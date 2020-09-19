@@ -9,12 +9,14 @@ use std::collections::HashMap;
 use quick_xml::de::{DeError};
 use yamato_event_analyzer::models::event;
 use yamato_event_analyzer::detections::security;
+use yamato_event_analyzer::detections::system;
+use yamato_event_analyzer::detections::application;
 
 fn main() -> Result<(), DeError> {
 
     let args: Vec<String> = env::args().collect();
     let fp: PathBuf;
-    if (args.len() > 1) {
+    if args.len() > 1 {
         fp = PathBuf::from(args[1].to_string());
     } else {
         fp = PathBuf::from(format!("./samples/security.evtx"));
@@ -37,20 +39,29 @@ fn main() -> Result<(), DeError> {
         match record {
             Ok(r) => {
                 let event: event::Evtx = quick_xml::de::from_str(&r.data)?;
+                let event_id = event.System.EventID.to_string();
+
                 // ログがSecurity.evtxなら
-                if (event.System.Channel == "Security") {
-                    if (event.System.EventID == "4672") {
-                        let event_data = event.parse_event_data();
-                        security::se_debug_privilege(event_data, alert_all_admin, &mut total_admin_logons,
-                            &mut admin_logons, &mut multiple_admin_logons);
-                    }
+                if event.System.Channel == "Security" {
+                    let event_data = event.parse_event_data();
+                    security::detection(event_id, 
+                        event_data, alert_all_admin, &mut total_admin_logons,
+                        &mut admin_logons, &mut multiple_admin_logons
+                    );
+                } else if event.System.Channel == "System" {
+                    system::detection();
+                } else if event.System.Channel == "Application" {
+                    application::detection();
                 }
             },
             Err(e) => eprintln!("{}", e),
         }
     }
 
-    if (total_admin_logons > 0) {
+    ////////////////////////////
+    // 表示　別ファイルでやりたい
+    ////////////////////////////
+    if total_admin_logons > 0 {
         println!("total_admin_logons:{}", total_admin_logons);
         println!("admin_logons:{:?}", admin_logons);
         println!("multiple_admin_logons:{:?}", multiple_admin_logons);
