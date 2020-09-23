@@ -4,55 +4,78 @@ use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Data {
-    pub Name: Option<String>,
+    #[serde(rename = "Name")]
+    pub name: Option<String>,
     #[serde(rename = "$value")]
-    pub Text: Option<String>,
+    pub text: Option<String>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct TimeCreated {
-    SystemTime: String,
+pub struct TimeCreated {
+    #[serde(rename = "SystemTime")]
+    pub system_time: String,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 struct Execution {
-    ProcessID: i32,
-    ThreadID: i32,
+    #[serde(rename = "ProcessID")]
+    process_id: i32,
+    #[serde(rename = "ThreadID")]
+    thread_id: i32,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 struct Provider {
-    Name: Option<String>,
-    Guid: Option<String>,
+    #[serde(rename = "Name")]
+    name: Option<String>,
+    #[serde(rename = "Guid")]
+    guid: Option<String>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct System {
-    Provider: Provider,
-    pub EventID: String,
-    Version: Option<String>,
-    Level: String,
-    Task: String,
-    Opcode: Option<String>,
-    Keywords: String,
-    TimeCreated: TimeCreated,
-    EventRecordID: String,
-    Correlation: Option<String>,
-    Execution: Option<Execution>,
-    pub Channel: String, // Security, System, Application ...etc
-    Computer: String,
-    Security: String,
+    #[serde(rename = "Provider")]
+    provider: Provider,
+    #[serde(rename = "EventID")]
+    pub event_id: String,
+    #[serde(rename = "Version")]
+    version: Option<String>,
+    #[serde(rename = "Level")]
+    level: String,
+    #[serde(rename = "Task")]
+    task: String,
+    #[serde(rename = "Opcode")]
+    opcode: Option<String>,
+    #[serde(rename = "Keywords")]
+    keywords: String,
+    #[serde(rename = "TimeCreated")]
+    pub time_created: TimeCreated,
+    #[serde(rename = "EventRecordID")]
+    pub event_record_id: String,
+    #[serde(rename = "Correlation")]
+    correlation: Option<String>,
+    #[serde(rename = "Execution")]
+    execution: Option<Execution>,
+    #[serde(rename = "Channel")]
+    pub channel: String, // Security, System, Application ...etc
+    #[serde(rename = "Computer")]
+    computer: String,
+    #[serde(rename = "Security")]
+    security: String,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct EventData {
-    pub Data: Option<Vec<Data>>,
+    #[serde(rename = "Data")]
+    pub data: Option<Vec<Data>>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Evtx {
-    pub System: System,
-    pub EventData: Option<EventData>,
+    #[serde(rename = "System")]
+    pub system: System,
+    #[serde(rename = "EventData")]
+    pub event_data: Option<EventData>,
 }
 
 impl Evtx {
@@ -62,7 +85,7 @@ impl Evtx {
     //
     fn get_string(v: &Data) -> String {
     
-        match &v.Text {
+        match &v.text {
             Some(text) => {
                 return text.to_string();
             },
@@ -73,15 +96,15 @@ impl Evtx {
     //
     // EventDataをHashMapとして取得する
     //
-    pub fn parse_event_data(self) -> HashMap<String,String> {
+    pub fn parse_event_data(&self) -> HashMap<String,String> {
         let mut values = HashMap::new();
     
-        match self.EventData {
+        match &self.event_data {
             Some(event_data) =>
-                match event_data.Data {
+                match &event_data.data {
                     Some(data) => {
                         for v in data.iter() {
-                            match &v.Name {
+                            match &v.name {
                                 Some(name) => {
                                     values.insert(name.to_string(), Evtx::get_string(v));
                                 },

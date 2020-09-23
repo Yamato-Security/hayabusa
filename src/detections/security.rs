@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use crate::models::event;
 
 #[derive(Debug)]
 pub struct Security {
@@ -26,7 +27,7 @@ impl Security {
         }
     }
 
-    pub fn detection(&mut self, event_id: String, event_data: HashMap<String, String>) {
+    pub fn detection(&mut self, event_id: String, system: &event::System, event_data: HashMap<String, String>) {
     
         if event_id == "4672" {
             &self.se_debug_privilege(event_data);
@@ -41,7 +42,7 @@ impl Security {
         match event_data.get("PrivilegeList") {
             Some(privileage_list) => {
                 match privileage_list.find("SeDebugPrivilege") {
-                    Some(data) => {
+                    Some(_data) => {
     
                         // alert_all_adminが有効であれば、標準出力して知らせる
                         // DeepBlueCLIでは必ず0になっていて、基本的には表示されない。
