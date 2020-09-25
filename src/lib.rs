@@ -1,2 +1,2 @@
-pub mod models;
 pub mod detections;
+pub mod models;

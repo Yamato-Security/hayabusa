@@ -1,19 +1,19 @@
-extern crate serde;
 extern crate clap;
+extern crate serde;
 
-use evtx::EvtxParser;
-use std::{env, process, path::PathBuf};
-use quick_xml::de::{DeError};
-use yamato_event_analyzer::detections::detection;
 use clap::{App, AppSettings, Arg};
+use evtx::EvtxParser;
+use quick_xml::de::DeError;
+use std::{env, path::PathBuf, process};
+use yamato_event_analyzer::detections::detection;
 
 fn build_app() -> clap::App<'static, 'static> {
     let program = std::env::args()
         .nth(0)
         .and_then(|s| {
             std::path::PathBuf::from(s)
-            .file_stem()
-            .map(|s| s.to_string_lossy().into_owned())
+                .file_stem()
+                .map(|s| s.to_string_lossy().into_owned())
         })
         .unwrap();
 
@@ -32,19 +32,17 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
         .arg(Arg::from_usage("-u --update 'signature update'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
-
 }
 
 fn main() -> Result<(), DeError> {
-
     let args = build_app().get_matches();
-    let filepath : Option<&str> = args.value_of("filepath");
-    
+    let filepath: Option<&str> = args.value_of("filepath");
+
     match filepath {
         Some(filepath) => parse_file(filepath),
         None => (),
     }
-    
+
     Ok(())
 }
 
@@ -55,9 +53,9 @@ fn parse_file(filepath: &str) {
         Err(e) => {
             eprintln!("{}", e);
             process::exit(1);
-        },
+        }
     };
-        
+
     let mut detection = detection::Detection::new();
     &detection.start(parser);
 }

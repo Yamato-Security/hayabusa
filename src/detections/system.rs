@@ -1,15 +1,9 @@
-
-pub struct System {
-    
-}
+pub struct System {}
 
 impl System {
-
     pub fn new() -> System {
-        System{}
+        System {}
     }
 
-    pub fn detection(&self) {
-
-    }
+    pub fn detection(&self) {}
 }
