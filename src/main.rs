@@ -1,32 +1,56 @@
 extern crate serde;
-extern crate quick_xml;
+extern crate clap;
 
 use evtx::EvtxParser;
-use std::env;
-use std::process;
-use std::path::PathBuf;
+use std::{env, process, path::PathBuf};
 use quick_xml::de::{DeError};
-use yamato_event_analyzer::models::event;
-use yamato_event_analyzer::detections::common;
-use yamato_event_analyzer::detections::security;
-use yamato_event_analyzer::detections::system;
-use yamato_event_analyzer::detections::application;
+use yamato_event_analyzer::detections::detection;
+use clap::{App, AppSettings, Arg};
+
+fn build_app() -> clap::App<'static, 'static> {
+    let program = std::env::args()
+        .nth(0)
+        .and_then(|s| {
+            std::path::PathBuf::from(s)
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+        })
+        .unwrap();
+
+    App::new(program)
+        .about("Yea! (Yamato Event Analyzer). Aiming to be the world's greatest Windows event log analysis tool!")
+        .version("0.0.1")
+        .author("Author name <author@example.com>")
+        .setting(AppSettings::VersionlessSubcommands)
+        .arg(Arg::from_usage("-f --filepath=[FILEPATH] 'event file path'"))
+        .arg(Arg::from_usage("--attackhunt=[ATTACK_HUNT] 'Attack Hunt'"))
+        .arg(Arg::from_usage("--csv-timeline=[CSV_TIMELINE] 'csv output timeline'"))
+        .arg(Arg::from_usage("--human-readable-timeline=[HUMAN_READABLE_TIMELINE] 'human readable timeline'"))
+        .arg(Arg::from_usage("-l --lang=[LANG] 'output language'"))
+        .arg(Arg::from_usage("-t --timezone=[TIMEZONE] 'timezone setting'"))
+        .arg(Arg::from_usage("-d --directory 'event log files directory'"))
+        .arg(Arg::from_usage("-s --statistics 'event statistics'"))
+        .arg(Arg::from_usage("-u --update 'signature update'"))
+        .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
+
+}
 
 fn main() -> Result<(), DeError> {
 
-    let args: Vec<String> = env::args().collect();
-    let fp: PathBuf;
-    if args.len() > 1 {
-        fp = PathBuf::from(args[1].to_string());
-    } else {
-        fp = PathBuf::from(format!("./samples/security.evtx"));
+    let args = build_app().get_matches();
+    let filepath : Option<&str> = args.value_of("filepath");
+    
+    match filepath {
+        Some(filepath) => parse_file(filepath),
+        None => (),
     }
     
-    let mut common = common::Common::new();    
-    let mut security = security::Security::new();
-    let mut system = system::System::new();
-    let mut application = application::Application::new();
-    let mut parser = match EvtxParser::from_path(fp) {
+    Ok(())
+}
+
+fn parse_file(filepath: &str) {
+    let fp = PathBuf::from(filepath);
+    let parser = match EvtxParser::from_path(fp) {
         Ok(pointer) => pointer,
         Err(e) => {
             eprintln!("{}", e);
@@ -34,34 +58,6 @@ fn main() -> Result<(), DeError> {
         },
     };
         
-    for record in parser.records() {
-        match record {
-            Ok(r) => {
-                let event: event::Evtx = quick_xml::de::from_str(&r.data)?;
-                let event_id = event.system.event_id.to_string();
-                let channel = event.system.channel.to_string();
-                let event_data = event.parse_event_data();
-                &common.detection(&event.system, &event_data);
-                if channel == "Security" {
-                    &security.detection(event_id, &event.system, event_data);
-                } else if channel == "System" {
-                    &system.detection();
-                } else if channel == "Application" {
-                    &application.detection();
-                } else {
-                    //&other.detection();
-                }
-            },
-            Err(e) => eprintln!("{}", e),
-        }
-    }
-
-    ////////////////////////////
-    // 表示
-    ////////////////////////////
-    common.disp();
-    security.disp();
-
-    Ok(())
+    let mut detection = detection::Detection::new();
+    &detection.start(parser);
 }
-

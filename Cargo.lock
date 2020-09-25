@@ -1107,6 +1107,7 @@ dependencies = [
 name = "yamato_event_analyzer"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "evtx",
  "quick-xml 0.17.2",
  "serde",

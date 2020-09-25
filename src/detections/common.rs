@@ -9,6 +9,7 @@ pub struct Common {
 }
 
 impl Common {
+
     pub fn new() -> Common {
         Common {
             record_id: 0,
@@ -28,7 +29,6 @@ impl Common {
         &self.check_record_id(system);
 
     }
-    
 
     //
     // Record IDがシーケンスになっているかチェック
