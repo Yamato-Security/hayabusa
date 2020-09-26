@@ -41,9 +41,9 @@ impl Application {
                     let username = message_split[4];
 
                     println!("Message EMET Block");
-                    println!("Command {}", command);
-                    println!("Results {}", text);
-                    println!("Results {}", username);
+                    println!("Command : {}", command);
+                    println!("Results : {}", text);
+                    println!("Results : {}", username);
                 }
             }
             None => {
