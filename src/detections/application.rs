@@ -18,22 +18,23 @@ impl Application {
         event_data: HashMap<String, String>,
     ) {
         if event_id == "2" {
-            match &system.provider.name {
-                Some(name) => {
-                    if (name == "EMET") {
-                        &self.emet(system, event_data);
-                    }
-                }
-                None => (),
-            }
+            &self.emet(system, event_data);
         }
     }
 
     fn emet(&mut self, system: &event::System, event_data: HashMap<String, String>) {
+        match &system.provider.name {
+            Some(name) => {
+                if (name != "EMET") {
+                    return;
+                }
+            }
+            None => return,
+        }
         match &system.message {
             Some(message) => {
                 let message_split: Vec<&str> = message.split("\n").collect();
-                if !message_split.is_empty() {
+                if !message_split.is_empty() && message_split.len() >= 5 {
                     let text = message_split[0];
                     let application = message_split[3];
                     let re = Regex::new(r"^Application: ").unwrap();
