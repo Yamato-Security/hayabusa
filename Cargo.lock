@@ -1110,6 +1110,7 @@ dependencies = [
  "clap",
  "evtx",
  "quick-xml 0.17.2",
+ "regex",
  "serde",
  "serde_json",
 ]

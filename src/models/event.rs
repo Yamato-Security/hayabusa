@@ -25,9 +25,9 @@ struct Execution {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct Provider {
+pub struct Provider {
     #[serde(rename = "Name")]
-    name: Option<String>,
+    pub name: Option<String>,
     #[serde(rename = "Guid")]
     guid: Option<String>,
 }
@@ -35,7 +35,7 @@ struct Provider {
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct System {
     #[serde(rename = "Provider")]
-    provider: Provider,
+    pub provider: Provider,
     #[serde(rename = "EventID")]
     pub event_id: String,
     #[serde(rename = "Version")]
@@ -62,6 +62,8 @@ pub struct System {
     computer: String,
     #[serde(rename = "Security")]
     security: String,
+    #[serde(rename = "Message")]
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -79,44 +81,41 @@ pub struct Evtx {
 }
 
 impl Evtx {
-    
     //
     // 文字列データを取得する
     //
     fn get_string(v: &Data) -> String {
-    
         match &v.text {
             Some(text) => {
                 return text.to_string();
-            },
+            }
             _ => return "".to_string(),
         }
     }
-    
+
     //
     // EventDataをHashMapとして取得する
     //
-    pub fn parse_event_data(&self) -> HashMap<String,String> {
+    pub fn parse_event_data(&self) -> HashMap<String, String> {
         let mut values = HashMap::new();
-    
+
         match &self.event_data {
-            Some(event_data) =>
-                match &event_data.data {
-                    Some(data) => {
-                        for v in data.iter() {
-                            match &v.name {
-                                Some(name) => {
-                                    values.insert(name.to_string(), Evtx::get_string(v));
-                                },
-                                None => (),
+            Some(event_data) => match &event_data.data {
+                Some(data) => {
+                    for v in data.iter() {
+                        match &v.name {
+                            Some(name) => {
+                                values.insert(name.to_string(), Evtx::get_string(v));
                             }
+                            None => (),
                         }
-                    },
-                    None => (),
-                },
+                    }
+                }
+                None => (),
+            },
             None => (),
         }
-    
+
         values
     }
 }
