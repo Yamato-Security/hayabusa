@@ -27,25 +27,23 @@ impl System {
     }
 
     fn windows_event_log(&mut self, event_data: HashMap<String, String>) {
-        match event_data.get("param1") {
-            Some(_param1) => {
-                if _param1 == "Windows Event Log" {
-                    println!("Service name : {}", _param1);
-                    match event_data.get("param2") {
-                        Some(_param2) => {
-                            if _param2 == "disabled" {
-                                println!("Message : Event Log Service Stopped");
-                                println!("Results : Selective event log manipulation may follow this event.");
-                            } else if _param2 == "auto start" {
-                                println!("Message : Event Log Service Started");
-                                println!("Results : Selective event log manipulation may precede this event.");
-                            }
-                        }
-                        None => (),
+        if let Some(_param1) = event_data.get("param1") {
+            if _param1 == "Windows Event Log" {
+                println!("Service name : {}", _param1);
+                if let Some(_param2) = event_data.get("param2") {
+                    if _param2 == "disabled" {
+                        println!("Message : Event Log Service Stopped");
+                        println!(
+                            "Results : Selective event log manipulation may follow this event."
+                        );
+                    } else if _param2 == "auto start" {
+                        println!("Message : Event Log Service Started");
+                        println!(
+                            "Results : Selective event log manipulation may precede this event."
+                        );
                     }
                 }
             }
-            None => (),
         }
     }
 }
