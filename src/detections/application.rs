@@ -18,11 +18,11 @@ impl Application {
         event_data: HashMap<String, String>,
     ) {
         if event_id == "2" {
-            &self.emet(system, event_data);
+            &self.emet(system);
         }
     }
 
-    fn emet(&mut self, system: &event::System, event_data: HashMap<String, String>) {
+    fn emet(&mut self, system: &event::System) {
         match &system.provider.name {
             Some(name) => {
                 if (name != "EMET") {

@@ -41,7 +41,7 @@ impl Detection {
                     if channel == "Security" {
                         &security.detection(event_id, &event.system, event_data);
                     } else if channel == "System" {
-                        &system.detection();
+                        &system.detection(event_id, &event.system, event_data);
                     } else if channel == "Application" {
                         &application.detection(event_id, &event.system, event_data);
                     } else {
