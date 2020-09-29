@@ -4,7 +4,7 @@ extern crate serde;
 use clap::{App, AppSettings, Arg};
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
-use std::{env, path::PathBuf, process};
+use std::{path::PathBuf, process};
 use yamato_event_analyzer::detections::detection;
 
 fn build_app() -> clap::App<'static, 'static> {
@@ -38,9 +38,8 @@ fn main() -> Result<(), DeError> {
     let args = build_app().get_matches();
     let filepath: Option<&str> = args.value_of("filepath");
 
-    match filepath {
-        Some(filepath) => parse_file(filepath),
-        None => (),
+    if let Some(filepath) = filepath {
+        parse_file(filepath);
     }
 
     Ok(())

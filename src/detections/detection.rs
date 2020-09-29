@@ -8,7 +8,6 @@ use crate::models::event;
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Detection {

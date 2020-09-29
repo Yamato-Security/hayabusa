@@ -85,12 +85,11 @@ impl Evtx {
     // 文字列データを取得する
     //
     fn get_string(v: &Data) -> String {
-        match &v.text {
-            Some(text) => {
-                return text.to_string();
-            }
-            _ => return "".to_string(),
+        let mut ret = "".to_string();
+        if let Some(text) = &v.text {
+            ret = text.to_string();
         }
+        return ret;
     }
 
     //
@@ -99,21 +98,14 @@ impl Evtx {
     pub fn parse_event_data(&self) -> HashMap<String, String> {
         let mut values = HashMap::new();
 
-        match &self.event_data {
-            Some(event_data) => match &event_data.data {
-                Some(data) => {
-                    for v in data.iter() {
-                        match &v.name {
-                            Some(name) => {
-                                values.insert(name.to_string(), Evtx::get_string(v));
-                            }
-                            None => (),
-                        }
+        if let Some(event_data) = &self.event_data {
+            if let Some(data) = &event_data.data {
+                for v in data.iter() {
+                    if let Some(name) = &v.name {
+                        values.insert(name.to_string(), Evtx::get_string(v));
                     }
                 }
-                None => (),
-            },
-            None => (),
+            }
         }
 
         values
