@@ -24,10 +24,10 @@ impl Sysmon {
     fn sysmon_event_1(&mut self, event_data: HashMap<String, String>) {
         println!("Message : Sysmon event 1");
         if let Some(_image) = event_data.get("Image") {
-            println!("_image : {}",_image);
+            println!("_image : {}", _image);
         }
         if let Some(_command_line) = event_data.get("CommandLine") {
-            println!("_command_line : {}",_command_line);
+            println!("_command_line : {}", _command_line);
         }
     }
 
