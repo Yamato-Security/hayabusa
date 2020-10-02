@@ -42,7 +42,6 @@ impl Security {
     // Special privileges assigned to new logon (possible admin access)
     //
     fn se_debug_privilege(&mut self, event_data: HashMap<String, String>) {
-
         if let Some(privileage_list) = event_data.get("PrivilegeList") {
             if let Some(_data) = privileage_list.find("SeDebugPrivilege") {
                 // alert_all_adminが有効であれば、標準出力して知らせる
@@ -72,10 +71,8 @@ impl Security {
                                 event_data["SubjectUserSid"].to_string(),
                                 sid[&event_data["SubjectUserSid"]] + 1,
                             );
-                            self.admin_logons.insert(
-                                event_data["SubjectUserName"].to_string(),
-                                count_hash,
-                            );
+                            self.admin_logons
+                                .insert(event_data["SubjectUserName"].to_string(), count_hash);
                         }
                     }
                     None => {
