@@ -1,10 +1,53 @@
 extern crate csv;
+extern crate regex;
+
+use regex::Regex;
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::string::String;
 
-pub fn check_command() {}
+fn check_obfu(string: &str) -> std::string::String {
+    let mut obfutext = "".to_string();
+    let mut lowercasestring = string.to_lowercase();
+    let mut length = lowercasestring.len();
+    let mut minpercent = 0.65;
+    let mut maxbinary = 0.50;
+
+    let mut re = Regex::new(r"[a-z0-9/\;:|.]").unwrap();
+    let mut caps = re.captures(&lowercasestring).unwrap();
+    let noalphastring = caps.get(0).unwrap().as_str();
+
+    re = Regex::new(r"[01]").unwrap();
+    caps = re.captures(&lowercasestring).unwrap();
+    let mut nobinarystring = caps.get(0).unwrap().as_str();
+
+    if (length > 0) {
+        let mut percent = ((length - noalphastring.len()) / length);
+        if ((length / 100) as f64)< minpercent {
+            minpercent = (length / 100) as f64;
+        }
+        if percent < minpercent as usize {
+            re = Regex::new(r"{0:P0}").unwrap();
+            let percent = &percent.to_string();
+            let caps = re.captures(percent).unwrap();
+            obfutext.push_str("Possible command obfuscation: only ");
+            obfutext.push_str(caps.get(0).unwrap().as_str());    
+            obfutext.push_str("alphanumeric and common symbols\n");
+        }
+        percent = ((nobinarystring.len() - length / length)  /length);
+        let mut binarypercent = 1 - percent;
+        if binarypercent > maxbinary as usize {
+            re = Regex::new(r"{0:P0}").unwrap();
+            let binarypercent = &binarypercent.to_string();
+            let caps = re.captures(binarypercent).unwrap();
+            obfutext.push_str("Possible command obfuscation: ");
+            obfutext.push_str(caps.get(0).unwrap().as_str());
+            obfutext.push_str("zeroes and ones (possible numeric or binary encoding)\n");
+        }
+    }
+    return obfutext;
+}
 
 fn check_regex(string: &str, r#type: &str) -> std::string::String {
     let mut f = File::open("regexes.txt").expect("file not found");
@@ -52,6 +95,8 @@ mod tests {
     use crate::detections::utils;
     #[test]
     fn test_check_regex() {
-        let result = utils::check_regex("test", "0");
+        let creatortext =
+            utils::check_regex("^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$", "0");
+        println!("{}", creatortext);
     }
 }
