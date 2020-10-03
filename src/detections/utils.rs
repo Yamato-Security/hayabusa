@@ -28,7 +28,7 @@ pub fn check_command(
 
     for entry in rdr.records() {
         if let Ok(_data) = entry {
-            if (commandline == &_data[0]) {
+            if commandline == &_data[0] {
                 return;
             }
         }
