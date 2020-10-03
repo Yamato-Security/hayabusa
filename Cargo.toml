@@ -14,3 +14,5 @@ serde_json = { version = "1.0"}
 clap = "*"
 regex = "1"
 csv = "1.1"
+base64 = "*"
+flate2 = "1.0"

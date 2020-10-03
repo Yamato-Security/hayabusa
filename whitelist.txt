@@ -1,0 +1,3 @@
+regex
+^"C:\\Program Files\\Google\\Chrome\\Application\\chrome\.exe"
+^"C:\\Program Files\\Google\\Update\\GoogleUpdate\.exe"
