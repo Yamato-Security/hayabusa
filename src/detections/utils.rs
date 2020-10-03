@@ -97,13 +97,21 @@ fn check_obfu(string: &str) -> std::string::String {
     let mut minpercent = 0.65;
     let mut maxbinary = 0.50;
 
-    let mut re = Regex::new(r"[a-z0-9/\;:|.]").unwrap();
-    let mut caps = re.captures(&lowercasestring).unwrap();
-    let noalphastring = caps.get(0).unwrap().as_str();
+    let mut re = Regex::new(r"[a-z0-9/¥;:|.]").unwrap();
+    let mut noalphastring = "";
+    if let Some(_caps) = re.captures(&lowercasestring) {
+        if let Some(_data) = _caps.get(0) {
+            noalphastring = _data.as_str();
+        }
+    }
 
     re = Regex::new(r"[01]").unwrap();
-    caps = re.captures(&lowercasestring).unwrap();
-    let mut nobinarystring = caps.get(0).unwrap().as_str();
+    let mut nobinarystring = "";
+    if let Some(_caps) = re.captures(&lowercasestring) {
+        if let Some(_data) = _caps.get(0) {
+            nobinarystring = _data.as_str();
+        }
+    }
 
     if (length > 0) {
         let mut percent = ((length - noalphastring.len()) / length);
@@ -111,21 +119,31 @@ fn check_obfu(string: &str) -> std::string::String {
             minpercent = (length / 100) as f64;
         }
         if percent < minpercent as usize {
+            obfutext.push_str("Possible command obfuscation: only ");
+
             re = Regex::new(r"{0:P0}").unwrap();
             let percent = &percent.to_string();
-            let caps = re.captures(percent).unwrap();
-            obfutext.push_str("Possible command obfuscation: only ");
-            obfutext.push_str(caps.get(0).unwrap().as_str());
+            if let Some(_caps) = re.captures(percent) {
+                if let Some(_data) = _caps.get(0) {
+                    obfutext.push_str(_data.as_str());
+                }
+            }
+
             obfutext.push_str("alphanumeric and common symbols\n");
         }
         percent = ((nobinarystring.len() - length / length) / length);
         let mut binarypercent = 1 - percent;
         if binarypercent > maxbinary as usize {
+            obfutext.push_str("Possible command obfuscation: ");
+
             re = Regex::new(r"{0:P0}").unwrap();
             let binarypercent = &binarypercent.to_string();
-            let caps = re.captures(binarypercent).unwrap();
-            obfutext.push_str("Possible command obfuscation: ");
-            obfutext.push_str(caps.get(0).unwrap().as_str());
+            if let Some(_caps) = re.captures(binarypercent) {
+                if let Some(_data) = _caps.get(0) {
+                    obfutext.push_str(_data.as_str());
+                }
+            }
+
             obfutext.push_str("zeroes and ones (possible numeric or binary encoding)\n");
         }
     }
@@ -143,13 +161,17 @@ fn check_regex(string: &str, r#type: usize) -> std::string::String {
     for regex in rdr.records() {
         if let Ok(_data) = regex {
             /*
-            data[0] is type.
-            data[1] is regex.
-            data[2] is string.
+            data[0] is type in csv.
+            data[1] is regex in csv.
+            data[2] is string in csv.
             */
-            if &_data[0] == r#type.to_string() && &_data[1] == string {
-                regextext.push_str(&_data[2]);
-                regextext.push_str("\n");
+            if &_data[0] == r#type.to_string() {
+                if let Ok(_re) = Regex::new(&_data[1]) {
+                    if _re.is_match(string) {
+                        regextext.push_str(&_data[2]);
+                        regextext.push_str("\n");
+                    }
+                }
             }
         }
     }
@@ -175,8 +197,28 @@ mod tests {
     use crate::detections::utils;
     #[test]
     fn test_check_regex() {
-        let creatortext =
-            utils::check_regex("^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$", "0");
-        println!("{}", creatortext);
+        let regextext = utils::check_regex(
+            "Metasploit-style cmd with pipe (possible use of Meterpreter 'getsystem')",
+            0,
+        );
+        println!("{}", regextext);
+    }
+
+    #[test]
+    fn test_check_creator() {
+        let mut creatortext = utils::check_creator("powershell", "PSEXESVC");
+        assert!(creatortext == "PowerShell launched via PsExec: $creator\n");
+        creatortext = utils::check_creator("powershell", "WmiPrvSE");
+        assert!(creatortext == "PowerShell launched via WMI: $creator\n");
+    }
+
+    #[test]
+    fn test_check_obfu() {
+        let mut obfutext = utils::check_obfu("dir01");
+    }
+
+    #[test]
+    fn test_check_command() {
+        utils::check_command(1, "dir", 100, 100, "dir", "dir");
     }
 }
