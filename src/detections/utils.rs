@@ -131,8 +131,8 @@ fn check_obfu(string: &str) -> std::string::String {
 
             obfutext.push_str("alphanumeric and common symbols\n");
         }
-        percent = ((nobinarystring.len() - length / length) / length);
-        let mut binarypercent = 1 - percent;
+        percent = ((nobinarystring.len().wrapping_sub(length) / length) / length);
+        let mut binarypercent = 1_usize.wrapping_sub(percent);
         if binarypercent > maxbinary as usize {
             obfutext.push_str("Possible command obfuscation: ");
 
@@ -183,9 +183,13 @@ fn check_creator(command: &str, creator: &str) -> std::string::String {
     if (!creator.is_empty()) {
         if (command == "powershell") {
             if (creator == "PSEXESVC") {
-                creatortext.push_str("PowerShell launched via PsExec: $creator\n");
+                creatortext.push_str("PowerShell launched via PsExec: ");
+                creatortext.push_str(creator);
+                creatortext.push_str("\n");
             } else if (creator == "WmiPrvSE") {
-                creatortext.push_str("PowerShell launched via WMI: $creator\n");
+                creatortext.push_str("PowerShell launched via WMI: ");
+                creatortext.push_str(creator);
+                creatortext.push_str("\n");
             }
         }
     }
@@ -198,23 +202,27 @@ mod tests {
     #[test]
     fn test_check_regex() {
         let regextext = utils::check_regex(
-            "Metasploit-style cmd with pipe (possible use of Meterpreter 'getsystem')",
+            "\\cvtres.exe",
             0,
         );
         println!("{}", regextext);
+        assert!(
+            regextext == "Resource File To COFF Object Conversion Utility cvtres.exe\n"
+        );
     }
 
     #[test]
     fn test_check_creator() {
         let mut creatortext = utils::check_creator("powershell", "PSEXESVC");
-        assert!(creatortext == "PowerShell launched via PsExec: $creator\n");
+        assert!(creatortext == "PowerShell launched via PsExec: PSEXESVC\n");
         creatortext = utils::check_creator("powershell", "WmiPrvSE");
-        assert!(creatortext == "PowerShell launched via WMI: $creator\n");
+        assert!(creatortext == "PowerShell launched via WMI: WmiPrvSE\n");
     }
 
     #[test]
     fn test_check_obfu() {
         let mut obfutext = utils::check_obfu("dir01");
+        println!("{}", obfutext);
     }
 
     #[test]
