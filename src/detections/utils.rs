@@ -121,7 +121,7 @@ fn check_obfu(string: &str) -> std::string::String {
         if percent < minpercent as usize {
             obfutext.push_str("Possible command obfuscation: only ");
 
-            re = Regex::new(r"{0:P0}").unwrap();
+            re = Regex::new(r"\{0:P0}").unwrap();
             let percent = &percent.to_string();
             if let Some(_caps) = re.captures(percent) {
                 if let Some(_data) = _caps.get(0) {
