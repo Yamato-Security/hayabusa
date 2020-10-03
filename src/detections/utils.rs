@@ -136,7 +136,7 @@ fn check_obfu(string: &str) -> std::string::String {
         if binarypercent > maxbinary as usize {
             obfutext.push_str("Possible command obfuscation: ");
 
-            re = Regex::new(r"{0:P0}").unwrap();
+            re = Regex::new(r"\{0:P0}").unwrap();
             let binarypercent = &binarypercent.to_string();
             if let Some(_caps) = re.captures(binarypercent) {
                 if let Some(_data) = _caps.get(0) {
@@ -201,14 +201,8 @@ mod tests {
     use crate::detections::utils;
     #[test]
     fn test_check_regex() {
-        let regextext = utils::check_regex(
-            "\\cvtres.exe",
-            0,
-        );
-        println!("{}", regextext);
-        assert!(
-            regextext == "Resource File To COFF Object Conversion Utility cvtres.exe\n"
-        );
+        let regextext = utils::check_regex("\\cvtres.exe", 0);
+        assert!(regextext == "Resource File To COFF Object Conversion Utility cvtres.exe\n");
     }
 
     #[test]
@@ -222,7 +216,6 @@ mod tests {
     #[test]
     fn test_check_obfu() {
         let mut obfutext = utils::check_obfu("dir01");
-        println!("{}", obfutext);
     }
 
     #[test]
