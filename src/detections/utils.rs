@@ -4,7 +4,6 @@ extern crate regex;
 
 use flate2::read::GzDecoder;
 use regex::Regex;
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::str;
@@ -42,25 +41,25 @@ pub fn check_command(
     text.push_str(&check_obfu(commandline));
     text.push_str(&check_regex(commandline, 0));
     text.push_str(&check_creator(commandline, creator));
-    if (Regex::new(r"\-enc.*[A-Za-z0-9/+=]{100}")
+    if Regex::new(r"\-enc.*[A-Za-z0-9/+=]{100}")
         .unwrap()
-        .is_match(commandline))
+        .is_match(commandline)
     {
         let re = Regex::new(r"^.* \-Enc(odedCommand)? ").unwrap();
         base64.push_str(&re.replace_all(commandline, ""));
-    } else if (Regex::new(r":FromBase64String\(")
+    } else if Regex::new(r":FromBase64String\(")
         .unwrap()
-        .is_match(commandline))
+        .is_match(commandline)
     {
         let re = Regex::new(r"^^.*:FromBase64String\(\'*").unwrap();
         base64.push_str(&re.replace_all(commandline, ""));
         let re = Regex::new(r"\'.*$").unwrap();
         base64.push_str(&re.replace_all(&base64.to_string(), ""));
     }
-    if (!base64.is_empty()) {
-        if (Regex::new(r"Compression.GzipStream.*Decompress")
+    if !base64.is_empty() {
+        if Regex::new(r"Compression.GzipStream.*Decompress")
             .unwrap()
-            .is_match(commandline))
+            .is_match(commandline)
         {
             let decoded = base64::decode(base64).unwrap();
             let mut d = GzDecoder::new(decoded.as_slice());
@@ -91,10 +90,10 @@ pub fn check_command(
 
 fn check_obfu(string: &str) -> std::string::String {
     let mut obfutext = "".to_string();
-    let mut lowercasestring = string.to_lowercase();
-    let mut length = lowercasestring.len();
+    let lowercasestring = string.to_lowercase();
+    let length = lowercasestring.len();
     let mut minpercent = 0.65;
-    let mut maxbinary = 0.50;
+    let maxbinary = 0.50;
 
     let mut re = Regex::new(r"[a-z0-9/¥;:|.]").unwrap();
     let mut noalphastring = "";
@@ -112,8 +111,8 @@ fn check_obfu(string: &str) -> std::string::String {
         }
     }
 
-    if (length > 0) {
-        let mut percent = ((length - noalphastring.len()) / length);
+    if length > 0 {
+        let mut percent = (length - noalphastring.len()) / length;
         if ((length / 100) as f64) < minpercent {
             minpercent = (length / 100) as f64;
         }
@@ -130,8 +129,8 @@ fn check_obfu(string: &str) -> std::string::String {
 
             obfutext.push_str("alphanumeric and common symbols\n");
         }
-        percent = ((nobinarystring.len().wrapping_sub(length) / length) / length);
-        let mut binarypercent = 1_usize.wrapping_sub(percent);
+        percent = (nobinarystring.len().wrapping_sub(length) / length) / length;
+        let binarypercent = 1_usize.wrapping_sub(percent);
         if binarypercent > maxbinary as usize {
             obfutext.push_str("Possible command obfuscation: ");
 
@@ -179,13 +178,13 @@ fn check_regex(string: &str, r#type: usize) -> std::string::String {
 
 fn check_creator(command: &str, creator: &str) -> std::string::String {
     let mut creatortext = "".to_string();
-    if (!creator.is_empty()) {
-        if (command == "powershell") {
-            if (creator == "PSEXESVC") {
+    if !creator.is_empty() {
+        if command == "powershell" {
+            if creator == "PSEXESVC" {
                 creatortext.push_str("PowerShell launched via PsExec: ");
                 creatortext.push_str(creator);
                 creatortext.push_str("\n");
-            } else if (creator == "WmiPrvSE") {
+            } else if creator == "WmiPrvSE" {
                 creatortext.push_str("PowerShell launched via WMI: ");
                 creatortext.push_str(creator);
                 creatortext.push_str("\n");
@@ -214,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_check_obfu() {
-        let mut obfutext = utils::check_obfu("dir01");
+        let obfutext = utils::check_obfu("dir01");
         assert!(obfutext == "Possible command obfuscation: zeroes and ones (possible numeric or binary encoding)\n");
     }
 
