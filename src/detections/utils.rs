@@ -7,7 +7,6 @@ use regex::Regex;
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::prelude::*;
 use std::str;
 use std::string::String;
 
