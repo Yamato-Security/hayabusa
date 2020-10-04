@@ -28,8 +28,10 @@ pub fn check_command(
 
     for entry in rdr.records() {
         if let Ok(_data) = entry {
-            if commandline == &_data[0] {
-                return;
+            if let Ok(_re) = Regex::new(&_data[0]) {
+                if _re.is_match(commandline) {
+                    return;
+                }
             }
         }
     }
@@ -220,5 +222,13 @@ mod tests {
     #[test]
     fn test_check_command() {
         utils::check_command(1, "dir", 100, 100, "dir", "dir");
+        utils::check_command(
+            1,
+            "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"",
+            100,
+            100,
+            "dir",
+            "dir",
+        );
     }
 }
