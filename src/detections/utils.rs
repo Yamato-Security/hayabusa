@@ -16,15 +16,10 @@ pub fn check_command(
     servicecmd: usize,
     servicename: &str,
     creator: &str,
+    mut rdr: csv::Reader<&[u8]>,
 ) {
     let mut text = "".to_string();
     let mut base64 = "".to_string();
-
-    let mut f = File::open("whitelist.txt").expect("file not found");
-    let mut contents = String::new();
-    f.read_to_string(&mut contents);
-
-    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
 
     for entry in rdr.records() {
         if let Ok(_data) = entry {
@@ -199,6 +194,8 @@ fn check_creator(command: &str, creator: &str) -> std::string::String {
 #[cfg(test)]
 mod tests {
     use crate::detections::utils;
+    use std::fs::File;
+    use std::io::Read;
     #[test]
     fn test_check_regex() {
         let regextext = utils::check_regex("\\cvtres.exe", 0);
@@ -221,7 +218,14 @@ mod tests {
 
     #[test]
     fn test_check_command() {
-        utils::check_command(1, "dir", 100, 100, "dir", "dir");
+        let mut f = File::open("whitelist.txt").expect("file not found");
+        let mut contents = String::new();
+        f.read_to_string(&mut contents);
+
+        let rdr = csv::Reader::from_reader(contents.as_bytes());
+        utils::check_command(1, "dir", 100, 100, "dir", "dir", rdr);
+
+        let rdr = csv::Reader::from_reader(contents.as_bytes());
         utils::check_command(
             1,
             "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"",
@@ -229,6 +233,7 @@ mod tests {
             100,
             "dir",
             "dir",
+            rdr,
         );
     }
 }
