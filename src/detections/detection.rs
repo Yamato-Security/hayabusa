@@ -38,7 +38,12 @@ impl Detection {
                     &common.detection(&event.system, &event_data);
                     //&common.detection(&event.system, &event_data);
                     if channel == "Security" {
-                        &security.detection(event_id, &event.system, &event.user_data, event_data);
+                        &security.detection(
+                            event_id,
+                            &event.system,
+                            &event.user_data.as_ref(),
+                            event_data,
+                        );
                     } else if channel == "System" {
                         &system.detection(event_id, &event.system, event_data);
                     } else if channel == "Application" {

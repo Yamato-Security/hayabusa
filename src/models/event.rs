@@ -39,7 +39,7 @@ pub struct System {
     #[serde(rename = "EventID")]
     pub event_id: String,
     #[serde(rename = "Version")]
-    pub version: Option<String>,
+    version: Option<String>,
     #[serde(rename = "Level")]
     level: String,
     #[serde(rename = "Task")]
