@@ -226,6 +226,7 @@ mod tests {
         utils::check_command(1, "dir", 100, 100, "dir", "dir", rdr);
 
         let rdr = csv::Reader::from_reader(contents.as_bytes());
+        //test return with whitelist.
         utils::check_command(
             1,
             "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"",
