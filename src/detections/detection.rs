@@ -4,6 +4,7 @@ use crate::detections::application;
 use crate::detections::common;
 use crate::detections::security;
 use crate::detections::system;
+use crate::detections::powershell;
 use crate::models::event;
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
@@ -26,6 +27,7 @@ impl Detection {
         let mut security = security::Security::new();
         let mut system = system::System::new();
         let mut application = application::Application::new();
+        let mut powershell = powershell::PowerShell::new();
 
         for record in parser.records() {
             match record {
@@ -43,6 +45,8 @@ impl Detection {
                         &system.detection(event_id, &event.system, event_data);
                     } else if channel == "Application" {
                         &application.detection(event_id, &event.system, event_data);
+                    } else if channel == "Microsoft-Windows-PowerShell/Operational" {
+                        &powershell.detection(event_id, &event.system, event_data);
                     } else {
                         //&other.detection();
                     }
