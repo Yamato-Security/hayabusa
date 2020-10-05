@@ -201,7 +201,7 @@ impl Security {
         // see fn disp()
         self.total_failed_logons += 1;
         let username = event_data.get("TargetUserName").unwrap_or(&self.empty_str);
-        let failed_cnt = self.account_2_failedcnt.get(username).unwrap_or(&0) + &1;
+        let failed_cnt = self.account_2_failedcnt.get(username).unwrap_or(&0) + 1;
         self.account_2_failedcnt
             .insert(username.to_string(), failed_cnt);
     }
