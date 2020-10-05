@@ -66,7 +66,7 @@ impl Security {
         &mut self,
         event_id: String,
         _system: &event::System,
-        user_data: &Option<&event::UserData>,
+        user_data: &Option<event::UserData>,
         event_data: HashMap<String, String>,
     ) {
         self.process_craeted(&event_id, &event_data);
@@ -287,16 +287,19 @@ impl Security {
         self.passspray_2_user = HashMap::new();
     }
 
-    fn audit_log_cleared(&mut self, event_id: &String, user_data: &Option<&event::UserData>) {
+    fn audit_log_cleared(&mut self, event_id: &String, user_data: &Option<event::UserData>) {
         if event_id != "1102" {
             return;
         }
 
         println!("Audit Log Clear");
         println!("The Audit log was cleared.");
-        user_data.and_then(|u| u.log_file_cleared.as_ref());
 
-        let username = user_data.and_then(|u| u.log_file_cleared.and_then(|l| l.subject_user_name));
-        println!("Security ID: {}", username.unwrap_or("".to_string()));
+        let username = user_data.as_ref().and_then(|u| {
+            u.log_file_cleared
+                .as_ref()
+                .and_then(|l| l.subject_user_name.as_ref())
+        });
+        println!("Security ID: {}", username.unwrap_or(&"".to_string()));
     }
 }
