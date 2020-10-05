@@ -69,7 +69,7 @@ impl Security {
         user_data: &Option<event::UserData>,
         event_data: HashMap<String, String>,
     ) {
-        self.process_craeted(&event_id, &event_data);
+        self.process_created(&event_id, &event_data);
         self.se_debug_privilege(&event_id, &event_data);
         self.account_created(&event_id, &event_data);
         self.add_member_security_group(&event_id, &event_data);
@@ -80,7 +80,7 @@ impl Security {
         self.audit_log_cleared(&event_id, &user_data);
     }
 
-    fn process_craeted(&mut self, event_id: &String, _event_data: &HashMap<String, String>) {
+    fn process_created(&mut self, event_id: &String, _event_data: &HashMap<String, String>) {
         if event_id != "4688" {
             return;
         }
