@@ -73,11 +73,31 @@ pub struct EventData {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
+pub struct UserData {
+    #[serde(rename = "LogFileCleared")]
+    pub log_file_cleared: Option<LogFileCleared>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct LogFileCleared {
+    #[serde(rename = "SubjectUserSid")]
+    pub subject_user_sid: Option<String>,
+    #[serde(rename = "SubjectUserName")]
+    pub subject_user_name: Option<String>,
+    #[serde(rename = "SubjectDomainName")]
+    pub subject_domain_name: Option<String>,
+    #[serde(rename = "SubjectLogonId")]
+    pub subject_logon_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct Evtx {
     #[serde(rename = "System")]
     pub system: System,
     #[serde(rename = "EventData")]
     pub event_data: Option<EventData>,
+    #[serde(rename = "UserData")]
+    pub user_data: Option<UserData>,
 }
 
 impl Evtx {
