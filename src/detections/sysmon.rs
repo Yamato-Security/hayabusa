@@ -1,5 +1,8 @@
 use crate::models::event;
+use crate::detections::utils::check_command;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
 
 pub struct Sysmon {
     checkunsigned: u64,
@@ -33,11 +36,17 @@ impl Sysmon {
                 println!("Date    : {} (UTC)", _date);
             }
             println!("Log     : Sysmon");
-            //if let Some(_creater) = event_data.get("ParentImage") {
-            //    println!("_creater : {}", _image);
-            //}
-            self.check_command("1".to_string(), _command_line.to_string());
-            println!("");
+            if let Some(_creater) = event_data.get("ParentImage") {
+                //println!("_creater : {}", _image);
+                let minlength = 100;    //  TBD
+                let mut f = File::open("whitelist.txt").expect("file not found");
+                let mut contents = String::new();
+                f.read_to_string(&mut contents);
+                let rdr = csv::Reader::from_reader(contents.as_bytes());
+                //self.check_command("1".to_string(), _command_line.to_string());
+                check_command(1, _command_line, minlength, 0, "", _creater, rdr);
+            }
+        println!("");
         }
     }
 
@@ -66,6 +75,7 @@ impl Sysmon {
         }
     }
 
+    /*
     fn check_command(&mut self, _event_id: String, _command_line: String) {
         let _result = "(TBD)";
         let _decoded = "(TBD)";
@@ -79,4 +89,5 @@ impl Sysmon {
         println!("Command : {}", _command_line);
         println!("Decoded : {}", _decoded);
     }
+    */
 }
