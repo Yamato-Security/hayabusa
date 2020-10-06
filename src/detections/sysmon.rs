@@ -36,15 +36,15 @@ impl Sysmon {
                 println!("Date    : {} (UTC)", _date);
             }
             println!("Log     : Sysmon");
+            let minlength = 100;    //  TBD
+            let mut f = File::open("whitelist.txt").expect("file not found");
+            let mut contents = String::new();
+            f.read_to_string(&mut contents);
+            let rdr = csv::Reader::from_reader(contents.as_bytes());
             if let Some(_creater) = event_data.get("ParentImage") {
-                //println!("_creater : {}", _image);
-                let minlength = 100;    //  TBD
-                let mut f = File::open("whitelist.txt").expect("file not found");
-                let mut contents = String::new();
-                f.read_to_string(&mut contents);
-                let rdr = csv::Reader::from_reader(contents.as_bytes());
-                //self.check_command("1".to_string(), _command_line.to_string());
                 check_command(1, _command_line, minlength, 0, "", _creater, rdr);
+            } else {
+                check_command(1, _command_line, minlength, 0, "", "", rdr);
             }
         println!("");
         }
@@ -74,20 +74,4 @@ impl Sysmon {
             }
         }
     }
-
-    /*
-    fn check_command(&mut self, _event_id: String, _command_line: String) {
-        let _result = "(TBD)";
-        let _decoded = "(TBD)";
-
-        //  TBD
-
-        //  Write-Output $obj
-        println!("EventID : {}", _event_id);
-        println!("Message : Suspicious Command Line");
-        println!("Result  : {}", _result);
-        println!("Command : {}", _command_line);
-        println!("Decoded : {}", _decoded);
-    }
-    */
 }
