@@ -1,10 +1,6 @@
 use crate::models::event;
 use std::collections::HashMap;
 
-// eventlogが用意できていない
-// 4674
-// 4756
-
 #[derive(Debug)]
 pub struct Security {
     max_total_sensitive_privuse: i32,
@@ -47,7 +43,7 @@ impl Security {
         if self.total_admin_logons > 0 {
             println!("total_admin_logons:{}", self.total_admin_logons);
             println!("admin_logons:{:?}", self.admin_logons);
-            println!("multiple_admin_logons:{:?}\n", self.multiple_admin_logons);
+            println!("multiple_admin_logons:{:?}\n\n", self.multiple_admin_logons);
         }
 
         let exceed_failed_logons = self.total_failed_logons > self.max_failed_logons;
@@ -58,7 +54,7 @@ impl Security {
                 "Total accounts: {}",
                 self.account_2_failedcnt.keys().count()
             );
-            println!("Total logon failures: {}\n", self.total_failed_logons);
+            println!("Total logon failures: {}\n\n", self.total_failed_logons);
         }
     }
 
@@ -150,11 +146,11 @@ impl Security {
         println!("New User Created");
         println!(
             "Username: {}",
-            event_data.get("TargetUserName").unwrap_or(&"".to_string())
+            event_data.get("TargetUserName").unwrap_or(&self.empty_str)
         );
         println!(
-            "User SID:: {}\n",
-            event_data.get("TargetSid").unwrap_or(&"".to_string())
+            "User SID:: {}\n\n",
+            event_data.get("TargetSid").unwrap_or(&self.empty_str)
         );
     }
 
@@ -182,11 +178,11 @@ impl Security {
 
         println!(
             "Username: {}",
-            event_data.get("TargetUserName").unwrap_or(&"".to_string())
+            event_data.get("TargetUserName").unwrap_or(&self.empty_str)
         );
         println!(
-            "User SID:: {}\n",
-            event_data.get("TargetSid").unwrap_or(&"".to_string())
+            "User SID:: {}\n\n",
+            event_data.get("TargetSid").unwrap_or(&self.empty_str)
         );
     }
 
@@ -221,7 +217,7 @@ impl Security {
                 event_data.get("SubjectUserName").unwrap_or(&self.empty_str)
             );
             println!(
-                "Domain Name: {}",
+                "Domain Name: {}\n\n",
                 event_data
                     .get("SubjectDomainName")
                     .unwrap_or(&self.empty_str)
@@ -295,11 +291,10 @@ impl Security {
         println!("Audit Log Clear");
         println!("The Audit log was cleared.");
 
-        let username = user_data.as_ref().and_then(|u| {
-            u.log_file_cleared
-                .as_ref()
-                .and_then(|l| l.subject_user_name.as_ref())
-        });
-        println!("Security ID: {}", username.unwrap_or(&"".to_string()));
+        let username = user_data
+            .as_ref()
+            .and_then(|u| u.log_file_cleared.as_ref())
+            .and_then(|l| l.subject_user_name.as_ref());
+        println!("Security ID: {}\n\n", username.unwrap_or(&self.empty_str));
     }
 }
