@@ -225,8 +225,29 @@ impl Security {
         }
     }
 
-    fn attempt_priviledge(&mut self, _event_id: &String, _event_data: &HashMap<String, String>) {
-        // event log cannot get...
+    fn attempt_priviledge(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
+        if event_id != "4674" {
+            return;
+        }
+
+        // "%%1539" means WRITE_DAC(see detail: https://docs.microsoft.com/ja-jp/windows/security/threat-protection/auditing/event-4663)
+        let servicename = event_data
+            .get("ProcessName")
+            .unwrap_or(&self.empty_str)
+            .to_uppercase();
+        let accessname = event_data.get("AccessMask").unwrap_or(&self.empty_str);
+        if servicename != r"C:\WINDOWS\SYSTEM32\SERVICES.EXE" || accessname != "%%1539" {
+            return;
+        }
+
+        println!("Possible Hidden Service Attempt");
+        println!("User requested to modify the Dynamic Access Control (DAC) permissions of a sevice, possibly to hide it from view.");
+
+        let username = event_data.get("SubjectUserName").unwrap_or(&self.empty_str);
+        println!("User: {}", username);
+        let servicename = event_data.get("ObjectName").unwrap_or(&self.empty_str);
+        println!("Target service: {}", servicename);
+        println!("WRITE_DAC\n\n");
     }
 
     // A logon was attempted using explicit credentials.
