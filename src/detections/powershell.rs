@@ -1,5 +1,6 @@
 use crate::detections::utils;
 use crate::models::event;
+use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -25,9 +26,30 @@ impl PowerShell {
         }
     }
 
-    fn execute_pipeline(&mut self, _event_data: &HashMap<String, String>) {
-        // PowerShell Error Code: 4103 is absent.
-        // ToDo: Correct Log & Check
+    fn execute_pipeline(&mut self, event_data: &HashMap<String, String>) {
+        // パイプライン実行をしています
+        let default = String::from("");
+        let commandline = event_data.get("ContextInfo").unwrap_or(&default);
+
+        if commandline.contains("Host Application")
+            || commandline.contains("ホスト アプリケーション")
+        {
+            let rm_before =
+                Regex::new("(?ms)^.*(ホスト アプリケーション|Host Application) = ").unwrap();
+            let rm_after = Regex::new("(?ms)\n.*$").unwrap();
+
+            let temp = rm_before.replace_all(commandline, "");
+            let command = rm_after.replace_all(&temp, "");
+
+            let mut f = File::open("whitelist.txt").expect("file not found");
+            let mut contents = String::new();
+            let _ = f.read_to_string(&mut contents);
+
+            let rdr = csv::Reader::from_reader(contents.as_bytes());
+            if command != "" {
+                utils::check_command(4103, &command, 1000, 0, &default, &default, rdr);
+            }
+        }
         return;
     }
 
