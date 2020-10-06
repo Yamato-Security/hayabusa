@@ -1,11 +1,16 @@
 use crate::models::event;
 use std::collections::HashMap;
 
-pub struct Sysmon {}
+pub struct Sysmon {
+    checkunsigned: u64,
+}
 
 impl Sysmon {
     pub fn new() -> Sysmon {
-        Sysmon {}
+        Sysmon {
+            //checkunsigned: 0,
+            checkunsigned: 1,
+        }
     }
 
     pub fn detection(
@@ -15,23 +20,45 @@ impl Sysmon {
         event_data: HashMap<String, String>,
     ) {
         if event_id == "1" {
-            &self.sysmon_event_1(event_data);
+            &self.check_command_lines(event_data);
         } else if event_id == "7" {
-            &self.sysmon_event_7(event_data);
+            &self.check_for_unsigned_files(event_data);
         }
     }
 
-    fn sysmon_event_1(&mut self, event_data: HashMap<String, String>) {
-        println!("Message : Sysmon event 1");
-        if let Some(_image) = event_data.get("Image") {
-            println!("_image : {}", _image);
+    fn check_command_lines(&mut self, event_data: HashMap<String, String>) {
+        // Check command lines
+        if let Some(_date) = event_data.get("UtcTime") {
+            println!("Date    : {} (UTC)", _date);
         }
+        println!("Log     : Sysmon");
+        println!("EventID : 1");
+        //if let Some(_creater) = event_data.get("ParentImage") {
+        //    println!("_creater : {}", _image);
+        //}
         if let Some(_command_line) = event_data.get("CommandLine") {
-            println!("_command_line : {}", _command_line);
+            self.check_command("1", event_data);
+            println!("Command : {}", _command_line);
+        }
+        println!("");
+    }
+
+    fn check_for_unsigned_files(&mut self, event_data: HashMap<String, String>) {
+        // Check for unsigned EXEs/DLLs:
+        // This can be very chatty, so it's disabled.
+        // Set $checkunsigned to 1 (global variable section) to enable:
+        if self.checkunsigned == 1 {
+            if let Some(_date) = event_data.get("UtcTime") {
+                println!("Date    : {} (UTC)", _date);
+            }
+            println!("Log     : Sysmon");
+            println!("EventID : 7");
+            //# TBD
+            println!("");
         }
     }
 
-    fn sysmon_event_7(&mut self, event_data: HashMap<String, String>) {
-        println!("Message : Sysmon event 7");
+    fn check_command(&mut self, event_id: String, event_data: HashMap<String, String>) {
+        //# TBD
     }
 }
