@@ -3,6 +3,7 @@ extern crate quick_xml;
 use crate::detections::application;
 use crate::detections::common;
 use crate::detections::security;
+use crate::detections::sysmon;
 use crate::detections::system;
 use crate::models::event;
 use evtx::EvtxParser;
@@ -26,6 +27,7 @@ impl Detection {
         let mut security = security::Security::new();
         let mut system = system::System::new();
         let mut application = application::Application::new();
+        let mut sysmon = sysmon::Sysmon::new();
 
         for record in parser.records() {
             match record {
@@ -43,6 +45,8 @@ impl Detection {
                         &system.detection(event_id, &event.system, event_data);
                     } else if channel == "Application" {
                         &application.detection(event_id, &event.system, event_data);
+                    } else if channel == "Microsoft-Windows-Sysmon/Operational" {
+                        &sysmon.detection(event_id, &event.system, event_data);
                     } else {
                         //&other.detection();
                     }
