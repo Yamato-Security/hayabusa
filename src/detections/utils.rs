@@ -16,7 +16,7 @@ pub fn check_command(
     servicecmd: usize,
     servicename: &str,
     creator: &str,
-    mut rdr: csv::Reader<&[u8]>,
+    rdr: &mut csv::Reader<&[u8]>,
 ) {
     let mut text = "".to_string();
     let mut base64 = "".to_string();
@@ -148,7 +148,10 @@ fn check_obfu(string: &str) -> std::string::String {
 fn check_regex(string: &str, r#type: usize) -> std::string::String {
     let mut f = File::open("regexes.txt").expect("file not found");
     let mut contents = String::new();
-    f.read_to_string(&mut contents);
+    let ret = f.read_to_string(&mut contents);
+    if let Err(_) = ret {
+        return "".to_string();
+    }
 
     let mut rdr = csv::Reader::from_reader(contents.as_bytes());
 
@@ -222,10 +225,10 @@ mod tests {
         let mut contents = String::new();
         f.read_to_string(&mut contents);
 
-        let rdr = csv::Reader::from_reader(contents.as_bytes());
-        utils::check_command(1, "dir", 100, 100, "dir", "dir", rdr);
+        let mut rdr = csv::Reader::from_reader(contents.as_bytes());
+        utils::check_command(1, "dir", 100, 100, "dir", "dir", &mut rdr);
 
-        let rdr = csv::Reader::from_reader(contents.as_bytes());
+        let mut rdr = csv::Reader::from_reader(contents.as_bytes());
         //test return with whitelist.
         utils::check_command(
             1,
@@ -234,7 +237,7 @@ mod tests {
             100,
             "dir",
             "dir",
-            rdr,
+            &mut rdr,
         );
     }
 }
