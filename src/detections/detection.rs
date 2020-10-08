@@ -1,3 +1,4 @@
+extern crate csv;
 extern crate quick_xml;
 
 use crate::detections::application;
@@ -11,7 +12,6 @@ use quick_xml::de::DeError;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
-extern crate csv;
 
 #[derive(Debug)]
 pub struct Detection {

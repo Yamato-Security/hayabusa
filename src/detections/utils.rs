@@ -228,7 +228,6 @@ mod tests {
         let mut rdr = csv::Reader::from_reader(contents.as_bytes());
         utils::check_command(1, "dir", 100, 100, "dir", "dir", &mut rdr);
 
-        let mut rdr = csv::Reader::from_reader(contents.as_bytes());
         //test return with whitelist.
         utils::check_command(
             1,

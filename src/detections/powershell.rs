@@ -41,14 +41,13 @@ impl PowerShell {
                 Regex::new("(?ms)^.*(ホスト アプリケーション|Host Application) = ").unwrap();
             let rm_after = Regex::new("(?ms)\n.*$").unwrap();
 
-            let temp = rm_before.replace_all(commandline, "");
-            let command = rm_after.replace_all(&temp, "");
+            let temp_command_with_extra = rm_before.replace_all(commandline, "");
+            let command = rm_after.replace_all(&temp_command_with_extra, "");
 
             if command != "" {
                 utils::check_command(4103, &command, 1000, 0, &default, &default, rdr);
             }
         }
-        return;
     }
 
     fn execute_remote_command(
@@ -61,11 +60,8 @@ impl PowerShell {
         let message_num = event_data.get("MessageNumber");
         let commandline = event_data.get("ScriptBlockText").unwrap_or(&default);
 
-        match message_num {
-            Some(_) => utils::check_command(4104, &commandline, 1000, 0, &default, &default, rdr),
-            _ => {}
+        if let Some(_) = message_num {
+            utils::check_command(4104, &commandline, 1000, 0, &default, &default, rdr);
         }
-
-        return;
     }
 }
