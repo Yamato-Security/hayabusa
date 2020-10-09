@@ -5,6 +5,7 @@ use crate::detections::application;
 use crate::detections::common;
 use crate::detections::powershell;
 use crate::detections::security;
+use crate::detections::sysmon;
 use crate::detections::system;
 use crate::models::event;
 use evtx::EvtxParser;
@@ -30,6 +31,7 @@ impl Detection {
         let mut security = security::Security::new();
         let mut system = system::System::new();
         let mut application = application::Application::new();
+        let mut sysmon = sysmon::Sysmon::new();
         let mut powershell = powershell::PowerShell::new();
 
         let mut f = File::open("whitelist.txt").expect("file not found");
@@ -49,13 +51,15 @@ impl Detection {
                     &common.detection(&event.system, &event_data);
                     //&common.detection(&event.system, &event_data);
                     if channel == "Security" {
-                        &security.detection(event_id, &event.system, event_data);
+                        &security.detection(event_id, &event.system, &event.user_data, event_data);
                     } else if channel == "System" {
                         &system.detection(event_id, &event.system, event_data);
                     } else if channel == "Application" {
                         &application.detection(event_id, &event.system, event_data);
                     } else if channel == "Microsoft-Windows-PowerShell/Operational" {
                         &powershell.detection(event_id, &event.system, event_data, &mut rdr);
+                    } else if channel == "Microsoft-Windows-Sysmon/Operational" {
+                        &sysmon.detection(event_id, &event.system, event_data);
                     } else {
                         //&other.detection();
                     }
