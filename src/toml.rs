@@ -1,23 +1,19 @@
 extern crate serde_derive;
 extern crate toml;
 
+use crate::models::rule;
 use std::fs;
 use std::io;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use crate::models::rule;
-
 
 pub struct ParseToml {
     pub rules: Vec<Result<rule::Toml, toml::de::Error>>,
 }
 
 impl ParseToml {
-
     pub fn new() -> ParseToml {
-        ParseToml {
-            rules: Vec::new(),
-        }
+        ParseToml { rules: Vec::new() }
     }
 
     fn read_file(&self, path: PathBuf) -> Result<String, String> {
@@ -47,7 +43,6 @@ impl ParseToml {
             })
             .collect())
     }
-
 }
 
 #[cfg(test)]
@@ -67,11 +62,9 @@ mod tests {
                     if let Some(severity) = _rule.rule.severity {
                         assert_eq!("high", severity);
                     }
-                },
+                }
                 Err(_) => (),
             }
         }
-        
     }
 }
-

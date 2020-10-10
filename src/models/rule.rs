@@ -10,5 +10,4 @@ pub struct Rule {
 #[derive(Debug, Deserialize)]
 pub struct Toml {
     pub rule: Rule,
-    
 }

@@ -59,4 +59,3 @@ fn parse_file(filepath: &str) {
     let mut detection = detection::Detection::new();
     &detection.start(parser);
 }
-
