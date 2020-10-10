@@ -58,7 +58,6 @@ mod tests {
         for rule in toml.rules {
             match rule {
                 Ok(_rule) => {
-                    println!("{:?}", _rule);
                     if let Some(severity) = _rule.rule.severity {
                         assert_eq!("high", severity);
                     }
