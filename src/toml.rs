@@ -58,11 +58,12 @@ mod tests {
     #[test]
     fn test_read_toml() {
         let mut toml = toml::ParseToml::new();
-        &toml.read_dir("rules".to_string());
+        &toml.read_dir("test_files/rules".to_string());
 
         for rule in toml.rules {
             match rule {
                 Ok(_rule) => {
+                    println!("{:?}", _rule);
                     if let Some(severity) = _rule.rule.severity {
                         assert_eq!("high", severity);
                     }
