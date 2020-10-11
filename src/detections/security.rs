@@ -261,7 +261,10 @@ impl Security {
         }
 
         msges.push("Sensititive Privilege Use Exceeds Threshold".to_string());
-        msges.push("Potentially indicative of Mimikatz, multiple sensitive privilege calls have been made".to_string());
+        msges.push(
+            "Potentially indicative of Mimikatz, multiple sensitive privilege calls have been made"
+                .to_string(),
+        );
 
         let username = event_data.get("SubjectUserName").unwrap_or(&self.empty_str);
         msges.push(format!("Username: {}", username));
@@ -335,7 +338,9 @@ impl Security {
 
         // let v_username  = Vec::new();
         let mut v_username = Vec::new();
-        self.passspray_2_user.keys().for_each(|u| v_username.push(u));
+        self.passspray_2_user
+            .keys()
+            .for_each(|u| v_username.push(u));
         v_username.sort();
         let usernames: String = v_username.iter().fold(
             self.empty_str.to_string(),
@@ -665,7 +670,8 @@ mod tests {
     // eventidが異なりヒットしないパターン
     #[test]
     fn test_add_member_security_group_noteq_eventid() {
-        let xml_str = get_add_member_security_group_xml().replace(r"<EventID>4732</EventID>", r"<EventID>4757</EventID>");
+        let xml_str = get_add_member_security_group_xml()
+            .replace(r"<EventID>4732</EventID>", r"<EventID>4757</EventID>");
         let event: event::Evtx = quick_xml::de::from_str(&xml_str)
             .map_err(|e| {
                 println!("{}", e.to_string());
@@ -683,7 +689,10 @@ mod tests {
     // グループがAdministratorsじゃなくてHitしないパターン
     #[test]
     fn test_add_member_security_not_administrators() {
-        let xml_str = get_add_member_security_group_xml().replace(r"<Data Name='TargetUserName'>Administrators</Data>", r"<Data Name='TargetUserName'>local</Data>");
+        let xml_str = get_add_member_security_group_xml().replace(
+            r"<Data Name='TargetUserName'>Administrators</Data>",
+            r"<Data Name='TargetUserName'>local</Data>",
+        );
         let event: event::Evtx = quick_xml::de::from_str(&xml_str)
             .map_err(|e| {
                 println!("{}", e.to_string());
@@ -746,10 +755,7 @@ mod tests {
             &"Username: ".to_string(),
             ite.next().unwrap_or(&"".to_string())
         );
-        assert_eq!(
-            &"User SID: ",
-            ite.next().unwrap_or(&"".to_string())
-        );
+        assert_eq!(&"User SID: ", ite.next().unwrap_or(&"".to_string()));
         assert_eq!(Option::None, ite.next());
     }
 
@@ -795,10 +801,10 @@ mod tests {
         let event: event::Evtx = quick_xml::de::from_str(&xml_str).unwrap();
 
         let mut sec = security::Security::new();
-        
+
         sec.max_failed_logons = 5;
-        let ite = [1,2,3,4,5,6,7].iter();
-        ite.for_each(|i|{
+        let ite = [1, 2, 3, 4, 5, 6, 7].iter();
+        ite.for_each(|i| {
             sec.failed_logon(
                 &event.system.event_id.to_string(),
                 &event.parse_event_data(),
@@ -813,9 +819,13 @@ mod tests {
     fn test_failed_logon_hit() {
         let xml_str = get_failed_logon_xml();
         let event: event::Evtx = quick_xml::de::from_str(&xml_str).unwrap();
-        let event_another: event::Evtx = quick_xml::de::from_str(&xml_str.replace(r"<Data Name='TargetUserName'>Administrator</Data>", r"<Data Name='TargetUserName'>localuser</Data>")).unwrap();
+        let event_another: event::Evtx = quick_xml::de::from_str(&xml_str.replace(
+            r"<Data Name='TargetUserName'>Administrator</Data>",
+            r"<Data Name='TargetUserName'>localuser</Data>",
+        ))
+        .unwrap();
 
-        let mut sec = security::Security::new();        
+        let mut sec = security::Security::new();
         sec.max_failed_logons = 5;
 
         // メッセージが表示されるには2ユーザー以上失敗している必要がある。まず一人目
@@ -825,13 +835,13 @@ mod tests {
         );
         assert_eq!(1, sec.total_failed_logons);
 
-        let ite = [1,2,3,4,5,6,7].iter();
-        ite.for_each(|i|{
+        let ite = [1, 2, 3, 4, 5, 6, 7].iter();
+        ite.for_each(|i| {
             sec.failed_logon(
                 &event_another.system.event_id.to_string(),
                 &event_another.parse_event_data(),
             );
-            let fail_cnt = i +1;
+            let fail_cnt = i + 1;
             assert_eq!(fail_cnt, sec.total_failed_logons);
             if fail_cnt > 5 {
                 let v = sec.disp_login_failed().unwrap();
@@ -848,7 +858,7 @@ mod tests {
                     &format!("Total logon failures: {}", fail_cnt),
                     ite.next().unwrap_or(&"".to_string())
                 );
-                // assert_eq!(Option::None, ite.next());
+            // assert_eq!(Option::None, ite.next());
             } else {
                 assert_eq!(Option::None, sec.disp_login_failed());
             }
@@ -870,14 +880,25 @@ mod tests {
         );
     }
 
-     // 失敗回数を増やしていき、境界値でメッセージが表示されることのテスト。
-     #[test]
-     fn test_failed_logon_noteq_eventid() {
+    // 失敗回数を増やしていき、境界値でメッセージが表示されることのテスト。
+    #[test]
+    fn test_failed_logon_noteq_eventid() {
         let xml_str = get_failed_logon_xml();
-        let event: event::Evtx = quick_xml::de::from_str(&xml_str.replace(r"<EventID>4625</EventID>",r"<EventID>4626</EventID>")).unwrap();
-        let event_another: event::Evtx = quick_xml::de::from_str(&xml_str.replace(r"<EventID>4625</EventID>",r"<EventID>4626</EventID>").replace(r"<Data Name='TargetUserName'>Administrator</Data>", r"<Data Name='TargetUserName'>localuser</Data>")).unwrap();
+        let event: event::Evtx = quick_xml::de::from_str(
+            &xml_str.replace(r"<EventID>4625</EventID>", r"<EventID>4626</EventID>"),
+        )
+        .unwrap();
+        let event_another: event::Evtx = quick_xml::de::from_str(
+            &xml_str
+                .replace(r"<EventID>4625</EventID>", r"<EventID>4626</EventID>")
+                .replace(
+                    r"<Data Name='TargetUserName'>Administrator</Data>",
+                    r"<Data Name='TargetUserName'>localuser</Data>",
+                ),
+        )
+        .unwrap();
 
-        let mut sec = security::Security::new();        
+        let mut sec = security::Security::new();
         sec.max_failed_logons = 5;
 
         // メッセージが表示されるには2ユーザー以上失敗している必要がある。まず一人目
@@ -887,16 +908,16 @@ mod tests {
         );
         assert_eq!(0, sec.total_failed_logons);
 
-        let ite = [1,2,3,4,5,6,7].iter();
-        ite.for_each(|_i|{
+        let ite = [1, 2, 3, 4, 5, 6, 7].iter();
+        ite.for_each(|_i| {
             sec.failed_logon(
                 &event_another.system.event_id.to_string(),
                 &event_another.parse_event_data(),
             );
             assert_eq!(0, sec.total_failed_logons);
             assert_eq!(Option::None, sec.disp_login_failed());
-        });      
-     }   
+        });
+    }
 
     fn get_failed_logon_xml() -> String {
         return r#"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
@@ -940,7 +961,8 @@ mod tests {
                 <Data Name='IpAddress'>192.168.198.149</Data>
                 <Data Name='IpPort'>33083</Data>
             </EventData>
-        </Event>"#.to_string();
+        </Event>"#
+            .to_string();
     }
 
     // Hitするパターンとしないパターンをまとめてテスト
@@ -949,10 +971,10 @@ mod tests {
         let xml_str = get_sensitive_prividedge_hit();
         let event: event::Evtx = quick_xml::de::from_str(&xml_str).unwrap();
 
-        let mut sec = security::Security::new();        
+        let mut sec = security::Security::new();
         sec.max_total_sensitive_privuse = 6;
 
-        let ite = [1,2,3,4,5,6,7].iter();
+        let ite = [1, 2, 3, 4, 5, 6, 7].iter();
         ite.for_each(|i| {
             let msg = sec.sensitive_priviledge(&event.system.event_id.to_string(), &event.parse_event_data());
             // i == 7ときにHitしない
@@ -984,15 +1006,19 @@ mod tests {
     // eventidが異なるので、Hitしないテスト
     #[test]
     fn test_sensitive_priviledge_noteq_eventid() {
-        let xml_str = get_sensitive_prividedge_hit().replace(r"<EventID>4673</EventID>", r"<EventID>4674</EventID>");
+        let xml_str = get_sensitive_prividedge_hit()
+            .replace(r"<EventID>4673</EventID>", r"<EventID>4674</EventID>");
         let event: event::Evtx = quick_xml::de::from_str(&xml_str).unwrap();
 
-        let mut sec = security::Security::new();        
+        let mut sec = security::Security::new();
         sec.max_total_sensitive_privuse = 6;
 
-        let ite = [1,2,3,4,5,6,7].iter();
+        let ite = [1, 2, 3, 4, 5, 6, 7].iter();
         ite.for_each(|_i| {
-            let msg = sec.sensitive_priviledge(&event.system.event_id.to_string(), &event.parse_event_data());
+            let msg = sec.sensitive_priviledge(
+                &event.system.event_id.to_string(),
+                &event.parse_event_data(),
+            );
             assert_eq!(Option::None, msg);
         });
     }
@@ -1037,16 +1063,31 @@ mod tests {
         let event: event::Evtx = quick_xml::de::from_str(&xml_str).unwrap();
 
         let mut sec = security::Security::new();
-        let msg = sec.attempt_priviledge(&event.system.event_id.to_string(), &event.parse_event_data());
-        
+        let msg = sec.attempt_priviledge(
+            &event.system.event_id.to_string(),
+            &event.parse_event_data(),
+        );
+
         assert_ne!(Option::None, msg);
         let v = msg.unwrap();
         let mut ite = v.iter();
-        assert_eq!(&"Possible Hidden Service Attempt".to_string(), ite.next().unwrap_or(&"".to_string()));
+        assert_eq!(
+            &"Possible Hidden Service Attempt".to_string(),
+            ite.next().unwrap_or(&"".to_string())
+        );
         assert_eq!(&"User requested to modify the Dynamic Access Control (DAC) permissions of a sevice, possibly to hide it from view".to_string(), ite.next().unwrap_or(&"".to_string()));
-        assert_eq!(&"User: Sec504".to_string(), ite.next().unwrap_or(&"".to_string()));
-        assert_eq!(&"Target service: nginx".to_string(), ite.next().unwrap_or(&"".to_string()));
-        assert_eq!(&"WRITE_DAC".to_string(), ite.next().unwrap_or(&"".to_string()));
+        assert_eq!(
+            &"User: Sec504".to_string(),
+            ite.next().unwrap_or(&"".to_string())
+        );
+        assert_eq!(
+            &"Target service: nginx".to_string(),
+            ite.next().unwrap_or(&"".to_string())
+        );
+        assert_eq!(
+            &"WRITE_DAC".to_string(),
+            ite.next().unwrap_or(&"".to_string())
+        );
         assert_eq!(Option::None, ite.next());
     }
 
@@ -1054,11 +1095,18 @@ mod tests {
     #[test]
     fn test_attempt_priviledge_noteq_accessmask() {
         let xml_str = get_attempt_priviledge_xml();
-        let event: event::Evtx = quick_xml::de::from_str(&xml_str.replace(r"<Data Name='AccessMask'>%%1539",r"<Data Name='AccessMask'>%%1538")).unwrap();
+        let event: event::Evtx = quick_xml::de::from_str(&xml_str.replace(
+            r"<Data Name='AccessMask'>%%1539",
+            r"<Data Name='AccessMask'>%%1538",
+        ))
+        .unwrap();
 
         let mut sec = security::Security::new();
-        let msg = sec.attempt_priviledge(&event.system.event_id.to_string(), &event.parse_event_data());
-        
+        let msg = sec.attempt_priviledge(
+            &event.system.event_id.to_string(),
+            &event.parse_event_data(),
+        );
+
         assert_eq!(Option::None, msg);
     }
 
@@ -1066,11 +1114,18 @@ mod tests {
     #[test]
     fn test_attempt_priviledge_noteq_service() {
         let xml_str = get_attempt_priviledge_xml();
-        let event: event::Evtx = quick_xml::de::from_str(&xml_str.replace(r"<Data Name='ProcessName'>C:\Windows\System32\services.exe</Data>",r"<Data Name='ProcessName'>C:\Windows\System32\lsass.exe</Data>")).unwrap();
+        let event: event::Evtx = quick_xml::de::from_str(&xml_str.replace(
+            r"<Data Name='ProcessName'>C:\Windows\System32\services.exe</Data>",
+            r"<Data Name='ProcessName'>C:\Windows\System32\lsass.exe</Data>",
+        ))
+        .unwrap();
 
         let mut sec = security::Security::new();
-        let msg = sec.attempt_priviledge(&event.system.event_id.to_string(), &event.parse_event_data());
-        
+        let msg = sec.attempt_priviledge(
+            &event.system.event_id.to_string(),
+            &event.parse_event_data(),
+        );
+
         assert_eq!(Option::None, msg);
     }
 
@@ -1078,11 +1133,17 @@ mod tests {
     #[test]
     fn test_attempt_priviledge_noteq_eventid() {
         let xml_str = get_attempt_priviledge_xml();
-        let event: event::Evtx = quick_xml::de::from_str(&xml_str.replace(r"<EventID>4674</EventID>",r"<EventID>4675</EventID>")).unwrap();
+        let event: event::Evtx = quick_xml::de::from_str(
+            &xml_str.replace(r"<EventID>4674</EventID>", r"<EventID>4675</EventID>"),
+        )
+        .unwrap();
 
         let mut sec = security::Security::new();
-        let msg = sec.attempt_priviledge(&event.system.event_id.to_string(), &event.parse_event_data());
-        
+        let msg = sec.attempt_priviledge(
+            &event.system.event_id.to_string(),
+            &event.parse_event_data(),
+        );
+
         assert_eq!(Option::None, msg);
     }
 
@@ -1130,11 +1191,10 @@ mod tests {
         sec.max_passspray_login = 6;
         sec.max_passspray_uniquser = 6;
 
-        test_pass_spray_hit_1cycle(&mut sec,"4648".to_string(), true);
+        test_pass_spray_hit_1cycle(&mut sec, "4648".to_string(), true);
         // counterがreset確認のため、2回実行
-        test_pass_spray_hit_1cycle(&mut sec,"4648".to_string(), true);
+        test_pass_spray_hit_1cycle(&mut sec, "4648".to_string(), true);
     }
-
 
     // eventid異なるので、Hitしないはず
     #[test]
@@ -1144,12 +1204,12 @@ mod tests {
         sec.max_passspray_login = 6;
         sec.max_passspray_uniquser = 6;
 
-        test_pass_spray_hit_1cycle(&mut sec,"4649".to_string(), false);
+        test_pass_spray_hit_1cycle(&mut sec, "4649".to_string(), false);
         // counterがreset確認のため、2回実行
-        test_pass_spray_hit_1cycle(&mut sec,"4649".to_string(), false);
+        test_pass_spray_hit_1cycle(&mut sec, "4649".to_string(), false);
     }
 
-    fn test_pass_spray_hit_1cycle( sec: &mut security::Security, event_id:String, is_eq:bool ) {
+    fn test_pass_spray_hit_1cycle(sec: &mut security::Security, event_id: String, is_eq: bool) {
         [1,2,3,4,5,6,7].iter().for_each(|i| {
             let rep_str = format!(r#"<Data Name='TargetUserName'>smisenar{}</Data>"#,i);
             let event_id_tag = format!("<EventID>{}</EventID>", event_id);
@@ -1173,7 +1233,7 @@ mod tests {
             });
         });
     }
-    
+
     fn get_passs_pray_hit() -> String {
         return r#"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
             <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -1224,22 +1284,32 @@ mod tests {
         assert_ne!(Option::None, msg);
         let v = msg.unwrap();
         let mut ite = v.iter();
-        assert_eq!(&"Audit Log Clear".to_string(), ite.next().unwrap_or(&"".to_string()));
-        assert_eq!(&"The Audit log was cleared".to_string(), ite.next().unwrap_or(&"".to_string()));
-        assert_eq!(&"Security ID: jwrig".to_string(), ite.next().unwrap_or(&"".to_string()));
+        assert_eq!(
+            &"Audit Log Clear".to_string(),
+            ite.next().unwrap_or(&"".to_string())
+        );
+        assert_eq!(
+            &"The Audit log was cleared".to_string(),
+            ite.next().unwrap_or(&"".to_string())
+        );
+        assert_eq!(
+            &"Security ID: jwrig".to_string(),
+            ite.next().unwrap_or(&"".to_string())
+        );
         assert_eq!(Option::None, ite.next());
     }
 
     // eventid違うのでHitしないはず
     #[test]
     fn test_audit_log_cleared_noteq_eventid() {
-        let xml_str = get_audit_log_cleared_xml().replace(r"<EventID>1102</EventID>", r"<EventID>1103</EventID>");
+        let xml_str = get_audit_log_cleared_xml()
+            .replace(r"<EventID>1102</EventID>", r"<EventID>1103</EventID>");
         let event: event::Evtx = quick_xml::de::from_str(&xml_str).unwrap();
 
         let mut sec = security::Security::new();
         let msg = sec.audit_log_cleared(&event.system.event_id.to_string(), &event.user_data);
         assert_eq!(Option::None, msg);
-    }    
+    }
 
     fn get_audit_log_cleared_xml() -> String {
         return r#"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
