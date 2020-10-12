@@ -21,7 +21,7 @@ pub fn check_command(
     let mut base64 = "".to_string();
 
     let empty = "".to_string();
-    for line in configs::get_instance().whitelist {
+    for line in configs::singleton().whitelist {
         let r_str = line.get(0).unwrap_or(&empty);
         if r_str.is_empty() {
             continue;
@@ -151,7 +151,7 @@ fn check_obfu(string: &str) -> std::string::String {
 fn check_regex(string: &str, r#type: usize) -> std::string::String {
     let empty = "".to_string();
     let mut regextext = "".to_string();
-    for line in configs::get_instance().regex {
+    for line in configs::singleton().regex {
         let type_str = line.get(0).unwrap_or(&empty);
         if type_str != &r#type.to_string() {
             continue;

@@ -8,7 +8,7 @@ pub struct SingletonReader {
     pub whitelist: Vec<Vec<String>>,
 }
 
-pub fn get_instance() -> Box<SingletonReader> {
+pub fn singleton() -> Box<SingletonReader> {
     static mut SINGLETON: Option<Box<SingletonReader>> = Option::None;
     static ONCE: Once = Once::new();
 
