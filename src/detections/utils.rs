@@ -2,9 +2,9 @@ extern crate base64;
 extern crate csv;
 extern crate regex;
 
+use crate::detections::configs;
 use flate2::read::GzDecoder;
 use regex::Regex;
-use std::fs::File;
 use std::io::prelude::*;
 use std::str;
 use std::string::String;
@@ -16,20 +16,23 @@ pub fn check_command(
     servicecmd: usize,
     servicename: &str,
     creator: &str,
-    rdr: &mut csv::Reader<&[u8]>,
 ) {
     let mut text = "".to_string();
     let mut base64 = "".to_string();
 
-    for entry in rdr.records() {
-        if let Ok(_data) = entry {
-            if let Ok(_re) = Regex::new(&_data[0]) {
-                if _re.is_match(commandline) {
-                    return;
-                }
-            }
+    let empty = "".to_string();
+    for line in configs::singleton().whitelist {
+        let r_str = line.get(0).unwrap_or(&empty);
+        if r_str.is_empty() {
+            continue;
+        }
+
+        let r = Regex::new(r_str);
+        if r.is_ok() && r.unwrap().is_match(commandline) {
+            return;
         }
     }
+
     if commandline.len() > minlength {
         text.push_str("Long Command Line: greater than ");
         text.push_str(&minlength.to_string());
@@ -146,33 +149,33 @@ fn check_obfu(string: &str) -> std::string::String {
 }
 
 fn check_regex(string: &str, r#type: usize) -> std::string::String {
-    let mut f = File::open("regexes.txt").expect("file not found");
-    let mut contents = String::new();
-    let ret = f.read_to_string(&mut contents);
-    if let Err(_) = ret {
-        return "".to_string();
-    }
-
-    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
-
+    let empty = "".to_string();
     let mut regextext = "".to_string();
-    for regex in rdr.records() {
-        if let Ok(_data) = regex {
-            /*
-            data[0] is type in csv.
-            data[1] is regex in csv.
-            data[2] is string in csv.
-            */
-            if &_data[0] == r#type.to_string() {
-                if let Ok(_re) = Regex::new(&_data[1]) {
-                    if _re.is_match(string) {
-                        regextext.push_str(&_data[2]);
-                        regextext.push_str("\n");
-                    }
-                }
-            }
+    for line in configs::singleton().regex {
+        let type_str = line.get(0).unwrap_or(&empty);
+        if type_str != &r#type.to_string() {
+            continue;
         }
+
+        let regex_str = line.get(1).unwrap_or(&empty);
+        if regex_str.is_empty() {
+            continue;
+        }
+
+        let re = Regex::new(regex_str);
+        if re.is_err() || re.unwrap().is_match(string) == false {
+            continue;
+        }
+
+        let text = line.get(2).unwrap_or(&empty);
+        if text.is_empty() {
+            continue;
+        }
+
+        regextext.push_str(text);
+        regextext.push_str("\n");
     }
+
     return regextext;
 }
 
@@ -197,8 +200,6 @@ fn check_creator(command: &str, creator: &str) -> std::string::String {
 #[cfg(test)]
 mod tests {
     use crate::detections::utils;
-    use std::fs::File;
-    use std::io::Read;
     #[test]
     fn test_check_regex() {
         let regextext = utils::check_regex("\\cvtres.exe", 0);
@@ -221,12 +222,7 @@ mod tests {
 
     #[test]
     fn test_check_command() {
-        let mut f = File::open("whitelist.txt").expect("file not found");
-        let mut contents = String::new();
-        f.read_to_string(&mut contents);
-
-        let mut rdr = csv::Reader::from_reader(contents.as_bytes());
-        utils::check_command(1, "dir", 100, 100, "dir", "dir", &mut rdr);
+        utils::check_command(1, "dir", 100, 100, "dir", "dir");
 
         //test return with whitelist.
         utils::check_command(
@@ -236,7 +232,6 @@ mod tests {
             100,
             "dir",
             "dir",
-            &mut rdr,
         );
     }
 }
