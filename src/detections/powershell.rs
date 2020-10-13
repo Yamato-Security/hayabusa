@@ -16,20 +16,15 @@ impl PowerShell {
         event_id: String,
         _system: &event::System,
         event_data: HashMap<String, String>,
-        rdr: &mut csv::Reader<&[u8]>,
     ) {
         if event_id == "4103" {
-            &self.execute_pipeline(&event_data, rdr);
+            &self.execute_pipeline(&event_data);
         } else if event_id == "4104" {
-            &self.execute_remote_command(&event_data, rdr);
+            &self.execute_remote_command(&event_data);
         }
     }
 
-    fn execute_pipeline(
-        &mut self,
-        event_data: &HashMap<String, String>,
-        rdr: &mut csv::Reader<&[u8]>,
-    ) {
+    fn execute_pipeline(&mut self, event_data: &HashMap<String, String>) {
         // パイプライン実行をしています
         let default = String::from("");
         let commandline = event_data.get("ContextInfo").unwrap_or(&default);
@@ -45,16 +40,12 @@ impl PowerShell {
             let command = rm_after.replace_all(&temp_command_with_extra, "");
 
             if command != "" {
-                utils::check_command(4103, &command, 1000, 0, &default, &default, rdr);
+                utils::check_command(4103, &command, 1000, 0, &default, &default);
             }
         }
     }
 
-    fn execute_remote_command(
-        &mut self,
-        event_data: &HashMap<String, String>,
-        rdr: &mut csv::Reader<&[u8]>,
-    ) {
+    fn execute_remote_command(&mut self, event_data: &HashMap<String, String>) {
         // リモートコマンドを実行します
         let default = String::from("");
         let path = event_data.get("Path").unwrap().to_string();

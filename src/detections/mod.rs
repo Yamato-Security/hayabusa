@@ -1,5 +1,6 @@
 mod application;
 mod common;
+mod configs;
 pub mod detection;
 mod powershell;
 mod security;

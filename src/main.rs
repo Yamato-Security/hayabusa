@@ -6,6 +6,7 @@ use evtx::EvtxParser;
 use quick_xml::de::DeError;
 use std::{path::PathBuf, process};
 use yamato_event_analyzer::detections::detection;
+use yamato_event_analyzer::toml;
 
 fn build_app() -> clap::App<'static, 'static> {
     let program = std::env::args()
