@@ -193,8 +193,8 @@ mod tests {
 
     #[test]
     fn test_check_obfu() {
-        let obfutext = utils::check_obfu("dir01");
-        assert!(obfutext == "Possible command obfuscation: zeroes and ones (possible numeric or binary encoding)\n");
+        let obfutext = utils::check_obfu("string");
+        assert!(obfutext == "Possible command obfuscation: 100% zeroes and ones (possible numeric or binary encoding)\n");
     }
 
     #[test]
