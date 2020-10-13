@@ -52,7 +52,7 @@ impl PowerShell {
         if path == "".to_string() {
             let commandline = event_data.get("ScriptBlockText").unwrap_or(&default);
             if commandline.to_string() != default {
-                utils::check_command(4104, &commandline, 1000, 0, &default, &default, rdr);
+                utils::check_command(4104, &commandline, 1000, 0, &default, &default);
             }
         }
     }
