@@ -11,8 +11,6 @@ use crate::models::event;
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
 use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::prelude::*;
 
 #[derive(Debug)]
 pub struct Detection {
@@ -34,12 +32,6 @@ impl Detection {
         let mut sysmon = sysmon::Sysmon::new();
         let mut powershell = powershell::PowerShell::new();
 
-        let mut f = File::open("whitelist.txt").expect("file not found");
-        let mut contents = String::new();
-        let _ = f.read_to_string(&mut contents);
-
-        let mut rdr = csv::Reader::from_reader(contents.as_bytes());
-
         for record in parser.records() {
             match record {
                 Ok(r) => {
@@ -57,7 +49,7 @@ impl Detection {
                     } else if channel == "Application" {
                         &application.detection(event_id, &event.system, event_data);
                     } else if channel == "Microsoft-Windows-PowerShell/Operational" {
-                        &powershell.detection(event_id, &event.system, event_data, &mut rdr);
+                        &powershell.detection(event_id, &event.system, event_data);
                     } else if channel == "Microsoft-Windows-Sysmon/Operational" {
                         &sysmon.detection(event_id, &event.system, event_data);
                     } else {
