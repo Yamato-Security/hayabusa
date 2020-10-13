@@ -91,58 +91,36 @@ pub fn check_command(
 fn check_obfu(string: &str) -> std::string::String {
     let mut obfutext = "".to_string();
     let lowercasestring = string.to_lowercase();
-    let length = lowercasestring.len();
+    let length = lowercasestring.len() as f64;
     let mut minpercent = 0.65;
     let maxbinary = 0.50;
 
     let mut re = Regex::new(r"[a-z0-9/¥;:|.]").unwrap();
-    let mut noalphastring = "";
-    if let Some(_caps) = re.captures(&lowercasestring) {
-        if let Some(_data) = _caps.get(0) {
-            noalphastring = _data.as_str();
-        }
-    }
+    let noalphastring = re.replace_all(&lowercasestring, "");
 
     re = Regex::new(r"[01]").unwrap();
-    let mut nobinarystring = "";
-    if let Some(_caps) = re.captures(&lowercasestring) {
-        if let Some(_data) = _caps.get(0) {
-            nobinarystring = _data.as_str();
-        }
-    }
+    let nobinarystring = re.replace_all(&lowercasestring, "");
 
-    if length > 0 {
-        let mut percent = (length - noalphastring.len()) / length;
-        if ((length / 100) as f64) < minpercent {
-            minpercent = (length / 100) as f64;
+    if length > 0.0 {
+        let mut percent = (length - noalphastring.len() as f64) / length;
+        if ((length / 100.0) as f64) < minpercent {
+            minpercent = length / 100.0;
         }
-        if percent < minpercent as usize {
+
+        if percent < minpercent {
             obfutext.push_str("Possible command obfuscation: only ");
-
-            re = Regex::new(r"\{0:P0}").unwrap();
-            let percent = &percent.to_string();
-            if let Some(_caps) = re.captures(percent) {
-                if let Some(_data) = _caps.get(0) {
-                    obfutext.push_str(_data.as_str());
-                }
-            }
-
-            obfutext.push_str("alphanumeric and common symbols\n");
+            let percent = (percent * 100.0) as usize;
+            obfutext.push_str(&percent.to_string());
+            obfutext.push_str("% alphanumeric and common symbols\n");
         }
-        percent = (nobinarystring.len().wrapping_sub(length) / length) / length;
-        let binarypercent = 1_usize.wrapping_sub(percent);
-        if binarypercent > maxbinary as usize {
+
+        percent = ((nobinarystring.len().wrapping_sub(length as usize) as f64) / length) / length;
+        let binarypercent = 1.0 - percent;
+        if binarypercent > maxbinary {
             obfutext.push_str("Possible command obfuscation: ");
-
-            re = Regex::new(r"\{0:P0}").unwrap();
-            let binarypercent = &binarypercent.to_string();
-            if let Some(_caps) = re.captures(binarypercent) {
-                if let Some(_data) = _caps.get(0) {
-                    obfutext.push_str(_data.as_str());
-                }
-            }
-
-            obfutext.push_str("zeroes and ones (possible numeric or binary encoding)\n");
+            let binarypercent = (binarypercent * 100.0) as usize;
+            obfutext.push_str(&binarypercent.to_string());
+            obfutext.push_str("% zeroes and ones (possible numeric or binary encoding)\n");
         }
     }
     return obfutext;
@@ -216,8 +194,8 @@ mod tests {
 
     #[test]
     fn test_check_obfu() {
-        let obfutext = utils::check_obfu("dir01");
-        assert!(obfutext == "Possible command obfuscation: zeroes and ones (possible numeric or binary encoding)\n");
+        let obfutext = utils::check_obfu("string");
+        assert!(obfutext == "Possible command obfuscation: 100% zeroes and ones (possible numeric or binary encoding)\n");
     }
 
     #[test]

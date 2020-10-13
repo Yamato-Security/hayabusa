@@ -25,7 +25,7 @@ impl Application {
     fn emet(&mut self, system: &event::System) {
         match &system.provider.name {
             Some(name) => {
-                if (name != "EMET") {
+                if name != "EMET" {
                     return;
                 }
             }
