@@ -17,12 +17,14 @@ impl Application {
         system: &event::System,
         event_data: HashMap<String, String>,
     ) {
-        if event_id == "2" {
-            &self.emet(system);
-        }
+        self.emet(&event_id, system);
     }
 
-    fn emet(&mut self, system: &event::System) {
+    fn emet(&mut self, event_id: &String, system: &event::System) {
+        if event_id != "2" {
+            return;
+        }
+
         match &system.provider.name {
             Some(name) => {
                 if name != "EMET" {

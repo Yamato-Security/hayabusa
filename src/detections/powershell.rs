@@ -17,15 +17,14 @@ impl PowerShell {
         _system: &event::System,
         event_data: HashMap<String, String>,
     ) {
-        if event_id == "4103" {
-            &self.execute_pipeline(&event_data);
-        } else if event_id == "4104" {
-            &self.execute_remote_command(&event_data);
-        }
+        self.execute_pipeline(&event_id, &event_data);
+        self.execute_remote_command(&event_id, &event_data);
     }
 
-    fn execute_pipeline(&mut self, event_data: &HashMap<String, String>) {
-        // パイプライン実行をしています
+    fn execute_pipeline(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
+        if event_id != "4103" {
+            return;
+        }
         let default = String::from("");
         let commandline = event_data.get("ContextInfo").unwrap_or(&default);
 
@@ -45,8 +44,10 @@ impl PowerShell {
         }
     }
 
-    fn execute_remote_command(&mut self, event_data: &HashMap<String, String>) {
-        // リモートコマンドを実行します
+    fn execute_remote_command(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
+        if event_id != "4104" {
+            return;
+        }
         let default = String::from("");
         let path = event_data.get("Path").unwrap().to_string();
         if path == "".to_string() {
