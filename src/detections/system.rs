@@ -14,19 +14,24 @@ impl System {
         system: &event::System,
         event_data: HashMap<String, String>,
     ) {
-        if event_id == "104" {
-            &self.system_log_clear();
-        } else if event_id == "7040" {
-            &self.windows_event_log(event_data);
-        }
+        self.system_log_clear(&event_id);
+        self.windows_event_log(&event_id, event_data);
     }
 
-    fn system_log_clear(&mut self) {
+    fn system_log_clear(&mut self, event_id: &String) {
+        if event_id != "104" {
+            return;
+        }
+
         println!("Message : System Log Clear");
         println!("Results : The System log was cleared.");
     }
 
-    fn windows_event_log(&mut self, event_data: HashMap<String, String>) {
+    fn windows_event_log(&mut self, event_id: &String, event_data: HashMap<String, String>) {
+        if event_id != "7040" {
+            return;
+        }
+
         if let Some(_param1) = event_data.get("param1") {
             if _param1 == "Windows Event Log" {
                 println!("Service name : {}", _param1);
