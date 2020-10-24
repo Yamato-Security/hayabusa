@@ -27,7 +27,7 @@ impl Sysmon {
     }
 
     fn check_command_lines(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
-        if event_id != "4" {
+        if event_id != "1" {
             return;
         }
 
