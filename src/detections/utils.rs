@@ -51,9 +51,9 @@ pub fn check_command(
         .unwrap()
         .is_match(commandline)
     {
-        let re = Regex::new(r"^^.*:FromBase64String\(\'*").unwrap();
+        let re = Regex::new(r"^.*:FromBase64String\('*").unwrap();
         base64.push_str(&re.replace_all(commandline, ""));
-        let re = Regex::new(r"\'.*$").unwrap();
+        let re = Regex::new(r"'.*$").unwrap();
         base64.push_str(&re.replace_all(&base64.to_string(), ""));
     }
     if !base64.is_empty() {
@@ -61,12 +61,16 @@ pub fn check_command(
             .unwrap()
             .is_match(commandline)
         {
-            let decoded = base64::decode(base64).unwrap();
+            /*
+            if let decoded = base64::decode(&base64) {
             let mut d = GzDecoder::new(decoded.as_slice());
             let mut uncompressed = String::new();
             d.read_to_string(&mut uncompressed).unwrap();
             println!("Decoded : {}", uncompressed);
             text.push_str("Base64-encoded and compressed function\n");
+
+            }
+            */
         } else {
             let decoded = base64::decode(base64).unwrap();
             println!("Decoded : {}", str::from_utf8(decoded.as_slice()).unwrap());
@@ -76,6 +80,7 @@ pub fn check_command(
         }
     }
     if !text.is_empty() {
+        println!("EventID : {}", event_id);
         if servicecmd != 0 {
             println!("Message : Suspicious Service Command");
             println!("Results : Service name: {}\n", servicename);
@@ -84,7 +89,6 @@ pub fn check_command(
         }
         println!("command : {}", commandline);
         println!("result : {}", text);
-        println!("EventID : {}", event_id);
     }
 }
 
@@ -126,7 +130,7 @@ fn check_obfu(string: &str) -> std::string::String {
     return obfutext;
 }
 
-fn check_regex(string: &str, r#type: usize) -> std::string::String {
+pub fn check_regex(string: &str, r#type: usize) -> std::string::String {
     let empty = "".to_string();
     let mut regextext = "".to_string();
     for line in configs::singleton().regex {

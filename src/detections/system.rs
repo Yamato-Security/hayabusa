@@ -1,3 +1,4 @@
+use crate::detections::utils;
 use crate::models::event;
 use std::collections::HashMap;
 
@@ -15,42 +16,73 @@ impl System {
         event_data: HashMap<String, String>,
     ) {
         self.system_log_clear(&event_id);
-        self.windows_event_log(&event_id, event_data);
-        self.new_service_created(&event_id);
-        self.interactive_service_warning(&event_id);
-        self.suspicious_service_name(&event_id);
+        self.windows_event_log(&event_id, &event_data);
+        self.new_service_created(&event_id, &event_data);
+        self.interactive_service_warning(&event_id, &event_data);
+        self.suspicious_service_name(&event_id, &event_data);
     }
 
-    fn new_service_created(&mut self, event_id: &String) {
+    fn new_service_created(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
         if event_id != "7045" {
-            return
+            return;
+        }
+
+        let servicename = &event_data["ServiceName"];
+        let commandline = &event_data["ImagePath"];
+        let text = utils::check_regex(&servicename, 1);
+        if !text.is_empty() {
+            println!("Message : New Service Created");
+            println!("Command : {}", commandline);
+            println!("Results : Service name: {}", servicename);
+            println!("Results : {}", text);
+        }
+        if !commandline.is_empty() {
+            utils::check_command(7045, &commandline, 1000, 0, &servicename, &"");
         }
     }
 
-    fn interactive_service_warning(&mut self, event_id: &String) {
+    fn interactive_service_warning(
+        &mut self,
+        event_id: &String,
+        event_data: &HashMap<String, String>,
+    ) {
         if event_id != "7030" {
-            return
+            return;
         }
+
+        let servicename = &event_data["param1"];
+        println!("Message : Interactive service warning");
+        println!("Results : Service name: {}", servicename);
+        println!("Results : Malware (and some third party software) trigger this warning");
+        println!("{}", utils::check_regex(&servicename, 1));
     }
 
-    fn suspicious_service_name(&mut self, event_id: &String) {
+    fn suspicious_service_name(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
         if event_id != "7036" {
-            return
+            return;
+        }
+
+        let servicename = &event_data["param1"];
+        let text = utils::check_regex(&servicename, 1);
+        if !text.is_empty() {
+            println!("Message : Suspicious Service Name");
+            println!("Results : Service name: {}", servicename);
+            println!("Results : {}", text);
         }
     }
 
     fn system_log_clear(&mut self, event_id: &String) {
         if event_id != "104" {
-            return
+            return;
         }
 
         println!("Message : System Log Clear");
         println!("Results : The System log was cleared.");
     }
 
-    fn windows_event_log(&mut self, event_id: &String, event_data: HashMap<String, String>) {
+    fn windows_event_log(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
         if event_id != "7040" {
-            return
+            return;
         }
 
         if let Some(_param1) = event_data.get("param1") {
