@@ -1,5 +1,5 @@
-use crate::models::event;
 use crate::detections::utils::check_command;
+use crate::models::event;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -12,7 +12,7 @@ impl Sysmon {
     pub fn new() -> Sysmon {
         Sysmon {
             //checkunsigned: 0, //  DeepBlueでは0固定
-            checkunsigned: 1, //  開発用に1
+            checkunsigned: 1, //  開発用に1 (configから設定可能になる予定)
         }
     }
 
@@ -37,14 +37,16 @@ impl Sysmon {
             }
             println!("Log     : Sysmon");
             let minlength = 1000;
-            let mut f = File::open("whitelist.txt").expect("file not found");
-            let mut contents = String::new();
-            f.read_to_string(&mut contents);
-            let rdr = csv::Reader::from_reader(contents.as_bytes());
+            //let mut f = File::open("whitelist.txt").expect("file not found");
+            //let mut contents = String::new();
+            //f.read_to_string(&mut contents);
+            //let rdr = csv::Reader::from_reader(contents.as_bytes());
             if let Some(_creater) = event_data.get("ParentImage") {
-                check_command(1, _command_line, minlength, 0, "", _creater, rdr);
+                //check_command(1, _command_line, minlength, 0, "", _creater, rdr);
+                check_command(1, _command_line, minlength, 0, "", _creater);
             } else {
-                check_command(1, _command_line, minlength, 0, "", "", rdr);
+                //check_command(1, _command_line, minlength, 0, "", "", rdr);
+                check_command(1, _command_line, minlength, 0, "", "");
             }
         }
     }
