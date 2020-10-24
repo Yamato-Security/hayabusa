@@ -22,14 +22,15 @@ impl Sysmon {
         _system: &event::System,
         event_data: HashMap<String, String>,
     ) {
-        if event_id == "1" {
-            &self.check_command_lines(event_data);
-        } else if event_id == "7" {
-            &self.check_for_unsigned_files(event_data);
-        }
+        &self.check_command_lines(&event_id,&event_data);
+        &self.check_for_unsigned_files(&event_id,&event_data);
     }
 
-    fn check_command_lines(&mut self, event_data: HashMap<String, String>) {
+    fn check_command_lines(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
+        if event_id != "4" {
+            return;
+        }
+
         // Check command lines
         if let Some(_command_line) = event_data.get("CommandLine") {
             if let Some(_date) = event_data.get("UtcTime") {
@@ -42,7 +43,11 @@ impl Sysmon {
         }
     }
 
-    fn check_for_unsigned_files(&mut self, event_data: HashMap<String, String>) {
+    fn check_for_unsigned_files(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
+        if event_id != "7" {
+            return;
+        }
+
         // Check for unsigned EXEs/DLLs:
         // This can be very chatty, so it's disabled.
         // Set $checkunsigned to 1 (global variable section) to enable:
