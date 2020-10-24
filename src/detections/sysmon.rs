@@ -36,7 +36,7 @@ impl Sysmon {
                 println!("Date    : {} (UTC)", _date);
             }
             println!("Log     : Sysmon");
-            let minlength = 100;    //  TBD
+            let minlength = 1000;
             let mut f = File::open("whitelist.txt").expect("file not found");
             let mut contents = String::new();
             f.read_to_string(&mut contents);
@@ -46,7 +46,6 @@ impl Sysmon {
             } else {
                 check_command(1, _command_line, minlength, 0, "", "", rdr);
             }
-        println!("");
         }
     }
 
@@ -69,7 +68,6 @@ impl Sysmon {
                     if let Some(_command_line) = event_data.get("ImageLoaded") {
                         println!("Command : {}", _command_line);
                     }
-                    println!("");
                 }
             }
         }
