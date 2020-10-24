@@ -16,11 +16,41 @@ impl System {
     ) {
         self.system_log_clear(&event_id);
         self.windows_event_log(&event_id, event_data);
+        self.new_service_created(&event_id);
+        self.interactive_service_warning(&event_id);
+        self.suspicious_service_name(&event_id);
+    }
+
+    fn new_service_created(&mut self, event_id: &String) {
+        if event_id != "7045" {
+            return
+        }
+
+        println!("Message : System Log Clear");
+        println!("Results : The System log was cleared.");
+    }
+
+    fn interactive_service_warning(&mut self, event_id: &String) {
+        if event_id != "7030" {
+            return
+        }
+
+        println!("Message : System Log Clear");
+        println!("Results : The System log was cleared.");
+    }
+
+    fn suspicious_service_name(&mut self, event_id: &String) {
+        if event_id != "7036" {
+            return
+        }
+
+        println!("Message : System Log Clear");
+        println!("Results : The System log was cleared.");
     }
 
     fn system_log_clear(&mut self, event_id: &String) {
         if event_id != "104" {
-            return;
+            return
         }
 
         println!("Message : System Log Clear");
@@ -29,7 +59,7 @@ impl System {
 
     fn windows_event_log(&mut self, event_id: &String, event_data: HashMap<String, String>) {
         if event_id != "7040" {
-            return;
+            return
         }
 
         if let Some(_param1) = event_data.get("param1") {
