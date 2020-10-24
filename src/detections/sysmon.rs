@@ -1,8 +1,8 @@
 use crate::detections::utils::check_command;
 use crate::models::event;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::prelude::*;
+//use std::fs::File;
+//use std::io::prelude::*;
 
 pub struct Sysmon {
     checkunsigned: u64,
