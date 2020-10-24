@@ -22,8 +22,8 @@ impl Sysmon {
         _system: &event::System,
         event_data: HashMap<String, String>,
     ) {
-        &self.check_command_lines(&event_id,&event_data);
-        &self.check_for_unsigned_files(&event_id,&event_data);
+        &self.check_command_lines(&event_id, &event_data);
+        &self.check_for_unsigned_files(&event_id, &event_data);
     }
 
     fn check_command_lines(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
@@ -43,7 +43,11 @@ impl Sysmon {
         }
     }
 
-    fn check_for_unsigned_files(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
+    fn check_for_unsigned_files(
+        &mut self,
+        event_id: &String,
+        event_data: &HashMap<String, String>,
+    ) {
         if event_id != "7" {
             return;
         }
@@ -76,6 +80,6 @@ mod tests {
 
     #[test]
     fn test_skelton_hit() {
-        assert_eq!(1,1);
+        assert_eq!(1, 1);
     }
 }
