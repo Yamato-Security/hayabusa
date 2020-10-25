@@ -1,15 +1,11 @@
+use crate::detections::configs::{get_lang, Lang};
 use std::collections::HashMap;
-
-#[derive(Debug)]
-pub enum Lang {
-    Ja,
-    En,
-}
+use std::fmt;
 
 #[derive(Debug)]
 pub struct MessageText {
-    ja: String,
-    en: String,
+    pub ja: String,
+    pub en: String,
 }
 
 #[derive(Debug)]
@@ -35,18 +31,25 @@ impl Message {
         self.map.insert(error_code, message);
     }
 
-    /// メッセージを指定された言語で返す
-    pub fn return_error_message(&self, error_num: &str, lang: Lang) -> String {
-        let messages = self.map.get(error_num).unwrap_or(self.map.get("undefined").unwrap());
-        match lang {
-            Lang::Ja => messages.ja.clone(),
-            Lang::En => messages.en.clone(),
+    /// メッセージを返す
+    pub fn return_message(&self, message_num: &str) -> &MessageText {
+        self.map.get(message_num).unwrap_or(self.map.get("undefined").unwrap())
+    }
+}
+
+/// メッセージテキストを言語設定に合わせて返す
+/// println!("{}", <MessageText>) とすると今の言語設定で出力される
+impl fmt::Display for MessageText {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match get_lang() {
+            Lang::Ja => write!(f, "{}", self.ja),
+            Lang::En => write!(f, "{}", self.en),
         }
     }
 }
 
 #[test]
-fn test_create_error_message() {
+fn test_create_and_read_message() {
     let mut error_message = Message::new();
 
     error_message.insert_message(
@@ -57,18 +60,7 @@ fn test_create_error_message() {
         },
     );
 
-    let message_ja1 = error_message.return_error_message("4103", Lang::Ja);
-    assert_eq!(message_ja1, "パイプライン実行をしています");
-    let message_ja2 = error_message.return_error_message("4103", Lang::Ja);
-    assert_eq!(message_ja2, "パイプライン実行をしています");
+    let display = format!("{}", format_args!("{}", error_message.return_message("4103")));
 
-    let message_en1 = error_message.return_error_message("4103", Lang::En);
-    assert_eq!(message_en1, "Execute pipeline");
-    let message_en2 = error_message.return_error_message("4103", Lang::En);
-    assert_eq!(message_en2, "Execute pipeline");
-
-    let undef_ja = error_message.return_error_message("HOGE", Lang::Ja);
-    assert_eq!(undef_ja, "未設定");
-    let undef_en = error_message.return_error_message("HOGE", Lang::En);
-    assert_eq!(undef_en, "Undefined");
+    assert_eq!(display, "Execute pipeline")
 }
