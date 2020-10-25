@@ -7,6 +7,7 @@ use quick_xml::de::DeError;
 use std::{fs, path::PathBuf, process};
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::toml;
+use yamato_event_analyzer::omikuji::Omikuji;
 
 fn build_app() -> clap::App<'static, 'static> {
     let program = std::env::args()
@@ -43,7 +44,7 @@ fn main() -> Result<(), DeError> {
     if let Some(filepath) = filepath {
         parse_file(filepath);
     }
-
+    output_with_omikuji(Omikuji::DAIKICHI);
     Ok(())
 }
 
@@ -61,8 +62,8 @@ fn parse_file(filepath: &str) {
     &detection.start(parser);
 }
 
-fn output_with_omikuji(severity: &str) {
-    let fp = &format!("art/omikuji/{}.txt", severity);
+fn output_with_omikuji(omikuji: Omikuji) {
+    let fp = &format!("art/omikuji/{}", omikuji.get_file_name());
     let content = fs::read_to_string(fp).unwrap();
     println!("{}", content);
 }
