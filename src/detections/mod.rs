@@ -1,7 +1,7 @@
 mod application;
 mod applocker;
 mod common;
-mod configs;
+pub mod configs;
 pub mod detection;
 mod powershell;
 mod print;

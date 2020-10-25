@@ -5,6 +5,7 @@ use clap::{App, AppSettings, Arg};
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
 use std::{fs, path::PathBuf, process};
+use yamato_event_analyzer::detections::configs;
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::omikuji::Omikuji;
 use yamato_event_analyzer::toml;
@@ -39,7 +40,9 @@ fn build_app() -> clap::App<'static, 'static> {
 
 fn main() -> Result<(), DeError> {
     let args = build_app().get_matches();
-    let filepath: Option<&str> = args.value_of("filepath");
+    configs::init_singleton(&args);
+
+    let filepath: Option<&str> = configs::singleton().args.filepath;
 
     if let Some(filepath) = filepath {
         parse_file(filepath);
