@@ -26,5 +26,5 @@ impl fmt::Display for Omikuji {
 
 #[test]
 fn test_display() {
-    assert_eq!("DAIKICHI.txt", Omikuji::DAIKICHI.to_string());
+    assert_eq!(Omikuji::DAIKICHI.to_string(), "DAIKICHI.txt",);
 }
