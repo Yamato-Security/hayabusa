@@ -1,3 +1,4 @@
+use crate::detections::utils;
 use crate::models::event;
 use std::collections::HashMap;
 
@@ -114,12 +115,16 @@ impl Security {
         return Option::Some(v);
     }
 
-    fn process_created(&mut self, event_id: &String, _event_data: &HashMap<String, String>) {
+    fn process_created(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
         if event_id != "4688" {
             return;
         }
-        // TODO Check-Commnad
-        return;
+
+        let commandline = event_data.get("CommandLine").unwrap_or(&self.empty_str);
+        let creator = event_data
+            .get("ParentProcessName")
+            .unwrap_or(&self.empty_str);
+        utils::check_command(4688, &commandline, 1000, 0, &self.empty_str, &creator);
     }
 
     //
