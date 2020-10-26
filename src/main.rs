@@ -44,7 +44,7 @@ fn main() -> Result<(), DeError> {
     if let Some(filepath) = filepath {
         parse_file(filepath);
     }
-    output_with_omikuji(Omikuji::DAIKICHI);
+
     Ok(())
 }
 
@@ -63,7 +63,7 @@ fn parse_file(filepath: &str) {
 }
 
 fn output_with_omikuji(omikuji: Omikuji) {
-    let fp = &format!("art/omikuji/{}", omikuji.get_file_name());
+    let fp = &format!("art/omikuji/{}", omikuji);
     let content = fs::read_to_string(fp).unwrap();
     println!("{}", content);
 }

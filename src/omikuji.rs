@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub enum Omikuji {
     DAIKICHI,
     KICHI,
@@ -7,16 +9,22 @@ pub enum Omikuji {
     KYOU,
 }
 
-impl Omikuji {
-    pub fn get_file_name(&self) -> String {
-        let file_name = match *self {
-            Omikuji::DAIKICHI => "DAIKICHI.txt",
-            Omikuji::KICHI => "KICHI.txt",
-            Omikuji::CHUKICHI => "CHUKICHI.txt",
-            Omikuji::SHOUKICHI => "SHOUKICHI.txt",
-            Omikuji::SUEKICHI => "SUEKICHI.txt",
-            Omikuji::KYOU => "KYOU.txt",
-        };
-        file_name.to_string()
+impl fmt::Display for Omikuji {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Omikuji::DAIKICHI => write!(f, "DAIKICHI.txt"),
+            Omikuji::KICHI => write!(f, "KICHI.txt"),
+            Omikuji::CHUKICHI => write!(f, "CHUKICHI.txt"),
+            Omikuji::SHOUKICHI => write!(f, "SHOUKICHI.txt"),
+            Omikuji::SUEKICHI => write!(f, "SUEKICHI.txt"),
+            Omikuji::KYOU => write!(f, "KYOU.txt"),
+        }
     }
+}
+
+
+
+#[test]
+fn test_display() {
+    assert_eq!("DAIKICHI.txt", Omikuji::DAIKICHI.to_string());
 }
