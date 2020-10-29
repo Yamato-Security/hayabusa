@@ -1,16 +1,18 @@
+extern crate lazy_static;
 use crate::detections::configs::{get_lang, Lang};
 use std::collections::HashMap;
+use crate::models::rule::MessageText;
+use lazy_static::lazy_static;
 use std::fmt;
-
-#[derive(Debug)]
-pub struct MessageText {
-    pub ja: String,
-    pub en: String,
-}
+use std::sync::Mutex;
 
 #[derive(Debug)]
 pub struct Message {
     map: HashMap<String, MessageText>,
+}
+
+lazy_static! {
+    pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
 }
 
 impl Message {
@@ -33,7 +35,9 @@ impl Message {
 
     /// メッセージを返す
     pub fn return_message(&self, message_num: &str) -> &MessageText {
-        self.map.get(message_num).unwrap_or(self.map.get("undefined").unwrap())
+        self.map
+            .get(message_num)
+            .unwrap_or(self.map.get("undefined").unwrap())
     }
 }
 
@@ -60,7 +64,10 @@ fn test_create_and_read_message() {
         },
     );
 
-    let display = format!("{}", format_args!("{}", error_message.return_message("4103")));
+    let display = format!(
+        "{}",
+        format_args!("{}", error_message.return_message("4103"))
+    );
 
     assert_eq!(display, "Execute pipeline")
 }
