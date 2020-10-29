@@ -27,8 +27,9 @@ impl System {
             return;
         }
 
-        let servicename = &event_data["ServiceName"];
-        let commandline = &event_data["ImagePath"];
+        let default = String::from("");
+        let servicename = &event_data.get("ServiceName").unwrap_or(&default);
+        let commandline = &event_data.get("ImagePath").unwrap_or(&default);
         let text = utils::check_regex(&servicename, 1);
         if !text.is_empty() {
             println!("Message : New Service Created");
@@ -50,7 +51,8 @@ impl System {
             return;
         }
 
-        let servicename = &event_data["param1"];
+        let default = String::from("");
+        let servicename = &event_data.get("param1").unwrap_or(&default);
         println!("Message : Interactive service warning");
         println!("Results : Service name: {}", servicename);
         println!("Results : Malware (and some third party software) trigger this warning");
@@ -62,7 +64,8 @@ impl System {
             return;
         }
 
-        let servicename = &event_data["param1"];
+        let default = String::from("");
+        let servicename = &event_data.get("param1").unwrap_or(&default);
         let text = utils::check_regex(&servicename, 1);
         if !text.is_empty() {
             println!("Message : Suspicious Service Name");
