@@ -1,8 +1,8 @@
 extern crate lazy_static;
 use crate::detections::configs::{get_lang, Lang};
-use std::collections::HashMap;
 use crate::models::rule::MessageText;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 use std::fmt;
 use std::sync::Mutex;
 

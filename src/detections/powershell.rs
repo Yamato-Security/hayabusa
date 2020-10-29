@@ -1,6 +1,6 @@
+use crate::detections::print::MESSAGES;
 use crate::detections::utils;
 use crate::models::event;
-use crate::detections::print::MESSAGES;
 use regex::Regex;
 use std::collections::HashMap;
 
