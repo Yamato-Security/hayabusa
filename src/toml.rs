@@ -16,7 +16,7 @@ impl ParseToml {
         ParseToml { rules: Vec::new() }
     }
 
-    fn read_file(&self, path: PathBuf) -> Result<String, String> {
+    pub fn read_file(&self, path: PathBuf) -> Result<String, String> {
         let mut file_content = String::new();
 
         let mut fr = fs::File::open(path)
@@ -29,7 +29,7 @@ impl ParseToml {
         Ok(file_content)
     }
 
-    fn read_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<String> {
+    pub fn read_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<String> {
         Ok(fs::read_dir(path)?
             .filter_map(|entry| {
                 let entry = entry.ok()?;
@@ -38,6 +38,9 @@ impl ParseToml {
                         Ok(s) => &self.rules.push(toml::from_str(&s)),
                         Err(e) => panic!("fail to read file: {}", e),
                     };
+                }
+                if entry.file_type().ok()?.is_dir() {
+                    self.read_dir(entry.path());
                 }
                 Some("")
             })
@@ -54,6 +57,23 @@ mod tests {
     fn test_read_toml() {
         let mut toml = toml::ParseToml::new();
         &toml.read_dir("test_files/rules".to_string());
+
+        for rule in toml.rules {
+            match rule {
+                Ok(_rule) => {
+                    if let Some(severity) = _rule.rule.severity {
+                        assert_eq!("high", severity);
+                    }
+                }
+                Err(_) => (),
+            }
+        }
+    }
+
+    #[test]
+    fn test_read_multiple_dir() {
+        let mut toml = toml::ParseToml::new();
+        &toml.read_dir("test_files".to_string());
 
         for rule in toml.rules {
             match rule {
