@@ -17,11 +17,11 @@ impl AppLocker {
         _system: &event::System,
         _event_data: HashMap<String, String>,
     ) {
-        self.appLocker_log_warning(&event_id, &_system);
-        self.appLocker_log_block(&event_id, &_system);
+        self.applocker_log_warning(&event_id, &_system);
+        self.applocker_log_block(&event_id, &_system);
     }
 
-    fn appLocker_log_warning(&mut self, event_id: &String, system: &event::System) {
+    fn applocker_log_warning(&mut self, event_id: &String, system: &event::System) {
         if event_id != "8003" {
             return;
         }
@@ -36,7 +36,7 @@ impl AppLocker {
         println!("Results : {}", message);
     }
 
-    fn appLocker_log_block(&mut self, event_id: &String, system: &event::System) {
+    fn applocker_log_block(&mut self, event_id: &String, system: &event::System) {
         if event_id != "8004" {
             return;
         }
