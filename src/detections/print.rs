@@ -1,5 +1,5 @@
 extern crate lazy_static;
-use crate::detections::configs::{get_lang, Lang};
+use crate::detections::configs::{singleton, Lang};
 use crate::models::rule::MessageText;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -29,12 +29,12 @@ impl Message {
     }
 
     /// メッセージを設定
-    pub fn insert_message(&mut self, error_code: String, message: MessageText) {
+    pub fn insert(&mut self, error_code: String, message: MessageText) {
         self.map.insert(error_code, message);
     }
 
     /// メッセージを返す
-    pub fn return_message(&self, message_num: &str) -> &MessageText {
+    pub fn get(&self, message_num: &str) -> &MessageText {
         self.map
             .get(message_num)
             .unwrap_or(self.map.get("undefined").unwrap())
@@ -52,11 +52,22 @@ impl fmt::Display for MessageText {
     }
 }
 
+/// Argsから言語情報を読み取り Lang を返す
+pub fn get_lang() -> Lang {
+    let lang: String = singleton().args.value_of("lang").unwrap_or("").to_string();
+
+    match &*lang {
+        "Ja" | "ja" => Lang::Ja,
+        "En" | "en" => Lang::En,
+        _ => Lang::En,
+    }
+}
+
 #[test]
 fn test_create_and_read_message() {
     let mut error_message = Message::new();
 
-    error_message.insert_message(
+    error_message.insert(
         "4103".to_string(),
         MessageText {
             ja: "パイプライン実行をしています".to_string(),
@@ -64,10 +75,7 @@ fn test_create_and_read_message() {
         },
     );
 
-    let display = format!(
-        "{}",
-        format_args!("{}", error_message.return_message("4103"))
-    );
+    let display = format!("{}", format_args!("{}", error_message.get("4103")));
 
     assert_eq!(display, "Execute pipeline")
 }

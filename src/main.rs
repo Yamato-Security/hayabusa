@@ -20,7 +20,7 @@ fn main() -> Result<(), DeError> {
                 let mut message = MESSAGES.lock().unwrap();
                 if let Some(messages) = _rule.rule.messages {
                     for (key, texts) in messages {
-                        message.insert_message(key, texts);
+                        message.insert(key, texts);
                     }
                 }
             }

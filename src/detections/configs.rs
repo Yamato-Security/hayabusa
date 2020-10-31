@@ -83,14 +83,3 @@ fn read_csv(filename: &str) -> Vec<Vec<String>> {
 
     return ret;
 }
-
-/// Argsから言語情報を読み取り Lang を返す
-pub fn get_lang() -> Lang {
-    let lang: String = singleton().args.value_of("lang").unwrap_or("").to_string();
-
-    match &*lang {
-        "Ja" | "ja" => Lang::Ja,
-        "En" | "en" => Lang::En,
-        _ => Lang::En,
-    }
-}

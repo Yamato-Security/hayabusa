@@ -27,7 +27,7 @@ impl PowerShell {
         }
 
         let message = MESSAGES.lock().unwrap();
-        println!("{}", message.return_message("4103"));
+        println!("{}", message.get("4103"));
 
         let default = String::from("");
         let commandline = event_data.get("ContextInfo").unwrap_or(&default);
@@ -53,7 +53,7 @@ impl PowerShell {
             return;
         }
         let message = MESSAGES.lock().unwrap();
-        println!("{}", message.return_message("4104"));
+        println!("{}", message.get("4104"));
 
         let default = String::from("");
         let path = event_data.get("Path").unwrap().to_string();
