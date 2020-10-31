@@ -1,4 +1,5 @@
 mod application;
+mod applocker;
 mod common;
 mod configs;
 pub mod detection;
