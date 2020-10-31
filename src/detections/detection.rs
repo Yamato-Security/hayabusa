@@ -50,7 +50,7 @@ impl Detection {
                         &application.detection(event_id, &event.system, event_data);
                     } else if channel == "Microsoft-Windows-PowerShell/Operational" {
                         &powershell.detection(event_id, &event.system, event_data);
-                    } else if channel == "Microsoft-Windows-Sysmon/Operational" {
+                    } else if channel == "Microsoft-Windows-AppLocker/EXE and DLL" {
                         &sysmon.detection(event_id, &event.system, event_data);
                     } else {
                         //&other.detection();
