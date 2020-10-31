@@ -39,6 +39,11 @@ impl Message {
             .get(message_num)
             .unwrap_or(self.map.get("undefined").unwrap())
     }
+
+    /// MessageMaoのなかに入っているメッセージすべてを表示する
+    pub fn print(&self) {
+        println!("{:?}", self.map);
+    }
 }
 
 /// メッセージテキストを言語設定に合わせて返す
