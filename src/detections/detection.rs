@@ -53,7 +53,7 @@ impl Detection {
                         &powershell.detection(event_id, &event.system, event_data);
                     } else if channel == "Microsoft-Windows-Sysmon/Operational" {
                         &sysmon.detection(event_id, &event.system, event_data);
-                    } else if channel == "Microsoft-Windows-Applocker/Operational" {
+                    } else if channel == "Microsoft-Windows-AppLocker/EXE and DLL" {
                         &applocker.detection(event_id, &event.system, event_data);
                     } else {
                         //&other.detection();
