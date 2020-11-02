@@ -56,27 +56,23 @@ pub fn check_command(
         let re = Regex::new(r"'.*$").unwrap();
         base64.push_str(&re.replace_all(&base64.to_string(), ""));
     }
-    if !base64.is_empty() {
-        if Regex::new(r"Compression.GzipStream.*Decompress")
-            .unwrap()
-            .is_match(commandline)
-        {
-            /*
-            if let decoded = base64::decode(&base64) {
-            let mut d = GzDecoder::new(decoded.as_slice());
-            let mut uncompressed = String::new();
-            d.read_to_string(&mut uncompressed).unwrap();
-            println!("Decoded : {}", uncompressed);
-            text.push_str("Base64-encoded and compressed function\n");
-
+    if let Ok(decoded) = base64::decode(&base64) {
+        if !base64.is_empty() {
+            if Regex::new(r"Compression.GzipStream.*Decompress")
+                .unwrap()
+                .is_match(commandline)
+            {
+                let mut d = GzDecoder::new(decoded.as_slice());
+                let mut uncompressed = String::new();
+                d.read_to_string(&mut uncompressed).unwrap();
+                println!("Decoded : {}", uncompressed);
+                text.push_str("Base64-encoded and compressed function\n");
+            } else {
+                println!("Decoded : {}", str::from_utf8(decoded.as_slice()).unwrap());
+                text.push_str("Base64-encoded function\n");
+                text.push_str(&check_obfu(str::from_utf8(decoded.as_slice()).unwrap()));
+                text.push_str(&check_regex(str::from_utf8(decoded.as_slice()).unwrap(), 0));
             }
-            */
-        } else {
-            let decoded = base64::decode(base64).unwrap();
-            println!("Decoded : {}", str::from_utf8(decoded.as_slice()).unwrap());
-            text.push_str("Base64-encoded function\n");
-            text.push_str(&check_obfu(str::from_utf8(decoded.as_slice()).unwrap()));
-            text.push_str(&check_regex(str::from_utf8(decoded.as_slice()).unwrap(), 0));
         }
     }
     if !text.is_empty() {
