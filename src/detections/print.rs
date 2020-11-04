@@ -50,17 +50,6 @@ impl Message {
     }
 }
 
-/// メッセージテキストを言語設定に合わせて返す
-/// println!("{}", <MessageText>) とすると今の言語設定で出力される
-impl fmt::Display for MessageText {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match get_lang() {
-            Lang::Ja => write!(f, "{}", self.ja),
-            Lang::En => write!(f, "{}", self.en),
-        }
-    }
-}
-
 /// Argsから言語情報を読み取り Lang を返す
 pub fn get_lang() -> Lang {
     let lang: String = singleton().args.value_of("lang").unwrap_or("").to_string();
