@@ -1,14 +1,16 @@
+extern crate chrono;
 extern crate lazy_static;
 use crate::detections::configs::{singleton, Lang};
-use crate::models::rule::MessageText;
+use chrono::prelude::*;
+use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::sync::Mutex;
 
 #[derive(Debug)]
 pub struct Message {
-    map: HashMap<String, MessageText>,
+    map: BTreeMap<DateTime<Utc>, Vec<String>>,
 }
 
 lazy_static! {
@@ -17,31 +19,33 @@ lazy_static! {
 
 impl Message {
     pub fn new() -> Self {
-        let mut messages: HashMap<String, MessageText> = HashMap::new();
-        messages.insert(
-            "undefined".to_string(),
-            MessageText {
-                ja: "未設定".to_string(),
-                en: "Undefined".to_string(),
-            },
-        );
+        let mut messages: BTreeMap<DateTime<Utc>, Vec<String>> = BTreeMap::new();
         Message { map: messages }
     }
 
     /// メッセージを設定
-    pub fn insert(&mut self, error_code: String, message: MessageText) {
-        self.map.insert(error_code, message);
+    pub fn insert(&mut self, time: DateTime<Utc>, message: String) {
+        match self.map.get_mut(&time) {
+            Some(v) => {
+                v.push(message.to_string());
+            }
+            None => {
+                let m = vec![message.to_string(); 1];
+                self.map.insert(time, m);
+            }
+        }
     }
 
     /// メッセージを返す
-    pub fn get(&self, message_num: &str) -> &MessageText {
-        self.map
-            .get(message_num)
-            .unwrap_or(self.map.get("undefined").unwrap())
+    pub fn get(&self, time: DateTime<Utc>) -> Vec<String> {
+        match self.map.get(&time) {
+            Some(v) => (&v).to_vec(),
+            None => Vec::new(),
+        }
     }
 
     /// MessageMaoのなかに入っているメッセージすべてを表示する
-    pub fn print(&self) {
+    pub fn debug(&self) {
         println!("{:?}", self.map);
     }
 }
@@ -69,18 +73,16 @@ pub fn get_lang() -> Lang {
 }
 
 #[test]
-fn test_create_and_read_message() {
-    let mut error_message = Message::new();
+fn test_create_and_append_message() {
+    let mut message = Message::new();
+    let poke = Utc.ymd(1996, 2, 27).and_hms(1, 5, 1);
+    let taka = Utc.ymd(2000, 1, 21).and_hms(9, 6, 1);
 
-    error_message.insert(
-        "4103".to_string(),
-        MessageText {
-            ja: "パイプライン実行をしています".to_string(),
-            en: "Execute pipeline".to_string(),
-        },
-    );
+    message.insert(poke, "TEST".to_string());
+    message.insert(poke, "TEST2".to_string());
+    message.insert(taka, "TEST3".to_string());
 
-    let display = format!("{}", format_args!("{}", error_message.get("4103")));
-
-    assert_eq!(display, "Execute pipeline")
+    let display = format!("{}", format_args!("{:?}", message));
+    let expect = "Message { map: {1996-02-27T01:05:01Z: [\"TEST\", \"TEST2\"], 2000-01-21T09:06:01Z: [\"TEST3\"]} }";
+    assert_eq!(display, expect);
 }
