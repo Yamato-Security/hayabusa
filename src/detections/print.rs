@@ -41,7 +41,7 @@ impl Message {
         }
     }
 
-    /// MessageMaoのなかに入っているメッセージすべてを表示する
+    /// Messageのなかに入っているメッセージすべてを表示する
     pub fn debug(&self) {
         println!("{:?}", self.map);
     }
