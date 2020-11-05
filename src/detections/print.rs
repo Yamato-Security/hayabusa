@@ -1,11 +1,9 @@
 extern crate chrono;
 extern crate lazy_static;
 use crate::detections::configs::{singleton, Lang};
-use chrono::prelude::*;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use lazy_static::lazy_static;
 use std::collections::BTreeMap;
-use std::fmt;
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -19,7 +17,7 @@ lazy_static! {
 
 impl Message {
     pub fn new() -> Self {
-        let mut messages: BTreeMap<DateTime<Utc>, Vec<String>> = BTreeMap::new();
+        let messages: BTreeMap<DateTime<Utc>, Vec<String>> = BTreeMap::new();
         Message { map: messages }
     }
 
