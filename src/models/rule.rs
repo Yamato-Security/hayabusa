@@ -5,7 +5,7 @@ use serde::Deserialize;
 pub struct Rule {
     pub severity: Option<String>,
     pub name: Option<String>,
-    pub messages: Option<Vec<(String, String)>>,
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

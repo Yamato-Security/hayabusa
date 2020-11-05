@@ -1,6 +1,4 @@
 [rule]
 severity = "high"
 name = "4104"
-messages = [
-    ["4104", { ja = "リモートコマンドを実行します", en = "Excute Remote Command" }]
-]
+message = "Excute Remote Command"

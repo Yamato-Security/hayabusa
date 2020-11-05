@@ -1,6 +1,4 @@
 [rule]
 severity = "high"
 name = "4103"
-messages = [
-    ["4103", { ja = "パイプライン実行をしています", en = "Execute Pipeline" }]
-]
+message = "Execute Pipeline"
