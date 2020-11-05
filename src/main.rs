@@ -6,12 +6,9 @@ use std::{fs, path::PathBuf, process};
 use yamato_event_analyzer::detections::configs;
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::omikuji::Omikuji;
-use yamato_event_analyzer::toml;
 
 fn main() -> Result<(), DeError> {
     configs::singleton();
-    let mut toml = toml::ParseToml::new();
-    &toml.read_dir("rules".to_string());
 
     let filepath: String = configs::singleton()
         .args

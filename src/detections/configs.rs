@@ -1,3 +1,4 @@
+use crate::toml;
 use clap::{App, AppSettings, Arg, ArgMatches};
 use std::fs::File;
 use std::io::prelude::*;
@@ -8,6 +9,7 @@ pub struct SingletonReader {
     pub regex: Vec<Vec<String>>,
     pub whitelist: Vec<Vec<String>>,
     pub args: ArgMatches<'static>,
+    pub rules: toml::ParseToml,
 }
 
 pub enum Lang {
@@ -19,12 +21,16 @@ pub fn singleton() -> Box<SingletonReader> {
     static mut SINGLETON: Option<Box<SingletonReader>> = Option::None;
     static ONCE: Once = Once::new();
 
+    let mut toml = toml::ParseToml::new();
+    &toml.read_dir("rules".to_string());
+
     unsafe {
         ONCE.call_once(|| {
             let singleton = SingletonReader {
                 regex: read_csv("regexes.txt"),
                 whitelist: read_csv("whitelist.txt"),
                 args: build_app().get_matches(),
+                rules: toml,
             };
 
             SINGLETON = Some(Box::new(singleton));

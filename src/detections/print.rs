@@ -1,6 +1,5 @@
 extern crate chrono;
 extern crate lazy_static;
-use crate::detections::configs::{singleton, Lang};
 use chrono::{DateTime, TimeZone, Utc};
 use lazy_static::lazy_static;
 use std::collections::BTreeMap;
