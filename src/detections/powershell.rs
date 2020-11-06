@@ -2,7 +2,6 @@ use crate::detections::utils;
 use crate::models::event;
 use regex::Regex;
 use std::collections::HashMap;
-extern crate csv;
 
 pub struct PowerShell {}
 
@@ -25,6 +24,7 @@ impl PowerShell {
         if event_id != "4103" {
             return;
         }
+
         let default = String::from("");
         let commandline = event_data.get("ContextInfo").unwrap_or(&default);
 
@@ -48,6 +48,7 @@ impl PowerShell {
         if event_id != "4104" {
             return;
         }
+
         let default = String::from("");
         let path = event_data.get("Path").unwrap().to_string();
         if path == "".to_string() {

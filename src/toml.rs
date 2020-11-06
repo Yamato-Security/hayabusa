@@ -7,6 +7,7 @@ use std::io;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 
+#[derive(Clone)]
 pub struct ParseToml {
     pub rules: Vec<Result<rule::Toml, toml::de::Error>>,
 }
