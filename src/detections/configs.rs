@@ -12,11 +12,6 @@ pub struct SingletonReader {
     pub rules: toml::ParseToml,
 }
 
-pub enum Lang {
-    Ja,
-    En,
-}
-
 pub fn singleton() -> Box<SingletonReader> {
     static mut SINGLETON: Option<Box<SingletonReader>> = Option::None;
     static ONCE: Once = Once::new();

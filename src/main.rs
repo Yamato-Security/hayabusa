@@ -8,8 +8,6 @@ use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::omikuji::Omikuji;
 
 fn main() -> Result<(), DeError> {
-    configs::singleton();
-
     let filepath: String = configs::singleton()
         .args
         .value_of("filepath")
