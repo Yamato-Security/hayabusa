@@ -16,11 +16,11 @@ pub fn singleton() -> Box<SingletonReader> {
     static mut SINGLETON: Option<Box<SingletonReader>> = Option::None;
     static ONCE: Once = Once::new();
 
-    let mut toml = toml::ParseToml::new();
-    &toml.read_dir("rules".to_string());
-
     unsafe {
         ONCE.call_once(|| {
+            let mut toml = toml::ParseToml::new();
+            &toml.read_dir("rules".to_string());
+
             let singleton = SingletonReader {
                 regex: read_csv("regexes.txt"),
                 whitelist: read_csv("whitelist.txt"),
