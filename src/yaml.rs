@@ -38,7 +38,9 @@ impl ParseYaml {
                         Ok(s) => {
                             let docs = YamlLoader::load_from_str(&s).unwrap();
                             for i in docs {
-                                &self.rules.push(i);
+                                if i["enabled"].as_bool().unwrap() {
+                                    &self.rules.push(i);
+                                }
                             }
                         }
                         Err(e) => panic!("fail to read file: {}", e),
