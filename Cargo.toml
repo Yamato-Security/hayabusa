@@ -17,9 +17,9 @@ regex = "1"
 csv = "1.1"
 base64 = "*"
 flate2 = "1.0"
-toml = "0.5"
 lazy_static = "1.4.0"
 chrono = "0.4.19"
+yaml-rust = "0.4"
 
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"
