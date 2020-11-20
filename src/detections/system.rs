@@ -30,7 +30,7 @@ impl System {
         let default = String::from("");
         let servicename = &event_data.get("ServiceName").unwrap_or(&default);
         let commandline = &event_data.get("ImagePath").unwrap_or(&default);
-        let text = utils::check_regex(&servicename, 1);
+        let text = utils::check_regex_old(&servicename, 1);
         if !text.is_empty() {
             println!("Message : New Service Created");
             println!("Command : {}", commandline);
@@ -56,7 +56,7 @@ impl System {
         println!("Message : Interactive service warning");
         println!("Results : Service name: {}", servicename);
         println!("Results : Malware (and some third party software) trigger this warning");
-        println!("{}", utils::check_regex(&servicename, 1));
+        println!("{}", utils::check_regex_old(&servicename, 1));
     }
 
     fn suspicious_service_name(&mut self, event_id: &String, event_data: &HashMap<String, String>) {
@@ -66,7 +66,7 @@ impl System {
 
         let default = String::from("");
         let servicename = &event_data.get("param1").unwrap_or(&default);
-        let text = utils::check_regex(&servicename, 1);
+        let text = utils::check_regex_old(&servicename, 1);
         if !text.is_empty() {
             println!("Message : Suspicious Service Name");
             println!("Results : Service name: {}", servicename);
