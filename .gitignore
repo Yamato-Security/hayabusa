@@ -1,3 +1,4 @@
 /target
 /samples
 *.test
+/.vscode/

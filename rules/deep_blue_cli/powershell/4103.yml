@@ -1,0 +1,20 @@
+title: PowerShell Execution Pipeline
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        EventLog: PowerShell
+        EventID: 4103
+        ContextInfo:
+            - Host Application
+            - ホスト アプリケーション
+    condition: selection
+falsepositives:
+    - unknown
+level: medium
+output: 'command=%CommandLine%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

@@ -1,4 +1,0 @@
-[rule]
-severity = "high"
-name = "4103"
-message = "Execute Pipeline"

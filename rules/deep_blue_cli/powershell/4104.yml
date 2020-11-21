@@ -1,0 +1,19 @@
+title: PowerShell Execution Remote Command
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        EventLog: PowerShell
+        EventID: 4104
+        Path: ''
+        ScriptBlockText: '.'
+    condition: selection
+falsepositives:
+    - unknown
+level: medium
+output: 'command=%CommandLine%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

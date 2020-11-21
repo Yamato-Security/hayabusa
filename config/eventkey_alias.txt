@@ -1,0 +1,12 @@
+alias,event_key
+EventID,Event.System.EventId
+Channel,Event.System.Channel
+CommandLine,Event.EventData.CommandLine
+Signed,Event.EventData.Signed
+ProcessName,Event.EventData.ProcessName
+AccessMask,Event.EventData.AccessMask
+TargetUserName,Event.EventData.TargetUserName
+param1,Event.EventData.param1
+param2,Event.EventData.param2
+ServiceName,Event.EventData.ServiceName
+ImagePath,Event.EventData.ImagePath
