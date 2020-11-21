@@ -1,4 +1,4 @@
-title: PowerShell Execution Pipeline
+title: The Audit log file was cleared
 description: hogehoge
 enabled: true
 author: Yea
@@ -6,15 +6,12 @@ logsource:
     product: windows
 detection:
     selection:
-        Channel: PowerShell
-        EventID: 4103
-        ContextInfo:
-            - Host Application
-            - ホスト アプリケーション
+        Channel: Security
+        EventID: 1102
     # condition: selection
 falsepositives:
     - unknown
 level: medium
-output: 'command=%CommandLine%'
+output: 'Audit Log Clear¥n The Audit log was cleared.¥m%user_data.log_file_cleared%%user_data.subject_user_name%'
 creation_date: 2020/11/8
 uodated_date: 2020/11/8

@@ -1,12 +1,6 @@
-mod application;
-mod applocker;
 mod common;
 pub mod configs;
 pub mod detection;
-mod powershell;
 pub mod print;
 mod rule;
-mod security;
-mod sysmon;
-mod system;
 mod utils;

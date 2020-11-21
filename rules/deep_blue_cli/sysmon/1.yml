@@ -1,4 +1,4 @@
-title: PowerShell Execution Pipeline
+title: Sysmon Check command lines
 description: hogehoge
 enabled: true
 author: Yea
@@ -6,15 +6,14 @@ logsource:
     product: windows
 detection:
     selection:
-        Channel: PowerShell
-        EventID: 4103
-        ContextInfo:
-            - Host Application
-            - ホスト アプリケーション
+        Channel: Sysmon
+        EventID: 1
+        CommandLine: '.+'
     # condition: selection
 falsepositives:
     - unknown
 level: medium
-output: 'command=%CommandLine%'
+output: 'CommandLine=%CommandLine%¥nParentImage=%ParentImage%'
 creation_date: 2020/11/8
 uodated_date: 2020/11/8
+

@@ -1,0 +1,19 @@
+title: Command Line Logging
+description: hogehoge
+enabled: false
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: Security
+        EventID: 4672
+        PrivilegeList: 
+            contain: SeDebugPrivilege
+    # condition: selection
+falsepositives:
+    - unknown
+level: medium
+output: 'CommandLine:%CommandLine% ParentProcessName:%ParentProcessName%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

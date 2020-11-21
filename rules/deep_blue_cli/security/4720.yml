@@ -1,4 +1,4 @@
-title: PowerShell Execution Remote Command
+title: A user account was created.
 description: hogehoge
 enabled: true
 author: Yea
@@ -6,14 +6,12 @@ logsource:
     product: windows
 detection:
     selection:
-        Channel: PowerShell
-        EventID: 4104
-        Path: null
-        ScriptBlockText: null
+        Channel: Security
+        EventID: 4720
     # condition: selection
 falsepositives:
     - unknown
-level: medium
-output: 'command=%CommandLine%'
+level: low
+output: 'New User Created UserName:%TargetUserName% SID:%TargetSid%'
 creation_date: 2020/11/8
 uodated_date: 2020/11/8

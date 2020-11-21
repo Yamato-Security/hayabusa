@@ -1,11 +1,13 @@
 use clap::{App, AppSettings, Arg, ArgMatches};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::Once;
-use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct SingletonReader {
+    pub regex: Vec<Vec<String>>,
+    pub whitelist: Vec<Vec<String>>,
     pub args: ArgMatches<'static>,
     pub event_key_alias_config: EventKeyAliasConfig,
 }
@@ -17,6 +19,8 @@ pub fn singleton() -> Box<SingletonReader> {
     unsafe {
         ONCE.call_once(|| {
             let singleton = SingletonReader {
+                regex: read_csv("regexes.txt"),
+                whitelist: read_csv("whitelist.txt"),
                 args: build_app().get_matches(),
                 event_key_alias_config: load_eventkey_alias(),
             };
@@ -57,35 +61,42 @@ fn build_app() -> clap::App<'static, 'static> {
 
 #[derive(Clone)]
 pub struct EventKeyAliasConfig {
-    key_to_eventkey: HashMap<String,String>,
+    key_to_eventkey: HashMap<String, String>,
 }
 
 impl EventKeyAliasConfig {
     pub fn new() -> EventKeyAliasConfig {
-        return EventKeyAliasConfig{ key_to_eventkey: HashMap::new() };
+        return EventKeyAliasConfig {
+            key_to_eventkey: HashMap::new(),
+        };
     }
 
-    pub fn get_event_key(&self, alias: String ) -> Option<&String> {
+    pub fn get_event_key(&self, alias: String) -> Option<&String> {
         return self.key_to_eventkey.get(&alias);
     }
 }
 
 fn load_eventkey_alias() -> EventKeyAliasConfig {
-    let config = EventKeyAliasConfig::new();
+    let mut config = EventKeyAliasConfig::new();
 
-    read_csv("config/eventkey_alias.txt").into_iter().for_each( | line| {
-        if line.len() != 2 {
-            return;
-        }
+    read_csv("config/eventkey_alias.txt")
+        .into_iter()
+        .for_each(|line| {
+            if line.len() != 2 {
+                return;
+            }
 
-        let alias = line[0];
-        let event_key = line[1];
-        if alias.len() == 0 || event_key.len() == 0 {
-            return;
-        }
+            let empty = &"".to_string();
+            let alias = line.get(0).unwrap_or(empty);
+            let event_key = line.get(1).unwrap_or(empty);
+            if alias.len() == 0 || event_key.len() == 0 {
+                return;
+            }
 
-        config.key_to_eventkey.insert(alias, event_key);
-    });
+            config
+                .key_to_eventkey
+                .insert(alias.to_owned(), event_key.to_owned());
+        });
 
     return config;
 }
