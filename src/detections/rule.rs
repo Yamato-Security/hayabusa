@@ -383,6 +383,7 @@ impl LeafMatcher for RegexMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
+        self.re = re_result.ok();
 
         return Result::Ok(());
     }

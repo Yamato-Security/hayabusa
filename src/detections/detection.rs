@@ -6,7 +6,7 @@ use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::yaml::ParseYaml;
 
-use chrono::{TimeZone, Utc};
+use chrono::{DateTime, FixedOffset, ParseError, ParseResult, TimeZone, Utc};
 use evtx::EvtxParser;
 use serde_json::{Error, Value};
 
@@ -30,7 +30,7 @@ impl Detection {
                     return Option::None;
                 }
 
-                //// refer https://rust-lang-nursery.github.io/rust-cookbook/encoding/complex.html
+                //// https://rust-lang-nursery.github.io/rust-cookbook/encoding/complex.html
                 let result_json: Result<Value, Error> =
                     serde_json::from_str(&result_record.unwrap().data);
                 if result_json.is_err() {
@@ -55,19 +55,24 @@ impl Detection {
             .into_iter()
             .map(|rule_file| rule::parse_rule(rule_file))
             .filter_map(|mut rule| {
-                return rule
-                    .init()
-                    .or_else(|err_msgs| {
-                        print!(
-                            "Failed to parse Rule file. See following detail. [rule file title:{}]",
-                            rule.yaml["title"].as_str().unwrap_or("")
-                        );
-                        err_msgs.iter().for_each(|err_msg| println!("{}", err_msg));
-                        println!("\n");
-                        return Result::Err(err_msgs);
-                    })
-                    .and_then(|_empty| Result::Ok(rule))
-                    .ok();
+                let err_msgs_result = rule.init();
+                if err_msgs_result.is_ok() {
+                    return Option::Some(rule);
+                }
+
+                // ruleファイルの初期化失敗時のエラーを表示する部分
+                err_msgs_result.err().iter().for_each(|err_msgs| {
+                    // TODO 本当はファイルパスを出力したい
+                    // ParseYamlの変更が必要なので、一旦yamlのタイトルを表示。
+                    println!(
+                        "[Failed to parse Rule file. See following detail. rule file title:{}]",
+                        rule.yaml["title"].as_str().unwrap_or("")
+                    );
+                    err_msgs.iter().for_each(|err_msg| println!("{}", err_msg));
+                    println!("");
+                });
+
+                return Option::None;
             })
             .collect();
 
@@ -78,14 +83,35 @@ impl Detection {
                 .iter()
                 .filter(|event_record| rule.select(event_record))
                 .for_each(|event_record| {
-                    message.insert(
-                        Utc.ymd(1996, 2, 27).and_hms(1, 5, 1),
-                        event_record.to_string(),
-                    )
+                    let event_time = Detection::get_event_time(event_record);
+                    // TODO ログから日付がとれない場合に本当は時刻不明という感じで表示したい。
+                    // しかし、Messageクラスのinsertメソッドが、UTCクラスのインスタンスを必ず渡すようなインタフェースになっているので、
+                    // やむなくUtc.ymd(1970, 1, 1).and_hms(0, 0, 0)を渡している。
+
+                    // Messageクラスのinsertメソッドの引数をDateTime<UTC>からOption<DateTime<UTC>>に変更して、
+                    // insertメソッドでOption::Noneが渡された場合に時刻不明だと分かるように表示させるような実装にした方がいいかも
+                    let utc_event_time = event_time
+                        .and_then(|datetime| {
+                            let utc = Utc.from_local_datetime(&datetime.naive_utc()).unwrap();
+                            return Option::Some(utc);
+                        })
+                        .or(Option::Some(Utc.ymd(1970, 1, 1).and_hms(0, 0, 0)));
+                    message.insert(utc_event_time.unwrap(), event_record.to_string())
                 });
         });
 
         // output message
         message.debug();
+    }
+
+    fn get_event_time(event_record: &Value) -> Option<DateTime<FixedOffset>> {
+        let system_time =
+            &event_record["Event"]["System"]["TimeCreated"]["#attributes"]["SystemTime"];
+        let system_time_str = system_time.as_str().unwrap_or("");
+        if system_time_str.is_empty() {
+            return Option::None;
+        }
+
+        return DateTime::parse_from_rfc3339(system_time_str).ok();
     }
 }
