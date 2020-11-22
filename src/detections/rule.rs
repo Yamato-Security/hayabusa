@@ -268,16 +268,6 @@ impl LeafSelectionNode {
     fn get_matchers(&self) -> Vec<Box<dyn LeafMatcher>> {
         return vec![Box::new(RegexMatcher::new())];
     }
-
-    // LeafMatcherを取得する。
-    fn get_matcher(&self) -> Option<Box<dyn LeafMatcher>> {
-        let matchers = self.get_matchers();
-        let mut match_key_list = self.key_list.clone();
-        match_key_list.remove(0);
-        return matchers
-            .into_iter()
-            .find(|matcher| matcher.is_target_key(&match_key_list));
-    }
 }
 
 impl SelectionNode for LeafSelectionNode {

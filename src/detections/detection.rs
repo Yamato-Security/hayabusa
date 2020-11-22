@@ -6,7 +6,7 @@ use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::yaml::ParseYaml;
 
-use chrono::{DateTime, FixedOffset, ParseError, ParseResult, TimeZone, Utc};
+use chrono::{DateTime, FixedOffset, TimeZone, Utc};
 use evtx::EvtxParser;
 use serde_json::{Error, Value};
 
