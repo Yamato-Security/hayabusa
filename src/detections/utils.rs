@@ -5,6 +5,7 @@ extern crate regex;
 use crate::detections::configs;
 use flate2::read::GzDecoder;
 use regex::Regex;
+use std::fs::File;
 use std::io::prelude::*;
 use std::str;
 use std::string::String;
@@ -20,17 +21,9 @@ pub fn check_command(
     let mut text = "".to_string();
     let mut base64 = "".to_string();
 
-    let empty = "".to_string();
-    for line in configs::singleton().whitelist {
-        let r_str = line.get(0).unwrap_or(&empty);
-        if r_str.is_empty() {
-            continue;
-        }
-
-        let r = Regex::new(r_str);
-        if r.is_ok() && r.unwrap().is_match(commandline) {
-            return;
-        }
+    let ret = check_whitelist(commandline, "whitelist.txt");
+    if (ret) {
+        return;
     }
 
     if commandline.len() > minlength {
@@ -39,7 +32,7 @@ pub fn check_command(
         text.push_str("bytes\n");
     }
     text.push_str(&check_obfu(commandline));
-    text.push_str(&check_regex(commandline, 0));
+    text.push_str(&check_regex_old(commandline, 0));
     text.push_str(&check_creator(commandline, creator));
     if Regex::new(r"\-enc.*[A-Za-z0-9/+=]{100}")
         .unwrap()
@@ -71,7 +64,10 @@ pub fn check_command(
                 println!("Decoded : {}", str::from_utf8(decoded.as_slice()).unwrap());
                 text.push_str("Base64-encoded function\n");
                 text.push_str(&check_obfu(str::from_utf8(decoded.as_slice()).unwrap()));
-                text.push_str(&check_regex(str::from_utf8(decoded.as_slice()).unwrap(), 0));
+                text.push_str(&check_regex_old(
+                    str::from_utf8(decoded.as_slice()).unwrap(),
+                    0,
+                ));
             }
         }
     }
@@ -126,7 +122,7 @@ fn check_obfu(string: &str) -> std::string::String {
     return obfutext;
 }
 
-pub fn check_regex(string: &str, r#type: usize) -> std::string::String {
+pub fn check_regex_old(string: &str, r#type: usize) -> std::string::String {
     let empty = "".to_string();
     let mut regextext = "".to_string();
     for line in configs::singleton().regex {
@@ -157,6 +153,79 @@ pub fn check_regex(string: &str, r#type: usize) -> std::string::String {
     return regextext;
 }
 
+pub fn check_regex(string: &str, r#type: usize, regex_path: &str) -> std::string::String {
+    let empty = "".to_string();
+    let mut regextext = "".to_string();
+    let regex_list = read_csv(regex_path);
+    for line in regex_list {
+        let type_str = line.get(0).unwrap_or(&empty);
+        if type_str != &r#type.to_string() {
+            continue;
+        }
+
+        let regex_str = line.get(1).unwrap_or(&empty);
+        if regex_str.is_empty() {
+            continue;
+        }
+
+        let re = Regex::new(regex_str);
+        if re.is_err() || re.unwrap().is_match(string) == false {
+            continue;
+        }
+
+        let text = line.get(2).unwrap_or(&empty);
+        if text.is_empty() {
+            continue;
+        }
+
+        regextext.push_str(text);
+        regextext.push_str("\n");
+    }
+
+    return regextext;
+}
+
+pub fn check_whitelist(target: &str, whitelist_path: &str) -> bool {
+    let empty = "".to_string();
+    let whitelist = read_csv(whitelist_path);
+    for line in whitelist {
+        let r_str = line.get(0).unwrap_or(&empty);
+        if r_str.is_empty() {
+            continue;
+        }
+
+        let r = Regex::new(r_str);
+        if r.is_ok() && r.unwrap().is_match(target) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+fn read_csv(filename: &str) -> Vec<Vec<String>> {
+    let mut f = File::open(filename).expect("file not found!!!");
+    let mut contents: String = String::new();
+    let mut ret = vec![];
+    if f.read_to_string(&mut contents).is_err() {
+        return ret;
+    }
+
+    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
+    rdr.records().for_each(|r| {
+        if r.is_err() {
+            return;
+        }
+
+        let line = r.unwrap();
+        let mut v = vec![];
+        line.iter().for_each(|s| v.push(s.to_string()));
+        ret.push(v);
+    });
+
+    return ret;
+}
+
 fn check_creator(command: &str, creator: &str) -> std::string::String {
     let mut creatortext = "".to_string();
     if !creator.is_empty() {
@@ -180,8 +249,11 @@ mod tests {
     use crate::detections::utils;
     #[test]
     fn test_check_regex() {
-        let regextext = utils::check_regex("\\cvtres.exe", 0);
+        let regextext = utils::check_regex("\\cvtres.exe", 0, "regexes.txt");
         assert!(regextext == "Resource File To COFF Object Conversion Utility cvtres.exe\n");
+
+        let regextext = utils::check_regex("\\hogehoge.exe", 0, "regexes.txt");
+        assert!(regextext == "");
     }
 
     #[test]
@@ -211,5 +283,14 @@ mod tests {
             "dir",
             "dir",
         );
+    }
+
+    #[test]
+    fn test_check_whitelist() {
+        let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
+        assert!(true == utils::check_whitelist(commandline, "whitelist.txt"));
+
+        let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";
+        assert!(false == utils::check_whitelist(commandline, "whitelist.txt"));
     }
 }
