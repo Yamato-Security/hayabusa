@@ -12,6 +12,7 @@ use serde_json::{Error, Value};
 
 const DIRPATH_RULES: &str = "rules";
 
+// TODO テストケースかかなきゃ...
 #[derive(Debug)]
 pub struct Detection {}
 
@@ -64,8 +65,11 @@ impl Detection {
                 err_msgs_result.err().iter().for_each(|err_msgs| {
                     // TODO 本当はファイルパスを出力したい
                     // ParseYamlの変更が必要なので、一旦yamlのタイトルを表示。
+
+                    // TODO エラーの出力方法を統一したい。
+                    // エラー出力用のクラスを作成してもいいかも
                     println!(
-                        "[Failed to parse Rule file. See following detail. rule file title:{}]",
+                        "[ERROR] Failed to parse Rule file. (Error Rule Title : {})",
                         rule.yaml["title"].as_str().unwrap_or("")
                     );
                     err_msgs.iter().for_each(|err_msg| println!("{}", err_msg));

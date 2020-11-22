@@ -6,6 +6,7 @@ use regex::Regex;
 use serde_json::Value;
 use yaml_rust::Yaml;
 
+// TODO テストケースかかなきゃ...
 pub fn parse_rule(yaml: Yaml) -> RuleNode {
     let detection = parse_detection(&yaml);
 
@@ -358,6 +359,8 @@ impl LeafMatcher for RegexMatcher {
     }
 
     fn is_match(&self, event_value: Option<&Value>) -> bool {
+        // unwrap_orの引数に""ではなく" "を指定しているのは、
+        // event_valueが文字列じゃない場合にis_event_value_nullの値がfalseになるように、len() == 0とならない値を指定している。
         let is_event_value_null = event_value.is_none()
             || event_value.unwrap().is_null()
             || event_value.unwrap().as_str().unwrap_or(" ").len() == 0;
