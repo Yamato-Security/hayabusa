@@ -89,11 +89,11 @@ impl RuleNode {
         return self.detection.as_mut().unwrap().init();
     }
 
-    pub fn select(&self, event_record: &Value) -> bool {
+    pub fn select(&mut self, event_record: &Value) -> bool {
         let selection = self
             .detection
-            .as_ref()
-            .and_then(|detect_node| detect_node.selection.as_ref());
+            .as_mut()
+            .and_then(|detect_node| detect_node.selection.as_mut());
         if selection.is_none() {
             return false;
         }
@@ -119,7 +119,7 @@ impl DetectionNode {
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
 trait SelectionNode {
-    fn select(&self, event_record: &Value) -> bool;
+    fn select(&mut self, event_record: &Value) -> bool;
     fn init(&mut self) -> Result<(), Vec<String>>;
 }
 
@@ -137,9 +137,9 @@ impl AndSelectionNode {
 }
 
 impl SelectionNode for AndSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
-        return self.child_nodes.iter().all(|child_node| {
-            return child_node.as_ref().select(event_record);
+    fn select(&mut self, event_record: &Value) -> bool {
+        return self.child_nodes.iter_mut().all(|child_node| {
+            return child_node.select(event_record);
         });
     }
 
@@ -185,9 +185,9 @@ impl OrSelectionNode {
 }
 
 impl SelectionNode for OrSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
-        return self.child_nodes.iter().any(|child_node| {
-            return child_node.as_ref().select(event_record);
+    fn select(&mut self, event_record: &Value) -> bool {
+        return self.child_nodes.iter_mut().any(|child_node| {
+            return child_node.select(event_record);
         });
     }
 
@@ -256,13 +256,13 @@ impl LeafSelectionNode {
 }
 
 impl SelectionNode for LeafSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
+    fn select(&mut self, event_record: &Value) -> bool {
         if self.matcher.is_none() {
             return false;
         }
 
         let event_value = self.get_event_value(event_record);
-        return self.matcher.as_ref().unwrap().is_match(event_value);
+        return self.matcher.as_mut().unwrap().is_match(event_value);
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -303,7 +303,7 @@ impl SelectionNode for LeafSelectionNode {
 trait LeafMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool;
 
-    fn is_match(&self, event_value: Option<&Value>) -> bool;
+    fn is_match(&mut self, event_value: Option<&Value>) -> bool;
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
 }
@@ -378,7 +378,7 @@ impl LeafMatcher for RegexMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
+    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
         // unwrap_orの引数に""ではなく" "を指定しているのは、
         // event_valueが文字列じゃない場合にis_event_value_nullの値がfalseになるように、len() == 0とならない値を指定している。
         let is_event_value_null = event_value.is_none()
@@ -433,7 +433,7 @@ impl LeafMatcher for MinlengthMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
+    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.len() as i64 >= self.min_len,
             Value::Number(n) => n.to_string().len() as i64 >= self.min_len,
@@ -493,7 +493,7 @@ impl LeafMatcher for RegexesFileMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
+    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => !utils::check_regex(s, 0, &self.regexes_csv_content).is_empty(),
             Value::Number(n) => {
@@ -555,7 +555,7 @@ impl LeafMatcher for WhitelistFileMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
+    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => utils::check_whitelist(s, &self.whitelist_csv_content),
             Value::Number(n) => utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content),

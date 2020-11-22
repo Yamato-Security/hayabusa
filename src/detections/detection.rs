@@ -51,7 +51,7 @@ impl Detection {
         }
 
         // parse rule files
-        let selection_rules: Vec<RuleNode> = rulefile_loader
+        let mut selection_rules: Vec<RuleNode> = rulefile_loader
             .files
             .into_iter()
             .map(|rule_file| rule::parse_rule(rule_file))
@@ -82,7 +82,7 @@ impl Detection {
 
         // selection rule files and collect message
         let mut message = Message::new();
-        selection_rules.iter().for_each(|rule| {
+        selection_rules.iter_mut().for_each(|rule| {
             &event_records
                 .iter()
                 .filter(|event_record| rule.select(event_record))
