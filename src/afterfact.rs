@@ -13,19 +13,49 @@ pub struct CsvFormat<'a> {
 
 pub fn after_fact() -> Result<(), Box<dyn Error>> {
     if let Some(csv_path) = configs::singleton().args.value_of("csv-timeline") {
-        let mut wtr = csv::Writer::from_path(csv_path)?;
-        let messages = print::MESSAGES.lock().unwrap();
-
-        for (time, texts) in messages.iter() {
-            for text in texts {
-                wtr.serialize(CsvFormat {
-                    time: *time,
-                    message: text,
-                })?;
-            }
-        }
-        wtr.flush()?;
+        emit_csv(csv_path)?;
     }
 
     Ok(())
+}
+
+fn emit_csv(path: &str) -> Result<(), Box<dyn Error>> {
+    let mut wtr = csv::Writer::from_path(path)?;
+    let messages = print::MESSAGES.lock().unwrap();
+
+    for (time, texts) in messages.iter() {
+        for text in texts {
+            wtr.serialize(CsvFormat {
+                time: *time,
+                message: text,
+            })?;
+        }
+    }
+    wtr.flush()?;
+    Ok(())
+}
+
+use std::fs::{read_to_string, remove_file};
+use std::io::Read;
+
+#[test]
+fn test_emit_csv() {
+    {
+        let mut messages = print::MESSAGES.lock().unwrap();
+        let poke = Utc.ymd(1996, 2, 27).and_hms(1, 5, 1);
+        messages.insert(poke, "pokepoke".to_string());
+    }
+
+    let expect = "Time,Message
+1996-02-27T01:05:01Z,pokepoke
+";
+
+    assert!(emit_csv(&"./test_emit_csv.csv".to_string()).is_ok());
+
+    match read_to_string("./test_emit_csv.csv") {
+        Err(_) => panic!("Failed to open file"),
+        Ok(s) => assert_eq!(s, expect),
+    };
+
+    assert!(remove_file("./test_emit_csv.csv").is_ok());
 }
