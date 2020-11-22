@@ -74,7 +74,7 @@ fn load_eventkey_alias() -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
     let read_result = utils::read_csv("config/eventkey_alias.txt");
-    // eventkey_alisasが読み込めなかったらエラーで終了とする。
+    // eventkey_aliasが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 2 {
             return;
