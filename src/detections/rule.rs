@@ -504,7 +504,7 @@ impl LeafMatcher for RegexesFileMatcher {
     }
 }
 
-// ファイルに列挙された文字列に一致しない場合に検知するロジックを表す
+// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
 // DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 struct WhitelistFileMatcher {
     whitelist_csv_content: Vec<Vec<String>>,
@@ -557,10 +557,9 @@ impl LeafMatcher for WhitelistFileMatcher {
 
     fn is_match(&self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_regex(s, 0, &self.whitelist_csv_content).is_empty(),
-            Value::Number(n) => {
-                !utils::check_regex(&n.to_string(), 0, &self.whitelist_csv_content).is_empty()
-            }
+            Value::String(s) => utils::check_whitelist(s, &self.whitelist_csv_content),
+            Value::Number(n) => utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content),
+            Value::Bool(b) => utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
             _ => false,
         };
     }
