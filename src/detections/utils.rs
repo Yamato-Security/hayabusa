@@ -63,12 +63,13 @@ pub fn check_whitelist(target: &str, whitelist: &Vec<Vec<String>>) -> bool {
     return false;
 }
 
-pub fn read_csv(filename: &str) -> Vec<Vec<String>> {
+pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
     let mut f = File::open(filename).expect("file not found!!!");
     let mut contents: String = String::new();
     let mut ret = vec![];
+    let read_res = f.read_to_string(&mut contents);
     if f.read_to_string(&mut contents).is_err() {
-        return ret;
+        return Result::Err(read_res.unwrap_err().to_string());
     }
 
     let mut rdr = csv::Reader::from_reader(contents.as_bytes());
@@ -83,7 +84,7 @@ pub fn read_csv(filename: &str) -> Vec<Vec<String>> {
         ret.push(v);
     });
 
-    return ret;
+    return Result::Ok(ret);
 }
 
 pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a Value> {
@@ -113,7 +114,7 @@ mod tests {
     use crate::detections::utils;
     #[test]
     fn test_check_regex() {
-        let regexes = utils::read_csv("regexes.txt");
+        let regexes = utils::read_csv("regexes.txt").unwrap();
         let regextext = utils::check_regex("\\cvtres.exe", 0, &regexes);
         assert!(regextext == "Resource File To COFF Object Conversion Utility cvtres.exe\n");
 
@@ -124,7 +125,7 @@ mod tests {
     #[test]
     fn test_check_whitelist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let whitelist = utils::read_csv("whitelist.txt");
+        let whitelist = utils::read_csv("whitelist.txt").unwrap();
         assert!(true == utils::check_whitelist(commandline, &whitelist));
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";

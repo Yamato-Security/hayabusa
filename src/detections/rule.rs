@@ -246,7 +246,12 @@ impl LeafSelectionNode {
 
     // LeafMatcherの一覧を取得する。
     fn get_matchers(&self) -> Vec<Box<dyn LeafMatcher>> {
-        return vec![Box::new(RegexMatcher::new())];
+        return vec![
+            Box::new(RegexMatcher::new()),
+            Box::new(MinlengthMatcher::new()),
+            Box::new(RegexesFileMatcher::new()),
+            Box::new(WhitelistFileMatcher::new()),
+        ];
     }
 }
 
@@ -271,6 +276,13 @@ impl SelectionNode for LeafSelectionNode {
         if self.matcher.is_none() {
             return Result::Err(vec![format!(
                 "Found unknown key. key:{}",
+                concat_selection_key(&match_key_list)
+            )]);
+        }
+
+        if self.select_value.is_badvalue() {
+            return Result::Err(vec![format!(
+                "Cannot parse yaml file. key:{}",
                 concat_selection_key(&match_key_list)
             )]);
         }
@@ -316,7 +328,15 @@ impl RegexMatcher {
 
 impl LeafMatcher for RegexMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        return key_list.is_empty();
+        if key_list.is_empty() {
+            return true;
+        }
+
+        if key_list.len() == 1 {
+            return key_list.get(0).unwrap_or(&"".to_string()) == &"regex".to_string();
+        } else {
+            return false;
+        }
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -374,6 +394,173 @@ impl LeafMatcher for RegexMatcher {
             Value::Bool(b) => self.is_regex_fullmatch(self.re.as_ref().unwrap(), b.to_string()),
             Value::String(s) => self.is_regex_fullmatch(self.re.as_ref().unwrap(), s.to_owned()),
             Value::Number(n) => self.is_regex_fullmatch(self.re.as_ref().unwrap(), n.to_string()),
+            _ => false,
+        };
+    }
+}
+
+// 指定された文字数以上であることをチェックするクラス。
+struct MinlengthMatcher {
+    min_len: i64,
+}
+
+impl MinlengthMatcher {
+    fn new() -> MinlengthMatcher {
+        return MinlengthMatcher { min_len: 0 };
+    }
+}
+
+impl LeafMatcher for MinlengthMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        if key_list.len() != 1 {
+            return false;
+        }
+
+        return key_list.get(0).unwrap() == "min_length";
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        let min_length = select_value.as_i64();
+        if min_length.is_none() {
+            let errmsg = format!(
+                "min_length value should be Integer. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        self.min_len = min_length.unwrap();
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => s.len() as i64 >= self.min_len,
+            Value::Number(n) => n.to_string().len() as i64 >= self.min_len,
+            _ => false,
+        };
+    }
+}
+
+// 正規表現のリストが記載されたファイルを読み取って、比較するロジックを表すクラス
+// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
+struct RegexesFileMatcher {
+    regexes_csv_content: Vec<Vec<String>>,
+}
+
+impl RegexesFileMatcher {
+    fn new() -> RegexesFileMatcher {
+        return RegexesFileMatcher {
+            regexes_csv_content: vec![],
+        };
+    }
+}
+
+impl LeafMatcher for RegexesFileMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        if key_list.len() != 1 {
+            return false;
+        }
+
+        return key_list.get(0).unwrap() == "regexes";
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        let value = match select_value {
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_owned()),
+            _ => Option::None,
+        };
+        if value.is_none() {
+            let errmsg = format!(
+                "regexes value should be String. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        let csv_content = utils::read_csv(&value.unwrap());
+        if csv_content.is_err() {
+            let errmsg = format!(
+                "cannot read regexes file. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+        self.regexes_csv_content = csv_content.unwrap();
+
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => !utils::check_regex(s, 0, &self.regexes_csv_content).is_empty(),
+            Value::Number(n) => {
+                !utils::check_regex(&n.to_string(), 0, &self.regexes_csv_content).is_empty()
+            }
+            _ => false,
+        };
+    }
+}
+
+// ファイルに列挙された文字列に一致しない場合に検知するロジックを表す
+// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
+struct WhitelistFileMatcher {
+    whitelist_csv_content: Vec<Vec<String>>,
+}
+
+impl WhitelistFileMatcher {
+    fn new() -> WhitelistFileMatcher {
+        return WhitelistFileMatcher {
+            whitelist_csv_content: vec![],
+        };
+    }
+}
+
+impl LeafMatcher for WhitelistFileMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        if key_list.len() != 1 {
+            return false;
+        }
+
+        return key_list.get(0).unwrap() == "whitelist";
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        let value = match select_value {
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_owned()),
+            _ => Option::None,
+        };
+        if value.is_none() {
+            let errmsg = format!(
+                "whitelist value should be String. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        let csv_content = utils::read_csv(&value.unwrap());
+        if csv_content.is_err() {
+            let errmsg = format!(
+                "cannot read whitelist file. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+        self.whitelist_csv_content = csv_content.unwrap();
+
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => !utils::check_regex(s, 0, &self.whitelist_csv_content).is_empty(),
+            Value::Number(n) => {
+                !utils::check_regex(&n.to_string(), 0, &self.whitelist_csv_content).is_empty()
+            }
             _ => false,
         };
     }

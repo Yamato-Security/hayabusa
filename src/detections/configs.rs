@@ -73,24 +73,24 @@ impl EventKeyAliasConfig {
 fn load_eventkey_alias() -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
-    utils::read_csv("config/eventkey_alias.txt")
-        .into_iter()
-        .for_each(|line| {
-            if line.len() != 2 {
-                return;
-            }
+    let read_result = utils::read_csv("config/eventkey_alias.txt");
+    // eventkey_alisasが読み込めなかったらエラーで終了とする。
+    read_result.unwrap().into_iter().for_each(|line| {
+        if line.len() != 2 {
+            return;
+        }
 
-            let empty = &"".to_string();
-            let alias = line.get(0).unwrap_or(empty);
-            let event_key = line.get(1).unwrap_or(empty);
-            if alias.len() == 0 || event_key.len() == 0 {
-                return;
-            }
+        let empty = &"".to_string();
+        let alias = line.get(0).unwrap_or(empty);
+        let event_key = line.get(1).unwrap_or(empty);
+        if alias.len() == 0 || event_key.len() == 0 {
+            return;
+        }
 
-            config
-                .key_to_eventkey
-                .insert(alias.to_owned(), event_key.to_owned());
-        });
+        config
+            .key_to_eventkey
+            .insert(alias.to_owned(), event_key.to_owned());
+    });
 
     return config;
 }
