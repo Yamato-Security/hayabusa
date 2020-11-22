@@ -1,6 +1,7 @@
 extern crate regex;
 
-use crate::detections::configs;
+use crate::detections::utils;
+
 use regex::Regex;
 use serde_json::Value;
 use yaml_rust::Yaml;
@@ -23,28 +24,6 @@ fn parse_detection(yaml: &Yaml) -> Option<DetectionNode> {
         };
         return Option::Some(node);
     }
-}
-
-pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a Value> {
-    if key.len() == 0 {
-        return Option::None;
-    }
-
-    let alias_config = configs::singleton().event_key_alias_config;
-    let event_key = match alias_config.get_event_key(key.to_string()) {
-        Some(alias_event_key) => alias_event_key,
-        None => key,
-    };
-
-    let mut ret: &Value = event_value;
-    for key in event_key.split(".") {
-        if ret.is_object() == false {
-            return Option::None;
-        }
-        ret = &ret[key];
-    }
-
-    return Option::Some(ret);
 }
 
 fn concat_selection_key(key_list: &Vec<String>) -> String {
@@ -261,7 +240,7 @@ impl LeafSelectionNode {
             return Option::None;
         }
 
-        return get_event_value(&self.key_list[0].to_string(), event_value);
+        return utils::get_event_value(&self.key_list[0].to_string(), event_value);
     }
 
     // LeafMatcherの一覧を取得する。

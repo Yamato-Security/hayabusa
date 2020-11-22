@@ -1,13 +1,9 @@
+use crate::detections::utils;
 use clap::{App, AppSettings, Arg, ArgMatches};
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::prelude::*;
 use std::sync::Once;
-
 #[derive(Clone)]
 pub struct SingletonReader {
-    pub regex: Vec<Vec<String>>,
-    pub whitelist: Vec<Vec<String>>,
     pub args: ArgMatches<'static>,
     pub event_key_alias_config: EventKeyAliasConfig,
 }
@@ -19,8 +15,6 @@ pub fn singleton() -> Box<SingletonReader> {
     unsafe {
         ONCE.call_once(|| {
             let singleton = SingletonReader {
-                regex: read_csv("regexes.txt"),
-                whitelist: read_csv("whitelist.txt"),
                 args: build_app().get_matches(),
                 event_key_alias_config: load_eventkey_alias(),
             };
@@ -79,7 +73,7 @@ impl EventKeyAliasConfig {
 fn load_eventkey_alias() -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
-    read_csv("config/eventkey_alias.txt")
+    utils::read_csv("config/eventkey_alias.txt")
         .into_iter()
         .for_each(|line| {
             if line.len() != 2 {
@@ -99,27 +93,4 @@ fn load_eventkey_alias() -> EventKeyAliasConfig {
         });
 
     return config;
-}
-
-fn read_csv(filename: &str) -> Vec<Vec<String>> {
-    let mut f = File::open(filename).expect("file not found!!!");
-    let mut contents: String = String::new();
-    let mut ret = vec![];
-    if f.read_to_string(&mut contents).is_err() {
-        return ret;
-    }
-
-    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
-    rdr.records().for_each(|r| {
-        if r.is_err() {
-            return;
-        }
-
-        let line = r.unwrap();
-        let mut v = vec![];
-        line.iter().for_each(|s| v.push(s.to_string()));
-        ret.push(v);
-    });
-
-    return ret;
 }
