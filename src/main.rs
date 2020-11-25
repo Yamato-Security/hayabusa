@@ -4,6 +4,7 @@ extern crate serde;
 use clap::{App, AppSettings, Arg};
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
+use std::fs;
 use std::{path::PathBuf, process};
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::toml;
@@ -32,7 +33,7 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("-d --directory 'event log files directory'"))
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
         .arg(Arg::from_usage("-u --update 'signature update'"))
-        .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
+        .arg(Arg::from_usage("-c --credits 'print credits infomation'"))
 }
 
 fn main() -> Result<(), DeError> {
@@ -43,7 +44,18 @@ fn main() -> Result<(), DeError> {
         parse_file(filepath);
     }
 
+    if args.is_present("credits") {
+        print_credits();
+    }
+
     Ok(())
+}
+
+fn print_credits() {
+    match fs::read_to_string("./credits.txt") {
+        Ok(contents) => println!("{}", contents),
+        Err(err) => println!("{}", err),
+    }
 }
 
 fn parse_file(filepath: &str) {
