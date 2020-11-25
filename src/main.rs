@@ -4,8 +4,7 @@ extern crate serde;
 use clap::{App, AppSettings, Arg};
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
-use std::fs;
-use std::{path::PathBuf, process};
+use std::{fs, path::PathBuf, process};
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::toml;
 
