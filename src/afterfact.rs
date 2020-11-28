@@ -3,6 +3,7 @@ use crate::detections::print;
 use chrono::{DateTime, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
+use std::process;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -11,12 +12,13 @@ pub struct CsvFormat<'a> {
     message: &'a str,
 }
 
-pub fn after_fact() -> Result<(), Box<dyn Error>> {
+pub fn after_fact() {
     if let Some(csv_path) = configs::singleton().args.value_of("csv-timeline") {
-        emit_csv(csv_path)?;
+        if let Err(err) = emit_csv(csv_path) {
+            println!("{}", err);
+            process::exit(1);
+        }
     }
-
-    Ok(())
 }
 
 fn emit_csv(path: &str) -> Result<(), Box<dyn Error>> {

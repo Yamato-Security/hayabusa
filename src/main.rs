@@ -20,9 +20,7 @@ fn main() -> Result<(), DeError> {
         parse_file(&filepath);
     }
 
-    if let Err(err) = after_fact() {
-        println!("{}", err);
-    }
+    after_fact();
 
     Ok(())
 }
