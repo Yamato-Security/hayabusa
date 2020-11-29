@@ -1,8 +1,11 @@
 extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
 use std::{fs, path::PathBuf, process};
+use yamato_event_analyzer::afterfact::after_fact;
 use yamato_event_analyzer::detections::configs;
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::omikuji::Omikuji;
@@ -11,6 +14,8 @@ fn main() -> Result<(), DeError> {
     if let Some(filepath) = configs::singleton().args.value_of("filepath") {
         parse_file(&filepath);
     }
+
+    after_fact();
 
     Ok(())
 }

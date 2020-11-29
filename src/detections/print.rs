@@ -115,6 +115,10 @@ impl Message {
             }
         }
     }
+
+    pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<String>> {
+        &self.map
+    }
 }
 
 #[test]
