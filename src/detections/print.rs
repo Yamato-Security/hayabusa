@@ -45,6 +45,10 @@ impl Message {
     pub fn debug(&self) {
         println!("{:?}", self.map);
     }
+
+    pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<String>> {
+        &self.map
+    }
 }
 
 #[test]

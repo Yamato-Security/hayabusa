@@ -1,3 +1,4 @@
+pub mod afterfact;
 pub mod detections;
 pub mod models;
 pub mod omikuji;
