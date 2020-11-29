@@ -83,29 +83,28 @@ impl Detection {
         // selection rule files and collect message
         let mut message = Message::new();
         selection_rules.iter_mut().for_each(|rule| {
-            &event_records
-                .iter()
-                .filter(|event_record| rule.select(event_record))
-                .for_each(|event_record| {
-                    let event_time = Detection::get_event_time(event_record);
-                    // TODO ログから日付がとれない場合に本当は時刻不明という感じで表示したい。
-                    // しかし、Messageクラスのinsertメソッドが、UTCクラスのインスタンスを必ず渡すようなインタフェースになっているので、
-                    // やむなくUtc.ymd(1970, 1, 1).and_hms(0, 0, 0)を渡している。
+            event_records.iter().for_each(|event_record| {
+                if !rule.select(event_record) {
+                    return;
+                }
 
-                    // Messageクラスのinsertメソッドの引数をDateTime<UTC>からOption<DateTime<UTC>>に変更して、
-                    // insertメソッドでOption::Noneが渡された場合に時刻不明だと分かるように表示させるような実装にした方がいいかも
-                    let utc_event_time = event_time
-                        .and_then(|datetime| {
-                            let utc = Utc.from_local_datetime(&datetime.naive_utc()).unwrap();
-                            return Option::Some(utc);
-                        })
-                        .or(Option::Some(Utc.ymd(1970, 1, 1).and_hms(0, 0, 0)));
-                    message.insert(utc_event_time.unwrap(), event_record.to_string())
-                });
+                let event_time = Detection::get_event_time(event_record);
+                let utc_event_time = event_time
+                    .and_then(|datetime| {
+                        let utc = Utc.from_local_datetime(&datetime.naive_utc()).unwrap();
+                        return Option::Some(utc);
+                    })
+                    .or(Option::None);
+                message.insert(
+                    utc_event_time,
+                    event_record,
+                    Some(rule.yaml["output"].as_str().unwrap().to_string()),
+                )
+            });
         });
 
         // output message
-        message.debug();
+        message.print();
     }
 
     fn get_event_time(event_record: &Value) -> Option<DateTime<FixedOffset>> {

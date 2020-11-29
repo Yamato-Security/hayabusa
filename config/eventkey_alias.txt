@@ -2,6 +2,7 @@ alias,event_key
 EventID,Event.System.EventID
 Channel,Event.System.Channel
 CommandLine,Event.EventData.CommandLine
+ParentProcessName,Event.EventData.ParentProcessName
 Signed,Event.EventData.Signed
 ProcessName,Event.EventData.ProcessName
 AccessMask,Event.EventData.AccessMask
@@ -13,3 +14,6 @@ ImagePath,Event.EventData.ImagePath
 ContextInfo,Event.EventData.ContextInfo
 Path,Event.EventData.Path
 ScriptBlockText,Event.EventData.ScriptBlockText#Name
+MemberName,Event.EventData.SubjectUserName
+MemberSid,Event.EventData.SubjectUserSid
+TargetSid,Event.EventData.TargetSid

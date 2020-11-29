@@ -8,12 +8,7 @@ use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::omikuji::Omikuji;
 
 fn main() -> Result<(), DeError> {
-    let filepath: String = configs::singleton()
-        .args
-        .value_of("filepath")
-        .unwrap_or("")
-        .to_string();
-    if filepath != "" {
+    if let Some(filepath) = configs::singleton().args.value_of("filepath") {
         parse_file(&filepath);
     }
 

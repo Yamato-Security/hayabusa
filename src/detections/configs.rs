@@ -53,7 +53,7 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct EventKeyAliasConfig {
     key_to_eventkey: HashMap<String, String>,
 }
