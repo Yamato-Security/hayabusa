@@ -85,7 +85,7 @@ impl RuleNode {
         let mut errmsgs: Vec<String> = vec![];
 
         // field check
-        if self.yaml["output"].as_str().is_none() {
+        if self.yaml["output"].as_str().unwrap_or("").is_empty() {
             errmsgs.push("Cannot find required key. key:output".to_string());
         }
 
