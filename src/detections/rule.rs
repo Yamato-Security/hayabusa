@@ -82,11 +82,27 @@ pub struct RuleNode {
 
 impl RuleNode {
     pub fn init(&mut self) -> Result<(), Vec<String>> {
-        if self.detection.is_none() {
-            return Result::Ok(());
+        let mut errmsgs: Vec<String> = vec![];
+
+        // field check
+        if self.yaml["output"].as_str().is_none() {
+            errmsgs.push("Cannot find required key. key:output".to_string());
         }
 
-        return self.detection.as_mut().unwrap().init();
+        // detection node initialization
+        self.detection.as_mut().and_then(|detection| {
+            let detection_result = detection.init();
+            if detection_result.is_err() {
+                errmsgs.extend(detection_result.unwrap_err());
+            }
+            return Option::Some(detection);
+        });
+
+        if errmsgs.is_empty() {
+            return Result::Ok(());
+        } else {
+            return Result::Err(errmsgs);
+        }
     }
 
     pub fn select(&mut self, event_record: &Value) -> bool {

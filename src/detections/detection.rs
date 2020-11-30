@@ -88,33 +88,14 @@ impl Detection {
                     return;
                 }
 
-                let event_time = Detection::get_event_time(event_record);
-                let utc_event_time = event_time
-                    .and_then(|datetime| {
-                        let utc = Utc.from_local_datetime(&datetime.naive_utc()).unwrap();
-                        return Option::Some(utc);
-                    })
-                    .or(Option::None);
                 message.insert(
-                    utc_event_time,
                     event_record,
-                    Some(rule.yaml["output"].as_str().unwrap().to_string()),
+                    rule.yaml["output"].as_str().unwrap_or("").to_string(),
                 )
             });
         });
 
         // output message
         message.print();
-    }
-
-    fn get_event_time(event_record: &Value) -> Option<DateTime<FixedOffset>> {
-        let system_time =
-            &event_record["Event"]["System"]["TimeCreated"]["#attributes"]["SystemTime"];
-        let system_time_str = system_time.as_str().unwrap_or("");
-        if system_time_str.is_empty() {
-            return Option::None;
-        }
-
-        return DateTime::parse_from_rfc3339(system_time_str).ok();
     }
 }

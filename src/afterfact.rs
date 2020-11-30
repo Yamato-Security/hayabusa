@@ -1,6 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 use std::error::Error;
 use std::process;
@@ -37,39 +37,50 @@ fn emit_csv(path: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-use serde_json::Value;
-use std::fs::{read_to_string, remove_file};
-use std::io::Read;
+#[cfg(test)]
+mod tests {
 
-#[test]
-fn test_emit_csv() {
-    {
-        let mut messages = print::MESSAGES.lock().unwrap();
-        let poke = Utc.ymd(1996, 2, 27).and_hms(1, 5, 1);
-        let json_str = r#"
+    use crate::afterfact::emit_csv;
+    use crate::detections::print;
+    use serde_json::Value;
+    use std::fs::{read_to_string, remove_file};
+
+    #[test]
+    fn test_emit_csv() {
+        {
+            let mut messages = print::MESSAGES.lock().unwrap();
+            let json_str = r##"
             {
                 "Event": {
                     "EventData": {
                         "CommandLine": "hoge"
+                    },
+                    "System": {
+                        "TimeCreated": {
+                            "#attributes":{
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
                     }
                 }
             }
-        "#;
-        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        "##;
+            let event_record: Value = serde_json::from_str(json_str).unwrap();
 
-        messages.insert(Some(poke), &event_record, Some("pokepoke".to_string()));
-    }
+            messages.insert(&event_record, "pokepoke".to_string());
+        }
 
-    let expect = "Time,Message
+        let expect = "Time,Message
 1996-02-27T01:05:01Z,pokepoke
 ";
 
-    assert!(emit_csv(&"./test_emit_csv.csv".to_string()).is_ok());
+        assert!(emit_csv(&"./test_emit_csv.csv".to_string()).is_ok());
 
-    match read_to_string("./test_emit_csv.csv") {
-        Err(_) => panic!("Failed to open file"),
-        Ok(s) => assert_eq!(s, expect),
-    };
+        match read_to_string("./test_emit_csv.csv") {
+            Err(_) => panic!("Failed to open file"),
+            Ok(s) => assert_eq!(s, expect),
+        };
 
-    assert!(remove_file("./test_emit_csv.csv").is_ok());
+        assert!(remove_file("./test_emit_csv.csv").is_ok());
+    }
 }
