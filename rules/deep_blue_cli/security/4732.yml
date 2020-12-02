@@ -1,0 +1,18 @@
+title: A member was added to a security-enabled local group.
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: Security
+        EventID: 4732
+        TargetUserName: Administrators
+    # condition: selection
+falsepositives:
+    - unknown
+level: low
+output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

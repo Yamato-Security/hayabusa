@@ -1,4 +1,0 @@
-[rule]
-severity = "high"
-name = "4104"
-message = "Excute Remote Command"

@@ -1,0 +1,19 @@
+title: An Operation was attempted on a privileged object
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: Security
+        EventID: 4674
+        ProcessName: '(?i)C:\WINDOWS\SYSTEM32\SERVICE.EXE' # (?i) means case insesitive for Rust Regex
+        AccessMask: '%%1539'
+    # condition: selection
+falsepositives:
+    - unknown
+level: medium
+output: 'Possible Hidden Service Attempt¥nUser requested to modify the Dynamic Access Control (DAC) permissions of a service, possibly to hide it from view.¥nUser: %SubjectUserName%¥nTarget service:%ObjectName¥nDesired Access:WRITE_DAC'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

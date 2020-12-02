@@ -1,0 +1,17 @@
+title: Sensitive Privilede Use (Mimikatz)
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: Security
+        EventID: 4673
+    # condition: selection | count(EventID) >  4
+falsepositives:
+    - unknown
+level: medium
+output: 'Sensitive Privilege Use Exceeds Threshold¥n Potentially indicative of Mimikatz, multiple sensitive priviledge calls have been made.¥nUserName:SubjectUserName% Domain Name:%DomainName%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

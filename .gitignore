@@ -1,3 +1,5 @@
 /target
 /samples
 *.test
+/.vscode/
+.DS_Store

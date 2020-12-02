@@ -1,0 +1,22 @@
+title: A service was installed in the system
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: System
+        EventID: 7045
+        ServiceName:
+            regexes: ./regexes.txt
+        ImagePath:
+            min_length: 1000
+            whitelist: ./whitelist.txt
+    condition: selection
+falsepositives:
+    - unknown
+level: low
+output: 'New Service Created¥n%ImagePath¥nService name: %ServiceName%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

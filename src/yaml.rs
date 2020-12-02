@@ -8,12 +8,12 @@ use std::path::{Path, PathBuf};
 use yaml_rust::YamlLoader;
 
 pub struct ParseYaml {
-    pub rules: Vec<yaml_rust::Yaml>,
+    pub files: Vec<yaml_rust::Yaml>,
 }
 
 impl ParseYaml {
     pub fn new() -> ParseYaml {
-        ParseYaml { rules: Vec::new() }
+        ParseYaml { files: Vec::new() }
     }
 
     pub fn read_file(&self, path: PathBuf) -> Result<String, String> {
@@ -39,7 +39,7 @@ impl ParseYaml {
                             let docs = YamlLoader::load_from_str(&s).unwrap();
                             for i in docs {
                                 if i["enabled"].as_bool().unwrap() {
-                                    &self.rules.push(i);
+                                    &self.files.push(i);
                                 }
                             }
                         }
@@ -64,7 +64,7 @@ mod tests {
     fn test_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         &yaml.read_dir("test_files/rules/yaml/".to_string());
-        for rule in yaml.rules {
+        for rule in yaml.files {
             if rule["title"].as_str().unwrap() == "Sysmon Check command lines" {
                 assert_eq!(
                     "*",

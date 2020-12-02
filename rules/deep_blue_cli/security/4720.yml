@@ -1,0 +1,17 @@
+title: A user account was created.
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: Security
+        EventID: 4720
+    # condition: selection
+falsepositives:
+    - unknown
+level: low
+output: 'New User Created UserName:%TargetUserName% SID:%TargetSid%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

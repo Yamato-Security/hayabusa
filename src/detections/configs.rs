@@ -1,13 +1,11 @@
+use crate::detections::utils;
 use clap::{App, AppSettings, Arg, ArgMatches};
-use std::fs::File;
-use std::io::prelude::*;
+use std::collections::HashMap;
 use std::sync::Once;
-
 #[derive(Clone)]
 pub struct SingletonReader {
-    pub regex: Vec<Vec<String>>,
-    pub whitelist: Vec<Vec<String>>,
     pub args: ArgMatches<'static>,
+    pub event_key_alias_config: EventKeyAliasConfig,
 }
 
 pub fn singleton() -> Box<SingletonReader> {
@@ -17,9 +15,8 @@ pub fn singleton() -> Box<SingletonReader> {
     unsafe {
         ONCE.call_once(|| {
             let singleton = SingletonReader {
-                regex: read_csv("regexes.txt"),
-                whitelist: read_csv("whitelist.txt"),
                 args: build_app().get_matches(),
+                event_key_alias_config: load_eventkey_alias(),
             };
 
             SINGLETON = Some(Box::new(singleton));
@@ -56,25 +53,44 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
 }
 
-fn read_csv(filename: &str) -> Vec<Vec<String>> {
-    let mut f = File::open(filename).expect("file not found!!!");
-    let mut contents: String = String::new();
-    let mut ret = vec![];
-    if f.read_to_string(&mut contents).is_err() {
-        return ret;
+#[derive(Debug, Clone)]
+pub struct EventKeyAliasConfig {
+    key_to_eventkey: HashMap<String, String>,
+}
+
+impl EventKeyAliasConfig {
+    pub fn new() -> EventKeyAliasConfig {
+        return EventKeyAliasConfig {
+            key_to_eventkey: HashMap::new(),
+        };
     }
 
-    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
-    rdr.records().for_each(|r| {
-        if r.is_err() {
+    pub fn get_event_key(&self, alias: String) -> Option<&String> {
+        return self.key_to_eventkey.get(&alias);
+    }
+}
+
+fn load_eventkey_alias() -> EventKeyAliasConfig {
+    let mut config = EventKeyAliasConfig::new();
+
+    let read_result = utils::read_csv("config/eventkey_alias.txt");
+    // eventkey_aliasが読み込めなかったらエラーで終了とする。
+    read_result.unwrap().into_iter().for_each(|line| {
+        if line.len() != 2 {
             return;
         }
 
-        let line = r.unwrap();
-        let mut v = vec![];
-        line.iter().for_each(|s| v.push(s.to_string()));
-        ret.push(v);
+        let empty = &"".to_string();
+        let alias = line.get(0).unwrap_or(empty);
+        let event_key = line.get(1).unwrap_or(empty);
+        if alias.len() == 0 || event_key.len() == 0 {
+            return;
+        }
+
+        config
+            .key_to_eventkey
+            .insert(alias.to_owned(), event_key.to_owned());
     });
 
-    return ret;
+    return config;
 }

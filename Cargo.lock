@@ -1192,6 +1192,7 @@ dependencies = [
  "evtx",
  "flate2",
  "lazy_static",
+ "linked-hash-map",
  "quick-xml 0.17.2",
  "regex",
  "serde",

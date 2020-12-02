@@ -1,0 +1,21 @@
+title: The start type of the Windows Event Log service was changed from auto start to disabled
+description: hogehoge
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: System
+        EventID: 7040
+        param1: 'Windows Event Log'
+        param2: 
+          - "disabled"
+          - "auto start"
+    condition: selection
+falsepositives:
+    - unknown
+level: low
+output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8
