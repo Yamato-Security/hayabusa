@@ -1,7 +1,7 @@
 extern crate chrono;
 extern crate csv;
 
-use crate::detections::print::Message;
+use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::yaml::ParseYaml;
@@ -81,7 +81,7 @@ impl Detection {
             .collect();
 
         // selection rule files and collect message
-        let mut message = Message::new();
+        let mut message = MESSAGES.lock().unwrap();
         selection_rules.iter_mut().for_each(|rule| {
             event_records.iter().for_each(|event_record| {
                 if !rule.select(event_record) {
@@ -94,8 +94,5 @@ impl Detection {
                 )
             });
         });
-
-        // output message
-        message.print();
     }
 }
