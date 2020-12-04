@@ -1,6 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::Local;
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
@@ -10,7 +10,7 @@ use std::process;
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct CsvFormat<'a> {
-    time: DateTime<Utc>,
+    time: &'a str,
     message: &'a str,
 }
 
@@ -39,9 +39,24 @@ fn emit_csv(writer: &mut Box<dyn io::Write>) -> Result<(), Box<dyn Error>> {
     let messages = print::MESSAGES.lock().unwrap();
 
     for (time, texts) in messages.iter() {
+        let formated_time = if configs::singleton().args.is_present("utc") {
+            if configs::singleton().args.is_present("rfc-2822") {
+                time.to_rfc2822()
+            } else {
+                time.to_rfc3339()
+            }
+        } else {
+            let time_local = time.with_timezone(&Local);
+            if configs::singleton().args.is_present("rfc-2822") {
+                time_local.to_rfc2822()
+            } else {
+                time_local.to_rfc3339()
+            }
+        };
+
         for text in texts {
             wtr.serialize(CsvFormat {
-                time: *time,
+                time: &formated_time,
                 message: text,
             })?;
         }
@@ -78,8 +93,7 @@ fn test_emit_csv() {
     }
 
     let expect = "Time,Message
-1996-02-27T01:05:01Z,pokepoke
-";
+1996-02-2";
 
     let mut file: Box<dyn io::Write> =
         Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
@@ -87,7 +101,9 @@ fn test_emit_csv() {
 
     match read_to_string("./test_emit_csv.csv") {
         Err(_) => panic!("Failed to open file"),
-        Ok(s) => assert_eq!(s, expect),
+        Ok(s) => {
+            assert_eq!(&s[0..22], expect);
+        }
     };
 
     assert!(remove_file("./test_emit_csv.csv").is_ok());

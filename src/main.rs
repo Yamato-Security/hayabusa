@@ -1,6 +1,4 @@
 extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 
 use evtx::EvtxParser;
 use quick_xml::de::DeError;
