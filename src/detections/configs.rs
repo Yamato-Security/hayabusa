@@ -47,7 +47,7 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("--human-readable-timeline=[HUMAN_READABLE_TIMELINE] 'human readable timeline'"))
         .arg(Arg::from_usage("-l --lang=[LANG] 'output language'"))
         .arg(Arg::from_usage("-t --timezone=[TIMEZONE] 'timezone setting'"))
-        .arg(Arg::from_usage("-d --directory 'event log files directory'"))
+        .arg(Arg::from_usage("-d --directory=[DIRECTORY] 'event log files directory'"))
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
         .arg(Arg::from_usage("-u --update 'signature update'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
