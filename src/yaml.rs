@@ -47,7 +47,7 @@ impl ParseYaml {
                     };
                 }
                 if entry.file_type().ok()?.is_dir() {
-                    self.read_dir(entry.path());
+                    let _ = self.read_dir(entry.path());
                 }
                 Some("")
             })
