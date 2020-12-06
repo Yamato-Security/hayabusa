@@ -13,7 +13,7 @@ ServiceName,Event.EventData.ServiceName
 ImagePath,Event.EventData.ImagePath
 ContextInfo,Event.EventData.ContextInfo
 Path,Event.EventData.Path
-ScriptBlockText,Event.EventData.ScriptBlockText#Name
+ScriptBlockText,Event.EventData.ScriptBlockText
 MemberName,Event.EventData.SubjectUserName
 MemberSid,Event.EventData.SubjectUserSid
 TargetSid,Event.EventData.TargetSid
