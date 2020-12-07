@@ -17,6 +17,10 @@ fn main() -> Result<(), DeError> {
         detect_files(evtx_files);
     }
 
+    if configs::singleton().args.is_present("credits") {
+        print_credits();
+    }
+
     after_fact();
 
     Ok(())
@@ -51,6 +55,13 @@ fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
     }
 
     return ret;
+}
+
+fn print_credits() {
+    match fs::read_to_string("./credits.txt") {
+        Ok(contents) => println!("{}", contents),
+        Err(err) => println!("{}", err),
+    }
 }
 
 fn detect_files(evtx_files: Vec<PathBuf>) {
