@@ -1,6 +1,6 @@
 title: Sysmon Check command lines
 description: hogehoge
-enabled: true
+enabled: truea
 author: Yea
 logsource: 
     product: windows
@@ -8,7 +8,7 @@ detection:
     selection:
         EventLog: Sysmon
         EventID: 1
-        CommandLine: '*'
+        CommandLine: %
     condition: selection
 falsepositives:
     - unknown
