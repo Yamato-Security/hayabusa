@@ -1,6 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
-use chrono::Local;
+use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
@@ -39,30 +39,34 @@ fn emit_csv(writer: &mut Box<dyn io::Write>) -> Result<(), Box<dyn Error>> {
     let messages = print::MESSAGES.lock().unwrap();
 
     for (time, texts) in messages.iter() {
-        let formated_time = if configs::singleton().args.is_present("utc") {
-            if configs::singleton().args.is_present("rfc-2822") {
-                time.to_rfc2822()
-            } else {
-                time.to_rfc3339()
-            }
-        } else {
-            let time_local = time.with_timezone(&Local);
-            if configs::singleton().args.is_present("rfc-2822") {
-                time_local.to_rfc2822()
-            } else {
-                time_local.to_rfc3339()
-            }
-        };
-
         for text in texts {
             wtr.serialize(CsvFormat {
-                time: &formated_time,
+                time: &format_time(time),
                 message: text,
             })?;
         }
     }
     wtr.flush()?;
     Ok(())
+}
+
+fn format_time(time: &DateTime<Utc>) -> String {
+    if configs::singleton().args.is_present("utc") {
+        format_rfc(time)
+    } else {
+        format_rfc(&time.with_timezone(&Local))
+    }
+}
+
+fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    if configs::singleton().args.is_present("rfc-2822") {
+        return time.to_rfc2822();
+    } else {
+        return time.to_rfc3339();
+    }
 }
 
 #[test]
