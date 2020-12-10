@@ -1,4 +1,3 @@
-extern crate chrono;
 extern crate csv;
 
 use std::path::PathBuf;

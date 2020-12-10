@@ -1,15 +1,13 @@
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
 
-use quick_xml::de::DeError;
 use std::{fs, path::PathBuf};
 use yamato_event_analyzer::afterfact::after_fact;
 use yamato_event_analyzer::detections::configs;
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::omikuji::Omikuji;
 
-fn main() -> Result<(), DeError> {
+fn main() {
     if let Some(filepath) = configs::singleton().args.value_of("filepath") {
         detect_files(vec![PathBuf::from(filepath)]);
     } else if let Some(directory) = configs::singleton().args.value_of("directory") {
@@ -22,8 +20,6 @@ fn main() -> Result<(), DeError> {
     }
 
     after_fact();
-
-    Ok(())
 }
 
 fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
