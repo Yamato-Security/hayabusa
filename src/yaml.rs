@@ -36,14 +36,21 @@ impl ParseYaml {
                 if entry.file_type().ok()?.is_file() {
                     match self.read_file(entry.path()) {
                         Ok(s) => {
-                            let docs = YamlLoader::load_from_str(&s).unwrap();
-                            for i in docs {
-                                if i["enabled"].as_bool().unwrap() {
-                                    &self.files.push(i);
+                            match YamlLoader::load_from_str(&s) {
+                                Ok(docs) => {
+                                    for i in docs {
+                                        // If there is no "enabled" it does not load
+                                        if i["enabled"].as_bool().unwrap_or(false) {
+                                            &self.files.push(i);
+                                        }
+                                    }
                                 }
+                                Err(e) => eprintln!("fail to read file\n{}\n{} ", s, e),
                             }
                         }
-                        Err(e) => panic!("fail to read file: {}", e),
+                        Err(e) => {
+                            eprintln!("fail to read file: {}\n{} ", entry.path().display(), e)
+                        }
                     };
                 }
                 if entry.file_type().ok()?.is_dir() {
@@ -59,24 +66,39 @@ impl ParseYaml {
 mod tests {
 
     use crate::yaml;
+    use std::path::Path;
+    use yaml_rust::YamlLoader;
+
+    #[test]
+    fn test_read_dir_yaml() {
+        let mut yaml = yaml::ParseYaml::new();
+        &yaml.read_dir("test_files/rules/yaml/".to_string());
+        assert_ne!(yaml.files.len(), 0);
+    }
 
     #[test]
     fn test_read_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
-        &yaml.read_dir("test_files/rules/yaml/".to_string());
-        for rule in yaml.files {
-            if rule["title"].as_str().unwrap() == "Sysmon Check command lines" {
+        let yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/yaml/1.yml");
+        let ret = yaml.read_file(path.to_path_buf()).unwrap();
+        let rule = YamlLoader::load_from_str(&ret).unwrap();
+        for i in rule {
+            if i["title"].as_str().unwrap() == "Sysmon Check command lines" {
                 assert_eq!(
                     "*",
-                    rule["detection"]["selection"]["CommandLine"]
-                        .as_str()
-                        .unwrap()
+                    i["detection"]["selection"]["CommandLine"].as_str().unwrap()
                 );
-                assert_eq!(
-                    1,
-                    rule["detection"]["selection"]["EventID"].as_i64().unwrap()
-                );
+                assert_eq!(1, i["detection"]["selection"]["EventID"].as_i64().unwrap());
             }
         }
+    }
+
+    #[test]
+    fn test_failed_read_yaml() {
+        let yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/yaml/error.yml");
+        let ret = yaml.read_file(path.to_path_buf()).unwrap();
+        let rule = YamlLoader::load_from_str(&ret);
+        assert_eq!(rule.is_err(), true);
     }
 }

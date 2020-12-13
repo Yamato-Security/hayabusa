@@ -6,14 +6,14 @@ logsource:
     product: windows
 detection:
     selection:
-        Channel: PowerShell
+        Channel: Microsoft-Windows-PowerShell/Operational
         EventID: 4104
         Path: null
-        ScriptBlockText: null
+        ScriptBlockText: '.+'
     # condition: selection
 falsepositives:
     - unknown
 level: medium
-output: 'command=%CommandLine%'
+output: 'command=%ScriptBlockText%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+updated_date: 2020/11/8
