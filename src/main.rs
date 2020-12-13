@@ -16,7 +16,6 @@ fn main() {
     } else if configs::singleton().args.is_present("credits") {
         print_credits();
     }
-
 }
 
 fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
@@ -60,7 +59,7 @@ fn print_credits() {
 fn detect_files(evtx_files: Vec<PathBuf>) {
     let mut detection = detection::Detection::new();
     &detection.start(evtx_files);
-  
+
     after_fact();
 }
 

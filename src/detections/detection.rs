@@ -1,13 +1,13 @@
 extern crate csv;
 
 use crate::detections::print::MESSAGES;
-use std::path::PathBuf;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::yaml::ParseYaml;
 use evtx::err;
 use evtx::{EvtxParser, SerializedEvtxRecord};
 use serde_json::{Error, Value};
+use std::path::PathBuf;
 
 const DIRPATH_RULES: &str = "rules";
 
