@@ -48,7 +48,7 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("--rfc-2822 'output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'"))
         .arg(Arg::from_usage("-l --lang=[LANG] 'output language'"))
         .arg(Arg::from_usage("-u --utc 'output time in UTC format(default: local time)'"))
-        .arg(Arg::from_usage("-d --directory 'event log files directory'"))
+        .arg(Arg::from_usage("-d --directory=[DIRECTORY] 'event log files directory'"))
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
 }
