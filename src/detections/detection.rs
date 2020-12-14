@@ -1,15 +1,13 @@
 extern crate csv;
 
-use std::path::PathBuf;
-
-use crate::detections::print::Message;
+use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::yaml::ParseYaml;
-
 use evtx::err;
 use evtx::{EvtxParser, SerializedEvtxRecord};
 use serde_json::{Error, Value};
+use std::path::PathBuf;
 
 const DIRPATH_RULES: &str = "rules";
 
@@ -37,7 +35,7 @@ impl Detection {
         let evtx_records = self.serialize_evtx_to_jsons(evtx_files);
 
         // select rule files and collect message
-        let mut message = Message::new();
+        let mut message = MESSAGES.lock().unwrap();
         selection_rules.iter_mut().for_each(|rule| {
             evtx_records.iter().for_each(|event_record| {
                 if !rule.select(event_record) {

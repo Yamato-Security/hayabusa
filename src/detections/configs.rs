@@ -45,11 +45,11 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("--attackhunt=[ATTACK_HUNT] 'Attack Hunt'"))
         .arg(Arg::from_usage("--csv-timeline=[CSV_TIMELINE] 'csv output timeline'"))
         .arg(Arg::from_usage("--human-readable-timeline=[HUMAN_READABLE_TIMELINE] 'human readable timeline'"))
+        .arg(Arg::from_usage("--rfc-2822 'output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'"))
         .arg(Arg::from_usage("-l --lang=[LANG] 'output language'"))
-        .arg(Arg::from_usage("-t --timezone=[TIMEZONE] 'timezone setting'"))
+        .arg(Arg::from_usage("-u --utc 'output time in UTC format(default: local time)'"))
         .arg(Arg::from_usage("-d --directory=[DIRECTORY] 'event log files directory'"))
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
-        .arg(Arg::from_usage("-u --update 'signature update'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
 }
 

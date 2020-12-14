@@ -13,13 +13,9 @@ fn main() {
     } else if let Some(directory) = configs::singleton().args.value_of("directory") {
         let evtx_files = collect_evtxfiles(&directory);
         detect_files(evtx_files);
-    }
-
-    if configs::singleton().args.is_present("credits") {
+    } else if configs::singleton().args.is_present("credits") {
         print_credits();
     }
-
-    after_fact();
 }
 
 fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
@@ -63,6 +59,8 @@ fn print_credits() {
 fn detect_files(evtx_files: Vec<PathBuf>) {
     let mut detection = detection::Detection::new();
     &detection.start(evtx_files);
+
+    after_fact();
 }
 
 fn _output_with_omikuji(omikuji: Omikuji) {
