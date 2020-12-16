@@ -15,4 +15,4 @@ falsepositives:
 level: low
 output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+updated_date: 2020/11/8

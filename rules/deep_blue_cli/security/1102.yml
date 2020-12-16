@@ -12,6 +12,9 @@ detection:
 falsepositives:
     - unknown
 level: medium
-output: 'Audit Log Clear¥n The Audit log was cleared.¥m%user_data.log_file_cleared%%user_data.subject_user_name%'
+output: |
+    Audit Log Clear 
+    The Audit log was cleared.
+    Security ID: %LogFileCleared%%LogFileClearedSubjectUserName%
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+updated_date: 2020/11/8
