@@ -11,6 +11,7 @@ use std::process;
 #[serde(rename_all = "PascalCase")]
 pub struct CsvFormat<'a> {
     time: &'a str,
+    title: &'a str,
     message: &'a str,
 }
 
@@ -38,11 +39,12 @@ fn emit_csv(writer: &mut Box<dyn io::Write>) -> Result<(), Box<dyn Error>> {
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
     let messages = print::MESSAGES.lock().unwrap();
 
-    for (time, texts) in messages.iter() {
-        for text in texts {
+    for (time, detect_infos) in messages.iter() {
+        for detect_info in detect_infos {
             wtr.serialize(CsvFormat {
                 time: &format_time(time),
-                message: text,
+                title: &detect_info.title,
+                message: &detect_info.detail,
             })?;
         }
     }
@@ -93,10 +95,10 @@ fn test_emit_csv() {
         }
     "##;
         let event: Value = serde_json::from_str(val).unwrap();
-        messages.insert(&event, "pokepoke".to_string());
+        messages.insert(&event, "test".to_string(), "pokepoke".to_string());
     }
 
-    let expect = "Time,Message
+    let expect = "Time,Title,Message
 1996-02-2";
 
     let mut file: Box<dyn io::Write> =
@@ -106,7 +108,7 @@ fn test_emit_csv() {
     match read_to_string("./test_emit_csv.csv") {
         Err(_) => panic!("Failed to open file"),
         Ok(s) => {
-            assert_eq!(&s[0..22], expect);
+            assert_eq!(&s[0..28], expect);
         }
     };
 

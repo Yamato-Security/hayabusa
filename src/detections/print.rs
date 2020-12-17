@@ -11,7 +11,13 @@ use std::sync::Mutex;
 
 #[derive(Debug)]
 pub struct Message {
-    map: BTreeMap<DateTime<Utc>, Vec<String>>,
+    map: BTreeMap<DateTime<Utc>, Vec<DetectInfo>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DetectInfo {
+    pub title: String,
+    pub detail: String,
 }
 
 lazy_static! {
@@ -20,12 +26,12 @@ lazy_static! {
 
 impl Message {
     pub fn new() -> Self {
-        let messages: BTreeMap<DateTime<Utc>, Vec<String>> = BTreeMap::new();
+        let messages: BTreeMap<DateTime<Utc>, Vec<DetectInfo>> = BTreeMap::new();
         Message { map: messages }
     }
 
     /// メッセージを設定
-    pub fn insert(&mut self, event_record: &Value, output: String) {
+    pub fn insert(&mut self, event_record: &Value, event_title: String, output: String) {
         if output.is_empty() {
             return;
         }
@@ -33,13 +39,17 @@ impl Message {
         let message = &self.parse_message(event_record, output);
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time = Message::get_event_time(event_record).unwrap_or(default_time);
+        let detect_info = DetectInfo {
+            title: event_title,
+            detail: message.to_string(),
+        };
 
         match self.map.get_mut(&time) {
             Some(v) => {
-                v.push(message.to_string());
+                v.push(detect_info);
             }
             None => {
-                let m = vec![message.to_string(); 1];
+                let m = vec![detect_info; 1];
                 self.map.insert(time, m);
             }
         }
@@ -84,9 +94,9 @@ impl Message {
     }
 
     /// メッセージを返す
-    pub fn get(&self, time: DateTime<Utc>) -> Vec<String> {
+    pub fn get(&self, time: DateTime<Utc>) -> Vec<DetectInfo> {
         match self.map.get(&time) {
-            Some(v) => (&v).to_vec(),
+            Some(v) => v.to_vec(),
             None => Vec::new(),
         }
     }
@@ -98,14 +108,14 @@ impl Message {
 
     /// 最後に表示を行う
     pub fn print(&self) {
-        for (key, values) in self.map.iter() {
-            for value in values.iter() {
-                println!("{} : {}", key, value);
+        for (key, detect_infos) in self.map.iter() {
+            for detect_info in detect_infos.iter() {
+                println!("{} <{}> {}", key, detect_info.title, detect_info.detail);
             }
         }
     }
 
-    pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<String>> {
+    pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<DetectInfo>> {
         &self.map
     }
 
@@ -157,7 +167,11 @@ mod tests {
         }
     "##;
         let event_record_1: Value = serde_json::from_str(json_str_1).unwrap();
-        message.insert(&event_record_1, "CommandLine1: %CommandLine%".to_string());
+        message.insert(
+            &event_record_1,
+            "test1".to_string(),
+            "CommandLine1: %CommandLine%".to_string(),
+        );
 
         let json_str_2 = r##"
     {
@@ -176,7 +190,11 @@ mod tests {
     }
     "##;
         let event_record_2: Value = serde_json::from_str(json_str_2).unwrap();
-        message.insert(&event_record_2, "CommandLine2: %CommandLine%".to_string());
+        message.insert(
+            &event_record_2,
+            "test2".to_string(),
+            "CommandLine2: %CommandLine%".to_string(),
+        );
 
         let json_str_3 = r##"
     {
@@ -195,7 +213,11 @@ mod tests {
     }
     "##;
         let event_record_3: Value = serde_json::from_str(json_str_3).unwrap();
-        message.insert(&event_record_3, "CommandLine3: %CommandLine%".to_string());
+        message.insert(
+            &event_record_3,
+            "test3".to_string(),
+            "CommandLine3: %CommandLine%".to_string(),
+        );
 
         let json_str_4 = r##"
     {
@@ -207,11 +229,15 @@ mod tests {
     }
     "##;
         let event_record_4: Value = serde_json::from_str(json_str_4).unwrap();
-        message.insert(&event_record_4, "CommandLine4: %CommandLine%".to_string());
+        message.insert(
+            &event_record_4,
+            "test4".to_string(),
+            "CommandLine4: %CommandLine%".to_string(),
+        );
 
         let display = format!("{}", format_args!("{:?}", message));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [\"CommandLine4: hoge\"], 1996-02-27T01:05:01Z: [\"CommandLine1: hoge\", \"CommandLine2: hoge\"], 2000-01-21T09:06:01Z: [\"CommandLine3: hoge\"]} }";
+        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { title: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { title: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { title: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { title: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
         assert_eq!(display, expect);
     }
 }
