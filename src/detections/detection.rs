@@ -48,9 +48,6 @@ impl Detection {
                 )
             });
         });
-
-        // output message
-        message.print();
     }
 
     // serialize evtx files to json
