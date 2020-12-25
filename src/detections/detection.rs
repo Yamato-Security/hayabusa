@@ -44,6 +44,7 @@ impl Detection {
 
                 message.insert(
                     event_record,
+                    rule.yaml["title"].as_str().unwrap_or("").to_string(),
                     rule.yaml["output"].as_str().unwrap_or("").to_string(),
                 )
             });
