@@ -5,7 +5,7 @@ use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::yaml::ParseYaml;
 use evtx::err;
-use evtx::{EvtxParser, SerializedEvtxRecord};
+use evtx::{EvtxParser, SerializedEvtxRecord, ParserSettings};
 use serde_json::{Error, Value};
 use std::path::PathBuf;
 
@@ -66,6 +66,9 @@ impl Detection {
                 }
             })
             .map(|mut cur| {
+                let mut parse_config = ParserSettings::default();
+                parse_config = parse_config.separate_json_attributes(true);
+                cur = cur.with_configuration(parse_config);
                 let ret: Vec<err::Result<SerializedEvtxRecord<String>>> =
                     cur.records_json().collect();
                 return ret;
