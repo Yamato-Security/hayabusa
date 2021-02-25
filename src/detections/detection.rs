@@ -5,7 +5,7 @@ use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::yaml::ParseYaml;
 use evtx::err;
-use evtx::{EvtxParser, SerializedEvtxRecord, ParserSettings};
+use evtx::{EvtxParser, ParserSettings, SerializedEvtxRecord};
 use serde_json::{Error, Value};
 use std::path::PathBuf;
 
