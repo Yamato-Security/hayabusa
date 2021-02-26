@@ -120,8 +120,7 @@ impl Message {
     }
 
     fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
-        let system_time =
-            &event_record["Event"]["System"]["TimeCreated"]["#attributes"]["SystemTime"];
+        let system_time = &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"];
         let system_time_str = system_time.as_str().unwrap_or("");
         if system_time_str.is_empty() {
             return Option::None;
