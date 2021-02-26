@@ -156,10 +156,8 @@ mod tests {
                     "CommandLine": "hoge"
                 },
                 "System": {
-                    "TimeCreated": {
-                        "#attributes":{
-                            "SystemTime": "1996-02-27T01:05:01Z"
-                        }
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
                     }
                 }
             }
@@ -179,10 +177,8 @@ mod tests {
                 "CommandLine": "hoge"
             },
             "System": {
-                "TimeCreated": {
-                    "#attributes":{
-                        "SystemTime": "1996-02-27T01:05:01Z"
-                    }
+                "TimeCreated_attributes": {
+                    "SystemTime": "1996-02-27T01:05:01Z"
                 }
             }
         }
@@ -202,10 +198,8 @@ mod tests {
                 "CommandLine": "hoge"
             },
             "System": {
-                "TimeCreated": {
-                    "#attributes":{
-                        "SystemTime": "2000-01-21T09:06:01Z"
-                    }
+                "TimeCreated_attributes": {
+                    "SystemTime": "2000-01-21T09:06:01Z"
                 }
             }
         }
