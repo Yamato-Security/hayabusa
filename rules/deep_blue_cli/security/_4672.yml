@@ -16,4 +16,4 @@ falsepositives:
 level: medium
 output: 'CommandLine:%CommandLine% ParentProcessName:%ParentProcessName%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+updated_date: 2020/11/8

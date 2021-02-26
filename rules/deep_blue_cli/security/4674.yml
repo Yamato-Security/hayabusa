@@ -14,6 +14,11 @@ detection:
 falsepositives:
     - unknown
 level: medium
-output: 'Possible Hidden Service Attempt¥nUser requested to modify the Dynamic Access Control (DAC) permissions of a service, possibly to hide it from view.¥nUser: %SubjectUserName%¥nTarget service:%ObjectName¥nDesired Access:WRITE_DAC'
+output: |
+    Possible Hidden Service Attempt
+    User requested to modify the Dynamic Access Control (DAC) permissions of a service, possibly to hide it from view.
+    User: %SubjectUserName%
+    Target service:%ObjectName
+    Desired Access:WRITE_DAC
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+updated_date: 2020/11/8

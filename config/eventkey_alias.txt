@@ -14,6 +14,11 @@ ImagePath,Event.EventData.ImagePath
 ContextInfo,Event.EventData.ContextInfo
 Path,Event.EventData.Path
 ScriptBlockText,Event.EventData.ScriptBlockText
-MemberName,Event.EventData.SubjectUserName
-MemberSid,Event.EventData.SubjectUserSid
+MemberName,Event.EventData.MemberName
+MemberSid,Event.EventData.MemberSid
 TargetSid,Event.EventData.TargetSid
+LogFileCleared,Event.UserData.LogFileCleared.SubjectUserName
+LogFileClearedSubjectUserName,Event.UserData.SubjectUserName
+SubjectUserName,Event.EventData.SubjectUserName
+SubjectUserSid,Event.EventData.SubjectUserSid
+DomainName,Event.EventData.SubjectDomainName

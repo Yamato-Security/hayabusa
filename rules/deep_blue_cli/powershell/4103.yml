@@ -6,7 +6,7 @@ logsource:
     product: windows
 detection:
     selection:
-        Channel: PowerShell
+        Channel: Microsoft-Windows-PowerShell/Operational
         EventID: 4103
         ContextInfo:
             - Host Application
@@ -17,4 +17,4 @@ falsepositives:
 level: medium
 output: 'command=%CommandLine%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+updated_date: 2020/11/8

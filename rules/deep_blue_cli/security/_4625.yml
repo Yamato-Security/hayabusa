@@ -14,4 +14,4 @@ falsepositives:
 level: medium
 output: 'High number of logon failures for one account UserName:%event_data.SubjectUserName% Total logon faiures:%count%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+updated_date: 2020/11/8
