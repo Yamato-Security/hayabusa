@@ -85,10 +85,8 @@ fn test_emit_csv() {
                     "CommandLine": "hoge"
                 },
                 "System": {
-                    "TimeCreated": {
-                        "#attributes":{
-                            "SystemTime": "1996-02-27T01:05:01Z"
-                        }
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
                     }
                 }
             }

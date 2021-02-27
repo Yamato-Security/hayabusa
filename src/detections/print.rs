@@ -120,8 +120,7 @@ impl Message {
     }
 
     fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
-        let system_time =
-            &event_record["Event"]["System"]["TimeCreated"]["#attributes"]["SystemTime"];
+        let system_time = &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"];
         let system_time_str = system_time.as_str().unwrap_or("");
         if system_time_str.is_empty() {
             return Option::None;
@@ -157,10 +156,8 @@ mod tests {
                     "CommandLine": "hoge"
                 },
                 "System": {
-                    "TimeCreated": {
-                        "#attributes":{
-                            "SystemTime": "1996-02-27T01:05:01Z"
-                        }
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
                     }
                 }
             }
@@ -180,10 +177,8 @@ mod tests {
                 "CommandLine": "hoge"
             },
             "System": {
-                "TimeCreated": {
-                    "#attributes":{
-                        "SystemTime": "1996-02-27T01:05:01Z"
-                    }
+                "TimeCreated_attributes": {
+                    "SystemTime": "1996-02-27T01:05:01Z"
                 }
             }
         }
@@ -203,10 +198,8 @@ mod tests {
                 "CommandLine": "hoge"
             },
             "System": {
-                "TimeCreated": {
-                    "#attributes":{
-                        "SystemTime": "2000-01-21T09:06:01Z"
-                    }
+                "TimeCreated_attributes": {
+                    "SystemTime": "2000-01-21T09:06:01Z"
                 }
             }
         }
