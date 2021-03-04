@@ -277,6 +277,61 @@ impl SelectionNode for LeafSelectionNode {
             return false;
         }
 
+        // EventDataはXMLが特殊な形式になっているので特別対応。
+        //// 元のXMLは下記のような形式
+        /*
+            <EventData>
+            <Data>Available</Data>
+            <Data>None</Data>
+            <Data>NewEngineState=Available PreviousEngineState=None SequenceNumber=9 HostName=ConsoleHost HostVersion=2.0 HostId=5cbb33bf-acf7-47cc-9242-141cd0ba9f0c EngineVersion=2.0 RunspaceId=c6e94dca-0daf-418c-860a-f751a9f2cbe1 PipelineId= CommandName= CommandType= ScriptName= CommandPath= CommandLine=</Data>
+            </EventData>
+        */
+        //// XMLをJSONにパースすると、下記のような形式になっていた。
+        //// JSONが配列になってしまうようなルールは現状では書けない。
+        /*     "EventData": {
+                    "Binary": null,
+                    "Data": [
+                        "",
+                        "\tDetailSequence=1\r\n\tDetailTotal=1\r\n\r\n\tSequenceNumber=15\r\n\r\n\tUserId=DESKTOP-ST69BPO\\user01\r\n\tHostName=ConsoleHost\r\n\tHostVersion=5.1.18362.145\r\n\tHostId=64821494-0737-4ce9-ad67-3ac0e50a81b8\r\n\tHostApplication=powershell calc\r\n\tEngineVersion=5.1.18362.145\r\n\tRunspaceId=74ae21ca-7fa9-40cc-a265-7a41fdb168a6\r\n\tPipelineId=1\r\n\tScriptName=\r\n\tCommandLine=",
+                        "CommandInvocation(Out-Default): \"Out-Default\"\r\n"
+                    ]
+                }
+        */
+        if self.key_list.len() > 0 && self.key_list[0].to_string() == "EventData" {
+            let values = utils::get_event_value(&"Event.EventData.Data".to_string(), event_record);
+            if values.is_none() {
+                return self.matcher.as_mut().unwrap().is_match(Option::None);
+            }
+
+            // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
+            let eventdata_data = values.unwrap();
+            if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
+            {
+                return self
+                    .matcher
+                    .as_mut()
+                    .unwrap()
+                    .is_match(Option::Some(eventdata_data));
+            }
+
+            // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
+            if eventdata_data.is_array() {
+                return eventdata_data
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|ary_element| {
+                        return self
+                            .matcher
+                            .as_mut()
+                            .unwrap()
+                            .is_match(Option::Some(ary_element));
+                    });
+            } else {
+                return self.matcher.as_mut().unwrap().is_match(Option::None);
+            }
+        }
+
         let event_value = self.get_event_value(event_record);
         return self.matcher.as_mut().unwrap().is_match(event_value);
     }
