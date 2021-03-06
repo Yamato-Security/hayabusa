@@ -20,7 +20,7 @@ pub struct DetectInfo {
     pub detail: String,
 }
 
-struct AlertMessage {}
+pub struct AlertMessage {}
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
