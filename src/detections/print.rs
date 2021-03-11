@@ -20,6 +20,8 @@ pub struct DetectInfo {
     pub detail: String,
 }
 
+pub struct AlertMessage {}
+
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
 }
@@ -138,6 +140,12 @@ impl Message {
         } else {
             return Option::Some(datetime.unwrap());
         }
+    }
+}
+
+impl AlertMessage {
+    pub fn alert(contents: String) {
+        println!("[ERROR] {}", contents);
     }
 }
 
