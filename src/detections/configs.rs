@@ -16,13 +16,13 @@ pub struct ConfigReader {
 impl ConfigReader {
     pub fn new() -> Self {
         ConfigReader {
-            args: build_app().get_matches(),
+            args: build_app(),
             event_key_alias_config: load_eventkey_alias("config/eventkey_alias.txt"),
         }
     }
 }
 
-fn build_app() -> clap::App<'static, 'static> {
+fn build_app<'a>() -> ArgMatches<'a> {
     let program = std::env::args()
         .nth(0)
         .and_then(|s| {
@@ -32,11 +32,11 @@ fn build_app() -> clap::App<'static, 'static> {
         })
         .unwrap();
 
-    App::new(program)
+    let matches = App::new(program)
         .about("Yea! (Yamato Event Analyzer). Aiming to be the world's greatest Windows event log analysis tool!")
         .version("0.0.1")
         .author("Author name <author@example.com>")
-        .setting(AppSettings::VersionlessSubcommands)
+        .setting(AppSettings::VersionlessSubcommands)        
         .arg(Arg::from_usage("-f --filepath=[FILEPATH] 'event file path'"))
         .arg(Arg::from_usage("--attackhunt=[ATTACK_HUNT] 'Attack Hunt'"))
         .arg(Arg::from_usage("--csv-timeline=[CSV_TIMELINE] 'csv output timeline'"))
@@ -47,6 +47,13 @@ fn build_app() -> clap::App<'static, 'static> {
         .arg(Arg::from_usage("-d --directory=[DIRECTORY] 'event log files directory'"))
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
+        .get_matches_safe();
+    
+    if matches.is_ok() {
+        matches.unwrap()
+    } else {
+        ArgMatches::default()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -99,14 +106,12 @@ mod tests {
     #[test]
     #[ignore]
     fn singleton_read_and_write() {
+        
         let message =
             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
-        let mut singleton = configs::CONFIG.write().unwrap();
-        singleton.event_key_alias_config =
-            configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
-
-        let singleton = configs::CONFIG.read().unwrap();
-        let display = format!("{}", format_args!("{:?}", singleton.event_key_alias_config));
+        configs::CONFIG.write().unwrap().event_key_alias_config = configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+        
+        let display = format!("{}", format_args!("{:?}", configs::CONFIG.write().unwrap().event_key_alias_config));
         assert_eq!(message, display);
     }
 }
