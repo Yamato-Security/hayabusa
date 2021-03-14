@@ -1,28 +1,24 @@
 use crate::detections::utils;
 use clap::{App, AppSettings, Arg, ArgMatches};
+use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::sync::Once;
+use std::sync::RwLock;
+lazy_static! {
+    pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
+}
+
 #[derive(Clone)]
-pub struct SingletonReader {
+pub struct ConfigReader {
     pub args: ArgMatches<'static>,
     pub event_key_alias_config: EventKeyAliasConfig,
 }
 
-pub fn singleton() -> Box<SingletonReader> {
-    static mut SINGLETON: Option<Box<SingletonReader>> = Option::None;
-    static ONCE: Once = Once::new();
-
-    unsafe {
-        ONCE.call_once(|| {
-            let singleton = SingletonReader {
-                args: build_app().get_matches(),
-                event_key_alias_config: load_eventkey_alias(),
-            };
-
-            SINGLETON = Some(Box::new(singleton));
-        });
-
-        return SINGLETON.clone().unwrap();
+impl ConfigReader {
+    pub fn new() -> Self {
+        ConfigReader {
+            args: build_app().get_matches(),
+            event_key_alias_config: load_eventkey_alias("config/eventkey_alias.txt"),
+        }
     }
 }
 
@@ -70,10 +66,10 @@ impl EventKeyAliasConfig {
     }
 }
 
-fn load_eventkey_alias() -> EventKeyAliasConfig {
+fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
-    let read_result = utils::read_csv("config/eventkey_alias.txt");
+    let read_result = utils::read_csv(path);
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 2 {
@@ -93,4 +89,24 @@ fn load_eventkey_alias() -> EventKeyAliasConfig {
     });
 
     return config;
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::detections::configs;
+
+    #[test]
+    #[ignore]
+    fn singleton_read_and_write() {
+        let message =
+            "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
+        let mut singleton = configs::CONFIG.write().unwrap();
+        singleton.event_key_alias_config =
+            configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+
+        let singleton = configs::CONFIG.read().unwrap();
+        let display = format!("{}", format_args!("{:?}", singleton.event_key_alias_config));
+        assert_eq!(message, display);
+    }
 }

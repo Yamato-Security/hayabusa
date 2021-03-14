@@ -8,12 +8,12 @@ use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::omikuji::Omikuji;
 
 fn main() {
-    if let Some(filepath) = configs::singleton().args.value_of("filepath") {
+    if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
         detect_files(vec![PathBuf::from(filepath)]);
-    } else if let Some(directory) = configs::singleton().args.value_of("directory") {
+    } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
         let evtx_files = collect_evtxfiles(&directory);
         detect_files(evtx_files);
-    } else if configs::singleton().args.is_present("credits") {
+    } else if configs::CONFIG.read().unwrap().args.is_present("credits") {
         print_credits();
     }
 }

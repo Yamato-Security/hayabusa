@@ -91,9 +91,11 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
     if key.len() == 0 {
         return Option::None;
     }
-
-    let alias_config = configs::singleton().event_key_alias_config;
-    let event_key = match alias_config.get_event_key(key.to_string()) {
+    let singleton = configs::CONFIG.read().unwrap();
+    let event_key = match singleton
+        .event_key_alias_config
+        .get_event_key(key.to_string())
+    {
         Some(alias_event_key) => alias_event_key,
         None => key,
     };
