@@ -32,7 +32,11 @@ fn build_app<'a>() -> ArgMatches<'a> {
         })
         .unwrap();
 
-    let matches = App::new(program)
+    if is_test_mode() {
+        return ArgMatches::default()
+    }
+
+    App::new(&program)
         .about("Yea! (Yamato Event Analyzer). Aiming to be the world's greatest Windows event log analysis tool!")
         .version("0.0.1")
         .author("Author name <author@example.com>")
@@ -47,13 +51,18 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .arg(Arg::from_usage("-d --directory=[DIRECTORY] 'event log files directory'"))
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
-        .get_matches_safe();
+        .get_matches()
     
-    if matches.is_ok() {
-        matches.unwrap()
-    } else {
-        ArgMatches::default()
+}
+
+fn is_test_mode() -> bool {
+    for i in std::env::args() {
+        if i == "--test" {
+            return true;
+        }
     }
+    
+    return false;
 }
 
 #[derive(Debug, Clone)]
