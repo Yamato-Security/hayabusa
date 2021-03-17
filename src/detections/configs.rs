@@ -33,14 +33,14 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .unwrap();
 
     if is_test_mode() {
-        return ArgMatches::default()
+        return ArgMatches::default();
     }
 
     App::new(&program)
         .about("Yea! (Yamato Event Analyzer). Aiming to be the world's greatest Windows event log analysis tool!")
         .version("0.0.1")
         .author("Author name <author@example.com>")
-        .setting(AppSettings::VersionlessSubcommands)        
+        .setting(AppSettings::VersionlessSubcommands)
         .arg(Arg::from_usage("-f --filepath=[FILEPATH] 'event file path'"))
         .arg(Arg::from_usage("--attackhunt=[ATTACK_HUNT] 'Attack Hunt'"))
         .arg(Arg::from_usage("--csv-timeline=[CSV_TIMELINE] 'csv output timeline'"))
@@ -52,7 +52,6 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
         .get_matches()
-    
 }
 
 fn is_test_mode() -> bool {
@@ -61,7 +60,7 @@ fn is_test_mode() -> bool {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -115,12 +114,18 @@ mod tests {
     #[test]
     #[ignore]
     fn singleton_read_and_write() {
-        
         let message =
             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
-        configs::CONFIG.write().unwrap().event_key_alias_config = configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
-        
-        let display = format!("{}", format_args!("{:?}", configs::CONFIG.write().unwrap().event_key_alias_config));
+        configs::CONFIG.write().unwrap().event_key_alias_config =
+            configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+
+        let display = format!(
+            "{}",
+            format_args!(
+                "{:?}",
+                configs::CONFIG.write().unwrap().event_key_alias_config
+            )
+        );
         assert_eq!(message, display);
     }
 }
