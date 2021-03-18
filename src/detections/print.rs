@@ -7,6 +7,7 @@ use regex::Regex;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::io::{self, Write};
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -144,14 +145,14 @@ impl Message {
 }
 
 impl AlertMessage {
-    pub fn alert(contents: String) {
-        println!("[ERROR] {}", contents);
+    pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
+        writeln!(w, "{}", contents)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::print::Message;
+    use crate::detections::print::{AlertMessage, Message};
     use serde_json::Value;
 
     #[test]
@@ -240,5 +241,14 @@ mod tests {
         println!("display::::{}", display);
         let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { title: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { title: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { title: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { title: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
         assert_eq!(display, expect);
+    }
+
+    #[test]
+    fn test_error_message() {
+        // expected print "[ERROR] TEST!"
+        let input = "TEST!";
+        let stdout = std::io::stdout();
+        let mut stdout = stdout.lock();
+        AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
     }
 }
