@@ -71,7 +71,9 @@ impl Message {
                 .take(target_length)
                 .collect::<String>();
 
-            if let Some(array_str) = configs::singleton()
+            if let Some(array_str) = configs::CONFIG
+                .read()
+                .unwrap()
                 .event_key_alias_config
                 .get_event_key(target_str.to_string())
             {

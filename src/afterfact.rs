@@ -17,20 +17,22 @@ pub struct CsvFormat<'a> {
 }
 
 pub fn after_fact() {
-    let mut target: Box<dyn io::Write> =
-        if let Some(csv_path) = configs::singleton().args.value_of("csv-timeline") {
-            match File::create(csv_path) {
-                Ok(file) => Box::new(file),
-                Err(err) => {
-                    let stdout = std::io::stdout();
-                    let mut stdout = stdout.lock();
-                    AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
-                    process::exit(1);
-                }
+    let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .value_of("csv-timeline")
+    {
+        match File::create(csv_path) {
+            Ok(file) => Box::new(file),
+            Err(err) => {
+                println!("Failed to open file. {}", err);
+                process::exit(1);
             }
-        } else {
-            Box::new(io::stdout())
-        };
+        }
+    } else {
+        Box::new(io::stdout())
+    };
 
     if let Err(err) = emit_csv(&mut target) {
         let stdout = std::io::stdout();
@@ -58,7 +60,7 @@ fn emit_csv(writer: &mut Box<dyn io::Write>) -> Result<(), Box<dyn Error>> {
 }
 
 fn format_time(time: &DateTime<Utc>) -> String {
-    if configs::singleton().args.is_present("utc") {
+    if configs::CONFIG.read().unwrap().args.is_present("utc") {
         format_rfc(time)
     } else {
         format_rfc(&time.with_timezone(&Local))
@@ -69,7 +71,7 @@ fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
-    if configs::singleton().args.is_present("rfc-2822") {
+    if configs::CONFIG.read().unwrap().args.is_present("rfc-2822") {
         return time.to_rfc2822();
     } else {
         return time.to_rfc3339();
