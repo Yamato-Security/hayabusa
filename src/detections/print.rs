@@ -245,7 +245,6 @@ mod tests {
 
     #[test]
     fn test_error_message() {
-        // expected print "[ERROR] TEST!"
         let input = "TEST!";
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
