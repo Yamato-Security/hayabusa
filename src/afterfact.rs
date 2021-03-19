@@ -26,7 +26,9 @@ pub fn after_fact() {
         match File::create(csv_path) {
             Ok(file) => Box::new(file),
             Err(err) => {
-                println!("Failed to open file. {}", err);
+                let stdout = std::io::stdout();
+                let mut stdout = stdout.lock();
+                AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
                 process::exit(1);
             }
         }
