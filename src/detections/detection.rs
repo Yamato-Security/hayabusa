@@ -129,10 +129,6 @@ impl Detection {
                 err_msgs_result.err().iter().for_each(|err_msgs| {
                     // TODO 本当はファイルパスを出力したい
                     // ParseYamlの変更が必要なので、一旦yamlのタイトルを表示。
-
-                    // TODO エラーの出力方法を統一したい。
-                    // エラー出力用のクラスを作成してもいいかも
-
                     let stdout = std::io::stdout();
                     let mut stdout = stdout.lock();
                     AlertMessage::alert(
