@@ -148,7 +148,7 @@ impl Message {
 
 impl AlertMessage {
     pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        writeln!(w, "{}", contents)
+        writeln!(w, "[ERROR] {}", contents)
     }
 }
 
