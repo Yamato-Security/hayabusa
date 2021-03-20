@@ -251,6 +251,6 @@ mod tests {
         let mut buf = Vec::<u8>::new();
         let result = AlertMessage::alert(&mut buf, input.to_string());
         assert!(result.is_ok());
-        assert_eq!(buf, b"[ERROR] error");
+        assert_eq!(buf, b"[ERROR] TEST!\n");
     }
 }
