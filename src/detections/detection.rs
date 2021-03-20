@@ -1,5 +1,6 @@
 extern crate csv;
 
+use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
@@ -60,7 +61,9 @@ impl Detection {
                 match EvtxParser::from_path(evtx_file) {
                     Ok(parser) => Option::Some(parser),
                     Err(e) => {
-                        eprintln!("{}", e);
+                        let stdout = std::io::stdout();
+                        let mut stdout = stdout.lock();
+                        AlertMessage::alert(&mut stdout, format!("{}", e)).ok();
                         return Option::None;
                     }
                 }
@@ -79,7 +82,9 @@ impl Detection {
                 if json_record.is_ok() {
                     return Option::Some(json_record.unwrap());
                 } else {
-                    eprintln!("{}", json_record.unwrap_err());
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
+                    AlertMessage::alert(&mut stdout, format!("{}", json_record.unwrap_err())).ok();
                     return Option::None;
                 }
             })
@@ -87,7 +92,9 @@ impl Detection {
                 // serialize json from json string
                 let result_json: Result<Value, Error> = serde_json::from_str(&json_record.data); //// https://rust-lang-nursery.github.io/rust-cookbook/encoding/complex.html
                 if result_json.is_err() {
-                    eprintln!("{}", result_json.unwrap_err());
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
+                    AlertMessage::alert(&mut stdout, format!("{}", result_json.unwrap_err())).ok();
                     return Option::None;
                 } else {
                     return result_json.ok();
@@ -101,7 +108,9 @@ impl Detection {
         let mut rulefile_loader = ParseYaml::new();
         let resutl_readdir = rulefile_loader.read_dir(DIRPATH_RULES);
         if resutl_readdir.is_err() {
-            eprintln!("{}", resutl_readdir.unwrap_err());
+            let stdout = std::io::stdout();
+            let mut stdout = stdout.lock();
+            AlertMessage::alert(&mut stdout, format!("{}", resutl_readdir.unwrap_err())).ok();
             return vec![];
         }
 
@@ -120,14 +129,19 @@ impl Detection {
                 err_msgs_result.err().iter().for_each(|err_msgs| {
                     // TODO 本当はファイルパスを出力したい
                     // ParseYamlの変更が必要なので、一旦yamlのタイトルを表示。
-
-                    // TODO エラーの出力方法を統一したい。
-                    // エラー出力用のクラスを作成してもいいかも
-                    println!(
-                        "[ERROR] Failed to parse Rule file. (Error Rule Title : {})",
-                        rule.yaml["title"].as_str().unwrap_or("")
-                    );
-                    err_msgs.iter().for_each(|err_msg| println!("{}", err_msg));
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
+                    AlertMessage::alert(
+                        &mut stdout,
+                        format!(
+                            "Failed to parse Rule file. (Error Rule Title : {})",
+                            rule.yaml["title"].as_str().unwrap_or("")
+                        ),
+                    )
+                    .ok();
+                    err_msgs.iter().for_each(|err_msg| {
+                        AlertMessage::alert(&mut stdout, err_msg.to_string()).ok();
+                    });
                     println!("");
                 });
 

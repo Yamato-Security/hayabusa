@@ -5,6 +5,7 @@ use std::{fs, path::PathBuf};
 use yamato_event_analyzer::afterfact::after_fact;
 use yamato_event_analyzer::detections::configs;
 use yamato_event_analyzer::detections::detection;
+use yamato_event_analyzer::detections::print::AlertMessage;
 use yamato_event_analyzer::omikuji::Omikuji;
 
 fn main() {
@@ -21,7 +22,9 @@ fn main() {
 fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
     let entries = fs::read_dir(dirpath);
     if entries.is_err() {
-        eprintln!("{}", entries.unwrap_err());
+        let stdout = std::io::stdout();
+        let mut stdout = stdout.lock();
+        AlertMessage::alert(&mut stdout, format!("{}", entries.unwrap_err())).ok();
         return vec![];
     }
 
@@ -50,9 +53,13 @@ fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
 }
 
 fn print_credits() {
+    let stdout = std::io::stdout();
+    let mut stdout = stdout.lock();
     match fs::read_to_string("./credits.txt") {
         Ok(contents) => println!("{}", contents),
-        Err(err) => println!("{}", err),
+        Err(err) => {
+            AlertMessage::alert(&mut stdout, format!("{}", err)).ok();
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 extern crate serde_derive;
 extern crate yaml_rust;
 
+use crate::detections::print::AlertMessage;
 use std::fs;
 use std::io;
 use std::io::{BufReader, Read};
@@ -34,6 +35,8 @@ impl ParseYaml {
             .filter_map(|entry| {
                 let entry = entry.ok()?;
                 if entry.file_type().ok()?.is_file() {
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
                     match self.read_file(entry.path()) {
                         Ok(s) => {
                             match YamlLoader::load_from_str(&s) {
@@ -45,11 +48,21 @@ impl ParseYaml {
                                         }
                                     }
                                 }
-                                Err(e) => eprintln!("fail to read file\n{}\n{} ", s, e),
+                                Err(e) => {
+                                    AlertMessage::alert(
+                                        &mut stdout,
+                                        format!("fail to read file\n{}\n{} ", s, e),
+                                    )
+                                    .ok();
+                                }
                             }
                         }
                         Err(e) => {
-                            eprintln!("fail to read file: {}\n{} ", entry.path().display(), e)
+                            AlertMessage::alert(
+                                &mut stdout,
+                                format!("fail to read file: {}\n{} ", entry.path().display(), e),
+                            )
+                            .ok();
                         }
                     };
                 }

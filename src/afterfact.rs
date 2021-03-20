@@ -1,5 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
+use crate::detections::print::AlertMessage;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
@@ -25,7 +26,9 @@ pub fn after_fact() {
         match File::create(csv_path) {
             Ok(file) => Box::new(file),
             Err(err) => {
-                println!("Failed to open file. {}", err);
+                let stdout = std::io::stdout();
+                let mut stdout = stdout.lock();
+                AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
                 process::exit(1);
             }
         }
@@ -34,7 +37,9 @@ pub fn after_fact() {
     };
 
     if let Err(err) = emit_csv(&mut target) {
-        println!("Failed to write CSV. {}", err);
+        let stdout = std::io::stdout();
+        let mut stdout = stdout.lock();
+        AlertMessage::alert(&mut stdout, format!("Failed to write CSV. {}", err)).ok();
         process::exit(1);
     }
 }
