@@ -248,8 +248,9 @@ mod tests {
     #[test]
     fn test_error_message() {
         let input = "TEST!";
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
+        let mut buf = Vec::<u8>::new();
+        let result = AlertMessage::alert(&mut buf, input.to_string());
+        assert!(result.is_ok());
+        assert_eq!(buf, b"[ERROR] error");
     }
 }
