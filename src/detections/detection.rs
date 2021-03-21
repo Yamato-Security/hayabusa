@@ -39,6 +39,7 @@ impl Detection {
         // transform from evtx files into json
         let records = self.evtx_to_jsons(evtx_files);
 
+
         runtime::Runtime::new()
             .unwrap()
             .block_on(self.execute_rule(rules, records));
@@ -194,16 +195,14 @@ impl Detection {
     }
 
     async fn execute_rule(&mut self, rules: Vec<RuleNode>, records: Vec<Value>) {
-        // 排他制御と所有権共有のため、recordをRwLockとArcで囲む
-        // recordは不変参照(mutが不要)なので、不変参照なら複数スレッドが同時にロックを取得できるようにRwLockを用いている。
-        // RwLockの代わりにMutexを使うこともできるが、これは不変参照であっても同時に1スレッドしかロックを取得できず、パフォーマンスが良くないと思う。
+        // 複数スレッドで所有権を共有するため、recordsをArcでwwap
         let mut records_arcs = vec![];
         for record_chunk in Detection::chunks(records, num_cpus::get() * 4) {
             let record_chunk_arc = Arc::new(record_chunk);
             records_arcs.push(record_chunk_arc);
         }
 
-        // 所有権共有のため、ruleをArcで囲む
+        // 複数スレッドで所有権を共有するため、rulesをArcでwwap
         let rules_arc = Arc::new(rules);
 
         // ルール実行するスレッドを作成。
