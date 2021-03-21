@@ -30,21 +30,19 @@ impl Detection {
             return;
         }
 
-        // parse rule files
         let rules = self.parse_rule_files();
         if rules.is_empty() {
             return;
         }
 
-        // transform from evtx files into json
         let records = self.evtx_to_jsons(evtx_files);
-
 
         runtime::Runtime::new()
             .unwrap()
             .block_on(self.execute_rule(rules, records));
     }
 
+    // ルールファイルをパースします。
     fn parse_rule_files(&self) -> Vec<RuleNode> {
         // load rule files
         let mut rulefile_loader = ParseYaml::new();
@@ -85,7 +83,7 @@ impl Detection {
             .collect();
     }
 
-    // evtxファイルをjsonに変換する。
+    // evtxファイルをjsonに変換します。
     fn evtx_to_jsons(&mut self, evtx_files: Vec<PathBuf>) -> Vec<Value> {
         // EvtxParserを生成する。
         let evtx_parsers: Vec<EvtxParser<File>> = evtx_files
@@ -157,6 +155,7 @@ impl Detection {
             .collect();
     }
 
+    // xmlからjsonに変換します。
     async fn xml_to_json(&mut self, xml_records: Vec<SerializedEvtxRecord<String>>) -> Vec<Value> {
         // xmlからjsonに変換するJobを作成
         let handles: Vec<JoinHandle<Result<Value, Error>>> = xml_records
@@ -194,6 +193,7 @@ impl Detection {
             .collect();
     }
 
+    // 検知ロジックを実行します。
     async fn execute_rule(&mut self, rules: Vec<RuleNode>, records: Vec<Value>) {
         // 複数スレッドで所有権を共有するため、recordsをArcでwwap
         let mut records_arcs = vec![];
