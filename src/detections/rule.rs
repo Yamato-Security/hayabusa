@@ -36,7 +36,7 @@ fn concat_selection_key(key_list: &Vec<String>) -> String {
         });
 }
 
-fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
+fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
     // TODO detection-selectionが存在しない場合のチェック
     let selection_yaml = &yaml["detection"]["selection"];
     if selection_yaml.is_badvalue() {
@@ -45,7 +45,10 @@ fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
     return Option::Some(parse_selection_recursively(vec![], &selection_yaml));
 }
 
-fn parse_selection_recursively(key_list: Vec<String>, yaml: &Yaml) -> Box<dyn SelectionNode> {
+fn parse_selection_recursively(
+    key_list: Vec<String>,
+    yaml: &Yaml,
+) -> Box<dyn SelectionNode + Send> {
     if yaml.as_hash().is_some() {
         // 連想配列はAND条件と解釈する
         let yaml_hash = yaml.as_hash().unwrap();
@@ -80,6 +83,8 @@ pub struct RuleNode {
     detection: Option<DetectionNode>,
 }
 
+unsafe impl Sync for RuleNode {}
+
 impl RuleNode {
     pub fn init(&mut self) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
@@ -105,11 +110,11 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&mut self, event_record: &Value) -> bool {
+    pub fn select(&self, event_record: &Value) -> bool {
         let selection = self
             .detection
-            .as_mut()
-            .and_then(|detect_node| detect_node.selection.as_mut());
+            .as_ref()
+            .and_then(|detect_node| detect_node.selection.as_ref());
         if selection.is_none() {
             return false;
         }
@@ -120,7 +125,7 @@ impl RuleNode {
 
 // Ruleファイルのdetectionを表すノード
 struct DetectionNode {
-    pub selection: Option<Box<dyn SelectionNode>>,
+    pub selection: Option<Box<dyn SelectionNode + Send>>,
 }
 
 impl DetectionNode {
@@ -135,7 +140,7 @@ impl DetectionNode {
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
 trait SelectionNode {
-    fn select(&mut self, event_record: &Value) -> bool;
+    fn select(&self, event_record: &Value) -> bool;
     fn init(&mut self) -> Result<(), Vec<String>>;
 }
 
@@ -143,6 +148,8 @@ trait SelectionNode {
 struct AndSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
+
+unsafe impl Send for AndSelectionNode {}
 
 impl AndSelectionNode {
     pub fn new() -> AndSelectionNode {
@@ -153,8 +160,8 @@ impl AndSelectionNode {
 }
 
 impl SelectionNode for AndSelectionNode {
-    fn select(&mut self, event_record: &Value) -> bool {
-        return self.child_nodes.iter_mut().all(|child_node| {
+    fn select(&self, event_record: &Value) -> bool {
+        return self.child_nodes.iter().all(|child_node| {
             return child_node.select(event_record);
         });
     }
@@ -192,6 +199,8 @@ struct OrSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
 
+unsafe impl Send for OrSelectionNode {}
+
 impl OrSelectionNode {
     pub fn new() -> OrSelectionNode {
         return OrSelectionNode {
@@ -201,8 +210,8 @@ impl OrSelectionNode {
 }
 
 impl SelectionNode for OrSelectionNode {
-    fn select(&mut self, event_record: &Value) -> bool {
-        return self.child_nodes.iter_mut().any(|child_node| {
+    fn select(&self, event_record: &Value) -> bool {
+        return self.child_nodes.iter().any(|child_node| {
             return child_node.select(event_record);
         });
     }
@@ -242,6 +251,8 @@ struct LeafSelectionNode {
     matcher: Option<Box<dyn LeafMatcher>>,
 }
 
+unsafe impl Send for LeafSelectionNode {}
+
 impl LeafSelectionNode {
     fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
         return LeafSelectionNode {
@@ -272,7 +283,7 @@ impl LeafSelectionNode {
 }
 
 impl SelectionNode for LeafSelectionNode {
-    fn select(&mut self, event_record: &Value) -> bool {
+    fn select(&self, event_record: &Value) -> bool {
         if self.matcher.is_none() {
             return false;
         }
@@ -300,7 +311,7 @@ impl SelectionNode for LeafSelectionNode {
         if self.key_list.len() > 0 && self.key_list[0].to_string() == "EventData" {
             let values = utils::get_event_value(&"Event.EventData.Data".to_string(), event_record);
             if values.is_none() {
-                return self.matcher.as_mut().unwrap().is_match(Option::None);
+                return self.matcher.as_ref().unwrap().is_match(Option::None);
             }
 
             // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
@@ -309,7 +320,7 @@ impl SelectionNode for LeafSelectionNode {
             {
                 return self
                     .matcher
-                    .as_mut()
+                    .as_ref()
                     .unwrap()
                     .is_match(Option::Some(eventdata_data));
             }
@@ -323,17 +334,17 @@ impl SelectionNode for LeafSelectionNode {
                     .any(|ary_element| {
                         return self
                             .matcher
-                            .as_mut()
+                            .as_ref()
                             .unwrap()
                             .is_match(Option::Some(ary_element));
                     });
             } else {
-                return self.matcher.as_mut().unwrap().is_match(Option::None);
+                return self.matcher.as_ref().unwrap().is_match(Option::None);
             }
         }
 
         let event_value = self.get_event_value(event_record);
-        return self.matcher.as_mut().unwrap().is_match(event_value);
+        return self.matcher.as_ref().unwrap().is_match(event_value);
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -374,7 +385,7 @@ impl SelectionNode for LeafSelectionNode {
 trait LeafMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool;
 
-    fn is_match(&mut self, event_value: Option<&Value>) -> bool;
+    fn is_match(&self, event_value: Option<&Value>) -> bool;
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
 }
@@ -449,7 +460,7 @@ impl LeafMatcher for RegexMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
         // unwrap_orの引数に""ではなく" "を指定しているのは、
         // event_valueが文字列じゃない場合にis_event_value_nullの値がfalseになるように、len() == 0とならない値を指定している。
         let is_event_value_null = event_value.is_none()
@@ -504,7 +515,7 @@ impl LeafMatcher for MinlengthMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.len() as i64 >= self.min_len,
             Value::Number(n) => n.to_string().len() as i64 >= self.min_len,
@@ -564,7 +575,7 @@ impl LeafMatcher for RegexesFileMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => !utils::check_regex(s, 0, &self.regexes_csv_content).is_empty(),
             Value::Number(n) => {
@@ -626,7 +637,7 @@ impl LeafMatcher for WhitelistFileMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&mut self, event_value: Option<&Value>) -> bool {
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => utils::check_whitelist(s, &self.whitelist_csv_content),
             Value::Number(n) => utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content),
