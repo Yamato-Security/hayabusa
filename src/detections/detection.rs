@@ -12,18 +12,30 @@ use serde_json::{Error, Value};
 use tokio::runtime;
 use tokio::{spawn, task::JoinHandle};
 
+use std::path::PathBuf;
 use std::{fs::File, sync::Arc};
-use std::{path::PathBuf, time::Instant};
 
 const DIRPATH_RULES: &str = "rules";
 
+#[derive(Clone, Debug)]
+pub struct ParseInfo {
+    evtx_filepath: String,
+    xml_contents: String,
+    json_contents: Value,
+}
+
 // TODO テストケースかかなきゃ...
 #[derive(Debug)]
-pub struct Detection {}
+pub struct Detection {
+    parseinfos: Vec<ParseInfo>,
+}
 
 impl Detection {
     pub fn new() -> Detection {
-        Detection {}
+        let initializer: Vec<ParseInfo> = Vec::new();
+        Detection {
+            parseinfos: initializer,
+        }
     }
 
     pub fn start(&mut self, evtx_files: Vec<PathBuf>) {
@@ -37,10 +49,25 @@ impl Detection {
         }
 
         let records = self.evtx_to_jsons(evtx_files);
-
-        runtime::Runtime::new()
-            .unwrap()
-            .block_on(self.execute_rule(rules, records));
+        let evtx_filepaths: Vec<String> = records
+            .clone()
+            .into_iter()
+            .map(|pinfo| {
+                return pinfo.evtx_filepath;
+            })
+            .collect();
+        let json_records: Vec<Value> = records
+            .clone()
+            .into_iter()
+            .map(|pinfo| {
+                return pinfo.json_contents;
+            })
+            .collect();
+        runtime::Runtime::new().unwrap().block_on(self.execute_rule(
+            rules,
+            json_records,
+            evtx_filepaths,
+        ));
     }
 
     // ルールファイルをパースします。
@@ -92,7 +119,7 @@ impl Detection {
     }
 
     // evtxファイルをjsonに変換します。
-    fn evtx_to_jsons(&mut self, evtx_files: Vec<PathBuf>) -> Vec<Value> {
+    fn evtx_to_jsons(&mut self, evtx_files: Vec<PathBuf>) -> Vec<ParseInfo> {
         // EvtxParserを生成する。
         let evtx_parsers: Vec<EvtxParser<File>> = evtx_files
             .iter()
@@ -111,10 +138,18 @@ impl Detection {
         let xml_records = runtime::Runtime::new()
             .unwrap()
             .block_on(self.evtx_to_xml(evtx_parsers));
-
-        return runtime::Runtime::new()
+        let json_records = runtime::Runtime::new()
             .unwrap()
-            .block_on(self.xml_to_json(xml_records));
+            .block_on(self.xml_to_json(xml_records.clone()));
+        let mut ret: Vec<ParseInfo> = Vec::new();
+        for (i, fpath) in evtx_files.into_iter().enumerate() {
+            ret.push(ParseInfo {
+                evtx_filepath: fpath.display().to_string(),
+                xml_contents: (&xml_records[i]).data.clone(),
+                json_contents: json_records[i].clone(),
+            });
+        }
+        return ret;
     }
 
     // evtxファイルからxmlを生成する。
@@ -157,7 +192,6 @@ impl Detection {
                     eprintln!("{}", parse_result.unwrap_err());
                     return Option::None;
                 }
-
                 return Option::Some(parse_result.unwrap());
             })
             .collect();
@@ -195,14 +229,19 @@ impl Detection {
                     eprintln!("{}", parse_result.unwrap_err());
                     return Option::None;
                 }
-
                 return Option::Some(parse_result.unwrap());
             })
             .collect();
     }
 
     // 検知ロジックを実行します。
-    async fn execute_rule(&mut self, rules: Vec<RuleNode>, records: Vec<Value>) {
+    async fn execute_rule(
+        &mut self,
+        rules: Vec<RuleNode>,
+        records: Vec<Value>,
+        filepath: Vec<String>,
+    ) {
+        let evtx_path = &filepath.clone();
         // 複数スレッドで所有権を共有するため、recordsをArcでwwap
         let mut records_arcs = vec![];
         for record_chunk in Detection::chunks(records, num_cpus::get() * 4) {
@@ -242,10 +281,12 @@ impl Detection {
         for record_chunk_arc in &records_arcs {
             let mut handles_ret_ite = handles_ite.next().unwrap().await.unwrap().into_iter();
             for rule in rules_arc.iter() {
-                for record_arc in record_chunk_arc.iter() {
+                for (i, record_arc) in record_chunk_arc.iter().enumerate() {
                     if handles_ret_ite.next().unwrap() == true {
+                        let evtx_path_tmp = &evtx_path[i];
                         // TODO メッセージが多いと、rule.select()よりもこの処理の方が時間かかる。
                         message.insert(
+                            evtx_path_tmp.to_string(),
                             record_arc,
                             rule.yaml["title"].as_str().unwrap_or("").to_string(),
                             rule.yaml["output"].as_str().unwrap_or("").to_string(),

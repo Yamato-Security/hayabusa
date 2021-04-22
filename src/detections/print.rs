@@ -17,6 +17,7 @@ pub struct Message {
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
+    pub filepath: String,
     pub title: String,
     pub detail: String,
 }
@@ -34,7 +35,13 @@ impl Message {
     }
 
     /// メッセージを設定
-    pub fn insert(&mut self, event_record: &Value, event_title: String, output: String) {
+    pub fn insert(
+        &mut self,
+        target_file: String,
+        event_record: &Value,
+        event_title: String,
+        output: String,
+    ) {
         if output.is_empty() {
             return;
         }
@@ -43,6 +50,7 @@ impl Message {
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time = Message::get_event_time(event_record).unwrap_or(default_time);
         let detect_info = DetectInfo {
+            filepath: target_file,
             title: event_title,
             detail: message.to_string(),
         };
@@ -176,6 +184,7 @@ mod tests {
     "##;
         let event_record_1: Value = serde_json::from_str(json_str_1).unwrap();
         message.insert(
+            "a".to_string(),
             &event_record_1,
             "test1".to_string(),
             "CommandLine1: %CommandLine%".to_string(),
@@ -197,6 +206,7 @@ mod tests {
     "##;
         let event_record_2: Value = serde_json::from_str(json_str_2).unwrap();
         message.insert(
+            "a".to_string(),
             &event_record_2,
             "test2".to_string(),
             "CommandLine2: %CommandLine%".to_string(),
@@ -218,6 +228,7 @@ mod tests {
     "##;
         let event_record_3: Value = serde_json::from_str(json_str_3).unwrap();
         message.insert(
+            "a".to_string(),
             &event_record_3,
             "test3".to_string(),
             "CommandLine3: %CommandLine%".to_string(),
@@ -234,6 +245,7 @@ mod tests {
     "##;
         let event_record_4: Value = serde_json::from_str(json_str_4).unwrap();
         message.insert(
+            "a".to_string(),
             &event_record_4,
             "test4".to_string(),
             "CommandLine4: %CommandLine%".to_string(),
