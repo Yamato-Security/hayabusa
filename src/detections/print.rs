@@ -253,7 +253,7 @@ mod tests {
 
         let display = format!("{}", format_args!("{:?}", message));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { title: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { title: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { title: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { title: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
+        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", title: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", title: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { filepath: \"a\", title: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", title: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
         assert_eq!(display, expect);
     }
 

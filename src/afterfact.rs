@@ -112,8 +112,13 @@ fn test_emit_csv() {
         );
     }
 
-    let expect = "Time,Filepath,Title,Message
-1996-02-2,test.evtx,test,pokepoke";
+    let expect_time = Utc
+        .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+        .unwrap();
+    let expect_tz = expect_time.with_timezone(&Local);
+    let expect = "Time,Filepath,Title,Message\n".to_string()
+        + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
+        + ",test,test,pokepoke";
 
     let mut file: Box<dyn io::Write> =
         Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
@@ -122,7 +127,7 @@ fn test_emit_csv() {
     match read_to_string("./test_emit_csv.csv") {
         Err(_) => panic!("Failed to open file"),
         Ok(s) => {
-            assert_eq!(&s[0..61], expect);
+            assert_eq!(&s[0..72], expect);
         }
     };
 
