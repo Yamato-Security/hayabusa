@@ -53,7 +53,7 @@ fn emit_csv(writer: &mut Box<dyn io::Write>) -> Result<(), Box<dyn Error>> {
         for detect_info in detect_infos {
             wtr.serialize(CsvFormat {
                 time: &format_time(time),
-                filepath: &detect_info.title,
+                filepath: &detect_info.filepath,
                 title: &detect_info.title,
                 message: &detect_info.detail,
             })?;
