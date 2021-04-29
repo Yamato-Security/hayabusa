@@ -48,7 +48,9 @@ impl Detection {
         }
 
         let records = self.evtx_to_jsons(evtx_files);
-        runtime::Runtime::new().unwrap().block_on(self.execute_rule(rules, records ));
+        runtime::Runtime::new()
+            .unwrap()
+            .block_on(self.execute_rule(rules, records));
     }
 
     // ルールファイルをパースします。
@@ -124,17 +126,24 @@ impl Detection {
             .block_on(self.xml_to_json(xml_records, &evtx_files));
 
         let mut evtx_file_index = 0;
-        return json_records.into_iter().map(|json_records_per_evtxfile|{
-            let evtx_filepath = evtx_files[evtx_file_index].display().to_string();
-            let ret:Vec<EvtxRecordInfo> = json_records_per_evtxfile.into_iter().map(|json_record|{
-                return EvtxRecordInfo{
-                    evtx_filepath: String::from(&evtx_filepath),
-                    record: json_record
-                };
-            }).collect();
-            evtx_file_index = evtx_file_index + 1;
-            return ret;
-        }).flatten().collect();
+        return json_records
+            .into_iter()
+            .map(|json_records_per_evtxfile| {
+                let evtx_filepath = evtx_files[evtx_file_index].display().to_string();
+                let ret: Vec<EvtxRecordInfo> = json_records_per_evtxfile
+                    .into_iter()
+                    .map(|json_record| {
+                        return EvtxRecordInfo {
+                            evtx_filepath: String::from(&evtx_filepath),
+                            record: json_record,
+                        };
+                    })
+                    .collect();
+                evtx_file_index = evtx_file_index + 1;
+                return ret;
+            })
+            .flatten()
+            .collect();
     }
 
     // evtxファイルからxmlを生成する。
@@ -144,9 +153,8 @@ impl Detection {
     async fn evtx_to_xml(
         &mut self,
         evtx_parsers: Vec<EvtxParser<File>>,
-        evtx_files: &Vec<PathBuf>
+        evtx_files: &Vec<PathBuf>,
     ) -> Vec<Vec<SerializedEvtxRecord<String>>> {
-
         // evtx_parser.records_json()でevtxをxmlに変換するJobを作成
         let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<String>>>>> = evtx_parsers
             .into_iter()
@@ -168,7 +176,11 @@ impl Detection {
             let future_result = handle.await;
             if future_result.is_err() {
                 let evtx_filepath = &evtx_files[evtx_file_index].display();
-                let errmsg = format!("Failed to parse event file. EventFile:{} Error:{}", evtx_filepath, future_result.unwrap_err());
+                let errmsg = format!(
+                    "Failed to parse event file. EventFile:{} Error:{}",
+                    evtx_filepath,
+                    future_result.unwrap_err()
+                );
                 AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
                 continue;
             }
@@ -180,33 +192,51 @@ impl Detection {
         // パースに失敗しているレコードを除外して、返す。
         // SerializedEvtxRecord<String>がどのEvtxParserからパースされたのか分かるようにするため、2次元配列のまま返す。
         let mut evtx_file_index = 0;
-        return ret.into_iter().map( |parse_results| {
-            let ret = parse_results.into_iter().filter_map(|parse_result|{
-                if parse_result.is_err() {
-                    let evtx_filepath = &evtx_files[evtx_file_index].display();
-                    let errmsg = format!("Failed to parse event file. EventFile:{} Error:{}", evtx_filepath, parse_result.unwrap_err());
-                    AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                    return Option::None;                 
-                }
-                return Option::Some(parse_result.unwrap());
-            }).collect();
-            evtx_file_index = evtx_file_index + 1;
-            return ret;
-        }).collect();
+        return ret
+            .into_iter()
+            .map(|parse_results| {
+                let ret = parse_results
+                    .into_iter()
+                    .filter_map(|parse_result| {
+                        if parse_result.is_err() {
+                            let evtx_filepath = &evtx_files[evtx_file_index].display();
+                            let errmsg = format!(
+                                "Failed to parse event file. EventFile:{} Error:{}",
+                                evtx_filepath,
+                                parse_result.unwrap_err()
+                            );
+                            AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
+                            return Option::None;
+                        }
+                        return Option::Some(parse_result.unwrap());
+                    })
+                    .collect();
+                evtx_file_index = evtx_file_index + 1;
+                return ret;
+            })
+            .collect();
     }
 
     // xmlからjsonに変換します。
-    async fn xml_to_json(&mut self, xml_records: Vec<Vec<SerializedEvtxRecord<String>>>, evtx_files: &Vec<PathBuf>) -> Vec<Vec<Value>> {
+    async fn xml_to_json(
+        &mut self,
+        xml_records: Vec<Vec<SerializedEvtxRecord<String>>>,
+        evtx_files: &Vec<PathBuf>,
+    ) -> Vec<Vec<Value>> {
         // xmlからjsonに変換するJobを作成
         let handles: Vec<Vec<JoinHandle<Result<Value, Error>>>> = xml_records
             .into_iter()
             .map(|xml_records| {
-                return xml_records.into_iter().map(|xml_record|{
-                    return spawn(async move {
-                        return serde_json::from_str(&xml_record.data);
-                    });
-                }).collect();
-            }).collect();
+                return xml_records
+                    .into_iter()
+                    .map(|xml_record| {
+                        return spawn(async move {
+                            return serde_json::from_str(&xml_record.data);
+                        });
+                    })
+                    .collect();
+            })
+            .collect();
 
         // 作成したjobを実行し(handle.awaitの部分)、スレッドの実行時にエラーが発生した場合、標準エラー出力に出しておく
         let mut ret = vec![];
@@ -217,12 +247,16 @@ impl Detection {
                 let future_result = handle.await;
                 if future_result.is_err() {
                     let evtx_filepath = &evtx_files[evtx_file_index].display();
-                    let errmsg = format!("Failed to serialize from event xml to json. EventFile:{} Error:{}", evtx_filepath, future_result.unwrap_err());
+                    let errmsg = format!(
+                        "Failed to serialize from event xml to json. EventFile:{} Error:{}",
+                        evtx_filepath,
+                        future_result.unwrap_err()
+                    );
                     AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
                     continue;
-                } 
+                }
 
-                sub_ret.push(future_result.unwrap());   
+                sub_ret.push(future_result.unwrap());
             }
             ret.push(sub_ret);
             evtx_file_index = evtx_file_index + 1;
@@ -231,29 +265,35 @@ impl Detection {
         // JSONの変換に失敗したものを除外して、返す。
         // ValueがどのEvtxParserからパースされたのか分かるようにするため、2次元配列のまま返す。
         let mut evtx_file_index = 0;
-        return ret.into_iter().map( |parse_results| {
-            let successed =  parse_results.into_iter().filter_map(|parse_result|{
-                if parse_result.is_err() {
-                    let evtx_filepath = &evtx_files[evtx_file_index].display();
-                    let errmsg = format!("Failed to serialize from event xml to json. EventFile:{} Error:{}", evtx_filepath, parse_result.unwrap_err());
-                    AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                    return Option::None;
-                }
+        return ret
+            .into_iter()
+            .map(|parse_results| {
+                let successed = parse_results
+                    .into_iter()
+                    .filter_map(|parse_result| {
+                        if parse_result.is_err() {
+                            let evtx_filepath = &evtx_files[evtx_file_index].display();
+                            let errmsg = format!(
+                                "Failed to serialize from event xml to json. EventFile:{} Error:{}",
+                                evtx_filepath,
+                                parse_result.unwrap_err()
+                            );
+                            AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
+                            return Option::None;
+                        }
 
-                return Option::Some(parse_result.unwrap());
-            }).collect();
-            evtx_file_index = evtx_file_index + 1;
+                        return Option::Some(parse_result.unwrap());
+                    })
+                    .collect();
+                evtx_file_index = evtx_file_index + 1;
 
-            return successed;
-        }).collect();
+                return successed;
+            })
+            .collect();
     }
 
     // 検知ロジックを実行します。
-    async fn execute_rule(
-        &mut self,
-        rules: Vec<RuleNode>,
-        records: Vec<EvtxRecordInfo>
-    ) {
+    async fn execute_rule(&mut self, rules: Vec<RuleNode>, records: Vec<EvtxRecordInfo>) {
         // 複数スレッドで所有権を共有するため、recordsをArcでwwap
         let mut records_arcs = vec![];
         for record_chunk in Detection::chunks(records, num_cpus::get() * 4) {
