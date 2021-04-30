@@ -3,3 +3,4 @@
 *.test
 /.vscode/
 .DS_Store
+test_*

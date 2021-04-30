@@ -86,6 +86,9 @@ where
 fn test_emit_csv() {
     use serde_json::Value;
     use std::fs::{read_to_string, remove_file};
+    let testfilepath: &str = "test.evtx";
+    let test_title = "test_title";
+    let output = "pokepoke";
     {
         let mut messages = print::MESSAGES.lock().unwrap();
 
@@ -93,7 +96,7 @@ fn test_emit_csv() {
         {
             "Event": {
                 "EventData": {
-                    "CommandLine": "hoge"
+                    "CommandRLine": "hoge"
                 },
                 "System": {
                     "TimeCreated_attributes": {
@@ -105,10 +108,10 @@ fn test_emit_csv() {
     "##;
         let event: Value = serde_json::from_str(val).unwrap();
         messages.insert(
-            "test.evtx".to_string(),
+            testfilepath.to_string(),
             &event,
-            "test".to_string(),
-            "pokepoke".to_string(),
+            test_title.to_string(),
+            output.to_string(),
         );
     }
 
@@ -118,7 +121,13 @@ fn test_emit_csv() {
     let expect_tz = expect_time.with_timezone(&Local);
     let expect = "Time,Filepath,Title,Message\n".to_string()
         + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
-        + ",test,test,pokepoke";
+        + ","
+        + testfilepath
+        + ","
+        + test_title
+        + ","
+        + output
+        + "\n";
 
     let mut file: Box<dyn io::Write> =
         Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
@@ -127,9 +136,8 @@ fn test_emit_csv() {
     match read_to_string("./test_emit_csv.csv") {
         Err(_) => panic!("Failed to open file"),
         Ok(s) => {
-            assert_eq!(&s[0..72], expect);
+            assert_eq!(s, expect);
         }
     };
-
     assert!(remove_file("./test_emit_csv.csv").is_ok());
 }
