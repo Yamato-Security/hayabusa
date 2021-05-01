@@ -1,5 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
+use crate::detections::print::AlertMessage;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
@@ -11,6 +12,7 @@ use std::process;
 #[serde(rename_all = "PascalCase")]
 pub struct CsvFormat<'a> {
     time: &'a str,
+    filepath: &'a str,
     title: &'a str,
     message: &'a str,
 }
@@ -25,7 +27,9 @@ pub fn after_fact() {
         match File::create(csv_path) {
             Ok(file) => Box::new(file),
             Err(err) => {
-                println!("Failed to open file. {}", err);
+                let stdout = std::io::stdout();
+                let mut stdout = stdout.lock();
+                AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
                 process::exit(1);
             }
         }
@@ -34,7 +38,9 @@ pub fn after_fact() {
     };
 
     if let Err(err) = emit_csv(&mut target) {
-        println!("Failed to write CSV. {}", err);
+        let stdout = std::io::stdout();
+        let mut stdout = stdout.lock();
+        AlertMessage::alert(&mut stdout, format!("Failed to write CSV. {}", err)).ok();
         process::exit(1);
     }
 }
@@ -47,6 +53,7 @@ fn emit_csv(writer: &mut Box<dyn io::Write>) -> Result<(), Box<dyn Error>> {
         for detect_info in detect_infos {
             wtr.serialize(CsvFormat {
                 time: &format_time(time),
+                filepath: &detect_info.filepath,
                 title: &detect_info.title,
                 message: &detect_info.detail,
             })?;
@@ -79,6 +86,9 @@ where
 fn test_emit_csv() {
     use serde_json::Value;
     use std::fs::{read_to_string, remove_file};
+    let testfilepath: &str = "test.evtx";
+    let test_title = "test_title";
+    let output = "pokepoke";
     {
         let mut messages = print::MESSAGES.lock().unwrap();
 
@@ -86,7 +96,7 @@ fn test_emit_csv() {
         {
             "Event": {
                 "EventData": {
-                    "CommandLine": "hoge"
+                    "CommandRLine": "hoge"
                 },
                 "System": {
                     "TimeCreated_attributes": {
@@ -97,11 +107,27 @@ fn test_emit_csv() {
         }
     "##;
         let event: Value = serde_json::from_str(val).unwrap();
-        messages.insert(&event, "test".to_string(), "pokepoke".to_string());
+        messages.insert(
+            testfilepath.to_string(),
+            &event,
+            test_title.to_string(),
+            output.to_string(),
+        );
     }
 
-    let expect = "Time,Title,Message
-1996-02-2";
+    let expect_time = Utc
+        .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+        .unwrap();
+    let expect_tz = expect_time.with_timezone(&Local);
+    let expect = "Time,Filepath,Title,Message\n".to_string()
+        + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
+        + ","
+        + testfilepath
+        + ","
+        + test_title
+        + ","
+        + output
+        + "\n";
 
     let mut file: Box<dyn io::Write> =
         Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
@@ -110,9 +136,8 @@ fn test_emit_csv() {
     match read_to_string("./test_emit_csv.csv") {
         Err(_) => panic!("Failed to open file"),
         Ok(s) => {
-            assert_eq!(&s[0..28], expect);
+            assert_eq!(s, expect);
         }
     };
-
     assert!(remove_file("./test_emit_csv.csv").is_ok());
 }
