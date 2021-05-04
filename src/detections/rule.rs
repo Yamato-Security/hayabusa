@@ -165,12 +165,6 @@ impl DetectionNode {
     }
 }
 
-enum NodeType {
-    AndSelection,
-    OrSelection,
-    LeafSelection,
-}
-
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
 trait SelectionNode {
     fn select(&self, event_record: &Value) -> bool;
