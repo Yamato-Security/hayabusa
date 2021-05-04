@@ -1,5 +1,7 @@
 extern crate regex;
 
+use std::vec;
+
 use crate::detections::utils;
 
 use regex::Regex;
@@ -121,6 +123,31 @@ impl RuleNode {
 
         return selection.unwrap().select(event_record);
     }
+
+    pub fn get_event_ids(&self) -> Vec<i64> {
+        let selection = self
+            .detection
+            .as_ref()
+            .and_then(|detection| detection.selection.as_ref());
+        if selection.is_none() {
+            return vec![];
+        }
+
+        return selection
+            .unwrap()
+            .get_leaf_nodes()
+            .iter()
+            .filter(|node| {
+                return node.get_key() == "EventID";
+            })
+            .filter(|node| {
+                return node.select_value.as_i64().is_some();
+            })
+            .map(|node| {
+                return node.select_value.as_i64().unwrap();
+            })
+            .collect();
+    }
 }
 
 // Ruleファイルのdetectionを表すノード
@@ -138,10 +165,17 @@ impl DetectionNode {
     }
 }
 
+enum NodeType {
+    AndSelection,
+    OrSelection,
+    LeafSelection,
+}
+
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
 trait SelectionNode {
     fn select(&self, event_record: &Value) -> bool;
     fn init(&mut self) -> Result<(), Vec<String>>;
+    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode>;
 }
 
 // detection - selection配下でAND条件を表すノード
@@ -191,6 +225,22 @@ impl SelectionNode for AndSelectionNode {
         } else {
             return Result::Err(err_msgs);
         }
+    }
+
+    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode> {
+        let mut ret = vec![];
+
+        self.child_nodes
+            .iter()
+            .map(|child| {
+                return child.get_leaf_nodes();
+            })
+            .flatten()
+            .for_each(|descendant| {
+                ret.push(descendant);
+            });
+
+        return ret;
     }
 }
 
@@ -242,6 +292,22 @@ impl SelectionNode for OrSelectionNode {
             return Result::Err(err_msgs);
         }
     }
+
+    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode> {
+        let mut ret = vec![];
+
+        self.child_nodes
+            .iter()
+            .map(|child| {
+                return child.get_leaf_nodes();
+            })
+            .flatten()
+            .for_each(|descendant| {
+                ret.push(descendant);
+            });
+
+        return ret;
+    }
 }
 
 // detection - selection配下の末端ノード
@@ -262,13 +328,21 @@ impl LeafSelectionNode {
         };
     }
 
+    fn get_key(&self) -> String {
+        if self.key_list.is_empty() {
+            return String::default();
+        }
+
+        return self.key_list[0].to_string();
+    }
+
     // JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
     fn get_event_value<'a>(&self, event_value: &'a Value) -> Option<&'a Value> {
         if self.key_list.is_empty() {
             return Option::None;
         }
 
-        return utils::get_event_value(&self.key_list[0].to_string(), event_value);
+        return utils::get_event_value(&self.get_key(), event_value);
     }
 
     // LeafMatcherの一覧を取得する。
@@ -374,6 +448,10 @@ impl SelectionNode for LeafSelectionNode {
             .as_mut()
             .unwrap()
             .init(&match_key_list, &self.select_value);
+    }
+
+    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode> {
+        return vec![&self];
     }
 }
 
