@@ -138,13 +138,22 @@ impl RuleNode {
             .get_leaf_nodes()
             .iter()
             .filter(|node| {
-                return node.get_key() == "EventID";
+                // alias.txtのevent_keyに一致するかどうか
+                let key = utils::get_event_id_key();
+                if node.get_key() == key {
+                    return true;
+                }
+
+                // alias.txtのaliasに一致するかどうか
+                let alias = utils::get_alias(&key);
+                if alias.is_none() {
+                    return false;
+                } else {
+                    return node.get_key() == alias.unwrap();
+                }
             })
-            .filter(|node| {
-                return node.select_value.as_i64().is_some();
-            })
-            .map(|node| {
-                return node.select_value.as_i64().unwrap();
+            .filter_map(|node| {
+                return node.select_value.as_i64();
             })
             .collect();
     }

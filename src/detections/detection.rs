@@ -1,14 +1,14 @@
 extern crate csv;
 
-use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
+use crate::detections::{print::AlertMessage, utils};
 use crate::yaml::ParseYaml;
 
 use evtx::err;
 use evtx::{EvtxParser, ParserSettings, SerializedEvtxRecord};
-use serde_json::{Error, Value};
+use serde_json::{Value};
 use tokio::runtime;
 use tokio::{spawn, task::JoinHandle};
 
@@ -209,43 +209,14 @@ impl Detection {
         evtx_files: &Vec<PathBuf>,
         rules: &Vec<RuleNode>,
     ) -> Vec<(usize, Value)> {
-        // 非同期で実行される処理
-        let async_job = |pair: (usize, SerializedEvtxRecord<String>)| {
+        // 非同期で実行される無名関数を定義
+        let async_job = |pair: (usize, SerializedEvtxRecord<String>),
+                         event_id_set: Arc<HashSet<i64>>,
+                         evtx_files: Arc<Vec<PathBuf>>| {
             let parser_idx = pair.0;
             let handle = spawn(async move {
-                return serde_json::from_str(&pair.1.data);
-            });
-
-            return (parser_idx, handle);
-        };
-        // 非同期で実行するスレッドを生成し、実行する。
-        let handles: Vec<(usize, JoinHandle<Result<Value, Error>>)> =
-            xml_records.into_iter().map(async_job).collect();
-
-        // スレッドの終了待ちをしている。
-        let mut ret = vec![];
-        for (parser_idx, handle) in handles {
-            let future = handle.await;
-            if future.is_err() {
-                // スレッドが正常に完了しなかった場合はエラーメッセージを出力する。
-                let evtx_filepath = &evtx_files[parser_idx].display();
-                let errmsg = format!(
-                    "Failed to serialize from event xml to json. EventFile:{} Error:{}",
-                    evtx_filepath,
-                    future.unwrap_err()
-                );
-                AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                continue;
-            }
-
-            let parse_result = future.unwrap();
-            ret.push((parser_idx, parse_result));
-        }
-
-        // JSONの変換に失敗したものを除外して、返す。
-        return ret
-            .into_iter()
-            .filter_map(|(parser_idx, parse_result)| {
+                let parse_result = serde_json::from_str(&pair.1.data);
+                // パースに失敗した場合はエラー出力しておく。
                 if parse_result.is_err() {
                     let evtx_filepath = &evtx_files[parser_idx].display();
                     let errmsg = format!(
@@ -257,10 +228,60 @@ impl Detection {
                     return Option::None;
                 }
 
-                let ret_elem = (parser_idx, parse_result.unwrap());
-                return Option::Some(ret_elem);
+                // ルールファイルで検知しようとしているEventIDでないレコードはここで捨てる。
+                let parsed_json: Value = parse_result.unwrap();
+                let event_id_opt = utils::get_event_value(&utils::get_event_id_key(), &parsed_json);
+                return event_id_opt
+                    .and_then(|event_id| event_id.as_i64())
+                    .and_then(|event_id| {
+                        if event_id_set.contains(&event_id) {
+                            return Option::Some(parsed_json);
+                        } else {
+                            return Option::None;
+                        }
+                    });
+            });
+
+            return (parser_idx, handle);
+        };
+        // 非同期で実行するスレッドを生成し、実行する。
+        let event_id_set_arc = Arc::new(Detection::get_event_ids(rules));
+        let evtx_files_arc = Arc::new(evtx_files.clone());
+        let handles: Vec<(usize, JoinHandle<Option<Value>>)> = xml_records
+            .into_iter()
+            .map(|xml_record_pair| {
+                let event_id_set_clone = Arc::clone(&event_id_set_arc);
+                let evtx_files_clone = Arc::clone(&evtx_files_arc);
+                return async_job(xml_record_pair, event_id_set_clone, evtx_files_clone);
             })
             .collect();
+
+        // スレッドの終了待ちをしている。
+        let mut ret = vec![];
+        for (parser_idx, handle) in handles {
+            let future = handle.await;
+            // スレッドが正常に完了しなかった場合はエラーメッセージを出力する。
+            if future.is_err() {
+                let evtx_filepath = &evtx_files[parser_idx].display();
+                let errmsg = format!(
+                    "Failed to serialize from event xml to json. EventFile:{} Error:{}",
+                    evtx_filepath,
+                    future.unwrap_err()
+                );
+                AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
+                continue;
+            }
+
+            // パース失敗やルールファイルで検知しようとしていないEventIDの場合等はis_none()==trueになる。
+            let parse_result = future.unwrap();
+            if parse_result.is_none() {
+                continue;
+            }
+
+            ret.push((parser_idx, parse_result.unwrap()));
+        }
+
+        return ret;
     }
 
     // 検知ロジックを実行します。
@@ -284,8 +305,8 @@ impl Detection {
             let handle: JoinHandle<Vec<bool>> = spawn(async move {
                 let mut ret = vec![];
                 for rule in rules_clones.iter() {
-                    for record_info in records_arc_clone.iter() {                
-                        ret.push(rule.select(&record_info.record));// 検知したか否かを配列に保存しておく
+                    for record_info in records_arc_clone.iter() {
+                        ret.push(rule.select(&record_info.record)); // 検知したか否かを配列に保存しておく
                     }
                 }
                 return ret;
