@@ -283,14 +283,9 @@ impl Detection {
 
             let handle: JoinHandle<Vec<bool>> = spawn(async move {
                 let mut ret = vec![];
-                for record_info in records_arc_clone.iter() {
-                    for rule in rules_clones.iter() {
-                        if rule.select(&record_info.record) {
-                            // TODO ここはtrue/falseじゃなくて、ruleとrecordのタプルをretにpushする実装に変更したい。
-                            ret.push(true);
-                        } else {
-                            ret.push(false);
-                        }
+                for rule in rules_clones.iter() {
+                    for record_info in records_arc_clone.iter() {                
+                        ret.push(rule.select(&record_info.record));// 検知したか否かを配列に保存しておく
                     }
                 }
                 return ret;
