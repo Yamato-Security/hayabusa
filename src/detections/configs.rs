@@ -50,6 +50,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .arg(Arg::from_usage("-u --utc 'output time in UTC format(default: local time)'"))
         .arg(Arg::from_usage("-d --directory=[DIRECTORY] 'event log files directory'"))
         .arg(Arg::from_usage("-s --statistics 'event statistics'"))
+        .arg(Arg::from_usage("-t --threadnum=[NUM] 'thread number'"))
         .arg(Arg::from_usage("--credits 'Zachary Mathis, Akira Nishikawa'"))
         .get_matches()
 }

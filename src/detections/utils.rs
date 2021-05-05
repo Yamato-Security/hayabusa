@@ -4,6 +4,9 @@ extern crate regex;
 
 use crate::detections::configs;
 
+use tokio::runtime::Builder;
+use tokio::runtime::Runtime;
+
 use regex::Regex;
 use serde_json::Value;
 use std::fs::File;
@@ -128,6 +131,24 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
     }
 
     return Option::Some(ret);
+}
+
+pub fn get_thread_num() -> usize {
+    let def_thread_num_str = num_cpus::get().to_string();
+    let conf = configs::CONFIG.read().unwrap();
+    let threadnum = &conf
+        .args
+        .value_of("threadnum")
+        .unwrap_or(def_thread_num_str.as_str());
+    return threadnum.parse::<usize>().unwrap().clone();
+}
+
+pub fn create_tokio_runtime() -> Runtime {
+    return Builder::new_multi_thread()
+        .worker_threads(get_thread_num())
+        .thread_name("yea-thread")
+        .build()
+        .unwrap();
 }
 
 #[cfg(test)]

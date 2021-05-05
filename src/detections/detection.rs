@@ -9,7 +9,6 @@ use crate::yaml::ParseYaml;
 use evtx::err;
 use evtx::{EvtxParser, ParserSettings, SerializedEvtxRecord};
 use serde_json::Value;
-use tokio::runtime;
 use tokio::{spawn, task::JoinHandle};
 
 use std::{collections::HashSet, path::PathBuf};
@@ -48,9 +47,10 @@ impl Detection {
         }
 
         let records = self.evtx_to_jsons(&evtx_files, &rules);
-        runtime::Runtime::new()
-            .unwrap()
-            .block_on(self.execute_rule(rules, records));
+
+        let tokio_rt = utils::create_tokio_runtime();
+        tokio_rt.block_on(self.execute_rule(rules, records));
+        tokio_rt.shutdown_background();
     }
 
     // ルールファイルをパースします。
@@ -121,15 +121,11 @@ impl Detection {
             })
             .collect();
 
-        let xml_records = runtime::Runtime::new()
-            .unwrap()
-            .block_on(self.evtx_to_xml(evtx_parsers, &evtx_files));
+        let tokio_rt = utils::create_tokio_runtime();
+        let xml_records = tokio_rt.block_on(self.evtx_to_xml(evtx_parsers, &evtx_files));
 
-        let json_records = runtime::Runtime::new().unwrap().block_on(self.xml_to_json(
-            xml_records,
-            &evtx_files,
-            &rules,
-        ));
+        let json_records = tokio_rt.block_on(self.xml_to_json(xml_records, &evtx_files, &rules));
+        tokio_rt.shutdown_background();
 
         return json_records
             .into_iter()
@@ -158,6 +154,8 @@ impl Detection {
                 return spawn(async move {
                     let mut parse_config = ParserSettings::default();
                     parse_config = parse_config.separate_json_attributes(true);
+                    parse_config = parse_config.num_threads(utils::get_thread_num());
+
                     evtx_parser = evtx_parser.with_configuration(parse_config);
                     let values = evtx_parser.records_json().collect();
                     return values;
