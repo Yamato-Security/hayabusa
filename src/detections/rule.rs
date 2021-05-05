@@ -46,12 +46,20 @@ fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
     if selection_yaml.is_badvalue() {
         return Option::None;
     }
-    return Option::Some(parse_selection_recursively(vec![], &selection_yaml));
+    return Option::Some(parse_selection_recursively(vec![], &selection_yaml, None));
+}
+
+#[derive(Clone, Copy)]
+enum StrFeature {
+    StartsWith,
+    EndsWith,
+    Contains,
 }
 
 fn parse_selection_recursively(
     key_list: Vec<String>,
     yaml: &Yaml,
+    str_feature: Option<StrFeature>,
 ) -> Box<dyn SelectionNode + Send> {
     if yaml.as_hash().is_some() {
         // 連想配列はAND条件と解釈する
@@ -62,7 +70,7 @@ fn parse_selection_recursively(
             let child_yaml = yaml_hash.get(hash_key).unwrap();
             let mut child_key_list = key_list.clone();
             child_key_list.push(hash_key.as_str().unwrap().to_string());
-            let child_node = parse_selection_recursively(child_key_list, child_yaml);
+            let child_node = parse_selection_recursively(child_key_list, child_yaml, str_feature);
             and_node.child_nodes.push(child_node);
         });
         return Box::new(and_node);
@@ -70,7 +78,7 @@ fn parse_selection_recursively(
         // 配列はOR条件と解釈する。
         let mut or_node = OrSelectionNode::new();
         yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
-            let child_node = parse_selection_recursively(key_list.clone(), child_yaml);
+            let child_node = parse_selection_recursively(key_list.clone(), child_yaml, str_feature);
             or_node.child_nodes.push(child_node);
         });
 
