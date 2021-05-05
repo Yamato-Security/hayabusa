@@ -94,8 +94,7 @@ pub fn get_event_id_key() -> String {
 // alias.txtについて、指定されたevent_keyに対応するaliasを取得します。
 pub fn get_alias(event_key: &String) -> Option<String> {
     let conf = configs::CONFIG.read().unwrap();
-    let keyvalues = &conf.event_key_alias_config
-        .get_event_key_values();
+    let keyvalues = &conf.event_key_alias_config.get_event_key_values();
     let value = keyvalues
         .iter()
         .find(|(_, cur_event_key)| &event_key == cur_event_key);

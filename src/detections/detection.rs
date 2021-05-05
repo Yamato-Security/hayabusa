@@ -8,7 +8,7 @@ use crate::yaml::ParseYaml;
 
 use evtx::err;
 use evtx::{EvtxParser, ParserSettings, SerializedEvtxRecord};
-use serde_json::{Value};
+use serde_json::Value;
 use tokio::runtime;
 use tokio::{spawn, task::JoinHandle};
 
@@ -104,9 +104,9 @@ impl Detection {
         evtx_files: &Vec<PathBuf>,
         rules: &Vec<RuleNode>,
     ) -> Vec<EvtxRecordInfo> {
-
         // EvtxParserを生成する。
-        let evtx_parsers: Vec<EvtxParser<File>> = evtx_files.clone()
+        let evtx_parsers: Vec<EvtxParser<File>> = evtx_files
+            .clone()
             .into_iter()
             .filter_map(|evtx_file| {
                 // convert to evtx parser
