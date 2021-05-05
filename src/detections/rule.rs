@@ -372,6 +372,7 @@ impl LeafSelectionNode {
     }
 
     // LeafMatcherの一覧を取得する。
+    // 上から順番に調べて、一番始めに一致したMatcherが適用される
     fn get_matchers(&self) -> Vec<Box<dyn LeafMatcher>> {
         return vec![
             Box::new(RegexMatcher::new()),
@@ -380,6 +381,7 @@ impl LeafSelectionNode {
             Box::new(WhitelistFileMatcher::new()),
             Box::new(StartsWithMatcher::new()),
             Box::new(EndsWithMatcher::new()),
+            Box::new(ContainsMatcher::new()),
         ];
     }
 }
@@ -760,7 +762,6 @@ impl LeafMatcher for WhitelistFileMatcher {
     }
 }
 
-
 // 指定された文字列で始まるか調べるクラス
 struct StartsWithMatcher {
     start_text: String,
@@ -777,7 +778,7 @@ impl StartsWithMatcher {
 impl LeafMatcher for StartsWithMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         // ContextInfo|startswith のような場合にLeafをStartsWithMatcherにする。
-        return false
+        return false;
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -810,8 +811,8 @@ impl LeafMatcher for StartsWithMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.starts_with(&self.start_text),
             Value::Number(n) => n.to_string().starts_with(&self.start_text),
-            _ => false
-        }
+            _ => false,
+        };
     }
 }
 
@@ -831,7 +832,7 @@ impl EndsWithMatcher {
 impl LeafMatcher for EndsWithMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         // ContextInfo|endswith のような場合にLeafをEndsWithMatcherにする。
-        return false
+        return false;
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -864,8 +865,62 @@ impl LeafMatcher for EndsWithMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.ends_with(&self.end_text),
             Value::Number(n) => n.to_string().ends_with(&self.end_text),
-            _ => false
+            _ => false,
+        };
+    }
+}
+
+// 指定された文字列が含まれるか調べるクラス
+struct ContainsMatcher {
+    pattern: String,
+}
+
+impl ContainsMatcher {
+    fn new() -> ContainsMatcher {
+        return ContainsMatcher {
+            pattern: String::from(""),
+        };
+    }
+}
+
+impl LeafMatcher for ContainsMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        // ContextInfo|contains のような場合にLeafをContainsMatcherにする。
+        return false;
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        if select_value.is_null() {
+            return Result::Ok(());
         }
+
+        // stringに変換
+        let yaml_value = match select_value {
+            Yaml::Boolean(b) => Option::Some(b.to_string()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_string()),
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            _ => Option::None,
+        };
+        if yaml_value.is_none() {
+            let errmsg = format!(
+                "unknown error occured. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        self.pattern = yaml_value.unwrap();
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        // 調査する文字列にself.patternが含まれるならtrueを返す
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => s.contains(&self.pattern),
+            Value::Number(n) => n.to_string().contains(&self.pattern),
+            _ => false,
+        };
     }
 }
 
