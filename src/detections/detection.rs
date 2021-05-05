@@ -47,7 +47,7 @@ impl Detection {
             return;
         }
 
-        let records = self.evtx_to_jsons(evtx_files, &rules);
+        let records = self.evtx_to_jsons(&evtx_files, &rules);
         runtime::Runtime::new()
             .unwrap()
             .block_on(self.execute_rule(rules, records));
@@ -101,14 +101,16 @@ impl Detection {
     // evtxファイルをjsonに変換します。
     fn evtx_to_jsons(
         &mut self,
-        evtx_files: Vec<PathBuf>,
+        evtx_files: &Vec<PathBuf>,
         rules: &Vec<RuleNode>,
     ) -> Vec<EvtxRecordInfo> {
+
         // EvtxParserを生成する。
-        let evtx_parsers: Vec<EvtxParser<File>> = evtx_files
-            .iter()
+        let evtx_parsers: Vec<EvtxParser<File>> = evtx_files.clone()
+            .into_iter()
             .filter_map(|evtx_file| {
                 // convert to evtx parser
+                // println!("PathBuf:{}", evtx_file.display());
                 match EvtxParser::from_path(evtx_file) {
                     Ok(parser) => Option::Some(parser),
                     Err(e) => {
@@ -122,6 +124,7 @@ impl Detection {
         let xml_records = runtime::Runtime::new()
             .unwrap()
             .block_on(self.evtx_to_xml(evtx_parsers, &evtx_files));
+
         let json_records = runtime::Runtime::new().unwrap().block_on(self.xml_to_json(
             xml_records,
             &evtx_files,
@@ -209,6 +212,8 @@ impl Detection {
         evtx_files: &Vec<PathBuf>,
         rules: &Vec<RuleNode>,
     ) -> Vec<(usize, Value)> {
+        // TODO スレッド作り過ぎなので、数を減らす
+
         // 非同期で実行される無名関数を定義
         let async_job = |pair: (usize, SerializedEvtxRecord<String>),
                          event_id_set: Arc<HashSet<i64>>,
