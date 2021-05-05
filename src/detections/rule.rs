@@ -378,6 +378,7 @@ impl LeafSelectionNode {
             Box::new(MinlengthMatcher::new()),
             Box::new(RegexesFileMatcher::new()),
             Box::new(WhitelistFileMatcher::new()),
+            Box::new(StartsWithMatcher::new()),
         ];
     }
 }
@@ -755,6 +756,61 @@ impl LeafMatcher for WhitelistFileMatcher {
             Value::Bool(b) => !utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
             _ => true,
         };
+    }
+}
+
+
+// 指定された文字列で始まるか調べるクラス
+struct StartsWithMatcher {
+    start_text: String,
+}
+
+impl StartsWithMatcher {
+    fn new() -> StartsWithMatcher {
+        return StartsWithMatcher {
+            start_text: String::from(""),
+        };
+    }
+}
+
+impl LeafMatcher for StartsWithMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        // ContextInfo|startswith のような場合にLeafをStartsWithMatcherにする。
+        return false
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        if select_value.is_null() {
+            return Result::Ok(());
+        }
+
+        // stringに変換
+        let yaml_value = match select_value {
+            Yaml::Boolean(b) => Option::Some(b.to_string()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_string()),
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            _ => Option::None,
+        };
+        if yaml_value.is_none() {
+            let errmsg = format!(
+                "unknown error occured. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        self.start_text = yaml_value.unwrap();
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        // 調査する文字列がself.start_textで始まるならtrueを返す
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => s.starts_with(&self.start_text),
+            Value::Number(n) => n.to_string().starts_with(&self.start_text),
+            _ => false
+        }
     }
 }
 
