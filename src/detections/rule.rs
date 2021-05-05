@@ -379,6 +379,7 @@ impl LeafSelectionNode {
             Box::new(RegexesFileMatcher::new()),
             Box::new(WhitelistFileMatcher::new()),
             Box::new(StartsWithMatcher::new()),
+            Box::new(EndsWithMatcher::new()),
         ];
     }
 }
@@ -809,6 +810,60 @@ impl LeafMatcher for StartsWithMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.starts_with(&self.start_text),
             Value::Number(n) => n.to_string().starts_with(&self.start_text),
+            _ => false
+        }
+    }
+}
+
+// 指定された文字列で終わるか調べるクラス
+struct EndsWithMatcher {
+    end_text: String,
+}
+
+impl EndsWithMatcher {
+    fn new() -> EndsWithMatcher {
+        return EndsWithMatcher {
+            end_text: String::from(""),
+        };
+    }
+}
+
+impl LeafMatcher for EndsWithMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        // ContextInfo|endswith のような場合にLeafをEndsWithMatcherにする。
+        return false
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        if select_value.is_null() {
+            return Result::Ok(());
+        }
+
+        // stringに変換
+        let yaml_value = match select_value {
+            Yaml::Boolean(b) => Option::Some(b.to_string()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_string()),
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            _ => Option::None,
+        };
+        if yaml_value.is_none() {
+            let errmsg = format!(
+                "unknown error occured. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        self.end_text = yaml_value.unwrap();
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        // 調査する文字列がself.end_textで終わるならtrueを返す
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => s.ends_with(&self.end_text),
+            Value::Number(n) => n.to_string().ends_with(&self.end_text),
             _ => false
         }
     }
