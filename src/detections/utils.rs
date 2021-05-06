@@ -4,6 +4,9 @@ extern crate regex;
 
 use crate::detections::configs;
 
+use tokio::runtime::Builder;
+use tokio::runtime::Runtime;
+
 use regex::Regex;
 use serde_json::Value;
 use std::fs::File;
@@ -87,6 +90,25 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
     return Result::Ok(ret);
 }
 
+pub fn get_event_id_key() -> String {
+    return "Event.System.EventID".to_string();
+}
+
+// alias.txtについて、指定されたevent_keyに対応するaliasを取得します。
+pub fn get_alias(event_key: &String) -> Option<String> {
+    let conf = configs::CONFIG.read().unwrap();
+    let keyvalues = &conf.event_key_alias_config.get_event_key_values();
+    let value = keyvalues
+        .iter()
+        .find(|(_, cur_event_key)| &event_key == cur_event_key);
+
+    if value.is_none() {
+        return Option::None;
+    } else {
+        return Option::Some(value.unwrap().0.clone());
+    }
+}
+
 pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a Value> {
     if key.len() == 0 {
         return Option::None;
@@ -109,6 +131,24 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
     }
 
     return Option::Some(ret);
+}
+
+pub fn get_thread_num() -> usize {
+    let def_thread_num_str = num_cpus::get().to_string();
+    let conf = configs::CONFIG.read().unwrap();
+    let threadnum = &conf
+        .args
+        .value_of("threadnum")
+        .unwrap_or(def_thread_num_str.as_str());
+    return threadnum.parse::<usize>().unwrap().clone();
+}
+
+pub fn create_tokio_runtime() -> Runtime {
+    return Builder::new_multi_thread()
+        .worker_threads(get_thread_num())
+        .thread_name("yea-thread")
+        .build()
+        .unwrap();
 }
 
 #[cfg(test)]
