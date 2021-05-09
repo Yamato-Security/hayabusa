@@ -490,13 +490,14 @@ impl SelectionNode for LeafSelectionNode {
 //
 // 新規にLeafMatcherを実装するクラスを作成した場合、
 // LeafSelectionNodeのget_matchersクラスの戻り値の配列に新規作成したクラスのインスタンスを追加する。
-trait LeafMatcher {
+trait LeafMatcher: mopa::Any {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool;
 
     fn is_match(&self, event_value: Option<&Value>) -> bool;
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
 }
+mopafy!(LeafMatcher);
 
 // 正規表現で比較するロジックを表すクラス
 struct RegexMatcher {
@@ -755,4 +756,160 @@ impl LeafMatcher for WhitelistFileMatcher {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use yaml_rust::YamlLoader;
 
+    use crate::detections::rule::{
+        parse_rule, AndSelectionNode, LeafSelectionNode, MinlengthMatcher, OrSelectionNode,
+        RegexMatcher, SelectionNode,
+    };
+
+    #[test]
+    fn test_rule_parse() {
+        // ルールファイルをYAML形式で読み込み
+        let rule_str = r#"
+        title: PowerShell Execution Pipeline
+        description: hogehoge
+        enabled: true
+        author: Yea
+        logsource: 
+            product: windows
+        detection:
+            selection:
+                Channel: Microsoft-Windows-PowerShell/Operational
+                EventID: 4103
+                ContextInfo:
+                    - Host Application
+                    - ホスト アプリケーション
+                ImagePath:
+                    min_length: 1234321
+        falsepositives:
+            - unknown
+        level: medium
+        output: 'command=%CommandLine%'
+        creation_date: 2020/11/8
+        updated_date: 2020/11/8
+        "#;
+        let rule_yaml = YamlLoader::load_from_str(rule_str);
+        assert_eq!(rule_yaml.is_ok(), true);
+        let rule_yamls = rule_yaml.unwrap();
+
+        let mut rule_yaml = rule_yamls.into_iter();
+        let mut rule_node = parse_rule(rule_yaml.next().unwrap());
+        assert_eq!(rule_node.init().is_ok(), true);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        // Root
+        let detection_childs = selection_node.get_childs();
+        assert_eq!(detection_childs.len(), 4);
+
+        // Channel
+        {
+            // LeafSelectionNodeが正しく読み込めることを確認
+            let child_node = detection_childs[0];
+            assert_eq!(child_node.is::<LeafSelectionNode>(), true);
+            let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
+            assert_eq!(child_node.get_key(), "Channel");
+            assert_eq!(child_node.get_childs().len(), 0);
+
+            // 比較する正規表現が正しいことを確認
+            let matcher = &child_node.matcher;
+            assert_eq!(matcher.is_some(), true);
+            let matcher = child_node.matcher.as_ref().unwrap();
+            assert_eq!(matcher.is::<RegexMatcher>(), true);
+            let matcher = matcher.downcast_ref::<RegexMatcher>().unwrap();
+
+            assert_eq!(matcher.re.is_some(), true);
+            let re = matcher.re.as_ref();
+            assert_eq!(
+                re.unwrap().as_str(),
+                "Microsoft-Windows-PowerShell/Operational"
+            );
+        }
+
+        // EventID
+        {
+            // LeafSelectionNodeが正しく読み込めることを確認
+            let child_node = detection_childs[1];
+            assert_eq!(child_node.is::<LeafSelectionNode>(), true);
+            let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
+            assert_eq!(child_node.get_key(), "EventID");
+            assert_eq!(child_node.get_childs().len(), 0);
+
+            // 比較する正規表現が正しいことを確認
+            let matcher = &child_node.matcher;
+            assert_eq!(matcher.is_some(), true);
+            let matcher = child_node.matcher.as_ref().unwrap();
+            assert_eq!(matcher.is::<RegexMatcher>(), true);
+            let matcher = matcher.downcast_ref::<RegexMatcher>().unwrap();
+
+            assert_eq!(matcher.re.is_some(), true);
+            let re = matcher.re.as_ref();
+            assert_eq!(re.unwrap().as_str(), "4103");
+        }
+
+        // ContextInfo
+        {
+            // OrSelectionNodeを正しく読み込めることを確認
+            let child_node = detection_childs[2];
+            assert_eq!(child_node.is::<OrSelectionNode>(), true);
+            let child_node = child_node.downcast_ref::<OrSelectionNode>().unwrap();
+            let ancestors = child_node.get_childs();
+            assert_eq!(ancestors.len(), 2);
+
+            // OrSelectionNodeの下にLeafSelectionNodeがあるパターンをテスト
+            // LeafSelectionNodeである、Host Applicationノードが正しいことを確認
+            let hostapp_en_node = ancestors[0];
+            assert_eq!(hostapp_en_node.is::<LeafSelectionNode>(), true);
+            let hostapp_en_node = hostapp_en_node.downcast_ref::<LeafSelectionNode>().unwrap();
+
+            let hostapp_en_matcher = &hostapp_en_node.matcher;
+            assert_eq!(hostapp_en_matcher.is_some(), true);
+            let hostapp_en_matcher = hostapp_en_matcher.as_ref().unwrap();
+            assert_eq!(hostapp_en_matcher.is::<RegexMatcher>(), true);
+            let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<RegexMatcher>().unwrap();
+            assert_eq!(hostapp_en_matcher.re.is_some(), true);
+            let re = hostapp_en_matcher.re.as_ref();
+            assert_eq!(re.unwrap().as_str(), "Host Application");
+
+            // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
+            let hostapp_jp_node = ancestors[1];
+            assert_eq!(hostapp_jp_node.is::<LeafSelectionNode>(), true);
+            let hostapp_jp_node = hostapp_jp_node.downcast_ref::<LeafSelectionNode>().unwrap();
+
+            let hostapp_jp_matcher = &hostapp_jp_node.matcher;
+            assert_eq!(hostapp_jp_matcher.is_some(), true);
+            let hostapp_jp_matcher = hostapp_jp_matcher.as_ref().unwrap();
+            assert_eq!(hostapp_jp_matcher.is::<RegexMatcher>(), true);
+            let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<RegexMatcher>().unwrap();
+            assert_eq!(hostapp_jp_matcher.re.is_some(), true);
+            let re = hostapp_jp_matcher.re.as_ref();
+            assert_eq!(re.unwrap().as_str(), "ホスト アプリケーション");
+        }
+
+        // ImagePath
+        {
+            // AndSelectionNodeを正しく読み込めることを確認
+            let child_node = detection_childs[3];
+            assert_eq!(child_node.is::<AndSelectionNode>(), true);
+            let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
+            let ancestors = child_node.get_childs();
+            assert_eq!(ancestors.len(), 1);
+
+            // min-lenが正しく読み込めることを確認
+            {
+                let ancestor_node = ancestors[0];
+                assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
+                let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
+
+                let ancestor_node = &ancestor_node.matcher;
+                assert_eq!(ancestor_node.is_some(), true);
+                let ancestor_matcher = ancestor_node.as_ref().unwrap();
+                assert_eq!(ancestor_matcher.is::<MinlengthMatcher>(), true);
+                let ancestor_matcher = ancestor_matcher.downcast_ref::<MinlengthMatcher>().unwrap();
+                assert_eq!(ancestor_matcher.min_len, 1234321);
+            }
+        }
+    }
+}
