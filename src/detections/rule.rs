@@ -762,7 +762,7 @@ mod tests {
 
     use crate::detections::rule::{
         parse_rule, AndSelectionNode, LeafSelectionNode, MinlengthMatcher, OrSelectionNode,
-        RegexMatcher, SelectionNode,
+        RegexMatcher, RegexesFileMatcher, SelectionNode,
     };
 
     #[test]
@@ -784,6 +784,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
+                    regexes: ./regexes.txt
+                    whitelist: ./whitelist.txt
         falsepositives:
             - unknown
         level: medium
@@ -895,7 +897,7 @@ mod tests {
             assert_eq!(child_node.is::<AndSelectionNode>(), true);
             let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
-            assert_eq!(ancestors.len(), 1);
+            assert_eq!(ancestors.len(), 3);
 
             // min-lenが正しく読み込めることを確認
             {
@@ -909,6 +911,46 @@ mod tests {
                 assert_eq!(ancestor_matcher.is::<MinlengthMatcher>(), true);
                 let ancestor_matcher = ancestor_matcher.downcast_ref::<MinlengthMatcher>().unwrap();
                 assert_eq!(ancestor_matcher.min_len, 1234321);
+            }
+
+            // regexesが正しく読み込めることを確認
+            {
+                let ancestor_node = ancestors[1];
+                assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
+                let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
+
+                let ancestor_node = &ancestor_node.matcher;
+                assert_eq!(ancestor_node.is_some(), true);
+                let ancestor_matcher = ancestor_node.as_ref().unwrap();
+                assert_eq!(ancestor_matcher.is::<RegexesFileMatcher>(), true);
+                let ancestor_matcher = ancestor_matcher
+                    .downcast_ref::<RegexesFileMatcher>()
+                    .unwrap();
+
+                // regexes.txtの中身と一致していることを確認
+                let csvcontent = &ancestor_matcher.regexes_csv_content;
+                assert_eq!(csvcontent.len(), 14);
+
+                let firstcontent = &csvcontent[0];
+                assert_eq!(firstcontent.len(), 3);
+                assert_eq!(firstcontent[0], "0");
+                assert_eq!(
+                    firstcontent[1],
+                    r"^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$"
+                );
+                assert_eq!(
+                    firstcontent[2],
+                    r"Metasploit-style cmd with pipe (possible use of Meterpreter 'getsystem')"
+                );
+
+                let lastcontent = &csvcontent[13];
+                assert_eq!(lastcontent.len(), 3);
+                assert_eq!(lastcontent[0], "0");
+                assert_eq!(
+                    lastcontent[1],
+                    r"\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp"
+                );
+                assert_eq!(lastcontent[2], r"PSAttack-style command via cvtres.exe");
             }
         }
     }
