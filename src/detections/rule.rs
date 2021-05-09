@@ -1,5 +1,7 @@
 extern crate regex;
 
+use mopa::mopafy;
+
 use std::vec;
 
 use crate::detections::utils;
@@ -135,16 +137,17 @@ impl RuleNode {
 
         return selection
             .unwrap()
-            .get_leaf_nodes()
+            .get_descendants()
             .iter()
+            .filter_map(|node| return node.downcast_ref::<LeafSelectionNode>()) // mopaというライブラリを使うと簡単にダウンキャストできるらしいです。https://crates.io/crates/mopa
             .filter(|node| {
-                // alias.txtのevent_keyに一致するかどうか
+                // キーがEventIDのノードである
                 let key = utils::get_event_id_key();
                 if node.get_key() == key {
                     return true;
                 }
 
-                // alias.txtのaliasに一致するかどうか
+                // EventIDのAliasに一致しているかどうか
                 let alias = utils::get_alias(&key);
                 if alias.is_none() {
                     return false;
@@ -175,11 +178,13 @@ impl DetectionNode {
 }
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
-trait SelectionNode {
+trait SelectionNode: mopa::Any {
     fn select(&self, event_record: &Value) -> bool;
     fn init(&mut self) -> Result<(), Vec<String>>;
-    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode>;
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>>;
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>>;
 }
+mopafy!(SelectionNode);
 
 // detection - selection配下でAND条件を表すノード
 struct AndSelectionNode {
@@ -230,17 +235,26 @@ impl SelectionNode for AndSelectionNode {
         }
     }
 
-    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
         let mut ret = vec![];
+        self.child_nodes.iter().for_each(|child_node| {
+            ret.push(child_node);
+        });
+
+        return ret;
+    }
+
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+        let mut ret = self.get_childs();
 
         self.child_nodes
             .iter()
-            .map(|child| {
-                return child.get_leaf_nodes();
+            .map(|child_node| {
+                return child_node.get_descendants();
             })
             .flatten()
-            .for_each(|descendant| {
-                ret.push(descendant);
+            .for_each(|descendant_node| {
+                ret.push(descendant_node);
             });
 
         return ret;
@@ -296,17 +310,26 @@ impl SelectionNode for OrSelectionNode {
         }
     }
 
-    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
         let mut ret = vec![];
+        self.child_nodes.iter().for_each(|child_node| {
+            ret.push(child_node);
+        });
+
+        return ret;
+    }
+
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+        let mut ret = self.get_childs();
 
         self.child_nodes
             .iter()
-            .map(|child| {
-                return child.get_leaf_nodes();
+            .map(|child_node| {
+                return child_node.get_descendants();
             })
             .flatten()
-            .for_each(|descendant| {
-                ret.push(descendant);
+            .for_each(|descendant_node| {
+                ret.push(descendant_node);
             });
 
         return ret;
@@ -453,8 +476,12 @@ impl SelectionNode for LeafSelectionNode {
             .init(&match_key_list, &self.select_value);
     }
 
-    fn get_leaf_nodes(&self) -> Vec<&LeafSelectionNode> {
-        return vec![&self];
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+        return vec![];
+    }
+
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+        return vec![];
     }
 }
 
@@ -727,3 +754,5 @@ impl LeafMatcher for WhitelistFileMatcher {
         };
     }
 }
+
+
