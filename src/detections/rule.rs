@@ -49,7 +49,7 @@ fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
     return Option::Some(parse_selection_recursively(vec![], &selection_yaml, None));
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum StrFeature {
     StartsWith,
     EndsWith,
@@ -59,7 +59,7 @@ enum StrFeature {
 fn parse_selection_recursively(
     key_list: Vec<String>,
     yaml: &Yaml,
-    str_feature: Option<StrFeature>,
+    mut str_feature: Option<StrFeature>,
 ) -> Box<dyn SelectionNode + Send> {
     if yaml.as_hash().is_some() {
         // 連想配列はAND条件と解釈する
@@ -67,9 +67,19 @@ fn parse_selection_recursively(
         let mut and_node = AndSelectionNode::new();
 
         yaml_hash.keys().for_each(|hash_key| {
+            let keys: Vec<&str> = hash_key.as_str().unwrap().split('|').collect();
+            if keys.len() > 1 {
+                match keys[1] {
+                    "startswith" => str_feature = Some(StrFeature::StartsWith),
+                    "endswith" => str_feature = Some(StrFeature::EndsWith),
+                    "contains" => str_feature = Some(StrFeature::Contains),
+                    _ => {},
+                }
+            }
+
             let child_yaml = yaml_hash.get(hash_key).unwrap();
             let mut child_key_list = key_list.clone();
-            child_key_list.push(hash_key.as_str().unwrap().to_string());
+            child_key_list.push(keys[0].to_string());
             let child_node = parse_selection_recursively(child_key_list, child_yaml, str_feature);
             and_node.child_nodes.push(child_node);
         });
@@ -85,6 +95,7 @@ fn parse_selection_recursively(
         return Box::new(or_node);
     } else {
         // 連想配列と配列以外は末端ノード
+        println!("{:?}: {:?}", str_feature, key_list);
         return Box::new(LeafSelectionNode::new(key_list, yaml.clone()));
     }
 }
