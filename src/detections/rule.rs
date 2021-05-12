@@ -748,10 +748,12 @@ impl LeafMatcher for WhitelistFileMatcher {
 
     fn is_match(&self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => utils::check_whitelist(s, &self.whitelist_csv_content),
-            Value::Number(n) => utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content),
-            Value::Bool(b) => utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
-            _ => false,
+            Value::String(s) => !utils::check_whitelist(s, &self.whitelist_csv_content),
+            Value::Number(n) => {
+                !utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content)
+            }
+            Value::Bool(b) => !utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
+            _ => true,
         };
     }
 }
@@ -762,8 +764,10 @@ mod tests {
 
     use crate::detections::rule::{
         parse_rule, AndSelectionNode, LeafSelectionNode, MinlengthMatcher, OrSelectionNode,
-        RegexMatcher, RegexesFileMatcher, SelectionNode,
+        RegexMatcher, RegexesFileMatcher, SelectionNode, WhitelistFileMatcher,
     };
+
+    use super::RuleNode;
 
     #[test]
     fn test_rule_parse() {
@@ -793,13 +797,7 @@ mod tests {
         creation_date: 2020/11/8
         updated_date: 2020/11/8
         "#;
-        let rule_yaml = YamlLoader::load_from_str(rule_str);
-        assert_eq!(rule_yaml.is_ok(), true);
-        let rule_yamls = rule_yaml.unwrap();
-
-        let mut rule_yaml = rule_yamls.into_iter();
-        let mut rule_node = parse_rule(rule_yaml.next().unwrap());
-        assert_eq!(rule_node.init().is_ok(), true);
+        let rule_node = parse_rule_from_str(rule_str);
         let selection_node = rule_node.detection.unwrap().selection.unwrap();
 
         // Root
@@ -952,6 +950,1262 @@ mod tests {
                 );
                 assert_eq!(lastcontent[2], r"PSAttack-style command via cvtres.exe");
             }
+
+            // whitelist.txtが読み込めることを確認
+            {
+                let ancestor_node = ancestors[2];
+                assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
+                let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
+
+                let ancestor_node = &ancestor_node.matcher;
+                assert_eq!(ancestor_node.is_some(), true);
+                let ancestor_matcher = ancestor_node.as_ref().unwrap();
+                assert_eq!(ancestor_matcher.is::<WhitelistFileMatcher>(), true);
+                let ancestor_matcher = ancestor_matcher
+                    .downcast_ref::<WhitelistFileMatcher>()
+                    .unwrap();
+
+                let csvcontent = &ancestor_matcher.whitelist_csv_content;
+                assert_eq!(csvcontent.len(), 2);
+
+                assert_eq!(
+                    csvcontent[0][0],
+                    r#"^"C:\\Program Files\\Google\\Chrome\\Application\\chrome\.exe""#.to_string()
+                );
+                assert_eq!(
+                    csvcontent[1][0],
+                    r#"^"C:\\Program Files\\Google\\Update\\GoogleUpdate\.exe""#.to_string()
+                );
+            }
         }
+    }
+
+    #[test]
+    fn test_get_event_ids() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1234
+        output: 'command=%CommandLine%'
+        "#;
+        let rule_node = parse_rule_from_str(rule_str);
+        let event_ids = rule_node.get_event_ids();
+        assert_eq!(event_ids.len(), 1);
+        assert_eq!(event_ids[0], 1234);
+    }
+
+    #[test]
+    fn test_notdetect_regex_eventid() {
+        // 完全一致なので、前方一致で検知しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 410}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_regex_eventid2() {
+        // 完全一致なので、後方一致で検知しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 103}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_regex_eventid() {
+        // これはEventID=4103で検知するはず
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_regex_str() {
+        // 文字列っぽいデータでも確認
+        // 完全一致なので、前方一致しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Securit"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_regex_str2() {
+        // 文字列っぽいデータでも確認
+        // 完全一致なので、後方一致しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "ecurity"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+    #[test]
+    fn test_detect_regex_str() {
+        // 文字列っぽいデータでも完全一致することを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_regex_emptystr() {
+        // 文字列っぽいデータでも完全一致することを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"Channel": ""}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_mutiple_regex_and() {
+        // AND条件が正しく検知することを確認する。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4103
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_mutiple_regex_and() {
+        // AND条件で一つでも条件に一致しないと、検知しないことを確認
+        // この例ではComputerの値が異なっている。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4103
+                Computer: DESKTOP-ICHIICHIN
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_dotkey() {
+        // aliasじゃなくて、.区切りでつなげるケースが正しく検知できる。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Event.System.Computer: DESKTOP-ICHIICHI
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_dotkey() {
+        // aliasじゃなくて、.区切りでつなげるケースで、検知しないはずのケースで検知しないことを確かめる。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Event.System.Computer: DESKTOP-ICHIICHIN
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_differentkey() {
+        // aliasじゃなくて、.区切りでつなげるケースで、検知しないはずのケースで検知しないことを確かめる。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: NOTDETECT
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_or() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    - PowerShell
+                    - Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_or2() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    - PowerShell
+                    - Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "PowerShell", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_or() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    - PowerShell
+                    - Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "not detect", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_casesensetive() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_minlen() {
+        // minlenが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel:
+                    min_length: 10
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security9", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_minlen() {
+        // minlenが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel:
+                    min_length: 10
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security10", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_minlen2() {
+        // minlenが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel:
+                    min_length: 10
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security.11", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_minlen_and() {
+        // minlenが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel:
+                    regex: Security10
+                    min_length: 10
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security10", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_minlen_and() {
+        // minlenが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel:
+                    regex: Security10
+                    min_length: 11
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security10", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_regex() {
+        // 正規表現が使えることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: ^Program$
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Program", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_regexes() {
+        // regexes.txtが正しく検知できることを確認
+        // この場合ではEventIDが一致しているが、whitelistに一致するので検知しないはず。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+                Channel:
+                    - whitelist: whitelist.txt
+        output: 'command=%CommandLine%'
+        "#;
+
+        // JSONで値としてダブルクオートを使う場合、\でエスケープが必要なのに注意
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_whitelist() {
+        // whitelistが正しく検知できることを確認
+        // この場合ではEventIDが一致しているが、whitelistに一致するので検知しないはず。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+                Channel:
+                    - whitelist: whitelist.txt
+        output: 'command=%CommandLine%'
+        "#;
+
+        // JSONで値としてダブルクオートを使う場合、\でエスケープが必要なのに注意
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_whitelist2() {
+        // whitelistが正しく検知できることを確認
+        // この場合ではEventIDが一致しているが、whitelistに一致するので検知しないはず。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+                Channel:
+                    - whitelist: whitelist.txt
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\"", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_attribute() {
+        // XMLのタグのattributionの部分に値がある場合、JSONが特殊な感じでパースされるのでそのテスト
+        // 元のXMLは下記のような感じで、Providerタグの部分のNameとかGuidを検知するテスト
+        /*         - <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+        - <System>
+          <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}" />
+          <EventID>4672</EventID>
+          <Version>0</Version>
+          <Level>0</Level>
+          <Task>12548</Task>
+          <Opcode>0</Opcode>
+          <Keywords>0x8020000000000000</Keywords>
+          <TimeCreated SystemTime="2021-05-12T13:33:08.0144343Z" />
+          <EventRecordID>244666</EventRecordID>
+          <Correlation ActivityID="{0188dd7a-447d-000c-82dd-88017d44d701}" />
+          <Execution ProcessID="1172" ThreadID="22352" />
+          <Channel>Security</Channel>
+          <Security />
+          </System>
+        - <EventData>
+          <Data Name="SubjectUserName">SYSTEM</Data>
+          <Data Name="SubjectDomainName">NT AUTHORITY</Data>
+          <Data Name="PrivilegeList">SeAssignPrimaryTokenPrivilege SeTcbPrivilege SeSecurityPrivilege SeTakeOwnershipPrivilege SeLoadDriverPrivilege SeBackupPrivilege SeRestorePrivilege SeDebugPrivilege SeAuditPrivilege SeSystemEnvironmentPrivilege SeImpersonatePrivilege SeDelegateSessionUserImpersonatePrivilege</Data>
+          </EventData>
+          </Event> */
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4797
+                Event.System.Provider_attributes.Guid: 54849625-5478-4994-A5BA-3E3B0328C30D
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {
+              "System": {
+                "Channel": "Security",
+                "Correlation_attributes": {
+                  "ActivityID": "0188DD7A-447D-000C-82DD-88017D44D701"
+                },
+                "EventID": 4797,
+                "EventRecordID": 239219,
+                "Execution_attributes": {
+                  "ProcessID": 1172,
+                  "ThreadID": 23236
+                },
+                "Keywords": "0x8020000000000000",
+                "Level": 0,
+                "Opcode": 0,
+                "Provider_attributes": {
+                  "Guid": "54849625-5478-4994-A5BA-3E3B0328C30D",
+                  "Name": "Microsoft-Windows-Security-Auditing"
+                },
+                "Security": null,
+                "Task": 13824,
+                "TimeCreated_attributes": {
+                  "SystemTime": "2021-05-12T09:39:19.828403Z"
+                },
+                "Version": 0
+              }
+            },
+            "Event_attributes": {
+              "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+            }
+          }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_attribute() {
+        // XMLのタグのattributionの検知しないケースを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4797
+                Event.System.Provider_attributes.Guid: 54849625-5478-4994-A5BA-3E3B0328C30DSS
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {
+              "System": {
+                "Channel": "Security",
+                "Correlation_attributes": {
+                  "ActivityID": "0188DD7A-447D-000C-82DD-88017D44D701"
+                },
+                "EventID": 4797,
+                "EventRecordID": 239219,
+                "Execution_attributes": {
+                  "ProcessID": 1172,
+                  "ThreadID": 23236
+                },
+                "Keywords": "0x8020000000000000",
+                "Level": 0,
+                "Opcode": 0,
+                "Provider_attributes": {
+                  "Guid": "54849625-5478-4994-A5BA-3E3B0328C30D",
+                  "Name": "Microsoft-Windows-Security-Auditing"
+                },
+                "Security": null,
+                "Task": 13824,
+                "TimeCreated_attributes": {
+                  "SystemTime": "2021-05-12T09:39:19.828403Z"
+                },
+                "Version": 0
+              }
+            },
+            "Event_attributes": {
+              "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+            }
+          }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_eventdata() {
+        // XML形式の特殊なパターンでEventDataというタグあって、Name=の部分にキー的なものが来る。
+        /* - <EventData>
+        <Data Name="SubjectUserSid">S-1-5-21-2673273881-979819022-3746999991-1001</Data>
+        <Data Name="SubjectUserName">takai</Data>
+        <Data Name="SubjectDomainName">DESKTOP-ICHIICH</Data>
+        <Data Name="SubjectLogonId">0x312cd</Data>
+        <Data Name="Workstation">DESKTOP-ICHIICH</Data>
+        <Data Name="TargetUserName">Administrator</Data>
+        <Data Name="TargetDomainName">DESKTOP-ICHIICH</Data>
+        </EventData> */
+
+        // その場合、イベントパーサーのJSONは下記のような感じになるので、それで正しく検知出来ることをテスト。
+        /*         {
+            "Event": {
+              "EventData": {
+                "TargetDomainName": "TEST-DOMAIN",
+                "Workstation": "TEST WorkStation"
+                "TargetUserName": "ichiichi11",
+              },
+            }
+        } */
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Event.EventData.Workstation: 'TEST WorkStation'
+                Event.EventData.TargetUserName: ichiichi11
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {
+              "EventData": {
+                "Workstation": "TEST WorkStation",
+                "TargetUserName": "ichiichi11"
+              },
+              "System": {
+                "Channel": "Security",
+                "EventID": 4103,
+                "EventRecordID": 239219,
+                "Security": null
+              }
+            },
+            "Event_attributes": {
+              "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+            }
+        }
+        "#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_eventdata2() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+                TargetUserName: ichiichi11
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {
+              "EventData": {
+                "Workstation": "TEST WorkStation",
+                "TargetUserName": "ichiichi11"
+              },
+              "System": {
+                "Channel": "Security",
+                "EventID": 4103,
+                "EventRecordID": 239219,
+                "Security": null
+              }
+            },
+            "Event_attributes": {
+              "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+            }
+        }
+        "#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_eventdata() {
+        // EventDataの検知しないパターン
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 4103
+                TargetUserName: ichiichi12
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {
+              "EventData": {
+                "Workstation": "TEST WorkStation",
+                "TargetUserName": "ichiichi11"
+              },
+              "System": {
+                "Channel": "Security",
+                "EventID": 4103,
+                "EventRecordID": 239219,
+                "Security": null
+              }
+            },
+            "Event_attributes": {
+              "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+            }
+        }
+        "#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_special_eventdata() {
+        // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
+        // そのためにruleファイルでEventDataというキーだけ特別対応している。
+        // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 403
+                EventData: '[\s\S]*EngineVersion=2.0[\s\S]*'
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {
+              "EventData": {
+                "Binary": null,
+                "Data": [
+                  "Stopped",
+                  "Available",
+                  "\tNewEngineState=Stopped\n\tPreviousEngineState=Available\n\n\tSequenceNumber=10\n\n\tHostName=ConsoleHost\n\tHostVersion=2.0\n\tHostId=5cbb33bf-acf7-47cc-9242-141cd0ba9f0c\n\tEngineVersion=2.0\n\tRunspaceId=c6e94dca-0daf-418c-860a-f751a9f2cbe1\n\tPipelineId=\n\tCommandName=\n\tCommandType=\n\tScriptName=\n\tCommandPath=\n\tCommandLine="
+                ]
+              },
+              "System": {
+                "Channel": "Windows PowerShell",
+                "Computer": "DESKTOP-ST69BPO",
+                "EventID": 403,
+                "EventID_attributes": {
+                  "Qualifiers": 0
+                },
+                "EventRecordID": 730,
+                "Keywords": "0x80000000000000",
+                "Level": 4,
+                "Provider_attributes": {
+                  "Name": "PowerShell"
+                },
+                "Security": null,
+                "Task": 4,
+                "TimeCreated_attributes": {
+                  "SystemTime": "2021-01-28T10:40:54.946866Z"
+                }
+              }
+            },
+            "Event_attributes": {
+              "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+            }
+          }
+        "#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_special_eventdata() {
+        // 上記テストケースのEventDataの更に特殊ケースで下記のようにDataタグの中にNameキーがないケースがある。
+        // そのためにruleファイルでEventDataというキーだけ特別対応している。
+        // 現状、downgrade_attack.ymlというルールの場合だけで確認出来ているケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 403
+                EventData: '[\s\S]*EngineVersion=3.0[\s\S]*'
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {
+              "EventData": {
+                "Binary": null,
+                "Data": [
+                  "Stopped",
+                  "Available",
+                  "\tNewEngineState=Stopped\n\tPreviousEngineState=Available\n\n\tSequenceNumber=10\n\n\tHostName=ConsoleHost\n\tHostVersion=2.0\n\tHostId=5cbb33bf-acf7-47cc-9242-141cd0ba9f0c\n\tEngineVersion=2.0\n\tRunspaceId=c6e94dca-0daf-418c-860a-f751a9f2cbe1\n\tPipelineId=\n\tCommandName=\n\tCommandType=\n\tScriptName=\n\tCommandPath=\n\tCommandLine="
+                ]
+              },
+              "System": {
+                "Channel": "Windows PowerShell",
+                "Computer": "DESKTOP-ST69BPO",
+                "EventID": 403,
+                "EventID_attributes": {
+                  "Qualifiers": 0
+                },
+                "EventRecordID": 730,
+                "Keywords": "0x80000000000000",
+                "Level": 4,
+                "Provider_attributes": {
+                  "Name": "PowerShell"
+                },
+                "Security": null,
+                "Task": 4,
+                "TimeCreated_attributes": {
+                  "SystemTime": "2021-01-28T10:40:54.946866Z"
+                }
+              }
+            },
+            "Event_attributes": {
+              "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+            }
+          }
+        "#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    fn parse_rule_from_str(rule_str: &str) -> RuleNode {
+        let rule_yaml = YamlLoader::load_from_str(rule_str);
+        assert_eq!(rule_yaml.is_ok(), true);
+        let rule_yamls = rule_yaml.unwrap();
+        let mut rule_yaml = rule_yamls.into_iter();
+        let mut rule_node = parse_rule(rule_yaml.next().unwrap());
+        assert_eq!(rule_node.init().is_ok(), true);
+        return rule_node;
     }
 }
