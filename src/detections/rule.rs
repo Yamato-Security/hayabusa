@@ -46,7 +46,11 @@ fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
     if selection_yaml.is_badvalue() {
         return Option::None;
     }
-    return Option::Some(parse_selection_recursively(vec![], &selection_yaml, None));
+    return Option::Some(parse_selection_recursively(
+        vec![],
+        &selection_yaml,
+        &mut vec![],
+    ));
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -59,7 +63,7 @@ enum StrFeature {
 fn parse_selection_recursively(
     key_list: Vec<String>,
     yaml: &Yaml,
-    mut str_feature: Option<StrFeature>,
+    str_feature: &mut Vec<StrFeature>,
 ) -> Box<dyn SelectionNode + Send> {
     if yaml.as_hash().is_some() {
         // 連想配列はAND条件と解釈する
@@ -70,11 +74,11 @@ fn parse_selection_recursively(
             let keys: Vec<&str> = hash_key.as_str().unwrap().split('|').collect();
             if keys.len() > 1 {
                 match keys[1] {
-                    "startswith" => str_feature = Some(StrFeature::StartsWith),
-                    "endswith" => str_feature = Some(StrFeature::EndsWith),
-                    "contains" => str_feature = Some(StrFeature::Contains),
-                    _ => {},
-                }
+                    "startswith" => str_feature.push(StrFeature::StartsWith),
+                    "endswith" => str_feature.push(StrFeature::EndsWith),
+                    "contains" => str_feature.push(StrFeature::Contains),
+                    _ => {}
+                };
             }
 
             let child_yaml = yaml_hash.get(hash_key).unwrap();
