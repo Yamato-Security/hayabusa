@@ -138,20 +138,21 @@ impl Detection {
         rules: &Vec<RuleNode>,
     ) -> Vec<EvtxRecordInfo> {
         // evtx_parser.records_json()でevtxをxmlに変換するJobを作成
-        let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<serde_json::Value>>>>> = evtx_parsers
-            .into_iter()
-            .map(|mut evtx_parser| {
-                return spawn(async move {
-                    let mut parse_config = ParserSettings::default();
-                    parse_config = parse_config.separate_json_attributes(true);
-                    parse_config = parse_config.num_threads(utils::get_thread_num());
+        let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<serde_json::Value>>>>> =
+            evtx_parsers
+                .into_iter()
+                .map(|mut evtx_parser| {
+                    return spawn(async move {
+                        let mut parse_config = ParserSettings::default();
+                        parse_config = parse_config.separate_json_attributes(true);
+                        parse_config = parse_config.num_threads(utils::get_thread_num());
 
-                    evtx_parser = evtx_parser.with_configuration(parse_config);
-                    let values = evtx_parser.records_json_value().collect();
-                    return values;
-                });
-            })
-            .collect();
+                        evtx_parser = evtx_parser.with_configuration(parse_config);
+                        let values = evtx_parser.records_json_value().collect();
+                        return values;
+                    });
+                })
+                .collect();
 
         // 作成したjobを実行し(handle.awaitの部分)、スレッドの実行時にエラーが発生した場合、標準エラー出力に出しておく
         let mut ret = vec![];
@@ -193,20 +194,23 @@ impl Detection {
                 let record_json = parse_result.unwrap().data;
                 let event_id_opt = utils::get_event_value(&utils::get_event_id_key(), &record_json);
                 let is_exit_eventid = event_id_opt
-                .and_then(|event_id| event_id.as_i64())
-                .and_then(|event_id| {
-                    if event_id_set.contains(&event_id) {
-                        return Option::Some(&record_json);
-                    } else {
-                        return Option::None;
-                    }
-                });
+                    .and_then(|event_id| event_id.as_i64())
+                    .and_then(|event_id| {
+                        if event_id_set.contains(&event_id) {
+                            return Option::Some(&record_json);
+                        } else {
+                            return Option::None;
+                        }
+                    });
                 if is_exit_eventid.is_none() {
                     return Option::None;
                 }
 
                 let evtx_filepath = evtx_files[parser_idx].display().to_string();
-                let record_info = EvtxRecordInfo{ evtx_filepath: evtx_filepath, record: record_json};
+                let record_info = EvtxRecordInfo {
+                    evtx_filepath: evtx_filepath,
+                    record: record_json,
+                };
                 return Option::Some(record_info);
             })
             .collect();
