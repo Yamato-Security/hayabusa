@@ -1,0 +1,18 @@
+title: Kerberoasting
+description: Adversaries may abuse a valid Kerberos ticket-granting ticket (TGT) or sniff network traffic to obtain a ticket-granting service (TGS) ticket that may be vulnerable to Brute Force.
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: System
+        EventID: 4768
+        param1: 'TicketEncryptionType=0x17'
+        param2: 'PreAuthType=2'
+falsepositives:
+    - unknown
+level: medium
+output: 'Detected Kerberoasting Risk Activity.'
+creation_date: 2021/4/31
+updated_date: 2021/4/31
