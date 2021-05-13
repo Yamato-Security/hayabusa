@@ -16,10 +16,11 @@ use std::{fs::File, sync::Arc};
 
 const DIRPATH_RULES: &str = "rules";
 
+// イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    evtx_filepath: String,
-    record: Value,
+    evtx_filepath: String,// イベントファイルのファイルパス　ログで出力するときに使う
+    record: Value,  // 1レコード分のデータをJSON形式にシリアライズしたもの
 }
 
 // TODO テストケースかかなきゃ...
@@ -128,7 +129,7 @@ impl Detection {
         return ret;
     }
 
-    // evtxファイルからxmlを生成する。
+    // evtxファイルからEvtxRecordInfoを生成する。
     // 戻り値は「どのイベントファイルから生成されたXMLかを示すindex」と「変換されたXML」のタプルです。
     // タプルのindexは、引数で指定されるevtx_filesのindexに対応しています。
     async fn evtx_to_json(
