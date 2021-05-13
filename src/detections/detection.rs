@@ -19,8 +19,8 @@ const DIRPATH_RULES: &str = "rules";
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    evtx_filepath: String,// イベントファイルのファイルパス　ログで出力するときに使う
-    record: Value,  // 1レコード分のデータをJSON形式にシリアライズしたもの
+    evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
+    record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
 }
 
 // TODO テストケースかかなきゃ...
