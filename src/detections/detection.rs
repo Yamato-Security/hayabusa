@@ -16,10 +16,11 @@ use std::{fs::File, sync::Arc};
 
 const DIRPATH_RULES: &str = "rules";
 
+// イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    evtx_filepath: String,
-    record: Value,
+    evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
+    record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
 }
 
 // TODO テストケースかかなきゃ...
@@ -122,46 +123,37 @@ impl Detection {
             .collect();
 
         let tokio_rt = utils::create_tokio_runtime();
-        let xml_records = tokio_rt.block_on(self.evtx_to_xml(evtx_parsers, &evtx_files));
-
-        let json_records = tokio_rt.block_on(self.xml_to_json(xml_records, &evtx_files, &rules));
+        let ret = tokio_rt.block_on(self.evtx_to_json(evtx_parsers, &evtx_files, rules));
         tokio_rt.shutdown_background();
 
-        return json_records
-            .into_iter()
-            .map(|(parser_idx, json_record)| {
-                let evtx_filepath = evtx_files[parser_idx].display().to_string();
-                return EvtxRecordInfo {
-                    evtx_filepath: String::from(&evtx_filepath),
-                    record: json_record,
-                };
-            })
-            .collect();
+        return ret;
     }
 
-    // evtxファイルからxmlを生成する。
+    // evtxファイルからEvtxRecordInfoを生成する。
     // 戻り値は「どのイベントファイルから生成されたXMLかを示すindex」と「変換されたXML」のタプルです。
     // タプルのindexは、引数で指定されるevtx_filesのindexに対応しています。
-    async fn evtx_to_xml(
+    async fn evtx_to_json(
         &mut self,
         evtx_parsers: Vec<EvtxParser<File>>,
         evtx_files: &Vec<PathBuf>,
-    ) -> Vec<(usize, SerializedEvtxRecord<String>)> {
+        rules: &Vec<RuleNode>,
+    ) -> Vec<EvtxRecordInfo> {
         // evtx_parser.records_json()でevtxをxmlに変換するJobを作成
-        let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<String>>>>> = evtx_parsers
-            .into_iter()
-            .map(|mut evtx_parser| {
-                return spawn(async move {
-                    let mut parse_config = ParserSettings::default();
-                    parse_config = parse_config.separate_json_attributes(true);
-                    parse_config = parse_config.num_threads(utils::get_thread_num());
+        let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<serde_json::Value>>>>> =
+            evtx_parsers
+                .into_iter()
+                .map(|mut evtx_parser| {
+                    return spawn(async move {
+                        let mut parse_config = ParserSettings::default();
+                        parse_config = parse_config.separate_json_attributes(true);
+                        parse_config = parse_config.num_threads(utils::get_thread_num());
 
-                    evtx_parser = evtx_parser.with_configuration(parse_config);
-                    let values = evtx_parser.records_json().collect();
-                    return values;
-                });
-            })
-            .collect();
+                        evtx_parser = evtx_parser.with_configuration(parse_config);
+                        let values = evtx_parser.records_json_value().collect();
+                        return values;
+                    });
+                })
+                .collect();
 
         // 作成したjobを実行し(handle.awaitの部分)、スレッドの実行時にエラーが発生した場合、標準エラー出力に出しておく
         let mut ret = vec![];
@@ -183,9 +175,11 @@ impl Detection {
             });
         }
 
+        let event_id_set = Detection::get_event_ids(rules);
         return ret
             .into_iter()
             .filter_map(|(parser_idx, parse_result)| {
+                // パースに失敗している場合、エラーメッセージを出力
                 if parse_result.is_err() {
                     let evtx_filepath = &evtx_files[parser_idx].display();
                     let errmsg = format!(
@@ -196,95 +190,31 @@ impl Detection {
                     AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
                     return Option::None;
                 }
-                return Option::Some((parser_idx, parse_result.unwrap()));
-            })
-            .collect();
-    }
 
-    // xmlからjsonに変換します。
-    // 戻り値は「どのイベントファイルから生成されたXMLかを示すindex」と「変換されたJSON」のタプルです。
-    // タプルのindexは、引数で指定されるevtx_filesのindexに対応しています。
-    async fn xml_to_json(
-        &mut self,
-        xml_records: Vec<(usize, SerializedEvtxRecord<String>)>,
-        evtx_files: &Vec<PathBuf>,
-        rules: &Vec<RuleNode>,
-    ) -> Vec<(usize, Value)> {
-        // TODO スレッド作り過ぎなので、数を減らす
-
-        // 非同期で実行される無名関数を定義
-        let async_job = |pair: (usize, SerializedEvtxRecord<String>),
-                         event_id_set: Arc<HashSet<i64>>,
-                         evtx_files: Arc<Vec<PathBuf>>| {
-            let parser_idx = pair.0;
-            let handle = spawn(async move {
-                let parse_result = serde_json::from_str(&pair.1.data);
-                // パースに失敗した場合はエラー出力しておく。
-                if parse_result.is_err() {
-                    let evtx_filepath = &evtx_files[parser_idx].display();
-                    let errmsg = format!(
-                        "Failed to serialize from event xml to json. EventFile:{} Error:{}",
-                        evtx_filepath,
-                        parse_result.unwrap_err()
-                    );
-                    AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                    return Option::None;
-                }
-
-                // ルールファイルで検知しようとしているEventIDでないレコードはここで捨てる。
-                let parsed_json: Value = parse_result.unwrap();
-                let event_id_opt = utils::get_event_value(&utils::get_event_id_key(), &parsed_json);
-                return event_id_opt
+                // ルールファイルに記載されていないEventIDのレコードは絶対に検知しないので無視する。
+                let record_json = parse_result.unwrap().data;
+                let event_id_opt = utils::get_event_value(&utils::get_event_id_key(), &record_json);
+                let is_exit_eventid = event_id_opt
                     .and_then(|event_id| event_id.as_i64())
                     .and_then(|event_id| {
                         if event_id_set.contains(&event_id) {
-                            return Option::Some(parsed_json);
+                            return Option::Some(&record_json);
                         } else {
                             return Option::None;
                         }
                     });
-            });
+                if is_exit_eventid.is_none() {
+                    return Option::None;
+                }
 
-            return (parser_idx, handle);
-        };
-        // 非同期で実行するスレッドを生成し、実行する。
-        let event_id_set_arc = Arc::new(Detection::get_event_ids(rules));
-        let evtx_files_arc = Arc::new(evtx_files.clone());
-        let handles: Vec<(usize, JoinHandle<Option<Value>>)> = xml_records
-            .into_iter()
-            .map(|xml_record_pair| {
-                let event_id_set_clone = Arc::clone(&event_id_set_arc);
-                let evtx_files_clone = Arc::clone(&evtx_files_arc);
-                return async_job(xml_record_pair, event_id_set_clone, evtx_files_clone);
+                let evtx_filepath = evtx_files[parser_idx].display().to_string();
+                let record_info = EvtxRecordInfo {
+                    evtx_filepath: evtx_filepath,
+                    record: record_json,
+                };
+                return Option::Some(record_info);
             })
             .collect();
-
-        // スレッドの終了待ちをしている。
-        let mut ret = vec![];
-        for (parser_idx, handle) in handles {
-            let future = handle.await;
-            // スレッドが正常に完了しなかった場合はエラーメッセージを出力する。
-            if future.is_err() {
-                let evtx_filepath = &evtx_files[parser_idx].display();
-                let errmsg = format!(
-                    "Failed to serialize from event xml to json. EventFile:{} Error:{}",
-                    evtx_filepath,
-                    future.unwrap_err()
-                );
-                AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                continue;
-            }
-
-            // パース失敗やルールファイルで検知しようとしていないEventIDの場合等はis_none()==trueになる。
-            let parse_result = future.unwrap();
-            if parse_result.is_none() {
-                continue;
-            }
-
-            ret.push((parser_idx, parse_result.unwrap()));
-        }
-
-        return ret;
     }
 
     // 検知ロジックを実行します。
