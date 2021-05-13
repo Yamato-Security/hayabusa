@@ -6,10 +6,10 @@ logsource:
     product: windows
 detection:
     selection:
-        Channel: System
+        Channel: Security
         EventID: 4768
-        param1: 'TicketEncryptionType=0x17'
-        param2: 'PreAuthType=2'
+        TicketEncryptionType: '0x17'
+        PreAuthType: 2
 falsepositives:
     - unknown
 level: medium
