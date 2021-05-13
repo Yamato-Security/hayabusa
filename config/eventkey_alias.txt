@@ -22,3 +22,5 @@ LogFileClearedSubjectUserName,Event.UserData.SubjectUserName
 SubjectUserName,Event.EventData.SubjectUserName
 SubjectUserSid,Event.EventData.SubjectUserSid
 DomainName,Event.EventData.SubjectDomainName
+TicketEncryptionType,Event.EventData.TicketEncryptionType
+PreAuthType,Event.EventData.PreAuthType

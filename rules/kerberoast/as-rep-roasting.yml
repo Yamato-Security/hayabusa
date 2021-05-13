@@ -1,0 +1,18 @@
+title: AS-REP Roasting
+description: For each account found without preauthentication, an adversary may send an AS-REQ message without the encrypted timestamp and receive an AS-REP message with TGT data which may be encrypted with an insecure algorithm such as RC4.
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: Security
+        EventID: 4768
+        TicketEncryptionType: '0x17'
+        PreAuthType: 0
+falsepositives:
+    - unknown
+level: medium
+output: 'Detected AS-REP Roasting Risk Actvity.'
+creation_date: 2021/4/31
+updated_date: 2021/4/31
