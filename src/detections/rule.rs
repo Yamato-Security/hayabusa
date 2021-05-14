@@ -126,40 +126,40 @@ impl RuleNode {
         return selection.unwrap().select(event_record);
     }
 
-    pub fn get_event_ids(&self) -> Vec<i64> {
-        let selection = self
-            .detection
-            .as_ref()
-            .and_then(|detection| detection.selection.as_ref());
-        if selection.is_none() {
-            return vec![];
-        }
+    // pub fn get_event_ids(&self) -> Vec<i64> {
+    //     let selection = self
+    //         .detection
+    //         .as_ref()
+    //         .and_then(|detection| detection.selection.as_ref());
+    //     if selection.is_none() {
+    //         return vec![];
+    //     }
 
-        return selection
-            .unwrap()
-            .get_descendants()
-            .iter()
-            .filter_map(|node| return node.downcast_ref::<LeafSelectionNode>()) // mopaというライブラリを使うと簡単にダウンキャストできるらしいです。https://crates.io/crates/mopa
-            .filter(|node| {
-                // キーがEventIDのノードである
-                let key = utils::get_event_id_key();
-                if node.get_key() == key {
-                    return true;
-                }
+    //     return selection
+    //         .unwrap()
+    //         .get_descendants()
+    //         .iter()
+    //         .filter_map(|node| return node.downcast_ref::<LeafSelectionNode>()) // mopaというライブラリを使うと簡単にダウンキャストできるらしいです。https://crates.io/crates/mopa
+    //         .filter(|node| {
+    //             // キーがEventIDのノードである
+    //             let key = utils::get_event_id_key();
+    //             if node.get_key() == key {
+    //                 return true;
+    //             }
 
-                // EventIDのAliasに一致しているかどうか
-                let alias = utils::get_alias(&key);
-                if alias.is_none() {
-                    return false;
-                } else {
-                    return node.get_key() == alias.unwrap();
-                }
-            })
-            .filter_map(|node| {
-                return node.select_value.as_i64();
-            })
-            .collect();
-    }
+    //             // EventIDのAliasに一致しているかどうか
+    //             let alias = utils::get_alias(&key);
+    //             if alias.is_none() {
+    //                 return false;
+    //             } else {
+    //                 return node.get_key() == alias.unwrap();
+    //             }
+    //         })
+    //         .filter_map(|node| {
+    //             return node.select_value.as_i64();
+    //         })
+    //         .collect();
+    // }
 }
 
 // Ruleファイルのdetectionを表すノード
@@ -980,20 +980,20 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_get_event_ids() {
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                EventID: 1234
-        output: 'command=%CommandLine%'
-        "#;
-        let rule_node = parse_rule_from_str(rule_str);
-        let event_ids = rule_node.get_event_ids();
-        assert_eq!(event_ids.len(), 1);
-        assert_eq!(event_ids[0], 1234);
-    }
+    // #[test]
+    // fn test_get_event_ids() {
+    //     let rule_str = r#"
+    //     enabled: true
+    //     detection:
+    //         selection:
+    //             EventID: 1234
+    //     output: 'command=%CommandLine%'
+    //     "#;
+    //     let rule_node = parse_rule_from_str(rule_str);
+    //     let event_ids = rule_node.get_event_ids();
+    //     assert_eq!(event_ids.len(), 1);
+    //     assert_eq!(event_ids[0], 1234);
+    // }
 
     #[test]
     fn test_notdetect_regex_eventid() {
