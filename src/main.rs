@@ -7,7 +7,7 @@ use std::{
     path::PathBuf,
 };
 use tokio::{spawn, task::JoinHandle};
-use yamato_event_analyzer::detections::configs;
+use yamato_event_analyzer::{detections::configs, timeline::timeline::Timeline};
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::detections::detection::EvtxRecordInfo;
 use yamato_event_analyzer::detections::print::AlertMessage;
@@ -71,6 +71,9 @@ fn print_credits() {
 
 fn detect_files(evtx_files: Vec<PathBuf>) {
     let evnt_records = evtx_to_jsons(&evtx_files);
+
+    let mut tl = Timeline::new();
+    tl.start(&evnt_records);
 
     let mut detection = detection::Detection::new();
     &detection.start(evnt_records);
