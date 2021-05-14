@@ -16,12 +16,12 @@ impl EventStatistics {
 
     // 現状では、この関数の戻り値として返すVec<String>を表示するコードは実装していません。
     pub fn start(&mut self, _records: &Vec<EvtxRecordInfo> ) -> Vec<String> {
-        // 引数でstatisticsオプションが指定されている時だけ、
-        if configs::CONFIG.read().unwrap().args.value_of("statistics").is_none() {
+        // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
+        if !configs::CONFIG.read().unwrap().args.is_present("statistics") {
             return vec![];
         }
 
-        // TODO ここから下を書いて欲しいです!!
+        // TODO ここから下を書いて欲しいです。
 
         return vec![];
     }
