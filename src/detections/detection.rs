@@ -9,7 +9,7 @@ use crate::detections::rule::RuleNode;
 use crate::detections::{print::AlertMessage, utils};
 use crate::yaml::ParseYaml;
 
-use std::{sync::Arc};
+use std::sync::Arc;
 
 const DIRPATH_RULES: &str = "rules";
 
@@ -21,25 +21,24 @@ pub struct EvtxRecordInfo {
 }
 
 impl EvtxRecordInfo {
-    pub fn new(evtx_filepath:String, record: Value) -> EvtxRecordInfo{
-        return EvtxRecordInfo{
+    pub fn new(evtx_filepath: String, record: Value) -> EvtxRecordInfo {
+        return EvtxRecordInfo {
             evtx_filepath: evtx_filepath,
-            record: record
+            record: record,
         };
     }
 }
 
 // TODO テストケースかかなきゃ...
 #[derive(Debug)]
-pub struct Detection {
-}
+pub struct Detection {}
 
 impl Detection {
     pub fn new() -> Detection {
         return Detection {};
     }
 
-    pub fn start(&mut self, records: Vec<EvtxRecordInfo> ) {
+    pub fn start(&mut self, records: Vec<EvtxRecordInfo>) {
         let rules = self.parse_rule_files();
         if rules.is_empty() {
             return;

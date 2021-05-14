@@ -7,12 +7,12 @@ use std::{
     path::PathBuf,
 };
 use tokio::{spawn, task::JoinHandle};
-use yamato_event_analyzer::{detections::configs, timeline::timeline::Timeline};
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::detections::detection::EvtxRecordInfo;
 use yamato_event_analyzer::detections::print::AlertMessage;
 use yamato_event_analyzer::omikuji::Omikuji;
 use yamato_event_analyzer::{afterfact::after_fact, detections::utils};
+use yamato_event_analyzer::{detections::configs, timeline::timeline::Timeline};
 
 fn main() {
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
