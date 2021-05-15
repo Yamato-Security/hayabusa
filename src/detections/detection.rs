@@ -1,53 +1,48 @@
 extern crate csv;
 
+use serde_json::Value;
+use tokio::{spawn, task::JoinHandle};
+
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::detections::{print::AlertMessage, utils};
 use crate::yaml::ParseYaml;
 
-use evtx::err;
-use evtx::{EvtxParser, ParserSettings, SerializedEvtxRecord};
-use serde_json::Value;
-use tokio::{spawn, task::JoinHandle};
-
-use std::{collections::HashSet, path::PathBuf};
-use std::{fs::File, sync::Arc};
+use std::sync::Arc;
 
 const DIRPATH_RULES: &str = "rules";
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
-    record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
+    pub evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
+    pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
+}
+
+impl EvtxRecordInfo {
+    pub fn new(evtx_filepath: String, record: Value) -> EvtxRecordInfo {
+        return EvtxRecordInfo {
+            evtx_filepath: evtx_filepath,
+            record: record,
+        };
+    }
 }
 
 // TODO テストケースかかなきゃ...
 #[derive(Debug)]
-pub struct Detection {
-    parseinfos: Vec<EvtxRecordInfo>,
-}
+pub struct Detection {}
 
 impl Detection {
     pub fn new() -> Detection {
-        let initializer: Vec<EvtxRecordInfo> = Vec::new();
-        Detection {
-            parseinfos: initializer,
-        }
+        return Detection {};
     }
 
-    pub fn start(&mut self, evtx_files: Vec<PathBuf>) {
-        if evtx_files.is_empty() {
-            return;
-        }
-
+    pub fn start(&mut self, records: Vec<EvtxRecordInfo>) {
         let rules = self.parse_rule_files();
         if rules.is_empty() {
             return;
         }
-
-        let records = self.evtx_to_jsons(&evtx_files, &rules);
 
         let tokio_rt = utils::create_tokio_runtime();
         tokio_rt.block_on(self.execute_rule(rules, records));
@@ -96,124 +91,6 @@ impl Detection {
             .into_iter()
             .map(|rule_file| rule::parse_rule(rule_file))
             .filter_map(return_if_success)
-            .collect();
-    }
-
-    // evtxファイルをjsonに変換します。
-    fn evtx_to_jsons(
-        &mut self,
-        evtx_files: &Vec<PathBuf>,
-        rules: &Vec<RuleNode>,
-    ) -> Vec<EvtxRecordInfo> {
-        // EvtxParserを生成する。
-        let evtx_parsers: Vec<EvtxParser<File>> = evtx_files
-            .clone()
-            .into_iter()
-            .filter_map(|evtx_file| {
-                // convert to evtx parser
-                // println!("PathBuf:{}", evtx_file.display());
-                match EvtxParser::from_path(evtx_file) {
-                    Ok(parser) => Option::Some(parser),
-                    Err(e) => {
-                        eprintln!("{}", e);
-                        return Option::None;
-                    }
-                }
-            })
-            .collect();
-
-        let tokio_rt = utils::create_tokio_runtime();
-        let ret = tokio_rt.block_on(self.evtx_to_json(evtx_parsers, &evtx_files, rules));
-        tokio_rt.shutdown_background();
-
-        return ret;
-    }
-
-    // evtxファイルからEvtxRecordInfoを生成する。
-    // 戻り値は「どのイベントファイルから生成されたXMLかを示すindex」と「変換されたXML」のタプルです。
-    // タプルのindexは、引数で指定されるevtx_filesのindexに対応しています。
-    async fn evtx_to_json(
-        &mut self,
-        evtx_parsers: Vec<EvtxParser<File>>,
-        evtx_files: &Vec<PathBuf>,
-        rules: &Vec<RuleNode>,
-    ) -> Vec<EvtxRecordInfo> {
-        // evtx_parser.records_json()でevtxをxmlに変換するJobを作成
-        let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<serde_json::Value>>>>> =
-            evtx_parsers
-                .into_iter()
-                .map(|mut evtx_parser| {
-                    return spawn(async move {
-                        let mut parse_config = ParserSettings::default();
-                        parse_config = parse_config.separate_json_attributes(true);
-                        parse_config = parse_config.num_threads(utils::get_thread_num());
-
-                        evtx_parser = evtx_parser.with_configuration(parse_config);
-                        let values = evtx_parser.records_json_value().collect();
-                        return values;
-                    });
-                })
-                .collect();
-
-        // 作成したjobを実行し(handle.awaitの部分)、スレッドの実行時にエラーが発生した場合、標準エラー出力に出しておく
-        let mut ret = vec![];
-        for (parser_idx, handle) in handles.into_iter().enumerate() {
-            let future_result = handle.await;
-            if future_result.is_err() {
-                let evtx_filepath = &evtx_files[parser_idx].display();
-                let errmsg = format!(
-                    "Failed to parse event file. EventFile:{} Error:{}",
-                    evtx_filepath,
-                    future_result.unwrap_err()
-                );
-                AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                continue;
-            }
-
-            future_result.unwrap().into_iter().for_each(|parse_result| {
-                ret.push((parser_idx, parse_result));
-            });
-        }
-
-        let event_id_set = Detection::get_event_ids(rules);
-        return ret
-            .into_iter()
-            .filter_map(|(parser_idx, parse_result)| {
-                // パースに失敗している場合、エラーメッセージを出力
-                if parse_result.is_err() {
-                    let evtx_filepath = &evtx_files[parser_idx].display();
-                    let errmsg = format!(
-                        "Failed to parse event file. EventFile:{} Error:{}",
-                        evtx_filepath,
-                        parse_result.unwrap_err()
-                    );
-                    AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                    return Option::None;
-                }
-
-                // ルールファイルに記載されていないEventIDのレコードは絶対に検知しないので無視する。
-                let record_json = parse_result.unwrap().data;
-                let event_id_opt = utils::get_event_value(&utils::get_event_id_key(), &record_json);
-                let is_exit_eventid = event_id_opt
-                    .and_then(|event_id| event_id.as_i64())
-                    .and_then(|event_id| {
-                        if event_id_set.contains(&event_id) {
-                            return Option::Some(&record_json);
-                        } else {
-                            return Option::None;
-                        }
-                    });
-                if is_exit_eventid.is_none() {
-                    return Option::None;
-                }
-
-                let evtx_filepath = evtx_files[parser_idx].display().to_string();
-                let record_info = EvtxRecordInfo {
-                    evtx_filepath: evtx_filepath,
-                    record: record_json,
-                };
-                return Option::Some(record_info);
-            })
             .collect();
     }
 
@@ -270,13 +147,13 @@ impl Detection {
         }
     }
 
-    fn get_event_ids(rules: &Vec<RuleNode>) -> HashSet<i64> {
-        return rules
-            .iter()
-            .map(|rule| rule.get_event_ids())
-            .flatten()
-            .collect();
-    }
+    // fn get_event_ids(rules: &Vec<RuleNode>) -> HashSet<i64> {
+    //     return rules
+    //         .iter()
+    //         .map(|rule| rule.get_event_ids())
+    //         .flatten()
+    //         .collect();
+    // }
 
     // 配列を指定したサイズで分割する。Vector.chunksと同じ動作をするが、Vectorの関数だとinto的なことができないので自作
     fn chunks<T>(ary: Vec<T>, size: usize) -> Vec<Vec<T>> {
