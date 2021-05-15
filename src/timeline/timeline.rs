@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::detections::detection::EvtxRecordInfo;
 
 use super::statistics::EventStatistics;
@@ -10,8 +12,8 @@ impl Timeline {
         return Timeline {};
     }
 
-    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
+    pub fn start(&mut self, evtx_files: &Vec<PathBuf>, records: &Vec<EvtxRecordInfo>) {
         let mut statistic = EventStatistics::new();
-        statistic.start(records);
+        statistic.start(evtx_files, records);
     }
 }
