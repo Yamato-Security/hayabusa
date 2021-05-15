@@ -1,12 +1,18 @@
 extern crate serde;
 extern crate serde_derive;
 
-use std::{fs, path::PathBuf};
-use yamato_event_analyzer::afterfact::after_fact;
-use yamato_event_analyzer::detections::configs;
+use evtx::{err, EvtxParser, ParserSettings, SerializedEvtxRecord};
+use std::{
+    fs::{self, File},
+    path::PathBuf,
+};
+use tokio::{spawn, task::JoinHandle};
 use yamato_event_analyzer::detections::detection;
+use yamato_event_analyzer::detections::detection::EvtxRecordInfo;
 use yamato_event_analyzer::detections::print::AlertMessage;
 use yamato_event_analyzer::omikuji::Omikuji;
+use yamato_event_analyzer::{afterfact::after_fact, detections::utils};
+use yamato_event_analyzer::{detections::configs, timeline::timeline::Timeline};
 
 fn main() {
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
@@ -64,10 +70,109 @@ fn print_credits() {
 }
 
 fn detect_files(evtx_files: Vec<PathBuf>) {
+    let evnt_records = evtx_to_jsons(&evtx_files);
+
+    let mut tl = Timeline::new();
+    tl.start(&evnt_records);
+
     let mut detection = detection::Detection::new();
-    &detection.start(evtx_files);
+    &detection.start(evnt_records);
 
     after_fact();
+}
+
+// evtxファイルをjsonに変換します。
+fn evtx_to_jsons(evtx_files: &Vec<PathBuf>) -> Vec<EvtxRecordInfo> {
+    // EvtxParserを生成する。
+    let evtx_parsers: Vec<EvtxParser<File>> = evtx_files
+        .clone()
+        .into_iter()
+        .filter_map(|evtx_file| {
+            // convert to evtx parser
+            // println!("PathBuf:{}", evtx_file.display());
+            match EvtxParser::from_path(evtx_file) {
+                Ok(parser) => Option::Some(parser),
+                Err(e) => {
+                    eprintln!("{}", e);
+                    return Option::None;
+                }
+            }
+        })
+        .collect();
+
+    let tokio_rt = utils::create_tokio_runtime();
+    let ret = tokio_rt.block_on(evtx_to_json(evtx_parsers, &evtx_files));
+    tokio_rt.shutdown_background();
+
+    return ret;
+}
+
+// evtxファイルからEvtxRecordInfoを生成する。
+// 戻り値は「どのイベントファイルから生成されたXMLかを示すindex」と「変換されたXML」のタプルです。
+// タプルのindexは、引数で指定されるevtx_filesのindexに対応しています。
+async fn evtx_to_json(
+    evtx_parsers: Vec<EvtxParser<File>>,
+    evtx_files: &Vec<PathBuf>,
+) -> Vec<EvtxRecordInfo> {
+    // evtx_parser.records_json()でevtxをxmlに変換するJobを作成
+    let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<serde_json::Value>>>>> =
+        evtx_parsers
+            .into_iter()
+            .map(|mut evtx_parser| {
+                return spawn(async move {
+                    let mut parse_config = ParserSettings::default();
+                    parse_config = parse_config.separate_json_attributes(true);
+                    parse_config = parse_config.num_threads(utils::get_thread_num());
+
+                    evtx_parser = evtx_parser.with_configuration(parse_config);
+                    let values = evtx_parser.records_json_value().collect();
+                    return values;
+                });
+            })
+            .collect();
+
+    // 作成したjobを実行し(handle.awaitの部分)、スレッドの実行時にエラーが発生した場合、標準エラー出力に出しておく
+    let mut ret = vec![];
+    for (parser_idx, handle) in handles.into_iter().enumerate() {
+        let future_result = handle.await;
+        if future_result.is_err() {
+            let evtx_filepath = &evtx_files[parser_idx].display();
+            let errmsg = format!(
+                "Failed to parse event file. EventFile:{} Error:{}",
+                evtx_filepath,
+                future_result.unwrap_err()
+            );
+            AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
+            continue;
+        }
+
+        future_result.unwrap().into_iter().for_each(|parse_result| {
+            ret.push((parser_idx, parse_result));
+        });
+    }
+
+    return ret
+        .into_iter()
+        .filter_map(|(parser_idx, parse_result)| {
+            // パースに失敗している場合、エラーメッセージを出力
+            if parse_result.is_err() {
+                let evtx_filepath = &evtx_files[parser_idx].display();
+                let errmsg = format!(
+                    "Failed to parse event file. EventFile:{} Error:{}",
+                    evtx_filepath,
+                    parse_result.unwrap_err()
+                );
+                AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
+                return Option::None;
+            }
+
+            let record_info = EvtxRecordInfo::new(
+                evtx_files[parser_idx].display().to_string(),
+                parse_result.unwrap().data,
+            );
+            return Option::Some(record_info);
+        })
+        .collect();
 }
 
 fn _output_with_omikuji(omikuji: Omikuji) {
