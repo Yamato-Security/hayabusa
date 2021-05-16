@@ -46,24 +46,12 @@ fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
     if selection_yaml.is_badvalue() {
         return Option::None;
     }
-    return Option::Some(parse_selection_recursively(
-        vec![],
-        &selection_yaml,
-        &mut vec![],
-    ));
-}
-
-#[derive(Debug, Clone, Copy)]
-enum StrFeature {
-    StartsWith,
-    EndsWith,
-    Contains,
+    return Option::Some(parse_selection_recursively(vec![], &selection_yaml));
 }
 
 fn parse_selection_recursively(
     key_list: Vec<String>,
     yaml: &Yaml,
-    str_feature: &mut Vec<StrFeature>,
 ) -> Box<dyn SelectionNode + Send> {
     if yaml.as_hash().is_some() {
         // 連想配列はAND条件と解釈する
@@ -71,20 +59,10 @@ fn parse_selection_recursively(
         let mut and_node = AndSelectionNode::new();
 
         yaml_hash.keys().for_each(|hash_key| {
-            let keys: Vec<&str> = hash_key.as_str().unwrap().split('|').collect();
-            if keys.len() > 1 {
-                match keys[1] {
-                    "startswith" => str_feature.push(StrFeature::StartsWith),
-                    "endswith" => str_feature.push(StrFeature::EndsWith),
-                    "contains" => str_feature.push(StrFeature::Contains),
-                    _ => {}
-                };
-            }
-
             let child_yaml = yaml_hash.get(hash_key).unwrap();
             let mut child_key_list = key_list.clone();
-            child_key_list.push(keys[0].to_string());
-            let child_node = parse_selection_recursively(child_key_list, child_yaml, str_feature);
+            child_key_list.push(hash_key.as_str().unwrap().to_string());
+            let child_node = parse_selection_recursively(child_key_list, child_yaml);
             and_node.child_nodes.push(child_node);
         });
         return Box::new(and_node);
@@ -92,14 +70,13 @@ fn parse_selection_recursively(
         // 配列はOR条件と解釈する。
         let mut or_node = OrSelectionNode::new();
         yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
-            let child_node = parse_selection_recursively(key_list.clone(), child_yaml, str_feature);
+            let child_node = parse_selection_recursively(key_list.clone(), child_yaml);
             or_node.child_nodes.push(child_node);
         });
 
         return Box::new(or_node);
     } else {
         // 連想配列と配列以外は末端ノード
-        println!("{:?}: {:?}", str_feature, key_list);
         return Box::new(LeafSelectionNode::new(key_list, yaml.clone()));
     }
 }
@@ -801,7 +778,7 @@ impl StartsWithMatcher {
 impl LeafMatcher for StartsWithMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         // ContextInfo|startswith のような場合にLeafをStartsWithMatcherにする。
-        return false;
+        return false
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -834,8 +811,8 @@ impl LeafMatcher for StartsWithMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.starts_with(&self.start_text),
             Value::Number(n) => n.to_string().starts_with(&self.start_text),
-            _ => false,
-        };
+            _ => false
+        }
     }
 }
 
@@ -855,7 +832,7 @@ impl EndsWithMatcher {
 impl LeafMatcher for EndsWithMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         // ContextInfo|endswith のような場合にLeafをEndsWithMatcherにする。
-        return false;
+        return false
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -888,8 +865,8 @@ impl LeafMatcher for EndsWithMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.ends_with(&self.end_text),
             Value::Number(n) => n.to_string().ends_with(&self.end_text),
-            _ => false,
-        };
+            _ => false
+        }
     }
 }
 
@@ -909,7 +886,7 @@ impl ContainsMatcher {
 impl LeafMatcher for ContainsMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         // ContextInfo|contains のような場合にLeafをContainsMatcherにする。
-        return false;
+        return false
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -942,8 +919,8 @@ impl LeafMatcher for ContainsMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.contains(&self.pattern),
             Value::Number(n) => n.to_string().contains(&self.pattern),
-            _ => false,
-        };
+            _ => false
+        }
     }
 }
 
