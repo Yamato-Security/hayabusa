@@ -73,7 +73,7 @@ fn detect_files(evtx_files: Vec<PathBuf>) {
     let evnt_records = evtx_to_jsons(&evtx_files);
 
     let mut tl = Timeline::new();
-    tl.start(&evnt_records);
+    tl.start(&evtx_files, &evnt_records);
 
     let mut detection = detection::Detection::new();
     &detection.start(evnt_records);

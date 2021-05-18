@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::detections::{configs, detection::EvtxRecordInfo};
 
 #[derive(Debug)]
@@ -18,7 +20,11 @@ impl EventStatistics {
     // recordからEventIDを取得するには、detection::utils::get_event_value()という関数があるので、それを使うと便利かもしれません。
 
     // 現状では、この関数の戻り値として返すVec<String>を表示するコードは実装していません。
-    pub fn start(&mut self, _records: &Vec<EvtxRecordInfo>) -> Vec<String> {
+    pub fn start(
+        &mut self,
+        evtx_files: &Vec<PathBuf>,
+        records: &Vec<EvtxRecordInfo>,
+    ) -> Vec<String> {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
