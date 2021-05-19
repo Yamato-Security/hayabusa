@@ -348,6 +348,7 @@ unsafe impl Send for LeafSelectionNode {}
 impl LeafSelectionNode {
     fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
         let mut matcer_tmp: Option<Box<dyn LeafMatcher>> = None;
+        let mut fixed_key_list = Vec::new();
         for key in &key_list {
             if key.contains('|') {
                 let v: Vec<&str> = key.split('|').collect();
@@ -356,11 +357,14 @@ impl LeafSelectionNode {
                     "endswith" => Some(Box::new(EndsWithMatcher::new())),
                     "contains" => Some(Box::new(ContainsMatcher::new())),
                     _ => None,
-                }
+                };
+                fixed_key_list.push(v[0].to_string());
+            } else {
+                fixed_key_list.push(key.to_string());
             }
         }
         return LeafSelectionNode {
-            key_list: key_list,
+            key_list: fixed_key_list,
             select_value: value_yaml,
             matcher: matcer_tmp,
         };
@@ -429,6 +433,7 @@ impl SelectionNode for LeafSelectionNode {
 
             // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
             let eventdata_data = values.unwrap();
+
             if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
             {
                 return self
@@ -437,7 +442,6 @@ impl SelectionNode for LeafSelectionNode {
                     .unwrap()
                     .is_match(Option::Some(eventdata_data));
             }
-
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
                 return eventdata_data
