@@ -347,10 +347,22 @@ unsafe impl Send for LeafSelectionNode {}
 
 impl LeafSelectionNode {
     fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
+        let mut matcer_tmp: Option<Box<dyn LeafMatcher>> = None;
+        for key in &key_list {
+            if key.contains('|') {
+                let v: Vec<&str> = key.split('|').collect();
+                matcer_tmp = match v[1] {
+                    "startswith" => Some(Box::new(StartsWithMatcher::new())),
+                    "endswith" => Some(Box::new(EndsWithMatcher::new())),
+                    "contains" => Some(Box::new(ContainsMatcher::new())),
+                    _ => None,
+                }
+            }
+        }
         return LeafSelectionNode {
             key_list: key_list,
             select_value: value_yaml,
-            matcher: Option::None,
+            matcher: matcer_tmp,
         };
     }
 
@@ -379,9 +391,6 @@ impl LeafSelectionNode {
             Box::new(MinlengthMatcher::new()),
             Box::new(RegexesFileMatcher::new()),
             Box::new(WhitelistFileMatcher::new()),
-            Box::new(StartsWithMatcher::new()),
-            Box::new(EndsWithMatcher::new()),
-            Box::new(ContainsMatcher::new()),
         ];
     }
 }
@@ -455,9 +464,11 @@ impl SelectionNode for LeafSelectionNode {
         let matchers = self.get_matchers();
         let mut match_key_list = self.key_list.clone();
         match_key_list.remove(0);
-        self.matcher = matchers
-            .into_iter()
-            .find(|matcher| matcher.is_target_key(&match_key_list));
+        if self.matcher.is_none() {
+            self.matcher = matchers
+                .into_iter()
+                .find(|matcher| matcher.is_target_key(&match_key_list));
+        }
         // 一致するmatcherが見つからないエラー
         if self.matcher.is_none() {
             return Result::Err(vec![format!(
@@ -776,7 +787,7 @@ impl StartsWithMatcher {
 }
 
 impl LeafMatcher for StartsWithMatcher {
-    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+    fn is_target_key(&self, _: &Vec<String>) -> bool {
         // ContextInfo|startswith のような場合にLeafをStartsWithMatcherにする。
         return false
     }
@@ -830,7 +841,7 @@ impl EndsWithMatcher {
 }
 
 impl LeafMatcher for EndsWithMatcher {
-    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+    fn is_target_key(&self, _: &Vec<String>) -> bool {
         // ContextInfo|endswith のような場合にLeafをEndsWithMatcherにする。
         return false
     }
@@ -884,7 +895,7 @@ impl ContainsMatcher {
 }
 
 impl LeafMatcher for ContainsMatcher {
-    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+    fn is_target_key(&self, _: &Vec<String>) -> bool {
         // ContextInfo|contains のような場合にLeafをContainsMatcherにする。
         return false
     }
