@@ -26,6 +26,7 @@ fn parse_detection(yaml: &Yaml) -> Option<DetectionNode> {
     } else {
         let node = DetectionNode {
             selection: parse_selection(&yaml),
+            condition: parse_condition(&yaml),
         };
         return Option::Some(node);
     }
@@ -40,6 +41,15 @@ fn concat_selection_key(key_list: &Vec<String>) -> String {
         });
 }
 
+fn parse_condition(yaml: &Yaml) -> Option<Box<dyn ConditionNode + Send>> {
+    let condition_yaml = &yaml["detection"]["condition"];
+    if condition_yaml.is_badvalue() {
+        return Option::None;
+    }
+
+    return Option::Some(parse_condition_recursively(vec![], &condition_yaml));
+}
+
 fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
     // TODO detection-selectionが存在しない場合のチェック
     let selection_yaml = &yaml["detection"]["selection"];
@@ -47,6 +57,26 @@ fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
         return Option::None;
     }
     return Option::Some(parse_selection_recursively(vec![], &selection_yaml));
+}
+
+fn parse_condition_recursively(
+    key_list: Vec<String>,
+    yaml: &Yaml,
+) -> Box<dyn ConditionNode + Send> {
+    // conditionでのand条件はcondition内のandで設定するためyamlの構造上でconditionのand条件は記述できない
+    if yaml.as_vec().is_some() {
+        // 配列はOR条件と解釈する。
+        let mut or_node = OrConditionNode::new();
+        yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
+            let child_node = parse_condition_recursively(key_list.clone(), child_yaml);
+            or_node.child_nodes.push(child_node);
+        });
+
+        return Box::new(or_node);
+    } else {
+        // 配列以外は末端ノード
+        return Box::new(LeafConditionNode::new(key_list, yaml.clone()));
+    }
 }
 
 fn parse_selection_recursively(
@@ -165,6 +195,7 @@ impl RuleNode {
 // Ruleファイルのdetectionを表すノード
 struct DetectionNode {
     pub selection: Option<Box<dyn SelectionNode + Send>>,
+    pub condition: Option<Box<dyn ConditionNode + Send>>,
 }
 
 impl DetectionNode {
@@ -174,6 +205,122 @@ impl DetectionNode {
         }
 
         return self.selection.as_mut().unwrap().init();
+    }
+}
+// detection - Condtion配下でOr条件を表すノード
+struct OrConditionNode {
+    pub child_nodes: Vec<Box<dyn ConditionNode>>,
+}
+
+unsafe impl Send for OrConditionNode {}
+
+impl OrConditionNode {
+    pub fn new() -> OrConditionNode {
+        return OrConditionNode {
+            child_nodes: vec![],
+        };
+    }
+}
+
+impl ConditionNode for OrConditionNode {
+    fn init(&mut self) -> Result<(), Vec<String>> {
+        let err_msgs = self
+            .child_nodes
+            .iter_mut()
+            .map(|child_node| {
+                let res = child_node.init();
+                if res.is_err() {
+                    return res.unwrap_err();
+                } else {
+                    return vec![];
+                }
+            })
+            .fold(
+                vec![],
+                |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
+                    acc.extend(cur.into_iter());
+                    return acc;
+                },
+            );
+
+        if err_msgs.is_empty() {
+            return Result::Ok(());
+        } else {
+            return Result::Err(err_msgs);
+        }
+    }
+
+    fn get_childs(&self) -> Vec<&Box<dyn ConditionNode>> {
+        let mut ret = vec![];
+        self.child_nodes.iter().for_each(|child_node| {
+            ret.push(child_node);
+        });
+
+        return ret;
+    }
+}
+
+// detection-condition node in rule files develop this trait
+trait ConditionNode: mopa::Any {
+    fn init(&mut self) -> Result<(), Vec<String>>;
+    fn get_childs(&self) -> Vec<&Box<dyn ConditionNode>>;
+}
+
+//TODO Merge LeafNode?
+struct LeafConditionNode {
+    key_list: Vec<String>,
+    condition_value: Yaml,
+    matcher: Option<Box<dyn LeafMatcher>>,
+}
+
+unsafe impl Send for LeafConditionNode {}
+
+impl LeafConditionNode {
+    fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafConditionNode {
+        return LeafConditionNode {
+            key_list: key_list,
+            condition_value: value_yaml,
+            matcher: Option::None,
+        };
+    }
+    // LeafMatcherの一覧を取得する。
+    fn get_matchers(&self) -> Vec<Box<dyn LeafMatcher>> {
+        return vec![Box::new(WhitelistFileMatcher::new())];
+    }
+}
+
+impl ConditionNode for LeafConditionNode {
+    fn init(&mut self) -> Result<(), Vec<String>> {
+        let matchers = self.get_matchers();
+        let mut match_key_list = self.key_list.clone();
+        match_key_list.remove(0);
+        self.matcher = matchers
+            .into_iter()
+            .find(|matcher| matcher.is_target_key(&match_key_list));
+        // 一致するmatcherが見つからないエラー
+        if self.matcher.is_none() {
+            return Result::Err(vec![format!(
+                "Found unknown key. key:{}",
+                concat_selection_key(&match_key_list)
+            )]);
+        }
+
+        if self.condition_value.is_badvalue() {
+            return Result::Err(vec![format!(
+                "Cannot parse yaml file. key:{}",
+                concat_selection_key(&match_key_list)
+            )]);
+        }
+
+        return self
+            .matcher
+            .as_mut()
+            .unwrap()
+            .init(&match_key_list, &self.condition_value);
+    }
+
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+        return vec![];
     }
 }
 
@@ -710,6 +857,59 @@ impl WhitelistFileMatcher {
 }
 
 impl LeafMatcher for WhitelistFileMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        if key_list.len() != 1 {
+            return false;
+        }
+
+        return key_list.get(0).unwrap() == "whitelist";
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        let value = match select_value {
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_owned()),
+            _ => Option::None,
+        };
+        if value.is_none() {
+            let errmsg = format!(
+                "whitelist value should be String. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        let csv_content = utils::read_csv(&value.unwrap());
+        if csv_content.is_err() {
+            let errmsg = format!(
+                "cannot read whitelist file. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+        self.whitelist_csv_content = csv_content.unwrap();
+
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => !utils::check_whitelist(s, &self.whitelist_csv_content),
+            Value::Number(n) => {
+                !utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content)
+            }
+            Value::Bool(b) => !utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
+            _ => true,
+        };
+    }
+}
+
+struct CountMatcher {
+    whitelist_csv_content: vec![],
+}
+
+impl LeafMatcher for CountMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         if key_list.len() != 1 {
             return false;
