@@ -10,7 +10,6 @@ use regex::Regex;
 use serde_json::Value;
 use yaml_rust::Yaml;
 
-// TODO テストケースかかなきゃ...
 pub fn parse_rule(yaml: Yaml) -> RuleNode {
     let detection = parse_detection(&yaml);
 
