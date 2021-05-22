@@ -258,12 +258,29 @@ impl ConditionNode for OrConditionNode {
 
         return ret;
     }
+
+    fn get_descendants(&self) -> Vec<&Box<dyn ConditionNode>> {
+        let mut ret = self.get_childs();
+
+        self.child_nodes
+            .iter()
+            .map(|child_node| {
+                return child_node.get_descendants();
+            })
+            .flatten()
+            .for_each(|descendant_node| {
+                ret.push(descendant_node);
+            });
+
+        return ret;
+    }
 }
 
 // detection-condition node in rule files develop this trait
 trait ConditionNode: mopa::Any {
     fn init(&mut self) -> Result<(), Vec<String>>;
     fn get_childs(&self) -> Vec<&Box<dyn ConditionNode>>;
+    fn get_descendants(&self) -> Vec<&Box<dyn ConditionNode>>;
 }
 
 //TODO Merge LeafNode?
@@ -291,20 +308,8 @@ impl LeafConditionNode {
 
 impl ConditionNode for LeafConditionNode {
     fn init(&mut self) -> Result<(), Vec<String>> {
-        let matchers = self.get_matchers();
         let mut match_key_list = self.key_list.clone();
         match_key_list.remove(0);
-        self.matcher = matchers
-            .into_iter()
-            .find(|matcher| matcher.is_target_key(&match_key_list));
-        // 一致するmatcherが見つからないエラー
-        if self.matcher.is_none() {
-            return Result::Err(vec![format!(
-                "Found unknown key. key:{}",
-                concat_selection_key(&match_key_list)
-            )]);
-        }
-
         if self.condition_value.is_badvalue() {
             return Result::Err(vec![format!(
                 "Cannot parse yaml file. key:{}",
@@ -319,7 +324,10 @@ impl ConditionNode for LeafConditionNode {
             .init(&match_key_list, &self.condition_value);
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&Box<dyn ConditionNode>> {
+        return vec![];
+    }
+    fn get_descendants(&self) -> Vec<&Box<dyn ConditionNode>> {
         return vec![];
     }
 }
@@ -857,59 +865,6 @@ impl WhitelistFileMatcher {
 }
 
 impl LeafMatcher for WhitelistFileMatcher {
-    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        if key_list.len() != 1 {
-            return false;
-        }
-
-        return key_list.get(0).unwrap() == "whitelist";
-    }
-
-    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
-        let value = match select_value {
-            Yaml::String(s) => Option::Some(s.to_owned()),
-            Yaml::Integer(i) => Option::Some(i.to_string()),
-            Yaml::Real(r) => Option::Some(r.to_owned()),
-            _ => Option::None,
-        };
-        if value.is_none() {
-            let errmsg = format!(
-                "whitelist value should be String. [key:{}]",
-                concat_selection_key(key_list)
-            );
-            return Result::Err(vec![errmsg]);
-        }
-
-        let csv_content = utils::read_csv(&value.unwrap());
-        if csv_content.is_err() {
-            let errmsg = format!(
-                "cannot read whitelist file. [key:{}]",
-                concat_selection_key(key_list)
-            );
-            return Result::Err(vec![errmsg]);
-        }
-        self.whitelist_csv_content = csv_content.unwrap();
-
-        return Result::Ok(());
-    }
-
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_whitelist(s, &self.whitelist_csv_content),
-            Value::Number(n) => {
-                !utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content)
-            }
-            Value::Bool(b) => !utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
-            _ => true,
-        };
-    }
-}
-
-struct CountMatcher {
-    whitelist_csv_content: vec![],
-}
-
-impl LeafMatcher for CountMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         if key_list.len() != 1 {
             return false;
