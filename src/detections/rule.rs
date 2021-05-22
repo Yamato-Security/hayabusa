@@ -51,7 +51,6 @@ fn parse_condition(yaml: &Yaml) -> Option<Box<dyn ConditionNode + Send>> {
 }
 
 fn parse_selection(yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
-    // TODO detection-selectionが存在しない場合のチェック
     let selection_yaml = &yaml["detection"]["selection"];
     if selection_yaml.is_badvalue() {
         return Option::None;
