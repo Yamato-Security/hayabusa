@@ -2,7 +2,7 @@ extern crate regex;
 
 use mopa::mopafy;
 
-use std::vec;
+use std::{usize, vec};
 
 use crate::detections::utils;
 
@@ -27,6 +27,9 @@ fn parse_detection(yaml: &Yaml) -> Option<DetectionNode> {
         let node = DetectionNode {
             selection: parse_selection(&yaml),
         };
+
+        let cond_compiler = ConditionCompiler::new();
+        let _ = cond_compiler.compile_condition("".to_string());
         return Option::Some(node);
     }
 }
@@ -78,6 +81,264 @@ fn parse_selection_recursively(
     } else {
         // 連想配列と配列以外は末端ノード
         return Box::new(LeafSelectionNode::new(key_list, yaml.clone()));
+    }
+}
+
+#[derive(Debug)]
+pub struct ConditionCompiler {
+    regex_patterns: Vec<Regex>,
+}
+
+// TODO やっぱり、antlrとかnomを使った方が良かった。
+impl ConditionCompiler {
+    const PREV_TYPE_LOGICAL:i32 = 1;
+    const PREV_TYPE_NODE:i32 = 2;
+    const PREV_TYPE_NOT:i32 = 3;
+
+    pub fn new() -> Self {
+        let mut regex_patterns = vec![];
+        regex_patterns.push(Regex::new(r"^(").unwrap());
+        regex_patterns.push(Regex::new(r"^)").unwrap());
+        regex_patterns.push(Regex::new(r"^ ").unwrap());
+        regex_patterns.push(Regex::new(r"^[A-Za-z0-9_-]").unwrap());
+
+        return ConditionCompiler{
+            regex_patterns: regex_patterns
+        };
+    }
+
+    fn compile_condition( &self, condition_str: String ) -> Result<Box<dyn SelectionNode + Send>,String> {
+        let tokens = self.tokenize(&condition_str)?;
+
+        return self.parse_token(tokens);
+    }
+    
+    // 字句解析を行う(lexerとかtokenizer的な部分)
+    fn tokenize( &self, condition_str: &String ) -> Result<Vec<String>,String> {
+        let mut cur_condition_str = condition_str.clone();
+
+        let mut tokens = Vec::new();
+        while cur_condition_str.len() != 0 {
+            let captured = self.regex_patterns.iter().find_map(| regex | {
+                let cap= regex.captures(cur_condition_str.as_str());
+                return cap;
+            });
+            if captured.is_none() {
+                return Result::Err("".to_string());
+            }
+
+            let mached_str = captured.unwrap().get(0).unwrap().as_str();
+            tokens.push(mached_str.to_string());
+            cur_condition_str = cur_condition_str.replace(mached_str, "");
+        }
+
+        return Result::Ok(tokens);
+    }
+
+    // AndNodeSelectionNode又はOrSelectionNodeに追加する。
+    fn add_node( &self, node:Box<dyn SelectionNode + Send>, prev_value:i32, mut current_and_node: Option<AndSelectionNode>, mut root_node: OrSelectionNode ) ->  (Option<AndSelectionNode>, OrSelectionNode) {
+        let selection_node = match prev_value {
+            ConditionCompiler::PREV_TYPE_NOT => Box::new(NotSelectionNode::new(node)),
+            _ => node,
+        };
+        
+        if current_and_node.is_some() {
+            current_and_node.as_mut().unwrap().child_nodes.push(selection_node);
+        } else {
+            root_node.child_nodes.push(selection_node);
+        }
+
+        return (current_and_node, root_node);
+    }
+
+    // tokenをSelectionNodeにパースする。
+    fn parse_token( &self,  tokens: Vec<String> ) -> Result<Box<dyn SelectionNode + Send>,String>  {
+        let mut cur_idx = 0;
+        let mut root_node = OrSelectionNode::new();
+        let mut current_and_node:Option<AndSelectionNode> = Option::None;
+
+        // 一つ前のノード
+        let mut prev = ConditionCompiler::PREV_TYPE_LOGICAL;
+
+        while tokens.len() > cur_idx {
+            let now = &tokens[cur_idx];
+            
+            if now == " " {
+                // 無視
+                cur_idx += 1;
+            }
+            else if now == "(" {
+                // 直前のノードが正しいことをチェック
+                match prev {
+                    // TODO エラーメッセージをちゃんとする
+                    ConditionCompiler::PREV_TYPE_NODE => Result::Err("Cannot parse condition".to_string()),// Nodeが2回連続で続いたらだめ
+                    _ => Result::Ok(()),
+                }?;
+
+                // 対応する括弧を探す
+                let right_bracket_index = ConditionCompiler::get_pair_parenthesis(&tokens, cur_idx);
+                if right_bracket_index == -1 {
+                    return Result::Err("Cannot parse condition.".to_string());
+                }
+                let right_bracket_index = right_bracket_index as usize;
+                if cur_idx == right_bracket_index -1 {
+                    return Result::Err("Cannot parse condition.".to_string());
+                }
+
+                // 対応する括弧までのtokenに対して、再帰的にparse_tokenを呼び出す
+                let mut ret_sub_token = vec![];
+                for i in cur_idx..right_bracket_index {
+                    ret_sub_token.push((&tokens[i]).clone());
+                }
+                let sub_result = self.parse_token(ret_sub_token)?;
+                let value = self.add_node(sub_result,prev,current_and_node,root_node);
+                // なんか所有権を戻さないと上手くいかない。
+                current_and_node = value.0;
+                root_node = value.1;
+                
+                cur_idx = right_bracket_index as usize + 1;
+                prev = ConditionCompiler::PREV_TYPE_NODE;
+            } else if now == "and"{
+                // 直前のノードが正しいことをチェック
+                match prev {
+                    ConditionCompiler::PREV_TYPE_NODE => Result::Ok(()),// AndやORの前はNodeしかこれない
+                    _ => Result::Err("Cannot parse condition".to_string()),
+                }?;
+
+                if current_and_node.is_none() {
+                    current_and_node = Option::Some(AndSelectionNode::new());
+                }
+
+                cur_idx += 1;
+                prev = ConditionCompiler::PREV_TYPE_LOGICAL;
+            } else if now == "or" {
+                // 直前のノードが正しいことをチェック
+                match prev {
+                    ConditionCompiler::PREV_TYPE_NODE => Result::Ok(()),// AndやORの前はNodeしかこれない
+                    _ => Result::Err("Cannot parse condition".to_string()),
+                }?;
+
+                if current_and_node.is_some() {
+                    root_node.child_nodes.push(Box::new(current_and_node.unwrap()));
+                    current_and_node = Option::None;
+                }
+                cur_idx += 1;
+                prev = ConditionCompiler::PREV_TYPE_LOGICAL;
+            } else if now == "not" {
+                // 直前のノードが正しいことをチェック
+                match prev {
+                    ConditionCompiler::PREV_TYPE_LOGICAL => Result::Ok(()),// Notの前はAND/ORしかない
+                    _ => Result::Err("Cannot parse condition".to_string()),
+                }?;
+
+                // notはその次に括弧かSelectionで指定された条件式が来る。ここではフラグだけONにして、次の括弧か条件式のNodeができた時にNotNodeを作成する。
+                cur_idx += 1;
+                prev = ConditionCompiler::PREV_TYPE_NOT;
+            } else {
+                // 直前のノードが正しいことをチェック
+                match prev {
+                    // TODO エラーメッセージをちゃんとする
+                    ConditionCompiler::PREV_TYPE_NODE => Result::Err("Cannot parse condition".to_string()),// Nodeが2回連続で続いたらだめ
+                    _ => Result::Ok(()),
+                }?;
+
+                // ここに来た場合、Selection以下の部分で指定される条件を表す
+                let ref_node = RefSelectionNode::new(now.clone());
+                let value = self.add_node(Box::new(ref_node),prev,current_and_node,root_node);
+                current_and_node = value.0;
+                root_node = value.1;
+                cur_idx += 1;
+                prev = ConditionCompiler::PREV_TYPE_NODE;
+            }
+            // 最後のノードがLogicalやNotはだめ
+            if tokens.len() > cur_idx {
+                continue;
+            }
+            match prev {
+                ConditionCompiler::PREV_TYPE_NODE => Result::Ok(()),// Nodeが2回連続で続いたらだめ
+                _ => Result::Err("Cannot parse condition".to_string()),
+            }?;
+        }
+
+        return Result::Ok(Box::new(root_node));
+    }
+
+    fn get_pair_parenthesis( tokens: &Vec<String>, left_parenthesis_index: usize ) -> i32 {
+        let mut left_cnt = 0;
+        let mut right_cnt = 0;
+        for i in left_parenthesis_index..tokens.len() {
+            if tokens[i] == "(" {
+                left_cnt+= 1;
+            } else if tokens[i] == ")" {
+                right_cnt+=1;
+            }
+
+            if left_cnt == right_cnt {
+                return i as i32;
+            }
+        }
+
+        return -1;
+    }
+}
+
+struct NotSelectionNode {
+    node: Box<dyn SelectionNode>,
+}
+
+unsafe impl Send for NotSelectionNode {}
+
+impl NotSelectionNode {
+    pub fn new( node: Box<dyn SelectionNode> ) -> NotSelectionNode {
+        return NotSelectionNode{ node: node };
+    }
+}
+
+impl SelectionNode for NotSelectionNode{
+    fn select(&self, event_record: &Value) -> bool {
+        return !self.node.select(event_record);
+    }
+
+    fn init(&mut self) -> Result<(), Vec<String>> {
+        return Result::Ok(());
+    }
+
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+        return vec![];
+    }
+
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+        return self.get_childs();
+    }
+}
+
+struct RefSelectionNode {
+    selection_name: String
+}
+
+unsafe impl Send for RefSelectionNode {}
+
+impl RefSelectionNode {
+    pub fn new( selection_name: String ) -> RefSelectionNode {
+        return RefSelectionNode { selection_name: selection_name };
+    }
+}
+
+impl SelectionNode for RefSelectionNode {
+    fn select(&self, _event_record: &Value) -> bool {
+        return self.selection_name == "hoge".to_string();
+    }
+
+    fn init(&mut self) -> Result<(), Vec<String>> {
+        return Result::Ok(());
+    }
+
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+        return vec![];
+    }
+
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+        return self.get_childs();
     }
 }
 
@@ -949,9 +1210,11 @@ impl LeafMatcher for ContainsMatcher {
 mod tests {
     use yaml_rust::YamlLoader;
 
+
+
     use crate::detections::rule::{
         parse_rule, AndSelectionNode, LeafSelectionNode, MinlengthMatcher, OrSelectionNode,
-        RegexMatcher, RegexesFileMatcher, SelectionNode, WhitelistFileMatcher,
+        RegexMatcher, RegexesFileMatcher, WhitelistFileMatcher, SelectionNode
     };
 
     use super::RuleNode;
