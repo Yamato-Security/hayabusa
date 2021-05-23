@@ -2641,4 +2641,51 @@ mod tests {
             }
         }
     }
+
+
+    #[test]
+    fn test_use_strfeature_in_or_node() {
+        // orNodeの中でもstartswithが使えるかのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7040
+                param1: 'Windows Event Log'
+                param2|startswith:
+                    - "disa"
+                    - "aut"
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
 }
