@@ -2642,7 +2642,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn test_use_strfeature_in_or_node() {
         // orNodeの中でもstartswithが使えるかのテスト
