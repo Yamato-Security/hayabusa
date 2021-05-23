@@ -356,7 +356,7 @@ impl LeafSelectionNode {
                     "startswith" => Some(Box::new(StartsWithMatcher::new())),
                     "endswith" => Some(Box::new(EndsWithMatcher::new())),
                     "contains" => Some(Box::new(ContainsMatcher::new())),
-                    _ => None,
+                    _ => matcer_tmp,
                 };
                 fixed_key_list.push(v[0].to_string());
             } else {
@@ -793,7 +793,7 @@ impl StartsWithMatcher {
 impl LeafMatcher for StartsWithMatcher {
     fn is_target_key(&self, _: &Vec<String>) -> bool {
         // ContextInfo|startswith のような場合にLeafをStartsWithMatcherにする。
-        return false
+        return false;
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -826,8 +826,8 @@ impl LeafMatcher for StartsWithMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.starts_with(&self.start_text),
             Value::Number(n) => n.to_string().starts_with(&self.start_text),
-            _ => false
-        }
+            _ => false,
+        };
     }
 }
 
@@ -847,7 +847,7 @@ impl EndsWithMatcher {
 impl LeafMatcher for EndsWithMatcher {
     fn is_target_key(&self, _: &Vec<String>) -> bool {
         // ContextInfo|endswith のような場合にLeafをEndsWithMatcherにする。
-        return false
+        return false;
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -880,8 +880,8 @@ impl LeafMatcher for EndsWithMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.ends_with(&self.end_text),
             Value::Number(n) => n.to_string().ends_with(&self.end_text),
-            _ => false
-        }
+            _ => false,
+        };
     }
 }
 
@@ -901,7 +901,7 @@ impl ContainsMatcher {
 impl LeafMatcher for ContainsMatcher {
     fn is_target_key(&self, _: &Vec<String>) -> bool {
         // ContextInfo|contains のような場合にLeafをContainsMatcherにする。
-        return false
+        return false;
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -934,8 +934,8 @@ impl LeafMatcher for ContainsMatcher {
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => s.contains(&self.pattern),
             Value::Number(n) => n.to_string().contains(&self.pattern),
-            _ => false
-        }
+            _ => false,
+        };
     }
 }
 
