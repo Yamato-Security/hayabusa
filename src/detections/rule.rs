@@ -2389,4 +2389,256 @@ mod tests {
         assert_eq!(rule_node.init().is_ok(), true);
         return rule_node;
     }
+
+    #[test]
+    fn test_detect_startswith1() {
+        // startswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_startswith2() {
+        // startswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_endswith1() {
+        // endswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_endswith2() {
+        // endswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_contains1() {
+        // containsが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_contains2() {
+        // containsが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "Testministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
 }
