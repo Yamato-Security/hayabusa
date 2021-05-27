@@ -347,26 +347,10 @@ unsafe impl Send for LeafSelectionNode {}
 
 impl LeafSelectionNode {
     fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
-        let mut matcer_tmp: Option<Box<dyn LeafMatcher>> = None;
-        let mut fixed_key_list = Vec::new();
-        for key in &key_list {
-            if key.contains('|') {
-                let v: Vec<&str> = key.split('|').collect();
-                matcer_tmp = match v[1] {
-                    "startswith" => Some(Box::new(StartsWithMatcher::new())),
-                    "endswith" => Some(Box::new(EndsWithMatcher::new())),
-                    "contains" => Some(Box::new(ContainsMatcher::new())),
-                    _ => matcer_tmp,
-                };
-                fixed_key_list.push(v[0].to_string());
-            } else {
-                fixed_key_list.push(key.to_string());
-            }
-        }
         return LeafSelectionNode {
-            key_list: fixed_key_list,
+            key_list: key_list,
             select_value: value_yaml,
-            matcher: matcer_tmp,
+            matcher: Option::None,
         };
     }
 
@@ -465,14 +449,36 @@ impl SelectionNode for LeafSelectionNode {
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        let matchers = self.get_matchers();
+        let mut fixed_key_list = Vec::new(); // |xx を排除したkey_listを作成する
+        for key in &self.key_list {
+            if key.contains('|') {
+                let v: Vec<&str> = key.split('|').collect();
+                self.matcher = match v[1] {
+                    "startswith" => Some(Box::new(StartsWithMatcher::new())),
+                    "endswith" => Some(Box::new(EndsWithMatcher::new())),
+                    "contains" => Some(Box::new(ContainsMatcher::new())),
+                    _ => {
+                        return Result::Err(vec![format!(
+                            "Found unknown key option. option: {}",
+                            v[1]
+                        )])
+                    }
+                };
+                fixed_key_list.push(v[0].to_string());
+            } else {
+                fixed_key_list.push(key.to_string());
+            }
+        }
+        self.key_list = fixed_key_list;
         let mut match_key_list = self.key_list.clone();
         match_key_list.remove(0);
         if self.matcher.is_none() {
+            let matchers = self.get_matchers();
             self.matcher = matchers
                 .into_iter()
                 .find(|matcher| matcher.is_target_key(&match_key_list));
         }
+
         // 一致するmatcherが見つからないエラー
         if self.matcher.is_none() {
             return Result::Err(vec![format!(
@@ -2686,5 +2692,25 @@ mod tests {
                 assert!(false, "failed to parse json record.");
             }
         }
+    }
+
+    #[test]
+    fn test_detect_undefined_rule_option() {
+        // 不明な文字列オプションがルールに書かれていたら警告するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|failed: Security
+                EventID: 0
+        output: 'Rule parse test'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = parse_rule(rule_yaml.next().unwrap());
+
+        assert_eq!(
+            rule_node.init(),
+            Err(vec!["Found unknown key option. option: failed".to_string()])
+        );
     }
 }
