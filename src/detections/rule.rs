@@ -372,6 +372,7 @@ impl LeafSelectionNode {
     }
 
     // LeafMatcherの一覧を取得する。
+    // 上から順番に調べて、一番始めに一致したMatcherが適用される
     fn get_matchers(&self) -> Vec<Box<dyn LeafMatcher>> {
         return vec![
             Box::new(RegexMatcher::new()),
@@ -416,6 +417,7 @@ impl SelectionNode for LeafSelectionNode {
 
             // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
             let eventdata_data = values.unwrap();
+
             if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
             {
                 return self
@@ -424,7 +426,6 @@ impl SelectionNode for LeafSelectionNode {
                     .unwrap()
                     .is_match(Option::Some(eventdata_data));
             }
-
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
                 return eventdata_data
@@ -448,12 +449,36 @@ impl SelectionNode for LeafSelectionNode {
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        let matchers = self.get_matchers();
+        let mut fixed_key_list = Vec::new(); // |xx を排除したkey_listを作成する
+        for key in &self.key_list {
+            if key.contains('|') {
+                let v: Vec<&str> = key.split('|').collect();
+                self.matcher = match v[1] {
+                    "startswith" => Some(Box::new(StartsWithMatcher::new())),
+                    "endswith" => Some(Box::new(EndsWithMatcher::new())),
+                    "contains" => Some(Box::new(ContainsMatcher::new())),
+                    _ => {
+                        return Result::Err(vec![format!(
+                            "Found unknown key option. option: {}",
+                            v[1]
+                        )])
+                    }
+                };
+                fixed_key_list.push(v[0].to_string());
+            } else {
+                fixed_key_list.push(key.to_string());
+            }
+        }
+        self.key_list = fixed_key_list;
         let mut match_key_list = self.key_list.clone();
         match_key_list.remove(0);
-        self.matcher = matchers
-            .into_iter()
-            .find(|matcher| matcher.is_target_key(&match_key_list));
+        if self.matcher.is_none() {
+            let matchers = self.get_matchers();
+            self.matcher = matchers
+                .into_iter()
+                .find(|matcher| matcher.is_target_key(&match_key_list));
+        }
+
         // 一致するmatcherが見つからないエラー
         if self.matcher.is_none() {
             return Result::Err(vec![format!(
@@ -754,6 +779,168 @@ impl LeafMatcher for WhitelistFileMatcher {
             }
             Value::Bool(b) => !utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
             _ => true,
+        };
+    }
+}
+
+// 指定された文字列で始まるか調べるクラス
+struct StartsWithMatcher {
+    start_text: String,
+}
+
+impl StartsWithMatcher {
+    fn new() -> StartsWithMatcher {
+        return StartsWithMatcher {
+            start_text: String::from(""),
+        };
+    }
+}
+
+impl LeafMatcher for StartsWithMatcher {
+    fn is_target_key(&self, _: &Vec<String>) -> bool {
+        // ContextInfo|startswith のような場合にLeafをStartsWithMatcherにする。
+        return false;
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        if select_value.is_null() {
+            return Result::Ok(());
+        }
+
+        // stringに変換
+        let yaml_value = match select_value {
+            Yaml::Boolean(b) => Option::Some(b.to_string()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_string()),
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            _ => Option::None,
+        };
+        if yaml_value.is_none() {
+            let errmsg = format!(
+                "unknown error occured. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        self.start_text = yaml_value.unwrap();
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        // 調査する文字列がself.start_textで始まるならtrueを返す
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => s.starts_with(&self.start_text),
+            Value::Number(n) => n.to_string().starts_with(&self.start_text),
+            _ => false,
+        };
+    }
+}
+
+// 指定された文字列で終わるか調べるクラス
+struct EndsWithMatcher {
+    end_text: String,
+}
+
+impl EndsWithMatcher {
+    fn new() -> EndsWithMatcher {
+        return EndsWithMatcher {
+            end_text: String::from(""),
+        };
+    }
+}
+
+impl LeafMatcher for EndsWithMatcher {
+    fn is_target_key(&self, _: &Vec<String>) -> bool {
+        // ContextInfo|endswith のような場合にLeafをEndsWithMatcherにする。
+        return false;
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        if select_value.is_null() {
+            return Result::Ok(());
+        }
+
+        // stringに変換
+        let yaml_value = match select_value {
+            Yaml::Boolean(b) => Option::Some(b.to_string()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_string()),
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            _ => Option::None,
+        };
+        if yaml_value.is_none() {
+            let errmsg = format!(
+                "unknown error occured. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        self.end_text = yaml_value.unwrap();
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        // 調査する文字列がself.end_textで終わるならtrueを返す
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => s.ends_with(&self.end_text),
+            Value::Number(n) => n.to_string().ends_with(&self.end_text),
+            _ => false,
+        };
+    }
+}
+
+// 指定された文字列が含まれるか調べるクラス
+struct ContainsMatcher {
+    pattern: String,
+}
+
+impl ContainsMatcher {
+    fn new() -> ContainsMatcher {
+        return ContainsMatcher {
+            pattern: String::from(""),
+        };
+    }
+}
+
+impl LeafMatcher for ContainsMatcher {
+    fn is_target_key(&self, _: &Vec<String>) -> bool {
+        // ContextInfo|contains のような場合にLeafをContainsMatcherにする。
+        return false;
+    }
+
+    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
+        if select_value.is_null() {
+            return Result::Ok(());
+        }
+
+        // stringに変換
+        let yaml_value = match select_value {
+            Yaml::Boolean(b) => Option::Some(b.to_string()),
+            Yaml::Integer(i) => Option::Some(i.to_string()),
+            Yaml::Real(r) => Option::Some(r.to_string()),
+            Yaml::String(s) => Option::Some(s.to_owned()),
+            _ => Option::None,
+        };
+        if yaml_value.is_none() {
+            let errmsg = format!(
+                "unknown error occured. [key:{}]",
+                concat_selection_key(key_list)
+            );
+            return Result::Err(vec![errmsg]);
+        }
+
+        self.pattern = yaml_value.unwrap();
+        return Result::Ok(());
+    }
+
+    fn is_match(&self, event_value: Option<&Value>) -> bool {
+        // 調査する文字列にself.patternが含まれるならtrueを返す
+        return match event_value.unwrap_or(&Value::Null) {
+            Value::String(s) => s.contains(&self.pattern),
+            Value::Number(n) => n.to_string().contains(&self.pattern),
+            _ => false,
         };
     }
 }
@@ -2207,5 +2394,323 @@ mod tests {
         let mut rule_node = parse_rule(rule_yaml.next().unwrap());
         assert_eq!(rule_node.init().is_ok(), true);
         return rule_node;
+    }
+
+    #[test]
+    fn test_detect_startswith1() {
+        // startswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_startswith2() {
+        // startswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_endswith1() {
+        // endswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_endswith2() {
+        // endswithが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_contains1() {
+        // containsが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_contains2() {
+        // containsが正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains: "Administrators"
+        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "Testministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), false);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_use_strfeature_in_or_node() {
+        // orNodeの中でもstartswithが使えるかのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7040
+                param1: 'Windows Event Log'
+                param2|startswith:
+                    - "disa"
+                    - "aut"
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        let selection_node = rule_node.detection.unwrap().selection.unwrap();
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(selection_node.select(&record), true);
+            }
+            Err(rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_undefined_rule_option() {
+        // 不明な文字列オプションがルールに書かれていたら警告するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel|failed: Security
+                EventID: 0
+        output: 'Rule parse test'
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = parse_rule(rule_yaml.next().unwrap());
+
+        assert_eq!(
+            rule_node.init(),
+            Err(vec!["Found unknown key option. option: failed".to_string()])
+        );
     }
 }
