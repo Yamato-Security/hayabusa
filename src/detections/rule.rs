@@ -90,7 +90,6 @@ impl ConditionToken {
 
 #[derive(Debug)]
 pub struct ConditionCompiler {
-    regex_patterns: Vec<Regex>,
 }
 
 // conditionの式を読み取るクラス。
@@ -98,26 +97,18 @@ impl ConditionCompiler {
     const PREV_TYPE_LOGICAL:i32 = 1;
     const PREV_TYPE_NODE:i32 = 2;
     const PREV_TYPE_NOT:i32 = 3;
+    
+    // 字句解析で使う正規表現の一覧
+    const REGEX_PATTERNS:Vec<Regex> = vec![Regex::new(r"^\(").unwrap(),Regex::new(r"^\)").unwrap(),Regex::new(r"^ ").unwrap(),Regex::new(r"^|)").unwrap(),Regex::new(r"^[A-Za-z0-9_-]+").unwrap()];
 
     pub fn new() -> Self {
         // ここで字句解析するときの、パターンの一覧を定義する。regex_patternsの配列の先頭から順にチェックしていき、
-        let mut regex_patterns = vec![];
-        regex_patterns.push(Regex::new(r"^\(").unwrap());// 右括弧
-        regex_patterns.push(Regex::new(r"^\)").unwrap());// 左括弧
-        regex_patterns.push(Regex::new(r"^ ").unwrap());// 空白
-        regex_patterns.push(Regex::new(r"^|)").unwrap());// ハイプ
-        regex_patterns.push(Regex::new(r"^[A-Za-z0-9_-]+").unwrap());    // 文字列
-
-        return ConditionCompiler{
-            regex_patterns: regex_patterns
-        };
+        return ConditionCompiler{};
     }
 
-    fn compile_condition( &self, condition_str: String ) -> Result<ConditionToken, String> {
+    fn compile_condition_body(&self, condition_str: String, name_set :HashSet<&String> ) -> Result<Box<dyn SelectionNode + Send>, String> {
         // 字句解析する
         let tokens = self.tokenize(&condition_str)?;
-
-        // TODOパイプをパースする。
 
         // 括弧をパースする。
         tokens = self.parse_parenthesis(tokens)?;
@@ -129,10 +120,19 @@ impl ConditionCompiler {
         let tokens = self.parse_operand_container(tokens)?;
 
         // 検証する
-        self.verify_expr(&tokens)?;
+        self.verify_expr(&tokens,name_set)?;
 
-        // TODO 変更
-        return Result::Ok(tokens);
+
+    }
+
+    fn compile_condition( &self, condition_str: String, name_set :HashSet<&String> ) -> Result<Box<dyn SelectionNode + Send>, String> {
+        let result = self.compile_condition(condition_str, name_set);
+        if result.is_err() {
+            let err_msg = result.unwrap_err();
+            return Result::Err(format!("condition parse error has occured. {}",err_msg));
+        } else {
+            return result;
+        }
     }
     
     // いわゆる字句解析を行う
@@ -141,7 +141,7 @@ impl ConditionCompiler {
 
         let mut tokens = Vec::new();
         while cur_condition_str.len() != 0 {
-            let captured = self.regex_patterns.iter().find_map(| regex | {
+            let captured = ConditionCompiler::REGEX_PATTERNS.iter().find_map(| regex | {
                 return regex.captures(cur_condition_str.as_str());
             });
             if captured.is_none() {
@@ -365,7 +365,7 @@ impl ConditionCompiler {
     }
 
     // パース結果が正しいことを検証する。ここでエラーになることは基本的にはないはずで、エラーが出たらそれまでの処理でチェックが不足しているorバグがあるということを示している。
-    fn verify_expr( &self, token: &ConditionToken ) -> Result<(),String> {
+    fn verify_expr( &self, token: &ConditionToken, name_set :HashSet<&String> ) -> Result<(),String> {
         // この段階であり得ない種類のトークンがないことを確認。
         let is_ok = match token {
             ConditionToken::TokenContainer(_) => true,
@@ -379,11 +379,23 @@ impl ConditionCompiler {
             return Result::Err("unknown error".to_string());
         }
 
+        // 存在するnameであることを確認
+        if let ConditionToken::SelectionReference(selection_name) = token {
+            if !name_set.contains(selection_name) {
+                let msg = format!("unknown name: {}", selection_name);
+                return Result::Err(msg);
+            }
+        }
+
         for child_token in token.iter() {
-            self.verify_expr(child_token);
+            self.verify_expr(child_token, name_set);
         }
 
         return Result::Ok(());
+    }
+
+    fn to_selectnode() -> Result<Box<dyn SelectionNode + Send>,String> {
+
     }
 
     fn is_logical( &self, token: &ConditionToken ) -> bool {
@@ -529,11 +541,13 @@ impl DetectionNode {
         // selection nodeの初期化
         let err_msgs = vec![];
         let names = self.name_to_selection.keys();
+        let name_set = HashSet::new();
         for name in names {
             let err_result = self.name_to_selection.get(name).unwrap().init();
             if err_result.is_err() {
                 err_msgs.extend(err_result.unwrap_err());
             }
+            name_set.insert(name);
         }
 
         // conditionが指定されていない場合、selectionが指定されているものとする。
@@ -541,7 +555,7 @@ impl DetectionNode {
         let condition_str = condition.unwrap_or("selection").to_string();
 
         // TODO ConditionTokenをSelectionNodeに変換する。
-        let compile_result = ConditionCompiler::new().compile_condition(condition_str);
+        let compile_result = ConditionCompiler::new().compile_condition(condition_str,name_set);
         if compile_result.is_err() {
             let errmsg = compile_result.unwrap_err();
             err_msgs.extend(vec![errmsg]);
