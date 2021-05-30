@@ -35,9 +35,9 @@ pub enum ConditionToken {
     SelectionReference(String),
 
     // パースの時に上手く処理するために作った疑似的なトークン
-    ParenthesisContainer(Vec<ConditionToken>),   // 括弧を表すトークン
-    AndContainer(Vec<ConditionToken>),     // ANDでつながった条件をまとめるためのトークン
-    OrContainer(Vec<ConditionToken>),      // ORでつながった条件をまとめるためのトークン
+    ParenthesisContainer(Vec<ConditionToken>), // 括弧を表すトークン
+    AndContainer(Vec<ConditionToken>),         // ANDでつながった条件をまとめるためのトークン
+    OrContainer(Vec<ConditionToken>),          // ORでつながった条件をまとめるためのトークン
     NotContainer(Vec<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
     OperandContainer(Vec<ConditionToken>), // ANDやORやNOT等の演算子に対して、非演算子を表す
 }
@@ -63,7 +63,9 @@ impl IntoIterator for ConditionToken {
 impl ConditionToken {
     fn replace_subtoken(&self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
         return match self {
-            ConditionToken::ParenthesisContainer(_) => ConditionToken::ParenthesisContainer(sub_tokens),
+            ConditionToken::ParenthesisContainer(_) => {
+                ConditionToken::ParenthesisContainer(sub_tokens)
+            }
             ConditionToken::AndContainer(_) => ConditionToken::AndContainer(sub_tokens),
             ConditionToken::OrContainer(_) => ConditionToken::OrContainer(sub_tokens),
             ConditionToken::NotContainer(_) => ConditionToken::NotContainer(sub_tokens),
@@ -141,7 +143,7 @@ impl ConditionCompiler {
     }
 
     // 構文解析を実行する。
-    fn parse( &self, tokens:Vec<ConditionToken> ) -> Result<ConditionToken, String> {
+    fn parse(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
         // 括弧で囲まれた部分を解析します。
         // (括弧で囲まれた部分は後で解析するため、ここでは一時的にConditionToken::ParenthesisContainerに変換しておく)
         // 括弧の中身を解析するのはparse_rest_parenthesis()で行う。
@@ -158,12 +160,12 @@ impl ConditionCompiler {
     }
 
     // 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
-    fn parse_rest_parenthesis( &self, token: ConditionToken ) -> Result<ConditionToken, String> {
+    fn parse_rest_parenthesis(&self, token: ConditionToken) -> Result<ConditionToken, String> {
         if let ConditionToken::ParenthesisContainer(sub_token) = token {
             let new_token = self.parse(sub_token)?;
             return Result::Ok(new_token);
         }
-        
+
         let sub_tokens = token.sub_tokens();
         if sub_tokens.len() == 0 {
             return Result::Ok(token);
@@ -383,7 +385,7 @@ impl ConditionCompiler {
             let second_token = sub_tokens_ite.next().unwrap();
             if let ConditionToken::Not = first_token {
                 if let ConditionToken::Not = second_token {
-                    return Result::Err("'not is continuous.".to_string());
+                    return Result::Err("not is continuous.".to_string());
                 } else {
                     let not_container = ConditionToken::NotContainer(vec![second_token]);
                     return Result::Ok(not_container);
@@ -577,9 +579,11 @@ impl DetectionNode {
             // conditionが指定されていない場合、selectionが一つだけならそのselectionを採用することにする。
             let mut keys = self.name_to_selection.keys().clone();
             if keys.len() >= 2 {
-                return Result::Err(vec!["There are no condition node under detection.".to_string()]); 
+                return Result::Err(vec![
+                    "There are no condition node under detection.".to_string()
+                ]);
             }
-            
+
             keys.nth(0).unwrap().to_string()
         };
 
@@ -3376,7 +3380,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3396,7 +3400,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3416,7 +3420,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3436,7 +3440,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3456,7 +3460,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3476,7 +3480,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3495,7 +3499,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3514,7 +3518,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3533,7 +3537,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3552,7 +3556,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3571,7 +3575,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3590,7 +3594,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3609,7 +3613,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3628,7 +3632,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3643,7 +3647,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3658,7 +3662,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3677,7 +3681,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3696,7 +3700,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3715,7 +3719,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3734,7 +3738,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3753,7 +3757,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3772,7 +3776,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3791,7 +3795,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3810,7 +3814,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3831,7 +3835,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3852,7 +3856,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3873,7 +3877,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,true);
+        test_select(rule_str, SIMPLE_RECORD_STR, true);
     }
 
     #[test]
@@ -3894,7 +3898,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_select(rule_str,SIMPLE_RECORD_STR,false);
+        test_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 
     #[test]
@@ -3916,7 +3920,9 @@ mod tests {
 
         assert_eq!(
             rule_node.init(),
-            Err(vec!["There are no condition node under detection.".to_string()])
+            Err(vec![
+                "There are no condition node under detection.".to_string()
+            ])
         );
     }
 
@@ -3935,7 +3941,10 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. An unusable character was found.".to_string()]);
+        test_rule_parse_error(
+            rule_str,
+            vec!["condition parse error has occured. An unusable character was found.".to_string()],
+        );
     }
 
     #[test]
@@ -3953,7 +3962,13 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. The corresponding parenthesis cannot be found.".to_string()]);
+        test_rule_parse_error(
+            rule_str,
+            vec![
+                "condition parse error has occured. The corresponding parenthesis cannot be found."
+                    .to_string(),
+            ],
+        );
     }
 
     #[test]
@@ -3971,7 +3986,13 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. The corresponding parenthesis cannot be found.".to_string()]);
+        test_rule_parse_error(
+            rule_str,
+            vec![
+                "condition parse error has occured. The corresponding parenthesis cannot be found."
+                    .to_string(),
+            ],
+        );
     }
 
     #[test]
@@ -3989,7 +4010,13 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. The corresponding parenthesis cannot be found.".to_string()]);
+        test_rule_parse_error(
+            rule_str,
+            vec![
+                "condition parse error has occured. The corresponding parenthesis cannot be found."
+                    .to_string(),
+            ],
+        );
     }
 
     #[test]
@@ -4012,7 +4039,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_first_logical() {
-        // 
+        //
         let rule_str = r#"
         enabled: true
         detection:
@@ -4025,12 +4052,18 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. illegal Logical Operator(and, or) was found.".to_string()]);
+        test_rule_parse_error(
+            rule_str,
+            vec![
+                "condition parse error has occured. illegal Logical Operator(and, or) was found."
+                    .to_string(),
+            ],
+        );
     }
 
     #[test]
     fn test_condition_err_last_logical() {
-        // 
+        //
         let rule_str = r#"
         enabled: true
         detection:
@@ -4043,12 +4076,18 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. illegal Logical Operator(and, or) was found.".to_string()]);
+        test_rule_parse_error(
+            rule_str,
+            vec![
+                "condition parse error has occured. illegal Logical Operator(and, or) was found."
+                    .to_string(),
+            ],
+        );
     }
 
     #[test]
     fn test_condition_err_consecutive_logical() {
-        // 
+        //
         let rule_str = r#"
         enabled: true
         detection:
@@ -4066,7 +4105,7 @@ mod tests {
 
     #[test]
     fn test_condition_err_only_not() {
-        // 
+        //
         let rule_str = r#"
         enabled: true
         detection:
@@ -4079,7 +4118,10 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. illegal not was found.".to_string()]);
+        test_rule_parse_error(
+            rule_str,
+            vec!["condition parse error has occured. illegal not was found.".to_string()],
+        );
     }
 
     #[test]
@@ -4093,24 +4135,24 @@ mod tests {
                 EventID: 7041
             selection2:
                 param1: 'Windows Event Log'
-            condition: selection1 or ( not )
+            condition: selection1 or ( not not )
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        test_rule_parse_error(rule_str,vec!["condition parse error has occured. not is continuous.".to_string()]);
-    }
-
-    fn test_rule_parse_error(rule_str:&str, errmsgs: Vec<String> ) {
-        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
-
-        assert_eq!(
-            rule_node.init(),
-            Err(errmsgs)
+        test_rule_parse_error(
+            rule_str,
+            vec!["condition parse error has occured. not is continuous.".to_string()],
         );
     }
 
-    fn test_select(rule_str:&str, record_str:&str, expect_select: bool ) {
+    fn test_rule_parse_error(rule_str: &str, errmsgs: Vec<String>) {
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+
+        assert_eq!(rule_node.init(), Err(errmsgs));
+    }
+
+    fn test_select(rule_str: &str, record_str: &str, expect_select: bool) {
         let rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_str) {
             Ok(record) => {
