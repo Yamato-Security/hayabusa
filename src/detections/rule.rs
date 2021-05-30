@@ -2,7 +2,7 @@ extern crate regex;
 
 use mopa::mopafy;
 
-use std::{collections::{HashMap, HashSet}, usize, vec};
+use std::{collections::{HashMap}, sync::Arc, usize, vec};
 
 use crate::detections::utils;
 
@@ -23,15 +23,12 @@ fn concat_selection_key(key_list: &Vec<String>) -> String {
         });
 }
 
-#[derive(Debug)]
-enum ConditionToken {
+#[derive(Debug,Clone)]
+pub enum ConditionToken {
     // 字句解析で出てくるトークン
     LeftParenthesis,
     RightParenthesis,
     Space,
-    Pipe,
-    Count,
-    By,
     Not,
     And,
     Or,
@@ -41,7 +38,7 @@ enum ConditionToken {
     TokenContainer(Vec<ConditionToken>),    // 括弧を表すトークン
     AndContainer(Vec<ConditionToken>),  // ANDでつながった条件をまとめるためのトークン
     OrContainer(Vec<ConditionToken>),   // ORでつながった条件をまとめるためのトークン
-    NotContainer(Vec<ConditionToken>),  // 「NOT」と「NOTで否定される式」をまとめるためのトークン
+    NotContainer(Vec<ConditionToken>),  // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
     OperandContainer(Vec<ConditionToken>),  // ANDやORやNOT等の演算子に対して、非演算子を表す
 }
 
@@ -64,72 +61,85 @@ impl IntoIterator for ConditionToken {
 }
 
 impl ConditionToken {
-    pub fn iter<'a>(&'a self) -> &'a Vec<ConditionToken> {
+    fn replace_subtoken(&self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
         return match self {
-            ConditionToken::TokenContainer(sub_tokens) => sub_tokens,
-            ConditionToken::AndContainer(sub_tokens) => sub_tokens,
-            ConditionToken::OrContainer(sub_tokens) => sub_tokens,
-            ConditionToken::NotContainer(sub_tokens) => sub_tokens,
-            ConditionToken::OperandContainer(sub_tokens) => sub_tokens,
-            _ => &Vec::new(),
-        };
-    }
-
-    fn replace_subtoken(self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
-        let ret = match self {
             ConditionToken::TokenContainer(_) => ConditionToken::TokenContainer(sub_tokens),
             ConditionToken::AndContainer(_) => ConditionToken::AndContainer(sub_tokens),
             ConditionToken::OrContainer(_) => ConditionToken::OrContainer(sub_tokens),
             ConditionToken::NotContainer(_) => ConditionToken::NotContainer(sub_tokens),
-            _ => self,
+            ConditionToken::OperandContainer(_) => ConditionToken::OperandContainer(sub_tokens),
+            ConditionToken::LeftParenthesis => ConditionToken::LeftParenthesis,
+            ConditionToken::RightParenthesis => ConditionToken::RightParenthesis,
+            ConditionToken::Space => ConditionToken::Space,
+            ConditionToken::Not => ConditionToken::Not,
+            ConditionToken::And => ConditionToken::And,
+            ConditionToken::Or => ConditionToken::Or,
+            ConditionToken::SelectionReference(name) => ConditionToken::SelectionReference(name.clone()),
         };
+    }
 
-        return ret;
+    pub fn sub_tokens<'a>(&'a self) -> Vec<ConditionToken> {
+        // TODO ここでcloneを使わずに実装できるようにしたい。
+        return  match self {
+            ConditionToken::TokenContainer(sub_tokens) => sub_tokens.clone(),
+            ConditionToken::AndContainer(sub_tokens) => sub_tokens.clone(),
+            ConditionToken::OrContainer(sub_tokens) => sub_tokens.clone(),
+            ConditionToken::NotContainer(sub_tokens) => sub_tokens.clone(),
+            ConditionToken::OperandContainer(sub_tokens) => sub_tokens.clone(),
+            ConditionToken::LeftParenthesis => vec![],
+            ConditionToken::RightParenthesis => vec![],
+            ConditionToken::Space => vec![],
+            ConditionToken::Not => vec![],
+            ConditionToken::And => vec![],
+            ConditionToken::Or => vec![],
+            ConditionToken::SelectionReference(_) => vec![],
+        };
     }
 }
 
 #[derive(Debug)]
 pub struct ConditionCompiler {
+    regex_patterns: Vec<Regex>,
 }
 
 // conditionの式を読み取るクラス。
 impl ConditionCompiler {
-    const PREV_TYPE_LOGICAL:i32 = 1;
-    const PREV_TYPE_NODE:i32 = 2;
-    const PREV_TYPE_NOT:i32 = 3;
-    
-    // 字句解析で使う正規表現の一覧
-    const REGEX_PATTERNS:Vec<Regex> = vec![Regex::new(r"^\(").unwrap(),Regex::new(r"^\)").unwrap(),Regex::new(r"^ ").unwrap(),Regex::new(r"^|)").unwrap(),Regex::new(r"^[A-Za-z0-9_-]+").unwrap()];
 
     pub fn new() -> Self {
-        // ここで字句解析するときの、パターンの一覧を定義する。regex_patternsの配列の先頭から順にチェックしていき、
-        return ConditionCompiler{};
+        // ここで字句解析するときに使う正規表現の一覧を定義する。
+        let mut regex_patterns = vec![];
+        regex_patterns.push(Regex::new(r"^(").unwrap());
+        regex_patterns.push(Regex::new(r"^)").unwrap());
+        regex_patterns.push(Regex::new(r"^ ").unwrap());
+        // ^\w+については、sigmaのソースのsigma/tools/sigma/parser/condition.pyのSigmaConditionTokenizerを参考にしている。(SigmaConditionToken.TOKEN_ID,     re.compile("[\\w*]+")),となっている。
+        regex_patterns.push(Regex::new(r"^\w+").unwrap());
+
+        return ConditionCompiler{
+            regex_patterns: regex_patterns
+        };
     }
 
-    fn compile_condition_body(&self, condition_str: String, name_set :HashSet<&String> ) -> Result<Box<dyn SelectionNode + Send>, String> {
+    fn compile_condition_body(&self, condition_str: String, name_2_node : &HashMap<String,Arc<Box<dyn SelectionNode + Send + Sync>>> ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
         // 字句解析する
         let tokens = self.tokenize(&condition_str)?;
 
         // 括弧をパースする。
-        tokens = self.parse_parenthesis(tokens)?;
+        let tokens = self.parse_parenthesis(tokens)?;
 
         // AndとOrをパースする。
         let tokens = self.parse_and_or_operator(tokens)?;
 
         // Notをパースする。
-        let tokens = self.parse_operand_container(tokens)?;
+        let parsed_token = self.parse_operand_container(&tokens)?;
 
-        // 検証する
-        self.verify_expr(&tokens,name_set)?;
-
-
+        // SelectionNodeに変換する
+        return self.to_selectnode(parsed_token, name_2_node);
     }
 
-    fn compile_condition( &self, condition_str: String, name_set :HashSet<&String> ) -> Result<Box<dyn SelectionNode + Send>, String> {
-        let result = self.compile_condition(condition_str, name_set);
-        if result.is_err() {
-            let err_msg = result.unwrap_err();
-            return Result::Err(format!("condition parse error has occured. {}",err_msg));
+    fn compile_condition( &self, condition_str: String, name_2_node : &HashMap<String,Arc<Box<dyn SelectionNode + Send + Sync>>> ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
+        let result = self.compile_condition_body(condition_str, name_2_node);
+        if let Result::Err(msg) = result {
+            return Result::Err(format!("condition parse error has occured. {}",msg));
         } else {
             return result;
         }
@@ -141,7 +151,7 @@ impl ConditionCompiler {
 
         let mut tokens = Vec::new();
         while cur_condition_str.len() != 0 {
-            let captured = ConditionCompiler::REGEX_PATTERNS.iter().find_map(| regex | {
+            let captured = self.regex_patterns.iter().find_map(| regex | {
                 return regex.captures(cur_condition_str.as_str());
             });
             if captured.is_none() {
@@ -171,12 +181,6 @@ impl ConditionCompiler {
             return ConditionToken::RightParenthesis;
         } else if token == " " {
             return ConditionToken::Space;
-        } else if token == "|" {
-            return ConditionToken::Pipe;
-        } else if token == "count" {
-            return ConditionToken::Count;
-        } else if token == "by" {
-            return ConditionToken::By;
         } else if token == "not" {
             return ConditionToken::Not;
         } else if token == "and" {
@@ -188,31 +192,16 @@ impl ConditionCompiler {
         }
     }
 
-    // AndNodeSelectionNode又はOrSelectionNodeに追加する。
-    fn add_node( &self, node:Box<dyn SelectionNode + Send>, prev_value:i32, mut current_and_node: Option<AndSelectionNode>, mut root_node: OrSelectionNode ) ->  (Option<AndSelectionNode>, OrSelectionNode) {
-        let selection_node = match prev_value {
-            ConditionCompiler::PREV_TYPE_NOT => Box::new(NotSelectionNode::new(node)),
-            _ => node,
-        };
-        
-        if current_and_node.is_some() {
-            current_and_node.as_mut().unwrap().child_nodes.push(selection_node);
-        } else {
-            root_node.child_nodes.push(selection_node);
-        }
-
-        return (current_and_node, root_node);
-    }
-
     // 右括弧と左括弧をだけをパースする。戻り値の配列にはLeftParenthesisとRightParenthesisが含まれず、代わりにTokenContainerに変換される。TokenContainerが括弧で囲まれた部分を表現している。
     fn parse_parenthesis( &self,  tokens: Vec<ConditionToken> ) -> Result<Vec<ConditionToken>,String>  {
-        let idx = 0;
-        let ret = vec![];
-        while idx < tokens.len() {
+        let mut idx = 0;
+        let mut ret = vec![];
+        let token_len = tokens.len();
+        while idx < token_len {
             // まず、左括弧を探す。
-            let token = tokens[idx];
+            let token = &tokens[idx];
             let is_left = match token {
-                ConditionToken::LeftParenthesis => true,
+                &ConditionToken::LeftParenthesis => true,
                 _ => false,
             };
             if !is_left {
@@ -259,12 +248,13 @@ impl ConditionCompiler {
         }
         // 長さ1の場合はこれでOK
         if tokens.len() == 1 {
-            return Result::Ok(tokens[0]);
+            let token = tokens.into_iter().nth(0).unwrap();
+            return Result::Ok(token);
         }
 
         // OperandContainerとLogicalOperator(AndとOR)が交互に並んでいることをチェック
-        let operand_list = vec![];
-        let operator_list = vec![];
+        let mut operand_list = vec![];
+        let mut operator_list = vec![];
         for (i,token) in tokens.into_iter().enumerate() {
             if (i%2==1) != self.is_logical(&token) {
                 // インデックスが奇数の時はLogicalOperatorで、インデックスが偶数のときはOperandContainerになる
@@ -274,26 +264,23 @@ impl ConditionCompiler {
             if i%2 == 0 { 
                 // ここで再帰的に呼ぶ
                 let sub_tokens:Vec<ConditionToken> = token.into_iter().collect();
-                if sub_tokens.len() >= 1 {
-                    let new_sub_token = self.parse_and_or_operator(sub_tokens)?;
-                    operand_list.push(new_sub_token); 
-                } else {
-                    operand_list.push(token); 
-                }
+                let sub_tokens = self.parse_and_or_operator(sub_tokens)?;
+                operand_list.push(sub_tokens);
             }else { 
                 operator_list.push(token); 
             }
         }
 
         // 先にANDでつながっている部分を全部まとめる
-        let operands = vec![operand_list[0]];
-        for (i,token) in operator_list.iter().enumerate() {
+        let mut operant_ite = operand_list.into_iter();
+        let mut operands = vec![operant_ite.next().unwrap()];
+        for token in operator_list.iter() {
             if let ConditionToken::Or = token {
                 // Orの場合はそのままリストに追加
-                operands.push(operand_list[i+1]);
+                operands.push(operant_ite.next().unwrap());
             } else {
                 // Andの場合はANDでつなげる
-                let and_operands = vec![operands.pop().unwrap(),operand_list[i+1]];
+                let and_operands = vec![operands.pop().unwrap(),operant_ite.next().unwrap()];
                 let and_container = ConditionToken::AndContainer(and_operands);
                 operands.push(and_container);
             }
@@ -305,97 +292,107 @@ impl ConditionCompiler {
     }
 
     // OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
-    fn parse_operand_container( &self, parent_token: ConditionToken ) -> Result<ConditionToken,String> {
-        let tokens:Vec<ConditionToken> = parent_token.into_iter().collect();
-
-        let parsed_tokens = vec![];
-        for token in tokens.into_iter() {
-            // 現状ではNotをパースためだけにある
-            if let ConditionToken::OperandContainer(operand_subtokens) = token {
-                // 現状ではNOTの場合は、「not」と「notで修飾されるselectionノードの名前」の2つ入っているはず
-                // NOTが無い場合、「selectionノードの名前」の一つしか入っていないはず。
-
-                // 上記通り、3つ以上入っていることはないはず。
-                if operand_subtokens.len() >= 3 {
-                    return Result::Err("unknown error. maybe it's because selection node name continue.".to_string());
-                }
-                // 0はありえないはず
-                if operand_subtokens.len() == 0 {
-                    return Result::Err("unknown error.".to_string());
-                }
-
-                // 1つだけ入っている場合、NOTはありえない。
-                if operand_subtokens.len() == 1 {
-                    let operand_subtoken = operand_subtokens[0];
-                    if let ConditionToken::Not = operand_subtoken {
-                        return Result::Err("illegal not was found.".to_string());
-                    }
-
-                    parsed_tokens.push(operand_subtokens[0]);
-                    continue;
-                }
-
-                // ２つ入っている場合、先頭がNotで次はNotじゃない何かのはず
-                let first_token = operand_subtokens[0];
-                let second_token = operand_subtokens[1];
-                if let ConditionToken::Not = first_token {
-                    if let ConditionToken::Not = second_token {
-                        return Result::Err("'not' is continuous.".to_string());    
-                    }
-                } else {
-                    return Result::Err("unknown error. maybe it's because selection node name continue.".to_string());
-                }
-
-                let not_container = ConditionToken::NotContainer(vec![second_token]);
-                parsed_tokens.push(not_container);
-            } else {
-                parsed_tokens.push(token);
-            }
-        }
-
+    fn parse_operand_container( &self, parent_token: &ConditionToken ) -> Result<ConditionToken,String> {
         // 再帰的に呼び出す
-        let rec_tokens = vec![];
-        for new_token in parsed_tokens.into_iter() {
-            let new_token = self.parse_operand_container(new_token)?;
+        let mut rec_tokens = vec![];
+        for new_token in parent_token.sub_tokens() {
+            let new_token = self.parse_operand_container(&new_token)?;
             rec_tokens.push(new_token);
         }
 
-        let ret = parent_token.replace_subtoken(rec_tokens);
-        return Result::Ok(ret);
+        // OperandContainerの場合だけ、変換する。
+        let parent_token = parent_token.replace_subtoken(rec_tokens);
+        if let ConditionToken::OperandContainer(sub_tokens) = parent_token {
+            // 現状ではNOTの場合は、「not」と「notで修飾されるselectionノードの名前」の2つ入っているはず
+            // NOTが無い場合、「selectionノードの名前」の一つしか入っていないはず。
+
+            // 上記の通り、3つ以上入っていることはないはず。
+            if sub_tokens.len() >= 3 {
+                return Result::Err("unknown error. maybe it's because selection node name continue.".to_string());
+            }
+
+            // 0はありえないはず
+            if sub_tokens.len() == 0 {
+                return Result::Err("unknown error.".to_string());
+            }
+
+            // 1つだけ入っている場合、NOTはありえない。
+            if sub_tokens.len() == 1 {
+                let operand_subtoken = sub_tokens.into_iter().next().unwrap();
+                if let ConditionToken::Not = operand_subtoken {
+                    return Result::Err("illegal not was found.".to_string());
+                }
+
+                return Result::Ok(operand_subtoken);
+            }
+
+            // ２つ入っている場合、先頭がNotで次はNotじゃない何かのはず
+            let mut sub_tokens_ite = sub_tokens.into_iter();
+            let first_token = sub_tokens_ite.next().unwrap();
+            let second_token = sub_tokens_ite.next().unwrap();
+            if let ConditionToken::Not = first_token {
+                if let ConditionToken::Not = second_token {
+                    return Result::Err("'not' is continuous.".to_string());    
+                } else {
+                    let not_container = ConditionToken::NotContainer(vec![second_token]);
+                    return Result::Ok(not_container);
+                }
+            } else {
+                return Result::Err("unknown error. maybe it's because selection node name continue.".to_string());
+            }
+        } else {
+            return Result::Ok(parent_token);
+        }
     }
 
-    // パース結果が正しいことを検証する。ここでエラーになることは基本的にはないはずで、エラーが出たらそれまでの処理でチェックが不足しているorバグがあるということを示している。
-    fn verify_expr( &self, token: &ConditionToken, name_set :HashSet<&String> ) -> Result<(),String> {
-        // この段階であり得ない種類のトークンがないことを確認。
-        let is_ok = match token {
-            ConditionToken::TokenContainer(_) => true,
-            ConditionToken::AndContainer(_) => true,
-            ConditionToken::OrContainer(_) => true,
-            ConditionToken::NotContainer(_) => true,
-            ConditionToken::SelectionReference(_) => true,
-            _ => false,
-        };
-        if !is_ok {
-            return Result::Err("unknown error".to_string());
-        }
-
-        // 存在するnameであることを確認
+    // SelectionNodeに変換する
+    fn to_selectnode(&self, token: ConditionToken, name_2_node : &HashMap<String,Arc<Box<dyn SelectionNode + Send + Sync>>> ) -> Result<Box<dyn SelectionNode + Send + Sync>,String> {
+        // RefSelectionNodeに変換
         if let ConditionToken::SelectionReference(selection_name) = token {
-            if !name_set.contains(selection_name) {
-                let msg = format!("unknown name: {}", selection_name);
-                return Result::Err(msg);
+            let selection_node = name_2_node.get(&selection_name);
+            if selection_node.is_none() {
+                let err_msg = format!("{} is not defined.",selection_name);
+                return Result::Err(err_msg);
+            } else {
+                let selection_node = selection_node.unwrap();
+                let selection_node = Arc::clone(selection_node);
+                let ref_node = RefSelectionNode::new(selection_node);
+                return Result::Ok(Box::new(ref_node));
             }
         }
 
-        for child_token in token.iter() {
-            self.verify_expr(child_token, name_set);
+        // AndSelectionNodeに変換
+        if let ConditionToken::AndContainer(sub_tokens) = token {
+            let mut select_and_node =  AndSelectionNode::new();
+            for sub_token in sub_tokens.into_iter() {
+                let sub_node = self.to_selectnode(sub_token, name_2_node)?;
+                select_and_node.child_nodes.push(sub_node);
+            }
+            return Result::Ok(Box::new(select_and_node));
         }
 
-        return Result::Ok(());
-    }
+        // OrSelectionNodeに変換
+        if let ConditionToken::OrContainer(sub_tokens) = token {
+            let mut select_or_node = OrSelectionNode::new();
+            for sub_token in sub_tokens.into_iter() {
+                let sub_node = self.to_selectnode(sub_token, name_2_node)?;
+                select_or_node.child_nodes.push(sub_node);
+            }
+            return Result::Ok(Box::new(select_or_node));
+        }
 
-    fn to_selectnode() -> Result<Box<dyn SelectionNode + Send>,String> {
+        // NotSelectionNodeに変換
+        if let ConditionToken::NotContainer(sub_tokens) = token {
+            if sub_tokens.len() > 1 {
+                return Result::Err("unknown error".to_string());
+            }
 
+            let select_sub_node = self.to_selectnode(sub_tokens.into_iter().next().unwrap(), name_2_node)?;
+            let select_not_node = NotSelectionNode::new(select_sub_node);
+            return Result::Ok(Box::new(select_not_node));
+        }
+
+        return Result::Err("unknown error".to_string());
     }
 
     fn is_logical( &self, token: &ConditionToken ) -> bool {
@@ -408,9 +405,9 @@ impl ConditionCompiler {
 
     // ConditionToken::OperandContainerに変換できる部分があれば変換する。
     fn to_operand_container(&self, tokens: Vec<ConditionToken> ) -> Result<Vec<ConditionToken>,String> {
-        let ret = vec![];
+        let mut ret = vec![];
         let mut grouped_operands = vec![];  // ANDとORの間にあるトークンを表す。ANDとORをOperatorとしたときのOperand
-        let token_ite = tokens.into_iter();
+        let mut token_ite = tokens.into_iter();
         while let Some(token) = token_ite.next() {
             if self.is_logical(&token) {
                 ret.push(ConditionToken::OperandContainer(grouped_operands));
@@ -419,13 +416,7 @@ impl ConditionCompiler {
                 continue;
             }
 
-            if let ConditionToken::TokenContainer(sub_token) = token {
-                // TokenContainerの場合は、中身を再帰的にパースしてあげないと、括弧の中身にANDやORがある場合に正しく解析できない。
-                let operand = self.parse_and_or_operator(sub_token)?;
-                grouped_operands.push(operand);
-            } else {
-                grouped_operands.push(token);
-            }
+            grouped_operands.push(token);
         }
         if !grouped_operands.is_empty() {
             ret.push(ConditionToken::OperandContainer(grouped_operands));
@@ -438,9 +429,10 @@ impl ConditionCompiler {
         let mut left_cnt = 0;
         let mut right_cnt = 0;
         for i in left_parenthesis_index..tokens.len() {
-            if let ConditionToken::LeftParenthesis = tokens[i] {
+            let token = &tokens[i];
+            if let ConditionToken::LeftParenthesis = token {
                 left_cnt+= 1;
-            } else if let ConditionToken::RightParenthesis = tokens[i] {
+            } else if let ConditionToken::RightParenthesis = token {
                 right_cnt+=1;
             }
 
@@ -453,7 +445,7 @@ impl ConditionCompiler {
     }
 
     pub fn sub_vec( ary: &Vec<ConditionToken>, left_idx: usize, right_idx: usize ) -> Vec<ConditionToken> {
-        let ret = vec![];
+        let mut ret = vec![];
         if ary.len() <= left_idx {
             return ret;
         } else if ary.len() <= right_idx {
@@ -462,8 +454,9 @@ impl ConditionCompiler {
             return ret;
         }
     
+        let mut ary_ite = ary.iter();
         for i in left_idx..=right_idx {
-            ret.push(ary[i]);
+            ret.push(ary_ite.nth(i).unwrap().clone());
         }
     
         return ret;
@@ -495,8 +488,8 @@ impl RuleNode {
         }
 
         // detection node initialization
-        let detection = DetectionNode::new(self.yaml["detection"]);
-        let detection_result = detection.init();
+        let mut detection = DetectionNode::new();
+        let detection_result = detection.init(&self.yaml["detection"]);
         if detection_result.is_err() {
             errmsgs.extend(detection_result.unwrap_err());
         }
@@ -510,55 +503,48 @@ impl RuleNode {
     }
 
     pub fn select(&self, event_record: &Value) -> bool {
+        if self.detection.is_none() {
+            return false;
+        }
 
+        return self.detection.as_ref().unwrap().select(event_record);
     }
 }
 
 // Ruleファイルのdetectionを表すノード
 struct DetectionNode {
-    pub name_to_selection: HashMap<String,Box<dyn SelectionNode + Send>>,
-    pub condition: Option<Box<dyn SelectionNode + Send>>,
-    pub detection: Yaml,
+    pub name_to_selection: HashMap<String,Arc<Box<dyn SelectionNode + Send + Sync>>>,
+    pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
 }
 
 impl DetectionNode {
-    const reserved_words: HashSet<String> = vec!["condition".to_string()].into_iter().collect();
-
-    fn new( detection:Yaml ) -> DetectionNode {
+    fn new() -> DetectionNode {
         return DetectionNode{
             name_to_selection: HashMap::new(),
             condition: Option::None,
-            detection: detection
         };
     }
 
-    fn init(&mut self) -> Result<(), Vec<String>> {
-        self.parse_name_to_selection()?;
+    fn init(&mut self, detection_yaml: &Yaml ) -> Result<(), Vec<String>> {
+        self.parse_name_to_selection(detection_yaml)?;
         if self.name_to_selection.len() == 0 {
             return Result::Err(vec!["not found selection node".to_string()]);
         }
 
         // selection nodeの初期化
-        let err_msgs = vec![];
-        let names = self.name_to_selection.keys();
-        let name_set = HashSet::new();
-        for name in names {
-            let err_result = self.name_to_selection.get(name).unwrap().init();
-            if err_result.is_err() {
-                err_msgs.extend(err_result.unwrap_err());
-            }
-            name_set.insert(name);
-        }
+        let mut err_msgs = vec![];
 
         // conditionが指定されていない場合、selectionが指定されているものとする。
-        let condition = self.detection["condition"].as_str();
+        let condition = detection_yaml.as_str();
         let condition_str = condition.unwrap_or("selection").to_string();
 
-        // TODO ConditionTokenをSelectionNodeに変換する。
-        let compile_result = ConditionCompiler::new().compile_condition(condition_str,name_set);
-        if compile_result.is_err() {
-            let errmsg = compile_result.unwrap_err();
-            err_msgs.extend(vec![errmsg]);
+        // ConditionTokenをSelectionNodeに変換する。
+        let compiler = ConditionCompiler::new();
+        let compile_result = compiler.compile_condition(condition_str,&self.name_to_selection);
+        if let Result::Err(err_msg) = compile_result {
+            err_msgs.extend(vec![err_msg]);
+        } else {
+            self.condition = Option::Some(compile_result.unwrap());
         }
 
         if err_msgs.is_empty() {
@@ -568,9 +554,18 @@ impl DetectionNode {
         }
     }
 
+    pub fn select(&self, event_record: &Value) -> bool {
+        if self.condition.is_none() {
+            return false;
+        }
+
+        let condition = &self.condition.as_ref().unwrap();
+        return condition.select(event_record);
+    }
+
     // selectionノードをパースします。
-    fn parse_name_to_selection(&self) -> Result<(), Vec<String>> {
-        let detection_hash = self.detection.as_hash();
+    fn parse_name_to_selection(&mut self, detection_yaml: &Yaml ) -> Result<(), Vec<String>> {
+        let detection_hash = detection_yaml.as_hash();
         if detection_hash.is_none() {
             return Result::Err(vec!["not found detection node".to_string()]); 
         }
@@ -578,28 +573,39 @@ impl DetectionNode {
         // selectionをパースする。
         let detection_hash = detection_hash.unwrap();
         let keys = detection_hash.keys();
+        let mut err_msgs = vec![];
         for key in keys {
             let name = key.as_str().unwrap_or("");
             if name.len() == 0 {
                 continue;
             }
             // condition等、特殊なキーワードを無視する。
-            if DetectionNode::reserved_words.contains(name) {
+            if name == "condition" {
                 continue;
             }
 
-            let value = detection_hash[key];
-            let parsed = self.parse_selection(&value);
-            if parsed.is_some() {
-                self.name_to_selection.insert(name.to_string(), parsed.unwrap());
+            let selection_node = self.parse_selection(&detection_hash[key]);
+            if selection_node.is_some() {
+                let mut selection_node = selection_node.unwrap();
+                let init_result = selection_node.init();
+                if init_result.is_err() {
+                    err_msgs.extend(init_result.unwrap_err());
+                } else {
+                    let rc_selection = Arc::new(selection_node);
+                    self.name_to_selection.insert(name.to_string(), rc_selection);
+                }
             }
         }
 
-        return Result::Ok(());
+        if err_msgs.is_empty() {
+            return Result::Ok(());
+        } else {
+            return Result::Err(err_msgs);
+        }
     }
 
     // selectionをパースします。
-    fn parse_selection(&self, yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send>> {
+    fn parse_selection(&self, yaml: &Yaml) -> Option<Box<dyn SelectionNode + Send + Sync>> {
         // TODO detection-selectionが存在しない場合のチェック
         let selection_yaml = &yaml["detection"]["selection"];
         if selection_yaml.is_badvalue() {
@@ -613,7 +619,7 @@ impl DetectionNode {
         &self, 
         key_list: Vec<String>,
         yaml: &Yaml,
-    ) -> Box<dyn SelectionNode + Send> {
+    ) -> Box<dyn SelectionNode + Send + Sync> {
         if yaml.as_hash().is_some() {
             // 連想配列はAND条件と解釈する
             let yaml_hash = yaml.as_hash().unwrap();
@@ -645,19 +651,31 @@ impl DetectionNode {
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
 trait SelectionNode: mopa::Any {
+    // 引数で指定されるイベントログのレコードが、条件に一致するかどうかを判定する
+    // このトレイトを実装する構造体毎に適切な判定処理を書く必要がある。
     fn select(&self, event_record: &Value) -> bool;
+
+    // 初期化処理を行う
+    // 戻り値としてエラーを返却できるようになっているので、Ruleファイルが間違っていて、SelectionNodeを構成出来ない時はここでエラーを出す
+    // AndSelectionNode等ではinit()関数とは別にnew()関数を実装しているが、new()関数はただインスタンスを作るだけにして、あまり長い処理を書かないようにしている。
+    // これはRuleファイルのパースのエラー処理をinit()関数にまとめるためにこうしている。
     fn init(&mut self) -> Result<(), Vec<String>>;
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>>;
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>>;
+
+    // 子ノードを取得する(グラフ理論のchildと同じ意味)
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>>;
+
+    // 子孫ノードを取得する(グラフ理論のdescendantと同じ意味)
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>>;
 }
 mopafy!(SelectionNode);
 
 // detection - selection配下でAND条件を表すノード
 struct AndSelectionNode {
-    pub child_nodes: Vec<Box<dyn SelectionNode>>,
+    pub child_nodes: Vec<Box<dyn SelectionNode + Send + Sync>>,
 }
 
 unsafe impl Send for AndSelectionNode {}
+unsafe impl Sync for AndSelectionNode {}
 
 impl AndSelectionNode {
     pub fn new() -> AndSelectionNode {
@@ -701,7 +719,7 @@ impl SelectionNode for AndSelectionNode {
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
             ret.push(child_node);
@@ -710,7 +728,7 @@ impl SelectionNode for AndSelectionNode {
         return ret;
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         let mut ret = self.get_childs();
 
         self.child_nodes
@@ -729,10 +747,11 @@ impl SelectionNode for AndSelectionNode {
 
 // detection - selection配下でOr条件を表すノード
 struct OrSelectionNode {
-    pub child_nodes: Vec<Box<dyn SelectionNode>>,
+    pub child_nodes: Vec<Box<dyn SelectionNode + Send + Sync>>,
 }
 
 unsafe impl Send for OrSelectionNode {}
+unsafe impl Sync for OrSelectionNode {}
 
 impl OrSelectionNode {
     pub fn new() -> OrSelectionNode {
@@ -776,7 +795,7 @@ impl SelectionNode for OrSelectionNode {
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
             ret.push(child_node);
@@ -785,7 +804,7 @@ impl SelectionNode for OrSelectionNode {
         return ret;
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         let mut ret = self.get_childs();
 
         self.child_nodes
@@ -802,14 +821,16 @@ impl SelectionNode for OrSelectionNode {
     }
 }
 
+// conditionでNotを表すノード
 struct NotSelectionNode {
-    node: Box<dyn SelectionNode>,
+    node: Box<dyn SelectionNode + Send + Sync>,
 }
 
 unsafe impl Send for NotSelectionNode {}
+unsafe impl Sync for NotSelectionNode {}
 
 impl NotSelectionNode {
-    pub fn new( node: Box<dyn SelectionNode> ) -> NotSelectionNode {
+    pub fn new( node: Box<dyn SelectionNode + Send + Sync> ) -> NotSelectionNode {
         return NotSelectionNode{ node: node };
     }
 }
@@ -823,41 +844,46 @@ impl SelectionNode for NotSelectionNode{
         return Result::Ok(());
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         return vec![];
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         return self.get_childs();
     }
 }
 
+// detectionで定義した条件をconditionで参照するためのもの
 struct RefSelectionNode {
-    selection_name: String
+    // selection_nodeはDetectionNodeのname_2_nodeが所有権を持っていて、RefSelectionNodeのselection_nodeに所有権を持たせることができない。
+    // そこでArcを使って、DetectionNodeのname_2_nodeとRefSelectionNodeのselection_nodeで所有権を共有する。
+    // RcじゃなくてArcなのはマルチスレッド対応のため
+    selection_node: Arc<Box<dyn SelectionNode + Send + Sync>>,
 }
 
 unsafe impl Send for RefSelectionNode {}
+unsafe impl Sync for RefSelectionNode {}
 
 impl RefSelectionNode {
-    pub fn new( selection_name: String ) -> RefSelectionNode {
-        return RefSelectionNode { selection_name: selection_name };
+    pub fn new( selection_node: Arc<Box<dyn SelectionNode + Send + Sync>> ) -> RefSelectionNode {
+        return RefSelectionNode { selection_node: selection_node };
     }
 }
 
 impl SelectionNode for RefSelectionNode {
-    fn select(&self, _event_record: &Value) -> bool {
-        return self.selection_name == "hoge".to_string();
+    fn select(&self, event_record: &Value) -> bool {
+        return self.selection_node.select(event_record);
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
         return Result::Ok(());
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
-        return vec![];
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+        return vec![&self.selection_node];
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         return self.get_childs();
     }
 }
@@ -870,6 +896,7 @@ struct LeafSelectionNode {
 }
 
 unsafe impl Send for LeafSelectionNode {}
+unsafe impl Sync for LeafSelectionNode {}
 
 impl LeafSelectionNode {
     fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
@@ -1027,11 +1054,11 @@ impl SelectionNode for LeafSelectionNode {
             .init(&match_key_list, &self.select_value);
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         return vec![];
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
         return vec![];
     }
 }
@@ -1510,7 +1537,7 @@ mod tests {
         updated_date: 2020/11/8
         "#;
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         // Root
         let detection_childs = selection_node.get_childs();
@@ -1519,7 +1546,7 @@ mod tests {
         // Channel
         {
             // LeafSelectionNodeが正しく読み込めることを確認
-            let child_node = detection_childs[0];
+            let child_node = detection_childs[0].as_ref() as &dyn SelectionNode;//  TODO キャストしないとエラーでるけど、このキャストよく分からん。
             assert_eq!(child_node.is::<LeafSelectionNode>(), true);
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "Channel");
@@ -1543,7 +1570,7 @@ mod tests {
         // EventID
         {
             // LeafSelectionNodeが正しく読み込めることを確認
-            let child_node = detection_childs[1];
+            let child_node = detection_childs[1].as_ref() as &dyn SelectionNode;
             assert_eq!(child_node.is::<LeafSelectionNode>(), true);
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "EventID");
@@ -1564,7 +1591,7 @@ mod tests {
         // ContextInfo
         {
             // OrSelectionNodeを正しく読み込めることを確認
-            let child_node = detection_childs[2];
+            let child_node = detection_childs[2].as_ref() as &dyn SelectionNode;
             assert_eq!(child_node.is::<OrSelectionNode>(), true);
             let child_node = child_node.downcast_ref::<OrSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
@@ -1572,7 +1599,7 @@ mod tests {
 
             // OrSelectionNodeの下にLeafSelectionNodeがあるパターンをテスト
             // LeafSelectionNodeである、Host Applicationノードが正しいことを確認
-            let hostapp_en_node = ancestors[0];
+            let hostapp_en_node = ancestors[0].as_ref() as &dyn SelectionNode;
             assert_eq!(hostapp_en_node.is::<LeafSelectionNode>(), true);
             let hostapp_en_node = hostapp_en_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -1586,7 +1613,7 @@ mod tests {
             assert_eq!(re.unwrap().as_str(), "Host Application");
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
-            let hostapp_jp_node = ancestors[1];
+            let hostapp_jp_node = ancestors[1].as_ref()  as &dyn SelectionNode;
             assert_eq!(hostapp_jp_node.is::<LeafSelectionNode>(), true);
             let hostapp_jp_node = hostapp_jp_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -1603,7 +1630,7 @@ mod tests {
         // ImagePath
         {
             // AndSelectionNodeを正しく読み込めることを確認
-            let child_node = detection_childs[3];
+            let child_node = detection_childs[3].as_ref() as &dyn SelectionNode;
             assert_eq!(child_node.is::<AndSelectionNode>(), true);
             let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
@@ -1611,7 +1638,7 @@ mod tests {
 
             // min-lenが正しく読み込めることを確認
             {
-                let ancestor_node = ancestors[0];
+                let ancestor_node = ancestors[0].as_ref() as &dyn SelectionNode;
                 assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -1625,7 +1652,7 @@ mod tests {
 
             // regexesが正しく読み込めることを確認
             {
-                let ancestor_node = ancestors[1];
+                let ancestor_node = ancestors[1].as_ref() as &dyn SelectionNode;
                 assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -1665,7 +1692,7 @@ mod tests {
 
             // whitelist.txtが読み込めることを確認
             {
-                let ancestor_node = ancestors[2];
+                let ancestor_node = ancestors[2].as_ref() as &dyn SelectionNode;
                 assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -1725,7 +1752,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1755,7 +1782,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1785,7 +1812,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1816,7 +1843,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1847,7 +1874,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1876,7 +1903,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1906,7 +1933,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1937,7 +1964,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -1970,7 +1997,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2000,7 +2027,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2030,7 +2057,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2060,7 +2087,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2092,7 +2119,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2124,7 +2151,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2156,7 +2183,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2186,7 +2213,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2217,7 +2244,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2248,7 +2275,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2279,7 +2306,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2311,7 +2338,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2343,7 +2370,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2373,7 +2400,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2407,7 +2434,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2441,7 +2468,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2474,7 +2501,7 @@ mod tests {
         }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2557,7 +2584,7 @@ mod tests {
           }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2616,7 +2643,7 @@ mod tests {
           }"#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2682,7 +2709,7 @@ mod tests {
         "#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2726,7 +2753,7 @@ mod tests {
         "#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2771,7 +2798,7 @@ mod tests {
         "#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2835,7 +2862,7 @@ mod tests {
         "#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
@@ -2899,7 +2926,7 @@ mod tests {
         "#;
 
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
