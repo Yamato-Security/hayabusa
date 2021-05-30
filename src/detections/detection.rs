@@ -89,7 +89,7 @@ impl Detection {
         return rulefile_loader
             .files
             .into_iter()
-            .map(|rule_file| rule::parse_rule(rule_file))
+            .map(|rule_file| rule::create_rule(rule_file))
             .filter_map(return_if_success)
             .collect();
     }
