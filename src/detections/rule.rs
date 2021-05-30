@@ -35,7 +35,7 @@ pub enum ConditionToken {
     SelectionReference(String),
 
     // パースの時に上手く処理するために作った疑似的なトークン
-    TokenContainer(Vec<ConditionToken>),   // 括弧を表すトークン
+    ParenthesisContainer(Vec<ConditionToken>),   // 括弧を表すトークン
     AndContainer(Vec<ConditionToken>),     // ANDでつながった条件をまとめるためのトークン
     OrContainer(Vec<ConditionToken>),      // ORでつながった条件をまとめるためのトークン
     NotContainer(Vec<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
@@ -49,7 +49,7 @@ impl IntoIterator for ConditionToken {
 
     fn into_iter(self) -> Self::IntoIter {
         let v = match self {
-            ConditionToken::TokenContainer(sub_tokens) => sub_tokens,
+            ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens,
             ConditionToken::AndContainer(sub_tokens) => sub_tokens,
             ConditionToken::OrContainer(sub_tokens) => sub_tokens,
             ConditionToken::NotContainer(sub_tokens) => sub_tokens,
@@ -63,7 +63,7 @@ impl IntoIterator for ConditionToken {
 impl ConditionToken {
     fn replace_subtoken(&self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
         return match self {
-            ConditionToken::TokenContainer(_) => ConditionToken::TokenContainer(sub_tokens),
+            ConditionToken::ParenthesisContainer(_) => ConditionToken::ParenthesisContainer(sub_tokens),
             ConditionToken::AndContainer(_) => ConditionToken::AndContainer(sub_tokens),
             ConditionToken::OrContainer(_) => ConditionToken::OrContainer(sub_tokens),
             ConditionToken::NotContainer(_) => ConditionToken::NotContainer(sub_tokens),
@@ -83,7 +83,7 @@ impl ConditionToken {
     pub fn sub_tokens<'a>(&'a self) -> Vec<ConditionToken> {
         // TODO ここでcloneを使わずに実装できるようにしたい。
         return match self {
-            ConditionToken::TokenContainer(sub_tokens) => sub_tokens.clone(),
+            ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens.clone(),
             ConditionToken::AndContainer(sub_tokens) => sub_tokens.clone(),
             ConditionToken::OrContainer(sub_tokens) => sub_tokens.clone(),
             ConditionToken::NotContainer(sub_tokens) => sub_tokens.clone(),
@@ -95,6 +95,13 @@ impl ConditionToken {
             ConditionToken::And => vec![],
             ConditionToken::Or => vec![],
             ConditionToken::SelectionReference(_) => vec![],
+        };
+    }
+
+    pub fn sub_tokens_without_parenthesis<'a>(&'a self) -> Vec<ConditionToken> {
+        return match self {
+            ConditionToken::ParenthesisContainer(_) => vec![],
+            _ => self.sub_tokens(),
         };
     }
 }
@@ -112,7 +119,8 @@ impl ConditionCompiler {
         regex_patterns.push(Regex::new(r"^\(").unwrap());
         regex_patterns.push(Regex::new(r"^\)").unwrap());
         regex_patterns.push(Regex::new(r"^ ").unwrap());
-        // ^\w+については、sigmaのソースのsigma/tools/sigma/parser/condition.pyのSigmaConditionTokenizerを参考にしている。(SigmaConditionToken.TOKEN_ID,     re.compile("[\\w*]+")),となっている。
+        // ^\w+については、sigmaのソースのsigma/tools/sigma/parser/condition.pyのSigmaConditionTokenizerを参考にしている。
+        // 上記ソースの(SigmaConditionToken.TOKEN_ID,     re.compile("[\\w*]+")),を参考。
         regex_patterns.push(Regex::new(r"^\w+").unwrap());
 
         return ConditionCompiler {
@@ -125,20 +133,48 @@ impl ConditionCompiler {
         condition_str: String,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
     ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
-        // 字句解析する
         let tokens = self.tokenize(&condition_str)?;
 
-        // 括弧をパースする。
+        let parsed = self.parse(tokens)?;
+
+        return self.to_selectnode(parsed, name_2_node);
+    }
+
+    // 構文解析を実行する。
+    fn parse( &self, tokens:Vec<ConditionToken> ) -> Result<ConditionToken, String> {
+        // 括弧で囲まれた部分を解析します。
+        // (括弧で囲まれた部分は後で解析するため、ここでは一時的にConditionToken::ParenthesisContainerに変換しておく)
+        // 括弧の中身を解析するのはparse_rest_parenthesis()で行う。
         let tokens = self.parse_parenthesis(tokens)?;
 
         // AndとOrをパースする。
         let tokens = self.parse_and_or_operator(tokens)?;
 
-        // Notをパースする。
-        let parsed_token = self.parse_operand_container(&tokens)?;
+        // OperandContainerトークンの中身をパースする。(現状、Notを解析するためだけにある。将来的に修飾するキーワードが増えたらここを変える。)
+        let token = self.parse_operand_container(tokens)?;
 
-        // SelectionNodeに変換する
-        return self.to_selectnode(parsed_token, name_2_node);
+        // 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
+        return self.parse_rest_parenthesis(token);
+    }
+
+    // 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
+    fn parse_rest_parenthesis( &self, token: ConditionToken ) -> Result<ConditionToken, String> {
+        if let ConditionToken::ParenthesisContainer(sub_token) = token {
+            let new_token = self.parse(sub_token)?;
+            return Result::Ok(new_token);
+        }
+        
+        let sub_tokens = token.sub_tokens();
+        if sub_tokens.len() == 0 {
+            return Result::Ok(token);
+        }
+
+        let mut new_sub_tokens = vec![];
+        for sub_token in sub_tokens {
+            let new_token = self.parse_rest_parenthesis(sub_token)?;
+            new_sub_tokens.push(new_token);
+        }
+        return Result::Ok(token.replace_subtoken(new_sub_tokens));
     }
 
     fn compile_condition(
@@ -154,7 +190,7 @@ impl ConditionCompiler {
         }
     }
 
-    // いわゆる字句解析を行う
+    // 字句解析を行う
     fn tokenize(&self, condition_str: &String) -> Result<Vec<ConditionToken>, String> {
         let mut cur_condition_str = condition_str.clone();
 
@@ -241,8 +277,7 @@ impl ConditionCompiler {
             }
 
             // ここで再帰的に呼び出す。
-            sub_tokens = self.parse_parenthesis(sub_tokens)?;
-            ret.push(ConditionToken::TokenContainer(sub_tokens));
+            ret.push(ConditionToken::ParenthesisContainer(sub_tokens));
         }
 
         // この時点で右括弧が残っている場合は右括弧の数が左括弧よりも多いことを表している。
@@ -280,7 +315,7 @@ impl ConditionCompiler {
         for (i, token) in tokens.into_iter().enumerate() {
             if (i % 2 == 1) != self.is_logical(&token) {
                 // インデックスが奇数の時はLogicalOperatorで、インデックスが偶数のときはOperandContainerになる
-                return Result::Err("illegal logical operator(and, or) was found.".to_string());
+                return Result::Err("The use of logical operator(and, or) was wrong.".to_string());
             }
 
             if i % 2 == 0 {
@@ -314,17 +349,8 @@ impl ConditionCompiler {
     // OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
     fn parse_operand_container(
         &self,
-        parent_token: &ConditionToken,
+        parent_token: ConditionToken,
     ) -> Result<ConditionToken, String> {
-        // 再帰的に呼び出す
-        let mut rec_tokens = vec![];
-        for new_token in parent_token.sub_tokens() {
-            let new_token = self.parse_operand_container(&new_token)?;
-            rec_tokens.push(new_token);
-        }
-
-        // OperandContainerの場合だけ、変換する。
-        let parent_token = parent_token.replace_subtoken(rec_tokens);
         if let ConditionToken::OperandContainer(sub_tokens) = parent_token {
             // 現状ではNOTの場合は、「not」と「notで修飾されるselectionノードの名前」の2つ入っているはず
             // NOTが無い場合、「selectionノードの名前」の一つしか入っていないはず。
@@ -357,7 +383,7 @@ impl ConditionCompiler {
             let second_token = sub_tokens_ite.next().unwrap();
             if let ConditionToken::Not = first_token {
                 if let ConditionToken::Not = second_token {
-                    return Result::Err("'not' is continuous.".to_string());
+                    return Result::Err("'not is continuous.".to_string());
                 } else {
                     let not_container = ConditionToken::NotContainer(vec![second_token]);
                     return Result::Ok(not_container);
@@ -368,11 +394,22 @@ impl ConditionCompiler {
                 );
             }
         } else {
-            return Result::Ok(parent_token);
+            let sub_tokens = parent_token.sub_tokens_without_parenthesis();
+            if sub_tokens.len() == 0 {
+                return Result::Ok(parent_token);
+            }
+
+            let mut new_sub_tokens = vec![];
+            for sub_token in sub_tokens {
+                let new_sub_token = self.parse_operand_container(sub_token)?;
+                new_sub_tokens.push(new_sub_token);
+            }
+
+            return Result::Ok(parent_token.replace_subtoken(new_sub_tokens));
         }
     }
 
-    // SelectionNodeに変換する
+    // ConditionTokenからSelectionNodeトレイトを実装した構造体に変換します。
     fn to_selectnode(
         &self,
         token: ConditionToken,
@@ -445,6 +482,11 @@ impl ConditionCompiler {
         let mut token_ite = tokens.into_iter();
         while let Some(token) = token_ite.next() {
             if self.is_logical(&token) {
+                // ここに来るのはエラーのはずだが、後でエラー出力するので、ここではエラー出さない。
+                if grouped_operands.is_empty() {
+                    ret.push(token);
+                    continue;
+                }
                 ret.push(ConditionToken::OperandContainer(grouped_operands));
                 ret.push(token);
                 grouped_operands = vec![];
@@ -480,10 +522,10 @@ impl RuleNode {
     pub fn init(&mut self) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
 
-        // field check
-        if self.yaml["output"].as_str().unwrap_or("").is_empty() {
-            errmsgs.push("Cannot find required key. key:output".to_string());
-        }
+        // SIGMAルールを受け入れるため、outputがなくてもOKにする。
+        // if self.yaml["output"].as_str().unwrap_or("").is_empty() {
+        //     errmsgs.push("Cannot find required key. key:output".to_string());
+        // }
 
         // detection node initialization
         let mut detection = DetectionNode::new();
@@ -3236,24 +3278,6 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_not_defined_output() {
-        // 不明な文字列オプションがルールに書かれていたら警告するテスト
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                EventID: 0
-        "#;
-        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
-
-        assert_eq!(
-            rule_node.init(),
-            Err(vec!["Cannot find required key. key:output".to_string()])
-        );
-    }
-
-    #[test]
     fn test_no_condition() {
         // condition式が無くても、selectionが一つだけなら、正しくパースできることを確認
         let rule_str = r#"
@@ -3337,32 +3361,8 @@ mod tests {
     }
 
     #[test]
-    fn test_no_condition_multiple_selection() {
-        // selectionが複数あるのにconditionが無いのはエラー
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                Channel: 'System'
-                EventID: 7041
-            selection2:
-                param1: 'Windows Event Log'
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
-        "#;
-
-        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
-
-        assert_eq!(
-            rule_node.init(),
-            Err(vec!["There are no condition node under detection.".to_string()])
-        );
-    }
-
-    #[test]
     fn test_condition_and_detect() {
         // conditionにandを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3482,7 +3482,6 @@ mod tests {
     #[test]
     fn test_condition_or_detect() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3502,7 +3501,6 @@ mod tests {
     #[test]
     fn test_condition_or_detect2() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3522,7 +3520,6 @@ mod tests {
     #[test]
     fn test_condition_or_detect3() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3542,7 +3539,6 @@ mod tests {
     #[test]
     fn test_condition_or_detect4() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3562,7 +3558,6 @@ mod tests {
     #[test]
     fn test_condition_or_detect5() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3582,7 +3577,6 @@ mod tests {
     #[test]
     fn test_condition_or_detect6() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3602,7 +3596,6 @@ mod tests {
     #[test]
     fn test_condition_or_detect7() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3622,7 +3615,6 @@ mod tests {
     #[test]
     fn test_condition_or_notdetect() {
         // conditionにorを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3642,7 +3634,6 @@ mod tests {
     #[test]
     fn test_condition_not_detect() {
         // conditionにnotを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3658,7 +3649,6 @@ mod tests {
     #[test]
     fn test_condition_not_notdetect() {
         // conditionにnotを使ったパターンのテスト
-        // これはHitするパターン
         let rule_str = r#"
         enabled: true
         detection:
@@ -3673,8 +3663,7 @@ mod tests {
 
     #[test]
     fn test_condition_parenthesis_detect() {
-        // conditionにnotを使ったパターンのテスト
-        // これはHitするパターン
+        // conditionに括弧を使ったテスト
         let rule_str = r#"
         enabled: true
         detection:
@@ -3689,6 +3678,436 @@ mod tests {
         "#;
 
         test_select(rule_str,SIMPLE_RECORD_STR,true);
+    }
+
+    #[test]
+    fn test_condition_parenthesis_not_detect() {
+        // conditionに括弧を使ったテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            condition: selection2 and (selection2 and selection3)
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,false);
+    }
+
+    #[test]
+    fn test_condition_many_parenthesis_detect() {
+        // conditionに括弧を沢山使ったテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            condition: selection2 and (((selection2 or selection3)))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,true);
+    }
+
+    #[test]
+    fn test_condition_manyparenthesis_not_detect() {
+        // conditionに括弧を沢山使ったテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            condition: selection2 and ((((selection2 and selection3))))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,false);
+    }
+
+    #[test]
+    fn test_condition_notparenthesis_detect() {
+        // conditionに括弧を沢山使ったテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            condition: (selection2 and selection1) and not ((selection2 and selection3))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,true);
+    }
+
+    #[test]
+    fn test_condition_notparenthesis_notdetect() {
+        // conditionに括弧とnotを組み合わせたテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            condition: (selection2 and selection1) and not (not(selection2 and selection3))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,false);
+    }
+
+    #[test]
+    fn test_condition_manyparenthesis_detect2() {
+        // 括弧を色々使ったケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            condition: (selection2 and selection1) and (selection2 or selection3)
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,true);
+    }
+
+    #[test]
+    fn test_condition_manyparenthesis_notdetect2() {
+        // 括弧を色々使ったケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            condition: (selection2 and selection1) and (selection2 and selection3)
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,false);
+    }
+
+    #[test]
+    fn test_condition_manyparenthesis_detect3() {
+        // 括弧を色々使ったケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            selection4:
+                param2: 'auto start'
+            condition: (selection1 and (selection2 and ( selection3 and selection4 )))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,true);
+    }
+
+    #[test]
+    fn test_condition_manyparenthesis_notdetect3() {
+        // 括弧を色々使ったケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            selection4:
+                param2: 'auto start'
+            condition: (selection1 and (selection2 and ( selection3 and selection4 )))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,false);
+    }
+
+    #[test]
+    fn test_condition_manyparenthesis_detect4() {
+        // 括弧を色々使ったケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            selection4:
+                param2: 'auto start'
+            condition: (selection1 and (selection2 and ( selection3 or selection4 )))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,true);
+    }
+
+    #[test]
+    fn test_condition_manyparenthesis_notdetect4() {
+        // 括弧を色々使ったケース
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Logn'
+            selection4:
+                param2: 'auto startn'
+            condition: (selection1 and (selection2 and ( selection3 or selection4 )))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_select(rule_str,SIMPLE_RECORD_STR,false);
+    }
+
+    #[test]
+    fn test_rule_parseerror_no_condition() {
+        // selectionが複数あるのにconditionが無いのはエラー
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+
+        assert_eq!(
+            rule_node.init(),
+            Err(vec!["There are no condition node under detection.".to_string()])
+        );
+    }
+
+    #[test]
+    fn test_condition_err_condition_forbit_character() {
+        // conditionに読み込めない文字が指定されている。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection-1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection-1 and selection2
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. An unusable character was found.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_leftparenthesis_over() {
+        // 左括弧が多い
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 and ((selection2)
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. The corresponding parenthesis cannot be found.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_rightparenthesis_over() {
+        // 右括弧が多い
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 and (selection2))
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. The corresponding parenthesis cannot be found.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_parenthesis_direction_wrong() {
+        // 括弧の向きが違う
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 and )selection2(
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. The corresponding parenthesis cannot be found.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_no_logical() {
+        // ANDとかORで結合してない
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 selection2
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. unknown error. maybe it\'s because selection node name continue.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_first_logical() {
+        // 
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: and selection1 or selection2
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. illegal Logical Operator(and, or) was found.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_last_logical() {
+        // 
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 or selection2 or
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. illegal Logical Operator(and, or) was found.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_consecutive_logical() {
+        // 
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 or or selection2
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. The use of logical operator(and, or) was wrong.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_only_not() {
+        // 
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 or ( not )
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. illegal not was found.".to_string()]);
+    }
+
+    #[test]
+    fn test_condition_err_not_not() {
+        // notが続くのはだめ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+                EventID: 7041
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 or ( not )
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        test_rule_parse_error(rule_str,vec!["condition parse error has occured. not is continuous.".to_string()]);
+    }
+
+    fn test_rule_parse_error(rule_str:&str, errmsgs: Vec<String> ) {
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+
+        assert_eq!(
+            rule_node.init(),
+            Err(errmsgs)
+        );
     }
 
     fn test_select(rule_str:&str, record_str:&str, expect_select: bool ) {
