@@ -275,7 +275,7 @@ impl ConditionCompiler {
             }
             // 最後までついても対応する右括弧が見つからないことを表している
             if left_cnt != right_cnt {
-                return Result::Err("The corresponding parenthesis cannot be found.".to_string());
+                return Result::Err("expected ')'. but not found.".to_string());
             }
 
             // ここで再帰的に呼び出す。
@@ -290,7 +290,7 @@ impl ConditionCompiler {
             };
         });
         if is_right_left {
-            return Result::Err("The corresponding parenthesis cannot be found.".to_string());
+            return Result::Err("expected '('. but not found.".to_string());
         }
 
         return Result::Ok(ret);
@@ -3965,7 +3965,7 @@ mod tests {
         test_rule_parse_error(
             rule_str,
             vec![
-                "condition parse error has occured. The corresponding parenthesis cannot be found."
+                "condition parse error has occured. expected ')'. but not found."
                     .to_string(),
             ],
         );
@@ -3989,7 +3989,7 @@ mod tests {
         test_rule_parse_error(
             rule_str,
             vec![
-                "condition parse error has occured. The corresponding parenthesis cannot be found."
+                "condition parse error has occured. expected '('. but not found."
                     .to_string(),
             ],
         );
@@ -4013,7 +4013,7 @@ mod tests {
         test_rule_parse_error(
             rule_str,
             vec![
-                "condition parse error has occured. The corresponding parenthesis cannot be found."
+                "condition parse error has occured. expected ')'. but not found."
                     .to_string(),
             ],
         );
