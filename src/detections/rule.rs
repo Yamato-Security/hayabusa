@@ -130,6 +130,29 @@ impl ConditionCompiler {
         };
     }
 
+    fn compile_condition(
+        &self,
+        condition_str: String,
+        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
+    ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
+        // パイプはここでは処理しない
+        let re_pipe = Regex::new(r"\|.*").unwrap();
+        let captured = re_pipe.captures(&condition_str);
+        let condition_str = if captured.is_some() {
+            let captured = captured.unwrap().get(0).unwrap().as_str().to_string();
+            condition_str.replacen(&captured, "", 1)
+        } else {
+            condition_str
+        };
+
+        let result = self.compile_condition_body(condition_str, name_2_node);
+        if let Result::Err(msg) = result {
+            return Result::Err(format!("condition parse error has occured. {}", msg));
+        } else {
+            return result;
+        }
+    }
+
     fn compile_condition_body(
         &self,
         condition_str: String,
@@ -177,19 +200,6 @@ impl ConditionCompiler {
             new_sub_tokens.push(new_token);
         }
         return Result::Ok(token.replace_subtoken(new_sub_tokens));
-    }
-
-    fn compile_condition(
-        &self,
-        condition_str: String,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
-    ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
-        let result = self.compile_condition_body(condition_str, name_2_node);
-        if let Result::Err(msg) = result {
-            return Result::Err(format!("condition parse error has occured. {}", msg));
-        } else {
-            return result;
-        }
     }
 
     // 字句解析を行う
@@ -505,6 +515,255 @@ impl ConditionCompiler {
     }
 }
 
+pub struct AggregationParseInfo {
+    _field_name: Option<String>,        // countの括弧に囲まれた部分の文字
+    _by_field_name: Option<String>,     // count() by の後に指定される文字列
+    _cmp_op: AggregationConditionToken, // (必須)<とか>とか何が指定されたのか
+    _cmp_num: i32,                      // (必須)<とか>とかの後にある数値
+}
+
+pub enum AggregationConditionToken {
+    COUNT(String),   // count
+    SPACE,           // 空白
+    BY,              // by
+    EQ,              // ..と等しい
+    LE,              // ..以下
+    LT,              // ..未満
+    GE,              // ..以上
+    GT,              // .よりおおきい
+    KEYWORD(String), // BYのフィールド名
+}
+
+// SIGMAルールでいうAggregationConditionを解析する。
+// AggregationConditionはconditionに指定された式のパイプ以降の部分を指してます。
+#[derive(Debug)]
+pub struct AggegationConditionCompiler {
+    regex_patterns: Vec<Regex>,
+}
+
+impl AggegationConditionCompiler {
+    pub fn new() -> Self {
+        // ここで字句解析するときに使う正規表現の一覧を定義する。
+        // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
+        let mut regex_patterns = vec![];
+        regex_patterns.push(Regex::new(r"^count\( *\w+ *\)").unwrap()); // countの式
+        regex_patterns.push(Regex::new(r"^ ").unwrap());
+        regex_patterns.push(Regex::new(r"^by").unwrap());
+        regex_patterns.push(Regex::new(r"^==").unwrap());
+        regex_patterns.push(Regex::new(r"^<=").unwrap());
+        regex_patterns.push(Regex::new(r"^>=").unwrap());
+        regex_patterns.push(Regex::new(r"^<").unwrap());
+        regex_patterns.push(Regex::new(r"^>").unwrap());
+        regex_patterns.push(Regex::new(r"^\w+").unwrap());
+
+        return AggegationConditionCompiler {
+            regex_patterns: regex_patterns,
+        };
+    }
+
+    pub fn compile(&self, condition_str: String) -> Result<Option<AggregationParseInfo>, String> {
+        let result = self.compile_body(condition_str);
+        if let Result::Err(msg) = result {
+            return Result::Err(format!(
+                "aggregation condition parse error has occured. {}",
+                msg
+            ));
+        } else {
+            return result;
+        }
+    }
+
+    pub fn compile_body(
+        &self,
+        condition_str: String,
+    ) -> Result<Option<AggregationParseInfo>, String> {
+        // パイプの部分だけを取り出す
+        let re_pipe = Regex::new(r"\|.*").unwrap();
+        let captured = re_pipe.captures(&condition_str);
+        if captured.is_none() {
+            // パイプが無いので終了
+            return Result::Ok(Option::None);
+        }
+        // ハイプ自体は削除してからパースする。
+        let aggregation_str = captured
+            .unwrap()
+            .get(0)
+            .unwrap()
+            .as_str()
+            .to_string()
+            .replacen("|", "", 1);
+
+        let tokens = self.tokenize(aggregation_str)?;
+
+        return self.parse(tokens);
+    }
+
+    // 字句解析します。
+    pub fn tokenize(
+        &self,
+        condition_str: String,
+    ) -> Result<Vec<AggregationConditionToken>, String> {
+        let mut cur_condition_str = condition_str.clone();
+
+        let mut tokens = Vec::new();
+        while cur_condition_str.len() != 0 {
+            let captured = self.regex_patterns.iter().find_map(|regex| {
+                return regex.captures(cur_condition_str.as_str());
+            });
+            if captured.is_none() {
+                // トークンにマッチしないのはありえないという方針でパースしています。
+                return Result::Err("An unusable character was found.".to_string());
+            }
+
+            let mached_str = captured.unwrap().get(0).unwrap().as_str();
+            let token = self.to_enum(mached_str.to_string());
+
+            if let AggregationConditionToken::SPACE = token {
+                // 空白は特に意味ないので、読み飛ばす。
+                cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+                continue;
+            }
+
+            tokens.push(token);
+            cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+        }
+
+        return Result::Ok(tokens);
+    }
+
+    // 比較演算子かどうか判定します。
+    fn is_cmp_op(&self, token: &AggregationConditionToken) -> bool {
+        return match token {
+            AggregationConditionToken::EQ => true,
+            AggregationConditionToken::LE => true,
+            AggregationConditionToken::LT => true,
+            AggregationConditionToken::GE => true,
+            AggregationConditionToken::GT => true,
+            _ => false,
+        };
+    }
+
+    // 構文解析します。
+    fn parse(
+        &self,
+        tokens: Vec<AggregationConditionToken>,
+    ) -> Result<Option<AggregationParseInfo>, String> {
+        if tokens.is_empty() {
+            // パイプしか無いのはおかしいのでエラー
+            return Result::Err("There are not strings after pipe(|).".to_string());
+        }
+
+        let mut token_ite = tokens.into_iter();
+        let token = token_ite.next().unwrap();
+
+        let mut count_field_name: Option<String> = Option::None;
+        if let AggregationConditionToken::COUNT(field_name) = token {
+            if !field_name.is_empty() {
+                count_field_name = Option::Some(field_name);
+            }
+        } else {
+            // いろんなパターンがあるので難しいが、countというキーワードしか使えないことを説明しておく。
+            return Result::Err("aggregation condition can use count only.".to_string());
+        }
+
+        let token = token_ite.next();
+        if token.is_none() {
+            // 論理演算子がないのはだめ
+            return Result::Err(
+                "count keyword need compare operator and number like '> 3'".to_string(),
+            );
+        }
+
+        // BYはオプションでつけなくても良い
+        let mut by_field_name = Option::None;
+        let token = token.unwrap();
+        let token = if let AggregationConditionToken::BY = token {
+            let after_by = token_ite.next();
+            if after_by.is_none() {
+                // BYの後に何もないのはだめ
+                return Result::Err("by keyword needs field name like 'by EventID'".to_string());
+            }
+
+            if let AggregationConditionToken::KEYWORD(keyword) = after_by.unwrap() {
+                by_field_name = Option::Some(keyword);
+                token_ite.next()
+            } else {
+                return Result::Err("by keyword needs field name like 'by EventID'".to_string());
+            }
+        } else {
+            Option::Some(token)
+        };
+
+        // 比較演算子と数値をパース
+        if token.is_none() {
+            // 論理演算子がないのはだめ
+            return Result::Err(
+                "count keyword need compare operator and number like '> 3'".to_string(),
+            );
+        }
+
+        let cmp_token = token.unwrap();
+        if !self.is_cmp_op(&cmp_token) {
+            return Result::Err(
+                "count keyword need compare operator and number like '> 3'".to_string(),
+            );
+        }
+
+        let token = token_ite.next().unwrap_or(AggregationConditionToken::SPACE);
+        let cmp_number = if let AggregationConditionToken::KEYWORD(number) = token {
+            let number: Result<i32, _> = number.parse();
+            if number.is_err() {
+                // 比較演算子の後に数値が無い。
+                return Result::Err("compare operator need number like '> 3'.".to_string());
+            } else {
+                number.unwrap()
+            }
+        } else {
+            // 比較演算子の後に数値が無い。
+            return Result::Err("compare operator need number like '> 3'.".to_string());
+        };
+
+        if token_ite.next().is_some() {
+            return Result::Err("unnecessary word was found.".to_string());
+        }
+
+        let info = AggregationParseInfo {
+            _field_name: count_field_name,
+            _by_field_name: by_field_name,
+            _cmp_op: cmp_token,
+            _cmp_num: cmp_number,
+        };
+        return Result::Ok(Option::Some(info));
+    }
+
+    // 文字列をConditionTokenに変換する。
+    fn to_enum(&self, token: String) -> AggregationConditionToken {
+        if token.starts_with("count(") {
+            let count_field = token
+                .replacen("count(", "", 1)
+                .replacen(")", "", 1)
+                .replace(" ", "");
+            return AggregationConditionToken::COUNT(count_field);
+        } else if token == " " {
+            return AggregationConditionToken::SPACE;
+        } else if token == "by" {
+            return AggregationConditionToken::BY;
+        } else if token == "==" {
+            return AggregationConditionToken::EQ;
+        } else if token == "<=" {
+            return AggregationConditionToken::LE;
+        } else if token == ">=" {
+            return AggregationConditionToken::GE;
+        } else if token == "<" {
+            return AggregationConditionToken::GT;
+        } else if token == ">" {
+            return AggregationConditionToken::LT;
+        } else {
+            return AggregationConditionToken::KEYWORD(token);
+        }
+    }
+}
+
 // Ruleファイルを表すノード
 pub struct RuleNode {
     pub yaml: Yaml,
@@ -557,6 +816,7 @@ impl RuleNode {
 struct DetectionNode {
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
     pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
+    pub aggregation_condition: Option<AggregationParseInfo>,
 }
 
 impl DetectionNode {
@@ -564,6 +824,7 @@ impl DetectionNode {
         return DetectionNode {
             name_to_selection: HashMap::new(),
             condition: Option::None,
+            aggregation_condition: Option::None,
         };
     }
 
@@ -587,14 +848,24 @@ impl DetectionNode {
             keys.nth(0).unwrap().to_string()
         };
 
-        // ConditionTokenをSelectionNodeに変換する
+        // conditionをパースして、SelectionNodeに変換する
         let mut err_msgs = vec![];
         let compiler = ConditionCompiler::new();
-        let compile_result = compiler.compile_condition(condition_str, &self.name_to_selection);
+        let compile_result =
+            compiler.compile_condition(condition_str.clone(), &self.name_to_selection);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.extend(vec![err_msg]);
         } else {
             self.condition = Option::Some(compile_result.unwrap());
+        }
+
+        // aggregation condition(conditionのパイプ以降の部分)をパース
+        let agg_compiler = AggegationConditionCompiler::new();
+        let compile_result = agg_compiler.compile(condition_str);
+        if let Result::Err(err_msg) = compile_result {
+            err_msgs.push(err_msg);
+        } else if let Result::Ok(info) = compile_result {
+            self.aggregation_condition = info;
         }
 
         if err_msgs.is_empty() {
@@ -3964,10 +4235,7 @@ mod tests {
 
         test_rule_parse_error(
             rule_str,
-            vec![
-                "condition parse error has occured. expected ')'. but not found."
-                    .to_string(),
-            ],
+            vec!["condition parse error has occured. expected ')'. but not found.".to_string()],
         );
     }
 
@@ -3988,10 +4256,7 @@ mod tests {
 
         test_rule_parse_error(
             rule_str,
-            vec![
-                "condition parse error has occured. expected '('. but not found."
-                    .to_string(),
-            ],
+            vec!["condition parse error has occured. expected '('. but not found.".to_string()],
         );
     }
 
@@ -4012,10 +4277,7 @@ mod tests {
 
         test_rule_parse_error(
             rule_str,
-            vec![
-                "condition parse error has occured. expected ')'. but not found."
-                    .to_string(),
-            ],
+            vec!["condition parse error has occured. expected ')'. but not found.".to_string()],
         );
     }
 
