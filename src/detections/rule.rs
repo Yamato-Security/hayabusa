@@ -24,8 +24,8 @@ fn concat_selection_key(key_list: &Vec<String>) -> String {
 }
 
 #[derive(Debug, Clone)]
+/// 字句解析で出てくるトークン
 pub enum ConditionToken {
-    // 字句解析で出てくるトークン
     LeftParenthesis,
     RightParenthesis,
     Space,
@@ -153,6 +153,7 @@ impl ConditionCompiler {
         }
     }
 
+    /// 与えたConditionからSelectionNodeを作る
     fn compile_condition_body(
         &self,
         condition_str: String,
@@ -165,7 +166,7 @@ impl ConditionCompiler {
         return self.to_selectnode(parsed, name_2_node);
     }
 
-    // 構文解析を実行する。
+    /// 構文解析を実行する。
     fn parse(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
         // 括弧で囲まれた部分を解析します。
         // (括弧で囲まれた部分は後で解析するため、ここでは一時的にConditionToken::ParenthesisContainerに変換しておく)
@@ -182,7 +183,7 @@ impl ConditionCompiler {
         return self.parse_rest_parenthesis(token);
     }
 
-    // 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
+    /// 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
     fn parse_rest_parenthesis(&self, token: ConditionToken) -> Result<ConditionToken, String> {
         if let ConditionToken::ParenthesisContainer(sub_token) = token {
             let new_token = self.parse(sub_token)?;
@@ -202,7 +203,7 @@ impl ConditionCompiler {
         return Result::Ok(token.replace_subtoken(new_sub_tokens));
     }
 
-    // 字句解析を行う
+    /// 字句解析を行う
     fn tokenize(&self, condition_str: &String) -> Result<Vec<ConditionToken>, String> {
         let mut cur_condition_str = condition_str.clone();
 
@@ -231,7 +232,7 @@ impl ConditionCompiler {
         return Result::Ok(tokens);
     }
 
-    // 文字列をConditionTokenに変換する。
+    /// 文字列をConditionTokenに変換する。
     fn to_enum(&self, token: String) -> ConditionToken {
         if token == "(" {
             return ConditionToken::LeftParenthesis;
@@ -250,7 +251,7 @@ impl ConditionCompiler {
         }
     }
 
-    // 右括弧と左括弧をだけをパースする。戻り値の配列にはLeftParenthesisとRightParenthesisが含まれず、代わりにTokenContainerに変換される。TokenContainerが括弧で囲まれた部分を表現している。
+    /// 右括弧と左括弧をだけをパースする。戻り値の配列にはLeftParenthesisとRightParenthesisが含まれず、代わりにTokenContainerに変換される。TokenContainerが括弧で囲まれた部分を表現している。
     fn parse_parenthesis(
         &self,
         tokens: Vec<ConditionToken>,
@@ -306,7 +307,7 @@ impl ConditionCompiler {
         return Result::Ok(ret);
     }
 
-    // AND, ORをパースする。
+    /// AND, ORをパースする。
     fn parse_and_or_operator(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
         if tokens.len() == 0 {
             // 長さ0は呼び出してはいけない
@@ -358,7 +359,7 @@ impl ConditionCompiler {
         return Result::Ok(or_contaienr);
     }
 
-    // OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
+    /// OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
     fn parse_operand_container(
         &self,
         parent_token: ConditionToken,
@@ -421,7 +422,7 @@ impl ConditionCompiler {
         }
     }
 
-    // ConditionTokenからSelectionNodeトレイトを実装した構造体に変換します。
+    /// ConditionTokenからSelectionNodeトレイトを実装した構造体に変換します。
     fn to_selectnode(
         &self,
         token: ConditionToken,
@@ -476,6 +477,7 @@ impl ConditionCompiler {
         return Result::Err("unknown error".to_string());
     }
 
+    /// ConditionTokenがAndまたはOrTokenならばTrue
     fn is_logical(&self, token: &ConditionToken) -> bool {
         return match token {
             ConditionToken::And => true,
@@ -484,7 +486,7 @@ impl ConditionCompiler {
         };
     }
 
-    // ConditionToken::OperandContainerに変換できる部分があれば変換する。
+    /// ConditionToken::OperandContainerに変換できる部分があれば変換する。
     fn to_operand_container(
         &self,
         tokens: Vec<ConditionToken>,
@@ -534,8 +536,8 @@ pub enum AggregationConditionToken {
     KEYWORD(String), // BYのフィールド名
 }
 
-// SIGMAルールでいうAggregationConditionを解析する。
-// AggregationConditionはconditionに指定された式のパイプ以降の部分を指してます。
+/// SIGMAルールでいうAggregationConditionを解析する。
+/// AggregationConditionはconditionに指定された式のパイプ以降の部分を指してます。
 #[derive(Debug)]
 pub struct AggegationConditionCompiler {
     regex_patterns: Vec<Regex>,
@@ -598,7 +600,7 @@ impl AggegationConditionCompiler {
         return self.parse(tokens);
     }
 
-    // 字句解析します。
+    /// 字句解析します。
     pub fn tokenize(
         &self,
         condition_str: String,
@@ -631,7 +633,7 @@ impl AggegationConditionCompiler {
         return Result::Ok(tokens);
     }
 
-    // 比較演算子かどうか判定します。
+    /// 比較演算子かどうか判定します。
     fn is_cmp_op(&self, token: &AggregationConditionToken) -> bool {
         return match token {
             AggregationConditionToken::EQ => true,
@@ -643,7 +645,7 @@ impl AggegationConditionCompiler {
         };
     }
 
-    // 構文解析します。
+    /// 構文解析します。
     fn parse(
         &self,
         tokens: Vec<AggregationConditionToken>,
@@ -736,7 +738,7 @@ impl AggegationConditionCompiler {
         return Result::Ok(Option::Some(info));
     }
 
-    // 文字列をConditionTokenに変換する。
+    /// 文字列をConditionTokenに変換する。
     fn to_enum(&self, token: String) -> AggregationConditionToken {
         if token.starts_with("count(") {
             let count_field = token
@@ -764,7 +766,7 @@ impl AggegationConditionCompiler {
     }
 }
 
-// Ruleファイルを表すノード
+/// Ruleファイルを表すノード
 pub struct RuleNode {
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
@@ -812,7 +814,7 @@ impl RuleNode {
     }
 }
 
-// Ruleファイルのdetectionを表すノード
+/// Ruleファイルのdetectionを表すノード
 struct DetectionNode {
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
     pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
@@ -884,7 +886,7 @@ impl DetectionNode {
         return condition.select(event_record);
     }
 
-    // selectionノードをパースします。
+    /// selectionノードをパースします。
     fn parse_name_to_selection(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
         let detection_hash = detection_yaml.as_hash();
         if detection_hash.is_none() {
@@ -933,7 +935,7 @@ impl DetectionNode {
         return Result::Ok(());
     }
 
-    // selectionをパースします。
+    /// selectionをパースします。
     fn parse_selection(
         &self,
         selection_yaml: &Yaml,
@@ -941,7 +943,7 @@ impl DetectionNode {
         return Option::Some(self.parse_selection_recursively(vec![], selection_yaml));
     }
 
-    // selectionをパースします。
+    /// selectionをパースします。
     fn parse_selection_recursively(
         &self,
         key_list: Vec<String>,
@@ -996,7 +998,7 @@ trait SelectionNode: mopa::Any {
 }
 mopafy!(SelectionNode);
 
-// detection - selection配下でAND条件を表すノード
+/// detection - selection配下でAND条件を表すノード
 struct AndSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode + Send + Sync>>,
 }
@@ -1072,7 +1074,7 @@ impl SelectionNode for AndSelectionNode {
     }
 }
 
-// detection - selection配下でOr条件を表すノード
+/// detection - selection配下でOr条件を表すノード
 struct OrSelectionNode {
     pub child_nodes: Vec<Box<dyn SelectionNode + Send + Sync>>,
 }
@@ -1148,7 +1150,7 @@ impl SelectionNode for OrSelectionNode {
     }
 }
 
-// conditionでNotを表すノード
+/// conditionでNotを表すノード
 struct NotSelectionNode {
     node: Box<dyn SelectionNode + Send + Sync>,
 }
@@ -1180,7 +1182,7 @@ impl SelectionNode for NotSelectionNode {
     }
 }
 
-// detectionで定義した条件をconditionで参照するためのもの
+/// detectionで定義した条件をconditionで参照するためのもの
 struct RefSelectionNode {
     // selection_nodeはDetectionNodeのname_2_nodeが所有権を持っていて、RefSelectionNodeのselection_nodeに所有権を持たせることができない。
     // そこでArcを使って、DetectionNodeのname_2_nodeとRefSelectionNodeのselection_nodeで所有権を共有する。
@@ -1217,7 +1219,7 @@ impl SelectionNode for RefSelectionNode {
     }
 }
 
-// detection - selection配下の末端ノード
+/// detection - selection配下の末端ノード
 struct LeafSelectionNode {
     key_list: Vec<String>,
     select_value: Yaml,
@@ -1244,7 +1246,7 @@ impl LeafSelectionNode {
         return self.key_list[0].to_string();
     }
 
-    // JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
+    /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
     fn get_event_value<'a>(&self, event_value: &'a Value) -> Option<&'a Value> {
         if self.key_list.is_empty() {
             return Option::None;
@@ -1253,8 +1255,8 @@ impl LeafSelectionNode {
         return utils::get_event_value(&self.get_key(), event_value);
     }
 
-    // LeafMatcherの一覧を取得する。
-    // 上から順番に調べて、一番始めに一致したMatcherが適用される
+    /// LeafMatcherの一覧を取得する。
+    /// 上から順番に調べて、一番始めに一致したMatcherが適用される
     fn get_matchers(&self) -> Vec<Box<dyn LeafMatcher>> {
         return vec![
             Box::new(RegexMatcher::new()),
@@ -1406,7 +1408,7 @@ trait LeafMatcher: mopa::Any {
 }
 mopafy!(LeafMatcher);
 
-// 正規表現で比較するロジックを表すクラス
+/// 正規表現で比較するロジックを表すクラス
 struct RegexMatcher {
     re: Option<Regex>,
 }
@@ -1497,7 +1499,7 @@ impl LeafMatcher for RegexMatcher {
     }
 }
 
-// 指定された文字数以上であることをチェックするクラス。
+/// 指定された文字数以上であることをチェックするクラス。
 struct MinlengthMatcher {
     min_len: i64,
 }
@@ -1540,8 +1542,8 @@ impl LeafMatcher for MinlengthMatcher {
     }
 }
 
-// 正規表現のリストが記載されたファイルを読み取って、比較するロジックを表すクラス
-// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
+/// 正規表現のリストが記載されたファイルを読み取って、比較するロジックを表すクラス
+/// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 struct RegexesFileMatcher {
     regexes_csv_content: Vec<Vec<String>>,
 }
@@ -1602,8 +1604,8 @@ impl LeafMatcher for RegexesFileMatcher {
     }
 }
 
-// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
-// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
+/// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
+/// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 struct WhitelistFileMatcher {
     whitelist_csv_content: Vec<Vec<String>>,
 }
@@ -1665,7 +1667,7 @@ impl LeafMatcher for WhitelistFileMatcher {
     }
 }
 
-// 指定された文字列で始まるか調べるクラス
+/// 指定された文字列で始まるか調べるクラス
 struct StartsWithMatcher {
     start_text: String,
 }
@@ -1719,7 +1721,7 @@ impl LeafMatcher for StartsWithMatcher {
     }
 }
 
-// 指定された文字列で終わるか調べるクラス
+/// 指定された文字列で終わるか調べるクラス
 struct EndsWithMatcher {
     end_text: String,
 }
@@ -1773,7 +1775,7 @@ impl LeafMatcher for EndsWithMatcher {
     }
 }
 
-// 指定された文字列が含まれるか調べるクラス
+/// 指定された文字列が含まれるか調べるクラス
 struct ContainsMatcher {
     pattern: String,
 }
