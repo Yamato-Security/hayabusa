@@ -1833,7 +1833,11 @@ impl LeafMatcher for ContainsMatcher {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::{AggregationConditionToken, AndSelectionNode, LeafSelectionNode, MinlengthMatcher, OrSelectionNode, RegexMatcher, RegexesFileMatcher, SelectionNode, WhitelistFileMatcher, create_rule};
+    use crate::detections::rule::{
+        create_rule, AggregationConditionToken, AndSelectionNode, LeafSelectionNode,
+        MinlengthMatcher, OrSelectionNode, RegexMatcher, RegexesFileMatcher, SelectionNode,
+        WhitelistFileMatcher,
+    };
     use yaml_rust::YamlLoader;
 
     use super::{AggegationConditionCompiler, RuleNode};
@@ -4411,65 +4415,70 @@ mod tests {
     #[test]
     fn test_aggegation_condition_compiler_no_count() {
         // countが無いパターン
-        let compiler = AggegationConditionCompiler::new();        
+        let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 and select2".to_string());
-        assert_eq!(true,result.is_ok());
+        assert_eq!(true, result.is_ok());
         let result = result.unwrap();
-        assert_eq!(true,result.is_none());
+        assert_eq!(true, result.is_none());
     }
 
     #[test]
     fn test_aggegation_condition_compiler_count_ope() {
         // 正常系 countの中身にフィールドが無い 各種演算子を試す
-        let token = check_aggregation_condition_ope("select1 and select2|count() > 32".to_string(),32);
+        let token =
+            check_aggregation_condition_ope("select1 and select2|count() > 32".to_string(), 32);
         let is_gt = match token {
             AggregationConditionToken::GT => true,
             _ => false,
         };
-        assert_eq!(is_gt,true);
+        assert_eq!(is_gt, true);
 
-        let token = check_aggregation_condition_ope("select1 and select2|count() >= 43".to_string(),43);
+        let token =
+            check_aggregation_condition_ope("select1 and select2|count() >= 43".to_string(), 43);
         let is_gt = match token {
             AggregationConditionToken::GE => true,
             _ => false,
         };
-        assert_eq!(is_gt,true);
+        assert_eq!(is_gt, true);
 
-        let token = check_aggregation_condition_ope("select1 and select2|count() < 59".to_string(),59);
+        let token =
+            check_aggregation_condition_ope("select1 and select2|count() < 59".to_string(), 59);
         let is_gt = match token {
             AggregationConditionToken::LT => true,
             _ => false,
         };
-        assert_eq!(is_gt,true);
+        assert_eq!(is_gt, true);
 
-        let token = check_aggregation_condition_ope("select1 and select2|count() <= 12".to_string(),12);
+        let token =
+            check_aggregation_condition_ope("select1 and select2|count() <= 12".to_string(), 12);
         let is_gt = match token {
             AggregationConditionToken::LE => true,
             _ => false,
         };
-        assert_eq!(is_gt,true);
+        assert_eq!(is_gt, true);
 
-        let token = check_aggregation_condition_ope("select1 and select2|count() == 28".to_string(),28);
+        let token =
+            check_aggregation_condition_ope("select1 and select2|count() == 28".to_string(), 28);
         let is_gt = match token {
             AggregationConditionToken::EQ => true,
             _ => false,
         };
-        assert_eq!(is_gt,true);
+        assert_eq!(is_gt, true);
     }
 
     #[test]
     fn test_aggegation_condition_compiler_count_by() {
-        let compiler = AggegationConditionCompiler::new();        
+        let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count() by iiibbb > 27".to_string());
 
-        assert_eq!(true,result.is_ok());
+        assert_eq!(true, result.is_ok());
         let result = result.unwrap();
-        assert_eq!(true,result.is_some());
+        assert_eq!(true, result.is_some());
 
         let result = result.unwrap();
-        assert_eq!("iiibbb".to_string(),result._by_field_name.unwrap());
-        assert_eq!(true,result._field_name.is_none());
-        assert_eq!(27,result._cmp_num);
+        assert_eq!("iiibbb".to_string(), result._by_field_name.unwrap());
+        assert_eq!(true, result._field_name.is_none());
+        assert_eq!(27, result._cmp_num);
         let is_ok = match result._cmp_op {
             AggregationConditionToken::GT => true,
             _ => false,
@@ -4479,17 +4488,17 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_count_field() {
-        let compiler = AggegationConditionCompiler::new();        
+        let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge    ) > 3".to_string());
 
-        assert_eq!(true,result.is_ok());
+        assert_eq!(true, result.is_ok());
         let result = result.unwrap();
-        assert_eq!(true,result.is_some());
+        assert_eq!(true, result.is_some());
 
         let result = result.unwrap();
-        assert_eq!(true,result._by_field_name.is_none());
-        assert_eq!("hogehoge",result._field_name.unwrap());
-        assert_eq!(3,result._cmp_num);
+        assert_eq!(true, result._by_field_name.is_none());
+        assert_eq!("hogehoge", result._field_name.unwrap());
+        assert_eq!(3, result._cmp_num);
         let is_ok = match result._cmp_op {
             AggregationConditionToken::GT => true,
             _ => false,
@@ -4499,17 +4508,18 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_count_all_field() {
-        let compiler = AggegationConditionCompiler::new();        
-        let result = compiler.compile("select1 or select2 | count( hogehoge) by snsn > 3".to_string());
+        let compiler = AggegationConditionCompiler::new();
+        let result =
+            compiler.compile("select1 or select2 | count( hogehoge) by snsn > 3".to_string());
 
-        assert_eq!(true,result.is_ok());
+        assert_eq!(true, result.is_ok());
         let result = result.unwrap();
-        assert_eq!(true,result.is_some());
+        assert_eq!(true, result.is_some());
 
         let result = result.unwrap();
-        assert_eq!("snsn".to_string(),result._by_field_name.unwrap());
-        assert_eq!("hogehoge",result._field_name.unwrap());
-        assert_eq!(3,result._cmp_num);
+        assert_eq!("snsn".to_string(), result._by_field_name.unwrap());
+        assert_eq!("hogehoge", result._field_name.unwrap());
+        assert_eq!(3, result._cmp_num);
         let is_ok = match result._cmp_op {
             AggregationConditionToken::GT => true,
             _ => false,
@@ -4519,85 +4529,100 @@ mod tests {
 
     #[test]
     fn test_aggegation_condition_compiler_only_pipe() {
-        let compiler = AggegationConditionCompiler::new();        
+        let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 |".to_string());
 
-        assert_eq!(true,result.is_err());
-        assert_eq!("aggregation condition parse error has occured. There are not strings after pipe(|).".to_string(),result.unwrap_err());
+        assert_eq!(true, result.is_err());
+        assert_eq!(
+            "aggregation condition parse error has occured. There are not strings after pipe(|)."
+                .to_string(),
+            result.unwrap_err()
+        );
     }
 
     #[test]
     fn test_aggegation_condition_compiler_unused_character() {
-        let compiler = AggegationConditionCompiler::new();        
-        let result = compiler.compile("select1 or select2 | count( hogeess ) by ii-i > 33".to_string());
+        let compiler = AggegationConditionCompiler::new();
+        let result =
+            compiler.compile("select1 or select2 | count( hogeess ) by ii-i > 33".to_string());
 
-        assert_eq!(true,result.is_err());
-        assert_eq!("aggregation condition parse error has occured. An unusable character was found.".to_string(),result.unwrap_err());
+        assert_eq!(true, result.is_err());
+        assert_eq!(
+            "aggregation condition parse error has occured. An unusable character was found."
+                .to_string(),
+            result.unwrap_err()
+        );
     }
 
     #[test]
     fn test_aggegation_condition_compiler_not_count() {
         // countじゃないものが先頭に来ている。
-        let compiler = AggegationConditionCompiler::new();        
-        let result = compiler.compile("select1 or select2 | by count( hogehoge) by snsn > 3".to_string());
+        let compiler = AggegationConditionCompiler::new();
+        let result =
+            compiler.compile("select1 or select2 | by count( hogehoge) by snsn > 3".to_string());
 
-        assert_eq!(true,result.is_err());
+        assert_eq!(true, result.is_err());
         assert_eq!("aggregation condition parse error has occured. aggregation condition can use count only.".to_string(),result.unwrap_err());
     }
 
     #[test]
     fn test_aggegation_condition_compiler_no_ope() {
         // 比較演算子がない
-        let compiler = AggegationConditionCompiler::new();        
+        let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge) 3".to_string());
 
-        assert_eq!(true,result.is_err());
+        assert_eq!(true, result.is_err());
         assert_eq!("aggregation condition parse error has occured. count keyword need compare operator and number like '> 3'".to_string(),result.unwrap_err());
     }
 
     #[test]
     fn test_aggegation_condition_compiler_by() {
         // byの後に何もない
-        let compiler = AggegationConditionCompiler::new();        
+        let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge) by".to_string());
 
-        assert_eq!(true,result.is_err());
+        assert_eq!(true, result.is_err());
         assert_eq!("aggregation condition parse error has occured. by keyword needs field name like 'by EventID'".to_string(),result.unwrap_err());
     }
 
     #[test]
     fn test_aggegation_condition_compiler_no_ope_afterby() {
         // byの後に何もない
-        let compiler = AggegationConditionCompiler::new();        
-        let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe >".to_string());
+        let compiler = AggegationConditionCompiler::new();
+        let result =
+            compiler.compile("select1 or select2 | count( hogehoge ) by hoe >".to_string());
 
-        assert_eq!(true,result.is_err());
+        assert_eq!(true, result.is_err());
         assert_eq!("aggregation condition parse error has occured. compare operator need number like '> 3'.".to_string(),result.unwrap_err());
     }
 
     #[test]
     fn test_aggegation_condition_compiler_unneccesary_word() {
         // byの後に何もない
-        let compiler = AggegationConditionCompiler::new();        
-        let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe > 3 33".to_string());
+        let compiler = AggegationConditionCompiler::new();
+        let result =
+            compiler.compile("select1 or select2 | count( hogehoge ) by hoe > 3 33".to_string());
 
-        assert_eq!(true,result.is_err());
-        assert_eq!("aggregation condition parse error has occured. unnecessary word was found.".to_string(),result.unwrap_err());
+        assert_eq!(true, result.is_err());
+        assert_eq!(
+            "aggregation condition parse error has occured. unnecessary word was found."
+                .to_string(),
+            result.unwrap_err()
+        );
     }
 
-
-    fn check_aggregation_condition_ope( expr: String, cmp_num:i32 ) -> AggregationConditionToken {
-        let compiler = AggegationConditionCompiler::new();        
+    fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
+        let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile(expr);
 
-        assert_eq!(true,result.is_ok());
+        assert_eq!(true, result.is_ok());
         let result = result.unwrap();
-        assert_eq!(true,result.is_some());
+        assert_eq!(true, result.is_some());
 
         let result = result.unwrap();
-        assert_eq!(true,result._by_field_name.is_none());
-        assert_eq!(true,result._field_name.is_none());
-        assert_eq!(cmp_num,result._cmp_num);
+        assert_eq!(true, result._by_field_name.is_none());
+        assert_eq!(true, result._field_name.is_none());
+        assert_eq!(cmp_num, result._cmp_num);
         return result._cmp_op;
     }
 
