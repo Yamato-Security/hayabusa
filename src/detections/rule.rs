@@ -4415,7 +4415,7 @@ mod tests {
     }
 
     #[test]
-    /// conditionのパイプ(|)が素材しないときに字句解析が完了し、パイプ以降の中身がないという結果が得られるかのテスト
+    /// conditionのパイプ(|)が存在しないときに字句解析、構文解析が完了し、パイプ以降の中身がないという結果が得られるかのテスト
     fn test_aggegation_condition_compiler_no_count() {
         // countが無いパターン
         let compiler = AggegationConditionCompiler::new();
@@ -4471,7 +4471,7 @@ mod tests {
     }
 
     #[test]
-    /// count() byの字句解析ができるかのテスト
+    /// count() byの字句解析、構文解析ができるかのテスト
     fn test_aggegation_condition_compiler_count_by() {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count() by iiibbb > 27".to_string());
@@ -4492,7 +4492,7 @@ mod tests {
     }
 
     #[test]
-    /// conditionのcount,count内の括弧内の変数、オペレータの字句解析ができるかのテスト
+    /// conditionのcount,count内の括弧内の変数、オペレータの字句解析、構文解析ができるかのテスト
     fn test_aggegation_condition_compiler_count_field() {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge    ) > 3".to_string());
@@ -4513,7 +4513,7 @@ mod tests {
     }
 
     #[test]
-    /// conditionのcount,count内の括弧内の変数、 count by、count by後のオペレータの字句解析ができるかのテスト
+    /// conditionのcount,count内の括弧内の変数、 count by、count by後のオペレータの字句解析、構文解析ができるかのテスト
     fn test_aggegation_condition_compiler_count_all_field() {
         let compiler = AggegationConditionCompiler::new();
         let result =
@@ -4535,6 +4535,7 @@ mod tests {
     }
 
     #[test]
+    /// conditionでパイプ以降に何の文字列もない場合にエラーが発生することの確認
     fn test_aggegation_condition_compiler_only_pipe() {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 |".to_string());
@@ -4548,6 +4549,7 @@ mod tests {
     }
 
     #[test]
+    /// conditionでパイプ以降の構文に登録されていない変数が存在した場合にエラーが出力されるかのテスト
     fn test_aggegation_condition_compiler_unused_character() {
         let compiler = AggegationConditionCompiler::new();
         let result =
@@ -4562,6 +4564,7 @@ mod tests {
     }
 
     #[test]
+    /// パイプの直後に正常な文ではあり得ないbyが先頭に来ている場合に構文解析としてエラーが出力されることを確認するテスト
     fn test_aggegation_condition_compiler_not_count() {
         // countじゃないものが先頭に来ている。
         let compiler = AggegationConditionCompiler::new();
