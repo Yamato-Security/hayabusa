@@ -4415,6 +4415,7 @@ mod tests {
     }
 
     #[test]
+    /// conditionのパイプ(|)が素材しないときに字句解析が完了し、パイプ以降の中身がないという結果が得られるかのテスト
     fn test_aggegation_condition_compiler_no_count() {
         // countが無いパターン
         let compiler = AggegationConditionCompiler::new();
@@ -4425,6 +4426,7 @@ mod tests {
     }
 
     #[test]
+    /// countの後のオペレータの字句解析ができるかのテスト
     fn test_aggegation_condition_compiler_count_ope() {
         // 正常系 countの中身にフィールドが無い 各種演算子を試す
         let token =
@@ -4469,6 +4471,7 @@ mod tests {
     }
 
     #[test]
+    /// count() byの字句解析ができるかのテスト
     fn test_aggegation_condition_compiler_count_by() {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count() by iiibbb > 27".to_string());
@@ -4489,6 +4492,7 @@ mod tests {
     }
 
     #[test]
+    /// conditionのcount,count内の括弧内の変数、オペレータの字句解析ができるかのテスト
     fn test_aggegation_condition_compiler_count_field() {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile("select1 or select2 | count( hogehoge    ) > 3".to_string());
@@ -4509,6 +4513,7 @@ mod tests {
     }
 
     #[test]
+    /// conditionのcount,count内の括弧内の変数、 count by、count by後のオペレータの字句解析ができるかのテスト
     fn test_aggegation_condition_compiler_count_all_field() {
         let compiler = AggegationConditionCompiler::new();
         let result =
