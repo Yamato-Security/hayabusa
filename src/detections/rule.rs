@@ -1,6 +1,7 @@
 extern crate regex;
 
 use mopa::mopafy;
+use std::sync::RwLock;
 
 use std::{collections::HashMap, sync::Arc, vec};
 
@@ -771,17 +772,32 @@ impl AggegationConditionCompiler {
     }
 }
 
+// #[derive(Copy)]
 /// イベントファイル毎の各種条件のカウントを保持する為の構造体
 pub struct CountData {
-    pub counter_by_evtx: Option<HashMap<String, *mut Vec<HashMap<String, i32>>>>,
-    pub field_store_count: Option<HashMap<String, Vec<HashMap<String, i32>>>>, // HashMapの入れ子構造(evtx filepath)-> [Keyをrecord"(_field_name_で指定された値)_(_by_fieldnameで指定された値)"としてcountされた個数を保持するハッシュマップ。複数のcount条件対応のためvec。
-    pub records_fields: Option<HashMap<Value, *mut i32>>, // recordに対応するfield_store_countへの数値の参照を保持するためのハッシュマップ
+    // pub filename_field_table: RwLock<HashMap<String, Hashm>>
+    pub field_store_count: HashMap<String, RwLock<HashMap<String, i32>>>, // HashMapの入れ子構造(evtx filepath)-> [Keyをrecord"(_field_name_で指定された値)_(_by_fieldnameで指定された値)"としてcountされた個数を保持するハッシュマップ。
+}
+
+impl CountData {
+    pub fn countup(&self, filepath: String, key: &str) {
+        let mut value_map = self
+            .field_store_count
+            .get(&filepath)
+            .unwrap()
+            .write()
+            .unwrap();
+        *value_map.entry(key.to_string()).or_insert(0);
+        let prev_value = value_map[key];
+        value_map.insert(key.to_string(), 1 + prev_value);
+    }
 }
 
 /// Ruleファイルを表すノード
 pub struct RuleNode {
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
+    countdata: Option<CountData>,
 }
 
 unsafe impl Sync for RuleNode {}
@@ -791,6 +807,7 @@ impl RuleNode {
         return RuleNode {
             yaml: yaml,
             detection: Option::None,
+            countdata: Option::None,
         };
     }
 
@@ -848,6 +865,22 @@ impl RuleNode {
         }
         // TODO aggregation condition での結果を返す関数
         return true;
+    }
+
+    /// 検知された際にカウント情報を投入する関数
+    fn count(&self, filepath: String, record: Value) {
+        let aggcondition = self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .as_ref()
+            .unwrap();
+        let countdata = self.countdata.as_ref();
+        let mut key = aggcondition._field_name.as_ref().unwrap().clone();
+        key.push_str("_");
+        key.push_str(&aggcondition._by_field_name.as_ref().unwrap().to_string());
+        countdata.unwrap().countup(filepath, &key);
     }
 }
 
