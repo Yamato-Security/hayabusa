@@ -824,6 +824,31 @@ impl RuleNode {
 
         return self.detection.as_ref().unwrap().select(event_record);
     }
+
+    /// Aggregation Conditionに合致するレコードであるかのbool値を返す関数
+    pub fn check_satisfy_aggcondition(
+        &self,
+        evtx_filname: String,
+        select_result: bool,
+        event_records: &Value,
+    ) -> bool {
+        // selectの結果が検知なしであればcountのルールを適用してもfalse
+        if !(select_result) {
+            return false;
+        }
+        //aggregationの中身がなければ検知条件を問題なしとして判定する
+        if self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .is_none()
+        {
+            return true;
+        }
+        // TODO aggregation condition での結果を返す関数
+        return true;
+    }
 }
 
 /// Ruleファイルのdetectionを表すノード
