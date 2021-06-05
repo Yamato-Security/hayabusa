@@ -877,9 +877,12 @@ impl RuleNode {
             .as_ref()
             .unwrap();
         let countdata = self.countdata.as_ref();
-        let mut key = aggcondition._field_name.as_ref().unwrap().clone();
+        // ここのキーはRECORDの値を持ってくること！
+        let mut key = record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string();
         key.push_str("_");
-        key.push_str(&aggcondition._by_field_name.as_ref().unwrap().to_string());
+        key.push_str(
+            &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
+        );
         countdata.unwrap().countup(filepath, &key);
     }
 }
