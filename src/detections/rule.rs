@@ -930,7 +930,7 @@ impl RuleNode {
     }
 
     /// 検知された際にカウント情報を投入する関数
-    fn count(&self, filepath: &String, record: &Value) {
+    pub fn count(&self, filepath: &String, record: &Value) {
         let aggcondition = self
             .detection
             .as_ref()
