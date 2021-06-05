@@ -780,16 +780,78 @@ pub struct CountData {
 }
 
 impl CountData {
-    pub fn countup(&self, filepath: String, key: &str) {
+    ///count byの条件に合致する検知済みレコードの数を増やすための関数
+    pub fn countup(&self, filepath: &String, key: &str) {
+        // countを管理するHashMapを書き込み権限でロック
         let mut value_map = self
             .field_store_count
-            .get(&filepath)
+            .get(filepath)
             .unwrap()
             .write()
             .unwrap();
         *value_map.entry(key.to_string()).or_insert(0);
         let prev_value = value_map[key];
         value_map.insert(key.to_string(), 1 + prev_value);
+    }
+
+    /// conditionのパイプ以降の処理をAggregationParseInfoを参照し、conditionの条件を満たすか判定するための関数
+    pub fn select_aggcon(
+        &self,
+        filepath: &String,
+        key: &str,
+        aggcondition: &AggregationParseInfo,
+    ) -> bool {
+        let value: i32;
+        // count回数を管理するHaspMapを読み込み権限でロック。必要な情報を取得したらロック解除を行うためライフタイム管理として中括弧でまとめた
+        {
+            let value_map = self
+                .field_store_count
+                .get(filepath)
+                .unwrap()
+                .read()
+                .unwrap();
+            value = value_map[key];
+        }
+        match aggcondition._cmp_op {
+            AggregationConditionToken::EQ => {
+                if value == aggcondition._cmp_num {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            AggregationConditionToken::GE => {
+                if value >= aggcondition._cmp_num {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            AggregationConditionToken::GT => {
+                if value > aggcondition._cmp_num {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            AggregationConditionToken::LE => {
+                if value <= aggcondition._cmp_num {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            AggregationConditionToken::LT => {
+                if value < aggcondition._cmp_num {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            _ => {
+                return false;
+            }
+        }
     }
 }
 
@@ -845,9 +907,9 @@ impl RuleNode {
     /// Aggregation Conditionに合致するレコードであるかのbool値を返す関数
     pub fn check_satisfy_aggcondition(
         &self,
-        evtx_filname: String,
+        filepath: &String,
         select_result: bool,
-        event_records: &Value,
+        record: &Value,
     ) -> bool {
         // selectの結果が検知なしであればcountのルールを適用してもfalse
         if !(select_result) {
@@ -863,12 +925,12 @@ impl RuleNode {
         {
             return true;
         }
-        // TODO aggregation condition での結果を返す関数
+        self.aggregation_condition_select(filepath, record);
         return true;
     }
 
     /// 検知された際にカウント情報を投入する関数
-    fn count(&self, filepath: String, record: Value) {
+    fn count(&self, filepath: &String, record: &Value) {
         let aggcondition = self
             .detection
             .as_ref()
@@ -877,13 +939,34 @@ impl RuleNode {
             .as_ref()
             .unwrap();
         let countdata = self.countdata.as_ref();
-        // ここのキーはRECORDの値を持ってくること！
+        // recordでaliasが登録されている前提とする
         let mut key = record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string();
         key.push_str("_");
         key.push_str(
             &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
         );
         countdata.unwrap().countup(filepath, &key);
+    }
+
+    ///現状のレコードの状態から条件式に一致しているかを判定する関数
+    fn aggregation_condition_select(&self, filepath: &String, record: &Value) -> bool {
+        let aggcondition = self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .as_ref()
+            .unwrap();
+        let countdata = self.countdata.as_ref();
+        // recordでaliasが登録されている前提とする
+        let mut key = record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string();
+        key.push_str("_");
+        key.push_str(
+            &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
+        );
+        return countdata
+            .unwrap()
+            .select_aggcon(filepath, &key, aggcondition);
     }
 }
 

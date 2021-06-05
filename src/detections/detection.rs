@@ -116,7 +116,13 @@ impl Detection {
                 let mut ret = vec![];
                 for rule in rules_clones.iter() {
                     for record_info in records_arc_clone.iter() {
-                        ret.push(rule.select(&record_info.record)); // 検知したか否かを配列に保存しておく
+                            let result = rule.select(&record_info.record);
+                            if result {
+                                rule.count(&record_info.record, record_info.evtx_filepath)
+                            }
+                            ret.push(result);
+                        }
+                        // 検知したか否かを配列に保存しておく
                     }
                 }
                 return ret;
