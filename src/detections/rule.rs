@@ -520,6 +520,7 @@ impl ConditionCompiler {
 }
 
 #[derive(Debug)]
+/// パイプ(|)以降のconditionでの字句解析、構文解析の結果を保存する構造体
 pub struct AggregationParseInfo {
     _field_name: Option<String>,        // countの括弧に囲まれた部分の文字
     _by_field_name: Option<String>,     // count() by の後に指定される文字列
