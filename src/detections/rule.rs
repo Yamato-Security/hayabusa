@@ -771,6 +771,13 @@ impl AggegationConditionCompiler {
     }
 }
 
+/// イベントファイル毎の各種条件のカウントを保持する為の構造体
+pub struct CountData {
+    pub counter_by_evtx: Option<HashMap<String, *mut Vec<HashMap<String, i32>>>>,
+    pub field_store_count: Option<HashMap<String, Vec<HashMap<String, i32>>>>, // HashMapの入れ子構造(evtx filepath)-> [Keyをrecord"(_field_name_で指定された値)_(_by_fieldnameで指定された値)"としてcountされた個数を保持するハッシュマップ。複数のcount条件対応のためvec。
+    pub records_fields: Option<HashMap<Value, *mut i32>>, // recordに対応するfield_store_countへの数値の参照を保持するためのハッシュマップ
+}
+
 /// Ruleファイルを表すノード
 pub struct RuleNode {
     pub yaml: Yaml,
