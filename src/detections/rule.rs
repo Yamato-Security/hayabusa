@@ -780,8 +780,16 @@ pub struct CountData {
 }
 
 impl CountData {
+    pub fn new() -> CountData {
+        return CountData {
+            field_store_count: HashMap::new(),
+        };
+    }
     ///count byの条件に合致する検知済みレコードの数を増やすための関数
-    pub fn countup(&self, filepath: &String, key: &str) {
+    pub fn countup(&mut self, filepath: &String, key: &str) {
+        self.field_store_count
+            .entry(filepath.to_string())
+            .or_insert(RwLock::new(HashMap::new()));
         // countを管理するHashMapを書き込み権限でロック
         let mut value_map = self
             .field_store_count
@@ -930,7 +938,7 @@ impl RuleNode {
     }
 
     /// 検知された際にカウント情報を投入する関数
-    pub fn count(&self, filepath: &String, record: &Value) {
+    pub fn count(&mut self, filepath: &String, record: &Value) {
         let aggcondition = self
             .detection
             .as_ref()
@@ -938,14 +946,13 @@ impl RuleNode {
             .aggregation_condition
             .as_ref()
             .unwrap();
-        let countdata = self.countdata.as_ref();
         // recordでaliasが登録されている前提とする
         let mut key = record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string();
         key.push_str("_");
         key.push_str(
             &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
         );
-        countdata.unwrap().countup(filepath, &key);
+        self.countdata.as_ref().unwrap().countup(filepath, &key);
     }
 
     ///現状のレコードの状態から条件式に一致しているかを判定する関数
@@ -957,14 +964,15 @@ impl RuleNode {
             .aggregation_condition
             .as_ref()
             .unwrap();
-        let countdata = self.countdata.as_ref();
         // recordでaliasが登録されている前提とする
         let mut key = record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string();
         key.push_str("_");
         key.push_str(
             &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
         );
-        return countdata
+        return self
+            .countdata
+            .as_ref()
             .unwrap()
             .select_aggcon(filepath, &key, aggcondition);
     }
@@ -1987,6 +1995,7 @@ impl LeafMatcher for ContainsMatcher {
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::rule::CountData;
     use crate::detections::rule::{
         create_rule, AggregationConditionToken, AndSelectionNode, LeafSelectionNode,
         MinlengthMatcher, OrSelectionNode, RegexMatcher, RegexesFileMatcher, SelectionNode,
@@ -4771,6 +4780,20 @@ mod tests {
                 .to_string(),
             result.unwrap_err()
         );
+    }
+
+    #[test]
+    /// countupでハッシュマップの情報がカウントアップされているかの確認
+    fn test_countup() {
+        let mut countdata = CountData::new();
+        countdata.countup(&"testevtx".to_string(), &"_".to_string());
+        let value = countdata
+            .field_store_count
+            .get(&"testevtx".to_string())
+            .unwrap()
+            .read()
+            .unwrap();
+        assert_eq!(value["_"], 1);
     }
 
     fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
