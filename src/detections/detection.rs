@@ -1,7 +1,7 @@
 extern crate csv;
 
 use serde_json::Value;
-use tokio::{spawn, task::JoinHandle};
+use tokio::{spawn};
 
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
@@ -39,15 +39,13 @@ impl Detection {
     }
 
     pub fn start(&mut self, records: Vec<EvtxRecordInfo>) {
-        let mut rules = self.parse_rule_files();
+        let rules = self.parse_rule_files();
         if rules.is_empty() {
             return;
         }
 
         let tokio_rt = utils::create_tokio_runtime();
-        for rule in rules {
-            tokio_rt.block_on(self.execute_rule(rule, records));
-        }
+        tokio_rt.block_on(Detection::execute_rules(rules,records));
         tokio_rt.shutdown_background();
     }
 
@@ -96,76 +94,40 @@ impl Detection {
             .collect();
     }
 
-    // 検知ロジックを実行します。
-    async fn execute_rule(&mut self, mut rule: RuleNode, records: Vec<EvtxRecordInfo>) {
-        // 複数スレッドで所有権を共有するため、recordsをArcでwwap
-        let mut records_arcs = vec![];
-        for record_chunk in Detection::chunks(records, num_cpus::get() * 4) {
-            let record_chunk_arc = Arc::new(record_chunk);
-            records_arcs.push(record_chunk_arc);
-        }
-        // ルール実行するスレッドを作成。
-        let mut handles = vec![];
-        for record_chunk_arc in &records_arcs {
-            let records_arc_clone = Arc::clone(&record_chunk_arc);
-            let handle: JoinHandle<Vec<bool>> = spawn(async move {
-                let mut ret = vec![];
-                for record_info in records_arc_clone.iter() {
-                    let result = rule.select(&record_info.record);
-                    ret.push(result);
-                    // 検知したか否かを配列に保存しておく
-                    rule.count(&record_info.evtx_filepath, &record_info.record);
-                }
-                return ret;
+    async fn execute_rules( rules: Vec<RuleNode>, records: Vec<EvtxRecordInfo> ) {
+        let records_arc = Arc::new(records);
+
+        // 各rule毎にスレッドを作成して、スレッドを起動する。
+        let handles = rules.into_iter().map( |rule| {
+            let records_cloned = Arc::clone(&records_arc);
+            return spawn(async move {
+                Detection::execute_rule(rule, records_cloned);
             });
-            handles.push(handle);
-        }
+        });
 
-        // メッセージを追加する。これを上記のspawnの中でやると、ロックの取得で逆に時間がかかるので、外に出す
-        let mut message = MESSAGES.lock().unwrap();
-        let mut handles_ite = handles.into_iter();
-        let rule2 = &rule;
-        for record_chunk_arc in &records_arcs {
-            let mut handles_ret_ite = handles_ite.next().unwrap().await.unwrap().into_iter();
-            for record_info_arc in record_chunk_arc.iter() {
-                if handles_ret_ite.next().unwrap() == false {
-                    continue;
-                }
-
-                // TODO メッセージが多いと、rule.select()よりもこの処理の方が時間かかる。
-                message.insert(
-                    record_info_arc.evtx_filepath.to_string(),
-                    &record_info_arc.record,
-                    rule2.yaml["title"].as_str().unwrap_or("").to_string(),
-                    rule2.yaml["output"].as_str().unwrap_or("").to_string(),
-                );
-            }
+        // 全スレッドの実行完了を待機
+        for handle in handles {
+            handle.await.unwrap();
         }
     }
 
-    // fn get_event_ids(rules: &Vec<RuleNode>) -> HashSet<i64> {
-    //     return rules
-    //         .iter()
-    //         .map(|rule| rule.get_event_ids())
-    //         .flatten()
-    //         .collect();
-    // }
-
-    // 配列を指定したサイズで分割する。Vector.chunksと同じ動作をするが、Vectorの関数だとinto的なことができないので自作
-    fn chunks<T>(ary: Vec<T>, size: usize) -> Vec<Vec<T>> {
-        let arylen = ary.len();
-        let mut ite = ary.into_iter();
-
-        let mut ret = vec![];
-        for i in 0..arylen {
-            if i % size == 0 {
-                ret.push(vec![]);
-                ret.iter_mut().last().unwrap().push(ite.next().unwrap());
-            } else {
-                ret.iter_mut().last().unwrap().push(ite.next().unwrap());
+    // 検知ロジックを実行します。
+    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>> ) {
+        let records = &*records;
+        for record_info in records {
+            let result = rule.select(&record_info.record);
+            rule.count(&record_info.evtx_filepath, &record_info.record);
+            if result {
+                continue;
             }
-        }
 
-        return ret;
+            // TODO メッセージが多いと、rule.select()よりもこの処理の方が時間かかる。
+            MESSAGES.lock().unwrap().insert(
+                record_info.evtx_filepath.to_string(),
+                &record_info.record,
+                rule.yaml["title"].as_str().unwrap_or("").to_string(),
+                rule.yaml["output"].as_str().unwrap_or("").to_string(),
+            );
+        }
     }
 }
