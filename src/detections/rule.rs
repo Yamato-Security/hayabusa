@@ -791,8 +791,8 @@ impl CountData {
         self.field_store_count
             .entry(filepath.to_string())
             .or_insert(HashMap::new());
-        let mut value_map = self.field_store_count.get(filepath).unwrap();
-        *value_map.entry(key.to_string()).or_insert(0);
+        let value_map = self.field_store_count.get_mut(filepath).unwrap();
+        value_map.entry(key.to_string()).or_insert(0);
         let prev_value = value_map[key];
         value_map.insert(key.to_string(), 1 + prev_value);
     }
@@ -976,28 +976,26 @@ struct TimeFrameInfo {
 impl TimeFrameInfo {
     /// timeframeの文字列をパースし、構造体を返す関数
     pub fn parse_tframe(value: String) -> TimeFrameInfo {
-        let mut ttype: &str;
-        match &*value {
-            "s" => {
-                ttype = "s";
-                value.retain(|c| c != 's');
-            }
-            "m" => {
-                ttype = "m";
-                value.retain(|c| c != 'm');
-            }
-            "h" => {
-                ttype = "h";
-                value.retain(|c| c != 'h');
-            }
-            "d" => {
-                ttype = "d";
-                value.retain(|c| c != 'd');
-            }
+        let mut ttype: String = "".to_string();
+        let mut tnum = value.clone();
+        if value == "s" {
+            ttype = "s".to_string();
+            tnum.retain(|c| c != 's');
+        } else if value == "m" {
+            ttype = "m".to_string();
+            tnum.retain(|c| c != 'm');
+        } else if value == "h" {
+            ttype = "h".to_string();
+            tnum.retain(|c| c != 'h');
+        } else if value == "d" {
+            ttype = "d".to_string();
+            tnum.retain(|c| c != 'd');
+        } else {
+            //TODO error parse
         }
         return TimeFrameInfo {
-            timetype: ttype.to_string(),
-            timenum: value.parse::<i32>(),
+            timetype: ttype,
+            timenum: tnum.parse::<i32>(),
         };
     }
 }
