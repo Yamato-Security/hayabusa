@@ -1,7 +1,9 @@
 extern crate regex;
 
+use chrono::DateTime;
+use chrono::Utc;
 use mopa::mopafy;
-use std::sync::RwLock;
+use std::num::ParseIntError;
 
 use std::{collections::HashMap, sync::Arc, vec};
 
@@ -772,11 +774,10 @@ impl AggegationConditionCompiler {
     }
 }
 
-// #[derive(Copy)]
 /// イベントファイル毎の各種条件のカウントを保持する為の構造体
 pub struct CountData {
     // pub filename_field_table: RwLock<HashMap<String, Hashm>>
-    pub field_store_count: HashMap<String, RwLock<HashMap<String, i32>>>, // HashMapの入れ子構造(evtx filepath)-> [Keyをrecord"(_field_name_で指定された値)_(_by_fieldnameで指定された値)"としてcountされた個数を保持するハッシュマップ。
+    pub field_store_count: HashMap<String, HashMap<String, i32>>, // HashMapの入れ子構造(evtx filepath)-> [Keyをrecord"(_field_name_で指定された値)_(_by_fieldnameで指定された値)"としてcountされた個数を保持するハッシュマップ。
 }
 
 impl CountData {
@@ -789,14 +790,8 @@ impl CountData {
     pub fn countup(&mut self, filepath: &String, key: &str) {
         self.field_store_count
             .entry(filepath.to_string())
-            .or_insert(RwLock::new(HashMap::new()));
-        // countを管理するHashMapを書き込み権限でロック
-        let mut value_map = self
-            .field_store_count
-            .get(filepath)
-            .unwrap()
-            .write()
-            .unwrap();
+            .or_insert(HashMap::new());
+        let mut value_map = self.field_store_count.get(filepath).unwrap();
         *value_map.entry(key.to_string()).or_insert(0);
         let prev_value = value_map[key];
         value_map.insert(key.to_string(), 1 + prev_value);
@@ -812,12 +807,7 @@ impl CountData {
         let value: i32;
         // count回数を管理するHaspMapを読み込み権限でロック。必要な情報を取得したらロック解除を行うためライフタイム管理として中括弧でまとめた
         {
-            let value_map = self
-                .field_store_count
-                .get(filepath)
-                .unwrap()
-                .read()
-                .unwrap();
+            let value_map = self.field_store_count.get(filepath).unwrap();
             value = value_map[key];
         }
         match aggcondition._cmp_op {
@@ -880,7 +870,6 @@ impl RuleNode {
             countdata: Option::None,
         };
     }
-
     pub fn init(&mut self) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
 
@@ -978,11 +967,47 @@ impl RuleNode {
     }
 }
 
+/// timeframeに設定された情報。SIGMAルール上tilmeframeで複数の単位(日、時、分、秒)が複合で記載されているルールがなかったためタイプと数値のみを格納する構造体
+struct TimeFrameInfo {
+    pub timetype: String,
+    pub timenum: Result<i32, ParseIntError>,
+}
+
+impl TimeFrameInfo {
+    /// timeframeの文字列をパースし、構造体を返す関数
+    pub fn parse_tframe(value: String) -> TimeFrameInfo {
+        let mut ttype: &str;
+        match &*value {
+            "s" => {
+                ttype = "s";
+                value.retain(|c| c != 's');
+            }
+            "m" => {
+                ttype = "m";
+                value.retain(|c| c != 'm');
+            }
+            "h" => {
+                ttype = "h";
+                value.retain(|c| c != 'h');
+            }
+            "d" => {
+                ttype = "d";
+                value.retain(|c| c != 'd');
+            }
+        }
+        return TimeFrameInfo {
+            timetype: ttype.to_string(),
+            timenum: value.parse::<i32>(),
+        };
+    }
+}
+
 /// Ruleファイルのdetectionを表すノード
 struct DetectionNode {
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
     pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
     pub aggregation_condition: Option<AggregationParseInfo>,
+    pub timeframe: Option<TimeFrameInfo>,
 }
 
 impl DetectionNode {
@@ -991,12 +1016,17 @@ impl DetectionNode {
             name_to_selection: HashMap::new(),
             condition: Option::None,
             aggregation_condition: Option::None,
+            timeframe: Option::None,
         };
     }
 
     fn init(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
         // selection nodeの初期化
         self.parse_name_to_selection(detection_yaml)?;
+
+        //timeframeに指定されている値を取得
+        // TODO timeframeの値を解析して格納する関数の呼び出し
+        let timeframe = &detection_yaml["timeframe"].as_str();
 
         // conditionに指定されている式を取得
         let condition = &detection_yaml["condition"].as_str();
@@ -4790,8 +4820,6 @@ mod tests {
         let value = countdata
             .field_store_count
             .get(&"testevtx".to_string())
-            .unwrap()
-            .read()
             .unwrap();
         assert_eq!(value["_"], 1);
     }

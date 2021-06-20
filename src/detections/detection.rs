@@ -39,13 +39,15 @@ impl Detection {
     }
 
     pub fn start(&mut self, records: Vec<EvtxRecordInfo>) {
-        let rules = self.parse_rule_files();
+        let mut rules = self.parse_rule_files();
         if rules.is_empty() {
             return;
         }
 
         let tokio_rt = utils::create_tokio_runtime();
-        tokio_rt.block_on(self.execute_rule(rules, records));
+        for rule in rules {
+            tokio_rt.block_on(self.execute_rule(rule, records));
+        }
         tokio_rt.shutdown_background();
     }
 
@@ -95,34 +97,24 @@ impl Detection {
     }
 
     // 検知ロジックを実行します。
-    async fn execute_rule(&mut self, rules: Vec<RuleNode>, records: Vec<EvtxRecordInfo>) {
+    async fn execute_rule(&mut self, mut rule: RuleNode, records: Vec<EvtxRecordInfo>) {
         // 複数スレッドで所有権を共有するため、recordsをArcでwwap
         let mut records_arcs = vec![];
         for record_chunk in Detection::chunks(records, num_cpus::get() * 4) {
             let record_chunk_arc = Arc::new(record_chunk);
             records_arcs.push(record_chunk_arc);
         }
-
-        // 複数スレッドで所有権を共有するため、rulesをArcでwwap
-        let rules_arc = Arc::new(rules);
-
         // ルール実行するスレッドを作成。
         let mut handles = vec![];
         for record_chunk_arc in &records_arcs {
             let records_arc_clone = Arc::clone(&record_chunk_arc);
-            let rules_clones = Arc::clone(&rules_arc);
-
             let handle: JoinHandle<Vec<bool>> = spawn(async move {
                 let mut ret = vec![];
-                for rule in rules_clones.iter() {
-                    for record_info in records_arc_clone.iter() {
-                        let result = rule.select(&record_info.record);
-                        if result {
-                            rule.count(&record_info.evtx_filepath, &record_info.record);
-                        }
-                        ret.push(result);
-                        // 検知したか否かを配列に保存しておく
-                    }
+                for record_info in records_arc_clone.iter() {
+                    let result = rule.select(&record_info.record);
+                    ret.push(result);
+                    // 検知したか否かを配列に保存しておく
+                    rule.count(&record_info.evtx_filepath, &record_info.record);
                 }
                 return ret;
             });
@@ -132,22 +124,21 @@ impl Detection {
         // メッセージを追加する。これを上記のspawnの中でやると、ロックの取得で逆に時間がかかるので、外に出す
         let mut message = MESSAGES.lock().unwrap();
         let mut handles_ite = handles.into_iter();
+        let rule2 = &rule;
         for record_chunk_arc in &records_arcs {
             let mut handles_ret_ite = handles_ite.next().unwrap().await.unwrap().into_iter();
-            for rule in rules_arc.iter() {
-                for record_info_arc in record_chunk_arc.iter() {
-                    if handles_ret_ite.next().unwrap() == false {
-                        continue;
-                    }
-
-                    // TODO メッセージが多いと、rule.select()よりもこの処理の方が時間かかる。
-                    message.insert(
-                        record_info_arc.evtx_filepath.to_string(),
-                        &record_info_arc.record,
-                        rule.yaml["title"].as_str().unwrap_or("").to_string(),
-                        rule.yaml["output"].as_str().unwrap_or("").to_string(),
-                    );
+            for record_info_arc in record_chunk_arc.iter() {
+                if handles_ret_ite.next().unwrap() == false {
+                    continue;
                 }
+
+                // TODO メッセージが多いと、rule.select()よりもこの処理の方が時間かかる。
+                message.insert(
+                    record_info_arc.evtx_filepath.to_string(),
+                    &record_info_arc.record,
+                    rule2.yaml["title"].as_str().unwrap_or("").to_string(),
+                    rule2.yaml["output"].as_str().unwrap_or("").to_string(),
+                );
             }
         }
     }
