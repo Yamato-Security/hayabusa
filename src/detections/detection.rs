@@ -1,7 +1,7 @@
 extern crate csv;
 
 use serde_json::Value;
-use tokio::{spawn};
+use tokio::spawn;
 
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
@@ -45,7 +45,7 @@ impl Detection {
         }
 
         let tokio_rt = utils::create_tokio_runtime();
-        tokio_rt.block_on(Detection::execute_rules(rules,records));
+        tokio_rt.block_on(Detection::execute_rules(rules, records));
         tokio_rt.shutdown_background();
     }
 
@@ -94,11 +94,11 @@ impl Detection {
             .collect();
     }
 
-    async fn execute_rules( rules: Vec<RuleNode>, records: Vec<EvtxRecordInfo> ) {
+    async fn execute_rules(rules: Vec<RuleNode>, records: Vec<EvtxRecordInfo>) {
         let records_arc = Arc::new(records);
 
         // 各rule毎にスレッドを作成して、スレッドを起動する。
-        let handles = rules.into_iter().map( |rule| {
+        let handles = rules.into_iter().map(|rule| {
             let records_cloned = Arc::clone(&records_arc);
             return spawn(async move {
                 Detection::execute_rule(rule, records_cloned);
@@ -112,11 +112,10 @@ impl Detection {
     }
 
     // 検知ロジックを実行します。
-    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>> ) {
+    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) {
         let records = &*records;
         for record_info in records {
-            let result = rule.select(&record_info.record);
-            rule.count(&record_info.evtx_filepath, &record_info.record);
+            let result = rule.select(&record_info.evtx_filepath, &record_info.record);
             if result {
                 continue;
             }
