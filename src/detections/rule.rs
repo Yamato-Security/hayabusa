@@ -786,12 +786,123 @@ impl CountData {
             field_store_count: HashMap::new(),
         };
     }
+}
+
+/// Ruleファイルを表すノード
+pub struct RuleNode {
+    pub yaml: Yaml,
+    detection: Option<DetectionNode>,
+    countdata: HashMap<String, HashMap<String, i32>>,
+}
+
+unsafe impl Sync for RuleNode {}
+
+impl RuleNode {
+    pub fn new(yaml: Yaml) -> RuleNode {
+        return RuleNode {
+            yaml: yaml,
+            detection: Option::None,
+            countdata: HashMap::new(),
+        };
+    }
+    pub fn init(&mut self) -> Result<(), Vec<String>> {
+        let mut errmsgs: Vec<String> = vec![];
+
+        // SIGMAルールを受け入れるため、outputがなくてもOKにする。
+        // if self.yaml["output"].as_str().unwrap_or("").is_empty() {
+        //     errmsgs.push("Cannot find required key. key:output".to_string());
+        // }
+
+        // detection node initialization
+        let mut detection = DetectionNode::new();
+        let detection_result = detection.init(&self.yaml["detection"]);
+        if detection_result.is_err() {
+            errmsgs.extend(detection_result.unwrap_err());
+        }
+        self.detection = Option::Some(detection);
+
+        if errmsgs.is_empty() {
+            return Result::Ok(());
+        } else {
+            return Result::Err(errmsgs);
+        }
+    }
+
+    pub fn select(&mut self, filepath: &String, event_record: &Value) -> bool {
+        if self.detection.is_none() {
+            return false;
+        }
+
+        let result = self.detection.as_ref().unwrap().select(event_record);
+        if self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .is_some()
+            && result
+        {
+            self.count(filepath, event_record);
+        }
+        return result;
+    }
+
+    /// Aggregation Conditionに合致するレコードであるかのbool値を返す関数
+    pub fn check_satisfy_aggcondition(
+        &self,
+        filepath: &String,
+        select_result: bool,
+        record: &Value,
+    ) -> bool {
+        // selectの結果が検知なしであればcountのルールを適用してもfalse
+        if !(select_result) {
+            return false;
+        }
+        //aggregationの中身がなければ検知条件を問題なしとして判定する
+        if self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .is_none()
+        {
+            return true;
+        }
+        self.aggregation_condition_select(filepath, record);
+        return true;
+    }
+
+    /// 検知された際にカウント情報を投入する関数
+    fn count(&mut self, filepath: &String, record: &Value) {
+        let aggcondition = self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .as_ref()
+            .unwrap();
+        // recordでaliasが登録されている前提とする
+        let mut key = "".to_string();
+        if aggcondition._field_name.is_some() {
+            key.push_str(
+                &record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string(),
+            );
+        }
+        key.push_str("_");
+        if aggcondition._by_field_name.is_some() {
+            key.push_str(
+                &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
+            );
+        }
+        self.countup(filepath, &key);
+    }
+
     ///count byの条件に合致する検知済みレコードの数を増やすための関数
     pub fn countup(&mut self, filepath: &String, key: &str) {
-        self.field_store_count
+        self.countdata
             .entry(filepath.to_string())
             .or_insert(HashMap::new());
-        let value_map = self.field_store_count.get_mut(filepath).unwrap();
+        let value_map = self.countdata.get_mut(filepath).unwrap();
         value_map.entry(key.to_string()).or_insert(0);
         let prev_value = value_map[key];
         value_map.insert(key.to_string(), 1 + prev_value);
@@ -804,12 +915,8 @@ impl CountData {
         key: &str,
         aggcondition: &AggregationParseInfo,
     ) -> bool {
-        let value: i32;
-        // count回数を管理するHaspMapを読み込み権限でロック。必要な情報を取得したらロック解除を行うためライフタイム管理として中括弧でまとめた
-        {
-            let value_map = self.field_store_count.get(filepath).unwrap();
-            value = value_map[key];
-        }
+        let value_map = self.countdata.get(filepath).unwrap();
+        let value: i32 = value_map[key];
         match aggcondition._cmp_op {
             AggregationConditionToken::EQ => {
                 if value == aggcondition._cmp_num {
@@ -851,103 +958,6 @@ impl CountData {
             }
         }
     }
-}
-
-/// Ruleファイルを表すノード
-pub struct RuleNode {
-    pub yaml: Yaml,
-    detection: Option<DetectionNode>,
-    countdata: Option<CountData>,
-}
-
-unsafe impl Sync for RuleNode {}
-
-impl RuleNode {
-    pub fn new(yaml: Yaml) -> RuleNode {
-        return RuleNode {
-            yaml: yaml,
-            detection: Option::None,
-            countdata: Option::None,
-        };
-    }
-    pub fn init(&mut self) -> Result<(), Vec<String>> {
-        let mut errmsgs: Vec<String> = vec![];
-
-        // SIGMAルールを受け入れるため、outputがなくてもOKにする。
-        // if self.yaml["output"].as_str().unwrap_or("").is_empty() {
-        //     errmsgs.push("Cannot find required key. key:output".to_string());
-        // }
-
-        // detection node initialization
-        let mut detection = DetectionNode::new();
-        let detection_result = detection.init(&self.yaml["detection"]);
-        if detection_result.is_err() {
-            errmsgs.extend(detection_result.unwrap_err());
-        }
-        self.detection = Option::Some(detection);
-
-        if errmsgs.is_empty() {
-            return Result::Ok(());
-        } else {
-            return Result::Err(errmsgs);
-        }
-    }
-
-    pub fn select(&mut self, filepath: &String, event_record: &Value) -> bool {
-        if self.detection.is_none() {
-            return false;
-        }
-
-        let result = self.detection.as_ref().unwrap().select(event_record);
-        if result {
-            self.count(filepath, event_record);
-        }
-        return result;
-    }
-
-    /// Aggregation Conditionに合致するレコードであるかのbool値を返す関数
-    pub fn check_satisfy_aggcondition(
-        &self,
-        filepath: &String,
-        select_result: bool,
-        record: &Value,
-    ) -> bool {
-        // selectの結果が検知なしであればcountのルールを適用してもfalse
-        if !(select_result) {
-            return false;
-        }
-        //aggregationの中身がなければ検知条件を問題なしとして判定する
-        if self
-            .detection
-            .as_ref()
-            .unwrap()
-            .aggregation_condition
-            .is_none()
-        {
-            return true;
-        }
-        self.aggregation_condition_select(filepath, record);
-        return true;
-    }
-
-    /// 検知された際にカウント情報を投入する関数
-    pub fn count(&mut self, filepath: &String, record: &Value) {
-        let aggcondition = self
-            .detection
-            .as_ref()
-            .unwrap()
-            .aggregation_condition
-            .as_ref()
-            .unwrap();
-        // recordでaliasが登録されている前提とする
-        let mut key = record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string();
-        key.push_str("_");
-        key.push_str(
-            &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
-        );
-        self.countdata.as_ref().unwrap().countup(filepath, &key);
-    }
-
     ///現状のレコードの状態から条件式に一致しているかを判定する関数
     fn aggregation_condition_select(&self, filepath: &String, record: &Value) -> bool {
         let aggcondition = self
@@ -963,11 +973,7 @@ impl RuleNode {
         key.push_str(
             &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
         );
-        return self
-            .countdata
-            .as_ref()
-            .unwrap()
-            .select_aggcon(filepath, &key, aggcondition);
+        return self.select_aggcon(filepath, &key, aggcondition);
     }
 }
 
@@ -2027,7 +2033,6 @@ impl LeafMatcher for ContainsMatcher {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::CountData;
     use crate::detections::rule::{
         create_rule, AggregationConditionToken, AndSelectionNode, LeafSelectionNode,
         MinlengthMatcher, OrSelectionNode, RegexMatcher, RegexesFileMatcher, SelectionNode,
@@ -4817,13 +4822,19 @@ mod tests {
     #[test]
     /// countupでハッシュマップの情報がカウントアップされているかの確認
     fn test_countup() {
-        let mut countdata = CountData::new();
-        countdata.countup(&"testevtx".to_string(), &"_".to_string());
-        let value = countdata
-            .field_store_count
-            .get(&"testevtx".to_string())
-            .unwrap();
-        assert_eq!(value["_"], 1);
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 and selection3 | count() >= 1
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+        check_count(rule_str, SIMPLE_RECORD_STR, "_", 1);
     }
 
     fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
@@ -4855,6 +4866,36 @@ mod tests {
                 assert_eq!(
                     rule_node.select(&"testpath".to_string(), &record),
                     expect_select
+                );
+            }
+            Err(_rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    /// countで対象の数値確認を行うためのテスト用関数
+    fn check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let mut test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule(test);
+        let resinit = rule_node.init();
+        match serde_json::from_str(record_str) {
+            Ok(record) => {
+                let result = rule_node.select(&"testpath".to_string(), &record);
+                assert_eq!(
+                    rule_node.detection.unwrap().aggregation_condition.is_some(),
+                    true
+                );
+                assert_eq!(result, true);
+                assert_eq!(
+                    rule_node
+                        .countdata
+                        .get("testpath")
+                        .unwrap()
+                        .get(key)
+                        .unwrap(),
+                    &expect_count
                 );
             }
             Err(_rec) => {
