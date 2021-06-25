@@ -848,13 +848,15 @@ impl RuleNode {
     }
 
     /// Aggregation Conditionに合致するレコードであるかのbool値を返す関数
-    pub fn check_satisfy_aggcondition(
+    pub fn judge_satisfy_aggcondition(
         &self,
         filepath: &String,
-        select_result: bool,
+        select_result: &bool,
         record: &Value,
     ) -> bool {
+        println!("[DEBUG] judge start");
         // selectの結果が検知なしであればcountのルールを適用してもfalse
+        println!("{:?}", select_result);
         if !(select_result) {
             return false;
         }
@@ -866,10 +868,11 @@ impl RuleNode {
             .aggregation_condition
             .is_none()
         {
+            println!("[DEBUG] aggregation_condition is none!");
             return true;
         }
-        self.aggregation_condition_select(filepath, record);
-        return true;
+        println!("[DEBUG]lets condition select!");
+        return self.aggregation_condition_select(filepath, record);
     }
 
     /// 検知された際にカウント情報を投入する関数
@@ -917,6 +920,8 @@ impl RuleNode {
     ) -> bool {
         let value_map = self.countdata.get(filepath).unwrap();
         let value: i32 = value_map[key];
+        println!("[DEBUG]value {:?}", value);
+        println!("[DEBUG]valuemap {:?}", value_map);
         match aggcondition._cmp_op {
             AggregationConditionToken::EQ => {
                 if value == aggcondition._cmp_num {
@@ -968,11 +973,15 @@ impl RuleNode {
             .as_ref()
             .unwrap();
         // recordでaliasが登録されている前提とする
-        let mut key = record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string();
+        let mut key = String::new();
+        if aggcondition._field_name.is_some() {
+            key.push_str(&record[aggcondition._field_name.as_ref().unwrap()].to_string());
+        }
         key.push_str("_");
-        key.push_str(
-            &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
-        );
+        if aggcondition._by_field_name.is_some() {
+            key.push_str(&record[aggcondition._by_field_name.as_ref().unwrap()].to_string());
+        }
+        println!("[DEGUG]{:?}", key);
         return self.select_aggcon(filepath, &key, aggcondition);
     }
 }
@@ -1033,8 +1042,10 @@ impl DetectionNode {
         self.parse_name_to_selection(detection_yaml)?;
 
         //timeframeに指定されている値を取得
-        // TODO timeframeの値を解析して格納する関数の呼び出し
         let timeframe = &detection_yaml["timeframe"].as_str();
+        if timeframe.is_some() {
+            self.timeframe = Some(TimeFrameInfo::parse_tframe(timeframe.unwrap().to_string()));
+        }
 
         // conditionに指定されている式を取得
         let condition = &detection_yaml["condition"].as_str();
@@ -4837,6 +4848,41 @@ mod tests {
         check_count(rule_str, SIMPLE_RECORD_STR, "_", 1);
     }
 
+    #[test]
+    /// count内の引数に有効な条件が指定されている場合
+    fn count_include_arg() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 and selection3 | count(EventID) >= 1
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule(test);
+        let init_result = rule_node.init();
+        assert_eq!(init_result.is_ok(), true);
+        match serde_json::from_str(SIMPLE_RECORD_STR) {
+            Ok(record) => {
+                let result = rule_node.select(&"testpath".to_string(), &record);
+                assert_eq!(
+                    true,
+                    rule_node.judge_satisfy_aggcondition(&"testpath".to_string(), &result, &record)
+                );
+            }
+            Err(_rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
     fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile(expr);
@@ -4873,13 +4919,12 @@ mod tests {
             }
         }
     }
-
     /// countで対象の数値確認を行うためのテスト用関数
     fn check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut test = rule_yaml.next().unwrap();
+        let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule(test);
-        let resinit = rule_node.init();
+        let _init = rule_node.init();
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let result = rule_node.select(&"testpath".to_string(), &record);
