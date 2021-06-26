@@ -854,7 +854,6 @@ impl RuleNode {
         select_result: &bool,
         record: &Value,
     ) -> bool {
-        println!("[DEBUG] judge start");
         // selectの結果が検知なしであればcountのルールを適用してもfalse
         println!("{:?}", select_result);
         if !(select_result) {
@@ -868,10 +867,8 @@ impl RuleNode {
             .aggregation_condition
             .is_none()
         {
-            println!("[DEBUG] aggregation_condition is none!");
             return true;
         }
-        println!("[DEBUG]lets condition select!");
         return self.aggregation_condition_select(filepath, record);
     }
 
@@ -887,15 +884,15 @@ impl RuleNode {
         // recordでaliasが登録されている前提とする
         let mut key = "".to_string();
         if aggcondition._field_name.is_some() {
-            key.push_str(
-                &record[aggcondition._field_name.as_ref().unwrap().to_string()].to_string(),
-            );
+            let field_value = aggcondition._field_name.as_ref().unwrap();
+            let converted_value = utils::get_record_data_by_alias(field_value, record);
+            key.push_str(&converted_value.replace("\"", ""));
         }
         key.push_str("_");
         if aggcondition._by_field_name.is_some() {
-            key.push_str(
-                &record[aggcondition._by_field_name.as_ref().unwrap().to_string()].to_string(),
-            );
+            let by_field_value = aggcondition._by_field_name.as_ref().unwrap();
+            let converted_by_value = utils::get_record_data_by_alias(by_field_value, record);
+            key.push_str(&converted_by_value.replace("\"", ""));
         }
         self.countup(filepath, &key);
     }
@@ -920,8 +917,6 @@ impl RuleNode {
     ) -> bool {
         let value_map = self.countdata.get(filepath).unwrap();
         let value: i32 = value_map[key];
-        println!("[DEBUG]value {:?}", value);
-        println!("[DEBUG]valuemap {:?}", value_map);
         match aggcondition._cmp_op {
             AggregationConditionToken::EQ => {
                 if value == aggcondition._cmp_num {
@@ -975,13 +970,16 @@ impl RuleNode {
         // recordでaliasが登録されている前提とする
         let mut key = String::new();
         if aggcondition._field_name.is_some() {
-            key.push_str(&record[aggcondition._field_name.as_ref().unwrap()].to_string());
+            let field_value = aggcondition._field_name.as_ref().unwrap();
+            let converted_value = utils::get_record_data_by_alias(field_value, record);
+            key.push_str(&converted_value.replace("\"", ""));
         }
         key.push_str("_");
         if aggcondition._by_field_name.is_some() {
-            key.push_str(&record[aggcondition._by_field_name.as_ref().unwrap()].to_string());
+            let by_field_value = aggcondition._by_field_name.as_ref().unwrap();
+            let converted_by_value = utils::get_record_data_by_alias(by_field_value, record);
+            key.push_str(&converted_by_value);
         }
-        println!("[DEGUG]{:?}", key);
         return self.select_aggcon(filepath, &key, aggcondition);
     }
 }
@@ -4846,6 +4844,24 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
         check_count(rule_str, SIMPLE_RECORD_STR, "_", 1);
+    }
+
+    #[test]
+    /// countupでハッシュマップの情報がカウントアップされているかの確認
+    fn test_countup_field() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 and selection3 | count(Channel) >= 1
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+        check_count(rule_str, SIMPLE_RECORD_STR, "System_", 1);
     }
 
     #[test]
