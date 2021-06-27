@@ -1,12 +1,12 @@
 extern crate regex;
 
-use chrono::DateTime;
-use chrono::Utc;
+use chrono::{DateTime, TimeZone, Utc};
 use mopa::mopafy;
 use std::num::ParseIntError;
 
 use std::{collections::HashMap, sync::Arc, vec};
 
+use crate::detections::print::Message;
 use crate::detections::utils;
 
 use regex::Regex;
@@ -792,7 +792,7 @@ impl CountData {
 pub struct RuleNode {
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
-    countdata: HashMap<String, HashMap<String, i32>>,
+    countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
 }
 
 unsafe impl Sync for RuleNode {}
@@ -894,18 +894,24 @@ impl RuleNode {
             let converted_by_value = utils::get_record_data_by_alias(by_field_value, record);
             key.push_str(&converted_by_value.replace("\"", ""));
         }
-        self.countup(filepath, &key);
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        self.countup(
+            filepath,
+            &key,
+            Message::get_event_time(record).unwrap_or(default_time),
+        );
     }
 
     ///count byの条件に合致する検知済みレコードの数を増やすための関数
-    pub fn countup(&mut self, filepath: &String, key: &str) {
+    pub fn countup(&mut self, filepath: &String, key: &str, record_time_value: DateTime<Utc>) {
         self.countdata
             .entry(filepath.to_string())
             .or_insert(HashMap::new());
         let value_map = self.countdata.get_mut(filepath).unwrap();
-        value_map.entry(key.to_string()).or_insert(0);
-        let prev_value = value_map[key];
-        value_map.insert(key.to_string(), 1 + prev_value);
+        value_map.entry(key.to_string()).or_insert(Vec::new());
+        let mut prev_value = value_map[key].clone();
+        prev_value.push(record_time_value);
+        value_map.insert(key.to_string(), prev_value);
     }
 
     /// conditionのパイプ以降の処理をAggregationParseInfoを参照し、conditionの条件を満たすか判定するための関数
@@ -916,38 +922,38 @@ impl RuleNode {
         aggcondition: &AggregationParseInfo,
     ) -> bool {
         let value_map = self.countdata.get(filepath).unwrap();
-        let value: i32 = value_map[key];
+        let value = &value_map[key];
         match aggcondition._cmp_op {
             AggregationConditionToken::EQ => {
-                if value == aggcondition._cmp_num {
+                if (value.len() as i32) == aggcondition._cmp_num {
                     return true;
                 } else {
                     return false;
                 }
             }
             AggregationConditionToken::GE => {
-                if value >= aggcondition._cmp_num {
+                if (value.len() as i32) >= aggcondition._cmp_num {
                     return true;
                 } else {
                     return false;
                 }
             }
             AggregationConditionToken::GT => {
-                if value > aggcondition._cmp_num {
+                if (value.len() as i32) > aggcondition._cmp_num {
                     return true;
                 } else {
                     return false;
                 }
             }
             AggregationConditionToken::LE => {
-                if value <= aggcondition._cmp_num {
+                if (value.len() as i32) <= aggcondition._cmp_num {
                     return true;
                 } else {
                     return false;
                 }
             }
             AggregationConditionToken::LT => {
-                if value < aggcondition._cmp_num {
+                if (value.len() as i32) < aggcondition._cmp_num {
                     return true;
                 } else {
                     return false;
@@ -4831,6 +4837,22 @@ mod tests {
     #[test]
     /// countupでハッシュマップの情報がカウントアップされているかの確認
     fn test_countup() {
+        let record_str: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
         let rule_str = r#"
         enabled: true
         detection:
@@ -4843,7 +4865,7 @@ mod tests {
             condition: selection1 and selection2 and selection3 | count() >= 1
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
-        check_count(rule_str, SIMPLE_RECORD_STR, "_", 1);
+        check_count(rule_str, record_str, "_", 1);
     }
 
     #[test]
@@ -4950,13 +4972,14 @@ mod tests {
                 );
                 assert_eq!(result, true);
                 assert_eq!(
-                    rule_node
+                    *&rule_node
                         .countdata
                         .get("testpath")
                         .unwrap()
                         .get(key)
-                        .unwrap(),
-                    &expect_count
+                        .unwrap()
+                        .len() as i32,
+                    expect_count
                 );
             }
             Err(_rec) => {
