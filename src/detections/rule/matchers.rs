@@ -445,10 +445,10 @@ mod tests {
     use crate::detections::rule::matchers::{
         MinlengthMatcher, RegexMatcher, RegexesFileMatcher, WhitelistFileMatcher,
     };
-    use crate::detections::rule::{
-        tests::parse_rule_from_str, AndSelectionNode, LeafSelectionNode, OrSelectionNode,
-        SelectionNode,
+    use crate::detections::rule::selectionnodes::{
+        AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
+    use crate::detections::rule::tests::parse_rule_from_str;
 
     #[test]
     fn test_rule_parse() {
