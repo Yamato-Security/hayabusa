@@ -421,3 +421,192 @@ impl SelectionNode for LeafSelectionNode {
         return vec![];
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::detections::rule::matchers::{
+        MinlengthMatcher, RegexMatcher, RegexesFileMatcher, WhitelistFileMatcher,
+    };
+    use crate::detections::rule::selectionnodes::{
+        AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
+    };
+    use crate::detections::rule::tests::parse_rule_from_str;
+
+    #[test]
+    fn test_detect_mutiple_regex_and() {
+        // AND条件が正しく検知することを確認する。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4103
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_mutiple_regex_and() {
+        // AND条件で一つでも条件に一致しないと、検知しないことを確認
+        // この例ではComputerの値が異なっている。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4103
+                Computer: DESKTOP-ICHIICHIN
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_or() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    - PowerShell
+                    - Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_or2() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    - PowerShell
+                    - Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "PowerShell", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_or() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    - PowerShell
+                    - Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "not detect", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_casesensetive() {
+        // OR条件が正しく検知できることを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"DESKTOP-ICHIICHI"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+}
