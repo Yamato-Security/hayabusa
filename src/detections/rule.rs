@@ -1,5 +1,6 @@
 extern crate regex;
 
+use std::collections::VecDeque;
 use mopa::mopafy;
 
 use std::{collections::HashMap, sync::Arc, vec};
@@ -1263,10 +1264,11 @@ impl LeafSelectionNode {
     /// 上から順番に調べて、一番始めに一致したMatcherが適用される
     fn get_matchers(&self) -> Vec<Box<dyn LeafMatcher>> {
         return vec![
-            Box::new(RegexMatcher::new()),
             Box::new(MinlengthMatcher::new()),
             Box::new(RegexesFileMatcher::new()),
             Box::new(WhitelistFileMatcher::new()),
+            Box::new(RegexMatcher::new()),
+            Box::new(DefaultMatcher::new()),
         ];
     }
 }
@@ -1305,7 +1307,6 @@ impl SelectionNode for LeafSelectionNode {
 
             // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
             let eventdata_data = values.unwrap();
-
             if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
             {
                 return self
@@ -1337,29 +1338,7 @@ impl SelectionNode for LeafSelectionNode {
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        let mut fixed_key_list = Vec::new(); // |xx を排除したkey_listを作成する
-        for key in &self.key_list {
-            if key.contains('|') {
-                let v: Vec<&str> = key.split('|').collect();
-                self.matcher = match v[1] {
-                    "startswith" => Some(Box::new(StartsWithMatcher::new())),
-                    "endswith" => Some(Box::new(EndsWithMatcher::new())),
-                    "contains" => Some(Box::new(ContainsMatcher::new())),
-                    _ => {
-                        return Result::Err(vec![format!(
-                            "Found unknown key option. option: {}",
-                            v[1]
-                        )])
-                    }
-                };
-                fixed_key_list.push(v[0].to_string());
-            } else {
-                fixed_key_list.push(key.to_string());
-            }
-        }
-        self.key_list = fixed_key_list;
-        let mut match_key_list = self.key_list.clone();
-        match_key_list.remove(0);
+        let match_key_list = self.key_list.clone();
         if self.matcher.is_none() {
             let matchers = self.get_matchers();
             self.matcher = matchers
@@ -1432,15 +1411,11 @@ impl RegexMatcher {
 
 impl LeafMatcher for RegexMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        if key_list.is_empty() {
-            return true;
-        }
-
-        if key_list.len() == 1 {
-            return key_list.get(0).unwrap_or(&"".to_string()) == &"regex".to_string();
-        } else {
+        if key_list.len() != 2 {
             return false;
         }
+
+        return key_list.get(1).unwrap_or(&"".to_string()) == &"re".to_string();
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -1516,11 +1491,11 @@ impl MinlengthMatcher {
 
 impl LeafMatcher for MinlengthMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        if key_list.len() != 1 {
+        if key_list.len() != 2 {
             return false;
         }
 
-        return key_list.get(0).unwrap() == "min_length";
+        return key_list.get(1).unwrap() == "min_length";
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -1562,11 +1537,11 @@ impl RegexesFileMatcher {
 
 impl LeafMatcher for RegexesFileMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        if key_list.len() != 1 {
+        if key_list.len() != 2 {
             return false;
         }
 
-        return key_list.get(0).unwrap() == "regexes";
+        return key_list.get(1).unwrap() == "regexes";
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -1598,6 +1573,7 @@ impl LeafMatcher for RegexesFileMatcher {
     }
 
     fn is_match(&self, event_value: Option<&Value>) -> bool {
+        //TODO Wildcardの場合、CaseInsensitiveなので、ToLowerする。
         return match event_value.unwrap_or(&Value::Null) {
             Value::String(s) => !utils::check_regex(s, 0, &self.regexes_csv_content).is_empty(),
             Value::Number(n) => {
@@ -1624,11 +1600,11 @@ impl WhitelistFileMatcher {
 
 impl LeafMatcher for WhitelistFileMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        if key_list.len() != 1 {
+        if key_list.len() != 2 {
             return false;
         }
 
-        return key_list.get(0).unwrap() == "whitelist";
+        return key_list.get(1).unwrap() == "whitelist";
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -1671,23 +1647,30 @@ impl LeafMatcher for WhitelistFileMatcher {
     }
 }
 
-/// 指定された文字列で始まるか調べるクラス
-struct StartsWithMatcher {
-    start_text: String,
+// デフォルトのマッチクラス
+struct DefaultMatcher {
+    re: Option<Regex>,
+    pipes: Vec<PipeElement>,
 }
 
-impl StartsWithMatcher {
-    fn new() -> StartsWithMatcher {
-        return StartsWithMatcher {
-            start_text: String::from(""),
+impl DefaultMatcher {
+    fn new() -> DefaultMatcher {
+        return DefaultMatcher {
+            re: Option::None,
+            pipes: Vec::new()
         };
+    }
+
+    fn is_regex_fullmatch(&self, value: String) -> bool {
+        return self.re.as_ref().unwrap().find_iter(&value).any(|match_obj| {
+            return match_obj.as_str().to_string() == value;
+        });
     }
 }
 
-impl LeafMatcher for StartsWithMatcher {
-    fn is_target_key(&self, _: &Vec<String>) -> bool {
-        // ContextInfo|startswith のような場合にLeafをStartsWithMatcherにする。
-        return false;
+impl LeafMatcher for DefaultMatcher {
+    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
+        return key_list.len() == 1;
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -1695,7 +1678,7 @@ impl LeafMatcher for StartsWithMatcher {
             return Result::Ok(());
         }
 
-        // stringに変換
+        // patternをパースする
         let yaml_value = match select_value {
             Yaml::Boolean(b) => Option::Some(b.to_string()),
             Yaml::Integer(i) => Option::Some(i.to_string()),
@@ -1710,126 +1693,140 @@ impl LeafMatcher for StartsWithMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
+        let pattern = yaml_value.unwrap();
 
-        self.start_text = yaml_value.unwrap();
-        return Result::Ok(());
-    }
+        // Pipeが指定されていればパースする
+        let mut keys : VecDeque<&str> = key_list.get(0).unwrap().split("|").collect();// key_listが空はあり得ない
+        keys.pop_front();
+        while !keys.is_empty() {
+            let key = keys.pop_front().unwrap();
+            let pipe_element = match key {
+                "startswith" => Option::Some(PipeElement::Startswith),
+                "endswith" => Option::Some(PipeElement::Endswith),
+                "contains" => Option::Some(PipeElement::Contains),
+                "re"=> Option::Some(PipeElement::Re),
+                _ => Option::None,
+            };
+            if pipe_element.is_none() {
+                let errmsg = format!("unknown pipe element was specified. key:{}", concat_selection_key(key_list));
+                return Result::Err(vec![errmsg]);
+            }
 
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
-        // 調査する文字列がself.start_textで始まるならtrueを返す
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => s.starts_with(&self.start_text),
-            Value::Number(n) => n.to_string().starts_with(&self.start_text),
-            _ => false,
-        };
-    }
-}
-
-/// 指定された文字列で終わるか調べるクラス
-struct EndsWithMatcher {
-    end_text: String,
-}
-
-impl EndsWithMatcher {
-    fn new() -> EndsWithMatcher {
-        return EndsWithMatcher {
-            end_text: String::from(""),
-        };
-    }
-}
-
-impl LeafMatcher for EndsWithMatcher {
-    fn is_target_key(&self, _: &Vec<String>) -> bool {
-        // ContextInfo|endswith のような場合にLeafをEndsWithMatcherにする。
-        return false;
-    }
-
-    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
-        if select_value.is_null() {
-            return Result::Ok(());
+            self.pipes.push(pipe_element.unwrap());
+        }
+        if self.pipes.len() >= 2 {
+            // 現状では複数のパイプは対応していない
+            let errmsg = format!("multiple pipe element can't be used. key:{}", concat_selection_key(key_list));
+            return Result::Err(vec![errmsg]);
+        }
+        let is_re = &self.pipes.iter().any(| pipe_element| { 
+            return match pipe_element {
+                PipeElement::Re => true,
+                _ => false,
+            };
+        });
+        // 正規表現ではない場合、ワイルドカードであることを表す。
+        // ワイルドカードは正規表現でマッチングするので、ワイルドカードを正規表現に変換するPipeを内部的に追加することにする。
+        if !is_re {
+            self.pipes.push(PipeElement::Wildcard);
         }
 
-        // stringに変換
-        let yaml_value = match select_value {
-            Yaml::Boolean(b) => Option::Some(b.to_string()),
-            Yaml::Integer(i) => Option::Some(i.to_string()),
-            Yaml::Real(r) => Option::Some(r.to_string()),
-            Yaml::String(s) => Option::Some(s.to_owned()),
-            _ => Option::None,
-        };
-        if yaml_value.is_none() {
+        // パターンをPipeで処理する。
+        let pattern = &self.pipes.iter().fold(pattern,|acc, pipe| {
+            return pipe.pipe_pattern(acc);
+        });
+
+        // Pipeで処理されたパターンを正規表現に変換
+        let re_result = Regex::new(pattern);
+        if re_result.is_err() {
             let errmsg = format!(
-                "unknown error occured. [key:{}]",
+                "cannot parse regex. [regex:{}, key:{}]",
+                pattern,
                 concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
+        self.re = re_result.ok();
 
-        self.end_text = yaml_value.unwrap();
         return Result::Ok(());
     }
 
     fn is_match(&self, event_value: Option<&Value>) -> bool {
-        // 調査する文字列がself.end_textで終わるならtrueを返す
+        // unwrap_orの引数に""ではなく" "を指定しているのは、
+        // event_valueが文字列じゃない場合にis_event_value_nullの値がfalseになるように、len() == 0とならない値を指定している。
+        let is_event_value_null = event_value.is_none()
+            || event_value.unwrap().is_null()
+            || event_value.unwrap().as_str().unwrap_or(" ").len() == 0;
+
+        // yamlにnullが設定されていた場合
+        if self.re.is_none() {
+            return is_event_value_null;
+        }
+
         return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => s.ends_with(&self.end_text),
-            Value::Number(n) => n.to_string().ends_with(&self.end_text),
+            Value::Bool(b) => self.is_regex_fullmatch( b.to_string()),
+            Value::String(s) => self.is_regex_fullmatch( s.to_owned()),
+            Value::Number(n) => self.is_regex_fullmatch( n.to_string()),
             _ => false,
         };
     }
 }
 
-/// 指定された文字列が含まれるか調べるクラス
-struct ContainsMatcher {
-    pattern: String,
+/// パイプ(|)で指定される要素を表すクラス。 
+enum PipeElement {
+    Startswith,
+    Endswith,
+    Contains,
+    Re,
+    Wildcard,
 }
 
-impl ContainsMatcher {
-    fn new() -> ContainsMatcher {
-        return ContainsMatcher {
-            pattern: String::from(""),
+impl PipeElement {
+    /// patternをパイプ処理します
+    fn pipe_pattern(&self, pattern:String ) -> String {
+        // enumでポリモーフィズムを実装すると、一つのメソッドに全部の型の実装をする感じになる。Java使い的にはキモイ感じがする。
+        let fn_add_asterisk_end = | patt: String | {
+            if patt.ends_with("//*") {
+                return patt;
+            } else if patt.ends_with("/*") {
+                return patt + "*";
+            } else if patt.ends_with("*") {
+                return patt;
+            } else {
+                return patt + "*";
+            }
         };
-    }
-}
-
-impl LeafMatcher for ContainsMatcher {
-    fn is_target_key(&self, _: &Vec<String>) -> bool {
-        // ContextInfo|contains のような場合にLeafをContainsMatcherにする。
-        return false;
-    }
-
-    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
-        if select_value.is_null() {
-            return Result::Ok(());
-        }
-
-        // stringに変換
-        let yaml_value = match select_value {
-            Yaml::Boolean(b) => Option::Some(b.to_string()),
-            Yaml::Integer(i) => Option::Some(i.to_string()),
-            Yaml::Real(r) => Option::Some(r.to_string()),
-            Yaml::String(s) => Option::Some(s.to_owned()),
-            _ => Option::None,
+        let fn_add_asterisk_begin = | patt: String | {
+            if patt.starts_with("//*") {
+                return patt;
+            } else if patt.starts_with("/*") {
+                return "*".to_string() + &patt;
+            } else if patt.starts_with("*") {
+                return patt;
+            } else {
+                return "*".to_string() + &patt;
+            }    
         };
-        if yaml_value.is_none() {
-            let errmsg = format!(
-                "unknown error occured. [key:{}]",
-                concat_selection_key(key_list)
-            );
-            return Result::Err(vec![errmsg]);
-        }
 
-        self.pattern = yaml_value.unwrap();
-        return Result::Ok(());
+        let val:String = match self {
+            // startswithの場合はpatternの最後にwildcardを足すことで対応する
+            PipeElement::Startswith => fn_add_asterisk_end(pattern),
+            // endswithの場合はpatternの最初にwildcardを足すことで対応する
+            PipeElement::Endswith => fn_add_asterisk_end(pattern),
+            // containsの場合はpatternの前後にwildcardを足すことで対応する
+            PipeElement::Contains => fn_add_asterisk_end(fn_add_asterisk_begin(pattern)),
+            // 正規表現の場合は特に処理する必要無い
+            PipeElement::Re => pattern,
+            // WildCardは正規表現に変換する。
+            PipeElement::Wildcard => PipeElement::pipe_wildcard(pattern)
+        };
+        return val;
     }
 
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
-        // 調査する文字列にself.patternが含まれるならtrueを返す
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => s.contains(&self.pattern),
-            Value::Number(n) => n.to_string().contains(&self.pattern),
-            _ => false,
-        };
+    /// PipeElement::Wildcardのパイプ処理です。
+    /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
+    fn pipe_wildcard( pattern:String ) -> String {
+
     }
 }
 
