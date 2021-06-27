@@ -5,16 +5,6 @@ use yaml_rust::Yaml;
 use crate::detections::utils;
 use mopa::mopafy;
 
-// TODO: 一時的に置いてるやつ
-fn concat_selection_key(key_list: &Vec<String>) -> String {
-    return key_list
-        .iter()
-        .fold("detection -> selection".to_string(), |mut acc, cur| {
-            acc = acc + " -> " + cur;
-            return acc;
-        });
-}
-
 // 末端ノードがEventLogの値を比較するロジックを表す。
 // 正規条件のマッチや文字数制限など、比較ロジック毎にこのtraitを実装したクラスが存在する。
 //
@@ -78,7 +68,7 @@ impl LeafMatcher for RegexMatcher {
         if yaml_value.is_none() {
             let errmsg = format!(
                 "unknown error occured. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -90,7 +80,7 @@ impl LeafMatcher for RegexMatcher {
             let errmsg = format!(
                 "cannot parse regex. [regex:{}, key:{}]",
                 yaml_str,
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -145,7 +135,7 @@ impl LeafMatcher for MinlengthMatcher {
         if min_length.is_none() {
             let errmsg = format!(
                 "min_length value should be Integer. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -196,7 +186,7 @@ impl LeafMatcher for RegexesFileMatcher {
         if value.is_none() {
             let errmsg = format!(
                 "regexes value should be String. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -205,7 +195,7 @@ impl LeafMatcher for RegexesFileMatcher {
         if csv_content.is_err() {
             let errmsg = format!(
                 "cannot read regexes file. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -258,7 +248,7 @@ impl LeafMatcher for WhitelistFileMatcher {
         if value.is_none() {
             let errmsg = format!(
                 "whitelist value should be String. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -267,7 +257,7 @@ impl LeafMatcher for WhitelistFileMatcher {
         if csv_content.is_err() {
             let errmsg = format!(
                 "cannot read whitelist file. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -323,7 +313,7 @@ impl LeafMatcher for StartsWithMatcher {
         if yaml_value.is_none() {
             let errmsg = format!(
                 "unknown error occured. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -377,7 +367,7 @@ impl LeafMatcher for EndsWithMatcher {
         if yaml_value.is_none() {
             let errmsg = format!(
                 "unknown error occured. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -431,7 +421,7 @@ impl LeafMatcher for ContainsMatcher {
         if yaml_value.is_none() {
             let errmsg = format!(
                 "unknown error occured. [key:{}]",
-                concat_selection_key(key_list)
+                utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
@@ -450,27 +440,15 @@ impl LeafMatcher for ContainsMatcher {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::{
-        create_rule, AndSelectionNode, LeafSelectionNode, SelectionNode, OrSelectionNode, RuleNode
-    };
     use crate::detections::rule::matchers::{
-        MinlengthMatcher, RegexesFileMatcher, WhitelistFileMatcher, RegexMatcher
+        MinlengthMatcher, RegexMatcher, RegexesFileMatcher, WhitelistFileMatcher,
     };
-    use yaml_rust::YamlLoader;
-
-    // TODO: 消すどこかにまとめる
-    fn parse_rule_from_str(rule_str: &str) -> RuleNode {
-        let rule_yaml = YamlLoader::load_from_str(rule_str);
-        assert_eq!(rule_yaml.is_ok(), true);
-        let rule_yamls = rule_yaml.unwrap();
-        let mut rule_yaml = rule_yamls.into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
-        assert_eq!(rule_node.init().is_ok(), true);
-        return rule_node;
-    }
+    use crate::detections::rule::{
+        tests::parse_rule_from_str, AndSelectionNode, LeafSelectionNode, OrSelectionNode,
+        SelectionNode,
+    };
 
     #[test]
     fn test_rule_parse() {

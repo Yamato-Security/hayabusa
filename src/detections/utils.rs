@@ -14,6 +14,15 @@ use std::io::prelude::*;
 use std::str;
 use std::string::String;
 
+pub fn concat_selection_key(key_list: &Vec<String>) -> String {
+    return key_list
+        .iter()
+        .fold("detection -> selection".to_string(), |mut acc, cur| {
+            acc = acc + " -> " + cur;
+            return acc;
+        });
+}
+
 pub fn check_regex(
     string: &str,
     r#type: usize,

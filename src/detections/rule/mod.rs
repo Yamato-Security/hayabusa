@@ -17,15 +17,6 @@ pub fn create_rule(yaml: Yaml) -> RuleNode {
     return RuleNode::new(yaml);
 }
 
-fn concat_selection_key(key_list: &Vec<String>) -> String {
-    return key_list
-        .iter()
-        .fold("detection -> selection".to_string(), |mut acc, cur| {
-            acc = acc + " -> " + cur;
-            return acc;
-        });
-}
-
 #[derive(Debug, Clone)]
 /// 字句解析で出てくるトークン
 pub enum ConditionToken {
@@ -1374,14 +1365,14 @@ impl SelectionNode for LeafSelectionNode {
         if self.matcher.is_none() {
             return Result::Err(vec![format!(
                 "Found unknown key. key:{}",
-                concat_selection_key(&match_key_list)
+                utils::concat_selection_key(&match_key_list)
             )]);
         }
 
         if self.select_value.is_badvalue() {
             return Result::Err(vec![format!(
                 "Cannot parse yaml file. key:{}",
-                concat_selection_key(&match_key_list)
+                utils::concat_selection_key(&match_key_list)
             )]);
         }
 
@@ -1401,15 +1392,22 @@ impl SelectionNode for LeafSelectionNode {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::{
-        create_rule, AggregationConditionToken
-    };
+    use crate::detections::rule::{create_rule, AggregationConditionToken};
     use yaml_rust::YamlLoader;
 
     use super::{AggegationConditionCompiler, RuleNode};
+
+    pub fn parse_rule_from_str(rule_str: &str) -> RuleNode {
+        let rule_yaml = YamlLoader::load_from_str(rule_str);
+        assert_eq!(rule_yaml.is_ok(), true);
+        let rule_yamls = rule_yaml.unwrap();
+        let mut rule_yaml = rule_yamls.into_iter();
+        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+        assert_eq!(rule_node.init().is_ok(), true);
+        return rule_node;
+    }
 
     const SIMPLE_RECORD_STR: &str = r#"
     {
@@ -2348,16 +2346,6 @@ mod tests {
                 assert!(false, "failed to parse json record.");
             }
         }
-    }
-
-    fn parse_rule_from_str(rule_str: &str) -> RuleNode {
-        let rule_yaml = YamlLoader::load_from_str(rule_str);
-        assert_eq!(rule_yaml.is_ok(), true);
-        let rule_yamls = rule_yaml.unwrap();
-        let mut rule_yaml = rule_yamls.into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
-        assert_eq!(rule_node.init().is_ok(), true);
-        return rule_node;
     }
 
     #[test]
