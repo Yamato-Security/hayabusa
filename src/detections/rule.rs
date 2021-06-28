@@ -1,7 +1,7 @@
 extern crate regex;
 
-use std::collections::VecDeque;
 use mopa::mopafy;
+use std::collections::VecDeque;
 
 use std::{collections::HashMap, sync::Arc, vec};
 
@@ -601,7 +601,6 @@ impl AggegationConditionCompiler {
             .replacen("|", "", 1);
 
         let tokens = self.tokenize(aggregation_str)?;
-
         return self.parse(tokens);
     }
 
@@ -1248,7 +1247,9 @@ impl LeafSelectionNode {
             return String::default();
         }
 
-        return self.key_list[0].to_string();
+        let topkey = self.key_list[0].to_string();
+        let values: Vec<&str> = topkey.split("|").collect();
+        return values[0].to_string();
     }
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
@@ -1267,7 +1268,6 @@ impl LeafSelectionNode {
             Box::new(MinlengthMatcher::new()),
             Box::new(RegexesFileMatcher::new()),
             Box::new(WhitelistFileMatcher::new()),
-            Box::new(RegexMatcher::new()),
             Box::new(DefaultMatcher::new()),
         ];
     }
@@ -1299,7 +1299,7 @@ impl SelectionNode for LeafSelectionNode {
                     ]
                 }
         */
-        if self.key_list.len() > 0 && self.key_list[0].to_string() == "EventData" {
+        if self.get_key() == "EventData" {
             let values = utils::get_event_value(&"Event.EventData.Data".to_string(), event_record);
             if values.is_none() {
                 return self.matcher.as_ref().unwrap().is_match(Option::None);
@@ -1383,100 +1383,19 @@ impl SelectionNode for LeafSelectionNode {
 // 新規にLeafMatcherを実装するクラスを作成した場合、
 // LeafSelectionNodeのget_matchersクラスの戻り値の配列に新規作成したクラスのインスタンスを追加する。
 trait LeafMatcher: mopa::Any {
+    /// 指定されたkey_listにマッチするLeafMatcherであるかどうか判定する。
     fn is_target_key(&self, key_list: &Vec<String>) -> bool;
 
+    /// 引数に指定されたJSON形式のデータがマッチするかどうか判定する。
+    /// main.rsでWindows Event LogをJSON形式に変換していて、そのJSON形式のWindowsのイベントログデータがここには来る
+    /// 例えば正規表現でマッチするロジックなら、ここに正規表現でマッチさせる処理を書く。
     fn is_match(&self, event_value: Option<&Value>) -> bool;
 
+    /// 初期化ロジックをここに記載します。
+    /// ルールファイルの書き方が間違っている等の原因により、正しくルールファイルからパースできない場合、戻り値のResult型でエラーを返してください。
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
 }
 mopafy!(LeafMatcher);
-
-/// 正規表現で比較するロジックを表すクラス
-struct RegexMatcher {
-    re: Option<Regex>,
-}
-
-impl RegexMatcher {
-    fn new() -> RegexMatcher {
-        return RegexMatcher {
-            re: Option::None, // empty
-        };
-    }
-    fn is_regex_fullmatch(&self, re: &Regex, value: String) -> bool {
-        return re.find_iter(&value).any(|match_obj| {
-            return match_obj.as_str().to_string() == value;
-        });
-    }
-}
-
-impl LeafMatcher for RegexMatcher {
-    fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        if key_list.len() != 2 {
-            return false;
-        }
-
-        return key_list.get(1).unwrap_or(&"".to_string()) == &"re".to_string();
-    }
-
-    fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
-        if select_value.is_null() {
-            self.re = Option::None;
-            return Result::Ok(());
-        }
-
-        // stringで比較する。
-        let yaml_value = match select_value {
-            Yaml::Boolean(b) => Option::Some(b.to_string()),
-            Yaml::Integer(i) => Option::Some(i.to_string()),
-            Yaml::Real(r) => Option::Some(r.to_string()),
-            Yaml::String(s) => Option::Some(s.to_owned()),
-            _ => Option::None,
-        };
-        // ここには来ないはず
-        if yaml_value.is_none() {
-            let errmsg = format!(
-                "unknown error occured. [key:{}]",
-                concat_selection_key(key_list)
-            );
-            return Result::Err(vec![errmsg]);
-        }
-
-        // 指定された正規表現が間違っていて、パースに失敗した場合
-        let yaml_str = yaml_value.unwrap();
-        let re_result = Regex::new(&yaml_str);
-        if re_result.is_err() {
-            let errmsg = format!(
-                "cannot parse regex. [regex:{}, key:{}]",
-                yaml_str,
-                concat_selection_key(key_list)
-            );
-            return Result::Err(vec![errmsg]);
-        }
-        self.re = re_result.ok();
-
-        return Result::Ok(());
-    }
-
-    fn is_match(&self, event_value: Option<&Value>) -> bool {
-        // unwrap_orの引数に""ではなく" "を指定しているのは、
-        // event_valueが文字列じゃない場合にis_event_value_nullの値がfalseになるように、len() == 0とならない値を指定している。
-        let is_event_value_null = event_value.is_none()
-            || event_value.unwrap().is_null()
-            || event_value.unwrap().as_str().unwrap_or(" ").len() == 0;
-
-        // yamlにnullが設定されていた場合
-        if self.re.is_none() {
-            return is_event_value_null;
-        }
-
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::Bool(b) => self.is_regex_fullmatch(self.re.as_ref().unwrap(), b.to_string()),
-            Value::String(s) => self.is_regex_fullmatch(self.re.as_ref().unwrap(), s.to_owned()),
-            Value::Number(n) => self.is_regex_fullmatch(self.re.as_ref().unwrap(), n.to_string()),
-            _ => false,
-        };
-    }
-}
 
 /// 指定された文字数以上であることをチェックするクラス。
 struct MinlengthMatcher {
@@ -1647,7 +1566,8 @@ impl LeafMatcher for WhitelistFileMatcher {
     }
 }
 
-// デフォルトのマッチクラス
+/// デフォルトのマッチクラス
+/// ワイルドカードの処理やパイプ
 struct DefaultMatcher {
     re: Option<Regex>,
     pipes: Vec<PipeElement>,
@@ -1657,14 +1577,19 @@ impl DefaultMatcher {
     fn new() -> DefaultMatcher {
         return DefaultMatcher {
             re: Option::None,
-            pipes: Vec::new()
+            pipes: Vec::new(),
         };
     }
 
     fn is_regex_fullmatch(&self, value: String) -> bool {
-        return self.re.as_ref().unwrap().find_iter(&value).any(|match_obj| {
-            return match_obj.as_str().to_string() == value;
-        });
+        return self
+            .re
+            .as_ref()
+            .unwrap()
+            .find_iter(&value)
+            .any(|match_obj| {
+                return match_obj.as_str().to_string() == value;
+            });
     }
 }
 
@@ -1696,7 +1621,7 @@ impl LeafMatcher for DefaultMatcher {
         let pattern = yaml_value.unwrap();
 
         // Pipeが指定されていればパースする
-        let mut keys : VecDeque<&str> = key_list.get(0).unwrap().split("|").collect();// key_listが空はあり得ない
+        let mut keys: VecDeque<&str> = key_list.get(0).unwrap().split("|").collect(); // key_listが空はあり得ない
         keys.pop_front();
         while !keys.is_empty() {
             let key = keys.pop_front().unwrap();
@@ -1704,11 +1629,14 @@ impl LeafMatcher for DefaultMatcher {
                 "startswith" => Option::Some(PipeElement::Startswith),
                 "endswith" => Option::Some(PipeElement::Endswith),
                 "contains" => Option::Some(PipeElement::Contains),
-                "re"=> Option::Some(PipeElement::Re),
+                "re" => Option::Some(PipeElement::Re),
                 _ => Option::None,
             };
             if pipe_element.is_none() {
-                let errmsg = format!("unknown pipe element was specified. key:{}", concat_selection_key(key_list));
+                let errmsg = format!(
+                    "unknown pipe element was specified. key:{}",
+                    concat_selection_key(key_list)
+                );
                 return Result::Err(vec![errmsg]);
             }
 
@@ -1716,10 +1644,13 @@ impl LeafMatcher for DefaultMatcher {
         }
         if self.pipes.len() >= 2 {
             // 現状では複数のパイプは対応していない
-            let errmsg = format!("multiple pipe element can't be used. key:{}", concat_selection_key(key_list));
+            let errmsg = format!(
+                "multiple pipe element can't be used. key:{}",
+                concat_selection_key(key_list)
+            );
             return Result::Err(vec![errmsg]);
         }
-        let is_re = &self.pipes.iter().any(| pipe_element| { 
+        let is_re = &self.pipes.iter().any(|pipe_element| {
             return match pipe_element {
                 PipeElement::Re => true,
                 _ => false,
@@ -1732,7 +1663,7 @@ impl LeafMatcher for DefaultMatcher {
         }
 
         // パターンをPipeで処理する。
-        let pattern = &self.pipes.iter().fold(pattern,|acc, pipe| {
+        let pattern = &self.pipes.iter().fold(pattern, |acc, pipe| {
             return pipe.pipe_pattern(acc);
         });
 
@@ -1764,15 +1695,15 @@ impl LeafMatcher for DefaultMatcher {
         }
 
         return match event_value.unwrap_or(&Value::Null) {
-            Value::Bool(b) => self.is_regex_fullmatch( b.to_string()),
-            Value::String(s) => self.is_regex_fullmatch( s.to_owned()),
-            Value::Number(n) => self.is_regex_fullmatch( n.to_string()),
+            Value::Bool(b) => self.is_regex_fullmatch(b.to_string()),
+            Value::String(s) => self.is_regex_fullmatch(s.to_owned()),
+            Value::Number(n) => self.is_regex_fullmatch(n.to_string()),
             _ => false,
         };
     }
 }
 
-/// パイプ(|)で指定される要素を表すクラス。 
+/// パイプ(|)で指定される要素を表すクラス。
 enum PipeElement {
     Startswith,
     Endswith,
@@ -1783,9 +1714,9 @@ enum PipeElement {
 
 impl PipeElement {
     /// patternをパイプ処理します
-    fn pipe_pattern(&self, pattern:String ) -> String {
+    fn pipe_pattern(&self, pattern: String) -> String {
         // enumでポリモーフィズムを実装すると、一つのメソッドに全部の型の実装をする感じになる。Java使い的にはキモイ感じがする。
-        let fn_add_asterisk_end = | patt: String | {
+        let fn_add_asterisk_end = |patt: String| {
             if patt.ends_with("//*") {
                 return patt;
             } else if patt.ends_with("/*") {
@@ -1796,7 +1727,7 @@ impl PipeElement {
                 return patt + "*";
             }
         };
-        let fn_add_asterisk_begin = | patt: String | {
+        let fn_add_asterisk_begin = |patt: String| {
             if patt.starts_with("//*") {
                 return patt;
             } else if patt.starts_with("/*") {
@@ -1805,28 +1736,95 @@ impl PipeElement {
                 return patt;
             } else {
                 return "*".to_string() + &patt;
-            }    
+            }
         };
 
-        let val:String = match self {
+        let val: String = match self {
             // startswithの場合はpatternの最後にwildcardを足すことで対応する
             PipeElement::Startswith => fn_add_asterisk_end(pattern),
             // endswithの場合はpatternの最初にwildcardを足すことで対応する
-            PipeElement::Endswith => fn_add_asterisk_end(pattern),
+            PipeElement::Endswith => fn_add_asterisk_begin(pattern),
             // containsの場合はpatternの前後にwildcardを足すことで対応する
             PipeElement::Contains => fn_add_asterisk_end(fn_add_asterisk_begin(pattern)),
             // 正規表現の場合は特に処理する必要無い
             PipeElement::Re => pattern,
             // WildCardは正規表現に変換する。
-            PipeElement::Wildcard => PipeElement::pipe_wildcard(pattern)
+            PipeElement::Wildcard => PipeElement::pipe_pattern_wildcard(pattern),
         };
         return val;
     }
 
     /// PipeElement::Wildcardのパイプ処理です。
     /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
-    fn pipe_wildcard( pattern:String ) -> String {
+    fn pipe_pattern_wildcard(pattern: String) -> String {
+        let wildcards = vec!["*".to_string(), "?".to_string()];
+        
+        // patternをwildcardでsplitした結果をpattern_splitsに入れる
+        // 以下のアルゴリズムの場合、pattern_splitsの偶数indexの要素はwildcardじゃない文字列となり、奇数indexの要素はwildcardが入る。
+        let mut idx = 0;
+        let mut pattern_splits = vec![];
+        let mut cur_str = String::default();
+        while idx < pattern.len() {
+            let prev_idx = idx;
+            for wildcard in &wildcards {
+                let cur_pattern: String = pattern.chars().skip(idx).collect::<String>();
+                if cur_pattern.starts_with(&format!(r"\\{}", wildcard)) {
+                    // wildcardの前にエスケープ文字が2つある場合
+                    cur_str = format!("{}{}", cur_str, r"\");
+                    pattern_splits.push(cur_str);
+                    pattern_splits.push(wildcard.to_string());
 
+                    cur_str = String::default();
+                    idx += 3;
+                    break;
+                } else if cur_pattern.starts_with(&format!(r"\{}", wildcard)) {
+                    // wildcardの前にエスケープ文字が1つある場合
+                    cur_str = format!("{}{}", cur_str, wildcard);
+                    idx += 2;
+                    break;
+                } else if cur_pattern.starts_with(wildcard) {
+                    // wildcardの場合
+                    pattern_splits.push(cur_str);
+                    pattern_splits.push(wildcard.to_string());
+
+                    cur_str = String::default();
+                    idx += 1;
+                    break;
+                }
+            }
+            // 上記のFor文でHitした場合はcontinue
+            if prev_idx != idx {
+                continue;
+            }
+
+            cur_str = format!("{}{}", cur_str, pattern.chars().skip(idx).take(1).collect::<String>());
+            idx += 1;
+        }
+        // 最後の文字がwildcardじゃない場合は、cur_strに文字が入っているので、それをpattern_splitsに入れておく
+        if !cur_str.is_empty() {
+            pattern_splits.push(cur_str);
+        }
+
+        // SIGMAルールのwildcard表記から正規表現の表記に変換します。
+        return pattern_splits.iter().enumerate().fold(
+            String::default(),
+            |acc: String, (idx, pattern)| {
+                let regex_value = if idx % 2 == 0 {
+                    // wildcardじゃない場合はescapeした文字列を返す
+                    regex::escape(pattern)
+                } else {
+                    // wildcardの場合、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
+                    let wildcard_regex_value = if pattern.to_string() == "*" {
+                        ".*"
+                    } else {
+                        "."
+                    };
+                    wildcard_regex_value.to_string()
+                };
+
+                return format!("{}{}", acc, regex_value);
+            },
+        );
     }
 }
 
@@ -1834,8 +1832,8 @@ impl PipeElement {
 mod tests {
     use crate::detections::rule::{
         create_rule, AggregationConditionToken, AndSelectionNode, LeafSelectionNode,
-        MinlengthMatcher, OrSelectionNode, RegexMatcher, RegexesFileMatcher, SelectionNode,
-        WhitelistFileMatcher,
+        MinlengthMatcher, OrSelectionNode, PipeElement, RegexesFileMatcher, SelectionNode,
+        WhitelistFileMatcher, DefaultMatcher
     };
     use yaml_rust::YamlLoader;
 
@@ -1866,7 +1864,7 @@ mod tests {
         description: hogehoge
         enabled: true
         author: Yea
-        logsource: 
+        logsource:
             product: windows
         detection:
             selection:
@@ -1906,14 +1904,14 @@ mod tests {
             let matcher = &child_node.matcher;
             assert_eq!(matcher.is_some(), true);
             let matcher = child_node.matcher.as_ref().unwrap();
-            assert_eq!(matcher.is::<RegexMatcher>(), true);
-            let matcher = matcher.downcast_ref::<RegexMatcher>().unwrap();
+            assert_eq!(matcher.is::<DefaultMatcher>(), true);
+            let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
 
             assert_eq!(matcher.re.is_some(), true);
             let re = matcher.re.as_ref();
             assert_eq!(
                 re.unwrap().as_str(),
-                "Microsoft-Windows-PowerShell/Operational"
+                r"Microsoft\-Windows\-PowerShell/Operational"
             );
         }
 
@@ -1930,8 +1928,8 @@ mod tests {
             let matcher = &child_node.matcher;
             assert_eq!(matcher.is_some(), true);
             let matcher = child_node.matcher.as_ref().unwrap();
-            assert_eq!(matcher.is::<RegexMatcher>(), true);
-            let matcher = matcher.downcast_ref::<RegexMatcher>().unwrap();
+            assert_eq!(matcher.is::<DefaultMatcher>(), true);
+            let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
 
             assert_eq!(matcher.re.is_some(), true);
             let re = matcher.re.as_ref();
@@ -1956,8 +1954,8 @@ mod tests {
             let hostapp_en_matcher = &hostapp_en_node.matcher;
             assert_eq!(hostapp_en_matcher.is_some(), true);
             let hostapp_en_matcher = hostapp_en_matcher.as_ref().unwrap();
-            assert_eq!(hostapp_en_matcher.is::<RegexMatcher>(), true);
-            let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<RegexMatcher>().unwrap();
+            assert_eq!(hostapp_en_matcher.is::<DefaultMatcher>(), true);
+            let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<DefaultMatcher>().unwrap();
             assert_eq!(hostapp_en_matcher.re.is_some(), true);
             let re = hostapp_en_matcher.re.as_ref();
             assert_eq!(re.unwrap().as_str(), "Host Application");
@@ -1970,8 +1968,8 @@ mod tests {
             let hostapp_jp_matcher = &hostapp_jp_node.matcher;
             assert_eq!(hostapp_jp_matcher.is_some(), true);
             let hostapp_jp_matcher = hostapp_jp_matcher.as_ref().unwrap();
-            assert_eq!(hostapp_jp_matcher.is::<RegexMatcher>(), true);
-            let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<RegexMatcher>().unwrap();
+            assert_eq!(hostapp_jp_matcher.is::<DefaultMatcher>(), true);
+            let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<DefaultMatcher>().unwrap();
             assert_eq!(hostapp_jp_matcher.re.is_some(), true);
             let re = hostapp_jp_matcher.re.as_ref();
             assert_eq!(re.unwrap().as_str(), "ホスト アプリケーション");
@@ -2068,21 +2066,6 @@ mod tests {
             }
         }
     }
-
-    // #[test]
-    // fn test_get_event_ids() {
-    //     let rule_str = r#"
-    //     enabled: true
-    //     detection:
-    //         selection:
-    //             EventID: 1234
-    //     output: 'command=%CommandLine%'
-    //     "#;
-    //     let rule_node = parse_rule_from_str(rule_str);
-    //     let event_ids = rule_node.get_event_ids();
-    //     assert_eq!(event_ids.len(), 1);
-    //     assert_eq!(event_ids[0], 1234);
-    // }
 
     #[test]
     fn test_notdetect_regex_eventid() {
@@ -2226,6 +2209,63 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_detect_wildcard_multibyte() {
+        // multi byteの確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: ホストアプリケーション
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "ホストアプリケーション"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_wildcard_multibyte_notdetect() {
+        // multi byteの確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: ホスとアプリケーション
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "ホストアプリケーション"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
     #[test]
     fn test_detect_regex_str() {
         // 文字列っぽいデータでも完全一致することを確認
@@ -2639,7 +2679,6 @@ mod tests {
         detection:
             selection:
                 Channel:
-                    regex: Security10
                     min_length: 10
         output: 'command=%CommandLine%'
         "#;
@@ -2669,7 +2708,6 @@ mod tests {
         detection:
             selection:
                 Channel:
-                    regex: Security10
                     min_length: 11
         output: 'command=%CommandLine%'
         "#;
@@ -2698,7 +2736,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: ^Program$
+                Channel|re: ^Program$
         output: 'command=%CommandLine%'
         "#;
 
@@ -3111,7 +3149,7 @@ mod tests {
         detection:
             selection:
                 EventID: 403
-                EventData: '[\s\S]*EngineVersion=2.0[\s\S]*'
+                EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
         output: 'command=%CommandLine%'
         "#;
 
@@ -3535,7 +3573,10 @@ mod tests {
 
         assert_eq!(
             rule_node.init(),
-            Err(vec!["Found unknown key option. option: failed".to_string()])
+            Err(vec![
+                "unknown pipe element was specified. key:detection -> selection -> Channel|failed"
+                    .to_string()
+            ])
         );
     }
 
@@ -4608,6 +4649,58 @@ mod tests {
                 .to_string(),
             result.unwrap_err()
         );
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_asterisk() {
+        let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
+        assert_eq!(".*ho.*ge.*", value);
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_asterisk2() {
+        let value = PipeElement::pipe_pattern_wildcard(r"\*ho\*\*ge\*".to_string());
+        // wildcardの「\*」は文字列としての「*」を表す。
+        // 正規表現で「*」はエスケープする必要があるので、\*が正解
+        assert_eq!(r"\*ho\*\*ge\*", value);
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_asterisk3() {
+        // wildcardの「\\*」は文字列としての「\」と正規表現の「.*」を表す。
+        // 文字列としての「\」はエスケープされるので、「\\.*」が正解
+        let value = PipeElement::pipe_pattern_wildcard(r"\\*ho\\*ge\\*".to_string());
+        assert_eq!(r"\\.*ho\\.*ge\\.*", value);
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_question() {
+        let value = PipeElement::pipe_pattern_wildcard(r"?ho?ge?".to_string());
+        assert_eq!(r".ho.ge.", value);
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_question2() {
+        let value = PipeElement::pipe_pattern_wildcard(r"\?ho\?ge\?".to_string());
+        assert_eq!(r"\?ho\?ge\?", value);
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_question3() {
+        let value = PipeElement::pipe_pattern_wildcard(r"\\?ho\\?ge\\?".to_string());
+        assert_eq!(r"\\.ho\\.ge\\.", value);
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_backshash() {
+        let value = PipeElement::pipe_pattern_wildcard(r"\\ho\\ge\\".to_string());
+        assert_eq!(r"\\\\ho\\\\ge\\\\", value);
+    }
+
+    #[test]
+    fn test_pipe_pattern_wildcard_mixed() {
+        let value = PipeElement::pipe_pattern_wildcard(r"\\*\****\*\\*".to_string());
+        assert_eq!(r"\\.*\*.*.*.*\*\\.*", value);
     }
 
     fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
