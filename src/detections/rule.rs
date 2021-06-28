@@ -1694,12 +1694,25 @@ impl LeafMatcher for DefaultMatcher {
             return is_event_value_null;
         }
 
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::Bool(b) => self.is_regex_fullmatch(b.to_string()),
-            Value::String(s) => self.is_regex_fullmatch(s.to_owned()),
-            Value::Number(n) => self.is_regex_fullmatch(n.to_string()),
-            _ => false,
+        // JSON形式のEventLogデータをstringに変換
+        let event_value_str = match event_value.unwrap_or(&Value::Null) {
+            Value::Bool(b) => Option::Some(b.to_string()),
+            Value::String(s) => Option::Some(s.to_owned()),
+            Value::Number(n) => Option::Some(n.to_string()),
+            _ => Option::None,
         };
+        if event_value_str.is_none() {
+            return false;
+        }
+
+        // 変換したデータに対してパイプ処理を実行する。
+        let event_value_str = (&self.pipes)
+            .iter()
+            .fold(event_value_str.unwrap(), |acc, pipe| {
+                return pipe.pipe_eventlog_data(acc);
+            });
+
+        return self.is_regex_fullmatch(event_value_str);
     }
 }
 
@@ -1713,6 +1726,15 @@ enum PipeElement {
 }
 
 impl PipeElement {
+    /// WindowsEventLogのJSONデータに対してパイプ処理します。
+    fn pipe_eventlog_data(&self, pattern: String) -> String {
+        return match self {
+            // wildcardはcase sensetiveなので、全て小文字にして比較する。
+            PipeElement::Wildcard => pattern.to_lowercase(),
+            _ => pattern,
+        };
+    }
+
     /// patternをパイプ処理します
     fn pipe_pattern(&self, pattern: String) -> String {
         // enumでポリモーフィズムを実装すると、一つのメソッドに全部の型の実装をする感じになる。Java使い的にはキモイ感じがする。
@@ -1757,8 +1779,10 @@ impl PipeElement {
     /// PipeElement::Wildcardのパイプ処理です。
     /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
     fn pipe_pattern_wildcard(pattern: String) -> String {
+        // wildcardはcase sensetiveなので、全て小文字にして比較する。
+        let pattern = pattern.to_lowercase();
         let wildcards = vec!["*".to_string(), "?".to_string()];
-        
+
         // patternをwildcardでsplitした結果をpattern_splitsに入れる
         // 以下のアルゴリズムの場合、pattern_splitsの偶数indexの要素はwildcardじゃない文字列となり、奇数indexの要素はwildcardが入る。
         let mut idx = 0;
@@ -1797,7 +1821,11 @@ impl PipeElement {
                 continue;
             }
 
-            cur_str = format!("{}{}", cur_str, pattern.chars().skip(idx).take(1).collect::<String>());
+            cur_str = format!(
+                "{}{}",
+                cur_str,
+                pattern.chars().skip(idx).take(1).collect::<String>()
+            );
             idx += 1;
         }
         // 最後の文字がwildcardじゃない場合は、cur_strに文字が入っているので、それをpattern_splitsに入れておく
@@ -1831,9 +1859,9 @@ impl PipeElement {
 #[cfg(test)]
 mod tests {
     use crate::detections::rule::{
-        create_rule, AggregationConditionToken, AndSelectionNode, LeafSelectionNode,
-        MinlengthMatcher, OrSelectionNode, PipeElement, RegexesFileMatcher, SelectionNode,
-        WhitelistFileMatcher, DefaultMatcher
+        create_rule, AggregationConditionToken, AndSelectionNode, DefaultMatcher,
+        LeafSelectionNode, MinlengthMatcher, OrSelectionNode, PipeElement, RegexesFileMatcher,
+        SelectionNode, WhitelistFileMatcher,
     };
     use yaml_rust::YamlLoader;
 
@@ -1911,7 +1939,7 @@ mod tests {
             let re = matcher.re.as_ref();
             assert_eq!(
                 re.unwrap().as_str(),
-                r"Microsoft\-Windows\-PowerShell/Operational"
+                r"Microsoft\-Windows\-PowerShell/Operational".to_lowercase()
             );
         }
 
@@ -1958,7 +1986,7 @@ mod tests {
             let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<DefaultMatcher>().unwrap();
             assert_eq!(hostapp_en_matcher.re.is_some(), true);
             let re = hostapp_en_matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "Host Application");
+            assert_eq!(re.unwrap().as_str(), "Host Application".to_lowercase());
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
             let hostapp_jp_node = ancestors[1].as_ref() as &dyn SelectionNode;
@@ -2557,8 +2585,8 @@ mod tests {
     }
 
     #[test]
-    fn test_notdetect_casesensetive() {
-        // OR条件が正しく検知できることを確認
+    fn test_wildcard_case_insensitive() {
+        // wildcardは大文字小文字関係なくマッチする。
         let rule_str = r#"
         enabled: true
         detection:
@@ -2576,7 +2604,7 @@ mod tests {
         let rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
