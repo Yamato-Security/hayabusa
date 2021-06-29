@@ -1,5 +1,6 @@
 extern crate regex;
 
+use crate::detections::print::AlertMessage;
 use chrono::{DateTime, TimeZone, Utc};
 use mopa::mopafy;
 use std::num::ParseIntError;
@@ -793,6 +794,7 @@ pub struct RuleNode {
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
     countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
+    timeframe: Option<TimeFrameInfo>,
 }
 
 unsafe impl Sync for RuleNode {}
@@ -803,6 +805,7 @@ impl RuleNode {
             yaml: yaml,
             detection: Option::None,
             countdata: HashMap::new(),
+            timeframe: Option::None,
         };
     }
     pub fn init(&mut self) -> Result<(), Vec<String>> {
@@ -834,46 +837,23 @@ impl RuleNode {
         }
 
         let result = self.detection.as_ref().unwrap().select(event_record);
-        if self
-            .detection
-            .as_ref()
-            .unwrap()
-            .aggregation_condition
-            .is_some()
-            && result
-        {
+        if result {
             self.count(filepath, event_record);
         }
         return result;
     }
 
-    /// Aggregation Conditionに合致するレコードであるかのbool値を返す関数
-    pub fn judge_satisfy_aggcondition(
-        &self,
-        filepath: &String,
-        select_result: &bool,
-        record: &Value,
-    ) -> bool {
-        // selectの結果が検知なしであればcountのルールを適用してもfalse
-        println!("{:?}", select_result);
-        if !(select_result) {
-            return false;
-        }
-        //aggregationの中身がなければ検知条件を問題なしとして判定する
-        if self
+    /// aggregation conditionがこのルールに含まれているかを返す関数
+    pub fn has_agg_condition(&self) -> bool {
+        return self
             .detection
             .as_ref()
             .unwrap()
             .aggregation_condition
-            .is_none()
-        {
-            return true;
-        }
-        return self.aggregation_condition_select(filepath, record);
+            .is_some();
     }
-
-    /// 検知された際にカウント情報を投入する関数
-    fn count(&mut self, filepath: &String, record: &Value) {
+    /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数
+    fn create_count_key(&self, record: &Value) -> String {
         let aggcondition = self
             .detection
             .as_ref()
@@ -894,6 +874,53 @@ impl RuleNode {
             let converted_by_value = utils::get_record_data_by_alias(by_field_value, record);
             key.push_str(&converted_by_value.replace("\"", ""));
         }
+        return key;
+    }
+
+    /// 与えられたレコードがselectで検知したか確認する関数
+    pub fn is_detected(&self, filepath: String, record: &Value) -> bool {
+        let key = self.create_count_key(&record);
+        if !(self.countdata.contains_key(&filepath)) {
+            return false;
+        } else {
+            let key = self.create_count_key(&record);
+            let targets = self.countdata[&filepath].get(&key);
+            let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+            match targets
+                .unwrap()
+                .binary_search(&Message::get_event_time(&record).unwrap_or(default_time))
+            {
+                Ok(n) => {
+                    return true;
+                }
+                Err(e) => {
+                    return false;
+                }
+            };
+        }
+    }
+
+    /// Aggregation Conditionに合致するレコードであるかのbool値を返す関数
+    pub fn judge_satisfy_aggcondition(
+        &self,
+        filepath: String,
+        select_result: bool,
+        record: &Value,
+    ) -> bool {
+        // selectの結果が検知なしであればcountのルールを適用してもfalse
+        if !(select_result) {
+            return false;
+        }
+        //aggregationの中身がなければ検知条件を問題なしとして判定する
+        if !(self.has_agg_condition()) {
+            return true;
+        }
+        return self.aggregation_condition_select(&filepath, &record);
+    }
+
+    /// 検知された際にカウント情報を投入する関数
+    fn count(&mut self, filepath: &String, record: &Value) {
+        let key = self.create_count_key(record);
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         self.countup(
             filepath,
@@ -911,18 +938,77 @@ impl RuleNode {
         value_map.entry(key.to_string()).or_insert(Vec::new());
         let mut prev_value = value_map[key].clone();
         prev_value.push(record_time_value);
+        prev_value.sort();
         value_map.insert(key.to_string(), prev_value);
+    }
+
+    /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードの時間情報のVecを返す関数
+    fn judge_timeframe(
+        &self,
+        key_time: DateTime<Utc>,
+        time_data: &Vec<DateTime<Utc>>,
+    ) -> Vec<DateTime<Utc>> {
+        let mut ret = Vec::new();
+        let key_time_sec = key_time.timestamp();
+        let mut start_point = 0;
+        for (i, val) in time_data.iter().enumerate() {
+            if val == &key_time {
+                start_point = i;
+                break;
+            }
+        }
+        let mut end_point = 1;
+        //対象となるcount済みデータの個数が1つのみもしくは配列の最後の要素であった場合はtimeframeで区分けをする範囲がないため終了
+        if time_data.len() == 1 || start_point == time_data.len() {
+            ret.push(ret[start_point]);
+            return ret;
+        } else {
+            let judge_sec_frame = self.get_sec_timeframe();
+            let check_target = &time_data[start_point..];
+            for (i, val) in check_target.iter().enumerate() {
+                let diff = val.timestamp() - key_time_sec;
+                if diff > judge_sec_frame.unwrap() {
+                    end_point = i - 1;
+                }
+            }
+            ret = time_data[start_point..end_point].to_vec();
+            return ret;
+        }
+    }
+
+    /// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
+    fn get_sec_timeframe(&self) -> Option<i64> {
+        let tfi = self.timeframe.as_ref().unwrap();
+        match &tfi.timenum {
+            Ok(n) => {
+                if tfi.timetype == "d" {
+                    return Some(n * 86400);
+                } else if tfi.timetype == "h" {
+                    return Some(n * 3600);
+                } else if tfi.timetype == "m" {
+                    return Some(n * 60);
+                } else {
+                    return Some(*n);
+                }
+            }
+            Err(n) => {
+                let stdout = std::io::stdout();
+                let mut stdout = stdout.lock();
+                AlertMessage::alert(
+                    &mut stdout,
+                    "timeframe num is invalid. timeframe".to_string(),
+                );
+                return Option::None;
+            }
+        }
     }
 
     /// conditionのパイプ以降の処理をAggregationParseInfoを参照し、conditionの条件を満たすか判定するための関数
     pub fn select_aggcon(
         &self,
-        filepath: &String,
-        key: &str,
+        value: Vec<DateTime<Utc>>,
         aggcondition: &AggregationParseInfo,
     ) -> bool {
-        let value_map = self.countdata.get(filepath).unwrap();
-        let value = &value_map[key];
         match aggcondition._cmp_op {
             AggregationConditionToken::EQ => {
                 if (value.len() as i32) == aggcondition._cmp_num {
@@ -974,26 +1060,22 @@ impl RuleNode {
             .as_ref()
             .unwrap();
         // recordでaliasが登録されている前提とする
-        let mut key = String::new();
-        if aggcondition._field_name.is_some() {
-            let field_value = aggcondition._field_name.as_ref().unwrap();
-            let converted_value = utils::get_record_data_by_alias(field_value, record);
-            key.push_str(&converted_value.replace("\"", ""));
+        let key = self.create_count_key(record);
+        let value_map = self.countdata.get(filepath).unwrap();
+        let value = &value_map[&key];
+        let mut ret_result = false;
+        for key_time in value {
+            let framein_data = self.judge_timeframe(*key_time, value);
+            ret_result = ret_result & self.select_aggcon(framein_data, aggcondition);
         }
-        key.push_str("_");
-        if aggcondition._by_field_name.is_some() {
-            let by_field_value = aggcondition._by_field_name.as_ref().unwrap();
-            let converted_by_value = utils::get_record_data_by_alias(by_field_value, record);
-            key.push_str(&converted_by_value);
-        }
-        return self.select_aggcon(filepath, &key, aggcondition);
+        return ret_result;
     }
 }
 
-/// timeframeに設定された情報。SIGMAルール上tilmeframeで複数の単位(日、時、分、秒)が複合で記載されているルールがなかったためタイプと数値のみを格納する構造体
+/// timeframeに設定された情報。SIGMAルール上timeframeで複数の単位(日、時、分、秒)が複合で記載されているルールがなかったためタイプと数値のみを格納する構造体
 struct TimeFrameInfo {
     pub timetype: String,
-    pub timenum: Result<i32, ParseIntError>,
+    pub timenum: Result<i64, ParseIntError>,
 }
 
 impl TimeFrameInfo {
@@ -1018,7 +1100,7 @@ impl TimeFrameInfo {
         }
         return TimeFrameInfo {
             timetype: ttype,
-            timenum: tnum.parse::<i32>(),
+            timenum: tnum.parse::<i64>(),
         };
     }
 }
@@ -4912,7 +4994,7 @@ mod tests {
                 let result = rule_node.select(&"testpath".to_string(), &record);
                 assert_eq!(
                     true,
-                    rule_node.judge_satisfy_aggcondition(&"testpath".to_string(), &result, &record)
+                    rule_node.judge_satisfy_aggcondition("testpath".to_string(), result, &record)
                 );
             }
             Err(_rec) => {

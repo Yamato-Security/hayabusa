@@ -96,9 +96,9 @@ impl Detection {
 
     async fn execute_rules(rules: Vec<RuleNode>, records: Vec<EvtxRecordInfo>) {
         let records_arc = Arc::new(records);
-
+        let traiter = rules.into_iter();
         // 各rule毎にスレッドを作成して、スレッドを起動する。
-        let handles = rules.into_iter().map(|rule| {
+        let handles = traiter.map(|rule| {
             let records_cloned = Arc::clone(&records_arc);
             return spawn(async move {
                 Detection::execute_rule(rule, records_cloned);
@@ -109,6 +109,14 @@ impl Detection {
         for handle in handles {
             handle.await.unwrap();
         }
+
+        // 各rule毎にスレッドを作成して、スレッドを起動する。
+        let arg_handles = &traiter.map(|rule| {
+            let records_cloned = Arc::clone(&records_arc);
+            return spawn(async move {
+                Detection::execute_agg_rule(rule, records_cloned);
+            });
+        });
     }
 
     // 検知ロジックを実行します。
@@ -116,17 +124,41 @@ impl Detection {
         let records = &*records;
         for record_info in records {
             let result = rule.select(&record_info.evtx_filepath, &record_info.record);
-            if result {
+            if !result {
                 continue;
             }
-
-            // TODO メッセージが多いと、rule.select()よりもこの処理の方が時間かかる。
-            MESSAGES.lock().unwrap().insert(
-                record_info.evtx_filepath.to_string(),
-                &record_info.record,
-                rule.yaml["title"].as_str().unwrap_or("").to_string(),
-                rule.yaml["output"].as_str().unwrap_or("").to_string(),
-            );
+            // aggregation conditionが存在しない場合はそのまま出力対応を行う
+            if !(rule.has_agg_condition()) {
+                Detection::insert_message(&rule, &record_info);
+            }
         }
+    }
+
+    // 検知ルールでのcountの条件を満たすかの判定ロジックを実行します
+    fn execute_agg_rule(rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) {
+        let records = &*records;
+        for record_info in records {
+            let is_detected =
+                rule.is_detected(record_info.evtx_filepath.to_string(), &record_info.record);
+            if is_detected
+                && rule.judge_satisfy_aggcondition(
+                    record_info.evtx_filepath.to_string(),
+                    is_detected,
+                    &record_info.record,
+                )
+            {
+                Detection::insert_message(&rule, record_info);
+            }
+        }
+    }
+
+    /// 条件に合致したレコードを表示するための関数
+    fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
+        MESSAGES.lock().unwrap().insert(
+            record_info.evtx_filepath.to_string(),
+            &record_info.record,
+            rule.yaml["title"].as_str().unwrap_or("").to_string(),
+            rule.yaml["output"].as_str().unwrap_or("").to_string(),
+        );
     }
 }
