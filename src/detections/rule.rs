@@ -1581,6 +1581,9 @@ impl DefaultMatcher {
         };
     }
 
+    /// このmatcherの正規表現とマッチするかどうか判定します。
+    /// 判定対象の文字列とこのmatcherが保持する正規表現が完全にマッチした場合のTRUEを返します。
+    /// 例えば、判定対象文字列が"abc"で、正規表現が"ab"の場合、正規表現は判定対象文字列の一部分にしか一致していないので、この関数はfalseを返します。
     fn is_regex_fullmatch(&self, value: String) -> bool {
         return self
             .re
@@ -1590,6 +1593,15 @@ impl DefaultMatcher {
             .any(|match_obj| {
                 return match_obj.as_str().to_string() == value;
             });
+    }
+
+    /// YEAのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
+    /// ワイルドカードの文字列を正規表現にする処理もこのメソッドに実装されています。patternにワイルドカードの文字列を指定して、pipesにPipeElement::Wildcardを指定すればOK!!
+    fn from_pattern_to_regex_str(pattern: String, pipes: &Vec<PipeElement>) -> String {
+        // パターンをPipeで処理する。
+        return pipes.iter().fold(pattern, |acc, pipe| {
+            return pipe.pipe_pattern(acc);
+        });
     }
 }
 
@@ -1663,12 +1675,9 @@ impl LeafMatcher for DefaultMatcher {
         }
 
         // パターンをPipeで処理する。
-        let pattern = &self.pipes.iter().fold(pattern, |acc, pipe| {
-            return pipe.pipe_pattern(acc);
-        });
-
+        let pattern = DefaultMatcher::from_pattern_to_regex_str(pattern, &self.pipes);
         // Pipeで処理されたパターンを正規表現に変換
-        let re_result = Regex::new(pattern);
+        let re_result = Regex::new(&pattern);
         if re_result.is_err() {
             let errmsg = format!(
                 "cannot parse regex. [regex:{}, key:{}]",
