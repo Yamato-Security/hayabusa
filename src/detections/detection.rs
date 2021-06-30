@@ -109,14 +109,6 @@ impl Detection {
         for handle in handles {
             handle.await.unwrap();
         }
-
-        // 各rule毎にスレッドを作成して、スレッドを起動する。
-        let arg_handles = &traiter.map(|rule| {
-            let records_cloned = Arc::clone(&records_arc);
-            return spawn(async move {
-                Detection::execute_agg_rule(rule, records_cloned);
-            });
-        });
     }
 
     // 検知ロジックを実行します。
@@ -132,10 +124,7 @@ impl Detection {
                 Detection::insert_message(&rule, &record_info);
             }
         }
-    }
 
-    // 検知ルールでのcountの条件を満たすかの判定ロジックを実行します
-    fn execute_agg_rule(rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) {
         let records = &*records;
         for record_info in records {
             let is_detected =
