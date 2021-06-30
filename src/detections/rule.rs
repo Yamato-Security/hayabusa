@@ -1077,7 +1077,6 @@ impl RuleNode {
         let key = self.create_count_key(record);
         let value_map = self.countdata.get(filepath).unwrap();
         let value = &value_map[&key];
-        let mut ret_result = true;
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let target_event_time = Message::get_event_time(record).unwrap_or(default_time);
         let framein_data = self.judge_timeframe(target_event_time, value);
