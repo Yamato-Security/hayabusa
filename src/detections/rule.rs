@@ -854,6 +854,16 @@ impl RuleNode {
     }
     /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数
     fn create_count_key(&self, record: &Value) -> String {
+        if self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .as_ref()
+            .is_none()
+        {
+            return "_".to_string();
+        }
         let aggcondition = self
             .detection
             .as_ref()
@@ -958,9 +968,10 @@ impl RuleNode {
             }
         }
         let mut end_point = 1;
+        println!("{:?}", start_point);
         //対象となるcount済みデータの個数が1つのみもしくは配列の最後の要素であった場合はtimeframeで区分けをする範囲がないため終了
         if time_data.len() == 1 || start_point == time_data.len() {
-            ret.push(ret[start_point]);
+            ret.push(time_data[start_point]);
             return ret;
         } else {
             let judge_sec_frame = self.get_sec_timeframe();
@@ -1009,6 +1020,9 @@ impl RuleNode {
         value: Vec<DateTime<Utc>>,
         aggcondition: &AggregationParseInfo,
     ) -> bool {
+        println!("{:?}", value.len());
+        println!("{:?}", aggcondition._cmp_num);
+        println!("{:?}", aggcondition._cmp_op);
         match aggcondition._cmp_op {
             AggregationConditionToken::EQ => {
                 if (value.len() as i32) == aggcondition._cmp_num {
@@ -1063,12 +1077,11 @@ impl RuleNode {
         let key = self.create_count_key(record);
         let value_map = self.countdata.get(filepath).unwrap();
         let value = &value_map[&key];
-        let mut ret_result = false;
-        for key_time in value {
-            let framein_data = self.judge_timeframe(*key_time, value);
-            ret_result = ret_result & self.select_aggcon(framein_data, aggcondition);
-        }
-        return ret_result;
+        let mut ret_result = true;
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let target_event_time = Message::get_event_time(record).unwrap_or(default_time);
+        let framein_data = self.judge_timeframe(target_event_time, value);
+        return self.select_aggcon(framein_data, aggcondition);
     }
 }
 
