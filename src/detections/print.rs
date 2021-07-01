@@ -34,6 +34,31 @@ impl Message {
         Message { map: messages }
     }
 
+    /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
+    pub fn insert_message(
+        &mut self,
+        target_file: String,
+        event_time: DateTime<Utc>,
+        event_title: String,
+        event_detail: String,
+    ) {
+        let detect_info = DetectInfo {
+            filepath: target_file,
+            title: event_title,
+            detail: event_detail,
+        };
+
+        match self.map.get_mut(&event_time) {
+            Some(v) => {
+                v.push(detect_info);
+            }
+            None => {
+                let m = vec![detect_info; 1];
+                self.map.insert(event_time, m);
+            }
+        }
+    }
+
     /// メッセージを設定
     pub fn insert(
         &mut self,
@@ -42,28 +67,10 @@ impl Message {
         event_title: String,
         output: String,
     ) {
-        if output.is_empty() {
-            return;
-        }
-
         let message = &self.parse_message(event_record, output);
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time = Message::get_event_time(event_record).unwrap_or(default_time);
-        let detect_info = DetectInfo {
-            filepath: target_file,
-            title: event_title,
-            detail: message.to_string(),
-        };
-
-        match self.map.get_mut(&time) {
-            Some(v) => {
-                v.push(detect_info);
-            }
-            None => {
-                let m = vec![detect_info; 1];
-                self.map.insert(time, m);
-            }
-        }
+        self.insert_message(target_file, time, event_title, message.to_string())
     }
 
     fn parse_message(&mut self, event_record: &Value, output: String) -> String {

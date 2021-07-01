@@ -1,5 +1,7 @@
 extern crate csv;
 
+use crate::detections::rule::AggResult;
+use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
 use tokio::spawn;
 
@@ -120,23 +122,16 @@ impl Detection {
                 continue;
             }
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
-            if !(rule.has_agg_condition()) {
+            if !rule.has_agg_condition() {
                 Detection::insert_message(&rule, &record_info);
             }
         }
 
-        let records = &*records;
-        for record_info in records {
-            let is_detected =
-                rule.is_detected(record_info.evtx_filepath.to_string(), &record_info.record);
-            if is_detected
-                && rule.judge_satisfy_aggcondition(
-                    record_info.evtx_filepath.to_string(),
-                    is_detected,
-                    &record_info.record,
-                )
-            {
-                Detection::insert_message(&rule, record_info);
+        let agg_results = rule.judge_satisfy_aggcondition();
+        let output = &rule.check_some_yaml_value("output".to_string());
+        for value in agg_results {
+            if rule.has_agg_condition() && !output {
+                Detection::insert_agg_message(&rule, value);
             }
         }
     }
@@ -149,5 +144,16 @@ impl Detection {
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
+    }
+
+    /// insert aggregation condition detection message tooutput stack
+    fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
+        let output = "".to_string();
+        MESSAGES.lock().unwrap().insert_message(
+            agg_result.filepath,
+            agg_result.start_timedate,
+            rule.yaml["title"].as_str().unwrap_or("").to_string(),
+            output,
+        )
     }
 }
