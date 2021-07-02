@@ -1077,12 +1077,12 @@ impl RuleNode {
                     return Some(*n);
                 }
             }
-            Err(n) => {
+            Err(err) => {
                 let stdout = std::io::stdout();
                 let mut stdout = stdout.lock();
                 AlertMessage::alert(
                     &mut stdout,
-                    "timeframe num is invalid. timeframe".to_string(),
+                    format!("timeframe num is invalid. timeframe.{}", err),
                 );
                 return Option::None;
             }
