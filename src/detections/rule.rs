@@ -5127,7 +5127,7 @@ mod tests {
 
     #[test]
     /// count内の引数に有効な条件が指定されている場合
-    fn count_include_arg() {
+    fn test_count_include_arg() {
         let rule_str = r#"
         enabled: true
         detection:
