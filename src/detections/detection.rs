@@ -147,14 +147,34 @@ impl Detection {
         );
     }
 
-    /// insert aggregation condition detection message tooutput stack
+    /// insert aggregation condition detection message to output stack
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
-        let output = "".to_string();
+        let output = Detection::create_count_output(rule, &agg_result);
         MESSAGES.lock().unwrap().insert_message(
             agg_result.filepath,
             agg_result.start_timedate,
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
-            output,
+            output.to_string(),
         )
+    }
+
+    ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
+    fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> String {
+        let mut ret: String = "count(".to_owned();
+        let key: Vec<&str> = agg_result.key.split("_").collect();
+        if key.len() >= 1 {
+            ret.push_str(key[0]);
+        }
+        ret.push_str(&") ");
+        if key.len() >= 2 {
+            ret.push_str("by ");
+            ret.push_str(key[1]);
+        }
+        ret.push_str(format!(
+            "{} in {}.",
+            &rule.get_str_agg_eq(),
+            rule.yaml["timeframe"].as_str().unwrap_or("")
+        ));
+        return ret;
     }
 }
