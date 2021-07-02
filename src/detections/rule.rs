@@ -1339,12 +1339,10 @@ impl SelectionNode for LeafSelectionNode {
 
     fn init(&mut self) -> Result<(), Vec<String>> {
         let match_key_list = self.key_list.clone();
-        if self.matcher.is_none() {
-            let matchers = self.get_matchers();
-            self.matcher = matchers
-                .into_iter()
-                .find(|matcher| matcher.is_target_key(&match_key_list));
-        }
+        let matchers = self.get_matchers();
+        self.matcher = matchers
+            .into_iter()
+            .find(|matcher| matcher.is_target_key(&match_key_list));
 
         // 一致するmatcherが見つからないエラー
         if self.matcher.is_none() {
