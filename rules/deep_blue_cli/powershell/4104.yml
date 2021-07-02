@@ -9,7 +9,7 @@ detection:
         Channel: Microsoft-Windows-PowerShell/Operational
         EventID: 4104
         Path: null
-        ScriptBlockText: '.+'
+        ScriptBlockText|re: '.+'
     # condition: selection
 falsepositives:
     - unknown

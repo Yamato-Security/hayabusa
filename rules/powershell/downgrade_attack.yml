@@ -8,7 +8,7 @@ detection:
     selection:
         Channel: Windows PowerShell
         EventID: 400
-        EventData: '[\s\S]*EngineVersion=2.0[\s\S]*'
+        EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
 falsepositives:
     - unknown
 level: medium
