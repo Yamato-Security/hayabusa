@@ -170,10 +170,10 @@ impl Detection {
             ret.push_str("by ");
             ret.push_str(key[1]);
         }
-        ret.push_str(format!(
+        ret.push_str(&format!(
             "{} in {}.",
-            &rule.get_str_agg_eq(),
-            rule.yaml["timeframe"].as_str().unwrap_or("")
+            agg_result.condition_op_num,
+            rule.yaml["timeframe"].as_str().unwrap_or(""),
         ));
         return ret;
     }
