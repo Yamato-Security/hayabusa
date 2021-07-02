@@ -2990,7 +2990,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_string(), &record), false);
+                assert_eq!(rule_node.select(&"testpath".to_string(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
