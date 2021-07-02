@@ -931,25 +931,49 @@ impl RuleNode {
     /// Aggregation Conditionの結果を配列で返却する関数
     pub fn judge_satisfy_aggcondition(&self) -> Vec<AggResult> {
         let mut ret = Vec::new();
+        if !self.has_agg_condition() {
+            return ret;
+        }
         for filepath in self.countdata.keys() {
-            //aggregationの中身がなければfalseとして対応して結果文の出力などを行わせないようにする
-            if !self.has_agg_condition() {
-                ret.push(AggResult::new(
-                    filepath.to_string(),
-                    false,
-                    -1,
-                    "".to_string(),
-                    Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
-                ));
-            } else {
-                ret.append(&mut self.aggregation_condition_select(&filepath));
-            }
+            ret.append(&mut self.aggregation_condition_select(&filepath));
         }
         return ret;
     }
 
-    pub fn check_some_yaml_value(&self, key: String) -> bool {
-        return self.yaml[key.as_str()].as_str().is_some();
+    /// aggregation condition内での条件式を文字として返す関数
+    pub fn get_str_agg_eq(&self) -> String {
+        //この関数はaggregation ruleのパースが正常終了した後に呼ばれる想定のためOptionの判定は行わない
+        let agg_condition = self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .as_ref()
+            .unwrap();
+        let mut ret: String = "".to_owned();
+        match agg_condition._cmp_op {
+            AggregationConditionToken::EQ => {
+                ret.push_str("== ");
+            }
+            AggregationConditionToken::GE => {
+                ret.push_str(">= ");
+            }
+            AggregationConditionToken::LE => {
+                ret.push_str("<= ");
+            }
+            AggregationConditionToken::GT => {
+                ret.push_str("> ");
+            }
+            AggregationConditionToken::LT => {
+                ret.push_str("< ");
+            }
+            _ => {
+                //想定しない演算子のため、空白文字で対応するものがない
+                return "".to_string();
+            }
+        }
+        ret.push_str(&agg_condition._cmp_num.to_string());
+        return ret;
     }
 
     /// 検知された際にカウント情報を投入する関数
