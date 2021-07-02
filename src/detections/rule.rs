@@ -3,8 +3,8 @@ extern crate regex;
 use crate::detections::print::AlertMessage;
 use chrono::{DateTime, TimeZone, Utc};
 use mopa::mopafy;
-use std::num::ParseIntError;
 use std::collections::VecDeque;
+use std::num::ParseIntError;
 
 use std::{collections::HashMap, sync::Arc, vec};
 
@@ -786,7 +786,7 @@ pub struct AggResult {
     pub data: i32,
     //(countの括弧内の記載)_(count byで指定された条件)で設定されたキー
     pub key: String,
-    //出力する内容
+    //検知したブロックの最初のレコードの時間
     pub start_timedate: DateTime<Utc>,
 }
 
@@ -2599,10 +2599,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_string(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -2627,10 +2627,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_string(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -5122,6 +5122,7 @@ mod tests {
                 assert!(false, "failed to parse json record.");
             }
         }
+    }
     fn test_pipe_pattern_wildcard_asterisk() {
         let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
         assert_eq!(".*ho.*ge.*", value);
@@ -5200,7 +5201,6 @@ mod tests {
 
         assert_eq!(rule_node.init(), Err(errmsgs));
     }
-
     fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_str) {
