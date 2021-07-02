@@ -1,7 +1,6 @@
 extern crate csv;
 
 use crate::detections::rule::AggResult;
-use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
 use tokio::spawn;
 

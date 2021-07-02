@@ -808,20 +808,6 @@ impl AggResult {
     }
 }
 
-/// イベントファイル毎の各種条件のカウントを保持する為の構造体
-pub struct CountData {
-    // pub filename_field_table: RwLock<HashMap<String, Hashm>>
-    pub field_store_count: HashMap<String, HashMap<String, i32>>, // HashMapの入れ子構造(evtx filepath)-> [Keyをrecord"(_field_name_で指定された値)_(_by_fieldnameで指定された値)"としてcountされた個数を保持するハッシュマップ。
-}
-
-impl CountData {
-    pub fn new() -> CountData {
-        return CountData {
-            field_store_count: HashMap::new(),
-        };
-    }
-}
-
 /// Ruleファイルを表すノード
 pub struct RuleNode {
     pub yaml: Yaml,
@@ -964,7 +950,6 @@ impl RuleNode {
         value_map.entry(key.to_string()).or_insert(Vec::new());
         let mut prev_value = value_map[key].clone();
         prev_value.push(record_time_value);
-        prev_value.sort();
         value_map.insert(key.to_string(), prev_value);
     }
 
@@ -2206,7 +2191,7 @@ mod tests {
         LeafSelectionNode, MinlengthMatcher, OrSelectionNode, PipeElement, RegexesFileMatcher,
         SelectionNode, WhitelistFileMatcher,
     };
-    use chrono::{DateTime, TimeZone, Utc};
+    use chrono::{TimeZone, Utc};
     use yaml_rust::YamlLoader;
 
     use super::{AggegationConditionCompiler, RuleNode};
