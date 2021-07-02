@@ -778,16 +778,18 @@ impl AggegationConditionCompiler {
 #[derive(Debug)]
 /// countなどのaggregationの結果を出力する構造体
 pub struct AggResult {
-    // evtx file path
+    /// evtx file path
     pub filepath: String,
-    // aggcondition result
+    /// result of aggregation condition select
     pub result: bool,
-    // countなどの値
+    /// countなどの値
     pub data: i32,
-    //(countの括弧内の記載)_(count byで指定された条件)で設定されたキー
+    /// (countの括弧内の記載)_(count byで指定された条件)で設定されたキー
     pub key: String,
-    //検知したブロックの最初のレコードの時間
+    ///検知したブロックの最初のレコードの時間
     pub start_timedate: DateTime<Utc>,
+    ///条件式の情報
+    pub condition_op_num: String,
 }
 
 impl AggResult {
@@ -797,6 +799,7 @@ impl AggResult {
         data: i32,
         key: String,
         start_timedate: DateTime<Utc>,
+        condition_op_num: String,
     ) -> AggResult {
         return AggResult {
             filepath: filepath,
@@ -804,6 +807,7 @@ impl AggResult {
             data: data,
             key: key,
             start_timedate: start_timedate,
+            condition_op_num: condition_op_num,
         };
     }
 }
@@ -896,7 +900,7 @@ impl RuleNode {
             let field_value = aggcondition._field_name.as_ref().unwrap();
             match utils::get_event_value(field_value, record) {
                 Some(value) => {
-                    key.push_str(&value[field_value].to_string());
+                    key.push_str(&value.to_string().replace("\"", ""));
                 }
                 None => {
                     let stdout = std::io::stdout();
@@ -1028,6 +1032,7 @@ impl RuleNode {
                         count_set_cnt as i32,
                         key.to_string(),
                         time_data[start_point as usize],
+                        self.get_str_agg_eq(),
                     ));
                 }
                 break;
@@ -1048,6 +1053,7 @@ impl RuleNode {
                     count_set_cnt,
                     key.to_string(),
                     time_data[start_point as usize],
+                    self.get_str_agg_eq(),
                 ));
                 start_point = check_point + 1;
                 check_point = start_point + aggcondition._cmp_num - 1;
@@ -1168,7 +1174,12 @@ impl TimeFrameInfo {
             ttype = "d".to_string();
             tnum.retain(|c| c != 'd');
         } else {
-            //TODO error parse
+            let stdout = std::io::stdout();
+            let mut stdout = stdout.lock();
+            AlertMessage::alert(
+                &mut stdout,
+                format!("timeframe is invalid.input value:{}", value),
+            );
         }
         return TimeFrameInfo {
             timetype: ttype,
@@ -5210,6 +5221,8 @@ mod tests {
         let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
         assert_eq!(r"\\\\.*ho\\\\.*ge\\\\\\", value);
     }
+
+    //TODO add count test
 
     fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
         let compiler = AggegationConditionCompiler::new();
