@@ -894,14 +894,36 @@ impl RuleNode {
         let mut key = "".to_string();
         if aggcondition._field_name.is_some() {
             let field_value = aggcondition._field_name.as_ref().unwrap();
-            let converted_value = utils::get_record_data_by_alias(field_value, record);
-            key.push_str(&converted_value.replace("\"", ""));
+            match utils::get_event_value(field_value, record) {
+                Some(value) => {
+                    key.push_str(&value[field_value].to_string());
+                }
+                None => {
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
+                    AlertMessage::alert(
+                        &mut stdout,
+                        format!("field_value alias not found.value:{}", field_value),
+                    );
+                }
+            };
         }
         key.push_str("_");
         if aggcondition._by_field_name.is_some() {
             let by_field_value = aggcondition._by_field_name.as_ref().unwrap();
-            let converted_by_value = utils::get_record_data_by_alias(by_field_value, record);
-            key.push_str(&converted_by_value.replace("\"", ""));
+            match utils::get_event_value(by_field_value, record) {
+                Some(value) => {
+                    key.push_str(&value[by_field_value].to_string());
+                }
+                None => {
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
+                    AlertMessage::alert(
+                        &mut stdout,
+                        format!("by_field_value alias not found.value:{}", by_field_value),
+                    );
+                }
+            }
         }
         return key;
     }

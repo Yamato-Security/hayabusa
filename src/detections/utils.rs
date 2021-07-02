@@ -109,21 +109,6 @@ pub fn get_alias(event_key: &String) -> Option<String> {
     }
 }
 
-/// alias.txtのキーに対応する情報をrecordから取得して文字列として返す関数
-pub fn get_record_data_by_alias(key: &String, record: &Value) -> String {
-    let alias_key = configs::CONFIG
-        .read()
-        .unwrap()
-        .event_key_alias_config
-        .get_event_key(key.to_string());
-    let full_key = match alias_key {
-        Some(full_event_key) => full_event_key,
-        None => key,
-    };
-    let converted_by_value = get_event_value(&full_key, record);
-    return converted_by_value.unwrap().to_string();
-}
-
 pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a Value> {
     if key.len() == 0 {
         return Option::None;
