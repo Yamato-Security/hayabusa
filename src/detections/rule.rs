@@ -4740,6 +4740,12 @@ mod tests {
         assert_eq!(r"\\.*\*.*.*.*\*\\.*", value);
     }
 
+    #[test]
+    fn test_pipe_pattern_wildcard_many_backshashs() {
+        let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
+        assert_eq!(r"\\\\.*ho\\\\.*ge\\\\\\", value);
+    }
+
     fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile(expr);
