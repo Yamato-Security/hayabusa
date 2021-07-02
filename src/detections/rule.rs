@@ -862,7 +862,7 @@ impl RuleNode {
         return result;
     }
 
-    /// aggregation conditionがこのルールに含まれているかを返す関数
+    /// aggregation conditionが存在するかを返す関数
     pub fn has_agg_condition(&self) -> bool {
         return self
             .detection
@@ -5113,7 +5113,7 @@ mod tests {
         assert_eq!(init_result.is_ok(), true);
         match serde_json::from_str(SIMPLE_RECORD_STR) {
             Ok(record) => {
-                let result = rule_node.select(&"testpath".to_string(), &record);
+                let _result = rule_node.select(&"testpath".to_string(), &record);
                 let judge_result = rule_node.judge_satisfy_aggcondition();
 
                 assert_eq!(1, judge_result.len());

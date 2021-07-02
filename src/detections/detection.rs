@@ -115,21 +115,23 @@ impl Detection {
     // 検知ロジックを実行します。
     fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) {
         let records = &*records;
+        let agg_condition = rule.has_agg_condition();
         for record_info in records {
             let result = rule.select(&record_info.evtx_filepath, &record_info.record);
             if !result {
                 continue;
             }
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
-            if !rule.has_agg_condition() {
+            if !agg_condition {
                 Detection::insert_message(&rule, &record_info);
+                return;
             }
         }
 
         let agg_results = rule.judge_satisfy_aggcondition();
-        let output = &rule.check_some_yaml_value("output".to_string());
+        let output = &rule.yaml["output"].as_str().is_some();
         for value in agg_results {
-            if rule.has_agg_condition() && !output {
+            if agg_condition && !output {
                 Detection::insert_agg_message(&rule, value);
             }
         }
