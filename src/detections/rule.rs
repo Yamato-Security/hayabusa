@@ -780,8 +780,6 @@ impl AggegationConditionCompiler {
 pub struct AggResult {
     /// evtx file path
     pub filepath: String,
-    /// result of aggregation condition select
-    pub result: bool,
     /// countなどの値
     pub data: i32,
     /// (countの括弧内の記載)_(count byで指定された条件)で設定されたキー
@@ -795,7 +793,6 @@ pub struct AggResult {
 impl AggResult {
     pub fn new(
         filepath: String,
-        result: bool,
         data: i32,
         key: String,
         start_timedate: DateTime<Utc>,
@@ -803,7 +800,6 @@ impl AggResult {
     ) -> AggResult {
         return AggResult {
             filepath: filepath,
-            result: result,
             data: data,
             key: key,
             start_timedate: start_timedate,
@@ -1035,7 +1031,6 @@ impl RuleNode {
                 if judge {
                     ret.push(AggResult::new(
                         filepath.to_string(),
-                        self.select_aggcon(count_set_cnt as i32, &aggcondition),
                         count_set_cnt as i32,
                         key.to_string(),
                         time_data[start_point as usize],
@@ -1060,7 +1055,6 @@ impl RuleNode {
                 //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
                 ret.push(AggResult::new(
                     filepath.to_string(),
-                    judge,
                     count_set_cnt,
                     key.to_string(),
                     time_data[start_point as usize],
@@ -2256,12 +2250,14 @@ impl PipeElement {
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::rule::AggResult;
     use crate::detections::rule::{
         create_rule, AggregationConditionToken, AndSelectionNode, DefaultMatcher,
         LeafSelectionNode, MinlengthMatcher, OrSelectionNode, PipeElement, RegexesFileMatcher,
         SelectionNode, WhitelistFileMatcher,
     };
     use chrono::{TimeZone, Utc};
+    use std::collections::HashMap;
     use yaml_rust::YamlLoader;
 
     use super::{AggegationConditionCompiler, RuleNode};
@@ -5117,7 +5113,22 @@ mod tests {
             condition: selection1 and selection2 and selection3 | count() >= 1
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
-        check_count(rule_str, record_str, "_", 1);
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("_".to_owned(), 1);
+        let expected_agg_result = AggResult::new(
+            "testpath".to_string(),
+            1,
+            "_".to_string(),
+            default_time,
+            ">= 1".to_string(),
+        );
+        check_count(
+            rule_str,
+            vec![SIMPLE_RECORD_STR],
+            expected_count,
+            vec![expected_agg_result],
+        );
     }
 
     #[test]
@@ -5135,7 +5146,22 @@ mod tests {
             condition: selection1 and selection2 and selection3 | count(Channel) >= 1
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
-        check_count(rule_str, SIMPLE_RECORD_STR, "System_", 1);
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("System_".to_owned(), 1);
+        let expected_agg_result = AggResult::new(
+            "testpath".to_string(),
+            1,
+            "System_".to_string(),
+            default_time,
+            ">= 1".to_string(),
+        );
+        check_count(
+            rule_str,
+            vec![SIMPLE_RECORD_STR],
+            expected_count,
+            vec![expected_agg_result],
+        );
     }
 
     #[test]
@@ -5167,7 +5193,6 @@ mod tests {
                 assert_eq!(1, judge_result.len());
                 assert_eq!("testpath".to_string(), judge_result[0].filepath);
                 assert_eq!("7040_".to_string(), judge_result[0].key);
-                assert_eq!(true, judge_result[0].result);
                 assert_eq!(
                     Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
                     judge_result[0].start_timedate
@@ -5273,33 +5298,66 @@ mod tests {
         }
     }
     /// countで対象の数値確認を行うためのテスト用関数
-    fn check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
+    fn check_count(
+        rule_str: &str,
+        records_str: Vec<&str>,
+        expected_counts: HashMap<String, i32>,
+        expect_agg_results: Vec<AggResult>,
+    ) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule(test);
         let _init = rule_node.init();
-        match serde_json::from_str(record_str) {
-            Ok(record) => {
-                let result = rule_node.select(&"testpath".to_string(), &record);
-                assert_eq!(
-                    rule_node.detection.unwrap().aggregation_condition.is_some(),
-                    true
-                );
-                assert_eq!(result, true);
-                assert_eq!(
-                    *&rule_node
-                        .countdata
-                        .get("testpath")
-                        .unwrap()
-                        .get(key)
-                        .unwrap()
-                        .len() as i32,
-                    expect_count
-                );
+        for record_str in records_str {
+            match serde_json::from_str(record_str) {
+                Ok(record) => {
+                    let result = &rule_node.select(&"testpath".to_owned(), &record);
+                    assert_eq!(result, &true);
+                }
+                Err(_rec) => {
+                    assert!(false, "failed to parse json record.");
+                }
             }
-            Err(_rec) => {
-                assert!(false, "failed to parse json record.");
-            }
+        }
+
+        let agg_results = &rule_node.judge_satisfy_aggcondition();
+        let mut expect_filepath = vec![];
+        let mut expect_data = vec![];
+        let mut expect_key = vec![];
+        let mut expect_start_timedate = vec![];
+        let mut expect_condition_op_num = vec![];
+
+        for expect_agg in expect_agg_results {
+            let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
+            println!("{:?}", rule_node.countdata);
+            println!("{:?}", expect_agg);
+
+            //countupの関数が機能しているかを確認
+            assert_eq!(
+                *&rule_node
+                    .countdata
+                    .get("testpath")
+                    .unwrap()
+                    .get(&expect_agg.key)
+                    .unwrap()
+                    .len() as i32,
+                *expect_count
+            );
+            expect_filepath.push(expect_agg.filepath);
+            expect_data.push(expect_agg.data);
+            expect_key.push(expect_agg.key);
+            expect_start_timedate.push(expect_agg.start_timedate);
+            expect_condition_op_num.push(expect_agg.condition_op_num);
+        }
+        for agg_result in agg_results {
+            //ここですでにstart_timedateの格納を確認済み
+            let index = expect_start_timedate
+                .binary_search(&agg_result.start_timedate)
+                .unwrap();
+            assert_eq!(agg_result.filepath, expect_filepath[index]);
+            assert_eq!(agg_result.data, expect_data[index]);
+            assert_eq!(agg_result.key, expect_key[index]);
+            assert_eq!(agg_result.condition_op_num, expect_condition_op_num[index]);
         }
     }
 }
