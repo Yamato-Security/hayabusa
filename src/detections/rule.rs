@@ -5195,8 +5195,8 @@ mod tests {
     }
 
     #[test]
-    /// countupでハッシュマップの情報がカウントアップされているかの確認
-    fn test_countup_field() {
+    /// countでカッコ内の記載がある場合にruleでcountの検知ができることを確認する
+    fn test_count_field() {
         let rule_str = r#"
         enabled: true
         detection:
@@ -5322,8 +5322,6 @@ mod tests {
         let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
         assert_eq!(r"\\\\.*ho\\\\.*ge\\\\\\", value);
     }
-
-    //TODO add count test
 
     fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
         let compiler = AggegationConditionCompiler::new();
