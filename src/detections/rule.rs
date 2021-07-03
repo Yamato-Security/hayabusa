@@ -1004,7 +1004,7 @@ impl RuleNode {
         time_datas: &Vec<DateTime<Utc>>,
         key: &String,
     ) -> Vec<AggResult> {
-        let mut ret = Vec::new();
+        let mut ret: Vec<AggResult> = Vec::new();
         let mut time_data = time_datas.clone();
         time_data.sort();
         let aggcondition = self
@@ -1016,7 +1016,7 @@ impl RuleNode {
             .unwrap();
         let mut start_point = 0;
         // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
-        let mut check_point = start_point + aggcondition._cmp_num - 1;
+        let mut check_point = start_point + aggcondition._cmp_num;
         // timeframeで指定された基準の値を秒数として保持
         let judge_sec_frame = self.get_sec_timeframe();
         loop {
@@ -1040,9 +1040,9 @@ impl RuleNode {
             // 基準となるレコードと時刻比較を行う対象のレコード時刻情報を取得する
             let check_point_date = time_data[check_point as usize];
             let diff = check_point_date.timestamp() - time_data[start_point as usize].timestamp();
-            // timeframeで指定した情報と比較して。時刻差がtimeframeの枠を超えていた場合(timeframeの属性を記載していない場合はtimeframeは0として扱う)
-            if diff > judge_sec_frame.unwrap_or(0) {
-                let count_set_cnt = check_point - start_point + 1;
+            // timeframeで指定した情報と比較して時刻差がtimeframeの枠を超えていた場合(timeframeの属性を記載していない場合はこの処理を行わない)
+            if judge_sec_frame.is_some() && diff > judge_sec_frame.unwrap() {
+                let count_set_cnt = check_point - start_point;
                 let judge = self.select_aggcon(count_set_cnt, &aggcondition);
                 // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
                 if !judge {
@@ -1059,8 +1059,8 @@ impl RuleNode {
                     self.get_str_agg_eq(),
                 ));
                 // timeframe投入内の対象レコード数がcountの条件を満たした場合は、すでに判定済みのtimeframe内では同様に検知を行うことになり、過検知となってしまうため、今回timeframe内と判定された最後のレコードの次のレコードを次の基準として参照するようにindexを設定する
-                start_point = check_point + 1;
-                check_point = start_point + aggcondition._cmp_num - 1;
+                start_point = check_point;
+                check_point = start_point + aggcondition._cmp_num;
             } else {
                 // timeframeで指定した情報と比較して。時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
                 check_point += 1;
@@ -1071,7 +1071,7 @@ impl RuleNode {
 
     /// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
     fn get_sec_timeframe(&self) -> Option<i64> {
-        let tframe = self.timeframe.as_ref();
+        let tframe = self.detection.as_ref().unwrap().timeframe.as_ref();
         if tframe.is_none() {
             return Option::None;
         }
@@ -1166,16 +1166,16 @@ impl TimeFrameInfo {
     pub fn parse_tframe(value: String) -> TimeFrameInfo {
         let mut ttype: String = "".to_string();
         let mut tnum = value.clone();
-        if value == "s" {
+        if value.contains("s") {
             ttype = "s".to_string();
             tnum.retain(|c| c != 's');
-        } else if value == "m" {
+        } else if value.contains("m") {
             ttype = "m".to_string();
             tnum.retain(|c| c != 'm');
-        } else if value == "h" {
+        } else if value.contains("h") {
             ttype = "h".to_string();
             tnum.retain(|c| c != 'h');
-        } else if value == "d" {
+        } else if value.contains("d") {
             ttype = "d".to_string();
             tnum.retain(|c| c != 'd');
         } else {
@@ -1290,7 +1290,7 @@ impl DetectionNode {
                 continue;
             }
             // condition等、特殊なキーワードを無視する。
-            if name == "condition" {
+            if name == "condition" || name == "timeframe" {
                 continue;
             }
 
@@ -5117,18 +5117,18 @@ mod tests {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 2);
-        let expected_agg_result = AggResult::new(
+        let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
             "testpath".to_string(),
             2,
             "_".to_string(),
             default_time,
             ">= 1".to_string(),
-        );
+        )];
         check_count(
             rule_str,
             vec![SIMPLE_RECORD_STR, record_str],
             expected_count,
-            vec![expected_agg_result],
+            expected_agg_result,
         );
     }
 
@@ -5164,6 +5164,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 and selection2 and selection3 | count() >= 1
+            timeframe: 15m
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
@@ -5369,7 +5370,7 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule(test);
-        let _init = rule_node.init();
+        rule_node.init();
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
@@ -5388,11 +5389,8 @@ mod tests {
         let mut expect_key = vec![];
         let mut expect_start_timedate = vec![];
         let mut expect_condition_op_num = vec![];
-
         for expect_agg in expect_agg_results {
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
-            println!("{:?}", rule_node.countdata);
-            println!("{:?}", expect_agg);
 
             //countupの関数が機能しているかを確認
             assert_eq!(
