@@ -5228,44 +5228,123 @@ mod tests {
     }
 
     #[test]
-    /// count内の引数に有効な条件が指定されている場合
+    /// countでカッコ内の記載、byの記載両方がある場合にruleでcountの検知ができることを確認する
     fn test_count_exist_field_by() {
+        let record_str: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 9999,
+              "Channel": "Test",
+              "TimeCreated_attributes": {
+                "SystemTime": "1996-02-27T01:05:01Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count(EventID) by Channel >= 1
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let record_time = Utc.ymd(1996, 2, 27).and_hms(1, 5, 1);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("7040_System".to_owned(), 1);
+        expected_count.insert("9999_Test".to_owned(), 1);
+        let mut expected_agg_result: Vec<AggResult> = Vec::new();
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            1,
+            "7040_System".to_owned(),
+            default_time,
+            ">= 1".to_string(),
+        ));
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            1,
+            "9999_Test".to_owned(),
+            record_time,
+            ">= 1".to_string(),
+        ));
+        check_count(
+            rule_str,
+            vec![SIMPLE_RECORD_STR, record_str],
+            expected_count,
+            expected_agg_result,
+        );
+    }
+
+    #[test]
+    /// countでカッコ内の記載、byの記載両方がある場合(複数レコードでカッコ内の指定する値が異なる場合)に値の組み合わせごとに分けてcountが実行していることを確認する
+    fn test_count_exist_field_by_with_othervalue_in_timeframe() {
+        let record_str: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 9999,
+              "Channel": "System",
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-01T00:05:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Test",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
         let rule_str = r#"
         enabled: true
         detection:
             selection1:
                 Channel: 'System'
-            selection2:
-                EventID: 7040
-            selection3:
-                param1: 'Windows Event Log'
-            condition: selection1 and selection2 and selection3 | count(EventID) by Channel >= 1
+            condition: selection1 | count(EventID) by param1 >= 1
+            timeframe: 1h
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
-
-        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let test = rule_yaml.next().unwrap();
-        let mut rule_node = create_rule(test);
-        let init_result = rule_node.init();
-        assert_eq!(init_result.is_ok(), true);
-        match serde_json::from_str(SIMPLE_RECORD_STR) {
-            Ok(record) => {
-                let _result = rule_node.select(&"testpath".to_string(), &record);
-                let judge_result = rule_node.judge_satisfy_aggcondition();
-
-                assert_eq!(1, judge_result.len());
-                assert_eq!("testpath".to_string(), judge_result[0].filepath);
-                assert_eq!("7040_System".to_string(), judge_result[0].key);
-                assert_eq!(
-                    Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
-                    judge_result[0].start_timedate
-                );
-            }
-            Err(_rec) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let record_time = Utc.ymd(1977, 1, 1).and_hms(0, 5, 0);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("7040_Windows Event Log".to_owned(), 1);
+        expected_count.insert("9999_Test".to_owned(), 1);
+        let mut expected_agg_result: Vec<AggResult> = Vec::new();
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            1,
+            "7040_Windows Event Log".to_owned(),
+            default_time,
+            ">= 1".to_string(),
+        ));
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            1,
+            "9999_Test".to_owned(),
+            record_time,
+            ">= 1".to_string(),
+        ));
+        check_count(
+            rule_str,
+            vec![SIMPLE_RECORD_STR, record_str],
+            expected_count,
+            expected_agg_result,
+        );
     }
+
     fn test_pipe_pattern_wildcard_asterisk() {
         let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
         assert_eq!(".*ho.*ge.*", value);
@@ -5380,7 +5459,6 @@ mod tests {
                 }
             }
         }
-
         let agg_results = &rule_node.judge_satisfy_aggcondition();
         let mut expect_filepath = vec![];
         let mut expect_data = vec![];
