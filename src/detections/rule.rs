@@ -5083,14 +5083,17 @@ mod tests {
     }
 
     #[test]
-    /// countupでハッシュマップの情報がカウントアップされているかの確認
-    fn test_countup() {
+    /// countのカッコ内の記載及びcount byの記載がない場合にruleで検知ができることのテスト
+    fn test_count_no_field_and_by() {
         let record_str: &str = r#"
         {
           "Event": {
             "System": {
               "EventID": 7040,
-              "Channel": "System"
+              "Channel": "System",
+              "TimeCreated_attributes": {
+                "SystemTime": "1996-02-27T01:05:01Z"
+              }
             },
             "EventData": {
               "param1": "Windows Event Log",
@@ -5115,17 +5118,17 @@ mod tests {
         "#;
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let mut expected_count = HashMap::new();
-        expected_count.insert("_".to_owned(), 1);
+        expected_count.insert("_".to_owned(), 2);
         let expected_agg_result = AggResult::new(
             "testpath".to_string(),
-            1,
+            2,
             "_".to_string(),
             default_time,
             ">= 1".to_string(),
         );
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR],
+            vec![SIMPLE_RECORD_STR, record_str],
             expected_count,
             vec![expected_agg_result],
         );
