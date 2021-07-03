@@ -1003,7 +1003,7 @@ impl RuleNode {
         value_map.insert(key.to_string(), prev_value);
     }
 
-    /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードがcount条件を満たしているかを判定する関数
+    /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
     fn judge_timeframe(
         &self,
         filepath: &String,
@@ -1019,11 +1019,16 @@ impl RuleNode {
             .as_ref()
             .unwrap();
         let mut start_point = 0;
+        // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
         let mut check_point = start_point + aggcondition._cmp_num - 1;
+        // timeframeで指定された基準の値を秒数として保持
         let judge_sec_frame = self.get_sec_timeframe();
         loop {
+            // 基準となるレコードもしくはcountを最低限満たす対象のレコードのindexが配列の領域を超えていた場合
             if start_point as usize >= time_data.len() || check_point as usize >= time_data.len() {
+                // 対象のレコード数を基準となるindexから計算
                 let count_set_cnt = time_data.len() - (start_point as usize);
+                // countの条件を満たしているがtimeframe内に入っている場合があるため判定を行う
                 let judge = self.select_aggcon(count_set_cnt as i32, &aggcondition);
                 if judge {
                     ret.push(AggResult::new(
@@ -1037,16 +1042,20 @@ impl RuleNode {
                 }
                 break;
             }
+            // 基準となるレコードと時刻比較を行う対象のレコード時刻情報を取得する
             let check_point_date = time_data[check_point as usize];
             let diff = check_point_date.timestamp() - time_data[start_point as usize].timestamp();
+            // timeframeで指定した情報と比較して。時刻差がtimeframeの枠を超えていた場合(timeframeの属性を記載していない場合はtimeframeは0として扱う)
             if diff > judge_sec_frame.unwrap_or(0) {
                 let count_set_cnt = check_point - start_point + 1;
                 let judge = self.select_aggcon(count_set_cnt, &aggcondition);
+                // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
                 if !judge {
                     start_point += 1;
                     check_point = start_point + aggcondition._cmp_num - 1;
                     continue;
                 }
+                //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
                 ret.push(AggResult::new(
                     filepath.to_string(),
                     judge,
@@ -1055,9 +1064,11 @@ impl RuleNode {
                     time_data[start_point as usize],
                     self.get_str_agg_eq(),
                 ));
+                // timeframe投入内の対象レコード数がcountの条件を満たした場合は、すでに判定済みのtimeframe内では同様に検知を行うことになり、過検知となってしまうため、今回timeframe内と判定された最後のレコードの次のレコードを次の基準として参照するようにindexを設定する
                 start_point = check_point + 1;
                 check_point = start_point + aggcondition._cmp_num - 1;
             } else {
+                // timeframeで指定した情報と比較して。時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
                 check_point += 1;
             }
         }
