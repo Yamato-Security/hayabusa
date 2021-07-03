@@ -5345,6 +5345,66 @@ mod tests {
         );
     }
 
+    #[test]
+    /// countでtimeframeの条件によってruleのcountの条件を満たさない場合に空の配列を返すことを確認する
+    fn test_count_not_satisfy_in_timeframe() {
+        let record_str: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System",
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-01T01:05:00Z"
+              }
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            condition: selection1 | count(EventID) > 2
+            timeframe: 1h
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+        let mut expected_count = HashMap::new();
+        expected_count.insert("7040_".to_owned(), 1);
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule(test);
+        let init_result = rule_node.init();
+        assert_eq!(init_result.is_ok(), true);
+        let target = vec![SIMPLE_RECORD_STR, record_str];
+        for record in target {
+            match serde_json::from_str(record) {
+                Ok(rec) => {
+                    let _result = rule_node.select(&"testpath".to_string(), &rec);
+                }
+                Err(_rec) => {
+                    assert!(false, "failed to parse json record.");
+                }
+            }
+        }
+        //countupの関数が機能しているかを確認
+        assert_eq!(
+            *&rule_node
+                .countdata
+                .get("testpath")
+                .unwrap()
+                .get(&"7040_".to_owned())
+                .unwrap()
+                .len() as i32,
+            2
+        );
+        let judge_result = rule_node.judge_satisfy_aggcondition();
+        assert_eq!(judge_result.len(), 0);
+    }
+
     fn test_pipe_pattern_wildcard_asterisk() {
         let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
         assert_eq!(".*ho.*ge.*", value);
