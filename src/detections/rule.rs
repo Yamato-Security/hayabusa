@@ -5083,7 +5083,7 @@ mod tests {
     }
 
     #[test]
-    /// countのカッコ内の記載及びcount byの記載がない場合にruleで検知ができることのテスト
+    /// countのカッコ内の記載及びcount byの記載がない場合(timeframeなし)にruleで検知ができることのテスト
     fn test_count_no_field_and_by() {
         let record_str: &str = r#"
         {
@@ -5131,6 +5131,67 @@ mod tests {
             vec![SIMPLE_RECORD_STR, record_str],
             expected_count,
             vec![expected_agg_result],
+        );
+    }
+
+    #[test]
+    /// countのカッコ内の記載及びcount byの記載がない場合(timeframeあり)にruleで検知ができることのテスト
+    fn test_count_no_field_and_by_with_timeframe() {
+        let record_str: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System",
+              "TimeCreated_attributes": {
+                "SystemTime": "1996-02-27T01:05:01Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 and selection3 | count() >= 1
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let record_time = Utc.ymd(1996, 2, 27).and_hms(1, 5, 1);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("_".to_owned(), 2);
+        let mut expected_agg_result: Vec<AggResult> = Vec::new();
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            1,
+            "_".to_string(),
+            default_time,
+            ">= 1".to_string(),
+        ));
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            1,
+            "_".to_string(),
+            record_time,
+            ">= 1".to_string(),
+        ));
+        check_count(
+            rule_str,
+            vec![SIMPLE_RECORD_STR, record_str],
+            expected_count,
+            expected_agg_result,
         );
     }
 
