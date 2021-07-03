@@ -1016,15 +1016,24 @@ impl RuleNode {
             .unwrap();
         let mut start_point = 0;
         // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
-        let mut check_point = start_point + aggcondition._cmp_num;
+        let mut check_point = start_point + aggcondition._cmp_num - 1;
         // timeframeで指定された基準の値を秒数として保持
         let judge_sec_frame = self.get_sec_timeframe();
         loop {
             // 基準となるレコードもしくはcountを最低限満たす対象のレコードのindexが配列の領域を超えていた場合
             if start_point as usize >= time_data.len() || check_point as usize >= time_data.len() {
+                // 最終のレコードを対象として時刻を確認する
+                let check_point_date = time_data[time_data.len() - 1];
+                let diff =
+                    check_point_date.timestamp() - time_data[start_point as usize].timestamp();
                 // 対象のレコード数を基準となるindexから計算
-                let count_set_cnt = time_data.len() - (start_point as usize);
-                // countの条件を満たしているがtimeframe内に入っている場合があるため判定を行う
+                let mut count_set_cnt = time_data.len() - (start_point as usize);
+                if judge_sec_frame.is_some() && diff > judge_sec_frame.unwrap() {
+                    //すでにcountを満たしている状態で1つずつdiffを確認している場合は適正な個数指定となり、もともとcountの条件が残りデータ個数より多い場合は-1したことによってcountの判定でもfalseになるため
+                    count_set_cnt -= count_set_cnt - 1;
+                }
+
+                // timeframe内に入っている場合があるため判定を行う
                 let judge = self.select_aggcon(count_set_cnt as i32, &aggcondition);
                 if judge {
                     ret.push(AggResult::new(
@@ -1060,7 +1069,7 @@ impl RuleNode {
                 ));
                 // timeframe投入内の対象レコード数がcountの条件を満たした場合は、すでに判定済みのtimeframe内では同様に検知を行うことになり、過検知となってしまうため、今回timeframe内と判定された最後のレコードの次のレコードを次の基準として参照するようにindexを設定する
                 start_point = check_point;
-                check_point = start_point + aggcondition._cmp_num;
+                check_point = start_point + aggcondition._cmp_num - 1;
             } else {
                 // timeframeで指定した情報と比較して。時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
                 check_point += 1;
@@ -5368,12 +5377,10 @@ mod tests {
         detection:
             selection1:
                 Channel: 'System'
-            condition: selection1 | count(EventID) > 2
+            condition: selection1 | count(EventID) >= 2
             timeframe: 1h
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
-        let mut expected_count = HashMap::new();
-        expected_count.insert("7040_".to_owned(), 1);
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule(test);
