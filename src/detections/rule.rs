@@ -911,7 +911,7 @@ impl RuleNode {
             let by_field_value = aggcondition._by_field_name.as_ref().unwrap();
             match utils::get_event_value(by_field_value, record) {
                 Some(value) => {
-                    key.push_str(&value[by_field_value].to_string());
+                    key.push_str(&value.to_string().replace("\"", ""));
                 }
                 None => {
                     let stdout = std::io::stdout();
@@ -5196,7 +5196,7 @@ mod tests {
 
     #[test]
     /// countでカッコ内の記載がある場合にruleでcountの検知ができることを確認する
-    fn test_count_field() {
+    fn test_count_exist_field() {
         let rule_str = r#"
         enabled: true
         detection:
@@ -5229,7 +5229,7 @@ mod tests {
 
     #[test]
     /// count内の引数に有効な条件が指定されている場合
-    fn test_count_include_arg() {
+    fn test_count_exist_field_by() {
         let rule_str = r#"
         enabled: true
         detection:
@@ -5239,7 +5239,7 @@ mod tests {
                 EventID: 7040
             selection3:
                 param1: 'Windows Event Log'
-            condition: selection1 and selection2 and selection3 | count(EventID) >= 1
+            condition: selection1 and selection2 and selection3 | count(EventID) by Channel >= 1
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
@@ -5255,7 +5255,7 @@ mod tests {
 
                 assert_eq!(1, judge_result.len());
                 assert_eq!("testpath".to_string(), judge_result[0].filepath);
-                assert_eq!("7040_".to_string(), judge_result[0].key);
+                assert_eq!("7040_System".to_string(), judge_result[0].key);
                 assert_eq!(
                     Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
                     judge_result[0].start_timedate
