@@ -5238,7 +5238,7 @@ mod tests {
 
     #[test]
     /// countでカッコ内の記載、byの記載両方がある場合にruleでcountの検知ができることを確認する
-    fn test_count_exist_field_by() {
+    fn test_count_exist_field_and_by() {
         let record_str: &str = r#"
         {
           "Event": {
@@ -5297,7 +5297,7 @@ mod tests {
 
     #[test]
     /// countでカッコ内の記載、byの記載両方がある場合(複数レコードでカッコ内の指定する値が異なる場合)に値の組み合わせごとに分けてcountが実行していることを確認する
-    fn test_count_exist_field_by_with_othervalue_in_timeframe() {
+    fn test_count_exist_field_and_by_with_othervalue_in_timeframe() {
         let record_str: &str = r#"
         {
           "Event": {
@@ -5410,6 +5410,56 @@ mod tests {
         );
         let judge_result = rule_node.judge_satisfy_aggcondition();
         assert_eq!(judge_result.len(), 0);
+    }
+    #[test]
+    /// countでカッコ内の記載、byの記載両方がありtimeframe内に存在する場合にruleでcountの検知ができることを確認する
+    fn test_count_exist_field_and_by_with_timeframe() {
+        let record_str: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System",
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-01T00:05:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count(EventID) by Channel >= 2
+            timeframe: 30m
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("7040_System".to_owned(), 2);
+        let mut expected_agg_result: Vec<AggResult> = Vec::new();
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            2,
+            "7040_System".to_owned(),
+            default_time,
+            ">= 2".to_string(),
+        ));
+        check_count(
+            rule_str,
+            vec![SIMPLE_RECORD_STR, record_str],
+            expected_count,
+            expected_agg_result,
+        );
     }
 
     fn test_pipe_pattern_wildcard_asterisk() {
