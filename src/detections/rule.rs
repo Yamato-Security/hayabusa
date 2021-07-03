@@ -1007,10 +1007,12 @@ impl RuleNode {
     fn judge_timeframe(
         &self,
         filepath: &String,
-        time_data: &Vec<DateTime<Utc>>,
+        time_datas: &Vec<DateTime<Utc>>,
         key: &String,
     ) -> Vec<AggResult> {
         let mut ret = Vec::new();
+        let mut time_data = time_datas.clone();
+        time_data.sort();
         let aggcondition = self
             .detection
             .as_ref()
