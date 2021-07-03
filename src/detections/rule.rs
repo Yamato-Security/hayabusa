@@ -813,7 +813,6 @@ pub struct RuleNode {
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
     countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
-    timeframe: Option<TimeFrameInfo>,
 }
 
 unsafe impl Sync for RuleNode {}
@@ -824,7 +823,6 @@ impl RuleNode {
             yaml: yaml,
             detection: Option::None,
             countdata: HashMap::new(),
-            timeframe: Option::None,
         };
     }
     pub fn init(&mut self) -> Result<(), Vec<String>> {
