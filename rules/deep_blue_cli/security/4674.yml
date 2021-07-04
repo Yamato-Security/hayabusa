@@ -8,7 +8,7 @@ detection:
     selection:
         Channel: Security
         EventID: 4674
-        ProcessName: '(?i)C:\WINDOWS\SYSTEM32\SERVICE.EXE' # (?i) means case insesitive for Rust Regex
+        ProcessName|re: '(?i)C:\WINDOWS\SYSTEM32\SERVICE.EXE' # (?i) means case insesitive for Rust Regex
         AccessMask: '%%1539'
     # condition: selection
 falsepositives:

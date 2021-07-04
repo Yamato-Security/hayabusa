@@ -8,8 +8,7 @@ detection:
     selection:
         Channel: Security
         EventID: 4672
-        PrivilegeList: 
-            contain: SeDebugPrivilege
+        PrivilegeList|contains: SeDebugPrivilege
     # condition: selection
 falsepositives:
     - unknown

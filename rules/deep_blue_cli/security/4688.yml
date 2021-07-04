@@ -8,7 +8,7 @@ detection:
     selection:
         Channel: Security
         EventID: 4688
-        CommandLine: '.+'
+        CommandLine|re: '.+'
     # condition: selection
 falsepositives:
     - unknown
