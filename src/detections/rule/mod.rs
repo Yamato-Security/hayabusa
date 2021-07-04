@@ -6,11 +6,9 @@ use yaml_rust::Yaml;
 
 mod matchers;
 mod selectionnodes;
-use self::selectionnodes::{AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode};
+use self::selectionnodes::SelectionNode;
 mod condition_parser;
-use self::condition_parser::{
-    AggegationConditionCompiler, AggregationParseInfo, ConditionCompiler,
-};
+mod aggregation_parser;
 
 pub fn create_rule(yaml: Yaml) -> RuleNode {
     return RuleNode::new(yaml);
@@ -68,7 +66,7 @@ impl RuleNode {
 struct DetectionNode {
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
     pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
-    pub aggregation_condition: Option<AggregationParseInfo>,
+    pub aggregation_condition: Option<aggregation_parser::AggregationParseInfo>,
 }
 
 impl DetectionNode {
@@ -102,7 +100,7 @@ impl DetectionNode {
 
         // conditionをパースして、SelectionNodeに変換する
         let mut err_msgs = vec![];
-        let compiler = ConditionCompiler::new();
+        let compiler = condition_parser::ConditionCompiler::new();
         let compile_result =
             compiler.compile_condition(condition_str.clone(), &self.name_to_selection);
         if let Result::Err(err_msg) = compile_result {
@@ -112,7 +110,7 @@ impl DetectionNode {
         }
 
         // aggregation condition(conditionのパイプ以降の部分)をパース
-        let agg_compiler = AggegationConditionCompiler::new();
+        let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
         let compile_result = agg_compiler.compile(condition_str);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.push(err_msg);
@@ -202,7 +200,7 @@ impl DetectionNode {
         if yaml.as_hash().is_some() {
             // 連想配列はAND条件と解釈する
             let yaml_hash = yaml.as_hash().unwrap();
-            let mut and_node = AndSelectionNode::new();
+            let mut and_node = selectionnodes::AndSelectionNode::new();
 
             yaml_hash.keys().for_each(|hash_key| {
                 let child_yaml = yaml_hash.get(hash_key).unwrap();
@@ -214,7 +212,7 @@ impl DetectionNode {
             return Box::new(and_node);
         } else if yaml.as_vec().is_some() {
             // 配列はOR条件と解釈する。
-            let mut or_node = OrSelectionNode::new();
+            let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = self.parse_selection_recursively(key_list.clone(), child_yaml);
                 or_node.child_nodes.push(child_node);
@@ -223,7 +221,7 @@ impl DetectionNode {
             return Box::new(or_node);
         } else {
             // 連想配列と配列以外は末端ノード
-            return Box::new(LeafSelectionNode::new(key_list, yaml.clone()));
+            return Box::new(selectionnodes::LeafSelectionNode::new(key_list, yaml.clone()));
         }
     }
 }
