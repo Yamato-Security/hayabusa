@@ -442,10 +442,10 @@ impl LeafMatcher for ContainsMatcher {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::matchers::{
+    use super::super::matchers::{
         MinlengthMatcher, RegexMatcher, RegexesFileMatcher, WhitelistFileMatcher,
     };
-    use crate::detections::rule::selectionnodes::{
+    use super::super::selectionnodes::{
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
     use crate::detections::rule::tests::parse_rule_from_str;

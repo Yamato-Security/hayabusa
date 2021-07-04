@@ -504,9 +504,9 @@ impl ConditionCompiler {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::create_rule;
     use yaml_rust::YamlLoader;
 
+    use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
 
     const SIMPLE_RECORD_STR: &str = r#"
