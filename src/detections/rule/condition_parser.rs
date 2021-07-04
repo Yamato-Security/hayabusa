@@ -1,9 +1,9 @@
 use regex::Regex;
 
-use super::selectionnodes;
 use self::selectionnodes::{
     AndSelectionNode, NotSelectionNode, OrSelectionNode, RefSelectionNode, SelectionNode,
 };
+use super::selectionnodes;
 use std::{collections::HashMap, sync::Arc};
 
 #[derive(Debug, Clone)]

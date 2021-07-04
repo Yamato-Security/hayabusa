@@ -7,8 +7,8 @@ use yaml_rust::Yaml;
 mod matchers;
 mod selectionnodes;
 use self::selectionnodes::SelectionNode;
-mod condition_parser;
 mod aggregation_parser;
+mod condition_parser;
 
 pub fn create_rule(yaml: Yaml) -> RuleNode {
     return RuleNode::new(yaml);
@@ -221,7 +221,10 @@ impl DetectionNode {
             return Box::new(or_node);
         } else {
             // 連想配列と配列以外は末端ノード
-            return Box::new(selectionnodes::LeafSelectionNode::new(key_list, yaml.clone()));
+            return Box::new(selectionnodes::LeafSelectionNode::new(
+                key_list,
+                yaml.clone(),
+            ));
         }
     }
 }

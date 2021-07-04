@@ -1,7 +1,7 @@
 use regex::Regex;
 use serde_json::Value;
-use yaml_rust::Yaml;
 use std::collections::VecDeque;
+use yaml_rust::Yaml;
 
 use crate::detections::utils;
 use mopa::mopafy;
@@ -357,7 +357,6 @@ impl LeafMatcher for ContainsMatcher {
     }
 }
 
-
 /// デフォルトのマッチクラス
 /// ワイルドカードの処理やパイプ
 pub struct DefaultMatcher {
@@ -660,7 +659,7 @@ impl PipeElement {
 #[cfg(test)]
 mod tests {
     use super::super::matchers::{
-        MinlengthMatcher, RegexesFileMatcher, WhitelistFileMatcher, DefaultMatcher, PipeElement
+        DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher, WhitelistFileMatcher,
     };
     use super::super::selectionnodes::{
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
@@ -1585,7 +1584,6 @@ mod tests {
         }
     }
 
-    
     #[test]
     fn test_detect_wildcard_multibyte() {
         // multi byteの確認
