@@ -69,7 +69,7 @@ impl RuleNode {
         }
         let result = self.detection.as_ref().unwrap().select(event_record);
         if result {
-            self.count(filepath, event_record);
+            count::count(self, filepath, event_record);
         }
         return result;
     }
@@ -89,45 +89,7 @@ impl RuleNode {
             return ret;
         }
         for filepath in self.countdata.keys() {
-            ret.append(&mut self.aggregation_condition_select(&filepath));
-        }
-        return ret;
-    }
-    /// 検知された際にカウント情報を投入する関数
-    fn count(&mut self, filepath: &String, record: &Value) {
-        let key = count::create_count_key(self, record);
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
-        self.countup(
-            filepath,
-            &key,
-            Message::get_event_time(record).unwrap_or(default_time),
-        );
-    }
-
-    ///count byの条件に合致する検知済みレコードの数を増やすための関数
-    pub fn countup(&mut self, filepath: &String, key: &str, record_time_value: DateTime<Utc>) {
-        self.countdata
-            .entry(filepath.to_string())
-            .or_insert(HashMap::new());
-        let value_map = self.countdata.get_mut(filepath).unwrap();
-        value_map.entry(key.to_string()).or_insert(Vec::new());
-        let mut prev_value = value_map[key].clone();
-        prev_value.push(record_time_value);
-        value_map.insert(key.to_string(), prev_value);
-    }
-
-    ///現状のレコードの状態から条件式に一致しているかを判定する関数
-    fn aggregation_condition_select(&self, filepath: &String) -> Vec<AggResult> {
-        // recordでaliasが登録されている前提とする
-        let value_map = self.countdata.get(filepath).unwrap();
-        let mut ret = Vec::new();
-        for (key, value) in value_map {
-            ret.append(&mut count::judge_timeframe(
-                self,
-                &filepath.to_string(),
-                value,
-                &key.to_string(),
-            ));
+            ret.append(&mut count::aggregation_condition_select(&self, &filepath));
         }
         return ret;
     }

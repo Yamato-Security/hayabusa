@@ -1,15 +1,45 @@
 use crate::detections::print::AlertMessage;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::AggregationParseInfo;
+use crate::detections::rule::Message;
 use crate::detections::rule::RuleNode;
-use chrono::DateTime;
-use chrono::Utc;
+use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::num::ParseIntError;
 
 use crate::detections::rule::condition_parser::AggregationConditionToken;
 
 use crate::detections::utils;
+
+/// 検知された際にカウント情報を投入する関数
+pub fn count(rule: &mut RuleNode, filepath: &String, record: &Value) {
+    let key = create_count_key(&rule, record);
+    let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+    countup(
+        rule,
+        filepath,
+        &key,
+        Message::get_event_time(record).unwrap_or(default_time),
+    );
+}
+
+///count byの条件に合致する検知済みレコードの数を増やすための関数
+pub fn countup(
+    rule: &mut RuleNode,
+    filepath: &String,
+    key: &str,
+    record_time_value: DateTime<Utc>,
+) {
+    rule.countdata
+        .entry(filepath.to_string())
+        .or_insert(HashMap::new());
+    let value_map = rule.countdata.get_mut(filepath).unwrap();
+    value_map.entry(key.to_string()).or_insert(Vec::new());
+    let mut prev_value = value_map[key].clone();
+    prev_value.push(record_time_value);
+    value_map.insert(key.to_string(), prev_value);
+}
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
@@ -66,6 +96,22 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
         }
     }
     return key;
+}
+
+///現状のレコードの状態から条件式に一致しているかを判定する関数
+pub fn aggregation_condition_select(rule: &RuleNode, filepath: &String) -> Vec<AggResult> {
+    // recordでaliasが登録されている前提とする
+    let value_map = rule.countdata.get(filepath).unwrap();
+    let mut ret = Vec::new();
+    for (key, value) in value_map {
+        ret.append(&mut judge_timeframe(
+            &rule,
+            &filepath.to_string(),
+            value,
+            &key.to_string(),
+        ));
+    }
+    return ret;
 }
 
 /// aggregation condition内での条件式を文字として返す関数
