@@ -1,4 +1,3 @@
-extern crate chrono;
 extern crate lazy_static;
 use crate::detections::configs;
 use chrono::{DateTime, TimeZone, Utc};

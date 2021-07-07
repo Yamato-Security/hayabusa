@@ -444,10 +444,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -475,10 +475,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -505,10 +505,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -535,10 +535,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -565,10 +565,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -593,10 +593,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
