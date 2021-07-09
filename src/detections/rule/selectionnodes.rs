@@ -271,7 +271,9 @@ impl LeafSelectionNode {
             return String::default();
         }
 
-        return self.key_list[0].to_string();
+        let topkey = self.key_list[0].to_string();
+        let values: Vec<&str> = topkey.split("|").collect();
+        return values[0].to_string();
     }
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
@@ -287,10 +289,10 @@ impl LeafSelectionNode {
     /// 上から順番に調べて、一番始めに一致したMatcherが適用される
     fn get_matchers(&self) -> Vec<Box<dyn matchers::LeafMatcher>> {
         return vec![
-            Box::new(matchers::RegexMatcher::new()),
             Box::new(matchers::MinlengthMatcher::new()),
             Box::new(matchers::RegexesFileMatcher::new()),
             Box::new(matchers::WhitelistFileMatcher::new()),
+            Box::new(matchers::DefaultMatcher::new()),
         ];
     }
 }
@@ -321,7 +323,7 @@ impl SelectionNode for LeafSelectionNode {
                     ]
                 }
         */
-        if self.key_list.len() > 0 && self.key_list[0].to_string() == "EventData" {
+        if self.get_key() == "EventData" {
             let values = utils::get_event_value(&"Event.EventData.Data".to_string(), event_record);
             if values.is_none() {
                 return self.matcher.as_ref().unwrap().is_match(Option::None);
@@ -329,7 +331,6 @@ impl SelectionNode for LeafSelectionNode {
 
             // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
             let eventdata_data = values.unwrap();
-
             if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
             {
                 return self
@@ -361,35 +362,11 @@ impl SelectionNode for LeafSelectionNode {
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        let mut fixed_key_list = Vec::new(); // |xx を排除したkey_listを作成する
-        for key in &self.key_list {
-            if key.contains('|') {
-                let v: Vec<&str> = key.split('|').collect();
-                self.matcher = match v[1] {
-                    "startswith" => Some(Box::new(matchers::StartsWithMatcher::new())),
-                    "endswith" => Some(Box::new(matchers::EndsWithMatcher::new())),
-                    "contains" => Some(Box::new(matchers::ContainsMatcher::new())),
-                    _ => {
-                        return Result::Err(vec![format!(
-                            "Found unknown key option. option: {}",
-                            v[1]
-                        )])
-                    }
-                };
-                fixed_key_list.push(v[0].to_string());
-            } else {
-                fixed_key_list.push(key.to_string());
-            }
-        }
-        self.key_list = fixed_key_list;
-        let mut match_key_list = self.key_list.clone();
-        match_key_list.remove(0);
-        if self.matcher.is_none() {
-            let matchers = self.get_matchers();
-            self.matcher = matchers
-                .into_iter()
-                .find(|matcher| matcher.is_target_key(&match_key_list));
-        }
+        let match_key_list = self.key_list.clone();
+        let matchers = self.get_matchers();
+        self.matcher = matchers
+            .into_iter()
+            .find(|matcher| matcher.is_target_key(&match_key_list));
 
         // 一致するmatcherが見つからないエラー
         if self.matcher.is_none() {
@@ -562,34 +539,6 @@ mod tests {
         let record_json_str = r#"
         {
             "Event": {"System": {"EventID": 4103, "Channel": "not detect", "Computer":"DESKTOP-ICHIICHI"}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
-    }
-
-    #[test]
-    fn test_notdetect_casesensetive() {
-        // OR条件が正しく検知できることを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                Channel: Security
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"DESKTOP-ICHIICHI"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 

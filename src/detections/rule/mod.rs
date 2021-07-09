@@ -10,13 +10,9 @@ use yaml_rust::Yaml;
 
 mod matchers;
 mod selectionnodes;
-use self::selectionnodes::{AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode};
+use self::selectionnodes::SelectionNode;
+mod aggregation_parser;
 mod condition_parser;
-use self::condition_parser::{
-    AggegationConditionCompiler, AggregationParseInfo, ConditionCompiler,
-};
-mod count;
-use self::count::TimeFrameInfo;
 
 pub fn create_rule(yaml: Yaml) -> RuleNode {
     return RuleNode::new(yaml);
@@ -141,7 +137,7 @@ impl DetectionNode {
 
         // conditionをパースして、SelectionNodeに変換する
         let mut err_msgs = vec![];
-        let compiler = ConditionCompiler::new();
+        let compiler = condition_parser::ConditionCompiler::new();
         let compile_result =
             compiler.compile_condition(condition_str.clone(), &self.name_to_selection);
         if let Result::Err(err_msg) = compile_result {
@@ -151,7 +147,7 @@ impl DetectionNode {
         }
 
         // aggregation condition(conditionのパイプ以降の部分)をパース
-        let agg_compiler = AggegationConditionCompiler::new();
+        let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
         let compile_result = agg_compiler.compile(condition_str);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.push(err_msg);
@@ -241,7 +237,7 @@ impl DetectionNode {
         if yaml.as_hash().is_some() {
             // 連想配列はAND条件と解釈する
             let yaml_hash = yaml.as_hash().unwrap();
-            let mut and_node = AndSelectionNode::new();
+            let mut and_node = selectionnodes::AndSelectionNode::new();
 
             yaml_hash.keys().for_each(|hash_key| {
                 let child_yaml = yaml_hash.get(hash_key).unwrap();
@@ -253,7 +249,7 @@ impl DetectionNode {
             return Box::new(and_node);
         } else if yaml.as_vec().is_some() {
             // 配列はOR条件と解釈する。
-            let mut or_node = OrSelectionNode::new();
+            let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
                 let child_node = self.parse_selection_recursively(key_list.clone(), child_yaml);
                 or_node.child_nodes.push(child_node);
@@ -262,7 +258,10 @@ impl DetectionNode {
             return Box::new(or_node);
         } else {
             // 連想配列と配列以外は末端ノード
-            return Box::new(LeafSelectionNode::new(key_list, yaml.clone()));
+            return Box::new(selectionnodes::LeafSelectionNode::new(
+                key_list,
+                yaml.clone(),
+            ));
         }
     }
 }
@@ -315,255 +314,6 @@ mod tests {
         let mut rule_node = create_rule(rule_yaml.next().unwrap());
         assert_eq!(rule_node.init().is_ok(), true);
         return rule_node;
-    }
-
-    #[test]
-    fn test_rule_parse() {
-        // ルールファイルをYAML形式で読み込み
-        let rule_str = r#"
-        title: PowerShell Execution Pipeline
-        description: hogehoge
-        enabled: true
-        author: Yea
-        logsource: 
-            product: windows
-        detection:
-            selection:
-                Channel: Microsoft-Windows-PowerShell/Operational
-                EventID: 4103
-                ContextInfo:
-                    - Host Application
-                    - ホスト アプリケーション
-                ImagePath:
-                    min_length: 1234321
-                    regexes: ./regexes.txt
-                    whitelist: ./whitelist.txt
-        falsepositives:
-            - unknown
-        level: medium
-        output: 'command=%CommandLine%'
-        creation_date: 2020/11/8
-        updated_date: 2020/11/8
-        "#;
-        let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
-
-        // Root
-        let detection_childs = selection_node.get_childs();
-        assert_eq!(detection_childs.len(), 4);
-    }
-
-    // #[test]
-    // fn test_get_event_ids() {
-    //     let rule_str = r#"
-    //     enabled: true
-    //     detection:
-    //         selection:
-    //             EventID: 1234
-    //     output: 'command=%CommandLine%'
-    //     "#;
-    //     let rule_node = parse_rule_from_str(rule_str);
-    //     let event_ids = rule_node.get_event_ids();
-    //     assert_eq!(event_ids.len(), 1);
-    //     assert_eq!(event_ids[0], 1234);
-    // }
-
-    #[test]
-    fn test_notdetect_regex_eventid() {
-        // 完全一致なので、前方一致で検知しないことを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                EventID: 4103
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 410}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
-    }
-
-    #[test]
-    fn test_notdetect_regex_eventid2() {
-        // 完全一致なので、後方一致で検知しないことを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                EventID: 4103
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 103}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
-    }
-
-    #[test]
-    fn test_detect_regex_eventid() {
-        // これはEventID=4103で検知するはず
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                EventID: 4103
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 4103}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
-    }
-
-    #[test]
-    fn test_notdetect_regex_str() {
-        // 文字列っぽいデータでも確認
-        // 完全一致なので、前方一致しないことを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                Channel: Security
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 4103, "Channel": "Securit"}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
-    }
-
-    #[test]
-    fn test_notdetect_regex_str2() {
-        // 文字列っぽいデータでも確認
-        // 完全一致なので、後方一致しないことを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                Channel: Security
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 4103, "Channel": "ecurity"}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
-    }
-    #[test]
-    fn test_detect_regex_str() {
-        // 文字列っぽいデータでも完全一致することを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                Channel: Security
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
-    }
-
-    #[test]
-    fn test_notdetect_regex_emptystr() {
-        // 文字列っぽいデータでも完全一致することを確認
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection:
-                Channel: Security
-        output: 'command=%CommandLine%'
-        "#;
-
-        let record_json_str = r#"
-        {
-            "Event": {"System": {"Channel": ""}},
-            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
-        }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
-            }
-            Err(_) => {
-                assert!(false, "failed to parse json record.");
-            }
-        }
     }
 
     #[test]
@@ -947,7 +697,7 @@ mod tests {
         detection:
             selection:
                 EventID: 403
-                EventData: '[\s\S]*EngineVersion=2.0[\s\S]*'
+                EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
         output: 'command=%CommandLine%'
         "#;
 
@@ -1121,7 +871,10 @@ mod tests {
 
         assert_eq!(
             rule_node.init(),
-            Err(vec!["Found unknown key option. option: failed".to_string()])
+            Err(vec![
+                "unknown pipe element was specified. key:detection -> selection -> Channel|failed"
+                    .to_string()
+            ])
         );
     }
 
