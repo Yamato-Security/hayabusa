@@ -12,7 +12,11 @@ mod matchers;
 mod selectionnodes;
 use self::selectionnodes::SelectionNode;
 mod aggregation_parser;
+use self::aggregation_parser::AggregationParseInfo;
+
 mod condition_parser;
+mod count;
+use self::count::TimeFrameInfo;
 
 pub fn create_rule(yaml: Yaml) -> RuleNode {
     return RuleNode::new(yaml);

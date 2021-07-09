@@ -8,7 +8,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::num::ParseIntError;
 
-use crate::detections::rule::condition_parser::AggregationConditionToken;
+use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 
 use crate::detections::utils;
 
