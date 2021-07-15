@@ -129,9 +129,8 @@ impl Detection {
         }
 
         let agg_results = rule.judge_satisfy_aggcondition();
-        let output = &rule.yaml["output"].as_str().is_some();
         for value in agg_results {
-            if agg_condition && !output {
+            if agg_condition {
                 Detection::insert_agg_message(&rule, value);
             }
         }
