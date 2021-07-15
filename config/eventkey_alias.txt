@@ -43,3 +43,6 @@ Image,Event.EventData.Image
 ParentImage,Event.EventData.ParentImage
 MachineName,Event.EventData.MachineName
 QueryName,Event.EventData.QueryName
+JobTitle,Event.EventData.Data_jobTitle
+Url,Event.EventData.Data_url
+ProcessId,Event.System.Execution_ProcessID

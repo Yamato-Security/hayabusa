@@ -1,0 +1,17 @@
+title: BitsJob
+description: Adversaries may abuse BITS jobs to persistently execute or clean up after malicious payloads.
+enabled: true
+author: Yea
+logsource: 
+    product: windows
+detection:
+    selection:
+        Channel: System
+        EventID: 59
+        ProcessPath: C:\Windows\System32\bitsadmin.exe
+falsepositives:
+    - unknown
+level: medium
+output: 'Started bits job created. JobTitle:%JobTitle% URL:%url% ProcessId:%ProcessId%'
+creation_date: 2021/7/15
+updated_date: 2021/7/15
