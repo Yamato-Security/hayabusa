@@ -2,10 +2,10 @@ use regex::Regex;
 
 #[derive(Debug)]
 pub struct AggregationParseInfo {
-    _field_name: Option<String>,        // countの括弧に囲まれた部分の文字
-    _by_field_name: Option<String>,     // count() by の後に指定される文字列
-    _cmp_op: AggregationConditionToken, // (必須)<とか>とか何が指定されたのか
-    _cmp_num: i32,                      // (必須)<とか>とかの後にある数値
+    pub _field_name: Option<String>,    // countの括弧に囲まれた部分の文字
+    pub _by_field_name: Option<String>, // count() by の後に指定される文字列
+    pub _cmp_op: AggregationConditionToken, // (必須)<とか>とか何が指定されたのか
+    pub _cmp_num: i32,                  // (必須)<とか>とかの後にある数値
 }
 
 #[derive(Debug)]

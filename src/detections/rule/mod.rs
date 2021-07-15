@@ -1,4 +1,8 @@
 extern crate regex;
+use crate::detections::print::Message;
+
+use chrono::{DateTime, TimeZone, Utc};
+
 use std::{collections::HashMap, sync::Arc, vec};
 
 use serde_json::Value;
@@ -8,7 +12,11 @@ mod matchers;
 mod selectionnodes;
 use self::selectionnodes::SelectionNode;
 mod aggregation_parser;
+use self::aggregation_parser::AggregationParseInfo;
+
 mod condition_parser;
+mod count;
+use self::count::TimeFrameInfo;
 
 pub fn create_rule(yaml: Yaml) -> RuleNode {
     return RuleNode::new(yaml);
@@ -18,6 +26,7 @@ pub fn create_rule(yaml: Yaml) -> RuleNode {
 pub struct RuleNode {
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
+    countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
 }
 
 unsafe impl Sync for RuleNode {}
@@ -27,6 +36,7 @@ impl RuleNode {
         return RuleNode {
             yaml: yaml,
             detection: Option::None,
+            countdata: HashMap::new(),
         };
     }
 
@@ -53,12 +63,35 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&self, event_record: &Value) -> bool {
+    pub fn select(&mut self, filepath: &String, event_record: &Value) -> bool {
         if self.detection.is_none() {
             return false;
         }
-
-        return self.detection.as_ref().unwrap().select(event_record);
+        let result = self.detection.as_ref().unwrap().select(event_record);
+        if result {
+            count::count(self, filepath, event_record);
+        }
+        return result;
+    }
+    /// aggregation conditionが存在するかを返す関数
+    pub fn has_agg_condition(&self) -> bool {
+        return self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .is_some();
+    }
+    /// Aggregation Conditionの結果を配列で返却する関数
+    pub fn judge_satisfy_aggcondition(&self) -> Vec<AggResult> {
+        let mut ret = Vec::new();
+        if !self.has_agg_condition() {
+            return ret;
+        }
+        for filepath in self.countdata.keys() {
+            ret.append(&mut count::aggregation_condition_select(&self, &filepath));
+        }
+        return ret;
     }
 }
 
@@ -66,7 +99,8 @@ impl RuleNode {
 struct DetectionNode {
     pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
     pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
-    pub aggregation_condition: Option<aggregation_parser::AggregationParseInfo>,
+    pub aggregation_condition: Option<AggregationParseInfo>,
+    pub timeframe: Option<TimeFrameInfo>,
 }
 
 impl DetectionNode {
@@ -75,12 +109,19 @@ impl DetectionNode {
             name_to_selection: HashMap::new(),
             condition: Option::None,
             aggregation_condition: Option::None,
+            timeframe: Option::None,
         };
     }
 
     fn init(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
         // selection nodeの初期化
         self.parse_name_to_selection(detection_yaml)?;
+
+        //timeframeに指定されている値を取得
+        let timeframe = &detection_yaml["timeframe"].as_str();
+        if timeframe.is_some() {
+            self.timeframe = Some(TimeFrameInfo::parse_tframe(timeframe.unwrap().to_string()));
+        }
 
         // conditionに指定されている式を取得
         let condition = &detection_yaml["condition"].as_str();
@@ -151,7 +192,7 @@ impl DetectionNode {
                 continue;
             }
             // condition等、特殊なキーワードを無視する。
-            if name == "condition" {
+            if name == "condition" || name == "timeframe" {
                 continue;
             }
 
@@ -229,6 +270,39 @@ impl DetectionNode {
     }
 }
 
+#[derive(Debug)]
+/// countなどのaggregationの結果を出力する構造体
+pub struct AggResult {
+    /// evtx file path
+    pub filepath: String,
+    /// countなどの値
+    pub data: i32,
+    /// (countの括弧内の記載)_(count byで指定された条件)で設定されたキー
+    pub key: String,
+    ///検知したブロックの最初のレコードの時間
+    pub start_timedate: DateTime<Utc>,
+    ///条件式の情報
+    pub condition_op_num: String,
+}
+
+impl AggResult {
+    pub fn new(
+        filepath: String,
+        data: i32,
+        key: String,
+        start_timedate: DateTime<Utc>,
+        condition_op_num: String,
+    ) -> AggResult {
+        return AggResult {
+            filepath: filepath,
+            data: data,
+            key: key,
+            start_timedate: start_timedate,
+            condition_op_num: condition_op_num,
+        };
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::detections::rule::create_rule;
@@ -263,10 +337,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -291,10 +365,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -319,10 +393,10 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -400,10 +474,10 @@ mod tests {
             }
           }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -457,10 +531,10 @@ mod tests {
             }
           }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -521,10 +595,10 @@ mod tests {
         }
         "#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -563,10 +637,10 @@ mod tests {
         }
         "#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -606,10 +680,10 @@ mod tests {
         }
         "#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -668,10 +742,10 @@ mod tests {
           }
         "#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -730,10 +804,10 @@ mod tests {
           }
         "#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), false);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -774,10 +848,10 @@ mod tests {
           }
         }"#;
 
-        let rule_node = parse_rule_from_str(rule_str);
+        let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&record), true);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
             }
             Err(_rec) => {
                 assert!(false, "failed to parse json record.");
@@ -823,5 +897,36 @@ mod tests {
             rule_node.init(),
             Err(vec!["not found detection node".to_string()])
         );
+    }
+
+    /// countで対象の数値確認を行うためのテスト用関数
+    fn check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule(test);
+        let _init = rule_node.init();
+        match serde_json::from_str(record_str) {
+            Ok(record) => {
+                let result = rule_node.select(&"testpath".to_string(), &record);
+                assert_eq!(
+                    rule_node.detection.unwrap().aggregation_condition.is_some(),
+                    true
+                );
+                assert_eq!(result, true);
+                assert_eq!(
+                    *&rule_node
+                        .countdata
+                        .get("testpath")
+                        .unwrap()
+                        .get(key)
+                        .unwrap()
+                        .len() as i32,
+                    expect_count
+                );
+            }
+            Err(_rec) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
     }
 }
