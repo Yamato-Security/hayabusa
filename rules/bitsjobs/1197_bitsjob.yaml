@@ -6,12 +6,11 @@ logsource:
     product: windows
 detection:
     selection:
-        Channel: System
+        Channel: Microsoft-Windows-Bits-Client/Operational
         EventID: 59
-        ProcessPath: C:\Windows\System32\bitsadmin.exe
 falsepositives:
     - unknown
 level: medium
-output: 'Started bits job created. JobTitle:%JobTitle% URL:%url% ProcessId:%ProcessId%'
+output: 'Started bits job created. JobTitle:%JobTitle% URL:%Url%'
 creation_date: 2021/7/15
 updated_date: 2021/7/15
