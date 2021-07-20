@@ -43,3 +43,5 @@ Image,Event.EventData.Image
 ParentImage,Event.EventData.ParentImage
 MachineName,Event.EventData.MachineName
 QueryName,Event.EventData.QueryName
+JobTitle,Event.EventData.name
+Url,Event.EventData.url
