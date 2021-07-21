@@ -139,7 +139,6 @@ Service,Event.EventData.Service
 ServiceFileName,Event.EventData.ServiceFileName
 ServiceName,Event.EventData.ServiceName
 ServicePrincipalNames,Event.EventData.ServicePrincipalNames
-sha1,Event.EventData.Hashes
 ShareName,Event.EventData.ShareName
 SidHistory,Event.EventData.SidHistory
 Signature,Event.EventData.Signature
