@@ -168,3 +168,5 @@ TicketOptions,Event.EventData.TicketOptions
 User,Event.EventData.User
 Workstation,Event.EventData.Workstation
 WorkstationName,Event.EventData.WorkstationName
+JobTitle,Event.EventData.name
+Url,Event.EventData.url
