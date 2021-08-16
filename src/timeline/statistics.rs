@@ -1,8 +1,18 @@
 use std::path::PathBuf;
 
-use crate::detections::{configs, detection::EvtxRecordInfo};
+use crate::detections::{configs, detection::EvtxRecordInfo, utils};
+use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct EvtList {
+    pub evttime: String,
+    pub evtid: String,
+}
+impl EvtList {
+    pub fn new(evtid: String, evttime: String) -> EvtList {
+        return EvtList { evtid, evttime };
+    }
+}
 pub struct EventStatistics {}
 /**
 * Windows Event Logの統計情報を出力する
@@ -23,7 +33,7 @@ impl EventStatistics {
     pub fn start(
         &mut self,
         evtx_files: &Vec<PathBuf>,
-        records: &Vec<EvtxRecordInfo>,
+        _records: &Vec<EvtxRecordInfo>,
     ) -> Vec<String> {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
@@ -35,8 +45,57 @@ impl EventStatistics {
             return vec![];
         }
 
-        // TODO ここから下を書いて欲しいです。
+        // _recordsから、EventIDを取り出す。
+        let mut evtstat_map = HashMap::new();
+        let mut totalcount = 0;
+        let mut firstevt_time = "";
+        let mut lastevt_time = "";
+        let mut filesize = 0;
+        let mut evtlist: Vec<EvtList> = Vec::new();
+        let mut i = 0;
+        // 一旦、EventIDと時刻を取得
+        for record in _records.iter() {
+            let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
+            let evttime = utils::get_event_value(
+                &"Event.System.TimeCreated_attributes.SystemTime".to_string(),
+                &record.record,
+            );
+            let evtdata = EvtList::new(evtid.unwrap().to_string(), evttime.unwrap().to_string());
+            evtlist.push(evtdata);
+            //            println!("no:{},{:?},{:?}", i, evtlist[i].evtid, evtlist[i].evttime);
+            //println!("no:{} {:?} {:?}", i, evtlist[i].evtid, evtlist[i].evttime);
+            i += 1;
+        }
+        // 時刻でソート
+        evtlist.sort_by(|a, b| a.evttime.cmp(&b.evttime));
+        firstevt_time = evtlist[0].evttime.as_str();
+        lastevt_time = evtlist[i - 1].evttime.as_str();
+        println!("firstevet_time: {}", firstevt_time);
+        println!("lastevet_time: {}", lastevt_time);
 
+        // EventIDで集計
+        for evtdata in evtlist.iter() {
+            let idnum = &evtdata.evtid;
+            let count: &mut usize = evtstat_map.entry(idnum).or_insert(0);
+            *count += 1;
+            //println!("count: {} idnum: {}", count, idnum);
+            totalcount += 1;
+        }
+
+        //println!("map -> {:#?}", evtstat_map);
+        let mut msges: Vec<String> = Vec::new();
+        msges.push(format!("Total_counts : {}", totalcount));
+        msges.push("count\tID\tevent\ttimeline".to_string());
+        msges.push("------- ------- ------- -------".to_string());
+
+        let mut mapsorted: Vec<_> = evtstat_map.into_iter().collect();
+        mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
+        for (key, value) in mapsorted.iter() {
+            msges.push(format!("{}\t{}", key, value));
+        }
+        for msgprint in msges.iter() {
+            println!("{}", msgprint);
+        }
         return vec![];
     }
 }
