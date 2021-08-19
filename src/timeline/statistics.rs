@@ -55,6 +55,8 @@ impl EventStatistics {
         let mut i = 0;
         // 一旦、EventIDと時刻を取得
         for record in _records.iter() {
+            let channel = utils::get_event_value(&"Channel".to_string(), &record.record);
+            //println!("channel: {:?}", channel);
             let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
             let evttime = utils::get_event_value(
                 &"Event.System.TimeCreated_attributes.SystemTime".to_string(),
@@ -70,8 +72,8 @@ impl EventStatistics {
         evtlist.sort_by(|a, b| a.evttime.cmp(&b.evttime));
         firstevt_time = evtlist[0].evttime.as_str();
         lastevt_time = evtlist[i - 1].evttime.as_str();
-        println!("firstevet_time: {}", firstevt_time);
-        println!("lastevet_time: {}", lastevt_time);
+        //println!("firstevet_time: {}", firstevt_time);
+        //println!("lastevet_time: {}", lastevt_time);
 
         // EventIDで集計
         for evtdata in evtlist.iter() {
@@ -84,14 +86,24 @@ impl EventStatistics {
 
         //println!("map -> {:#?}", evtstat_map);
         let mut msges: Vec<String> = Vec::new();
-        msges.push(format!("Total_counts : {}", totalcount));
-        msges.push("count\tID\tevent\ttimeline".to_string());
-        msges.push("------- ------- ------- -------".to_string());
+        msges.push(format!("Total_counts : {}\n", totalcount));
+        msges.push(format!("firstevet_time: {}", firstevt_time));
+        msges.push(format!("lastevet_time: {}\n", lastevt_time));
+        msges.push("count(rate)\tID\tevent\ttimeline".to_string());
+        msges.push("--------------- ------- ------- -------".to_string());
 
         let mut mapsorted: Vec<_> = evtstat_map.into_iter().collect();
         mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
         for (key, value) in mapsorted.iter() {
-            msges.push(format!("{}\t{}", key, value));
+            let rate: f32 = *value as f32 / totalcount as f32;
+            //println!("total:{}",totalcount);
+            //println!("{}", rate );
+            msges.push(format!(
+                "{} ({}%)\t{}",
+                value,
+                (rate * 10000.0).round() / 100.0,
+                key
+            ));
         }
         for msgprint in msges.iter() {
             println!("{}", msgprint);
