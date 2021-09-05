@@ -5,8 +5,8 @@ use std::collections::HashMap;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct EvtList {
-    pub evttime: String,
     pub evtid: String,
+    pub evttime: String,
 }
 impl EvtList {
     pub fn new(evtid: String, evttime: String) -> EvtList {
@@ -46,10 +46,6 @@ impl EventStatistics {
         }
 
         // _recordsから、EventIDを取り出す。
-        let mut evtstat_map = HashMap::new();
-        let mut totalcount = 0;
-        let mut firstevt_time = "";
-        let mut lastevt_time = "";
         let mut filesize = 0;
         let mut evtlist: Vec<EvtList> = Vec::new();
         let mut i = 0;
@@ -70,12 +66,14 @@ impl EventStatistics {
         }
         // 時刻でソート
         evtlist.sort_by(|a, b| a.evttime.cmp(&b.evttime));
-        firstevt_time = evtlist[0].evttime.as_str();
-        lastevt_time = evtlist[i - 1].evttime.as_str();
+        let firstevt_time = evtlist[0].evttime.as_str();
+        let lastevt_time = evtlist[i - 1].evttime.as_str();
         //println!("firstevet_time: {}", firstevt_time);
         //println!("lastevet_time: {}", lastevt_time);
 
         // EventIDで集計
+        let mut evtstat_map = HashMap::new();
+        let mut totalcount = 0;
         for evtdata in evtlist.iter() {
             let idnum = &evtdata.evtid;
             let count: &mut usize = evtstat_map.entry(idnum).or_insert(0);
@@ -84,27 +82,44 @@ impl EventStatistics {
             totalcount += 1;
         }
 
+        // 出力メッセージ作成
         //println!("map -> {:#?}", evtstat_map);
         let mut msges: Vec<String> = Vec::new();
+        msges.push("---------------------------------------".to_string());
         msges.push(format!("Total_counts : {}\n", totalcount));
         msges.push(format!("firstevet_time: {}", firstevt_time));
         msges.push(format!("lastevet_time: {}\n", lastevt_time));
         msges.push("count(rate)\tID\tevent\ttimeline".to_string());
-        msges.push("--------------- ------- ------- -------".to_string());
+        msges.push("--------------- ------- -------------- -------".to_string());
 
         let mut mapsorted: Vec<_> = evtstat_map.into_iter().collect();
         mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
-        for (key, value) in mapsorted.iter() {
-            let rate: f32 = *value as f32 / totalcount as f32;
+        for (event_id, event_cnt) in mapsorted.iter() {
+            let rate: f32 = *event_cnt as f32 / totalcount as f32;
             //println!("total:{}",totalcount);
             //println!("{}", rate );
+            let conf = configs::CONFIG.read().unwrap();
+            let mut event_title: String = "Unknown".to_string();
+            let mut detect_flg: String = "".to_string();
+            // timeline_event_info.txtに登録あるものは情報設定
+            for evtinfo in conf.event_timeline_config.iter() {
+                if **event_id == evtinfo.get_event_id() {
+                    //                    println!("{:#?}", evtinfo.get_event_id());
+                    event_title = evtinfo.get_event_title();
+                    detect_flg = evtinfo.get_event_flg();
+                }
+            }
+            // 出力メッセージ1行作成
             msges.push(format!(
-                "{} ({}%)\t{}",
-                value,
+                "{} ({}%)\t{}\t{}\t{}",
+                event_cnt,
                 (rate * 10000.0).round() / 100.0,
-                key
+                event_id,
+                event_title,
+                detect_flg
             ));
         }
+        msges.push("---------------------------------------".to_string());
         for msgprint in msges.iter() {
             println!("{}", msgprint);
         }

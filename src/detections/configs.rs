@@ -11,6 +11,7 @@ lazy_static! {
 pub struct ConfigReader {
     pub args: ArgMatches<'static>,
     pub event_key_alias_config: EventKeyAliasConfig,
+    pub event_timeline_config: Vec<TimelineEventInfoConfig>,
 }
 
 impl ConfigReader {
@@ -18,6 +19,7 @@ impl ConfigReader {
         ConfigReader {
             args: build_app(),
             event_key_alias_config: load_eventkey_alias("config/eventkey_alias.txt"),
+            event_timeline_config: load_eventcode_info("config/timeline_event_info.txt"),
         }
     }
 }
@@ -107,7 +109,70 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
             .key_to_eventkey
             .insert(alias.to_owned(), event_key.to_owned());
     });
+    return config;
+}
 
+#[derive(Debug, Clone)]
+pub struct TimelineEventInfoConfig {
+    evtid: String,
+    evttitle: String,
+    detectflg: String,
+    comment: String,
+}
+
+impl TimelineEventInfoConfig {
+    pub fn new(
+        evtid: String,
+        evttitle: String,
+        detectflg: String,
+        comment: String,
+    ) -> TimelineEventInfoConfig {
+        return TimelineEventInfoConfig {
+            evtid,
+            evttitle,
+            detectflg,
+            comment,
+        };
+    }
+    pub fn get_event_id(&self) -> String {
+        return self.evtid.clone();
+    }
+
+    pub fn get_event_title(&self) -> String {
+        return self.evttitle.clone();
+    }
+    pub fn get_event_flg(&self) -> String {
+        return self.detectflg.clone();
+    }
+
+    //    pub fn get_event_key_values(&self) -> Vec<(&String, &String)> {
+    //        return self.timeline_eventcode_info.iter().map(|e| e).collect();
+    //    }
+}
+
+fn load_eventcode_info(path: &str) -> Vec<TimelineEventInfoConfig> {
+    let mut config: Vec<TimelineEventInfoConfig> = Vec::new();
+
+    let read_result = utils::read_csv(path);
+    // timeline_event_infoが読み込めなかったらエラーで終了とする。
+    read_result.unwrap().into_iter().for_each(|line| {
+        if line.len() != 4 {
+            return;
+        }
+
+        let empty = &"".to_string();
+        let eventcode = line.get(0).unwrap_or(empty);
+        let event_title = line.get(1).unwrap_or(empty);
+        let detect_flg = line.get(2).unwrap_or(empty);
+        let comment = line.get(3).unwrap_or(empty);
+        let evtinfo = TimelineEventInfoConfig::new(
+            eventcode.to_string(),
+            event_title.to_string(),
+            detect_flg.to_string(),
+            comment.to_string(),
+        );
+        config.push(evtinfo);
+    });
     return config;
 }
 
