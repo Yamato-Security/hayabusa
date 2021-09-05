@@ -87,8 +87,8 @@ impl EventStatistics {
         let mut msges: Vec<String> = Vec::new();
         msges.push("---------------------------------------".to_string());
         msges.push(format!("Total_counts : {}\n", totalcount));
-        msges.push(format!("firstevet_time: {}", firstevt_time));
-        msges.push(format!("lastevet_time: {}\n", lastevt_time));
+        msges.push(format!("firstevent_time: {}", firstevt_time));
+        msges.push(format!("lastevent_time: {}\n", lastevt_time));
         msges.push("count(rate)\tID\tevent\ttimeline".to_string());
         msges.push("--------------- ------- -------------- -------".to_string());
 
