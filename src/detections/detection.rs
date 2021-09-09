@@ -2,7 +2,7 @@ extern crate csv;
 
 use crate::detections::rule::AggResult;
 use serde_json::Value;
-use tokio::spawn;
+use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
@@ -10,7 +10,7 @@ use crate::detections::rule::RuleNode;
 use crate::detections::{print::AlertMessage, utils};
 use crate::yaml::ParseYaml;
 
-use std::sync::Arc;
+use std::{sync::Arc, usize};
 
 const DIRPATH_RULES: &str = "rules";
 
@@ -32,26 +32,21 @@ impl EvtxRecordInfo {
 
 // TODO テストケースかかなきゃ...
 #[derive(Debug)]
-pub struct Detection {}
+pub struct Detection {
+    rules: Vec<RuleNode>,
+}
 
 impl Detection {
-    pub fn new() -> Detection {
-        return Detection {};
+    pub fn new(rules: Vec<RuleNode>) -> Detection {
+        return Detection { rules: rules };
     }
 
-    pub fn start(&mut self, records: Vec<EvtxRecordInfo>) {
-        let rules = self.parse_rule_files();
-        if rules.is_empty() {
-            return;
-        }
-
-        let tokio_rt = utils::create_tokio_runtime();
-        tokio_rt.block_on(Detection::execute_rules(rules, records));
-        tokio_rt.shutdown_background();
+    pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> Self {
+        return rt.block_on(self.execute_rules(records));
     }
 
     // ルールファイルをパースします。
-    fn parse_rule_files(&self) -> Vec<RuleNode> {
+    pub fn parse_rule_files() -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
         let resutl_readdir = rulefile_loader.read_dir(DIRPATH_RULES);
@@ -81,7 +76,7 @@ impl Detection {
                 err_msgs.iter().for_each(|err_msg| {
                     AlertMessage::alert(&mut stdout, err_msg.to_string()).ok();
                 });
-                println!("");
+                println!(""); // 一行開けるためのprintln
             });
             return Option::None;
         };
@@ -95,25 +90,52 @@ impl Detection {
             .collect();
     }
 
-    async fn execute_rules(rules: Vec<RuleNode>, records: Vec<EvtxRecordInfo>) {
+    // 複数のイベントレコードに対して、複数のルールを1個実行します。
+    async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> Self {
         let records_arc = Arc::new(records);
-        let traiter = rules.into_iter();
-        // 各rule毎にスレッドを作成して、スレッドを起動する。
-        let handles = traiter.map(|rule| {
-            let records_cloned = Arc::clone(&records_arc);
-            return spawn(async move {
-                Detection::execute_rule(rule, records_cloned);
-            });
-        });
+        // // 各rule毎にスレッドを作成して、スレッドを起動する。
+        let rules = self.rules;
+        let handles: Vec<JoinHandle<RuleNode>> = rules
+            .into_iter()
+            .map(|rule| {
+                let records_cloned = Arc::clone(&records_arc);
+                return spawn(async move {
+                    let moved_rule = Detection::execute_rule(rule, records_cloned);
+                    return moved_rule;
+                });
+            })
+            .collect();
 
         // 全スレッドの実行完了を待機
+        let mut rules = vec![];
         for handle in handles {
-            handle.await.unwrap();
+            let ret_rule = handle.await.unwrap();
+            rules.push(ret_rule);
+        }
+
+        // この関数の先頭でrules.into_iter()を呼び出している。それにより所有権がmapのruleを経由し、execute_ruleの引数に渡しているruleに移っているので、self.rulesには所有権が無くなっている。
+        // 所有権を失ったメンバー変数を持つオブジェクトをreturnするコードを書くと、コンパイラが怒になるので(E0382という番号のコンパイルエラー)、ここでself.rulesに所有権を戻している。
+        // self.rulesが再度所有権を取り戻せるように、Detection::execute_ruleで引数に渡したruleを戻り値として返すようにしている。
+        self.rules = rules;
+
+        return self;
+    }
+
+    pub fn add_aggcondtion_msg(&self) {
+        for rule in &self.rules {
+            if !rule.has_agg_condition() {
+                continue;
+            }
+
+            let agg_results = rule.judge_satisfy_aggcondition();
+            for value in agg_results {
+                Detection::insert_agg_message(rule, value);
+            }
         }
     }
 
-    // 検知ロジックを実行します。
-    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) {
+    // 複数のイベントレコードに対して、ルールを1個実行します。
+    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
         let records = &*records;
         let agg_condition = rule.has_agg_condition();
         for record_info in records {
@@ -124,16 +146,10 @@ impl Detection {
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
                 Detection::insert_message(&rule, &record_info);
-                return;
             }
         }
 
-        let agg_results = rule.judge_satisfy_aggcondition();
-        for value in agg_results {
-            if agg_condition {
-                Detection::insert_agg_message(&rule, value);
-            }
-        }
+        return rule;
     }
 
     /// 条件に合致したレコードを表示するための関数

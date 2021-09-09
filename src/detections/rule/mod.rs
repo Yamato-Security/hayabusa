@@ -3,7 +3,7 @@ use crate::detections::print::Message;
 
 use chrono::{DateTime, TimeZone, Utc};
 
-use std::{collections::HashMap, sync::Arc, vec};
+use std::{collections::HashMap, fmt::Debug, sync::Arc, vec};
 
 use serde_json::Value;
 use yaml_rust::Yaml;
@@ -27,6 +27,12 @@ pub struct RuleNode {
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
     countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
+}
+
+impl Debug for RuleNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return Result::Ok(());
+    }
 }
 
 unsafe impl Sync for RuleNode {}
