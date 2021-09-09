@@ -1,12 +1,13 @@
 extern crate serde;
 extern crate serde_derive;
 
-use evtx::{err, EvtxParser, ParserSettings, SerializedEvtxRecord};
+use evtx::{EvtxParser, ParserSettings};
 use std::{
     fs::{self, File},
     path::PathBuf,
+    time::Instant,
+    vec,
 };
-use tokio::{spawn, task::JoinHandle};
 use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::detections::detection::EvtxRecordInfo;
 use yamato_event_analyzer::detections::print::AlertMessage;
@@ -14,12 +15,15 @@ use yamato_event_analyzer::omikuji::Omikuji;
 use yamato_event_analyzer::{afterfact::after_fact, detections::utils};
 use yamato_event_analyzer::{detections::configs, timeline::timeline::Timeline};
 
+// 一度にtimelineやdetectionを実行する行数
+const MAX_DETECT_RECORDS: usize = 40000;
+
 fn main() {
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
-        detect_files(vec![PathBuf::from(filepath)]);
+        analysis_files(vec![PathBuf::from(filepath)]);
     } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
         let evtx_files = collect_evtxfiles(&directory);
-        detect_files(evtx_files);
+        analysis_files(evtx_files);
     } else if configs::CONFIG.read().unwrap().args.is_present("credits") {
         print_credits();
     }
@@ -69,110 +73,92 @@ fn print_credits() {
     }
 }
 
-fn detect_files(evtx_files: Vec<PathBuf>) {
-    let evnt_records = evtx_to_jsons(&evtx_files);
-
+fn analysis_files(evtx_files: Vec<PathBuf>) {
     let mut tl = Timeline::new();
-    tl.start(&evtx_files, &evnt_records);
+    let mut detection = detection::Detection::new(detection::Detection::parse_rule_files());
 
-    let mut detection = detection::Detection::new();
-    &detection.start(evnt_records);
+    for evtx_file in evtx_files {
+        let ret = analysis_file(evtx_file, tl, detection);
+        tl = ret.0;
+        detection = ret.1;
+    }
 
     after_fact();
 }
 
-// evtxファイルをjsonに変換します。
-fn evtx_to_jsons(evtx_files: &Vec<PathBuf>) -> Vec<EvtxRecordInfo> {
-    // EvtxParserを生成する。
-    let evtx_parsers: Vec<EvtxParser<File>> = evtx_files
-        .clone()
-        .into_iter()
-        .filter_map(|evtx_file| {
-            // convert to evtx parser
-            // println!("PathBuf:{}", evtx_file.display());
-            match EvtxParser::from_path(evtx_file) {
-                Ok(parser) => Option::Some(parser),
-                Err(e) => {
-                    eprintln!("{}", e);
-                    return Option::None;
-                }
-            }
-        })
-        .collect();
-
-    let tokio_rt = utils::create_tokio_runtime();
-    let ret = tokio_rt.block_on(evtx_to_json(evtx_parsers, &evtx_files));
-    tokio_rt.shutdown_background();
-
-    return ret;
-}
-
-// evtxファイルからEvtxRecordInfoを生成する。
-// 戻り値は「どのイベントファイルから生成されたXMLかを示すindex」と「変換されたXML」のタプルです。
-// タプルのindexは、引数で指定されるevtx_filesのindexに対応しています。
-async fn evtx_to_json(
-    evtx_parsers: Vec<EvtxParser<File>>,
-    evtx_files: &Vec<PathBuf>,
-) -> Vec<EvtxRecordInfo> {
-    // evtx_parser.records_json()でevtxをxmlに変換するJobを作成
-    let handles: Vec<JoinHandle<Vec<err::Result<SerializedEvtxRecord<serde_json::Value>>>>> =
-        evtx_parsers
-            .into_iter()
-            .map(|mut evtx_parser| {
-                return spawn(async move {
-                    let mut parse_config = ParserSettings::default();
-                    parse_config = parse_config.separate_json_attributes(true);
-                    parse_config = parse_config.num_threads(utils::get_thread_num());
-
-                    evtx_parser = evtx_parser.with_configuration(parse_config);
-                    let values = evtx_parser.records_json_value().collect();
-                    return values;
-                });
-            })
-            .collect();
-
-    // 作成したjobを実行し(handle.awaitの部分)、スレッドの実行時にエラーが発生した場合、標準エラー出力に出しておく
-    let mut ret = vec![];
-    for (parser_idx, handle) in handles.into_iter().enumerate() {
-        let future_result = handle.await;
-        if future_result.is_err() {
-            let evtx_filepath = &evtx_files[parser_idx].display();
-            let errmsg = format!(
-                "Failed to parse event file. EventFile:{} Error:{}",
-                evtx_filepath,
-                future_result.unwrap_err()
-            );
-            AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-            continue;
-        }
-
-        future_result.unwrap().into_iter().for_each(|parse_result| {
-            ret.push((parser_idx, parse_result));
-        });
+// Windowsイベントログファイルを1ファイル分解析する。
+fn analysis_file(
+    evtx_filepath: PathBuf,
+    mut tl: Timeline,
+    mut detection: detection::Detection,
+) -> (Timeline, detection::Detection) {
+    let filepath_disp = evtx_filepath.display();
+    let parser = evtx_to_jsons(evtx_filepath.clone());
+    if parser.is_none() {
+        return (tl, detection);
     }
 
-    return ret
-        .into_iter()
-        .filter_map(|(parser_idx, parse_result)| {
+    let mut parser = parser.unwrap();
+    let mut records = parser.records_json_value();
+    let tokio_rt = utils::create_tokio_runtime();
+    loop {
+        let mut records_per_detect = vec![];
+        while records_per_detect.len() < MAX_DETECT_RECORDS {
             // パースに失敗している場合、エラーメッセージを出力
-            if parse_result.is_err() {
-                let evtx_filepath = &evtx_files[parser_idx].display();
+            let next_rec = records.next();
+            if next_rec.is_none() {
+                break;
+            }
+
+            let record_result = next_rec.unwrap();
+            if record_result.is_err() {
+                let evtx_filepath = &filepath_disp;
                 let errmsg = format!(
                     "Failed to parse event file. EventFile:{} Error:{}",
                     evtx_filepath,
-                    parse_result.unwrap_err()
+                    record_result.unwrap_err()
                 );
                 AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
-                return Option::None;
+                continue;
             }
 
-            let record_info = EvtxRecordInfo::new(
-                evtx_files[parser_idx].display().to_string(),
-                parse_result.unwrap().data,
-            );
-            return Option::Some(record_info);
-        })
-        .collect();
+            let record_info =
+                EvtxRecordInfo::new((&filepath_disp).to_string(), record_result.unwrap().data);
+            records_per_detect.push(record_info);
+        }
+        if records_per_detect.len() == 0 {
+            break;
+        }
+
+        // timeline機能の実行
+        tl.start(&records_per_detect);
+
+        // ruleファイルの検知
+        detection = detection.start(&tokio_rt, records_per_detect);
+    }
+
+    tokio_rt.shutdown_background();
+    detection.add_aggcondtion_msg();
+
+    return (tl, detection);
+}
+
+fn evtx_to_jsons(evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {
+    match EvtxParser::from_path(evtx_filepath) {
+        Ok(evtx_parser) => {
+            // parserのデフォルト設定を変更
+            let mut parse_config = ParserSettings::default();
+            parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
+            parse_config = parse_config.num_threads(utils::get_thread_num()); // 設定しないと遅かったので、設定しておく。
+
+            let evtx_parser = evtx_parser.with_configuration(parse_config);
+            return Option::Some(evtx_parser);
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+            return Option::None;
+        }
+    }
 }
 
 fn _output_with_omikuji(omikuji: Omikuji) {
