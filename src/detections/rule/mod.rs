@@ -74,9 +74,9 @@ impl RuleNode {
             return false;
         }
         let result = self.detection.as_ref().unwrap().select(event_record);
-        // if result {
-        //     count::count(self, filepath, event_record);
-        // }
+        if result {
+            count::count(self, filepath, event_record);
+        }
         return result;
     }
     /// aggregation conditionが存在するかを返す関数
