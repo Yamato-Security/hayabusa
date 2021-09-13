@@ -43,9 +43,10 @@ impl ParseYaml {
                                 Ok(docs) => {
                                     for i in docs {
                                         // If there is no "enabled" it does not load
-                                        if i["enabled"].as_bool().unwrap_or(false) {
-                                            &self.files.push(i);
+                                        if i["ignore"].as_bool().unwrap_or(false) {
+                                            continue;
                                         }
+                                        &self.files.push(i);
                                     }
                                 }
                                 Err(e) => {
