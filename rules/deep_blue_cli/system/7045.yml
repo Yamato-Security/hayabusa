@@ -1,6 +1,5 @@
 title: A service was installed in the system
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

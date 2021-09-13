@@ -1,6 +1,5 @@
 title: The ... service entered the stopped|running state
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

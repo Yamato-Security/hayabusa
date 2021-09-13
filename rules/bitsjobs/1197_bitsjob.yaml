@@ -1,6 +1,5 @@
 title: BitsJob
 description: Adversaries may abuse BITS jobs to persistently execute or clean up after malicious payloads.
-enabled: true
 author: Yea
 logsource: 
     product: windows
