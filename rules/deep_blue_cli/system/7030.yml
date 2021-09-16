@@ -1,6 +1,5 @@
 title: This service may not function properly
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

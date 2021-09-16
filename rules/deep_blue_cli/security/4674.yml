@@ -1,6 +1,5 @@
 title: An Operation was attempted on a privileged object
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

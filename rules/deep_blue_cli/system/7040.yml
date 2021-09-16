@@ -1,6 +1,5 @@
 title: The start type of the Windows Event Log service was changed from auto start to disabled
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

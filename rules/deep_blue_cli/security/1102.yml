@@ -1,6 +1,5 @@
 title: The Audit log file was cleared
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

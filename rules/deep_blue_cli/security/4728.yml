@@ -1,6 +1,5 @@
 title: A member was added to a security-enabled global group.
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

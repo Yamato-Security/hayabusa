@@ -1,6 +1,5 @@
 title: Check for unsigned EXEs/DLLs
 description: hogehoge
-enabled: true
 author: Yea
 logsource: 
     product: windows

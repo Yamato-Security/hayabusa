@@ -1,6 +1,5 @@
 title: AS-REP Roasting
 description: For each account found without preauthentication, an adversary may send an AS-REQ message without the encrypted timestamp and receive an AS-REP message with TGT data which may be encrypted with an insecure algorithm such as RC4.
-enabled: true
 author: Yea
 logsource: 
     product: windows
