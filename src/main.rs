@@ -2,6 +2,7 @@ extern crate serde;
 extern crate serde_derive;
 
 use evtx::{EvtxParser, ParserSettings};
+use std::collections::HashMap;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -12,6 +13,7 @@ use yamato_event_analyzer::detections::detection;
 use yamato_event_analyzer::detections::detection::EvtxRecordInfo;
 use yamato_event_analyzer::detections::print::AlertMessage;
 use yamato_event_analyzer::omikuji::Omikuji;
+use yamato_event_analyzer::timeline::statistics::EventStatistics;
 use yamato_event_analyzer::{afterfact::after_fact, detections::utils};
 use yamato_event_analyzer::{detections::configs, timeline::timeline::Timeline};
 
@@ -101,6 +103,14 @@ fn analysis_file(
     let mut parser = parser.unwrap();
     let mut records = parser.records_json_value();
     let tokio_rt = utils::create_tokio_runtime();
+
+    let totalcnt = "".to_string();
+    let starttm = "".to_string();
+    let endtm = "".to_string();
+    let statslst = HashMap::new();
+    let mut stats = EventStatistics::new(totalcnt, starttm, endtm, statslst);
+    let mut tl_stats: Vec<EventStatistics> = Vec::new();
+
     loop {
         let mut records_per_detect = vec![];
         while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -131,7 +141,8 @@ fn analysis_file(
         }
 
         // timeline機能の実行
-        tl.start(&records_per_detect);
+        stats = tl.start(&records_per_detect);
+        tl_stats.push(stats);
 
         // ruleファイルの検知
         detection = detection.start(&tokio_rt, records_per_detect);
@@ -139,6 +150,7 @@ fn analysis_file(
 
     tokio_rt.shutdown_background();
     detection.add_aggcondtion_msg();
+    tl.tm_stats_resmsg(&tl_stats);
 
     return (tl, detection);
 }

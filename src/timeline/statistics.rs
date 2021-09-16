@@ -13,28 +13,31 @@ impl EvtList {
         return EvtList { evtid, evttime };
     }
 }
-pub struct EventStatistics {}
+pub struct EventStatistics {
+    pub total: String,
+    pub start_time: String,
+    pub end_time: String,
+    pub stats_list: HashMap<String, usize>,
+}
 /**
 * Windows Event Logの統計情報を出力する
 */
 impl EventStatistics {
-    pub fn new() -> EventStatistics {
-        return EventStatistics {};
+    pub fn new(
+        total: String,
+        start_time: String,
+        end_time: String,
+        stats_list: HashMap<String, usize>,
+    ) -> EventStatistics {
+        return EventStatistics {
+            total,
+            start_time,
+            end_time,
+            stats_list,
+        };
     }
 
-    // この関数の戻り値として、コンソールに出力する内容をStringの可変配列(Vec)として返却してください。
-    // 可変配列にしているのは改行を表すためで、可変配列にコンソールに出力する内容を1行ずつ追加してください。
-    // 引数の_recordsが読み込んだWindowsイベントログのを表す、EvtxRecordInfo構造体の配列になっています。
-    // EvtxRecordInfo構造体の pub record: Value というメンバーがいて、それがWindowsイベントログの1レコード分を表していますので、
-    // EvtxRecordInfo構造体のrecordから、EventIDとか統計情報を取得するようにしてください。
-    // recordからEventIDを取得するには、detection::utils::get_event_value()という関数があるので、それを使うと便利かもしれません。
-
-    // 現状では、この関数の戻り値として返すVec<String>を表示するコードは実装していません。
-    pub fn start(
-        &mut self,
-        evtx_files: &Vec<PathBuf>,
-        _records: &Vec<EvtxRecordInfo>,
-    ) -> Vec<String> {
+    pub fn start(&mut self, _records: &Vec<EvtxRecordInfo>) -> Vec<String> {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
@@ -45,7 +48,7 @@ impl EventStatistics {
             return vec![];
         }
 
-        let mut filesize = 0;
+        //let mut filesize = 0;
         // _recordsから、EventIDを取り出す。
         let (evtlist, index) = self.timeline_get_eventid(&_records);
         //        println!("{}", index);
@@ -72,8 +75,10 @@ impl EventStatistics {
             println!("{}", msgprint);
         }
 
+        self.stats_list = evtstat_map;
         // 集計件数でソート
-        let mut mapsorted: Vec<_> = evtstat_map.into_iter().collect();
+        /*
+        let mut mapsorted: Vec<_> = &evtstat_map.into_iter().collect();
         mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
 
         // イベントID毎の出力メッセージ生成
@@ -83,7 +88,10 @@ impl EventStatistics {
         for msgprint in res_msg.iter() {
             println!("{}", msgprint);
         }
-
+        */
+        self.total = totalcount.to_string();
+        self.start_time = firstevt_time.to_string();
+        self.end_time = lastevt_time.to_string();
         return vec![];
     }
 
@@ -93,7 +101,7 @@ impl EventStatistics {
         let mut i = 0;
         // 一旦、EventIDと時刻を取得
         for record in _records.iter() {
-            let channel = utils::get_event_value(&"Channel".to_string(), &record.record);
+            //let channel = utils::get_event_value(&"Channel".to_string(), &record.record);
             //println!("channel: {:?}", channel);
             let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
             let evttime = utils::get_event_value(
