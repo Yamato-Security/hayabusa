@@ -1,18 +1,7 @@
-use std::path::PathBuf;
-
 use crate::detections::{configs, detection::EvtxRecordInfo, utils};
 use std::collections::HashMap;
 
-#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct EvtList {
-    pub evtid: String,
-    pub evttime: String,
-}
-impl EvtList {
-    pub fn new(evtid: String, evttime: String) -> EvtList {
-        return EvtList { evtid, evttime };
-    }
-}
+#[derive(Debug)]
 pub struct EventStatistics {
     pub total: String,
     pub start_time: String,
@@ -37,7 +26,7 @@ impl EventStatistics {
         };
     }
 
-    pub fn start(&mut self, _records: &Vec<EvtxRecordInfo>) -> Vec<String> {
+    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) -> Vec<String> {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
@@ -50,24 +39,19 @@ impl EventStatistics {
 
         //let mut filesize = 0;
         // _recordsから、EventIDを取り出す。
-        let (evtlist, index) = self.timeline_get_eventid(&_records);
-        //        println!("{}", index);
-        let firstevt_time = evtlist[0].evttime.as_str();
-        let lastevt_time = evtlist[index - 1].evttime.as_str();
-        //println!("firstevet_time: {}", firstevt_time);
-        //println!("lastevet_time: {}", lastevt_time);
+        self.stats_time_cnt(records);
 
         // EventIDで集計
         //let evtstat_map = HashMap::new();
-        let (evtstat_map, totalcount) = self.timeline_stats_eventid(&evtlist);
+        self.stats_list = self.timeline_stats_eventid(records);
 
         // 出力メッセージ作成
         //println!("map -> {:#?}", evtstat_map);
         let mut sammsges: Vec<String> = Vec::new();
         sammsges.push("---------------------------------------".to_string());
-        sammsges.push(format!("Total_counts : {}\n", totalcount));
-        sammsges.push(format!("firstevent_time: {}", firstevt_time));
-        sammsges.push(format!("lastevent_time: {}\n", lastevt_time));
+        sammsges.push(format!("Total_counts : {}\n", self.total));
+        sammsges.push(format!("firstevent_time: {}", self.start_time));
+        sammsges.push(format!("lastevent_time: {}\n", self.end_time));
         sammsges.push("count(rate)\tID\tevent\t\ttimeline".to_string());
         sammsges.push("--------------- ------- --------------- -------".to_string());
 
@@ -75,66 +59,59 @@ impl EventStatistics {
             println!("{}", msgprint);
         }
 
-        self.stats_list = evtstat_map;
-        // 集計件数でソート
-        /*
-        let mut mapsorted: Vec<_> = &evtstat_map.into_iter().collect();
-        mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
-
-        // イベントID毎の出力メッセージ生成
-        let res_msg: Vec<String> = self.timeline_stats_res_msg(&mapsorted, &totalcount);
-
-        //        msges.push(res_msg);
-        for msgprint in res_msg.iter() {
-            println!("{}", msgprint);
-        }
-        */
-        self.total = totalcount.to_string();
-        self.start_time = firstevt_time.to_string();
-        self.end_time = lastevt_time.to_string();
         return vec![];
     }
 
-    // _recordsから、EventIDを取り出す。
-    fn timeline_get_eventid(&self, _records: &Vec<EvtxRecordInfo>) -> (Vec<EvtList>, usize) {
-        let mut evtlist: Vec<EvtList> = Vec::new();
-        let mut i = 0;
-        // 一旦、EventIDと時刻を取得
-        for record in _records.iter() {
-            //let channel = utils::get_event_value(&"Channel".to_string(), &record.record);
-            //println!("channel: {:?}", channel);
-            let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
+    fn stats_time_cnt(&mut self, records: &Vec<EvtxRecordInfo>) {
+        if records.len() == 0 {
+            return;
+        }
+
+        // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
+        // sortしないことにより計算量が改善されています。
+        // もうちょっと感じに書けるといえば書けます。
+        for record in records.iter() {
             let evttime = utils::get_event_value(
                 &"Event.System.TimeCreated_attributes.SystemTime".to_string(),
                 &record.record,
-            );
+            )
+            .and_then(|evt_value| {
+                return Option::Some(evt_value.to_string());
+            });
+            if evttime.is_none() {
+                continue;
+            }
 
-            let evtdata = EvtList::new(evtid.unwrap().to_string(), evttime.unwrap().to_string());
-            // 取得イベントを格納
-            evtlist.push(evtdata);
-            //println!("no:{},{:?},{:?}", i, evtlist[i].evtid, evtlist[i].evttime);
-            //println!("no:{} {:?} {:?}", i, evtlist[i].evtid, evtlist[i].evttime);
-            i += 1;
+            let evttime = evttime.unwrap();
+            if self.start_time.len() == 0 || evttime < self.start_time {
+                self.start_time = evttime.to_string();
+            }
+            if self.end_time.len() == 0 || evttime > self.end_time {
+                self.end_time = evttime;
+            }
         }
-        // 時刻でソート
-        evtlist.sort_by(|a, b| a.evttime.cmp(&b.evttime));
-        return (evtlist, i);
+
+        self.total = records.len().to_string(); // for文で数えなくても、Vecの関数で簡単に取得可能
     }
 
     // EventIDで集計
-    fn timeline_stats_eventid(&self, _evtlist: &Vec<EvtList>) -> (HashMap<String, usize>, usize) {
+    fn timeline_stats_eventid(&self, records: &Vec<EvtxRecordInfo>) -> HashMap<String, usize> {
         let mut evtstat_map = HashMap::new();
-        let mut totalcount: usize = 0;
-        for evtdata in _evtlist.iter() {
-            let idnum = &evtdata.evtid;
+        for record in records.iter() {
+            let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
+            if evtid.is_none() {
+                continue;
+            }
+
+            let idnum = evtid.unwrap();
             let count: &mut usize = evtstat_map.entry(idnum.to_string()).or_insert(0);
             *count += 1;
-            //println!("count: {} idnum: {}", count, idnum);
-            totalcount += 1;
         }
-        return (evtstat_map, totalcount);
+        return evtstat_map;
     }
 
+    /// ここの処理も変える必要がありそうだが、何やっているかあまりよく分からないので、本人に確認する。
+    /// 多分、timelineに移動する。
     // イベントID毎の出力メッセージ生成
     fn timeline_stats_res_msg(
         &self,
