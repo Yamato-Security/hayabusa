@@ -26,7 +26,7 @@ impl EventStatistics {
         };
     }
 
-    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) -> Vec<String> {
+    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
@@ -34,7 +34,7 @@ impl EventStatistics {
             .args
             .is_present("statistics")
         {
-            return vec![];
+            return;
         }
 
         //let mut filesize = 0;
@@ -58,8 +58,6 @@ impl EventStatistics {
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-
-        return vec![];
     }
 
     fn stats_time_cnt(&mut self, records: &Vec<EvtxRecordInfo>) {
