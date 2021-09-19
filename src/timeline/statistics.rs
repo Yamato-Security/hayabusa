@@ -2,7 +2,6 @@ use crate::detections::{configs, detection::EvtxRecordInfo, utils};
 use std::collections::HashMap;
 
 #[derive(Debug)]
-
 pub struct EventStatistics {
     pub total: String,
     pub start_time: String,

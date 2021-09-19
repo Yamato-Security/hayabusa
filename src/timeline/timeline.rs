@@ -40,12 +40,12 @@ impl Timeline {
 
         // イベントID毎の出力メッセージ生成
         let totalnum: usize = self.stats.total.parse().unwrap();
-        let res_msges: Vec<String> = self.tm_stats_set_msg(mapsorted, &totalnum);
+        let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted, &totalnum);
 
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-        for msgprint in res_msges.iter() {
+        for msgprint in stats_msges.iter() {
             println!("{}", msgprint);
         }
     }
@@ -63,24 +63,31 @@ impl Timeline {
 
             // イベント情報取得(eventtitleなど)
             let conf = configs::CONFIG.read().unwrap();
-            let mut event_title: String = "Unknown".to_string();
-            let mut detect_flg: String = "".to_string();
             // timeline_event_info.txtに登録あるものは情報設定
-            for evtinfo in conf.event_timeline_config.iter() {
-                if **event_id == evtinfo.get_event_id() {
-                    event_title = evtinfo.get_event_title();
-                    detect_flg = evtinfo.get_event_flg();
+            match conf.event_timeline_config.get_event_id(*event_id) {
+                Some(e) => {
+                    // 出力メッセージ1行作成
+                    msges.push(format!(
+                        "{0} ({1:.1}%)\t{2}\t{3}\t{4}",
+                        event_cnt,
+                        (rate * 1000.0).round() / 10.0,
+                        event_id,
+                        e.evttitle,
+                        e.detectflg
+                    ));
+                }
+                None => {
+                    // 出力メッセージ1行作成
+                    msges.push(format!(
+                        "{0} ({1:.1}%)\t{2}\t{3}\t{4}",
+                        event_cnt,
+                        (rate * 1000.0).round() / 100.0,
+                        event_id,
+                        "Unknown".to_string(),
+                        "".to_string()
+                    ));
                 }
             }
-            // 出力メッセージ1行作成
-            msges.push(format!(
-                "{} ({}%)\t{}\t{}\t{}",
-                event_cnt,
-                (rate * 10000.0).round() / 100.0,
-                event_id,
-                event_title,
-                detect_flg
-            ));
         }
         msges.push("---------------------------------------".to_string());
         return msges;
