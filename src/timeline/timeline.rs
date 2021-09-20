@@ -47,8 +47,7 @@ impl Timeline {
         mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
 
         // イベントID毎の出力メッセージ生成
-        let totalnum: usize = self.stats.total;
-        let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted, &totalnum);
+        let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted);
 
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
@@ -58,16 +57,12 @@ impl Timeline {
         }
     }
     // イベントID毎の出力メッセージ生成
-    fn tm_stats_set_msg(
-        &self,
-        mapsorted: Vec<(&std::string::String, &usize)>,
-        totalcount: &usize,
-    ) -> Vec<String> {
+    fn tm_stats_set_msg(&self, mapsorted: Vec<(&std::string::String, &usize)>) -> Vec<String> {
         let mut msges: Vec<String> = Vec::new();
 
         for (event_id, event_cnt) in mapsorted.iter() {
             // 件数の割合を算出
-            let rate: f32 = **event_cnt as f32 / *totalcount as f32;
+            let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
 
             // イベント情報取得(eventtitleなど)
             let conf = configs::CONFIG.read().unwrap();
@@ -89,7 +84,7 @@ impl Timeline {
                     msges.push(format!(
                         "{0} ({1:.1}%)\t{2}\t{3}\t{4}",
                         event_cnt,
-                        (rate * 1000.0).round() / 100.0,
+                        (rate * 1000.0).round() / 10.0,
                         event_id,
                         "Unknown".to_string(),
                         "".to_string()
