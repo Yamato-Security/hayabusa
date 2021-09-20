@@ -9,15 +9,13 @@ import copy
 
 class YeaBackend(SingleTextQueryBackend):
     """Base class for backends that generate one text-based expression from a Sigma rule"""
-    ## see tools.py 
-    ## use this value when sigmac parse argument of "-t" 
+    ## see tools.py
+    ## use this value when sigmac parse argument of "-t"
     identifier = "yea"
     ## see tools.py
     active = True
 
     # the following class variables define the generation and behavior of queries from a parse tree some are prefilled with default values that are quite usual
-    reEscape = re.compile('(")')
-    reClear = None
     andToken = " and "                  # Token used for linking expressions with logical AND
     orToken = " or "                    # Same for OR
     notToken = " not "                  # Same for NOT
@@ -42,30 +40,51 @@ class YeaBackend(SingleTextQueryBackend):
         return self.generateORNode(node)
 
     def generateMapItemNode(self, node):
-        # 以下の形式のnodeが来る
+        # 以下のルールに対応。
+        # logsource:
+        #     product: windows
+        #     service: system
+        # detection:
+        # EventID: 7045
+        # TaskName:
+        #     - 'SC Scheduled Scan'
+        #     - 'UpdatMachine'
+        #
+        # 変換されて以下の形式でnodeが渡される
         # - LogName System
         # - EventID 7045
         # - TaskName ['SC Scheduled Scan', 'UpdatMachine']
-        # - CommandLine ['*i', '*u']
-        # - CommandLine *\microsoft\Taskbar\autoit3.exe
-        # - Image *\Windows\Temp\DB\\*
-        # いま見ている SELECTION_x にANDNodeとしてつなげることが目標
 
         fieldname, value = node
-        if type(value) in (str, int):
-            # TODO: fix...
-            return self.generateMapItemTypedNode(fieldname, value)
+        name = self.selection_prefix.format(self.name_idx)
+
+        childValue = None
+        if type(value) == str and "*" in value[1:-1]:
+            childValue = self.generateValueNode(value)
+        elif type(value) in (str, int):
+            childValue = value
+        else:
+            childValue = self.generateNode(value)
+
+        if self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
+            if name in self.name_2_selection:
+                self.name_2_selection[name].append((fieldname, childValue))
+            else:
+                self.name_2_selection[name] = [(fieldname, childValue)]
+            return None
         elif type(value) == list:
             return self.generateMapItemListNode(fieldname, value)
         elif isinstance(value, SigmaTypeModifier):
             return self.generateMapItemTypedNode(fieldname, value)
+        elif value is None:
+            return self.nullExpression % (fieldname, )
         else:
-            raise TypeError("Backend does not support map values of type " + str(type(value)))      
+            raise TypeError("Backend does not support map values of type " + str(type(value)))
 
     def generateMapItemTypedNode(self, fieldname, value):
         name = self.selection_prefix.format(self.name_idx)
         self.name_idx += 1
-        self.name_2_selection[name] = (fieldname, self.generateNode(value))
+        self.name_2_selection[name] = [(fieldname, self.generateNode(value))]
         return name
 
     def generateMapItemListNode(self, fieldname, value):
@@ -84,7 +103,11 @@ class YeaBackend(SingleTextQueryBackend):
         name = self.selection_prefix.format(self.name_idx)
         self.name_idx += 1
         values = [ self.generateNode(value_element) for value_element in value]
-        self.name_2_selection[name] = (fieldname, values)
+        # selection下に置かれるもの
+        if name in self.name_2_selection:
+            self.name_2_selection[name].append((fieldname, values))
+        else:
+            self.name_2_selection[name] = [(fieldname, values)]
         return name
 
     def generateQuery(self, parsed):
@@ -104,9 +127,10 @@ class YeaBackend(SingleTextQueryBackend):
             ## detectionの部分だけ変更して出力する。
             parsed_yaml["detection"] = {}
             parsed_yaml["detection"]["condition"] = result
-            for key, val in self.name_2_selection.items():
+            for key, values in self.name_2_selection.items():
                 parsed_yaml["detection"][key] = {}
-                parsed_yaml["detection"][key][val[0]] = val[1]
+                for fieldname, value in values:
+                    parsed_yaml["detection"][key][fieldname] = value
 
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
