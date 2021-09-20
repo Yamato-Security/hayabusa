@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct EventStatistics {
-    pub total: String,
+    pub total: usize,
     pub start_time: String,
     pub end_time: String,
     pub stats_list: HashMap<String, usize>,
@@ -13,7 +13,7 @@ pub struct EventStatistics {
 */
 impl EventStatistics {
     pub fn new(
-        total: String,
+        total: usize,
         start_time: String,
         end_time: String,
         stats_list: HashMap<String, usize>,
@@ -74,13 +74,7 @@ impl EventStatistics {
                 self.end_time = evttime;
             }
         }
-        if self.total.is_empty() {
-            self.total = records.len().to_string();
-        } else {
-            let totalnum: usize = self.total.parse().unwrap();
-            let count = records.len();
-            self.total = (totalnum + count).to_string(); // 複数回コールされていた場合は、加算する
-        }
+        self.total += records.len();
     }
 
     // EventIDで集計

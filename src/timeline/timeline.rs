@@ -10,7 +10,7 @@ pub struct Timeline {
 
 impl Timeline {
     pub fn new() -> Timeline {
-        let totalcnt = "".to_string();
+        let totalcnt = 0;
         let starttm = "".to_string();
         let endtm = "".to_string();
         let statslst = HashMap::new();
@@ -47,7 +47,7 @@ impl Timeline {
         mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
 
         // イベントID毎の出力メッセージ生成
-        let totalnum: usize = self.stats.total.parse().unwrap();
+        let totalnum: usize = self.stats.total;
         let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted, &totalnum);
 
         for msgprint in sammsges.iter() {
