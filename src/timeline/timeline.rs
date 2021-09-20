@@ -24,6 +24,14 @@ impl Timeline {
     }
 
     pub fn tm_stats_dsp_msg(&mut self) {
+        if !configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("statistics")
+        {
+            return;
+        }
         // 出力メッセージ作成
         //println!("map -> {:#?}", evtstat_map);
         let mut sammsges: Vec<String> = Vec::new();
