@@ -532,7 +532,7 @@ mod tests {
         creation_date: 2020/11/8
         updated_date: 2020/11/8
         "#;
-        let mut rule_node = parse_rule_from_str(rule_str);
+        let rule_node = parse_rule_from_str(rule_str);
         let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
 
         // Root

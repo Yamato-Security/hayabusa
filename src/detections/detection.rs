@@ -4,13 +4,13 @@ use crate::detections::rule::AggResult;
 use serde_json::Value;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
+use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
-use crate::detections::{print::AlertMessage, utils};
 use crate::yaml::ParseYaml;
 
-use std::{sync::Arc, usize};
+use std::sync::Arc;
 
 const DIRPATH_RULES: &str = "rules";
 

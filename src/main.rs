@@ -5,7 +5,6 @@ use evtx::{EvtxParser, ParserSettings};
 use std::{
     fs::{self, File},
     path::PathBuf,
-    time::Instant,
     vec,
 };
 use yamato_event_analyzer::detections::detection;
@@ -74,13 +73,11 @@ fn print_credits() {
 }
 
 fn analysis_files(evtx_files: Vec<PathBuf>) {
-    let mut tl = Timeline::new();
     let mut detection = detection::Detection::new(detection::Detection::parse_rule_files());
 
     for evtx_file in evtx_files {
-        let ret = analysis_file(evtx_file, tl, detection);
-        tl = ret.0;
-        detection = ret.1;
+        let ret = analysis_file(evtx_file, detection);
+        detection = ret;
     }
 
     after_fact();
@@ -89,18 +86,19 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
 // Windowsイベントログファイルを1ファイル分解析する。
 fn analysis_file(
     evtx_filepath: PathBuf,
-    mut tl: Timeline,
     mut detection: detection::Detection,
-) -> (Timeline, detection::Detection) {
+) -> detection::Detection {
     let filepath_disp = evtx_filepath.display();
     let parser = evtx_to_jsons(evtx_filepath.clone());
     if parser.is_none() {
-        return (tl, detection);
+        return detection;
     }
 
+    let mut tl = Timeline::new();
     let mut parser = parser.unwrap();
     let mut records = parser.records_json_value();
     let tokio_rt = utils::create_tokio_runtime();
+
     loop {
         let mut records_per_detect = vec![];
         while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -139,8 +137,9 @@ fn analysis_file(
 
     tokio_rt.shutdown_background();
     detection.add_aggcondtion_msg();
+    tl.tm_stats_dsp_msg();
 
-    return (tl, detection);
+    return detection;
 }
 
 fn evtx_to_jsons(evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {

@@ -1,7 +1,7 @@
 extern crate regex;
 use crate::detections::print::Message;
 
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 use std::{collections::HashMap, fmt::Debug, sync::Arc, vec};
 
@@ -30,7 +30,7 @@ pub struct RuleNode {
 }
 
 impl Debug for RuleNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         return Result::Ok(());
     }
 }
@@ -906,7 +906,7 @@ mod tests {
     }
 
     /// countで対象の数値確認を行うためのテスト用関数
-    fn check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
+    fn _check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule(test);

@@ -1,24 +1,32 @@
-use crate::detections::{configs, detection::EvtxRecordInfo};
+use crate::detections::{configs, detection::EvtxRecordInfo, utils};
+use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct EventStatistics {}
+pub struct EventStatistics {
+    pub total: usize,
+    pub start_time: String,
+    pub end_time: String,
+    pub stats_list: HashMap<String, usize>,
+}
 /**
 * Windows Event Logの統計情報を出力する
 */
 impl EventStatistics {
-    pub fn new() -> EventStatistics {
-        return EventStatistics {};
+    pub fn new(
+        total: usize,
+        start_time: String,
+        end_time: String,
+        stats_list: HashMap<String, usize>,
+    ) -> EventStatistics {
+        return EventStatistics {
+            total,
+            start_time,
+            end_time,
+            stats_list,
+        };
     }
 
-    // この関数の戻り値として、コンソールに出力する内容をStringの可変配列(Vec)として返却してください。
-    // 可変配列にしているのは改行を表すためで、可変配列にコンソールに出力する内容を1行ずつ追加してください。
-    // 引数の_recordsが読み込んだWindowsイベントログのを表す、EvtxRecordInfo構造体の配列になっています。
-    // EvtxRecordInfo構造体の pub record: Value というメンバーがいて、それがWindowsイベントログの1レコード分を表していますので、
-    // EvtxRecordInfo構造体のrecordから、EventIDとか統計情報を取得するようにしてください。
-    // recordからEventIDを取得するには、detection::utils::get_event_value()という関数があるので、それを使うと便利かもしれません。
-
-    // 現状では、この関数の戻り値として返すVec<String>を表示するコードは実装していません。
-    pub fn start(&mut self, _records: &Vec<EvtxRecordInfo>) -> Vec<String> {
+    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
@@ -26,11 +34,62 @@ impl EventStatistics {
             .args
             .is_present("statistics")
         {
-            return vec![];
+            return;
         }
 
-        // TODO ここから下を書いて欲しいです。
+        //let mut filesize = 0;
+        // _recordsから、EventIDを取り出す。
+        self.stats_time_cnt(records);
 
-        return vec![];
+        // EventIDで集計
+        //let evtstat_map = HashMap::new();
+        self.stats_eventid(records);
+    }
+
+    fn stats_time_cnt(&mut self, records: &Vec<EvtxRecordInfo>) {
+        if records.len() == 0 {
+            return;
+        }
+
+        // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
+        // sortしないことにより計算量が改善されています。
+        // もうちょっと感じに書けるといえば書けます。
+        for record in records.iter() {
+            let evttime = utils::get_event_value(
+                &"Event.System.TimeCreated_attributes.SystemTime".to_string(),
+                &record.record,
+            )
+            .and_then(|evt_value| {
+                return Option::Some(evt_value.to_string());
+            });
+            if evttime.is_none() {
+                continue;
+            }
+
+            let evttime = evttime.unwrap();
+            if self.start_time.len() == 0 || evttime < self.start_time {
+                self.start_time = evttime.to_string();
+            }
+            if self.end_time.len() == 0 || evttime > self.end_time {
+                self.end_time = evttime;
+            }
+        }
+        self.total += records.len();
+    }
+
+    // EventIDで集計
+    fn stats_eventid(&mut self, records: &Vec<EvtxRecordInfo>) {
+        //        let mut evtstat_map = HashMap::new();
+        for record in records.iter() {
+            let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
+            if evtid.is_none() {
+                continue;
+            }
+
+            let idnum = evtid.unwrap();
+            let count: &mut usize = self.stats_list.entry(idnum.to_string()).or_insert(0);
+            *count += 1;
+        }
+        //        return evtstat_map;
     }
 }
