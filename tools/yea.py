@@ -1,11 +1,13 @@
-import sys
-import re
-from collections import OrderedDict
-from sigma.backends.base import SingleTextQueryBackend
-from sigma.parser.modifiers.base import SigmaTypeModifier
-from io import StringIO
-import yaml
 import copy
+from collections import OrderedDict
+from io import StringIO
+
+import yaml
+from sigma.backends.base import SingleTextQueryBackend
+from sigma.parser.condition import SigmaAggregationParser
+from sigma.parser.modifiers.base import SigmaTypeModifier
+from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
+
 
 class YeaBackend(SingleTextQueryBackend):
     """Base class for backends that generate one text-based expression from a Sigma rule"""
@@ -42,13 +44,13 @@ class YeaBackend(SingleTextQueryBackend):
     def generateMapItemNode(self, node):
         # 以下のルールに対応。
         # logsource:
-        #     product: windows
-        #     service: system
+        #   product: windows
+        #   service: system
         # detection:
         # EventID: 7045
         # TaskName:
-        #     - 'SC Scheduled Scan'
-        #     - 'UpdatMachine'
+        #   - 'SC Scheduled Scan'
+        #   - 'UpdatMachine'
         #
         # 変換されて以下の形式でnodeが渡される
         # - LogName System
@@ -58,15 +60,15 @@ class YeaBackend(SingleTextQueryBackend):
         fieldname, value = node
         name = self.selection_prefix.format(self.name_idx)
 
-        childValue = None
-        if type(value) == str and "*" in value[1:-1]:
-            childValue = self.generateValueNode(value)
-        elif type(value) in (str, int):
-            childValue = value
-        else:
-            childValue = self.generateNode(value)
-
         if self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
+            childValue = None
+            if type(value) == str and "*" in value[1:-1]:
+                childValue = self.generateValueNode(value)
+            elif type(value) in (str, int):
+                childValue = value
+            else:
+                childValue = self.generateNode(value)
+
             if name in self.name_2_selection:
                 self.name_2_selection[name].append((fieldname, childValue))
             else:
@@ -76,16 +78,19 @@ class YeaBackend(SingleTextQueryBackend):
             return self.generateMapItemListNode(fieldname, value)
         elif isinstance(value, SigmaTypeModifier):
             return self.generateMapItemTypedNode(fieldname, value)
-        elif value is None:
-            return self.nullExpression % (fieldname, )
         else:
             raise TypeError("Backend does not support map values of type " + str(type(value)))
 
     def generateMapItemTypedNode(self, fieldname, value):
-        name = self.selection_prefix.format(self.name_idx)
-        self.name_idx += 1
-        self.name_2_selection[name] = [(fieldname, self.generateNode(value))]
-        return name
+        # `|re`オプションに対応
+        if type(value) == SigmaRegularExpressionModifier:
+            name = self.selection_prefix.format(self.name_idx)
+            if name in self.name_2_selection:
+                self.name_2_selection[name].append((fieldname, value))
+            else:
+                self.name_2_selection[name] = [(fieldname, value)]
+        else:
+            raise NotImplementedError("Type modifier '{}' is not supported by backend".format(value.identifier))
 
     def generateMapItemListNode(self, fieldname, value):
         ### 下記のようなケースに対応
@@ -109,6 +114,25 @@ class YeaBackend(SingleTextQueryBackend):
         else:
             self.name_2_selection[name] = [(fieldname, values)]
         return name
+
+    def generateAggregation(self, agg):
+        # python3 tools/sigmac -rI rules/windows/builtin/ --config powershell-windows-all --target yea > result.yaml
+        if agg == None:
+            return ""
+        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_COUNT:
+            # Example rule: ./rules/windows/builtin/win_global_catalog_enumeration.yml
+            raise NotImplementedError("COUNT aggregation operator is not yet implemented for this backend")
+        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_MIN:
+            raise NotImplementedError("MIN aggregation operator is not yet implemented for this backend")
+        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_MAX:
+            raise NotImplementedError("MAX aggregation operator is not yet implemented for this backend")
+        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_AVG:
+            raise NotImplementedError("AVG aggregation operator is not yet implemented for this backend")
+        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_SUM:
+            raise NotImplementedError("SUM aggregation operator is not yet implemented for this backend")
+        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_NEAR:
+            # Example rule: ./rules/windows/builtin/win_susp_samr_pwset.yml
+            raise NotImplementedError("NEAR aggregation operator is not yet implemented for this backend")
 
     def generateQuery(self, parsed):
         result = self.generateNode(parsed.parsedSearch)
