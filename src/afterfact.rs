@@ -19,9 +19,8 @@ pub struct CsvFormat<'a> {
     message: &'a str,
 }
 
-
-pub fn after_fact( ) {
-    let fn_emit_csv_err = | err: Box<dyn Error> |{
+pub fn after_fact() {
+    let fn_emit_csv_err = |err: Box<dyn Error>| {
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
         AlertMessage::alert(&mut stdout, format!("Failed to write CSV. {}", err)).ok();
@@ -29,15 +28,10 @@ pub fn after_fact( ) {
     };
 
     // slack通知する場合はemit_csvした後に
-    if configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("slack") {
-
+    if configs::CONFIG.read().unwrap().args.is_present("slack") {
         let mut buf = vec![];
-        let mut writer = BufWriter::new( buf);
-        if let Err(err) = emit_csv(&mut writer ) {
+        let mut writer = BufWriter::new(buf);
+        if let Err(err) = emit_csv(&mut writer) {
             fn_emit_csv_err(err);
         } else {
             buf = writer.into_inner().unwrap();
@@ -49,10 +43,10 @@ pub fn after_fact( ) {
         }
     } else {
         let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .value_of("csv-timeline")
+            .read()
+            .unwrap()
+            .args
+            .value_of("csv-timeline")
         {
             // ファイル出力する場合
             match File::create(csv_path) {
@@ -74,8 +68,8 @@ pub fn after_fact( ) {
         }
     }
 }
-    
-fn emit_csv<W: std::io::Write>(writer: &mut W ) -> Result<(), Box<dyn Error>> {
+
+fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
     let messages = print::MESSAGES.lock().unwrap();
 

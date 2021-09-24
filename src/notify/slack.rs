@@ -1,12 +1,11 @@
 extern crate slack_hook;
-use slack_hook::{Slack, PayloadBuilder};
 use dotenv::dotenv;
+use slack_hook::{PayloadBuilder, Slack};
 use std::env;
 
 pub struct SlackNotify {}
 
 impl SlackNotify {
-
     // Check if Slack is configured.
     pub fn check_setting() -> bool {
         dotenv().ok();
@@ -34,13 +33,16 @@ impl SlackNotify {
         let ret = SlackNotify::_send_to_slack(msg, &channel, &webhook_url);
         if ret.is_ok() {
             Ok(())
-        }
-        else {
+        } else {
             Err("Slack Notification Failed.".to_string())
         }
     }
 
-    fn _send_to_slack(msg: String, channel: &str, webhook_url: &str) -> Result<(), slack_hook::Error> {        
+    fn _send_to_slack(
+        msg: String,
+        channel: &str,
+        webhook_url: &str,
+    ) -> Result<(), slack_hook::Error> {
         let slack = Slack::new(webhook_url).unwrap();
         let p = PayloadBuilder::new()
             .text(msg)
