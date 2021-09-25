@@ -47,7 +47,7 @@ impl SlackNotify {
         let p = PayloadBuilder::new()
             .text(msg)
             .channel(channel)
-            .username("Subdomain Takerover Bot")
+            .username("Lagotto Notify Bot")
             .icon_emoji(":scream:")
             .build()
             .unwrap();
