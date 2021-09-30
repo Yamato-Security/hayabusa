@@ -4,3 +4,4 @@
 /.vscode/
 .DS_Store
 test_*
+.env

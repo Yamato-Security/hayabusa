@@ -1,11 +1,13 @@
 use crate::detections::configs;
 use crate::detections::print;
 use crate::detections::print::AlertMessage;
+use crate::notify::slack::SlackNotify;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use std::io;
+use std::io::BufWriter;
 use std::process;
 
 #[derive(Debug, Serialize)]
@@ -18,34 +20,56 @@ pub struct CsvFormat<'a> {
 }
 
 pub fn after_fact() {
-    let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .value_of("csv-timeline")
-    {
-        match File::create(csv_path) {
-            Ok(file) => Box::new(file),
-            Err(err) => {
-                let stdout = std::io::stdout();
-                let mut stdout = stdout.lock();
-                AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
-                process::exit(1);
-            }
-        }
-    } else {
-        Box::new(io::stdout())
-    };
-
-    if let Err(err) = emit_csv(&mut target) {
+    let fn_emit_csv_err = |err: Box<dyn Error>| {
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
         AlertMessage::alert(&mut stdout, format!("Failed to write CSV. {}", err)).ok();
         process::exit(1);
+    };
+
+    // slack通知する場合はemit_csvした後に
+    if configs::CONFIG.read().unwrap().args.is_present("slack") {
+        let mut buf = vec![];
+        let mut writer = BufWriter::new(buf);
+        if let Err(err) = emit_csv(&mut writer) {
+            fn_emit_csv_err(err);
+        } else {
+            buf = writer.into_inner().unwrap();
+            let s = std::str::from_utf8(&buf).unwrap();
+            if SlackNotify::notify(s.to_string()).is_err() {
+                eprintln!("slack notification failed!!");
+            }
+            println!("{}", s.to_string());
+        }
+    } else {
+        let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .value_of("csv-timeline")
+        {
+            // ファイル出力する場合
+            match File::create(csv_path) {
+                Ok(file) => Box::new(file),
+                Err(err) => {
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
+                    AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
+                    process::exit(1);
+                }
+            }
+        } else {
+            // 標準出力に出力する場合
+            Box::new(io::stdout())
+        };
+
+        if let Err(err) = emit_csv(&mut target) {
+            fn_emit_csv_err(err);
+        }
     }
 }
 
-fn emit_csv(writer: &mut Box<dyn io::Write>) -> Result<(), Box<dyn Error>> {
+fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
     let messages = print::MESSAGES.lock().unwrap();
 
