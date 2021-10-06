@@ -59,15 +59,24 @@ class YeaBackend(SingleTextQueryBackend):
         # - EventID 7045
         # - TaskName ['SC Scheduled Scan', 'UpdatMachine']
         fieldname, value = node
-        print("generateMapItemNode:     ", fieldname, value, self.name_idx)
         name = self.selection_prefix.format(self.name_idx)
 
         if self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
-            print("1")
-
             childValue = None
             if type(value) == str and "*" in value[1:-1]:
                 childValue = self.generateValueNode(value)
+            elif type(value) == str and "*" in value:
+                if value.startswith("*") and value.endswith("*"):
+                    fieldname = fieldname + "|contains"
+                    childValue = value[1:-1]
+                elif value.endswith("*"):
+                    fieldname = fieldname + "|startswith"
+                    childValue = value[0:-1]
+                elif value.startswith("*"):
+                    fieldname = fieldname + "|endswith"
+                    childValue = value[1:]
+                else:
+                    raise Exception("Value error")
             elif type(value) in (str, int):
                 childValue = value
             else:
@@ -75,18 +84,14 @@ class YeaBackend(SingleTextQueryBackend):
 
             if name in self.name_2_selection:
                 self.name_2_selection[name].append((fieldname, childValue))
-                print(self.name_2_selection[name])
             else:
                 self.name_2_selection[name] = [(fieldname, childValue)]
             return None
         elif type(value) == list:
-            print("2")
             return self.generateMapItemListNode(fieldname, value)
         elif isinstance(value, SigmaTypeModifier):
-            print("3")
             return self.generateMapItemTypedNode(fieldname, value)
         else:
-            print("4")
             raise TypeError("Backend does not support map values of type " + str(type(value)))
 
     def generateMapItemTypedNode(self, fieldname, value):
@@ -113,7 +118,6 @@ class YeaBackend(SingleTextQueryBackend):
         ### なお、generateMapItemListNode()を有効にするために、self.mapListsSpecialHandling = Trueとしている
         ### selection:
         ###     EventID: 1 or 2
-        print("generateMapItemListNode: ", fieldname, value)
         name = self.selection_prefix.format(self.name_idx)
         self.name_idx += 1
         values = [ self.generateNode(value_element) for value_element in value]
@@ -151,7 +155,6 @@ class YeaBackend(SingleTextQueryBackend):
         with StringIO() as bs:
             ## 元のyamlをいじるとこの後の処理に影響を与える可能性があるので、deepCopyする
             parsed_yaml = copy.deepcopy(parsed.sigmaParser.parsedyaml)
-
             ## なんかタイトルは先頭に来てほしいので、そのための処理
             ## parsed.sigmaParser.parsedyamlがOrderedDictならこんなことしなくていい、後で別のやり方があるか調べる
             bs.write("title: " + parsed_yaml["title"]+"\n")
@@ -163,60 +166,9 @@ class YeaBackend(SingleTextQueryBackend):
             for key, values in self.name_2_selection.items():
                 parsed_yaml["detection"][key] = {}
                 for fieldname, value in values:
-                    print(fieldname, value)
-                    if type(value) == str and "*" in value and fieldname in parsed_yaml["detection"][key]:
-                        parsed_yaml["detection"][key][fieldname] = mergeContexts(parsed_yaml["detection"][key][fieldname], value)
-                    else:
-                        parsed_yaml["detection"][key][fieldname] = value
+                    parsed_yaml["detection"][key][fieldname] = value
 
-            print(parsed_yaml)
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
 
         return ret
-
-def mergeContexts(param1, param2):
-    """
-    以下のような形式で同一のパラメータに対してANDをかけていた場合、
-    条件をマージする。
-    selection_process2:
-        Image|contains: '\Windows\Temp\DB\'
-        Image|endswith: '.exe'
-    ↓
-    selection_process2:
-        Image: '*\Windows\Temp\DB\\*.exe'
-    """
-    if param1 == param2:
-        return param1
-
-    if not param1.startswith("*"):
-        # Startwith x XXX
-        if param2.startswith("*"):
-            return param1 + param2[1:]
-        else:
-            raise SyntaxError("Rule was not good. If you want to make 'startswith' section in same field, use OR node", param1, param2, type(param1))
-
-    if not param2.startswith("*"):
-        # Startswith x XXX
-        if param1.startswith("*"):
-            return param2 + param1[1:]
-        else:
-            raise SyntaxError("Rule was not good. If you want to make 'startswith' section in same field, use OR node")
-
-    if not param1.endswith("*"):
-        # Endwith x Endswith
-        # Endswith x Contains
-        if param2.endsswith("*"):
-            return param2 + param1[1:]
-        else:
-            raise SyntaxError("Rule was not good. If you want to make 'endswith' section in same field, use OR node")
-
-    if not param2.endswith("*"):
-        # Endswith x Endswith
-        # Endswith x Contains
-        if param1.endswith("*"):
-            return param1 + param2[1:]
-        else:
-            raise SyntaxError("Rule was not good. If you want to make 'endswith' section in same field, use OR node")
-
-    raise NotImplementedError("Error", param1, param2)
