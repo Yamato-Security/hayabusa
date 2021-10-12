@@ -94,6 +94,7 @@ class YeaBackend(SingleTextQueryBackend):
         else:
             raise TypeError("Backend does not support map values of type " + str(type(value)))
 
+
     def generateMapItemTypedNode(self, fieldname, value):
         # `|re`オプションに対応
         if type(value) == SigmaRegularExpressionModifier:
@@ -119,7 +120,6 @@ class YeaBackend(SingleTextQueryBackend):
         ### selection:
         ###     EventID: 1 or 2
         name = self.selection_prefix.format(self.name_idx)
-        self.name_idx += 1
         values = [ self.generateNode(value_element) for value_element in value]
         # selection下に置かれるもの
         if name in self.name_2_selection:
@@ -152,6 +152,7 @@ class YeaBackend(SingleTextQueryBackend):
         if parsed.parsedAgg:
             result += self.generateAggregation(parsed.parsedAgg)
         ret = ""
+        self.name_idx += 1
         with StringIO() as bs:
             ## 元のyamlをいじるとこの後の処理に影響を与える可能性があるので、deepCopyする
             parsed_yaml = copy.deepcopy(parsed.sigmaParser.parsedyaml)

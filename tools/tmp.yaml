@@ -1,21 +1,23 @@
+title: Chafer Activity
 author: Florian Roth, Markus Neis, Jonhnathan Ribeiro, Daniil Yugoslavskiy, oscd.community
 date: 2018/03/23
 description: Detects Chafer activity attributed to OilRig as reported in Nyotron report
-  in March 2018
+    in March 2018
 detection:
-  condition: 1 of them
-  selection_service:
-    EventID: 7045
-    ServiceName:
-    - SC Scheduled Scan
-    - UpdatMachine
+    SELECTION_1:
+        EventID: 7045
+        LogName: System
+        ServiceName:
+        - SC Scheduled Scan
+        - UpdatMachine
+    condition: (SELECTION_1)
 falsepositives:
 - Unknown
 id: 53ba33fd-3a50-4468-a5ef-c583635cfa92
 level: critical
 logsource:
-  product: windows
-  service: system
+    product: windows
+    service: system
 modified: 2020/08/26
 references:
 - https://nyotron.com/nyotron-discovers-next-generation-oilrig-attacks/
@@ -32,26 +34,33 @@ tags:
 - attack.command_and_control
 - attack.t1071
 - attack.t1071.004
-title: Chafer Activity
 
+title: Chafer Activity
 author: Florian Roth, Markus Neis, Jonhnathan Ribeiro, Daniil Yugoslavskiy, oscd.community
 date: 2018/03/23
 description: Detects Chafer activity attributed to OilRig as reported in Nyotron report
-  in March 2018
+    in March 2018
 detection:
-  condition: 1 of them
-  selection_service:
-    EventID: 4698
-    TaskName:
-    - SC Scheduled Scan
-    - UpdatMachine
+    SELECTION_1:
+        EventID: 7045
+        LogName: System
+        ServiceName:
+        - SC Scheduled Scan
+        - UpdatMachine
+    SELECTION_2:
+        EventID: 4698
+        LogName: Security
+        TaskName:
+        - SC Scheduled Scan
+        - UpdatMachine
+    condition: (SELECTION_2)
 falsepositives:
 - Unknown
 id: 53ba33fd-3a50-4468-a5ef-c583635cfa92
 level: critical
 logsource:
-  product: windows
-  service: security
+    product: windows
+    service: security
 modified: 2020/08/26
 references:
 - https://nyotron.com/nyotron-discovers-next-generation-oilrig-attacks/
@@ -68,25 +77,37 @@ tags:
 - attack.command_and_control
 - attack.t1071
 - attack.t1071.004
-title: Chafer Activity
 
+title: Chafer Activity
 author: Florian Roth, Markus Neis, Jonhnathan Ribeiro, Daniil Yugoslavskiy, oscd.community
 date: 2018/03/23
 description: Detects Chafer activity attributed to OilRig as reported in Nyotron report
-  in March 2018
+    in March 2018
 detection:
-  condition: 1 of them
-  selection_reg1:
-    TargetObject|endswith:
-    - SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UMe
-    - SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UT
+    SELECTION_1:
+        EventID: 7045
+        LogName: System
+        ServiceName:
+        - SC Scheduled Scan
+        - UpdatMachine
+    SELECTION_2:
+        EventID: 4698
+        LogName: Security
+        TaskName:
+        - SC Scheduled Scan
+        - UpdatMachine
+    SELECTION_3:
+        TargetObject:
+        - '*SOFTWARE\Microsoft\Windows\CurrentVersion\UMe'
+        - '*SOFTWARE\Microsoft\Windows\CurrentVersion\UT'
+    condition: SELECTION_3
 falsepositives:
 - Unknown
 id: 53ba33fd-3a50-4468-a5ef-c583635cfa92
 level: critical
 logsource:
-  category: registry_event
-  product: windows
+    category: registry_event
+    product: windows
 modified: 2020/08/26
 references:
 - https://nyotron.com/nyotron-discovers-next-generation-oilrig-attacks/
@@ -103,37 +124,47 @@ tags:
 - attack.command_and_control
 - attack.t1071
 - attack.t1071.004
-title: Chafer Activity
 
+title: Chafer Activity
 author: Florian Roth, Markus Neis, Jonhnathan Ribeiro, Daniil Yugoslavskiy, oscd.community
 date: 2018/03/23
 description: Detects Chafer activity attributed to OilRig as reported in Nyotron report
-  in March 2018
+    in March 2018
 detection:
-  condition: 1 of them
-  selection_process0:
-    CommandLine|contains: \\Service.exe
-    CommandLine|endswith:
-    - i
-    - u
-  selection_process1:
-  - CommandLine|endswith: \\microsoft\\Taskbar\\autoit3.exe
-  - CommandLine|startswith: C:\\wsc.exe
-  selection_process2:
-    Image|contains: \\Windows\\Temp\\DB\\
-    Image|endswith: .exe
-  selection_process3:
-    CommandLine|contains|all:
-    - \\nslookup.exe
-    - -q=TXT
-    ParentImage|contains: \\Autoit
+    SELECTION_1:
+        EventID: 7045
+        LogName: System
+        ServiceName:
+        - SC Scheduled Scan
+        - UpdatMachine
+    SELECTION_2:
+        EventID: 4698
+        LogName: Security
+        TaskName:
+        - SC Scheduled Scan
+        - UpdatMachine
+    SELECTION_3:
+        TargetObject:
+        - '*SOFTWARE\Microsoft\Windows\CurrentVersion\UMe'
+        - '*SOFTWARE\Microsoft\Windows\CurrentVersion\UT'
+    SELECTION_4:
+        CommandLine:
+        - '*i'
+        - '*u'
+        CommandLine|contains: -q=TXT
+        CommandLine|endswith: \microsoft\Taskbar\autoit3.exe
+        CommandLine|startswith: C:\wsc.exe
+        Image|contains: \Windows\Temp\DB\\
+        Image|endswith: .exe
+        ParentImage|contains: \Autoit
+    condition: ((SELECTION_4))
 falsepositives:
 - Unknown
 id: 53ba33fd-3a50-4468-a5ef-c583635cfa92
 level: critical
 logsource:
-  category: process_creation
-  product: windows
+    category: process_creation
+    product: windows
 modified: 2020/08/26
 references:
 - https://nyotron.com/nyotron-discovers-next-generation-oilrig-attacks/
@@ -150,6 +181,4 @@ tags:
 - attack.command_and_control
 - attack.t1071
 - attack.t1071.004
-title: Chafer Activity
 
-==============
