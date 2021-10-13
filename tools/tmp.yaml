@@ -53,7 +53,7 @@ detection:
         TaskName:
         - SC Scheduled Scan
         - UpdatMachine
-    condition: (SELECTION_2)
+    condition: (SELECTION_1) and (SELECTION_2)
 falsepositives:
 - Unknown
 id: 53ba33fd-3a50-4468-a5ef-c583635cfa92
@@ -100,7 +100,7 @@ detection:
         TargetObject:
         - '*SOFTWARE\Microsoft\Windows\CurrentVersion\UMe'
         - '*SOFTWARE\Microsoft\Windows\CurrentVersion\UT'
-    condition: SELECTION_3
+    condition: (SELECTION_1) and (SELECTION_2) and SELECTION_3
 falsepositives:
 - Unknown
 id: 53ba33fd-3a50-4468-a5ef-c583635cfa92
@@ -157,7 +157,7 @@ detection:
         Image|contains: \Windows\Temp\DB\\
         Image|endswith: .exe
         ParentImage|contains: \Autoit
-    condition: ((SELECTION_4))
+    condition: (SELECTION_1) and (SELECTION_2) and SELECTION_3 and ((SELECTION_4))
 falsepositives:
 - Unknown
 id: 53ba33fd-3a50-4468-a5ef-c583635cfa92

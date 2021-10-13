@@ -8,15 +8,11 @@ from sigma.parser.condition import SigmaAggregationParser
 from sigma.parser.modifiers.base import SigmaTypeModifier
 from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
 
-class SyntaxError(Exception):
-    pass
-
 class YeaBackend(SingleTextQueryBackend):
     """Base class for backends that generate one text-based expression from a Sigma rule"""
     ## see tools.py
     ## use this value when sigmac parse argument of "-t"
     identifier = "yea"
-    ## see tools.py
     active = True
 
     # the following class variables define the generation and behavior of queries from a parse tree some are prefilled with default values that are quite usual
@@ -32,6 +28,7 @@ class YeaBackend(SingleTextQueryBackend):
 
     name_idx = 1
     selection_prefix = "SELECTION_{0}"
+    selections = []
     name_2_selection = OrderedDict()
 
     def __init__(self, sigmaconfig, options):
@@ -105,6 +102,7 @@ class YeaBackend(SingleTextQueryBackend):
                 self.name_2_selection[name] = [(fieldname, value)]
         else:
             raise NotImplementedError("Type modifier '{}' is not supported by backend".format(value.identifier))
+        # return value 
 
     def generateMapItemListNode(self, fieldname, value):
         ### 下記のようなケースに対応
@@ -147,10 +145,12 @@ class YeaBackend(SingleTextQueryBackend):
             # Example rule: ./rules/windows/builtin/win_susp_samr_pwset.yml
             raise NotImplementedError("NEAR aggregation operator is not yet implemented for this backend")
 
+
     def generateQuery(self, parsed):
         result = self.generateNode(parsed.parsedSearch)
         if parsed.parsedAgg:
             result += self.generateAggregation(parsed.parsedAgg)
+        self.selections.append(result)
         ret = ""
         self.name_idx += 1
         with StringIO() as bs:
@@ -163,7 +163,7 @@ class YeaBackend(SingleTextQueryBackend):
 
             ## detectionの部分だけ変更して出力する。
             parsed_yaml["detection"] = {}
-            parsed_yaml["detection"]["condition"] = result
+            parsed_yaml["detection"]["condition"] = self.andToken.join(self.selections)
             for key, values in self.name_2_selection.items():
                 parsed_yaml["detection"][key] = {}
                 for fieldname, value in values:
