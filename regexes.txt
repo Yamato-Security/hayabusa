@@ -1,19 +1,17 @@
-Type,regex,string
-0,^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$,Metasploit-style cmd with pipe (possible use of Meterpreter 'getsystem')
-0,^%SYSTEMROOT%\\[a-zA-Z]{8}\.exe$,Metasploit-style %SYSTEMROOT% image path (possible use of Metasploit 'Native upload' exploit payload)
-0,powershell.*FromBase64String.*IO.Compression.GzipStream,Metasploit-style base64 encoded/compressed PowerShell function (possible use of Metasploit PowerShell exploit payload)
-0,DownloadString\(.http,Download via Net.WebClient DownloadString
-0,mimikatz,Command referencing Mimikatz
-0,Invoke-Mimikatz.ps,PowerSploit Invoke-Mimikatz.ps1
-0,PowerSploit.*ps1,Use of PowerSploit
-0,User-Agent,User-Agent set via command line
-0,[a-zA-Z0-9/+=]{500},500+ consecutive Base64 characters
-0,powershell.exe.*Hidden.*Enc,Base64 encoded and hidden PowerShell command
-# Generic csc.exe alert, comment out if experiencing false positives
-0,\\csc\.exe,Use of C Sharp compiler csc.exe
-0,\\csc\.exe.*\\Appdata\\Local\\Temp\\[a-z0-9]{8}\.cmdline,PSAttack-style command via csc.exe
-# Generic cvtres.exe alert, comment out if experiencing false positives
-0,\\cvtres\.exe.*,Resource File To COFF Object Conversion Utility cvtres.exe
-0,\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp,PSAttack-style command via cvtres.exe
-1,^[a-zA-Z]{22}$,Metasploit-style service name: 22 characters, [A-Za-z]
-1,^[a-zA-Z]{16}$,Metasploit-style service name: 16 characters, [A-Za-z]
+^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$
+^%SYSTEMROOT%\\[a-zA-Z]{8}\.exe$
+powershell.*FromBase64String.*IO.Compression.GzipStream
+DownloadString\(.http
+mimikatz
+Invoke-Mimikatz.ps
+PowerSploit.*ps1
+User-Agent
+[a-zA-Z0-9/+=]{500}
+powershell.exe.*Hidden.*Enc
+\\csc\.exe
+\\csc\.exe.*\\Appdata\\Local\\Temp\\[a-z0-9]{8}\.cmdline
+# Generic cvtres.exe alert
+\\cvtres\.exe.*
+\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp
+^[a-zA-Z]{22}$
+^[a-zA-Z]{16}$

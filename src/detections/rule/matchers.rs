@@ -72,7 +72,7 @@ impl LeafMatcher for MinlengthMatcher {
 /// 正規表現のリストが記載されたファイルを読み取って、比較するロジックを表すクラス
 /// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 pub struct RegexesFileMatcher {
-    regexes_csv_content: Vec<Vec<String>>,
+    regexes_csv_content: Vec<String>,
 }
 
 impl RegexesFileMatcher {
@@ -107,15 +107,11 @@ impl LeafMatcher for RegexesFileMatcher {
             return Result::Err(vec![errmsg]);
         }
 
-        let csv_content = utils::read_csv(&value.unwrap());
-        if csv_content.is_err() {
-            let errmsg = format!(
-                "cannot read regexes file. [key:{}]",
-                utils::concat_selection_key(key_list)
-            );
-            return Result::Err(vec![errmsg]);
+        let regexes_csv_content = utils::read_txt(&value.unwrap());
+        if regexes_csv_content.is_err() {
+            return Result::Err(vec![regexes_csv_content.unwrap_err()]);
         }
-        self.regexes_csv_content = csv_content.unwrap();
+        self.regexes_csv_content = regexes_csv_content.unwrap();
 
         return Result::Ok(());
     }
@@ -123,10 +119,8 @@ impl LeafMatcher for RegexesFileMatcher {
     fn is_match(&self, event_value: Option<&Value>) -> bool {
         //TODO Wildcardの場合、CaseInsensitiveなので、ToLowerする。
         return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_regex(s, 0, &self.regexes_csv_content).is_empty(),
-            Value::Number(n) => {
-                !utils::check_regex(&n.to_string(), 0, &self.regexes_csv_content).is_empty()
-            }
+            Value::String(s) => !utils::check_regex(s, &self.regexes_csv_content),
+            Value::Number(n) => !utils::check_regex(&n.to_string(), &self.regexes_csv_content),
             _ => false,
         };
     }
@@ -135,7 +129,7 @@ impl LeafMatcher for RegexesFileMatcher {
 /// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
 /// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 pub struct WhitelistFileMatcher {
-    whitelist_csv_content: Vec<Vec<String>>,
+    whitelist_csv_content: Vec<String>,
 }
 
 impl WhitelistFileMatcher {
@@ -170,15 +164,11 @@ impl LeafMatcher for WhitelistFileMatcher {
             return Result::Err(vec![errmsg]);
         }
 
-        let csv_content = utils::read_csv(&value.unwrap());
-        if csv_content.is_err() {
-            let errmsg = format!(
-                "cannot read whitelist file. [key:{}]",
-                utils::concat_selection_key(key_list)
-            );
-            return Result::Err(vec![errmsg]);
+        let whitelist_content = utils::read_txt(&value.unwrap());
+        if whitelist_content.is_err() {
+            return Result::Err(vec![whitelist_content.unwrap_err()]);
         }
-        self.whitelist_csv_content = csv_content.unwrap();
+        self.whitelist_csv_content = whitelist_content.unwrap();
 
         return Result::Ok(());
     }
@@ -662,28 +652,16 @@ mod tests {
 
                 // regexes.txtの中身と一致していることを確認
                 let csvcontent = &ancestor_matcher.regexes_csv_content;
-                assert_eq!(csvcontent.len(), 14);
-
-                let firstcontent = &csvcontent[0];
-                assert_eq!(firstcontent.len(), 3);
-                assert_eq!(firstcontent[0], "0");
+                assert_eq!(csvcontent.len(), 17);
                 assert_eq!(
-                    firstcontent[1],
+                    csvcontent[0],
                     r"^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$"
                 );
-                assert_eq!(
-                    firstcontent[2],
-                    r"Metasploit-style cmd with pipe (possible use of Meterpreter 'getsystem')"
-                );
 
-                let lastcontent = &csvcontent[13];
-                assert_eq!(lastcontent.len(), 3);
-                assert_eq!(lastcontent[0], "0");
                 assert_eq!(
-                    lastcontent[1],
+                    csvcontent[14],
                     r"\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp"
                 );
-                assert_eq!(lastcontent[2], r"PSAttack-style command via cvtres.exe");
             }
 
             // whitelist.txtが読み込めることを確認
@@ -704,11 +682,11 @@ mod tests {
                 assert_eq!(csvcontent.len(), 2);
 
                 assert_eq!(
-                    csvcontent[0][0],
+                    csvcontent[0],
                     r#"^"C:\\Program Files\\Google\\Chrome\\Application\\chrome\.exe""#.to_string()
                 );
                 assert_eq!(
-                    csvcontent[1][0],
+                    csvcontent[1],
                     r#"^"C:\\Program Files\\Google\\Update\\GoogleUpdate\.exe""#.to_string()
                 );
             }

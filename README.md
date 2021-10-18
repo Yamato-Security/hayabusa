@@ -49,14 +49,46 @@ lagotto.exe --directory=.\evtx
 lagotto.exe --directory=.\evtx --csv-timeline lagotto.csv
 ````
 
-## Rule files
+# Rule files
 
 # Configuration File
+## config\eventkey_alias.txt
+
 ## regexes.txt
+ルールファイルのregexというキーワードに指定するファイルのサンプルです。
+regexes.txtの1行目はヘッダであり、2行目以降に正規表現を記載します。
+記載された正規表現のいずれかひとつにマッチする場合、一致したものとして処理されます。
+
+regexesキーワードは下記のように使用します。
+下記の例では、regexes.txtに記載された正規表現の内ひとつでもImagePathの値に一致していた場合、ImagePathは一致したものとして処理されます。
+``````
+detection:
+    selection_img:
+        Channel: Security
+        EventID: 7045
+        ImagePath:
+            regexes: ./regexes.txt
+``````
+
+上記の例では組み込みで用意されているregexes.txtを参照していますが、ユーザーが独自に作成したファイルを指定することも可能です。
 
 ## whitelist.txt
+ルールファイルのwhitelistというキーワードに指定するファイルであり、一部の組み込みのルールファイル(rulesフォルダに設置されているファイル)が参照しています。
+whitelist.txtのフォーマットは、1行目はヘッダであり、2行目以降に正規表現を記載します。
+記載された正規表現のいずれかひとつにマッチする場合、一致してないものとして処理されます。
 
-## config\eventkey_alias.txt
+whiltelistキーワードは下記のように使用します。
+下記の例では、whitelist.txtに記載された正規表現の内ひとつでもImagePathの値に一致していた場合、ImagePathは一致していないものとして処理されます。
+``````
+detection:
+    selection_img:
+        Channel: Security
+        EventID: 7045
+        ImagePath:
+            whitelist: ./whitelist.txt
+``````
+
+上記の例では組み込みで用意されているwhitelist.txtを参照していますが、ユーザーが独自に作成したファイルを指定することも可能です。
 
 
 # How to compile from source files
