@@ -5,9 +5,13 @@ Aiming to be the world's greatest Windows event log analysis tool!
 
 
 # Platforms
+Lagottoは下記のプラットフォーム上で実行できます。
 * Windows
 * Linux
 * macOS
+
+# Downloads
+[Releases](https://github.com/Yamato-Security/YamatoEventAnalyzer/releases)からコンパイル済みの実行ファイルをダウンロードできます。
 
 # Usage
 ## Commnad line option
@@ -50,46 +54,12 @@ lagotto.exe --directory=.\evtx --csv-timeline lagotto.csv
 ````
 
 # Rule files
+LagottoではWindowsEventログを検知するルールをYAML形式で定義します。
 
-# Configuration File
-## config\eventkey_alias.txt
+ルールの記載方法については[RULEFILE.md](./RULEFILE.md)を参照してください。
 
-## regexes.txt
-ルールファイルのregexというキーワードに指定するファイルのサンプルです。
-regexes.txtの1行目はヘッダであり、2行目以降に正規表現を記載します。
-記載された正規表現のいずれかひとつにマッチする場合、一致したものとして処理されます。
-
-regexesキーワードは下記のように使用します。
-下記の例では、regexes.txtに記載された正規表現の内ひとつでもImagePathの値に一致していた場合、ImagePathは一致したものとして処理されます。
-``````
-detection:
-    selection_img:
-        Channel: Security
-        EventID: 7045
-        ImagePath:
-            regexes: ./regexes.txt
-``````
-
-上記の例では組み込みで用意されているregexes.txtを参照していますが、ユーザーが独自に作成したファイルを指定することも可能です。
-
-## whitelist.txt
-ルールファイルのwhitelistというキーワードに指定するファイルであり、一部の組み込みのルールファイル(rulesフォルダに設置されているファイル)が参照しています。
-whitelist.txtのフォーマットは、1行目はヘッダであり、2行目以降に正規表現を記載します。
-記載された正規表現のいずれかひとつにマッチする場合、一致してないものとして処理されます。
-
-whiltelistキーワードは下記のように使用します。
-下記の例では、whitelist.txtに記載された正規表現の内ひとつでもImagePathの値に一致していた場合、ImagePathは一致していないものとして処理されます。
-``````
-detection:
-    selection_img:
-        Channel: Security
-        EventID: 7045
-        ImagePath:
-            whitelist: ./whitelist.txt
-``````
-
-上記の例では組み込みで用意されているwhitelist.txtを参照していますが、ユーザーが独自に作成したファイルを指定することも可能です。
-
+ルールファイルはrulesフォルダ内に設置します。
+rulesフォルダには組み込みルールファイルも設置されていますので、参考にしてください。
 
 # How to compile from source files
 下記のコマンドでビルドできます。
