@@ -16,6 +16,7 @@ detection:
         Event.System.Channel: System
 falsepositives:
     - unknown
+level: medium
 output: 'command=%CommandLine%'
 creation_date: 2020/11/8
 updated_date: 2020/11/8
@@ -26,6 +27,7 @@ updated_date: 2020/11/8
 * author [optional]: ルールファイルの作者を入力します。
 * detection  [required]: 検知ルールを入力します。
 * falsepositives [optional]: 誤検知に関する情報を入力します。
+* level [optional]: リスクレベルを入力します。
 * output [required]: イベントログが検知した場合に表示されるメッセージを入力します。
 * creation_date [optional]: ルールファイルの作成日を入力します。
 * updated_date [optional]: ルールファイルの更新日を入力します。
