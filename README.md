@@ -56,7 +56,7 @@ lagotto.exe --directory=.\evtx --csv-timeline lagotto.csv
 # Rule files
 LagottoではWindowsEventログを検知するルールをYAML形式で定義します。
 
-ルールの記載方法については[RULEFILE.md](./RULEFILE.md)を参照してください。
+ルールの記載方法については[RULEFILE.md](./doc/RULEFILE.md)を参照してください。
 
 ルールファイルはrulesフォルダ内に設置します。
 rulesフォルダには組み込みルールファイルも設置されていますので、参考にしてください。

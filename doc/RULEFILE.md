@@ -99,13 +99,13 @@ detection:
         Channel: System
 ``````
 ### XMLの属性(attribute)をルールの条件にする方法
-WindowsEventログをXML形式で出力すると、XMLの属性に値が設定されている場合もあります。下記の例だと、TimeCreatedタグのSystemTimeがXMLの属性です。
+WindowsEventログをXML形式で出力すると、XMLの属性に値が設定されている場合もあります。下記の例だと、ProviderタグのNameがXMLの属性です。
 
 ````````````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
-        <EventID>5379</EventID>
-        <TimeCreated SystemTime='2021-10-20T10:16:18.7782563Z' />
+        <Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/>
+        <EventID>4672</EventID>
         <EventRecordID>607469</EventRecordID>
         <Channel>Security</Channel>
         <Security />
@@ -113,14 +113,14 @@ WindowsEventログをXML形式で出力すると、XMLの属性に値が設定�
 </Event>
 ````````````
 
-XMLの属性をeventkeyで指定するには、{eventkey}_TimeCreated_attributes.{attribute_name}という形式で指定します。例えば、TimeCreatedタグのSystemTime属性をルールファイルに指定する場合、下記のようになります。
+XMLの属性をeventkeyで指定するには、{eventkey}_attributes.{attribute_name}という形式で指定します。例えば、ProviderタグのName属性をルールファイルに指定する場合、下記のようになります。
 
 ``````
 detection:
     selection:
-        EventID: 5379
         Channel: Security
-        Event.System.TimeCreated_attributes.SystemTime: 2021-10-20T10:16:18.7782563Z
+        EventID: 4672
+        Event.System.Provider_attributes.Name: 'Microsoft-Windows-Security-Auditing'
 ``````
 
 ### EventData
@@ -155,15 +155,29 @@ detection:
 ``````
 
 ### EventDataの特殊なパターン
-
+EventDataというタグにネストされたタグの中には、Name属性が存在しないタグもあります。
 ``````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
+    <System>
+        <EventID>5379</EventID>
+        <Channel>Security</Channel>
+        <Security />
+    </System>
     <EventData>
         <Data>Available</Data>
         <Data>None</Data>
         <Data>NewEngineState=Available PreviousEngineState=None SequenceNumber=9 HostName=ConsoleHost HostVersion=2.0 HostId=5cbb33bf-acf7-47cc-9242-141cd0ba9f0c EngineVersion=2.0 RunspaceId=c6e94dca-0daf-418c-860a-f751a9f2cbe1 PipelineId= CommandName= CommandType= ScriptName= CommandPath= CommandLine=</Data>
     </EventData>
 </Event>
+``````
+
+上記のようなイベントログを検知する場合、`EventData`というeventkeyを指定します。この場合、EventDataタグにネストされているName属性の指定されてないタグのうち、いずれか一つでも一致するタグがあれば、条件に一致したものとして処理されます。
+``````
+detection:
+    selection:
+        Channel: Security
+        EventID: 5379
+        EventData: None
 ``````
 
 ## パイプ
@@ -269,8 +283,16 @@ detection:
 
 aggregation conditionは下記の形式で定義できます。なお、{number}には数値を指定します。
 * `count() {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+
+![](count1.png)
+
 * `count({eventkey}) {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、{eventkey}の値が何種類存在するか数えます。その数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+
+![](count2.png)
+
 * `count({eventkey_1}) by {eventkey_2} {operator} {number}`: conditionのパイプ以前の条件に一致したログを{eventkey_2}毎にグルーピングし、そのグループ毎に{eventkey_1}の値が何種類存在するか数えます。そのグルーピング毎に数えた値が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+
+![](count3.png)
 
 また、上記のoperatorには下記を指定できます。
 * `==`: 指定された値と等しい場合、条件に一致したものと処理されます。
