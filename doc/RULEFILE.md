@@ -284,17 +284,21 @@ detection:
 ``````
 
 aggregation conditionは下記の形式で定義できます。なお、{number}には数値を指定します。
-* `count() {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+* `count() {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、一致したログ数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
 
 ![](count1.png)
 
-* `count({eventkey}) {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、{eventkey}の値が何種類存在するか数えます。その数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+* `count() by {eventkey_2} {operator} {number}`: conditionのパイプ以前の条件に一致したログを{eventkey_2}毎にグルーピングし、グルーピング毎に一致したログ数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
 
 ![](count2.png)
 
-* `count({eventkey_1}) by {eventkey_2} {operator} {number}`: conditionのパイプ以前の条件に一致したログを{eventkey_2}毎にグルーピングし、そのグループ毎に{eventkey_1}の値が何種類存在するか数えます。そのグルーピング毎に数えた値が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+* `count({eventkey}) {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、{eventkey}の値が何種類存在するか数えます。その数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
 
 ![](count3.png)
+
+* `count({eventkey_1}) by {eventkey_2} {operator} {number}`: conditionのパイプ以前の条件に一致したログを{eventkey_2}毎にグルーピングし、そのグループ毎に{eventkey_1}の値が何種類存在するか数えます。そのグルーピング毎に数えた値が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+
+![](count4.png)
 
 また、上記のoperatorには下記を指定できます。
 * `==`: 指定された値と等しい場合、条件に一致したものと処理されます。
