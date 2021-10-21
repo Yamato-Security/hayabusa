@@ -1,8 +1,6 @@
 title: PowerShell DownGradeAttack
 description: hogehoge
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: Windows PowerShell
@@ -10,7 +8,6 @@ detection:
         EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
 falsepositives:
     - unknown
-level: medium
 output: 'Powershell DownGrade Attack Detected!!'
 creation_date: 2020/11/8
 updated_date: 2020/11/8

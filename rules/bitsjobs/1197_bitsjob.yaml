@@ -1,15 +1,12 @@
 title: BitsJob
 description: Adversaries may abuse BITS jobs to persistently execute or clean up after malicious payloads.
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: Microsoft-Windows-Bits-Client/Operational
         EventID: 59
 falsepositives:
     - unknown
-level: medium
 output: 'Started bits job created. JobTitle:%JobTitle% URL:%Url%'
 creation_date: 2021/7/15
 updated_date: 2021/7/15

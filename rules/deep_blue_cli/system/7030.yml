@@ -1,8 +1,6 @@
 title: This service may not function properly
 description: hogehoge
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: System
@@ -12,7 +10,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-level: low
 output: 'Interactive service warning¥nService name: %ServiceName%¥nMalware (and some third party software) trigger this warning'
 creation_date: 2020/11/8
 uodated_date: 2020/11/8

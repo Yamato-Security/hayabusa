@@ -1,5 +1,5 @@
 # ルールファイル
-LagottoはWindowsEventログの検知ルールをファイルにYAML形式のファイルに記載します。
+LagottoはWindowsEventログの検知ルールをYAML形式のファイルに記載します。
 単なる文字列一致だけでなく、正規表現やANDやOR等の条件を組み合わせることができ、複雑な検知ルールも表現できるようになっています。
 ここではその検知ルールの書き方について説明します。
 
@@ -27,7 +27,7 @@ updated_date: 2020/11/8
 * author [optional]: ルールファイルの作者を入力します。
 * detection  [required]: 検知ルールを入力します。
 * falsepositives [optional]: 誤検知に関する情報を入力します。
-* level [optional]: リスクレベルを入力します。
+* level [optional]: リスクレベルを入力します。指定する値は`informational`,`low`,`medium`,`high`,`critical`のいづれかです。
 * output [required]: イベントログが検知した場合に表示されるメッセージを入力します。
 * creation_date [optional]: ルールファイルの作成日を入力します。
 * updated_date [optional]: ルールファイルの更新日を入力します。
@@ -76,7 +76,7 @@ detection:
 ``````
 
 ### eventkey
-WindowsイベントログをXML形式で一部抜粋で出力すると、下記のようになります。ルールファイルの例に含まれる`Event.System.Channel`というのは、XMLの`<Event><System><Channel>System<Channel><System></Event>`を指しています。今回の例のように、XML形式のWindowsイベントログについて、入れ子になったXMLのタグに含まれる値をルールの条件に指定する場合、`.`でつなげて指定します。ルールファイルでは、この`.`でつなげた文字列をeventkeyと読んでいます。
+WindowsイベントログをXML形式で一部抜粋で出力すると、下記のようになります。ルールファイルの例に含まれる`Event.System.Channel`は、XMLの`<Event><System><Channel>System<Channel><System></Event>`を指しています。今回の例のように、XML形式のWindowsイベントログについて、入れ子になったXMLのタグに含まれる値をルールの条件に指定する場合、`.`でつなげて指定します。ルールファイルでは、この`.`でつなげた文字列をeventkeyと呼んでいます。
 
 ``````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -183,7 +183,7 @@ detection:
 ``````
 
 ## パイプ
-eventkeyにはパイプを指定することができます。ここまで説明した書き方では完全一致しか表現できましたんでしが、パイプを使うことでより柔軟な検知ルールを記載できるようになります。下記の例ではCommandLineの値が`yamato.*lagotto`という正規表現にマッチする場合、条件に一致したものとして処理されます。
+eventkeyにはパイプを指定することができます。ここまで説明した書き方では完全一致しか表現できませんでしたが、パイプを使うことでより柔軟な検知ルールを記載できるようになります。下記の例ではCommandLineの値が`yamato.*lagotto`という正規表現にマッチする場合、条件に一致したものとして処理されます。
 
 ``````
 detection:

@@ -1,8 +1,6 @@
 title: A service was installed in the system
 description: hogehoge
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: System
@@ -15,7 +13,6 @@ detection:
     condition: selection
 falsepositives:
     - unknown
-level: low
 output: 'New Service Created¥n%ImagePath¥nService name: %ServiceName%'
 creation_date: 2020/11/8
 uodated_date: 2020/11/8

@@ -45,7 +45,6 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .setting(AppSettings::VersionlessSubcommands)
         .arg(Arg::from_usage("-f --filepath=[FILEPATH] 'Event file path'"))
         .arg(Arg::from_usage("--csv-timeline=[CSV_TIMELINE] 'Csv output timeline'"))
-        .arg(Arg::from_usage("--human-readable-timeline=[HUMAN_READABLE_TIMELINE] 'Human readable timeline'"))
         .arg(Arg::from_usage("--rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'"))
         .arg(Arg::from_usage("-l --lang=[LANG] 'Output language'"))
         .arg(Arg::from_usage("-u --utc 'Output time in UTC format(default: local time)'"))
