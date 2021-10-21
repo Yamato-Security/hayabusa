@@ -1,8 +1,6 @@
 title: A user account was created.
 description: hogehoge
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: Security
@@ -10,7 +8,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-level: low
 output: 'New User Created UserName:%TargetUserName% SID:%TargetSid%'
 creation_date: 2020/11/8
 updated_date: 2020/11/8

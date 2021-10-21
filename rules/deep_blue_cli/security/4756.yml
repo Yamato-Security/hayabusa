@@ -1,8 +1,6 @@
 title: A member was added to a security-enabled universal group.
 description: hogehoge
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: Security
@@ -11,7 +9,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-level: low
 output: 'user added to universal Administrators UserName: %MemberName% SID: %MemberSid%'
 creation_date: 2020/11/8
 updated_date: 2020/11/8

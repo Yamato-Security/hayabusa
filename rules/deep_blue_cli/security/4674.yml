@@ -1,8 +1,6 @@
 title: An Operation was attempted on a privileged object
 description: hogehoge
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: Security
@@ -12,7 +10,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-level: medium
 output: |
     Possible Hidden Service Attempt
     User requested to modify the Dynamic Access Control (DAC) permissions of a service, possibly to hide it from view.

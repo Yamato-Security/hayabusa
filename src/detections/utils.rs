@@ -11,6 +11,7 @@ use regex::Regex;
 use serde_json::Value;
 use std::fs::File;
 use std::io::prelude::*;
+use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
 
@@ -23,56 +24,51 @@ pub fn concat_selection_key(key_list: &Vec<String>) -> String {
         });
 }
 
-pub fn check_regex(
-    string: &str,
-    r#type: usize,
-    regex_list: &Vec<Vec<String>>,
-) -> std::string::String {
-    let empty = "".to_string();
-    let mut regextext = "".to_string();
+pub fn check_regex(string: &str, regex_list: &Vec<String>) -> bool {
     for line in regex_list {
-        let type_str = line.get(0).unwrap_or(&empty);
-        if type_str != &r#type.to_string() {
+        if line.is_empty() {
             continue;
         }
 
-        let regex_str = line.get(1).unwrap_or(&empty);
-        if regex_str.is_empty() {
-            continue;
-        }
-
-        let re = Regex::new(regex_str);
+        let re = Regex::new(line);
         if re.is_err() || re.unwrap().is_match(string) == false {
             continue;
         }
 
-        let text = line.get(2).unwrap_or(&empty);
-        if text.is_empty() {
-            continue;
-        }
-
-        regextext.push_str(text);
-        regextext.push_str("\n");
+        return true;
     }
 
-    return regextext;
+    return false;
 }
 
-pub fn check_whitelist(target: &str, whitelist: &Vec<Vec<String>>) -> bool {
-    let empty = "".to_string();
+pub fn check_whitelist(target: &str, whitelist: &Vec<String>) -> bool {
     for line in whitelist {
-        let r_str = line.get(0).unwrap_or(&empty);
-        if r_str.is_empty() {
+        if line.is_empty() {
             continue;
         }
 
-        let r = Regex::new(r_str);
+        let r = Regex::new(line);
         if r.is_ok() && r.unwrap().is_match(target) {
             return true;
         }
     }
 
     return false;
+}
+
+pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
+    let f = File::open(filename);
+    if f.is_err() {
+        let errmsg = format!("cannot open file. [file:{}]", filename);
+        return Result::Err(errmsg);
+    }
+    let reader = BufReader::new(f.unwrap());
+    return Result::Ok(
+        reader
+            .lines()
+            .map(|line| line.unwrap_or(String::default()))
+            .collect(),
+    );
 }
 
 pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
@@ -165,18 +161,18 @@ mod tests {
     use crate::detections::utils;
     #[test]
     fn test_check_regex() {
-        let regexes = utils::read_csv("regexes.txt").unwrap();
-        let regextext = utils::check_regex("\\cvtres.exe", 0, &regexes);
-        assert!(regextext == "Resource File To COFF Object Conversion Utility cvtres.exe\n");
+        let regexes = utils::read_txt("regexes.txt").unwrap();
+        let regextext = utils::check_regex("\\cvtres.exe", &regexes);
+        assert!(regextext == true);
 
-        let regextext = utils::check_regex("\\hogehoge.exe", 0, &regexes);
-        assert!(regextext == "");
+        let regextext = utils::check_regex("\\hogehoge.exe", &regexes);
+        assert!(regextext == false);
     }
 
     #[test]
     fn test_check_whitelist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let whitelist = utils::read_csv("whitelist.txt").unwrap();
+        let whitelist = utils::read_txt("whitelist.txt").unwrap();
         assert!(true == utils::check_whitelist(commandline, &whitelist));
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";

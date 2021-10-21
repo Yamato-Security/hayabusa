@@ -2,8 +2,6 @@ title: An account failed to log on
 description: hogehoge
 ignore: true
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: Security
@@ -11,7 +9,6 @@ detection:
     # condition: selection | count(TargetUserName) > 3
 falsepositives:
     - unknown
-level: medium
 output: 'High number of logon failures for one account UserName:%event_data.SubjectUserName% Total logon faiures:%count%'
 creation_date: 2020/11/8
 updated_date: 2020/11/8

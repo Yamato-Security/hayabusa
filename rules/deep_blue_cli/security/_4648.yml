@@ -2,8 +2,6 @@ title: An account failed to log on
 description: hogehoge
 ignore: true
 author: Yea
-logsource: 
-    product: windows
 detection:
     selection:
         Channel: Security
@@ -11,7 +9,6 @@ detection:
     # condition: selection | count(TargetUserName) > 3
 falsepositives:
     - unknown
-level: High
 output: 'Distributed Account Explicit Credential Use (Password Spray Attack)¥n The use of multiple user account access attempts with explicit credentials is ¥nan indicator of a password spray attack.¥nTarget Usernames:%TargetUserName$¥nAccessing Username: %SubjectUserName%¥nAccessing Host Name: %SubjectDomainName%'
 creation_date: 2020/11/8
 updated_date: 2020/11/8

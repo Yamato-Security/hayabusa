@@ -2,17 +2,17 @@ extern crate serde;
 extern crate serde_derive;
 
 use evtx::{EvtxParser, ParserSettings};
+use lagotto::detections::detection;
+use lagotto::detections::detection::EvtxRecordInfo;
+use lagotto::detections::print::AlertMessage;
+use lagotto::omikuji::Omikuji;
+use lagotto::{afterfact::after_fact, detections::utils};
+use lagotto::{detections::configs, timeline::timeline::Timeline};
 use std::{
     fs::{self, File},
     path::PathBuf,
     vec,
 };
-use yamato_event_analyzer::detections::detection;
-use yamato_event_analyzer::detections::detection::EvtxRecordInfo;
-use yamato_event_analyzer::detections::print::AlertMessage;
-use yamato_event_analyzer::omikuji::Omikuji;
-use yamato_event_analyzer::{afterfact::after_fact, detections::utils};
-use yamato_event_analyzer::{detections::configs, timeline::timeline::Timeline};
 
 // 一度にtimelineやdetectionを実行する行数
 const MAX_DETECT_RECORDS: usize = 40000;
