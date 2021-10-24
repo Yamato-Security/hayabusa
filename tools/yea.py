@@ -60,6 +60,7 @@ class YeaBackend(SingleTextQueryBackend):
         name = self.selection_prefix.format(self.name_idx)
 
         if self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
+            # base64とかでエラーだす必要あるか確認
             childValue = None
             if type(value) == str and "*" in value[1:-1]:
                 childValue = self.generateValueNode(value)
@@ -90,9 +91,11 @@ class YeaBackend(SingleTextQueryBackend):
         elif isinstance(value, SigmaTypeModifier):
             return self.generateMapItemTypedNode(fieldname, value)
         else:
-            self.name_2_selection[name].append((fieldname, None))
+            if name in self.name_2_selection:
+                self.name_2_selection[name].append((fieldname, None))
+            else:
+                self.name_2_selection[name] = [(fieldname, None)]
             return name
-
 
     def generateMapItemTypedNode(self, fieldname, value):
         # `|re`オプションに対応
@@ -133,24 +136,18 @@ class YeaBackend(SingleTextQueryBackend):
         return name
 
     def generateAggregation(self, agg):
-        # python3 tools/sigmac -rI rules/windows/builtin/ --config tools/config/generic/powershell.yml --target yea > result.yaml
+        # python3 tools/sigmac rules/windows/process_creation/win_dnscat2_powershell_implementation.yml --config tools/config/generic/sysmon.yml --target yea
         if agg == None:
             return ""
         if agg.aggfunc == SigmaAggregationParser.AGGFUNC_COUNT:
-            # Example rule: ./rules/windows/builtin/win_global_catalog_enumeration.yml
-            raise NotImplementedError("COUNT aggregation operator is not yet implemented for this backend")
-        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_MIN:
-            raise NotImplementedError("MIN aggregation operator is not yet implemented for this backend")
-        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_MAX:
-            raise NotImplementedError("MAX aggregation operator is not yet implemented for this backend")
-        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_AVG:
-            raise NotImplementedError("AVG aggregation operator is not yet implemented for this backend")
-        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_SUM:
-            raise NotImplementedError("SUM aggregation operator is not yet implemented for this backend")
-        if agg.aggfunc == SigmaAggregationParser.AGGFUNC_NEAR:
-            # Example rule: ./rules/windows/builtin/win_susp_samr_pwset.yml
-            raise NotImplementedError("NEAR aggregation operator is not yet implemented for this backend")
+            # condition の中に "|" は1つのみ
+            # | 以降をそのまま出力する
+            target = '|'
+            index = agg.parser.parsedyaml["detection"]["condition"].find(target)
+            return agg.parser.parsedyaml["detection"]["condition"][index:]
 
+        ## count以外は対応していないので、エラーを返す
+        raise NotImplementedError("This rule contains aggregation operator not implemented for this backend")
 
     def generateQuery(self, parsed):
         result = self.generateNode(parsed.parsedSearch)
