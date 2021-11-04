@@ -67,3 +67,17 @@ rulesフォルダには組み込みルールファイルも設置されていま
 ````
 cargo build
 ````
+
+# How to notify to Slack channel
+
+Slackチャンネルへの通知にはSlackでのWEBHOOKURLの設定と実行マシンの環境変数(WEBHOOKURL、CHANNEL)への追加が必要です。
+
+1. 通知先のSlackのワークスペースに対して「Incoming Webhook」をSlackに追加してください。
+2. 「チャンネルへの投稿」で投稿するチャンネルを選択し 「Incoming Webhookインテグレーションの追加」をクリックします。
+3. 遷移後のぺージの「Webhook URL」の内容(https:hooks.slack.com/services/xxx...)を環境変数の`WEBHOOK_URL` に代入してください。
+4. 投入するchannelを#付きで環境変数の`CHANNEL`に代入してください。
+5. 以下のコマンドで実行をするとCHANNELで指定したチャンネルに検知情報の通知が送付されます。
+
+````
+lagotto.exe --slack
+````
