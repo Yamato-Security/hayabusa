@@ -29,7 +29,6 @@ class YeaBackend(SingleTextQueryBackend):
 
     name_idx = 1
     selection_prefix = "SELECTION_{0}"
-    selections = []
     name_2_selection = OrderedDict()
 
     def __init__(self, sigmaconfig, options):
@@ -40,6 +39,11 @@ class YeaBackend(SingleTextQueryBackend):
 
     def generateListNode(self, node):
         return self.generateORNode(node)
+
+    def create_new_selection(self):
+        name = self.selection_prefix.format(self.name_idx)
+        self.name_idx+=1
+        return name 
 
     def generateMapItemNode(self, node):
         # 以下のルールに対応。
@@ -57,7 +61,6 @@ class YeaBackend(SingleTextQueryBackend):
         # - EventID 7045
         # - TaskName ['SC Scheduled Scan', 'UpdatMachine']
         fieldname, value = node
-        name = self.selection_prefix.format(self.name_idx)
 
         if self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
             # base64とかでエラーだす必要あるか確認
@@ -81,6 +84,7 @@ class YeaBackend(SingleTextQueryBackend):
             else:
                 childValue = self.generateNode(value)
 
+            name = self.create_new_selection()
             if name in self.name_2_selection:
                 self.name_2_selection[name].append((fieldname, childValue))
             else:
@@ -91,6 +95,7 @@ class YeaBackend(SingleTextQueryBackend):
         elif isinstance(value, SigmaTypeModifier):
             return self.generateMapItemTypedNode(fieldname, value)
         else:
+            name = self.create_new_selection()
             if name in self.name_2_selection:
                 self.name_2_selection[name].append((fieldname, None))
             else:
@@ -154,7 +159,6 @@ class YeaBackend(SingleTextQueryBackend):
         if parsed.parsedAgg:
             res = self.generateAggregation(parsed.parsedAgg)
             result += res
-        self.selections.append(result)
         ret = ""
         with StringIO() as bs:
             ## 元のyamlをいじるとこの後の処理に影響を与える可能性があるので、deepCopyする
@@ -166,7 +170,7 @@ class YeaBackend(SingleTextQueryBackend):
 
             ## detectionの部分だけ変更して出力する。
             parsed_yaml["detection"] = {}
-            parsed_yaml["detection"]["condition"] = self.andToken.join(self.selections)
+            parsed_yaml["detection"]["condition"] = result
             for key, values in self.name_2_selection.items():
                 parsed_yaml["detection"][key] = {}
                 for fieldname, value in values:
