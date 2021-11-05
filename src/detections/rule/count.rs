@@ -74,7 +74,8 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
                 AlertMessage::alert(
                     &mut stdout,
                     format!("field_value alias not found.value:{}", field_value),
-                );
+                )
+                .ok();
             }
         };
     }
@@ -91,7 +92,8 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
                 AlertMessage::alert(
                     &mut stdout,
                     format!("by_field_value alias not found.value:{}", by_field_value),
-                );
+                )
+                .ok();
             }
         }
     }
@@ -180,7 +182,8 @@ impl TimeFrameInfo {
             AlertMessage::alert(
                 &mut stdout,
                 format!("timeframe is invalid.input value:{}", value),
-            );
+            )
+            .ok();
         }
         return TimeFrameInfo {
             timetype: ttype,
@@ -213,7 +216,8 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
             AlertMessage::alert(
                 &mut stdout,
                 format!("timeframe num is invalid. timeframe.{}", err),
-            );
+            )
+            .ok();
             return Option::None;
         }
     }
@@ -751,7 +755,10 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule(test);
-        rule_node.init();
+        let error_checker = rule_node.init();
+        if error_checker.is_err() {
+            assert!(false, "failed to init rulenode");
+        }
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
