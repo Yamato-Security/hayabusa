@@ -1,5 +1,5 @@
 # ルールファイル
-LagottoはWindowsEventログの検知ルールをYAML形式のファイルに記載します。
+HayabusaはWindowsEventログの検知ルールをYAML形式のファイルに記載します。
 単なる文字列一致だけでなく、正規表現やANDやOR等の条件を組み合わせることができ、複雑な検知ルールも表現できるようになっています。
 ここではその検知ルールの書き方について説明します。
 
@@ -26,8 +26,8 @@ updated_date: 2020/11/8
 * description [optional]: ルールファイルの説明を入力します。
 * author [optional]: ルールファイルの作者を入力します。
 * detection  [required]: 検知ルールを入力します。
-* falsepositives [optional]: 誤検知に関する情報を入力します。
-* level [optional]: リスクレベルを入力します。指定する値は`informational`,`low`,`medium`,`high`,`critical`のいづれかです。
+* falsepositives [optional]: 誤検知に関する情報を入力します。例：System Administrator、Normal User Usage、Security Team等々。
+* level [optional]: リスクレベルを入力します。指定する値は`info`,`low`,`medium`,`high`,`critical`のいづれかです。
 * output [required]: イベントログが検知した場合に表示されるメッセージを入力します。
 * creation_date [optional]: ルールファイルの作成日を入力します。
 * updated_date [optional]: ルールファイルの更新日を入力します。
@@ -92,7 +92,7 @@ WindowsイベントログをXML形式で一部抜粋で出力すると、下記�
 ``````
 
 ### eventkeyのalias
-`.`でつなげたeventkeyは長い文字列になってしまうことがあるため、Lagottoではeventkeyに対するエイリアスを使用できます。エイリアスは`config\eventkey_alias.txt`というファイルに定義されています。ファイルはCSV形式であり、aliasとevent_keyという列から構成されています。aliasにはエイリアスを定義し、event_keyには`.`でつなげたeventkeyを指定します。このエイリアスを用いると、最初に例に挙げたdetectionは以下のように書き換えることができます。
+`.`でつなげたeventkeyは長い文字列になってしまうことがあるため、hayabusaではeventkeyに対するエイリアスを使用できます。エイリアスは`config\eventkey_alias.txt`というファイルに定義されています。ファイルはCSV形式であり、aliasとevent_keyという列から構成されています。aliasにはエイリアスを定義し、event_keyには`.`でつなげたeventkeyを指定します。このエイリアスを用いると、最初に例に挙げたdetectionは以下のように書き換えることができます。
 
 ``````
 detection:
@@ -138,8 +138,8 @@ WindowsEventログをXML形式で出力すると、EventDataというタグが�
     </System>
     <EventData>
         <Data Name='SubjectUserSid'>S-1-1-11-1111111111-111111111-1111111111-1111</Data>
-        <Data Name='SubjectUserName'>lagotto</Data>
-        <Data Name='SubjectDomainName'>DESKTOP-LAGOTTO</Data>
+        <Data Name='SubjectUserName'>hayabusa</Data>
+        <Data Name='SubjectDomainName'>DESKTOP-HAYABUSA</Data>
         <Data Name='SubjectLogonId'>0x11111111</Data>
     </EventData>
 </Event>
@@ -152,8 +152,8 @@ detection:
     selection:
         EventID: 7040
         Channel: System
-        Event.EventData.SubjectUserName: lagotto
-        Event.EventData.SubjectDomainName: DESKTOP-LAGOTTO
+        Event.EventData.SubjectUserName: hayabusa
+        Event.EventData.SubjectDomainName: DESKTOP-HAYBUSA
 ``````
 
 ### EventDataの特殊なパターン
@@ -183,14 +183,14 @@ detection:
 ``````
 
 ## パイプ
-eventkeyにはパイプを指定することができます。ここまで説明した書き方では完全一致しか表現できませんでしたが、パイプを使うことでより柔軟な検知ルールを記載できるようになります。下記の例ではCommandLineの値が`yamato.*lagotto`という正規表現にマッチする場合、条件に一致したものとして処理されます。
+eventkeyにはパイプを指定することができます。ここまで説明した書き方では完全一致しか表現できませんでしたが、パイプを使うことでより柔軟な検知ルールを記載できるようになります。下記の例ではCommandLineの値が`yamato.*hayabusa`という正規表現にマッチする場合、条件に一致したものとして処理されます。
 
 ``````
 detection:
     selection:
         EventID: 7040
         Channel: System
-        CommandLine|re: yamato.*lagotto
+        CommandLine|re: yamato.*hayabusa
 ``````
 
 使用できるパイプの一覧です。なお、v1.0.0時点では、複数のパイプをつなげて使用することはできません。
@@ -200,14 +200,14 @@ detection:
 * re: 正規表現(正規表現の処理にはregexクレートを使用しています。正規表現の詳細記法についてはhttps://docs.rs/regex/1.5.4/regex/を参照してください。)
 
 ## ワイルドカード
-eventkeyに対応する値にはワイルドカードを指定することができます。下記の例ではCommandLineがlagottoという文字列で始まっていれば、条件に一致したものとして処理されます。基本的にはsigmaルールのwildcardと同じ仕様になっています。
+eventkeyに対応する値にはワイルドカードを指定することができます。下記の例ではCommandLineがhayabusaという文字列で始まっていれば、条件に一致したものとして処理されます。基本的にはsigmaルールのwildcardと同じ仕様になっています。
 
 ``````
 detection:
     selection:
         EventID: 7040
         Channel: System
-        CommandLine: lagotto*
+        CommandLine: hayabusa*
 ``````
 
 使用できるワイルドカードの一覧です。
@@ -239,7 +239,7 @@ detection:
 * whitelist: 指定したファイルに記載された正規表現のリストにひとつでも一致すれば、`条件に一致していない`ものとして処理されます。
 
 ### regexes.txtとwhitelist.txt
-lagottoではregexesやwhitelistを使用した組み込みのルールを用意しており、それらのルールはregexes.txtとwhitelist.txtを参照しています。regexes.txtとwhitelist.txtを書き換えることで、参照する全てのルールの挙動を一度に変更することが可能です。
+hayabusaではregexesやwhitelistを使用した組み込みのルールを用意しており、それらのルールはregexes.txtとwhitelist.txtを参照しています。regexes.txtとwhitelist.txtを書き換えることで、参照する全てのルールの挙動を一度に変更することが可能です。
 
 また、regexesやwhitelistに指定するファイルは、ユーザーが独自に作成することも可能です。作成する場合、regexes.txtとwhitelist.txtを参考にしてください。
 
