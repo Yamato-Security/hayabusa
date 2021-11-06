@@ -85,9 +85,9 @@ class YeaBackend(SingleTextQueryBackend):
         ### なお、generateMapItemListNode()を有効にするために、self.mapListsSpecialHandling = Trueとしている
         list_values = list()
         for sub_node in value:
-            list_values.append((fieldname,value))
+            list_values.append((fieldname,sub_node))
 
-        return self.generateORNode(list_values)
+        return self.subExpression % self.generateORNode(list_values) 
 
     def generateAggregation(self, agg):
         # python3 tools/sigmac rules/windows/process_creation/win_dnscat2_powershell_implementation.yml --config tools/config/generic/sysmon.yml --target yea
