@@ -1,6 +1,6 @@
 title: This service may not function properly
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: System

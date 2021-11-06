@@ -1,6 +1,6 @@
 title: A service was installed in the system
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: System

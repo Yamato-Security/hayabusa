@@ -26,7 +26,7 @@ updated_date: 2020/11/8
 * description [optional]: ルールファイルの説明を入力します。
 * author [optional]: ルールファイルの作者を入力します。
 * detection  [required]: 検知ルールを入力します。
-* falsepositives [optional]: 誤検知に関する情報を入力します。例：System Administrator、Normal User Usage、Security Team等々。
+* falsepositives [optional]: 誤検知に関する情報を入力します。例：unknown、system administrator、normal user usage、normal system usage、legacy application、security team等々。
 * level [optional]: リスクレベルを入力します。指定する値は`info`,`low`,`medium`,`high`,`critical`のいづれかです。
 * output [required]: イベントログが検知した場合に表示されるメッセージを入力します。
 * creation_date [optional]: ルールファイルの作成日を入力します。

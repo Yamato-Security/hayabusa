@@ -1,6 +1,6 @@
 title: An Operation was attempted on a privileged object
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: Security

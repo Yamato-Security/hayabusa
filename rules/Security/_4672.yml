@@ -1,11 +1,12 @@
 title: Command Line Logging
 description: hogehoge
-author: Yea
+ignore: true
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: Security
-        EventID: 4688
-        CommandLine|re: '.+'
+        EventID: 4672
+        PrivilegeList|contains: SeDebugPrivilege
     # condition: selection
 falsepositives:
     - unknown

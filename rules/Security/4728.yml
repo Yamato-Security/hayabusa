@@ -1,14 +1,14 @@
-title: A member was added to a security-enabled local group.
+title: A member was added to a security-enabled global group.
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: Security
-        EventID: 4732
+        EventID: 4728
         TargetUserName: Administrators
     # condition: selection
 falsepositives:
     - unknown
-output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+output: 'user added to global Administrators UserName: %MemberName% SID: %MemberSid%'
 creation_date: 2020/11/8
 updated_date: 2020/11/8

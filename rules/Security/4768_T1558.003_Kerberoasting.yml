@@ -1,0 +1,20 @@
+title: Kerberoasting
+title_jp: Kerberoast攻撃
+description: Adversaries may abuse a valid Kerberos ticket-granting ticket (TGT) or sniff network traffic to obtain a ticket-granting service (TGS) ticket that may be vulnerable to Brute Force.
+description_jp: Adversaries may abuse a valid Kerberos ticket-granting ticket (TGT) or sniff network traffic to obtain a ticket-granting service (TGS) ticket that may be vulnerable to Brute Force.
+author: Matsui
+contributor: Zach Mathis, James Takai, DustInDark
+mitre_attack: T1558.003
+level: high
+detection:
+    selection:
+        Channel: Security
+        EventID: 4768
+        TicketEncryptionType: '0x17' #RC4-HMAC
+        PreAuthType: 2 #Standard password authentication
+falsepositives:
+    - legacy application
+output: 'Possible Kerberoasting Risk Activity.'
+output_jp: 'Kerberoast攻撃のリスクがある'
+creation_date: 2021/04/31
+updated_date:  2021/11/06

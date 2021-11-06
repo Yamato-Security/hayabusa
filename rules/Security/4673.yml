@@ -1,6 +1,6 @@
 title: Sensitive Privilede Use (Mimikatz)
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: Security
@@ -14,3 +14,4 @@ output: |
     UserName:%SubjectUserName% Domain Name:%DomainName%
 creation_date: 2020/11/8
 updated_date: 2020/11/8
+comments: 

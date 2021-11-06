@@ -1,6 +1,6 @@
 title: The ... service entered the stopped|running state
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: System

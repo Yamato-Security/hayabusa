@@ -1,6 +1,6 @@
 title: A user account was created.
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: Security

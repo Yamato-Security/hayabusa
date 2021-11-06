@@ -1,0 +1,19 @@
+title: Security log was cleared
+title_jp: セキュリティログがクリアされた
+description: Somebody has cleared the Security event log.
+description_jp: 誰かがセキュリティログをクリアした。
+author: Eric Contrad
+contributor: Zach Mathis, Akira Nishikawa, James Takai
+mitre_attack: T1070.001
+level: high
+detection:
+    selection:
+        Channel: Security
+        EventID: 1102
+    # condition: selection
+falsepositives:
+    - system administrator
+output: "User: %LogFileCleared%%SubjectUserName%"
+output_jp: "ユーザ名: %LogFileCleared%%SubjectUserName%"
+creation_date: 2020/11/08
+updated_date:  2021/11/06

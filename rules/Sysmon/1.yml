@@ -1,6 +1,6 @@
 title: Sysmon Check command lines
 description: hogehoge
-author: Yea
+author: DeepblueCLI, Zach Mathis
 detection:
     selection:
         Channel: Sysmon
