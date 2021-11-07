@@ -8,11 +8,11 @@ from sigma.parser.condition import SigmaAggregationParser
 from sigma.parser.modifiers.base import SigmaTypeModifier
 from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
 
-class YeaBackend(SingleTextQueryBackend):
+class HayabusaBackend(SingleTextQueryBackend):
     """Base class for backends that generate one text-based expression from a Sigma rule"""
     ## see tools.py
     ## use this value when sigmac parse argument of "-t"
-    identifier = "yea"
+    identifier = "hayabusa"
     active = True
 
     # the following class variables define the generation and behavior of queries from a parse tree some are prefilled with default values that are quite usual
@@ -90,7 +90,7 @@ class YeaBackend(SingleTextQueryBackend):
         return self.subExpression % self.generateORNode(list_values) 
 
     def generateAggregation(self, agg):
-        # python3 tools/sigmac rules/windows/process_creation/win_dnscat2_powershell_implementation.yml --config tools/config/generic/sysmon.yml --target yea
+        # python3 tools/sigmac rules/windows/process_creation/win_dnscat2_powershell_implementation.yml --config tools/config/generic/sysmon.yml --target hayabusa
         if agg == None:
             return ""
         if agg.aggfunc == SigmaAggregationParser.AGGFUNC_COUNT:
