@@ -24,16 +24,14 @@ git clone https://github.com/SigmaHQ/sigma.git
 
 ## 使い方
 
-hayabusaGenerator.pyをsigmaのbackendとして登録します。
+hayabusaGenerator.pyをSIGMAのbackendとして登録します。
 
 ```sh
 export sigma_path=/path/to/sigma_repository
 cp hayabusaGenerater.py $sigma_path/tools/sigma/backends
 ```
 
-## 単体のルールを変換
-
-sigmacのバックエンドをhayabusaにして実行します。
+### 単体のルールを変換
 
 ```sh
 python3 $sigma_path/tools/sigmac <変換対象ruleの指定> --config <configの指定> --target hayabusa
@@ -44,7 +42,7 @@ python3 $sigma_path/tools/sigmac <変換対象ruleの指定> --config <configの
 python3 $sigma_path/tools/sigmac $sigma/rules/windows/create_remote_thread/sysmon_cactustorch.yml --config $sigma_path/tools/config/generic/sysmon.yml --target hayabusa > sysmon_cactustorch.yml
 ```
 
-## 複数のルールを変換
+### 複数のルールを変換
 
 現在のディレクトリ内に指定したディレクトリ内のルールファイルを作成するコマンドサンプルです。
 
