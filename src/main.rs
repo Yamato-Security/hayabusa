@@ -19,7 +19,10 @@ const MAX_DETECT_RECORDS: usize = 40000;
 
 fn main() {
     if configs::CONFIG.read().unwrap().args.args.len() == 0 {
-        println!("{}", configs::CONFIG.read().unwrap().args.usage().to_string());
+        println!(
+            "{}",
+            configs::CONFIG.read().unwrap().args.usage().to_string()
+        );
         return;
     }
 
