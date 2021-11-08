@@ -2,12 +2,12 @@ extern crate serde;
 extern crate serde_derive;
 
 use evtx::{EvtxParser, ParserSettings};
-use lagotto::detections::detection;
-use lagotto::detections::detection::EvtxRecordInfo;
-use lagotto::detections::print::AlertMessage;
-use lagotto::omikuji::Omikuji;
-use lagotto::{afterfact::after_fact, detections::utils};
-use lagotto::{detections::configs, timeline::timeline::Timeline};
+use hayabusa::detections::detection;
+use hayabusa::detections::detection::EvtxRecordInfo;
+use hayabusa::detections::print::AlertMessage;
+use hayabusa::omikuji::Omikuji;
+use hayabusa::{afterfact::after_fact, detections::utils};
+use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use std::{
     fs::{self, File},
     path::PathBuf,

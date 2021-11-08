@@ -39,9 +39,9 @@ fn build_app<'a>() -> ArgMatches<'a> {
     }
 
     App::new(&program)
-        .about("Lagotto. Aiming to be the world's greatest Windows event log analysis tool!")
+        .about("hayabusa. Aiming to be the world's greatest Windows event log analysis tool!")
         .version("1.0.0")
-        .author("Author name Yamato-Security(https://github.com/Yamato-Security/YamatoEventAnalyzer)")
+        .author("Author name Yamato-Security(https://github.com/Yamato-Security/hayabusa)")
         .setting(AppSettings::VersionlessSubcommands)
         .arg(Arg::from_usage("-f --filepath=[FILEPATH] 'Event file path'"))
         .arg(Arg::from_usage("--csv-timeline=[CSV_TIMELINE] 'Csv output timeline'"))
