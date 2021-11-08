@@ -236,12 +236,12 @@ detection:
 * value: 文字列による一致(ワイルドカードやパイプを指定することもできます)
 * min_length: 指定した文字数以上である場合、条件に一致したものとして処理されます。
 * regexes: 指定したファイルに記載された正規表現のリストにひとつでも一致すれば、`条件に一致した`ものとして処理されます。
-* whitelist: 指定したファイルに記載された正規表現のリストにひとつでも一致すれば、`条件に一致していない`ものとして処理されます。
+* allowlist: 指定したファイルに記載された正規表現のリストにひとつでも一致すれば、`条件に一致していない`ものとして処理されます。
 
-### regexes.txtとwhitelist.txt
-hayabusaではregexesやwhitelistを使用した組み込みのルールを用意しており、それらのルールはregexes.txtとwhitelist.txtを参照しています。regexes.txtとwhitelist.txtを書き換えることで、参照する全てのルールの挙動を一度に変更することが可能です。
+### regexes.txtとallowlist.txt
+hayabusaではregexesやallowlistを使用した組み込みのルールを用意しており、それらのルールはregexes.txtとallowlist.txtを参照しています。regexes.txtとallowlist.txtを書き換えることで、参照する全てのルールの挙動を一度に変更することが可能です。
 
-また、regexesやwhitelistに指定するファイルは、ユーザーが独自に作成することも可能です。作成する場合、regexes.txtとwhitelist.txtを参考にしてください。
+また、regexesやallowlistに指定するファイルは、ユーザーが独自に作成することも可能です。作成する場合、regexes.txtとallowlist.txtを参考にしてください。
 
 ## condition
 これまでの記法を用いると、AND条件やOR条件を表現することができますが、ANDやOR等が複雑に入り組んだ条件を定義することは難しい場合があります。その場合、conditionというキーワードを使用することで、複雑な条件式を定義することができます。

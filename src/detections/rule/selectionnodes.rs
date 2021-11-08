@@ -291,7 +291,7 @@ impl LeafSelectionNode {
         return vec![
             Box::new(matchers::MinlengthMatcher::new()),
             Box::new(matchers::RegexesFileMatcher::new()),
-            Box::new(matchers::WhitelistFileMatcher::new()),
+            Box::new(matchers::AllowlistFileMatcher::new()),
             Box::new(matchers::DefaultMatcher::new()),
         ];
     }

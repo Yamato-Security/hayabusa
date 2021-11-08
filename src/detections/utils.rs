@@ -41,8 +41,8 @@ pub fn check_regex(string: &str, regex_list: &Vec<String>) -> bool {
     return false;
 }
 
-pub fn check_whitelist(target: &str, whitelist: &Vec<String>) -> bool {
-    for line in whitelist {
+pub fn check_allowlist(target: &str, allowlist: &Vec<String>) -> bool {
+    for line in allowlist {
         if line.is_empty() {
             continue;
         }
@@ -170,12 +170,12 @@ mod tests {
     }
 
     #[test]
-    fn test_check_whitelist() {
+    fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let whitelist = utils::read_txt("whitelist.txt").unwrap();
-        assert!(true == utils::check_whitelist(commandline, &whitelist));
+        let allowlist = utils::read_txt("allowlist.txt").unwrap();
+        assert!(true == utils::check_allowlist(commandline, &allowlist));
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";
-        assert!(false == utils::check_whitelist(commandline, &whitelist));
+        assert!(false == utils::check_allowlist(commandline, &allowlist));
     }
 }
