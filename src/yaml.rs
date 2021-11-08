@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use yaml_rust::YamlLoader;
 
 pub struct ParseYaml {
-    pub files: Vec<yaml_rust::Yaml>,
+    pub files: Vec<(String, yaml_rust::Yaml)>,
 }
 
 impl ParseYaml {
@@ -46,7 +46,9 @@ impl ParseYaml {
                                         if i["ignore"].as_bool().unwrap_or(false) {
                                             continue;
                                         }
-                                        &self.files.push(i);
+                                        &self
+                                            .files
+                                            .push((format!("{}", entry.path().display()), i));
                                     }
                                 }
                                 Err(e) => {

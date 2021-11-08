@@ -15,6 +15,7 @@ use std::process;
 pub struct CsvFormat<'a> {
     time: &'a str,
     filepath: &'a str,
+    rulepath: &'a str,
     level: &'a str,
     title: &'a str,
     message: &'a str,
@@ -79,6 +80,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
             wtr.serialize(CsvFormat {
                 time: &format_time(time),
                 filepath: &detect_info.filepath,
+                rulepath: &detect_info.rulepath,
                 level: &detect_info.level,
                 title: &detect_info.title,
                 message: &detect_info.detail,
@@ -113,6 +115,7 @@ fn test_emit_csv() {
     use serde_json::Value;
     use std::fs::{read_to_string, remove_file};
     let testfilepath: &str = "test.evtx";
+    let testrulepath: &str = "test-rule.yml";
     let test_title = "test_title";
     let test_level = "high";
     let output = "pokepoke";
@@ -136,6 +139,7 @@ fn test_emit_csv() {
         let event: Value = serde_json::from_str(val).unwrap();
         messages.insert(
             testfilepath.to_string(),
+            testrulepath.to_string(),
             &event,
             test_level.to_string(),
             test_title.to_string(),
@@ -147,10 +151,12 @@ fn test_emit_csv() {
         .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
         .unwrap();
     let expect_tz = expect_time.with_timezone(&Local);
-    let expect = "Time,Filepath,Level,Title,Message\n".to_string()
+    let expect = "Time,Filepath,Rulepath,Level,Title,Message\n".to_string()
         + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
         + ","
         + testfilepath
+        + ","
+        + testrulepath
         + ","
         + test_level
         + ","

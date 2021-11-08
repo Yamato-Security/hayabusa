@@ -85,7 +85,7 @@ impl Detection {
         return rulefile_loader
             .files
             .into_iter()
-            .map(|rule_file| rule::create_rule(rule_file))
+            .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
     }
@@ -156,6 +156,7 @@ impl Detection {
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
         MESSAGES.lock().unwrap().insert(
             record_info.evtx_filepath.to_string(),
+            rule.rulepath.to_string(),
             &record_info.record,
             rule.yaml["level"].as_str().unwrap_or("").to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
@@ -168,6 +169,7 @@ impl Detection {
         let output = Detection::create_count_output(rule, &agg_result);
         MESSAGES.lock().unwrap().insert_message(
             agg_result.filepath,
+            rule.rulepath.to_string(),
             agg_result.start_timedate,
             rule.yaml["level"].as_str().unwrap_or("").to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
