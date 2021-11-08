@@ -26,6 +26,7 @@ num_cpus = "1.13.0"
 mopa = "0.2.2"
 slack-hook = "0.8"
 dotenv = "0.15.0"
+hhmmss = "*"
 
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"

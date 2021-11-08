@@ -1,7 +1,9 @@
 extern crate serde;
 extern crate serde_derive;
 
+use chrono::{DateTime, Utc};
 use evtx::{EvtxParser, ParserSettings};
+use hhmmss::Hhmmss;
 use lagotto::detections::detection;
 use lagotto::detections::detection::EvtxRecordInfo;
 use lagotto::detections::print::AlertMessage;
@@ -18,6 +20,7 @@ use std::{
 const MAX_DETECT_RECORDS: usize = 40000;
 
 fn main() {
+    let analysis_start_time: DateTime<Utc> = Utc::now();
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
         analysis_files(vec![PathBuf::from(filepath)]);
     } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
@@ -25,7 +28,13 @@ fn main() {
         analysis_files(evtx_files);
     } else if configs::CONFIG.read().unwrap().args.is_present("credits") {
         print_credits();
+        return;
     }
+    let analysis_end_time: DateTime<Utc> = Utc::now();
+    let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
+    println!("");
+    println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
+    println!("");
 }
 
 fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
