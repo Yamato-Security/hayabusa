@@ -73,7 +73,7 @@ pub fn after_fact() {
 fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
     let messages = print::MESSAGES.lock().unwrap();
-
+    let mut detect_count = 0;
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             wtr.serialize(CsvFormat {
@@ -84,7 +84,12 @@ fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
                 message: &detect_info.detail,
             })?;
         }
+        detect_count += detect_infos.len();
     }
+    println!("");
+    println!("Events Detected:{:?}", detect_count);
+    println!("");
+
     wtr.flush()?;
     Ok(())
 }

@@ -131,11 +131,16 @@ impl Message {
 
     /// 最後に表示を行う
     pub fn print(&self) {
+        let mut detect_count = 0;
         for (key, detect_infos) in self.map.iter() {
             for detect_info in detect_infos.iter() {
                 println!("{} <{}> {}", key, detect_info.title, detect_info.detail);
             }
+            detect_count += detect_infos.len();
         }
+        println!("");
+        println!("Events Detected:{:?}", detect_count);
+        println!("");
     }
 
     pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<DetectInfo>> {
