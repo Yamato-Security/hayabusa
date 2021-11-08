@@ -18,6 +18,11 @@ use std::{
 const MAX_DETECT_RECORDS: usize = 40000;
 
 fn main() {
+    if configs::CONFIG.read().unwrap().args.args.len() == 0 {
+        println!("{}", configs::CONFIG.read().unwrap().args.usage().to_string());
+        return;
+    }
+
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
         analysis_files(vec![PathBuf::from(filepath)]);
     } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
