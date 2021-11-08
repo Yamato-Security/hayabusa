@@ -47,7 +47,7 @@ impl SlackNotify {
         let p = PayloadBuilder::new()
             .text(msg)
             .channel(channel)
-            .username("Lagotto Notify Bot")
+            .username("hayabusa Notify Bot")
             .icon_emoji(":scream:")
             .build()
             .unwrap();

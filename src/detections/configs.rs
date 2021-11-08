@@ -1,5 +1,5 @@
 use crate::detections::utils;
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{App, AppSettings, ArgMatches};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -38,21 +38,23 @@ fn build_app<'a>() -> ArgMatches<'a> {
         return ArgMatches::default();
     }
 
+    let usages = "-f --filepath=[FILEPATH] 'Event file path'
+    --csv-timeline=[CSV_TIMELINE] 'Csv output timeline'
+    --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
+    -l --lang=[LANG] 'Output language'
+    -u --utc 'Output time in UTC format(default: local time)'
+    -d --directory=[DIRECTORY] 'Event log files directory'
+    -s --statistics 'Prints statistics for event logs'
+    -t --threadnum=[NUM] 'Thread number'
+    --slack 'Slack notification'
+    --credits 'Prints credits'";
     App::new(&program)
-        .about("Lagotto. Aiming to be the world's greatest Windows event log analysis tool!")
+        .about("hayabusa. Aiming to be the world's greatest Windows event log analysis tool!")
         .version("1.0.0")
-        .author("Author name Yamato-Security(https://github.com/Yamato-Security/YamatoEventAnalyzer)")
+        .author("Author name Yamato-Security(https://github.com/Yamato-Security/hayabusa)")
         .setting(AppSettings::VersionlessSubcommands)
-        .arg(Arg::from_usage("-f --filepath=[FILEPATH] 'Event file path'"))
-        .arg(Arg::from_usage("--csv-timeline=[CSV_TIMELINE] 'Csv output timeline'"))
-        .arg(Arg::from_usage("--rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'"))
-        .arg(Arg::from_usage("-l --lang=[LANG] 'Output language'"))
-        .arg(Arg::from_usage("-u --utc 'Output time in UTC format(default: local time)'"))
-        .arg(Arg::from_usage("-d --directory=[DIRECTORY] 'Event log files directory'"))
-        .arg(Arg::from_usage("-s --statistics 'Prints statistics for event logs'"))
-        .arg(Arg::from_usage("-t --threadnum=[NUM] 'Thread number'"))
-        .arg(Arg::from_usage("--slack 'Slack notification'"))
-        .arg(Arg::from_usage("--credits 'Prints credits'"))
+        .usage(usages)
+        .args_from_usage(usages)
         .get_matches()
 }
 

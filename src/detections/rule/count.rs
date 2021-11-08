@@ -667,7 +667,7 @@ mod tests {
         "#;
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
-        let mut rule_node = create_rule(test);
+        let mut rule_node = create_rule("testpath".to_string(), test);
         let init_result = rule_node.init();
         assert_eq!(init_result.is_ok(), true);
         let target = vec![SIMPLE_RECORD_STR, record_str];
@@ -754,7 +754,7 @@ mod tests {
     ) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
-        let mut rule_node = create_rule(test);
+        let mut rule_node = create_rule("testpath".to_string(), test);
         let error_checker = rule_node.init();
         if error_checker.is_err() {
             assert!(false, "failed to init rulenode");

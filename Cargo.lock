@@ -715,6 +715,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 
 [[package]]
+name = "hayabusa"
+version = "1.0.0"
+dependencies = [
+ "base64",
+ "chrono",
+ "clap",
+ "csv",
+ "dotenv",
+ "evtx",
+ "flate2",
+ "hhmmss",
+ "lazy_static",
+ "linked-hash-map",
+ "mopa",
+ "num_cpus",
+ "quick-xml 0.17.2",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "slack-hook",
+ "tokio 1.3.0",
+ "yaml-rust",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -928,32 +954,6 @@ checksum = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
 dependencies = [
  "winapi 0.2.8",
  "winapi-build",
-]
-
-[[package]]
-name = "lagotto"
-version = "1.0.0"
-dependencies = [
- "base64",
- "chrono",
- "clap",
- "csv",
- "dotenv",
- "evtx",
- "flate2",
- "hhmmss",
- "lazy_static",
- "linked-hash-map",
- "mopa",
- "num_cpus",
- "quick-xml 0.17.2",
- "regex",
- "serde",
- "serde_derive",
- "serde_json",
- "slack-hook",
- "tokio 1.3.0",
- "yaml-rust",
 ]
 
 [[package]]

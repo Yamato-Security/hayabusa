@@ -128,25 +128,25 @@ impl LeafMatcher for RegexesFileMatcher {
 
 /// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
 /// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
-pub struct WhitelistFileMatcher {
-    whitelist_csv_content: Vec<String>,
+pub struct AllowlistFileMatcher {
+    allowlist_csv_content: Vec<String>,
 }
 
-impl WhitelistFileMatcher {
-    pub fn new() -> WhitelistFileMatcher {
-        return WhitelistFileMatcher {
-            whitelist_csv_content: vec![],
+impl AllowlistFileMatcher {
+    pub fn new() -> AllowlistFileMatcher {
+        return AllowlistFileMatcher {
+            allowlist_csv_content: vec![],
         };
     }
 }
 
-impl LeafMatcher for WhitelistFileMatcher {
+impl LeafMatcher for AllowlistFileMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
         if key_list.len() != 2 {
             return false;
         }
 
-        return key_list.get(1).unwrap() == "whitelist";
+        return key_list.get(1).unwrap() == "allowlist";
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -158,28 +158,28 @@ impl LeafMatcher for WhitelistFileMatcher {
         };
         if value.is_none() {
             let errmsg = format!(
-                "whitelist value should be String. [key:{}]",
+                "allowlist value should be String. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
         }
 
-        let whitelist_content = utils::read_txt(&value.unwrap());
-        if whitelist_content.is_err() {
-            return Result::Err(vec![whitelist_content.unwrap_err()]);
+        let allowlist_content = utils::read_txt(&value.unwrap());
+        if allowlist_content.is_err() {
+            return Result::Err(vec![allowlist_content.unwrap_err()]);
         }
-        self.whitelist_csv_content = whitelist_content.unwrap();
+        self.allowlist_csv_content = allowlist_content.unwrap();
 
         return Result::Ok(());
     }
 
     fn is_match(&self, event_value: Option<&Value>) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_whitelist(s, &self.whitelist_csv_content),
+            Value::String(s) => !utils::check_allowlist(s, &self.allowlist_csv_content),
             Value::Number(n) => {
-                !utils::check_whitelist(&n.to_string(), &self.whitelist_csv_content)
+                !utils::check_allowlist(&n.to_string(), &self.allowlist_csv_content)
             }
-            Value::Bool(b) => !utils::check_whitelist(&b.to_string(), &self.whitelist_csv_content),
+            Value::Bool(b) => !utils::check_allowlist(&b.to_string(), &self.allowlist_csv_content),
             _ => true,
         };
     }
@@ -487,7 +487,7 @@ impl PipeElement {
 #[cfg(test)]
 mod tests {
     use super::super::matchers::{
-        DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher, WhitelistFileMatcher,
+        AllowlistFileMatcher, DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher,
     };
     use super::super::selectionnodes::{
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
@@ -514,7 +514,7 @@ mod tests {
                 ImagePath:
                     min_length: 1234321
                     regexes: ./regexes.txt
-                    whitelist: ./whitelist.txt
+                    allowlist: ./allowlist.txt
         falsepositives:
             - unknown
         level: medium
@@ -664,7 +664,7 @@ mod tests {
                 );
             }
 
-            // whitelist.txtが読み込めることを確認
+            // allowlist.txtが読み込めることを確認
             {
                 let ancestor_node = ancestors[2].as_ref() as &dyn SelectionNode;
                 assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
@@ -673,12 +673,12 @@ mod tests {
                 let ancestor_node = &ancestor_node.matcher;
                 assert_eq!(ancestor_node.is_some(), true);
                 let ancestor_matcher = ancestor_node.as_ref().unwrap();
-                assert_eq!(ancestor_matcher.is::<WhitelistFileMatcher>(), true);
+                assert_eq!(ancestor_matcher.is::<AllowlistFileMatcher>(), true);
                 let ancestor_matcher = ancestor_matcher
-                    .downcast_ref::<WhitelistFileMatcher>()
+                    .downcast_ref::<AllowlistFileMatcher>()
                     .unwrap();
 
-                let csvcontent = &ancestor_matcher.whitelist_csv_content;
+                let csvcontent = &ancestor_matcher.allowlist_csv_content;
                 assert_eq!(csvcontent.len(), 2);
 
                 assert_eq!(
@@ -1068,14 +1068,14 @@ mod tests {
     #[test]
     fn test_detect_regexes() {
         // regexes.txtが正しく検知できることを確認
-        // この場合ではEventIDが一致しているが、whitelistに一致するので検知しないはず。
+        // この場合ではEventIDが一致しているが、allowlistに一致するので検知しないはず。
         let rule_str = r#"
         enabled: true
         detection:
             selection:
                 EventID: 4103
                 Channel:
-                    - whitelist: whitelist.txt
+                    - allowlist: allowlist.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1098,16 +1098,16 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_whitelist() {
-        // whitelistが正しく検知できることを確認
-        // この場合ではEventIDが一致しているが、whitelistに一致するので検知しないはず。
+    fn test_detect_allowlist() {
+        // allowlistが正しく検知できることを確認
+        // この場合ではEventIDが一致しているが、allowlistに一致するので検知しないはず。
         let rule_str = r#"
         enabled: true
         detection:
             selection:
                 EventID: 4103
                 Channel:
-                    - whitelist: whitelist.txt
+                    - allowlist: allowlist.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1130,16 +1130,16 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_whitelist2() {
-        // whitelistが正しく検知できることを確認
-        // この場合ではEventIDが一致しているが、whitelistに一致するので検知しないはず。
+    fn test_detect_allowlist2() {
+        // allowlistが正しく検知できることを確認
+        // この場合ではEventIDが一致しているが、allowlistに一致するので検知しないはず。
         let rule_str = r#"
         enabled: true
         detection:
             selection:
                 EventID: 4103
                 Channel:
-                    - whitelist: whitelist.txt
+                    - allowlist: allowlist.txt
         output: 'command=%CommandLine%'
         "#;
 

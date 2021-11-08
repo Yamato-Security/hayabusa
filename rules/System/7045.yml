@@ -9,7 +9,7 @@ detection:
             regexes: ./regexes.txt
         ImagePath:
             min_length: 1000
-            whitelist: ./whitelist.txt
+            allowlist: ./allowlist.txt
     condition: selection
 falsepositives:
     - unknown

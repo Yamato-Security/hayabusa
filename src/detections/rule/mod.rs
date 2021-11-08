@@ -18,12 +18,13 @@ mod condition_parser;
 mod count;
 use self::count::TimeFrameInfo;
 
-pub fn create_rule(yaml: Yaml) -> RuleNode {
-    return RuleNode::new(yaml);
+pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
+    return RuleNode::new(rulepath, yaml);
 }
 
 /// Ruleファイルを表すノード
 pub struct RuleNode {
+    pub rulepath: String,
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
     countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
@@ -38,8 +39,9 @@ impl Debug for RuleNode {
 unsafe impl Sync for RuleNode {}
 
 impl RuleNode {
-    pub fn new(yaml: Yaml) -> RuleNode {
+    pub fn new(rulepath: String, yaml: Yaml) -> RuleNode {
         return RuleNode {
+            rulepath: rulepath,
             yaml: yaml,
             detection: Option::None,
             countdata: HashMap::new(),
@@ -321,7 +323,7 @@ mod tests {
         assert_eq!(rule_yaml.is_ok(), true);
         let rule_yamls = rule_yaml.unwrap();
         let mut rule_yaml = rule_yamls.into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
         assert_eq!(rule_node.init().is_ok(), true);
         return rule_node;
     }
@@ -877,7 +879,7 @@ mod tests {
         output: 'Rule parse test'
         "#;
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
         assert_eq!(
             rule_node.init(),
@@ -897,7 +899,7 @@ mod tests {
         output: 'Rule parse test'
         "#;
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
         assert_eq!(
             rule_node.init(),
@@ -909,7 +911,7 @@ mod tests {
     fn _check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
-        let mut rule_node = create_rule(test);
+        let mut rule_node = create_rule("testpath".to_string(), test);
         let _init = rule_node.init();
         match serde_json::from_str(record_str) {
             Ok(record) => {

@@ -3,13 +3,13 @@ extern crate serde_derive;
 
 use chrono::{DateTime, Utc};
 use evtx::{EvtxParser, ParserSettings};
+use hayabusa::detections::detection;
+use hayabusa::detections::detection::EvtxRecordInfo;
+use hayabusa::detections::print::AlertMessage;
+use hayabusa::omikuji::Omikuji;
+use hayabusa::{afterfact::after_fact, detections::utils};
+use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
-use lagotto::detections::detection;
-use lagotto::detections::detection::EvtxRecordInfo;
-use lagotto::detections::print::AlertMessage;
-use lagotto::omikuji::Omikuji;
-use lagotto::{afterfact::after_fact, detections::utils};
-use lagotto::{detections::configs, timeline::timeline::Timeline};
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -20,6 +20,13 @@ use std::{
 const MAX_DETECT_RECORDS: usize = 40000;
 
 fn main() {
+    if configs::CONFIG.read().unwrap().args.args.len() == 0 {
+        println!(
+            "{}",
+            configs::CONFIG.read().unwrap().args.usage().to_string()
+        );
+        return;
+    }
     let analysis_start_time: DateTime<Utc> = Utc::now();
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
         analysis_files(vec![PathBuf::from(filepath)]);
