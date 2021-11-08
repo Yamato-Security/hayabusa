@@ -528,7 +528,7 @@ mod tests {
 
     fn check_rule_parse_error(rule_str: &str, errmsgs: Vec<String>) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
         assert_eq!(rule_node.init(), Err(errmsgs));
     }
@@ -1183,7 +1183,7 @@ mod tests {
         "#;
 
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
-        let mut rule_node = create_rule(rule_yaml.next().unwrap());
+        let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
         assert_eq!(
             rule_node.init(),
