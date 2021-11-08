@@ -17,6 +17,7 @@ pub struct Message {
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
     pub filepath: String,
+    pub level: String,
     pub title: String,
     pub detail: String,
 }
@@ -38,11 +39,13 @@ impl Message {
         &mut self,
         target_file: String,
         event_time: DateTime<Utc>,
+        level: String,
         event_title: String,
         event_detail: String,
     ) {
         let detect_info = DetectInfo {
             filepath: target_file,
+            level: level,
             title: event_title,
             detail: event_detail,
         };
@@ -63,13 +66,14 @@ impl Message {
         &mut self,
         target_file: String,
         event_record: &Value,
+        level: String,
         event_title: String,
         output: String,
     ) {
         let message = &self.parse_message(event_record, output);
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time = Message::get_event_time(event_record).unwrap_or(default_time);
-        self.insert_message(target_file, time, event_title, message.to_string())
+        self.insert_message(target_file, time, level, event_title, message.to_string())
     }
 
     fn parse_message(&mut self, event_record: &Value, output: String) -> String {
@@ -197,6 +201,7 @@ mod tests {
         message.insert(
             "a".to_string(),
             &event_record_1,
+            "high".to_string(),
             "test1".to_string(),
             "CommandLine1: %CommandLine%".to_string(),
         );
@@ -219,6 +224,7 @@ mod tests {
         message.insert(
             "a".to_string(),
             &event_record_2,
+            "high".to_string(),
             "test2".to_string(),
             "CommandLine2: %CommandLine%".to_string(),
         );
@@ -241,6 +247,7 @@ mod tests {
         message.insert(
             "a".to_string(),
             &event_record_3,
+            "high".to_string(),
             "test3".to_string(),
             "CommandLine3: %CommandLine%".to_string(),
         );
@@ -258,13 +265,14 @@ mod tests {
         message.insert(
             "a".to_string(),
             &event_record_4,
+            "medium".to_string(),
             "test4".to_string(),
             "CommandLine4: %CommandLine%".to_string(),
         );
 
         let display = format!("{}", format_args!("{:?}", message));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", title: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", title: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { filepath: \"a\", title: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", title: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
+        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", level: \"medium\", title: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", level: \"high\", title: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { filepath: \"a\", level: \"high\", title: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", level: \"high\", title: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
         assert_eq!(display, expect);
     }
 

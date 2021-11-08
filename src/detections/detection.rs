@@ -157,6 +157,7 @@ impl Detection {
         MESSAGES.lock().unwrap().insert(
             record_info.evtx_filepath.to_string(),
             &record_info.record,
+            rule.yaml["level"].as_str().unwrap_or("").to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
@@ -168,6 +169,7 @@ impl Detection {
         MESSAGES.lock().unwrap().insert_message(
             agg_result.filepath,
             agg_result.start_timedate,
+            rule.yaml["level"].as_str().unwrap_or("").to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             output.to_string(),
         )
