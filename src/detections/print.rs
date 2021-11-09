@@ -19,7 +19,9 @@ pub struct DetectInfo {
     pub filepath: String,
     pub rulepath: String,
     pub level: String,
-    pub title: String,
+    pub computername: String,
+    pub eventid: String,
+    pub alert: String,
     pub detail: String,
 }
 
@@ -42,6 +44,8 @@ impl Message {
         rule_path: String,
         event_time: DateTime<Utc>,
         level: String,
+        computername: String,
+        eventid: String,
         event_title: String,
         event_detail: String,
     ) {
@@ -49,7 +53,9 @@ impl Message {
             filepath: target_file,
             rulepath: rule_path,
             level: level,
-            title: event_title,
+            computername: computername,
+            eventid: eventid,
+            alert: event_title,
             detail: event_detail,
         };
 
@@ -71,6 +77,8 @@ impl Message {
         rule_path: String,
         event_record: &Value,
         level: String,
+        computername: String,
+        eventid: String,
         event_title: String,
         output: String,
     ) {
@@ -82,6 +90,8 @@ impl Message {
             rule_path,
             time,
             level,
+            computername,
+            eventid,
             event_title,
             message.to_string(),
         )
@@ -145,7 +155,7 @@ impl Message {
         let mut detect_count = 0;
         for (key, detect_infos) in self.map.iter() {
             for detect_info in detect_infos.iter() {
-                println!("{} <{}> {}", key, detect_info.title, detect_info.detail);
+                println!("{} <{}> {}", key, detect_info.alert, detect_info.detail);
             }
             detect_count += detect_infos.len();
         }
@@ -214,6 +224,8 @@ mod tests {
             "test_rule".to_string(),
             &event_record_1,
             "high".to_string(),
+            "testcomputer1".to_string(),
+            "1".to_string(),
             "test1".to_string(),
             "CommandLine1: %CommandLine%".to_string(),
         );
@@ -238,6 +250,8 @@ mod tests {
             "test_rule2".to_string(),
             &event_record_2,
             "high".to_string(),
+            "testcomputer2".to_string(),
+            "2".to_string(),
             "test2".to_string(),
             "CommandLine2: %CommandLine%".to_string(),
         );
@@ -262,6 +276,8 @@ mod tests {
             "test_rule3".to_string(),
             &event_record_3,
             "high".to_string(),
+            "testcomputer3".to_string(),
+            "3".to_string(),
             "test3".to_string(),
             "CommandLine3: %CommandLine%".to_string(),
         );
@@ -281,13 +297,15 @@ mod tests {
             "test_rule4".to_string(),
             &event_record_4,
             "medium".to_string(),
+            "testcomputer4".to_string(),
+            "4".to_string(),
             "test4".to_string(),
             "CommandLine4: %CommandLine%".to_string(),
         );
 
         let display = format!("{}", format_args!("{:?}", message));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", title: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", title: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", title: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", title: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
+        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", alert: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", alert: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", alert: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", alert: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
         assert_eq!(display, expect);
     }
 
