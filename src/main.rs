@@ -39,7 +39,6 @@ fn main() {
     }
     let analysis_end_time: DateTime<Utc> = Utc::now();
     let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-    println!("");
     println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
     println!("");
 }

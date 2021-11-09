@@ -151,7 +151,6 @@ impl Message {
         }
         println!("");
         println!("Events Detected:{:?}", detect_count);
-        println!("");
     }
 
     pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<DetectInfo>> {
