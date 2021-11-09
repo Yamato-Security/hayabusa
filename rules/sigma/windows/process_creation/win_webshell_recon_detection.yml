@@ -1,0 +1,56 @@
+title: Webshell Recon Detection Via CommandLine & Processes
+author: Cian Heasley
+date: 2020/07/22
+description: Looking for processes spawned by web server components that indicate
+    reconnaissance by popular public domain webshells for whether perl, python or
+    wget are installed.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*python --help*'
+    SELECTION_11:
+        CommandLine: '*wget --help*'
+    SELECTION_12:
+        CommandLine: '*perl -h*'
+    SELECTION_2:
+        ParentImage: '*\apache*'
+    SELECTION_3:
+        ParentImage: '*\tomcat*'
+    SELECTION_4:
+        ParentImage: '*\w3wp.exe'
+    SELECTION_5:
+        ParentImage: '*\php-cgi.exe'
+    SELECTION_6:
+        ParentImage: '*\nginx.exe'
+    SELECTION_7:
+        ParentImage: '*\httpd.exe'
+    SELECTION_8:
+        Image: '*\cmd.exe'
+    SELECTION_9:
+        CommandLine: '*perl --help*'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) or (SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7)) and ((SELECTION_8) and (SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12)))
+falsepositives:
+- unknown
+fields:
+- Image
+- CommandLine
+- ParentCommandLine
+id: f64e5c19-879c-4bae-b471-6d84c8339677
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://ragged-lab.blogspot.com/2020/07/webshells-automating-reconnaissance.html
+status: experimental
+tags:
+- attack.persistence
+- attack.t1505.003
+- attack.privilege_escalation
+- attack.t1100
+yml_filename: win_webshell_recon_detection.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

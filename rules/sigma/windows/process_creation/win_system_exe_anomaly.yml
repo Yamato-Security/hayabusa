@@ -1,0 +1,97 @@
+title: System File Execution Location Anomaly
+author: Florian Roth, Patrick Bareiss, Anton Kutepov, oscd.community
+date: 2017/11/27
+description: Detects a Windows program executable started in a suspicious folder
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\csrss.exe'
+    SELECTION_11:
+        Image: '*\conhost.exe'
+    SELECTION_12:
+        Image: '*\wininit.exe'
+    SELECTION_13:
+        Image: '*\lsm.exe'
+    SELECTION_14:
+        Image: '*\winlogon.exe'
+    SELECTION_15:
+        Image: '*\explorer.exe'
+    SELECTION_16:
+        Image: '*\taskhost.exe'
+    SELECTION_17:
+        Image: '*\Taskmgr.exe'
+    SELECTION_18:
+        Image: '*\sihost.exe'
+    SELECTION_19:
+        Image: '*\RuntimeBroker.exe'
+    SELECTION_2:
+        Image: '*\svchost.exe'
+    SELECTION_20:
+        Image: '*\smartscreen.exe'
+    SELECTION_21:
+        Image: '*\dllhost.exe'
+    SELECTION_22:
+        Image: '*\audiodg.exe'
+    SELECTION_23:
+        Image: '*\wlanext.exe'
+    SELECTION_24:
+        Image: C:\Windows\System32\\*
+    SELECTION_25:
+        Image: C:\Windows\system32\\*
+    SELECTION_26:
+        Image: C:\Windows\SysWow64\\*
+    SELECTION_27:
+        Image: C:\Windows\SysWOW64\\*
+    SELECTION_28:
+        Image: C:\Windows\winsxs\\*
+    SELECTION_29:
+        Image: C:\Windows\WinSxS\\*
+    SELECTION_3:
+        Image: '*\rundll32.exe'
+    SELECTION_30:
+        Image: C:\avast! sandbox*
+    SELECTION_31:
+        Image: '*\SystemRoot\System32\\*'
+    SELECTION_32:
+        Image: C:\Windows\explorer.exe
+    SELECTION_4:
+        Image: '*\services.exe'
+    SELECTION_5:
+        Image: '*\powershell.exe'
+    SELECTION_6:
+        Image: '*\regsvr32.exe'
+    SELECTION_7:
+        Image: '*\spoolsv.exe'
+    SELECTION_8:
+        Image: '*\lsass.exe'
+    SELECTION_9:
+        Image: '*\smss.exe'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23) and  not ((SELECTION_24 or
+        SELECTION_25 or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29
+        or SELECTION_30) or SELECTION_31 or SELECTION_32))
+falsepositives:
+- Exotic software
+fields:
+- ComputerName
+- User
+- Image
+id: e4a6b256-3e47-40fc-89d2-7a477edd6915
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/03/02
+references:
+- https://twitter.com/GelosSnake/status/934900723426439170
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+yml_filename: win_system_exe_anomaly.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

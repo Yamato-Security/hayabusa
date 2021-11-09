@@ -1,0 +1,22 @@
+title: Suspicious PowerShell Download
+author: Florian Roth
+date: 2017/03/05
+description: Detects suspicious PowerShell download command
+detection:
+    condition: (System.Net.WebClient and (.DownloadFile( or .DownloadString())
+falsepositives:
+- PowerShell scripts that download content from the Internet
+id: 65531a81-a694-4e31-ae04-f8ba5bc33759
+level: medium
+logsource:
+    product: windows
+    service: powershell
+modified: 2021/09/21
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: powershell_suspicious_download.yml
+yml_path: /home/itib/git/sigma/rules/windows/powershell
+

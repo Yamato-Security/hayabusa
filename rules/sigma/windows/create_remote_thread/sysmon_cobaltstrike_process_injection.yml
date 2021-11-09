@@ -1,0 +1,34 @@
+title: CobaltStrike Process Injection
+author: Olaf Hartong, Florian Roth, Aleksey Potapov, oscd.community
+date: 2018/11/30
+description: Detects a possible remote threat creation with certain characteristics
+    which are typical for Cobalt Strike beacons
+detection:
+    SELECTION_1:
+        EventID: 8
+    SELECTION_2:
+        TargetProcessAddress: '*0B80'
+    SELECTION_3:
+        TargetProcessAddress: '*0C7C'
+    SELECTION_4:
+        TargetProcessAddress: '*0C88'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4))
+falsepositives:
+- unknown
+id: 6309645e-122d-4c5b-bb2b-22e4f9c2fa42
+level: high
+logsource:
+    category: create_remote_thread
+    product: windows
+modified: 2020/08/28
+references:
+- https://medium.com/@olafhartong/cobalt-strike-remote-threads-detection-206372d11d0f
+- https://blog.cobaltstrike.com/2018/04/09/cobalt-strike-3-11-the-snake-that-eats-its-tail/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1055
+- attack.t1055.001
+yml_filename: sysmon_cobaltstrike_process_injection.yml
+yml_path: /home/itib/git/sigma/rules/windows/create_remote_thread
+

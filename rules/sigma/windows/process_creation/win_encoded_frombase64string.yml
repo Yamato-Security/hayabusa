@@ -1,0 +1,35 @@
+title: Encoded FromBase64String
+author: Florian Roth
+date: 2019/08/24
+description: Detects a base64 encoded FromBase64String keyword in a process command
+    line
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*OjpGcm9tQmFzZTY0U3RyaW5n*'
+    SELECTION_3:
+        CommandLine: '*o6RnJvbUJhc2U2NFN0cmluZ*'
+    SELECTION_4:
+        CommandLine: '*6OkZyb21CYXNlNjRTdHJpbm*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: fdb62a13-9a81-4e5c-a38f-ea93a16f6d7c
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1140
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: win_encoded_frombase64string.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,92 @@
+title: Microsoft Office Product Spawning Windows Shell
+author: Michael Haag, Florian Roth, Markus Neis, Elastic, FPT.EagleEye Team
+date: 2018/04/06
+description: Detects a Windows command and scripting interpreter executable started
+    from Microsoft Word, Excel, Powerpoint, Publisher and Visio
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\cmd.exe'
+    SELECTION_11:
+        Image: '*\powershell.exe'
+    SELECTION_12:
+        Image: '*\wscript.exe'
+    SELECTION_13:
+        Image: '*\cscript.exe'
+    SELECTION_14:
+        Image: '*\sh.exe'
+    SELECTION_15:
+        Image: '*\bash.exe'
+    SELECTION_16:
+        Image: '*\scrcons.exe'
+    SELECTION_17:
+        Image: '*\schtasks.exe'
+    SELECTION_18:
+        Image: '*\regsvr32.exe'
+    SELECTION_19:
+        Image: '*\hh.exe'
+    SELECTION_2:
+        ParentImage: '*\WINWORD.EXE'
+    SELECTION_20:
+        Image: '*\wmic.exe'
+    SELECTION_21:
+        Image: '*\mshta.exe'
+    SELECTION_22:
+        Image: '*\rundll32.exe'
+    SELECTION_23:
+        Image: '*\msiexec.exe'
+    SELECTION_24:
+        Image: '*\forfiles.exe'
+    SELECTION_25:
+        Image: '*\scriptrunner.exe'
+    SELECTION_26:
+        Image: '*\mftrace.exe'
+    SELECTION_27:
+        Image: '*\AppVLP.exe'
+    SELECTION_28:
+        Image: '*\svchost.exe'
+    SELECTION_29:
+        Image: '*\msbuild.exe'
+    SELECTION_3:
+        ParentImage: '*\EXCEL.EXE'
+    SELECTION_4:
+        ParentImage: '*\POWERPNT.exe'
+    SELECTION_5:
+        ParentImage: '*\MSPUB.exe'
+    SELECTION_6:
+        ParentImage: '*\VISIO.exe'
+    SELECTION_7:
+        ParentImage: '*\OUTLOOK.EXE'
+    SELECTION_8:
+        ParentImage: '*\MSACCESS.EXE'
+    SELECTION_9:
+        ParentImage: '*\EQNEDT32.EXE'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9) and (SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: 438025f9-5856-4663-83f7-52f878a70a50
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/01
+references:
+- https://www.hybrid-analysis.com/sample/465aabe132ccb949e75b8ab9c5bda36d80cf2fd503d52b8bad54e295f28bbc21?environmentId=100
+- https://mgreen27.github.io/posts/2018/04/02/DownloadCradle.html
+status: experimental
+tags:
+- attack.execution
+- attack.t1204
+- attack.t1204.002
+yml_filename: win_office_shell.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

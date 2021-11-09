@@ -1,0 +1,30 @@
+title: Invoke-Obfuscation CLIP+ Launcher
+author: Jonathan Cheong, oscd.community
+date: 2020/10/13
+description: Detects Obfuscated use of Clip.exe to execute PowerShell
+detection:
+    SELECTION_1:
+        EventID: 4104
+    SELECTION_2:
+        ScriptBlockText|re: .*cmd.{0,5}(?:\/c|\/r).+clip(?:\.exe)?.{0,4}&&.+clipboard]::\(\s\\\"\{\d\}.+\-f.+\"
+    condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: 73e67340-0d25-11eb-adc1-0242ac120002
+level: high
+logsource:
+    definition: Script block logging must be enabled
+    product: windows
+    service: powershell
+modified: 2021/10/07
+references:
+- https://github.com/Neo23x0/sigma/issues/1009
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001
+yml_filename: powershell_invoke_obfuscation_clip_in_scriptblocktext.yml
+yml_path: /home/itib/git/sigma/rules/windows/powershell/powershell_script
+

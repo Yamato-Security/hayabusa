@@ -1,0 +1,30 @@
+title: MSTSC Shadowing
+author: Florian Roth
+date: 2020/01/24
+description: Detects RDP session hijacking by using MSTSC shadowing
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*noconsentprompt*'
+    SELECTION_3:
+        CommandLine: '*shadow:*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 6ba5a05f-b095-4f0a-8654-b825f4f16334
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/06
+references:
+- https://twitter.com/kmkz_security/status/1220694202301976576
+- https://github.com/kmkz/Pentesting/blob/master/Post-Exploitation-Cheat-Sheet
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1563.002
+yml_filename: win_rdp_hijack_shadowing.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

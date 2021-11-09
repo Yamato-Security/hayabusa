@@ -1,0 +1,52 @@
+title: Rclone Execution via Command Line or PowerShell
+author: Aaron Greetham (@beardofbinary) - NCC Group
+date: 2021/05/26
+description: Detects Rclone which is commonly used by ransomware groups for exfiltration
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '* ls *'
+    SELECTION_11:
+        Description: Rsync for cloud storage
+    SELECTION_12:
+        Image: '*\rclone.exe'
+    SELECTION_13:
+        ParentImage: '*\PowerShell.exe'
+    SELECTION_14:
+        ParentImage: '*\cmd.exe'
+    SELECTION_2:
+        CommandLine: '* pass *'
+    SELECTION_3:
+        CommandLine: '* user *'
+    SELECTION_4:
+        CommandLine: '* copy *'
+    SELECTION_5:
+        CommandLine: '* mega *'
+    SELECTION_6:
+        CommandLine: '* sync *'
+    SELECTION_7:
+        CommandLine: '* config *'
+    SELECTION_8:
+        CommandLine: '* lsd *'
+    SELECTION_9:
+        CommandLine: '* remote *'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+        and (SELECTION_11 or (SELECTION_12 and (SELECTION_13 or SELECTION_14))))
+falsepositives:
+- Legitimate Rclone usage (rare)
+id: cb7286ba-f207-44ab-b9e6-760d82b84253
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://research.nccgroup.com/2021/05/27/detecting-rclone-an-effective-tool-for-exfiltration/
+status: experimental
+tags:
+- attack.exfiltration
+- attack.t1567.002
+yml_filename: win_susp_rclone_exec.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

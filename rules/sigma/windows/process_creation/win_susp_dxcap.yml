@@ -1,0 +1,33 @@
+title: Application Whitelisting Bypass via Dxcap.exe
+author: Beyu Denis, oscd.community
+date: 2019/10/26
+description: Detects execution of of Dxcap.exe
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\dxcap.exe'
+    SELECTION_3:
+        CommandLine: '*-c*'
+    SELECTION_4:
+        CommandLine: '*.exe*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Legitimate execution of dxcap.exe by legitimate user
+id: 60f16a96-db70-42eb-8f76-16763e333590
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/11/04
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OtherMSBinaries/Dxcap.yml
+- https://twitter.com/harr0ey/status/992008180904419328
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218
+- attack.execution
+yml_filename: win_susp_dxcap.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

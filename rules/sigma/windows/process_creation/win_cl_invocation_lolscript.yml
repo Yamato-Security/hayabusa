@@ -1,0 +1,30 @@
+title: Execution via CL_Invocation.ps1
+author: oscd.community, Natalia Shornikova
+date: 2020/10/14
+description: Detects Execution via SyncInvoke in CL_Invocation.ps1 module
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*CL_Invocation.ps1*'
+    SELECTION_3:
+        CommandLine: '*SyncInvoke*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: a0459f02-ac51-4c09-b511-b8c9203fc429
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/05/21
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSScripts/Cl_invocation.yml
+- https://twitter.com/bohops/status/948061991012327424
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1216
+yml_filename: win_cl_invocation_lolscript.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

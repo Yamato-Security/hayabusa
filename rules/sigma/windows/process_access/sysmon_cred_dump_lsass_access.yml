@@ -1,0 +1,89 @@
+title: Credentials Dumping Tools Accessing LSASS Memory
+author: Florian Roth, Roberto Rodriguez, Dimitrios Slamaris, Mark Russinovich, Thomas
+    Patzke, Teymur Kheirkhabarov, Sherif Eldeeb, James Dickenson, Aleksey Potapov,
+    oscd.community (update)
+date: 2017/02/16
+description: Detects process access LSASS memory which is typical for credentials
+    dumping tools
+detection:
+    SELECTION_1:
+        EventID: 10
+    SELECTION_10:
+        GrantedAccess: '*0x143a*'
+    SELECTION_11:
+        GrantedAccess: '*0x1418*'
+    SELECTION_12:
+        GrantedAccess: '*0x1f0fff*'
+    SELECTION_13:
+        GrantedAccess: '*0x1f1fff*'
+    SELECTION_14:
+        GrantedAccess: '*0x1f2fff*'
+    SELECTION_15:
+        GrantedAccess: '*0x1f3fff*'
+    SELECTION_16:
+        ProcessName: '*\wmiprvse.exe'
+    SELECTION_17:
+        ProcessName: '*\taskmgr.exe'
+    SELECTION_18:
+        ProcessName: '*\procexp64.exe'
+    SELECTION_19:
+        ProcessName: '*\procexp.exe'
+    SELECTION_2:
+        TargetImage: '*\lsass.exe'
+    SELECTION_20:
+        ProcessName: '*\lsm.exe'
+    SELECTION_21:
+        ProcessName: '*\MsMpEng.exe'
+    SELECTION_22:
+        ProcessName: '*\csrss.exe'
+    SELECTION_23:
+        ProcessName: '*\wininit.exe'
+    SELECTION_24:
+        ProcessName: '*\vmtoolsd.exe'
+    SELECTION_3:
+        GrantedAccess: '*0x40*'
+    SELECTION_4:
+        GrantedAccess: '*0x1000*'
+    SELECTION_5:
+        GrantedAccess: '*0x1400*'
+    SELECTION_6:
+        GrantedAccess: '*0x100000*'
+    SELECTION_7:
+        GrantedAccess: '*0x1410*'
+    SELECTION_8:
+        GrantedAccess: '*0x1010*'
+    SELECTION_9:
+        GrantedAccess: '*0x1438*'
+    condition: (SELECTION_1 and (SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15))
+        and  not ((SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or
+        SELECTION_20 or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24)))
+falsepositives:
+- Legitimate software accessing LSASS process for legitimate reason; update the whitelist
+    with it
+fields:
+- ComputerName
+- User
+- SourceImage
+id: 32d0d3e2-e58d-4d41-926b-18b520b2b32d
+level: high
+logsource:
+    category: process_access
+    product: windows
+modified: 2021/05/16
+references:
+- https://onedrive.live.com/view.aspx?resid=D026B4699190F1E6!2843&ithint=file%2cpptx&app=PowerPoint&authkey=!AMvCRTKB_V1J5ow
+- https://cyberwardog.blogspot.com/2017/03/chronicles-of-threat-hunter-hunting-for_22.html
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+- http://security-research.dyndns.org/pub/slides/FIRST2017/FIRST-2017_Tom-Ueltschi_Sysmon_FINAL_notes.pdf
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003.001
+- attack.t1003
+- attack.s0002
+- car.2019-04-004
+yml_filename: sysmon_cred_dump_lsass_access.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_access
+

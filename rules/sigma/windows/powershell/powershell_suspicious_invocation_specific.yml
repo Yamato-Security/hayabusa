@@ -1,0 +1,27 @@
+title: Suspicious PowerShell Invocations - Specific
+author: Florian Roth (rule), Jonhnathan Ribeiro
+date: 2017/03/05
+description: Detects suspicious PowerShell invocation command parameters
+detection:
+    condition: (((( -w  and hidden and ((-nop and  -c  and ([Convert]::FromBase64String
+        or (-noni and iex and New-Object))) or (-ep and bypass and -Enc))) or (powershell
+        and reg and add and HKCU\software\microsoft\windows\currentversion\run)) or
+        (bypass and -noprofile and -windowstyle and hidden and new-object and system.net.webclient
+        and .download)) or (iex and New-Object and Net.WebClient and .Download))
+falsepositives:
+- Penetration tests
+id: fce5f582-cc00-41e1-941a-c6fabf0fdb8c
+level: high
+logsource:
+    definition: Script block logging must be enabled for 4104, Module Logging must
+        be enabled for 4103
+    product: windows
+    service: powershell
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: powershell_suspicious_invocation_specific.yml
+yml_path: /home/itib/git/sigma/rules/windows/powershell
+

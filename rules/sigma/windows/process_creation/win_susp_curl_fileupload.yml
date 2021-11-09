@@ -1,0 +1,33 @@
+title: Suspicious Curl File Upload
+author: Florian Roth
+date: 2020/07/03
+description: Detects a suspicious curl process start the adds a file to a web request
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\curl.exe'
+    SELECTION_3:
+        CommandLine: '* -F *'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Scripts created by developers and admins
+fields:
+- CommandLine
+- ParentCommandLine
+id: 00bca14a-df4e-4649-9054-3f2aa676bc04
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/05
+references:
+- https://twitter.com/d1r4c/status/1279042657508081664
+- https://medium.com/@petehouston/upload-files-with-curl-93064dcccc76
+status: experimental
+tags:
+- attack.exfiltration
+- attack.t1567
+yml_filename: win_susp_curl_fileupload.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

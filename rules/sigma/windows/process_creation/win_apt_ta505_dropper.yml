@@ -1,0 +1,29 @@
+title: TA505 Dropper Load Pattern
+author: Florian Roth
+date: 2020/12/08
+description: Detects mshta loaded by wmiprvse as parent as used by TA505 malicious
+    documents
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\mshta.exe'
+    SELECTION_3:
+        ParentImage: '*\wmiprvse.exe'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- unknown
+id: 18cf6cf0-39b0-4c22-9593-e244bdc9a2d4
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://twitter.com/ForensicITGuy/status/1334734244120309760
+status: experimental
+tags:
+- attack.execution
+- attack.g0092
+yml_filename: win_apt_ta505_dropper.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

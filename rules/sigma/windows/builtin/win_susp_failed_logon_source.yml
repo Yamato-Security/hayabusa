@@ -1,0 +1,79 @@
+title: Failed Logon From Public IP
+author: NVISO
+date: 2020/05/06
+description: A login from a public IP can indicate a misconfigured firewall or network
+    boundary.
+detection:
+    SELECTION_1:
+        EventID: 4625
+    SELECTION_10:
+        IpAddress: 172.21.*
+    SELECTION_11:
+        IpAddress: 172.22.*
+    SELECTION_12:
+        IpAddress: 172.23.*
+    SELECTION_13:
+        IpAddress: 172.24.*
+    SELECTION_14:
+        IpAddress: 172.25.*
+    SELECTION_15:
+        IpAddress: 172.26.*
+    SELECTION_16:
+        IpAddress: 172.27.*
+    SELECTION_17:
+        IpAddress: 172.28.*
+    SELECTION_18:
+        IpAddress: 172.29.*
+    SELECTION_19:
+        IpAddress: 172.30.*
+    SELECTION_2:
+        IpAddress: '*-*'
+    SELECTION_20:
+        IpAddress: 172.31.*
+    SELECTION_21:
+        IpAddress: 127.*
+    SELECTION_22:
+        IpAddress: 169.254.*
+    SELECTION_23:
+        IpAddress: ::1
+    SELECTION_24:
+        IpAddress: fe80::*
+    SELECTION_25:
+        IpAddress: fc00::*
+    SELECTION_3:
+        IpAddress: 10.*
+    SELECTION_4:
+        IpAddress: 192.168.*
+    SELECTION_5:
+        IpAddress: 172.16.*
+    SELECTION_6:
+        IpAddress: 172.17.*
+    SELECTION_7:
+        IpAddress: 172.18.*
+    SELECTION_8:
+        IpAddress: 172.19.*
+    SELECTION_9:
+        IpAddress: 172.20.*
+    condition: (SELECTION_1 and  not ((SELECTION_2 or (SELECTION_3 or SELECTION_4
+        or SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
+        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
+        or SELECTION_20 or SELECTION_21 or SELECTION_22) or SELECTION_23 or (SELECTION_24
+        or SELECTION_25))))
+falsepositives:
+- Legitimate logon attempts over the internet
+- IPv4-to-IPv6 mapped IPs
+id: f88e112a-21aa-44bd-9b01-6ee2a2bbbed1
+level: medium
+logsource:
+    product: windows
+    service: security
+tags:
+- attack.initial_access
+- attack.persistence
+- attack.t1078
+- attack.t1190
+- attack.t1133
+yml_filename: win_susp_failed_logon_source.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

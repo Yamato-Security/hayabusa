@@ -1,0 +1,39 @@
+title: RedMimicry Winnti Playbook Execute
+author: Alexander Rausch
+date: 2020/06/24
+description: Detects actions caused by the RedMimicry Winnti playbook
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*rundll32.exe*'
+    SELECTION_3:
+        Image: '*cmd.exe*'
+    SELECTION_4:
+        CommandLine: '*gthread-3.6.dll*'
+    SELECTION_5:
+        CommandLine: '*\Windows\Temp\tmp.bat*'
+    SELECTION_6:
+        CommandLine: '*sigcmm-2.4.dll*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
+        or SELECTION_6))
+falsepositives:
+- Unknown
+id: 95022b85-ff2a-49fa-939a-d7b8f56eeb9b
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/06
+references:
+- https://redmimicry.com
+tags:
+- attack.execution
+- attack.defense_evasion
+- attack.t1059
+- attack.t1106
+- attack.t1059.003
+- attack.t1218.011
+yml_filename: win_redmimicry_winnti_proc.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

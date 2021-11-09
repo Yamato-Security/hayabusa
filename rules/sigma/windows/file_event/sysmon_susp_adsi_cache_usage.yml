@@ -1,0 +1,45 @@
+title: Suspicious ADSI-Cache Usage By Unknown Tool
+author: xknow @xknow_infosec
+date: 2019/03/24
+description: Detects the usage of ADSI (LDAP) operations by tools. This may also detect
+    tools like LDAPFragger.
+detection:
+    SELECTION_1:
+        EventID: 11
+    SELECTION_2:
+        TargetFilename: '*\Local\Microsoft\Windows\SchCache\\*'
+    SELECTION_3:
+        TargetFilename: '*.sch'
+    SELECTION_4:
+        Image: C:\windows\system32\svchost.exe
+    SELECTION_5:
+        Image: C:\windows\system32\dllhost.exe
+    SELECTION_6:
+        Image: C:\windows\system32\mmc.exe
+    SELECTION_7:
+        Image: C:\windows\system32\WindowsPowerShell\v1.0\powershell.exe
+    SELECTION_8:
+        Image: C:\Windows\CCM\CcmExec.exe
+    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
+        or SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8)))
+falsepositives:
+- Other legimate tools, which do ADSI (LDAP) operations, e.g. any remoting activity
+    by MMC, Powershell, Windows etc.
+id: 75bf09fa-1dd7-4d18-9af9-dd9e492562eb
+level: high
+logsource:
+    category: file_event
+    product: windows
+modified: 2020/08/23
+references:
+- https://medium.com/@ivecodoe/detecting-ldapfragger-a-newly-released-cobalt-strike-beacon-using-ldap-for-c2-communication-c274a7f00961
+- https://blog.fox-it.com/2020/03/19/ldapfragger-command-and-control-over-ldap-attributes/
+- https://github.com/fox-it/LDAPFragger
+status: experimental
+tags:
+- attack.t1071
+- attack.t1001.003
+- attack.command_and_control
+yml_filename: sysmon_susp_adsi_cache_usage.yml
+yml_path: /home/itib/git/sigma/rules/windows/file_event
+

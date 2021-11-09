@@ -1,0 +1,239 @@
+title: Malicious PowerShell Commandlets
+author: Sean Metcalf (source), Florian Roth (rule), Bartlomiej Czyz @bczyz1 (update),
+    oscd.community (update)
+date: 2017/03/05
+description: Detects Commandlet names from well-known PowerShell exploitation frameworks
+detection:
+    SELECTION_1:
+        EventID: 4104
+    SELECTION_10:
+        ScriptBlockText: '*Invoke-Mimikatz*'
+    SELECTION_11:
+        ScriptBlockText: '*Invoke-NinjaCopy*'
+    SELECTION_12:
+        ScriptBlockText: '*Invoke-TokenManipulation*'
+    SELECTION_13:
+        ScriptBlockText: '*Out-Minidump*'
+    SELECTION_14:
+        ScriptBlockText: '*VolumeShadowCopyTools*'
+    SELECTION_15:
+        ScriptBlockText: '*Invoke-ReflectivePEInjection*'
+    SELECTION_16:
+        ScriptBlockText: '*Invoke-UserHunter*'
+    SELECTION_17:
+        ScriptBlockText: '*Find-GPOLocation*'
+    SELECTION_18:
+        ScriptBlockText: '*Invoke-ACLScanner*'
+    SELECTION_19:
+        ScriptBlockText: '*Invoke-DowngradeAccount*'
+    SELECTION_2:
+        ScriptBlockText: '*Invoke-DllInjection*'
+    SELECTION_20:
+        ScriptBlockText: '*Get-ServiceUnquoted*'
+    SELECTION_21:
+        ScriptBlockText: '*Get-ServiceFilePermission*'
+    SELECTION_22:
+        ScriptBlockText: '*Get-ServicePermission*'
+    SELECTION_23:
+        ScriptBlockText: '*Invoke-ServiceAbuse*'
+    SELECTION_24:
+        ScriptBlockText: '*Install-ServiceBinary*'
+    SELECTION_25:
+        ScriptBlockText: '*Get-RegAutoLogon*'
+    SELECTION_26:
+        ScriptBlockText: '*Get-VulnAutoRun*'
+    SELECTION_27:
+        ScriptBlockText: '*Get-VulnSchTask*'
+    SELECTION_28:
+        ScriptBlockText: '*Get-UnattendedInstallFile*'
+    SELECTION_29:
+        ScriptBlockText: '*Get-ApplicationHost*'
+    SELECTION_3:
+        ScriptBlockText: '*Invoke-Shellcode*'
+    SELECTION_30:
+        ScriptBlockText: '*Get-RegAlwaysInstallElevated*'
+    SELECTION_31:
+        ScriptBlockText: '*Get-Unconstrained*'
+    SELECTION_32:
+        ScriptBlockText: '*Add-RegBackdoor*'
+    SELECTION_33:
+        ScriptBlockText: '*Add-ScrnSaveBackdoor*'
+    SELECTION_34:
+        ScriptBlockText: '*Gupt-Backdoor*'
+    SELECTION_35:
+        ScriptBlockText: '*Invoke-ADSBackdoor*'
+    SELECTION_36:
+        ScriptBlockText: '*Enabled-DuplicateToken*'
+    SELECTION_37:
+        ScriptBlockText: '*Invoke-PsUaCme*'
+    SELECTION_38:
+        ScriptBlockText: '*Remove-Update*'
+    SELECTION_39:
+        ScriptBlockText: '*Check-VM*'
+    SELECTION_4:
+        ScriptBlockText: '*Invoke-WmiCommand*'
+    SELECTION_40:
+        ScriptBlockText: '*Get-LSASecret*'
+    SELECTION_41:
+        ScriptBlockText: '*Get-PassHashes*'
+    SELECTION_42:
+        ScriptBlockText: '*Show-TargetScreen*'
+    SELECTION_43:
+        ScriptBlockText: '*Port-Scan*'
+    SELECTION_44:
+        ScriptBlockText: '*Invoke-PoshRatHttp*'
+    SELECTION_45:
+        ScriptBlockText: '*Invoke-PowerShellTCP*'
+    SELECTION_46:
+        ScriptBlockText: '*Invoke-PowerShellWMI*'
+    SELECTION_47:
+        ScriptBlockText: '*Add-Exfiltration*'
+    SELECTION_48:
+        ScriptBlockText: '*Add-Persistence*'
+    SELECTION_49:
+        ScriptBlockText: '*Do-Exfiltration*'
+    SELECTION_5:
+        ScriptBlockText: '*Get-GPPPassword*'
+    SELECTION_50:
+        ScriptBlockText: '*Start-CaptureServer*'
+    SELECTION_51:
+        ScriptBlockText: '*Get-ChromeDump*'
+    SELECTION_52:
+        ScriptBlockText: '*Get-ClipboardContents*'
+    SELECTION_53:
+        ScriptBlockText: '*Get-FoxDump*'
+    SELECTION_54:
+        ScriptBlockText: '*Get-IndexedItem*'
+    SELECTION_55:
+        ScriptBlockText: '*Get-Screenshot*'
+    SELECTION_56:
+        ScriptBlockText: '*Invoke-Inveigh*'
+    SELECTION_57:
+        ScriptBlockText: '*Invoke-NetRipper*'
+    SELECTION_58:
+        ScriptBlockText: '*Invoke-EgressCheck*'
+    SELECTION_59:
+        ScriptBlockText: '*Invoke-PostExfil*'
+    SELECTION_6:
+        ScriptBlockText: '*Get-Keystrokes*'
+    SELECTION_60:
+        ScriptBlockText: '*Invoke-PSInject*'
+    SELECTION_61:
+        ScriptBlockText: '*Invoke-RunAs*'
+    SELECTION_62:
+        ScriptBlockText: '*MailRaider*'
+    SELECTION_63:
+        ScriptBlockText: '*New-HoneyHash*'
+    SELECTION_64:
+        ScriptBlockText: '*Set-MacAttribute*'
+    SELECTION_65:
+        ScriptBlockText: '*Invoke-DCSync*'
+    SELECTION_66:
+        ScriptBlockText: '*Invoke-PowerDump*'
+    SELECTION_67:
+        ScriptBlockText: '*Exploit-Jboss*'
+    SELECTION_68:
+        ScriptBlockText: '*Invoke-ThunderStruck*'
+    SELECTION_69:
+        ScriptBlockText: '*Invoke-VoiceTroll*'
+    SELECTION_7:
+        ScriptBlockText: '*Get-TimedScreenshot*'
+    SELECTION_70:
+        ScriptBlockText: '*Set-Wallpaper*'
+    SELECTION_71:
+        ScriptBlockText: '*Invoke-InveighRelay*'
+    SELECTION_72:
+        ScriptBlockText: '*Invoke-PsExec*'
+    SELECTION_73:
+        ScriptBlockText: '*Invoke-SSHCommand*'
+    SELECTION_74:
+        ScriptBlockText: '*Get-SecurityPackages*'
+    SELECTION_75:
+        ScriptBlockText: '*Install-SSP*'
+    SELECTION_76:
+        ScriptBlockText: '*Invoke-BackdoorLNK*'
+    SELECTION_77:
+        ScriptBlockText: '*PowerBreach*'
+    SELECTION_78:
+        ScriptBlockText: '*Get-SiteListPassword*'
+    SELECTION_79:
+        ScriptBlockText: '*Get-System*'
+    SELECTION_8:
+        ScriptBlockText: '*Get-VaultCredential*'
+    SELECTION_80:
+        ScriptBlockText: '*Invoke-BypassUAC*'
+    SELECTION_81:
+        ScriptBlockText: '*Invoke-Tater*'
+    SELECTION_82:
+        ScriptBlockText: '*Invoke-WScriptBypassUAC*'
+    SELECTION_83:
+        ScriptBlockText: '*PowerUp*'
+    SELECTION_84:
+        ScriptBlockText: '*PowerView*'
+    SELECTION_85:
+        ScriptBlockText: '*Get-RickAstley*'
+    SELECTION_86:
+        ScriptBlockText: '*Find-Fruit*'
+    SELECTION_87:
+        ScriptBlockText: '*HTTP-Login*'
+    SELECTION_88:
+        ScriptBlockText: '*Find-TrustedDocuments*'
+    SELECTION_89:
+        ScriptBlockText: '*Invoke-Paranoia*'
+    SELECTION_9:
+        ScriptBlockText: '*Invoke-CredentialInjection*'
+    SELECTION_90:
+        ScriptBlockText: '*Invoke-WinEnum*'
+    SELECTION_91:
+        ScriptBlockText: '*Invoke-ARPScan*'
+    SELECTION_92:
+        ScriptBlockText: '*Invoke-PortScan*'
+    SELECTION_93:
+        ScriptBlockText: '*Invoke-ReverseDNSLookup*'
+    SELECTION_94:
+        ScriptBlockText: '*Invoke-SMBScanner*'
+    SELECTION_95:
+        ScriptBlockText: '*Invoke-Mimikittenz*'
+    SELECTION_96:
+        ScriptBlockText: '*Invoke-AllChecks*'
+    SELECTION_97:
+        ScriptBlockText: '*Get-SystemDriveInfo*'
+    condition: ((SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39 or SELECTION_40
+        or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44 or SELECTION_45
+        or SELECTION_46 or SELECTION_47 or SELECTION_48 or SELECTION_49 or SELECTION_50
+        or SELECTION_51 or SELECTION_52 or SELECTION_53 or SELECTION_54 or SELECTION_55
+        or SELECTION_56 or SELECTION_57 or SELECTION_58 or SELECTION_59 or SELECTION_60
+        or SELECTION_61 or SELECTION_62 or SELECTION_63 or SELECTION_64 or SELECTION_65
+        or SELECTION_66 or SELECTION_67 or SELECTION_68 or SELECTION_69 or SELECTION_70
+        or SELECTION_71 or SELECTION_72 or SELECTION_73 or SELECTION_74 or SELECTION_75
+        or SELECTION_76 or SELECTION_77 or SELECTION_78 or SELECTION_79 or SELECTION_80
+        or SELECTION_81 or SELECTION_82 or SELECTION_83 or SELECTION_84 or SELECTION_85
+        or SELECTION_86 or SELECTION_87 or SELECTION_88 or SELECTION_89 or SELECTION_90
+        or SELECTION_91 or SELECTION_92 or SELECTION_93 or SELECTION_94 or SELECTION_95
+        or SELECTION_96)) and  not (SELECTION_97))
+falsepositives:
+- Penetration testing
+id: 89819aa4-bbd6-46bc-88ec-c7f7fe30efa6
+level: high
+logsource:
+    definition: Script Block Logging must be enable
+    product: windows
+    service: powershell
+modified: 2021/08/21
+references:
+- https://adsecurity.org/?p=2921
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: powershell_malicious_commandlets.yml
+yml_path: /home/itib/git/sigma/rules/windows/powershell/powershell_script
+

@@ -1,0 +1,50 @@
+title: Sticky Key Like Backdoor Usage
+author: Florian Roth, @twjackomo, Jonhnathan Ribeiro, oscd.community
+date: 2018/03/15
+description: Detects the usage and installation of a backdoor that uses an option
+    to register a malicious debugger for built-in tools that are accessible in the
+    login screen
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        ParentImage: '*\winlogon.exe'
+    SELECTION_3:
+        Image: '*\cmd.exe'
+    SELECTION_4:
+        CommandLine: '*sethc.exe*'
+    SELECTION_5:
+        CommandLine: '*utilman.exe*'
+    SELECTION_6:
+        CommandLine: '*osk.exe*'
+    SELECTION_7:
+        CommandLine: '*Magnify.exe*'
+    SELECTION_8:
+        CommandLine: '*Narrator.exe*'
+    SELECTION_9:
+        CommandLine: '*DisplaySwitch.exe*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9))
+falsepositives:
+- Unlikely
+id: 2fdefcb3-dbda-401e-ae23-f0db027628bc
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/09/12
+references:
+- https://blogs.technet.microsoft.com/jonathantrull/2016/10/03/detecting-sticky-key-backdoors/
+related:
+-   id: baca5663-583c-45f9-b5dc-ea96a22ce542
+    type: derived
+tags:
+- attack.privilege_escalation
+- attack.persistence
+- attack.t1015
+- attack.t1546.008
+- car.2014-11-003
+- car.2014-11-008
+yml_filename: process_creation_stickykey_like_backdoor.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,32 @@
+title: Reg Add RUN Key
+author: Florian Roth
+date: 2021/06/28
+description: Detects suspicious command line reg.exe tool adding key to RUN key in
+    Registry
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*reg*'
+    SELECTION_3:
+        CommandLine: '* ADD *'
+    SELECTION_4:
+        CommandLine: '*Software\Microsoft\Windows\CurrentVersion\Run*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Unknown
+id: de587dce-915e-4218-aac4-835ca6af6f70
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://app.any.run/tasks/9c0f37bc-867a-4314-b685-e101566766d7/
+- https://docs.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys
+status: experimental
+tags:
+- attack.persistence
+- attack.t1547.001
+yml_filename: win_reg_add_run_key.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

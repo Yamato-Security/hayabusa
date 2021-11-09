@@ -1,0 +1,36 @@
+title: Suspicious Esentutl Use
+author: Florian Roth
+date: 2020/05/23
+description: Detects flags often used with the LOLBAS Esentutl for malicious activity.
+    It could be used in rare cases by administrators to access locked files or during
+    maintenance.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '* /vss *'
+    SELECTION_3:
+        CommandLine: '* /y *'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Administrative activity
+fields:
+- CommandLine
+- ParentCommandLine
+id: 56a8189f-11b2-48c8-8ca7-c54b03c2fbf7
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://lolbas-project.github.io/
+- https://twitter.com/chadtilbury/status/1264226341408452610
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.execution
+- attack.s0404
+- attack.t1218
+yml_filename: win_susp_esentutl_activity.yml
+yml_path: /home/itib/git/sigma/rules/windows/deprecated
+

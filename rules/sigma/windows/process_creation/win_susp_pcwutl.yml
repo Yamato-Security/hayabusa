@@ -1,0 +1,34 @@
+title: Code Execution via Pcwutl.dll
+author: Julia Fomina, oscd.community
+date: 2020/10/05
+description: Detects launch of executable by calling the LaunchApplication function
+    from pcwutl.dll library.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\rundll32.exe'
+    SELECTION_3:
+        CommandLine: '*pcwutl*'
+    SELECTION_4:
+        CommandLine: '*LaunchApplication*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Use of Program Compatibility Troubleshooter Helper
+id: 9386d78a-7207-4048-9c9f-a93a7c2d1c05
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/api0cradle/LOLBAS/blob/master/OSLibraries/Pcwutl.md
+- https://twitter.com/harr0ey/status/989617817849876488
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218.011
+- attack.execution
+- attack.t1218
+yml_filename: win_susp_pcwutl.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

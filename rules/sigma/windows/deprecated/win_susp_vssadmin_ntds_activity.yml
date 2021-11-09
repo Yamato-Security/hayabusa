@@ -1,0 +1,51 @@
+title: Activity Related to NTDS.dit Domain Hash Retrieval
+author: Florian Roth, Michael Haag
+date: 2019/01/16
+description: Detects suspicious commands that could be related to activity that uses
+    volume shadow copy to steal and retrieve hashes from the NTDS.dit file remotely
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: esentutl.exe /y /vss *\SYSTEM
+    SELECTION_2:
+        CommandLine: vssadmin.exe Delete Shadows
+    SELECTION_3:
+        CommandLine: 'vssadmin create shadow /for=C:'
+    SELECTION_4:
+        CommandLine: copy \\?\GLOBALROOT\Device\\*\windows\ntds\ntds.dit
+    SELECTION_5:
+        CommandLine: copy \\?\GLOBALROOT\Device\\*\config\SAM
+    SELECTION_6:
+        CommandLine: 'vssadmin delete shadows /for=C:'
+    SELECTION_7:
+        CommandLine: 'reg SAVE HKLM\SYSTEM '
+    SELECTION_8:
+        CommandLine: esentutl.exe /y /vss *\ntds.dit*
+    SELECTION_9:
+        CommandLine: esentutl.exe /y /vss *\SAM
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10))
+falsepositives:
+- Administrative activity
+fields:
+- CommandLine
+- ParentCommandLine
+id: b932b60f-fdda-4d53-8eda-a170c1d97bbd
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.swordshield.com/2015/07/getting-hashes-from-ntds-dit-file/
+- https://room362.com/post/2013/2013-06-10-volume-shadow-copy-ntdsdit-domain-hashes-remotely-part-1/
+- https://www.trustwave.com/Resources/SpiderLabs-Blog/Tutorial-for-NTDS-goodness-(VSSADMIN,-WMIS,-NTDS-dit,-SYSTEM)/
+- https://securingtomorrow.mcafee.com/mcafee-labs/new-teslacrypt-ransomware-arrives-via-spam/
+- https://dfironthemountain.wordpress.com/2018/12/06/locked-file-access-using-esentutl-exe/
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003
+yml_filename: win_susp_vssadmin_ntds_activity.yml
+yml_path: /home/itib/git/sigma/rules/windows/deprecated
+

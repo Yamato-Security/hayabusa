@@ -1,0 +1,99 @@
+title: Load of dbghelp/dbgcore DLL from Suspicious Process
+author: Perez Diego (@darkquassar), oscd.community, Ecco
+date: 2019/10/27
+description: Detects the load of dbghelp/dbgcore DLL (used to make memory dumps) by
+    suspicious processes. Tools like ProcessHacker and some attacker tradecract use
+    MiniDumpWriteDump API found in dbghelp.dll or dbgcore.dll. As an example, SilentTrynity
+    C2 Framework has a module that leverages this API to dump the contents of Lsass.exe
+    and transfer it over the network back to the attacker's machine.
+detection:
+    SELECTION_1:
+        EventID: 7
+    SELECTION_10:
+        Image: '*\excel.exe'
+    SELECTION_11:
+        Image: '*\powerpnt.exe'
+    SELECTION_12:
+        Image: '*\outlook.exe'
+    SELECTION_13:
+        Image: '*\monitoringhost.exe'
+    SELECTION_14:
+        Image: '*\wmic.exe'
+    SELECTION_15:
+        Image: '*\bash.exe'
+    SELECTION_16:
+        Image: '*\wscript.exe'
+    SELECTION_17:
+        Image: '*\cscript.exe'
+    SELECTION_18:
+        Image: '*\mshta.exe'
+    SELECTION_19:
+        Image: '*\regsvr32.exe'
+    SELECTION_2:
+        ImageLoaded: '*\dbghelp.dll'
+    SELECTION_20:
+        Image: '*\schtasks.exe'
+    SELECTION_21:
+        Image: '*\dnx.exe'
+    SELECTION_22:
+        Image: '*\regsvcs.exe'
+    SELECTION_23:
+        Image: '*\sc.exe'
+    SELECTION_24:
+        Image: '*\scriptrunner.exe'
+    SELECTION_25:
+        Image: '*Visual Studio*'
+    SELECTION_26:
+        ImageLoaded: '*\dbghelp.dll'
+    SELECTION_27:
+        ImageLoaded: '*\dbgcore.dll'
+    SELECTION_28:
+        Signed: 'FALSE'
+    SELECTION_29:
+        Image: '*Visual Studio*'
+    SELECTION_3:
+        ImageLoaded: '*\dbgcore.dll'
+    SELECTION_4:
+        Image: '*\msbuild.exe'
+    SELECTION_5:
+        Image: '*\cmd.exe'
+    SELECTION_6:
+        Image: '*\svchost.exe'
+    SELECTION_7:
+        Image: '*\rundll32.exe'
+    SELECTION_8:
+        Image: '*\powershell.exe'
+    SELECTION_9:
+        Image: '*\word.exe'
+    condition: (SELECTION_1 and ((((SELECTION_2 or SELECTION_3) and (SELECTION_4 or
+        SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or
+        SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
+        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
+        or SELECTION_20 or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24))
+        and  not (SELECTION_25)) or (((SELECTION_26 or SELECTION_27) and SELECTION_28)
+        and  not (SELECTION_29))))
+falsepositives:
+- Penetration tests
+fields:
+- ComputerName
+- User
+- Image
+- ImageLoaded
+id: 0e277796-5f23-4e49-a490-483131d4f6e1
+level: high
+logsource:
+    category: image_load
+    product: windows
+modified: 2020/08/23
+references:
+- https://docs.microsoft.com/en-us/windows/win32/api/minidumpapiset/nf-minidumpapiset-minidumpwritedump
+- https://www.pinvoke.net/default.aspx/dbghelp/MiniDumpWriteDump.html
+- https://medium.com/@fsx30/bypass-edrs-memory-protection-introduction-to-hooking-2efb21acffd6
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1003.001
+yml_filename: sysmon_suspicious_dbghelp_dbgcore_load.yml
+yml_path: /home/itib/git/sigma/rules/windows/image_load
+

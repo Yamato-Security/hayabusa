@@ -1,0 +1,87 @@
+title: Highly Relevant Renamed Binary
+author: Matthew Green - @mgreen27, Florian Roth
+date: 2019/06/15
+description: Detects the execution of a renamed binary often used by attackers or
+    malware leveraging new Sysmon OriginalFileName datapoint.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        OriginalFileName: wmic.exe
+    SELECTION_11:
+        OriginalFileName: certutil.exe
+    SELECTION_12:
+        OriginalFileName: rundll32.exe
+    SELECTION_13:
+        OriginalFileName: cmstp.exe
+    SELECTION_14:
+        OriginalFileName: msiexec.exe
+    SELECTION_15:
+        Image: '*\powershell.exe'
+    SELECTION_16:
+        Image: '*\powershell_ise.exe'
+    SELECTION_17:
+        Image: '*\psexec.exe'
+    SELECTION_18:
+        Image: '*\psexec64.exe'
+    SELECTION_19:
+        Image: '*\cscript.exe'
+    SELECTION_2:
+        OriginalFileName: powershell.exe
+    SELECTION_20:
+        Image: '*\wscript.exe'
+    SELECTION_21:
+        Image: '*\mshta.exe'
+    SELECTION_22:
+        Image: '*\regsvr32.exe'
+    SELECTION_23:
+        Image: '*\wmic.exe'
+    SELECTION_24:
+        Image: '*\certutil.exe'
+    SELECTION_25:
+        Image: '*\rundll32.exe'
+    SELECTION_26:
+        Image: '*\cmstp.exe'
+    SELECTION_27:
+        Image: '*\msiexec.exe'
+    SELECTION_3:
+        OriginalFileName: powershell_ise.exe
+    SELECTION_4:
+        OriginalFileName: psexec.exe
+    SELECTION_5:
+        OriginalFileName: psexec.c
+    SELECTION_6:
+        OriginalFileName: cscript.exe
+    SELECTION_7:
+        OriginalFileName: wscript.exe
+    SELECTION_8:
+        OriginalFileName: mshta.exe
+    SELECTION_9:
+        OriginalFileName: regsvr32.exe
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14) and  not
+        ((SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
+        or SELECTION_20 or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24
+        or SELECTION_25 or SELECTION_26 or SELECTION_27)))
+falsepositives:
+- Custom applications use renamed binaries adding slight change to binary name. Typically
+    this is easy to spot and add to whitelist
+id: 0ba1da6d-b6ce-4366-828c-18826c9de23e
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/06
+references:
+- https://attack.mitre.org/techniques/T1036/
+- https://mgreen27.github.io/posts/2019/05/12/BinaryRename.html
+- https://mgreen27.github.io/posts/2019/05/29/BinaryRename2.html
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.003
+yml_filename: win_renamed_binary_highly_relevant.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

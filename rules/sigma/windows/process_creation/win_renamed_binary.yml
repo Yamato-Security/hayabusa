@@ -1,0 +1,119 @@
+title: Renamed Binary
+author: Matthew Green - @mgreen27, Ecco, James Pemberton / @4A616D6573, oscd.community
+    (improvements), Andreas Hunkeler (@Karneades)
+date: 2019/06/15
+description: Detects the execution of a renamed binary often used by attackers or
+    malware leveraging new Sysmon OriginalFileName datapoint.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        OriginalFileName: regsvr32.exe
+    SELECTION_11:
+        OriginalFileName: wmic.exe
+    SELECTION_12:
+        OriginalFileName: certutil.exe
+    SELECTION_13:
+        OriginalFileName: rundll32.exe
+    SELECTION_14:
+        OriginalFileName: cmstp.exe
+    SELECTION_15:
+        OriginalFileName: msiexec.exe
+    SELECTION_16:
+        OriginalFileName: 7z.exe
+    SELECTION_17:
+        OriginalFileName: winrar.exe
+    SELECTION_18:
+        OriginalFileName: wevtutil.exe
+    SELECTION_19:
+        OriginalFileName: net.exe
+    SELECTION_2:
+        OriginalFileName: cmd.exe
+    SELECTION_20:
+        OriginalFileName: net1.exe
+    SELECTION_21:
+        OriginalFileName: netsh.exe
+    SELECTION_22:
+        Image: '*\cmd.exe'
+    SELECTION_23:
+        Image: '*\powershell.exe'
+    SELECTION_24:
+        Image: '*\powershell_ise.exe'
+    SELECTION_25:
+        Image: '*\psexec.exe'
+    SELECTION_26:
+        Image: '*\psexec64.exe'
+    SELECTION_27:
+        Image: '*\cscript.exe'
+    SELECTION_28:
+        Image: '*\wscript.exe'
+    SELECTION_29:
+        Image: '*\mshta.exe'
+    SELECTION_3:
+        OriginalFileName: powershell.exe
+    SELECTION_30:
+        Image: '*\regsvr32.exe'
+    SELECTION_31:
+        Image: '*\wmic.exe'
+    SELECTION_32:
+        Image: '*\certutil.exe'
+    SELECTION_33:
+        Image: '*\rundll32.exe'
+    SELECTION_34:
+        Image: '*\cmstp.exe'
+    SELECTION_35:
+        Image: '*\msiexec.exe'
+    SELECTION_36:
+        Image: '*\7z.exe'
+    SELECTION_37:
+        Image: '*\winrar.exe'
+    SELECTION_38:
+        Image: '*\wevtutil.exe'
+    SELECTION_39:
+        Image: '*\net.exe'
+    SELECTION_4:
+        OriginalFileName: powershell_ise.exe
+    SELECTION_40:
+        Image: '*\net1.exe'
+    SELECTION_41:
+        Image: '*\netsh.exe'
+    SELECTION_5:
+        OriginalFileName: psexec.exe
+    SELECTION_6:
+        OriginalFileName: psexec.c
+    SELECTION_7:
+        OriginalFileName: cscript.exe
+    SELECTION_8:
+        OriginalFileName: wscript.exe
+    SELECTION_9:
+        OriginalFileName: mshta.exe
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21) and  not ((SELECTION_22 or SELECTION_23 or SELECTION_24 or
+        SELECTION_25 or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29
+        or SELECTION_30 or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34
+        or SELECTION_35 or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39
+        or SELECTION_40 or SELECTION_41)))
+falsepositives:
+- Custom applications use renamed binaries adding slight change to binary name. Typically
+    this is easy to spot and add to whitelist
+id: 36480ae1-a1cb-4eaa-a0d6-29801d7e9142
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/06
+references:
+- https://attack.mitre.org/techniques/T1036/
+- https://mgreen27.github.io/posts/2019/05/12/BinaryRename.html
+- https://mgreen27.github.io/posts/2019/05/29/BinaryRename2.html
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.003
+yml_filename: win_renamed_binary.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

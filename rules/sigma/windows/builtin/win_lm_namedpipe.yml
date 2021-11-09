@@ -1,0 +1,72 @@
+title: First Time Seen Remote Named Pipe
+author: Samir Bousseaden
+date: 2019/04/03
+description: This detection excludes known namped pipes accessible remotely and notify
+    on newly observed ones, may help to detect lateral movement and remote exec using
+    named pipes
+detection:
+    SELECTION_1:
+        EventID: 5145
+    SELECTION_10:
+        RelativeTargetName: srvsvc
+    SELECTION_11:
+        RelativeTargetName: protected_storage
+    SELECTION_12:
+        RelativeTargetName: wkssvc
+    SELECTION_13:
+        RelativeTargetName: browser
+    SELECTION_14:
+        RelativeTargetName: netdfs
+    SELECTION_15:
+        RelativeTargetName: svcctl
+    SELECTION_16:
+        RelativeTargetName: spoolss
+    SELECTION_17:
+        RelativeTargetName: ntsvcs
+    SELECTION_18:
+        RelativeTargetName: LSM_API_service
+    SELECTION_19:
+        RelativeTargetName: HydraLsPipe
+    SELECTION_2:
+        ShareName: \\*\IPC$
+    SELECTION_20:
+        RelativeTargetName: TermSrv_API_service
+    SELECTION_21:
+        RelativeTargetName: MsFteWds
+    SELECTION_3:
+        EventID: 5145
+    SELECTION_4:
+        ShareName: \\*\IPC$
+    SELECTION_5:
+        RelativeTargetName: atsvc
+    SELECTION_6:
+        RelativeTargetName: samr
+    SELECTION_7:
+        RelativeTargetName: lsarpc
+    SELECTION_8:
+        RelativeTargetName: winreg
+    SELECTION_9:
+        RelativeTargetName: netlogon
+    condition: ((SELECTION_1 and SELECTION_2) and  not (SELECTION_3 and SELECTION_4
+        and (SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
+        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
+        or SELECTION_20 or SELECTION_21)))
+falsepositives:
+- update the excluded named pipe to filter out any newly observed legit named pipe
+id: 52d8b0c6-53d6-439a-9e41-52ad442ad9ad
+level: high
+logsource:
+    definition: The advanced audit policy setting "Object Access > Audit Detailed
+        File Share" must be configured for Success/Failure
+    product: windows
+    service: security
+references:
+- https://twitter.com/menasec1/status/1104489274387451904
+tags:
+- attack.lateral_movement
+- attack.t1077
+- attack.t1021.002
+yml_filename: win_lm_namedpipe.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

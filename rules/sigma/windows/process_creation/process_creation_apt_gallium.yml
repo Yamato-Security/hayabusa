@@ -1,0 +1,36 @@
+title: GALLIUM Artefacts
+author: Tim Burrell
+date: 2020/02/07
+description: Detects artefacts associated with activity group GALLIUM - Microsoft
+    Threat Intelligence Center indicators released in December 2019.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        sha1: e570585edc69f9074cb5e8a790708336bd45ca0f
+    SELECTION_3:
+        Image: '*:\Program Files(x86)\\*'
+    SELECTION_4:
+        Image: '*:\Program Files\\*'
+    condition: (SELECTION_1 and (SELECTION_2) and  not ((SELECTION_3 or SELECTION_4)))
+falsepositives:
+- unknown
+id: 18739897-21b1-41da-8ee4-5b786915a676
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/09/19
+references:
+- https://www.microsoft.com/security/blog/2019/12/12/gallium-targeting-global-telecom/
+- https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn800669(v=ws.11)
+related:
+-   id: 440a56bf-7873-4439-940a-1c8a671073c2
+    type: derived
+status: experimental
+tags:
+- attack.credential_access
+- attack.command_and_control
+yml_filename: process_creation_apt_gallium.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

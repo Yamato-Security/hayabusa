@@ -1,0 +1,130 @@
+title: Accessing WinAPI in PowerShell
+author: Nikita Nazarov, oscd.community
+date: 2020/10/06
+description: Detecting use WinAPI Functions in PowerShell
+detection:
+    SELECTION_1:
+        EventID: 4104
+    SELECTION_10:
+        ScriptBlockText: '*CloseHandle*'
+    SELECTION_11:
+        ScriptBlockText: '*GetDelegateForFunctionPointer*'
+    SELECTION_12:
+        ScriptBlockText: '*CreateThread*'
+    SELECTION_13:
+        ScriptBlockText: '*memcpy*'
+    SELECTION_14:
+        ScriptBlockText: '*LoadLibrary*'
+    SELECTION_15:
+        ScriptBlockText: '*GetModuleHandle*'
+    SELECTION_16:
+        ScriptBlockText: '*GetProcAddress*'
+    SELECTION_17:
+        ScriptBlockText: '*VirtualProtect*'
+    SELECTION_18:
+        ScriptBlockText: '*FreeLibrary*'
+    SELECTION_19:
+        ScriptBlockText: '*ReadProcessMemory*'
+    SELECTION_2:
+        ScriptBlockText: '*WaitForSingleObject*'
+    SELECTION_20:
+        ScriptBlockText: '*CreateRemoteThread*'
+    SELECTION_21:
+        ScriptBlockText: '*AdjustTokenPrivileges*'
+    SELECTION_22:
+        ScriptBlockText: '*WriteByte*'
+    SELECTION_23:
+        ScriptBlockText: '*WriteInt32*'
+    SELECTION_24:
+        ScriptBlockText: '*OpenThreadToken*'
+    SELECTION_25:
+        ScriptBlockText: '*PtrToString*'
+    SELECTION_26:
+        ScriptBlockText: '*FreeHGlobal*'
+    SELECTION_27:
+        ScriptBlockText: '*ZeroFreeGlobalAllocUnicode*'
+    SELECTION_28:
+        ScriptBlockText: '*OpenProcessToken*'
+    SELECTION_29:
+        ScriptBlockText: '*GetTokenInformation*'
+    SELECTION_3:
+        ScriptBlockText: '*QueueUserApc*'
+    SELECTION_30:
+        ScriptBlockText: '*SetThreadToken*'
+    SELECTION_31:
+        ScriptBlockText: '*ImpersonateLoggedOnUser*'
+    SELECTION_32:
+        ScriptBlockText: '*RevertToSelf*'
+    SELECTION_33:
+        ScriptBlockText: '*GetLogonSessionData*'
+    SELECTION_34:
+        ScriptBlockText: '*CreateProcessWithToken*'
+    SELECTION_35:
+        ScriptBlockText: '*DuplicateTokenEx*'
+    SELECTION_36:
+        ScriptBlockText: '*OpenWindowStation*'
+    SELECTION_37:
+        ScriptBlockText: '*OpenDesktop*'
+    SELECTION_38:
+        ScriptBlockText: '*MiniDumpWriteDump*'
+    SELECTION_39:
+        ScriptBlockText: '*AddSecurityPackage*'
+    SELECTION_4:
+        ScriptBlockText: '*RtlCreateUserThread*'
+    SELECTION_40:
+        ScriptBlockText: '*EnumerateSecurityPackages*'
+    SELECTION_41:
+        ScriptBlockText: '*GetProcessHandle*'
+    SELECTION_42:
+        ScriptBlockText: '*DangerousGetHandle*'
+    SELECTION_43:
+        ScriptBlockText: '*kernel32*'
+    SELECTION_44:
+        ScriptBlockText: '*Advapi32*'
+    SELECTION_45:
+        ScriptBlockText: '*msvcrt*'
+    SELECTION_46:
+        ScriptBlockText: '*ntdll*'
+    SELECTION_47:
+        ScriptBlockText: '*user32*'
+    SELECTION_48:
+        ScriptBlockText: '*secur32*'
+    SELECTION_5:
+        ScriptBlockText: '*OpenProcess*'
+    SELECTION_6:
+        ScriptBlockText: '*VirtualAlloc*'
+    SELECTION_7:
+        ScriptBlockText: '*VirtualFree*'
+    SELECTION_8:
+        ScriptBlockText: '*WriteProcessMemory*'
+    SELECTION_9:
+        ScriptBlockText: '*CreateUserThread*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39 or SELECTION_40
+        or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44 or SELECTION_45
+        or SELECTION_46 or SELECTION_47 or SELECTION_48))
+falsepositives:
+- Carbon PowerShell Module (https://github.com/webmd-health-services/Carbon)
+id: 03d83090-8cba-44a0-b02f-0b756a050306
+level: high
+logsource:
+    definition: Script block logging must be enabled
+    product: windows
+    service: powershell
+modified: 2021/08/04
+references:
+- https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1106
+yml_filename: powershell_accessing_win_api.yml
+yml_path: /home/itib/git/sigma/rules/windows/powershell/powershell_script
+

@@ -1,0 +1,47 @@
+title: Suspicious ftp.exe
+author: Victor Sergeev, oscd.community
+date: 2020/10/09
+description: Detects renamed ftp.exe, ftp.exe script execution and child processes
+    ran by ftp.exe
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        EventID: 1
+    SELECTION_3:
+        CommandLine: '*-s:*'
+    SELECTION_4:
+        Image: '*ftp.exe'
+    SELECTION_5:
+        OriginalFileName: '*ftp.exe*'
+    SELECTION_6:
+        EventID: 1
+    SELECTION_7:
+        OriginalFileName: '*ftp.exe*'
+    SELECTION_8:
+        Image: '*ftp.exe'
+    SELECTION_9:
+        ParentImage: '*ftp.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and (SELECTION_4 or
+        SELECTION_5)) or (SELECTION_6 and SELECTION_7 and  not (SELECTION_8)) or SELECTION_9))
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+- ParentImage
+id: 06b401f4-107c-4ff9-947f-9ec1e7649f1e
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Ftp.yml
+status: experimental
+tags:
+- attack.execution
+- attack.t1059
+- attack.defense_evasion
+- attack.t1202
+yml_filename: win_susp_ftp.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

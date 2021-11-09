@@ -1,0 +1,34 @@
+title: Mimikatz Use
+author: Florian Roth
+date: 2017/01/10
+description: This method detects mimikatz keywords in different Eventlogs (some of
+    them only appear in older Mimikatz version that are however still used by different
+    threat groups)
+detection:
+    condition: (\mimikatz or mimikatz.exe or \mimilib.dll or <3 eo.oe or eo.oe.kiwi
+        or privilege::debug or sekurlsa::logonpasswords or lsadump::sam or mimidrv.sys
+        or  p::d  or  s::l  or gentilkiwi.com or Kiwi Legit Printer)
+falsepositives:
+- Naughty administrators
+- Penetration test
+- AV Signature updates
+- Files with Mimikatz in their filename
+id: 06d71506-7beb-4f22-8888-e2e5e2ca7fd8
+level: critical
+logsource:
+    product: windows
+modified: 2021/08/26
+tags:
+- attack.s0002
+- attack.t1003
+- attack.lateral_movement
+- attack.credential_access
+- car.2013-07-001
+- car.2019-04-004
+- attack.t1003.002
+- attack.t1003.004
+- attack.t1003.001
+- attack.t1003.006
+yml_filename: win_alert_mimikatz_keywords.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

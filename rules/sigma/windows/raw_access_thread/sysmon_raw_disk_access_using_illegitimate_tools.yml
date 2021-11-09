@@ -1,0 +1,63 @@
+title: Raw Disk Access Using Illegitimate Tools
+author: Teymur Kheirkhabarov, oscd.community
+date: 2019/10/22
+description: Raw disk access using illegitimate tools, possible defence evasion
+detection:
+    SELECTION_1:
+        EventID: 9
+    SELECTION_10:
+        Image: '*\compattelrunner.exe'
+    SELECTION_11:
+        Image: '*\wininit.exe'
+    SELECTION_12:
+        Image: '*\autochk.exe'
+    SELECTION_13:
+        Image: '*\taskhost.exe'
+    SELECTION_14:
+        Image: '*\dfsrs.exe'
+    SELECTION_15:
+        Image: '*\vds.exe'
+    SELECTION_16:
+        Image: '*\lsass.exe'
+    SELECTION_2:
+        Device: '*floppy*'
+    SELECTION_3:
+        Image: '*\wmiprvse.exe'
+    SELECTION_4:
+        Image: '*\sdiagnhost.exe'
+    SELECTION_5:
+        Image: '*\searchindexer.exe'
+    SELECTION_6:
+        Image: '*\csrss.exe'
+    SELECTION_7:
+        Image: '*\defrag.exe'
+    SELECTION_8:
+        Image: '*\smss.exe'
+    SELECTION_9:
+        Image: '*\vssvc.exe'
+    condition: (SELECTION_1 and  not (SELECTION_2) and  not ((SELECTION_3 or SELECTION_4
+        or SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
+        or SELECTION_15 or SELECTION_16)))
+falsepositives:
+- Legitimate Administrator using tool for raw access or ongoing forensic investigation
+fields:
+- ComputerName
+- Image
+- ProcessID
+- Device
+id: db809f10-56ce-4420-8c86-d6a7d793c79c
+level: medium
+logsource:
+    category: raw_access_thread
+    product: windows
+modified: 2021/08/14
+references:
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1006
+yml_filename: sysmon_raw_disk_access_using_illegitimate_tools.yml
+yml_path: /home/itib/git/sigma/rules/windows/raw_access_thread
+

@@ -1,0 +1,53 @@
+title: Suspicious Encoded Scripts in a WMI Consumer
+author: Florian Roth
+date: 2021/09/01
+description: Detects suspicious encoded payloads in WMI Event Consumers
+detection:
+    SELECTION_1:
+        EventID: 19
+    SELECTION_10:
+        Destination: '*VGhpcyBwcm9ncmFtIG11c3QgYmUgcnVuIHVuZGVyIFdpbjMy*'
+    SELECTION_11:
+        Destination: '*RoaXMgcHJvZ3JhbSBtdXN0IGJlIHJ1biB1bmRlciBXaW4zM*'
+    SELECTION_12:
+        Destination: '*UaGlzIHByb2dyYW0gbXVzdCBiZSBydW4gdW5kZXIgV2luMz*'
+    SELECTION_2:
+        EventID: 20
+    SELECTION_3:
+        EventID: 21
+    SELECTION_4:
+        Destination: '*V3JpdGVQcm9jZXNzTWVtb3J5*'
+    SELECTION_5:
+        Destination: '*dyaXRlUHJvY2Vzc01lbW9ye*'
+    SELECTION_6:
+        Destination: '*Xcml0ZVByb2Nlc3NNZW1vcn*'
+    SELECTION_7:
+        Destination: '*VGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZG*'
+    SELECTION_8:
+        Destination: '*RoaXMgcHJvZ3JhbSBjYW5ub3QgYmUgcnVuIGluIERPUyBtb2Rl*'
+    SELECTION_9:
+        Destination: '*UaGlzIHByb2dyYW0gY2Fubm90IGJlIHJ1biBpbiBET1MgbW9kZ*'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12))
+falsepositives:
+- Unknown
+fields:
+- User
+- Operation
+id: 83844185-1c5b-45bc-bcf3-b5bf3084ca5b
+level: high
+logsource:
+    category: wmi_event
+    product: windows
+references:
+- https://github.com/RiccardoAncarani/LiquidSnake
+status: experimental
+tags:
+- attack.execution
+- attack.t1047
+- attack.persistence
+- attack.t1546.003
+yml_filename: sysmon_wmi_susp_encoded_scripts.yml
+yml_path: /home/itib/git/sigma/rules/windows/wmi_event
+

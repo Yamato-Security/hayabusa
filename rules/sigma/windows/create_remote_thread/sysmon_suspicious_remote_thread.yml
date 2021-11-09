@@ -1,0 +1,144 @@
+title: Suspicious Remote Thread Created
+author: Perez Diego (@darkquassar), oscd.community
+date: 2019/10/27
+description: Offensive tradecraft is switching away from using APIs like "CreateRemoteThread",
+    however, this is still largely observed in the wild. This rule aims to detect
+    suspicious processes (those we would not expect to behave in this way like word.exe
+    or outlook.exe) creating remote threads on other processes. It is a generalistic
+    rule, but it should have a low FP ratio due to the selected range of processes.
+detection:
+    SELECTION_1:
+        EventID: 8
+    SELECTION_10:
+        SourceImage: '*\find.exe'
+    SELECTION_11:
+        SourceImage: '*\findstr.exe'
+    SELECTION_12:
+        SourceImage: '*\forfiles.exe'
+    SELECTION_13:
+        SourceImage: '*\git.exe'
+    SELECTION_14:
+        SourceImage: '*\gpupdate.exe'
+    SELECTION_15:
+        SourceImage: '*\hh.exe'
+    SELECTION_16:
+        SourceImage: '*\iexplore.exe'
+    SELECTION_17:
+        SourceImage: '*\installutil.exe'
+    SELECTION_18:
+        SourceImage: '*\lync.exe'
+    SELECTION_19:
+        SourceImage: '*\makecab.exe'
+    SELECTION_2:
+        SourceImage: '*\bash.exe'
+    SELECTION_20:
+        SourceImage: '*\mDNSResponder.exe'
+    SELECTION_21:
+        SourceImage: '*\monitoringhost.exe'
+    SELECTION_22:
+        SourceImage: '*\msbuild.exe'
+    SELECTION_23:
+        SourceImage: '*\mshta.exe'
+    SELECTION_24:
+        SourceImage: '*\msiexec.exe'
+    SELECTION_25:
+        SourceImage: '*\mspaint.exe'
+    SELECTION_26:
+        SourceImage: '*\outlook.exe'
+    SELECTION_27:
+        SourceImage: '*\ping.exe'
+    SELECTION_28:
+        SourceImage: '*\powerpnt.exe'
+    SELECTION_29:
+        SourceImage: '*\powershell.exe'
+    SELECTION_3:
+        SourceImage: '*\cvtres.exe'
+    SELECTION_30:
+        SourceImage: '*\provtool.exe'
+    SELECTION_31:
+        SourceImage: '*\python.exe'
+    SELECTION_32:
+        SourceImage: '*\regsvr32.exe'
+    SELECTION_33:
+        SourceImage: '*\robocopy.exe'
+    SELECTION_34:
+        SourceImage: '*\runonce.exe'
+    SELECTION_35:
+        SourceImage: '*\sapcimc.exe'
+    SELECTION_36:
+        SourceImage: '*\schtasks.exe'
+    SELECTION_37:
+        SourceImage: '*\smartscreen.exe'
+    SELECTION_38:
+        SourceImage: '*\spoolsv.exe'
+    SELECTION_39:
+        SourceImage: '*\tstheme.exe'
+    SELECTION_4:
+        SourceImage: '*\defrag.exe'
+    SELECTION_40:
+        SourceImage: '*\userinit.exe'
+    SELECTION_41:
+        SourceImage: '*\vssadmin.exe'
+    SELECTION_42:
+        SourceImage: '*\vssvc.exe'
+    SELECTION_43:
+        SourceImage: '*\w3wp.exe'
+    SELECTION_44:
+        SourceImage: '*\winlogon.exe'
+    SELECTION_45:
+        SourceImage: '*\winscp.exe'
+    SELECTION_46:
+        SourceImage: '*\wmic.exe'
+    SELECTION_47:
+        SourceImage: '*\word.exe'
+    SELECTION_48:
+        SourceImage: '*\wscript.exe'
+    SELECTION_49:
+        SourceImage: '*Visual Studio*'
+    SELECTION_5:
+        SourceImage: '*\dnx.exe'
+    SELECTION_6:
+        SourceImage: '*\esentutl.exe'
+    SELECTION_7:
+        SourceImage: '*\excel.exe'
+    SELECTION_8:
+        SourceImage: '*\expand.exe'
+    SELECTION_9:
+        SourceImage: '*\explorer.exe'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39 or SELECTION_40
+        or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44 or SELECTION_45
+        or SELECTION_46 or SELECTION_47 or SELECTION_48) and  not (SELECTION_49))
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- User
+- SourceImage
+- TargetImage
+id: 66d31e5f-52d6-40a4-9615-002d3789a119
+level: high
+logsource:
+    category: create_remote_thread
+    product: windows
+modified: 2021/06/27
+notes:
+- MonitoringHost.exe is a process that loads .NET CLR by default and thus a favorite
+    for process injection for .NET in-memory offensive tools.
+references:
+- Personal research, statistical analysis
+- https://lolbas-project.github.io
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.defense_evasion
+- attack.t1055
+yml_filename: sysmon_suspicious_remote_thread.yml
+yml_path: /home/itib/git/sigma/rules/windows/create_remote_thread
+

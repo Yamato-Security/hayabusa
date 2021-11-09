@@ -1,0 +1,52 @@
+title: Credential Dumping Tools Service Execution
+author: Florian Roth, Teymur Kheirkhabarov, Daniil Yugoslavskiy, oscd.community
+date: 2017/03/05
+description: Detects well-known credential dumping tools execution via service execution
+    events
+detection:
+    SELECTION_1:
+        EventID: 4697
+    SELECTION_2:
+        ServiceFileName: '*fgexec*'
+    SELECTION_3:
+        ServiceFileName: '*dumpsvc*'
+    SELECTION_4:
+        ServiceFileName: '*cachedump*'
+    SELECTION_5:
+        ServiceFileName: '*mimidrv*'
+    SELECTION_6:
+        ServiceFileName: '*gsecdump*'
+    SELECTION_7:
+        ServiceFileName: '*servpw*'
+    SELECTION_8:
+        ServiceFileName: '*pwdump*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8))
+falsepositives:
+- Legitimate Administrator using credential dumping tool for password recovery
+id: f0d1feba-4344-4ca9-8121-a6c97bd6df52
+level: high
+logsource:
+    product: windows
+    service: security
+modified: 2021/09/21
+references:
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+related:
+-   id: 4976aa50-8f41-45c6-8b15-ab3fc10e79ed
+    type: derived
+tags:
+- attack.credential_access
+- attack.execution
+- attack.t1003
+- attack.t1003.001
+- attack.t1003.002
+- attack.t1003.004
+- attack.t1003.005
+- attack.t1003.006
+- attack.t1035
+- attack.t1569.002
+- attack.s0005
+yml_filename: win_security_mal_creddumper.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

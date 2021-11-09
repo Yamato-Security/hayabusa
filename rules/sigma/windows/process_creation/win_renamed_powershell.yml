@@ -1,0 +1,41 @@
+title: Renamed PowerShell
+author: Florian Roth, frack113
+date: 2019/08/22
+description: Detects the execution of a renamed PowerShell often used by attackers
+    or malware
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Description: Windows PowerShell*
+    SELECTION_3:
+        Description: pwsh*
+    SELECTION_4:
+        Company: Microsoft Corporation
+    SELECTION_5:
+        Image: '*\powershell.exe'
+    SELECTION_6:
+        Image: '*\powershell_ise.exe'
+    SELECTION_7:
+        Image: '*\pwsh.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) and SELECTION_4) and  not
+        ((SELECTION_5 or SELECTION_6 or SELECTION_7)))
+falsepositives:
+- Unknown
+id: d178a2d7-129a-4ba4-8ee6-d6e1fecd5d20
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/07/03
+references:
+- https://twitter.com/christophetd/status/1164506034720952320
+status: experimental
+tags:
+- car.2013-05-009
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.003
+yml_filename: win_renamed_powershell.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

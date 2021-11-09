@@ -1,0 +1,24 @@
+title: ProxyLogon MSExchange OabVirtualDirectory
+author: Florian Roth
+date: 2021/08/09
+description: Detects specific patterns found after a successful ProxyLogon exploitation
+    in relation to a Commandlet invocation of Set-OabVirtualDirectory
+detection:
+    condition: ((OabVirtualDirectory and  -ExternalUrl ) and (eval(request or http://f/<script
+        or "unsafe"}; or function Page_Load()))
+falsepositives:
+- Unlikely
+id: 550d3350-bb8a-4ff3-9533-2ba533f4a1c0
+level: critical
+logsource:
+    product: windows
+    service: msexchange-management
+references:
+- https://bi-zone.medium.com/hunting-down-ms-exchange-attacks-part-1-proxylogon-cve-2021-26855-26858-27065-26857-6e885c5f197c
+status: experimental
+tags:
+- attack.t1587.001
+- attack.resource_development
+yml_filename: win_exchange_proxylogon_oabvirtualdir.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

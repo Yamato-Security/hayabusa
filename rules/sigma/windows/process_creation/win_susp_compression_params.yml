@@ -1,0 +1,51 @@
+title: Suspicious Compression Tool Parameters
+author: Florian Roth, Samir Bousseaden
+date: 2019/10/15
+description: Detects suspicious command line arguments of common data compression
+    tools
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '* -hp*'
+    SELECTION_11:
+        ParentImage: C:\Program*
+    SELECTION_2:
+        OriginalFileName: 7z*.exe
+    SELECTION_3:
+        OriginalFileName: '*rar.exe'
+    SELECTION_4:
+        OriginalFileName: '*Command*Line*RAR*'
+    SELECTION_5:
+        CommandLine: '* -p*'
+    SELECTION_6:
+        CommandLine: '* -ta*'
+    SELECTION_7:
+        CommandLine: '* -tb*'
+    SELECTION_8:
+        CommandLine: '* -sdel*'
+    SELECTION_9:
+        CommandLine: '* -dw*'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4) and (SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10))
+        and  not (SELECTION_11))
+falsepositives:
+- unknown
+id: 27a72a60-7e5e-47b1-9d17-909c9abafdcd
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/05
+references:
+- https://twitter.com/SBousseaden/status/1184067445612535811
+status: experimental
+tags:
+- attack.collection
+- attack.t1560.001
+- attack.exfiltration
+- attack.t1020
+- attack.t1002
+yml_filename: win_susp_compression_params.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,44 @@
+title: Suspicious Shells Spawn by WinRM
+author: Andreas Hunkeler (@Karneades), Markus Neis
+date: 2021/05/20
+description: Detects suspicious shell spawn from WinRM host process
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\bitsadmin.exe'
+    SELECTION_2:
+        ParentImage: '*\wsmprovhost.exe'
+    SELECTION_3:
+        Image: '*\cmd.exe'
+    SELECTION_4:
+        Image: '*\sh.exe'
+    SELECTION_5:
+        Image: '*\bash.exe'
+    SELECTION_6:
+        Image: '*\powershell.exe'
+    SELECTION_7:
+        Image: '*\schtasks.exe'
+    SELECTION_8:
+        Image: '*\certutil.exe'
+    SELECTION_9:
+        Image: '*\whoami.exe'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10))
+falsepositives:
+- Legitimate WinRM usage
+id: 5cc2cda8-f261-4d88-a2de-e9e193c86716
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/05/22
+status: experimental
+tags:
+- attack.t1190
+- attack.initial_access
+- attack.persistence
+- attack.privilege_escalation
+yml_filename: win_susp_shell_spawn_from_winrm.yml.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_access
+

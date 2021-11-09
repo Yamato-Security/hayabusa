@@ -1,0 +1,37 @@
+title: CLR DLL Loaded Via Office Applications
+author: Antonlovesdnb
+date: 2020/02/19
+description: Detects CLR DLL being loaded by an Office Product
+detection:
+    SELECTION_1:
+        EventID: 7
+    SELECTION_2:
+        Image: '*\winword.exe'
+    SELECTION_3:
+        Image: '*\powerpnt.exe'
+    SELECTION_4:
+        Image: '*\excel.exe'
+    SELECTION_5:
+        Image: '*\outlook.exe'
+    SELECTION_6:
+        ImageLoaded: '*\clr.dll*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
+        and (SELECTION_6))
+falsepositives:
+- Alerts on legitimate macro usage as well, will need to filter as appropriate
+id: d13c43f0-f66b-4279-8b2c-5912077c1780
+level: high
+logsource:
+    category: image_load
+    product: windows
+modified: 2020/08/23
+references:
+- https://medium.com/threatpunter/detecting-adversary-tradecraft-with-image-load-event-logging-and-eql-8de93338c16
+status: experimental
+tags:
+- attack.execution
+- attack.t1204
+- attack.t1204.002
+yml_filename: sysmon_susp_office_dotnet_clr_dll_load.yml
+yml_path: /home/itib/git/sigma/rules/windows/image_load
+

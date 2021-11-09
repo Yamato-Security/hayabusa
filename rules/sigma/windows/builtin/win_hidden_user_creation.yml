@@ -1,0 +1,30 @@
+title: Hidden Local User Creation
+author: Christian Burkard
+date: 2021/05/03
+description: Detects the creation of a local hidden user account which should not
+    happen for event ID 4720.
+detection:
+    SELECTION_1:
+        EventID: 4720
+    SELECTION_2:
+        TargetUserName: '*$'
+    condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- unknown
+fields:
+- EventCode
+- AccountName
+id: 7b449a5e-1db5-4dd0-a2dc-4e3a67282538
+level: high
+logsource:
+    product: windows
+    service: security
+references:
+- https://twitter.com/SBousseaden/status/1387743867663958021
+status: experimental
+tags:
+- attack.persistence
+- attack.t1136.001
+yml_filename: win_hidden_user_creation.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

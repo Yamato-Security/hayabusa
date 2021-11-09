@@ -1,0 +1,53 @@
+title: Sticky Key Like Backdoor Usage
+author: Florian Roth, @twjackomo, Jonhnathan Ribeiro, oscd.community
+date: 2018/03/15
+description: Detects the usage and installation of a backdoor that uses an option
+    to register a malicious debugger for built-in tools that are accessible in the
+    login screen
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution
+            Options\sethc.exe\Debugger'
+    SELECTION_5:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution
+            Options\utilman.exe\Debugger'
+    SELECTION_6:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution
+            Options\osk.exe\Debugger'
+    SELECTION_7:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution
+            Options\Magnify.exe\Debugger'
+    SELECTION_8:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution
+            Options\Narrator.exe\Debugger'
+    SELECTION_9:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution
+            Options\DisplaySwitch.exe\Debugger'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9))
+falsepositives:
+- Unlikely
+id: baca5663-583c-45f9-b5dc-ea96a22ce542
+level: critical
+logsource:
+    category: registry_event
+    product: windows
+modified: 2021/09/12
+references:
+- https://blogs.technet.microsoft.com/jonathantrull/2016/10/03/detecting-sticky-key-backdoors/
+tags:
+- attack.privilege_escalation
+- attack.persistence
+- attack.t1015
+- attack.t1546.008
+- car.2014-11-003
+- car.2014-11-008
+yml_filename: registry_event_stickykey_like_backdoor.yml
+yml_path: /home/itib/git/sigma/rules/windows/registry_event
+

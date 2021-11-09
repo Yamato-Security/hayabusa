@@ -1,0 +1,46 @@
+title: Always Install Elevated Windows Installer
+author: Teymur Kheirkhabarov (idea), Mangatas Tondang (rule), oscd.community
+date: 2020/10/13
+description: This rule will looks for Windows Installer service (msiexec.exe) when
+    it tries to install MSI packages with SYSTEM privilege
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        User: NT AUTHORITY\SYSTEM*
+    SELECTION_3:
+        User: AUTORITE NT\Sys*
+    SELECTION_4:
+        Image: '*\Windows\Installer\\*'
+    SELECTION_5:
+        Image: '*msi*'
+    SELECTION_6:
+        Image: '*tmp'
+    SELECTION_7:
+        Image: '*\msiexec.exe'
+    SELECTION_8:
+        IntegrityLevel: System
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and ((SELECTION_4 and
+        SELECTION_5 and (SELECTION_6)) or ((SELECTION_7) and SELECTION_8)))
+falsepositives:
+- System administrator Usage
+- Penetration test
+fields:
+- IntegrityLevel
+- User
+- Image
+id: cd951fdc-4b2f-47f5-ba99-a33bf61e3770
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/08/26
+references:
+- https://image.slidesharecdn.com/kheirkhabarovoffzonefinal-181117201458/95/hunting-for-privilege-escalation-in-windows-environment-48-638.jpg
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.t1548.002
+yml_filename: sysmon_always_install_elevated_windows_installer.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

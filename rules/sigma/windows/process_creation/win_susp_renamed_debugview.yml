@@ -1,0 +1,33 @@
+title: Renamed SysInternals Debug View
+author: Florian Roth
+date: 2020/05/28
+description: Detects suspicious renamed SysInternals DebugView execution
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Product: Sysinternals DebugView
+    SELECTION_3:
+        Product: Sysinternals Debugview
+    SELECTION_4:
+        OriginalFileName: Dbgview.exe
+    SELECTION_5:
+        Image: '*\Dbgview.exe'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and  not (SELECTION_4
+        and SELECTION_5))
+falsepositives:
+- Unknown
+id: cd764533-2e07-40d6-a718-cfeec7f2da7f
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.epicturla.com/blog/sysinturla
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.discovery
+yml_filename: win_susp_renamed_debugview.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

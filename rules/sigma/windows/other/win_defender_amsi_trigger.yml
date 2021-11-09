@@ -1,0 +1,27 @@
+title: Windows Defender AMSI Trigger Detected
+author: Bhabesh Raj
+date: 2020/09/14
+description: Detects triggering of AMSI by Windows Defender.
+detection:
+    SELECTION_1:
+        EventID: 1116
+    SELECTION_2:
+        Source Name: AMSI
+    condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- unlikely
+id: ea9bf0fa-edec-4fb8-8b78-b119f2528186
+level: high
+logsource:
+    product: windows
+    service: windefend
+modified: 2021/08/06
+references:
+- https://docs.microsoft.com/en-us/windows/win32/amsi/how-amsi-helps
+status: stable
+tags:
+- attack.execution
+- attack.t1059
+yml_filename: win_defender_amsi_trigger.yml
+yml_path: /home/itib/git/sigma/rules/windows/other
+

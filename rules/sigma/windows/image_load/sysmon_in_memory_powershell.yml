@@ -1,0 +1,59 @@
+title: In-memory PowerShell
+author: Tom Kern, oscd.community, Natalia Shornikova
+date: 2019/11/14
+description: Detects loading of essential DLL used by PowerShell, but not by the process
+    powershell.exe. Detects meterpreter's "load powershell" extension.
+detection:
+    SELECTION_1:
+        EventID: 7
+    SELECTION_10:
+        Image: '*\wsmprovhost.exe'
+    SELECTION_11:
+        Image: '*\winrshost.exe'
+    SELECTION_12:
+        Image: '*\syncappvpublishingserver.exe'
+    SELECTION_13:
+        Image: '*\runscripthelper.exe'
+    SELECTION_14:
+        Image: '*\ServerManager.exe'
+    SELECTION_2:
+        ImageLoaded: '*\System.Management.Automation.Dll'
+    SELECTION_3:
+        ImageLoaded: '*\System.Management.Automation.ni.Dll'
+    SELECTION_4:
+        Image: '*\powershell.exe'
+    SELECTION_5:
+        Image: '*\powershell_ise.exe'
+    SELECTION_6:
+        Image: '*\WINDOWS\System32\sdiagnhost.exe'
+    SELECTION_7:
+        Image: '*\mscorsvw.exe'
+    SELECTION_8:
+        Image: '*\WINDOWS\System32\RemoteFXvGPUDisablement.exe'
+    SELECTION_9:
+        Image: '*\sqlps.exe'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and  not ((SELECTION_4
+        or SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14)))
+enrichment:
+- EN_0001_cache_sysmon_event_id_1_info
+- EN_0003_enrich_other_sysmon_events_with_event_id_1_data
+falsepositives:
+- Used by some .NET binaries, minimal on user workstation.
+id: 092bc4b9-3d1d-43b4-a6b4-8c8acd83522f
+level: high
+logsource:
+    category: image_load
+    product: windows
+modified: 2020/10/12
+references:
+- https://adsecurity.org/?p=2921
+- https://github.com/p3nt4/PowerShdll
+status: experimental
+tags:
+- attack.t1086
+- attack.t1059.001
+- attack.execution
+yml_filename: sysmon_in_memory_powershell.yml
+yml_path: /home/itib/git/sigma/rules/windows/image_load
+

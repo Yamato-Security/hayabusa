@@ -1,0 +1,61 @@
+title: Default PowerSploit and Empire Schtasks Persistence
+author: Markus Neis, @Karneades
+date: 2018/03/06
+description: Detects the creation of a schtask via PowerSploit or Empire Default Configuration.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*/TN*'
+    SELECTION_11:
+        CommandLine: '*Updater*'
+    SELECTION_12:
+        CommandLine: '*/TR*'
+    SELECTION_13:
+        CommandLine: '*powershell*'
+    SELECTION_2:
+        ParentImage: '*\powershell.exe'
+    SELECTION_3:
+        Image: '*\schtasks.exe'
+    SELECTION_4:
+        CommandLine: '*/Create*'
+    SELECTION_5:
+        CommandLine: '*/SC*'
+    SELECTION_6:
+        CommandLine: '*ONLOGON*'
+    SELECTION_7:
+        CommandLine: '*DAILY*'
+    SELECTION_8:
+        CommandLine: '*ONIDLE*'
+    SELECTION_9:
+        CommandLine: '*Updater*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+        and (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9) and SELECTION_10
+        and SELECTION_11 and SELECTION_12 and SELECTION_13)
+falsepositives:
+- False positives are possible, depends on organisation and processes
+id: 56c217c3-2de2-479b-990f-5c109ba8458f
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/0xdeadbeefJERKY/PowerSploit/blob/8690399ef70d2cad10213575ac67e8fa90ddf7c3/Persistence/Persistence.psm1
+- https://github.com/EmpireProject/Empire/blob/master/lib/modules/powershell/persistence/userland/schtasks.py
+- https://github.com/EmpireProject/Empire/blob/master/lib/modules/powershell/persistence/elevated/schtasks.py
+status: experimental
+tags:
+- attack.execution
+- attack.persistence
+- attack.privilege_escalation
+- attack.t1053
+- attack.t1086
+- attack.s0111
+- attack.g0022
+- attack.g0060
+- car.2013-08-001
+- attack.t1053.005
+- attack.t1059.001
+yml_filename: win_powersploit_empire_schtasks.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

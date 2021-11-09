@@ -1,0 +1,36 @@
+title: HH.exe Execution
+author: E.M. Anhaus (originally from Atomic Blue Detections, Dan Beavin), oscd.community
+date: 2019/10/24
+description: Identifies usage of hh.exe executing recently modified .chm files.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\hh.exe'
+    SELECTION_3:
+        CommandLine: '*.chm*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- unlike
+fields:
+- ComputerName
+- User
+- CommandLine
+id: 68c8acb4-1b60-4890-8e82-3ddf7a6dba84
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/11/11
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1218.001/T1218.001.md
+- https://eqllib.readthedocs.io/en/latest/analytics/b25aa548-7937-11e9-8f5c-d46d6d62a49e.html
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218.001
+- attack.execution
+- attack.t1223
+yml_filename: win_hh_chm.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

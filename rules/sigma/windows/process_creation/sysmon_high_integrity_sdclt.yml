@@ -1,0 +1,31 @@
+title: High Integrity Sdclt Process
+author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
+date: 2020/05/02
+description: A General detection for sdclt being spawned as an elevated process. This
+    could be an indicator of sdclt being used for bypass UAC techniques.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*sdclt.exe'
+    SELECTION_3:
+        IntegrityLevel: High
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- unknown
+id: 40f9af16-589d-4984-b78d-8c2aec023197
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/OTRF/detection-hackathon-apt29/issues/6
+- https://threathunterplaybook.com/evals/apt29/detections/3.B.2_C36B49B5-DF58-4A34-9FE9-56189B9DEFEA.html
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.defense_evasion
+- attack.t1548.002
+yml_filename: sysmon_high_integrity_sdclt.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,33 @@
+title: EfsPotato Named Pipe
+author: Florian Roth
+date: 2021/08/23
+description: Detects the pattern of a pipe name as used by the tool EfsPotato
+detection:
+    SELECTION_1:
+        EventID: 17
+    SELECTION_2:
+        EventID: 18
+    SELECTION_3:
+        PipeName: '*\pipe\\*'
+    SELECTION_4:
+        PipeName: '*\pipe\srvsvc*'
+    condition: ((SELECTION_1 or SELECTION_2) and (SELECTION_3 or SELECTION_4))
+falsepositives:
+- Unknown
+id: 637f689e-b4a5-4a86-be0e-0100a0a33ba2
+level: critical
+logsource:
+    category: pipe_created
+    definition: Note that you have to configure logging for PipeEvents in Sysmon config
+    product: windows
+references:
+- https://twitter.com/SBousseaden/status/1429530155291193354?s=20
+- https://github.com/zcgonvh/EfsPotato
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1055
+yml_filename: sysmon_efspotato_namedpipe.yml
+yml_path: /home/itib/git/sigma/rules/windows/pipe_created
+

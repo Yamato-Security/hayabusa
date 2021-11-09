@@ -1,0 +1,32 @@
+title: UAC Bypass Tool UACMe
+author: Christian Burkard
+date: 2021/08/30
+description: Detects execution of UACMe (a tool used for UAC bypass) via default PE
+    metadata
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Product: UACMe
+    SELECTION_3:
+        Company: REvol Corp
+    SELECTION_4:
+        OriginalFileName: Akagi.exe
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4))
+falsepositives:
+- Unknown
+id: d38d2fa4-98e6-4a24-aff1-410b0c9ad177
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/hfiref0x/UACME
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1548.002
+yml_filename: win_hktl_uacme_uac_bypass.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,102 @@
+title: Webshell Detection With Command Line Keywords
+author: Florian Roth, Jonhnathan Ribeiro, Anton Kutepov, oscd.community
+date: 2017/01/01
+description: Detects certain command line parameters often used during reconnaissance
+    activity via web shells
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\net1.exe'
+    SELECTION_11:
+        CommandLine: '* user *'
+    SELECTION_12:
+        CommandLine: '* use *'
+    SELECTION_13:
+        CommandLine: '* group *'
+    SELECTION_14:
+        Image: '*\ping.exe'
+    SELECTION_15:
+        CommandLine: '* -n *'
+    SELECTION_16:
+        CommandLine: '*&cd&echo*'
+    SELECTION_17:
+        CommandLine: '*cd /d *'
+    SELECTION_18:
+        Image: '*\wmic.exe'
+    SELECTION_19:
+        CommandLine: '* /node:*'
+    SELECTION_2:
+        ParentImage: '*\w3wp.exe'
+    SELECTION_20:
+        Image: '*\whoami.exe'
+    SELECTION_21:
+        Image: '*\systeminfo.exe'
+    SELECTION_22:
+        Image: '*\quser.exe'
+    SELECTION_23:
+        Image: '*\ipconfig.exe'
+    SELECTION_24:
+        Image: '*\pathping.exe'
+    SELECTION_25:
+        Image: '*\tracert.exe'
+    SELECTION_26:
+        Image: '*\netstat.exe'
+    SELECTION_27:
+        Image: '*\schtasks.exe'
+    SELECTION_28:
+        Image: '*\vssadmin.exe'
+    SELECTION_29:
+        Image: '*\wevtutil.exe'
+    SELECTION_3:
+        ParentImage: '*\php-cgi.exe'
+    SELECTION_30:
+        Image: '*\tasklist.exe'
+    SELECTION_31:
+        CommandLine: '* Test-NetConnection *'
+    SELECTION_32:
+        CommandLine: '*dir \\*'
+    SELECTION_4:
+        ParentImage: '*\nginx.exe'
+    SELECTION_5:
+        ParentImage: '*\httpd.exe'
+    SELECTION_6:
+        ParentImage: '*\apache*'
+    SELECTION_7:
+        ParentImage: '*\tomcat*'
+    SELECTION_8:
+        EventID: 1
+    SELECTION_9:
+        Image: '*\net.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
+        or (SELECTION_6 or SELECTION_7)) and (SELECTION_8 and ((((SELECTION_9 or SELECTION_10)
+        and (SELECTION_11 or SELECTION_12 or SELECTION_13)) or (SELECTION_14 and SELECTION_15)
+        or (SELECTION_16 or SELECTION_17)) or (SELECTION_18 and SELECTION_19) or (SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30)
+        or (SELECTION_31 or SELECTION_32))))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: bed2a484-9348-4143-8a8a-b801c979301c
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/03/02
+references:
+- https://www.fireeye.com/blog/threat-research/2013/08/breaking-down-the-china-chopper-web-shell-part-ii.html
+- https://unit42.paloaltonetworks.com/bumblebee-webshell-xhunt-campaign/
+tags:
+- attack.persistence
+- attack.t1505.003
+- attack.t1018
+- attack.t1033
+- attack.t1087
+- attack.privilege_escalation
+- attack.t1100
+yml_filename: win_webshell_detection.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

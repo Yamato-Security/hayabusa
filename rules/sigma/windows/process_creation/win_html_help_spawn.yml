@@ -1,0 +1,55 @@
+title: HTML Help Shell Spawn
+author: Maxim Pavlunin
+date: 2020/04/01
+description: Detects a suspicious child process of a Microsoft HTML Help system when
+    executing compiled HTML files (.chm)
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        ParentImage: C:\Windows\hh.exe
+    SELECTION_3:
+        Image: '*\cmd.exe'
+    SELECTION_4:
+        Image: '*\powershell.exe'
+    SELECTION_5:
+        Image: '*\wscript.exe'
+    SELECTION_6:
+        Image: '*\cscript.exe'
+    SELECTION_7:
+        Image: '*\regsvr32.exe'
+    SELECTION_8:
+        Image: '*\wmic.exe'
+    SELECTION_9:
+        Image: '*\rundll32.exe'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: 52cad028-0ff0-4854-8f67-d25dfcbc78b4
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/01
+references:
+- https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/chm-badness-delivers-a-banking-trojan/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218.001
+- attack.t1218.010
+- attack.t1218.011
+- attack.execution
+- attack.t1223
+- attack.t1059.001
+- attack.t1059.003
+- attack.t1059.005
+- attack.t1059.007
+- attack.t1047
+yml_filename: win_html_help_spawn.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

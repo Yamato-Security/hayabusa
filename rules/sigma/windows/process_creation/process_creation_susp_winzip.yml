@@ -1,0 +1,36 @@
+title: Compress Data and Lock With Password for Exfiltration With WINZIP
+author: frack113
+date: 2021/07/27
+description: An adversary may compress or encrypt data that is collected prior to
+    exfiltration using 3rd party utilities
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*winzip.exe*'
+    SELECTION_3:
+        CommandLine: '*winzip64.exe*'
+    SELECTION_4:
+        CommandLine: '*-s"*'
+    SELECTION_5:
+        CommandLine: '* -min *'
+    SELECTION_6:
+        CommandLine: '* -a *'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4) and
+        (SELECTION_5 or SELECTION_6))
+falsepositives:
+- Unknown
+id: e2e80da2-8c66-4e00-ae3c-2eebd29f6b6d
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1560.001/T1560.001.md
+status: experimental
+tags:
+- attack.collection
+- attack.t1560.001
+yml_filename: process_creation_susp_winzip.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

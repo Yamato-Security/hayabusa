@@ -1,0 +1,67 @@
+title: Encoded PowerShell Command Line
+author: Teymur Kheirkhabarov (idea), Vasiliy Burov (rule), oscd.community
+date: 2020/10/11
+description: Detects specific combinations of encoding methods in the PowerShell command
+    lines
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*ToChar*'
+    SELECTION_11:
+        CommandLine: '*ToString*'
+    SELECTION_12:
+        CommandLine: '*String*'
+    SELECTION_13:
+        CommandLine: '*char*'
+    SELECTION_14:
+        CommandLine: '*join*'
+    SELECTION_15:
+        CommandLine: '*split*'
+    SELECTION_16:
+        CommandLine: '*join*'
+    SELECTION_17:
+        CommandLine: '*ForEach*'
+    SELECTION_18:
+        CommandLine: '*Xor*'
+    SELECTION_19:
+        CommandLine: '*cOnvErTTO-SECUreStRIng*'
+    SELECTION_2:
+        Image: '*\powershell.exe'
+    SELECTION_3:
+        EventID: 1
+    SELECTION_4:
+        CommandLine: '*ToInt*'
+    SELECTION_5:
+        CommandLine: '*ToDecimal*'
+    SELECTION_6:
+        CommandLine: '*ToByte*'
+    SELECTION_7:
+        CommandLine: '*ToUint*'
+    SELECTION_8:
+        CommandLine: '*ToSingle*'
+    SELECTION_9:
+        CommandLine: '*ToSByte*'
+    condition: (SELECTION_1 and SELECTION_2 and ((((SELECTION_3 and (SELECTION_4 or
+        SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9) and
+        (SELECTION_10 or SELECTION_11 or SELECTION_12)) or (SELECTION_13 and SELECTION_14))
+        or (SELECTION_15 and SELECTION_16)) or (SELECTION_17 and SELECTION_18) or
+        (SELECTION_19)))
+falsepositives:
+- Unlikely
+id: cdf05894-89e7-4ead-b2b0-0a5f97a90f2f
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=65
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001
+yml_filename: win_powershell_cmdline_specific_comb_methods.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

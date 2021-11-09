@@ -1,0 +1,49 @@
+title: Winnti Malware HK University Campaign
+author: Florian Roth, Markus Neis
+date: 2020/02/01
+description: Detects specific process characteristics of Winnti malware noticed in
+    Dec/Jan 2020 in a campaign against Honk Kong universities
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        ParentImage: C:\ProgramData\DRM\Windows*
+    SELECTION_11:
+        Image: '*\SearchFilterHost.exe'
+    SELECTION_2:
+        ParentImage: '*C:\Windows\Temp*'
+    SELECTION_3:
+        ParentImage: '*\hpqhvind.exe*'
+    SELECTION_4:
+        Image: C:\ProgramData\DRM*
+    SELECTION_5:
+        ParentImage: C:\ProgramData\DRM*
+    SELECTION_6:
+        Image: '*\wmplayer.exe'
+    SELECTION_7:
+        ParentImage: '*\Test.exe'
+    SELECTION_8:
+        Image: '*\wmplayer.exe'
+    SELECTION_9:
+        Image: C:\ProgramData\DRM\CLR\CLR.exe
+    condition: (SELECTION_1 and (((SELECTION_2 or SELECTION_3) and SELECTION_4) or
+        (SELECTION_5 and SELECTION_6) or (SELECTION_7 and SELECTION_8) or SELECTION_9
+        or (SELECTION_10 and SELECTION_11)))
+falsepositives:
+- Unlikely
+id: 3121461b-5aa0-4a41-b910-66d25524edbb
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.welivesecurity.com/2020/01/31/winnti-group-targeting-universities-hong-kong/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1574.002
+- attack.t1073
+- attack.g0044
+yml_filename: win_apt_winnti_mal_hk_jan20.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

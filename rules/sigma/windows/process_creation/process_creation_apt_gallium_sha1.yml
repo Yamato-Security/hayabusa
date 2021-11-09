@@ -1,0 +1,68 @@
+title: GALLIUM Artefacts
+author: Tim Burrell
+date: 2020/02/07
+description: Detects artefacts associated with activity group GALLIUM - Microsoft
+    Threat Intelligence Center indicators released in December 2019.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        sha1: 2e94b305d6812a9f96e6781c888e48c7fb157b6b
+    SELECTION_11:
+        sha1: dd44133716b8a241957b912fa6a02efde3ce3025
+    SELECTION_12:
+        sha1: 8793bf166cb89eb55f0593404e4e933ab605e803
+    SELECTION_13:
+        sha1: a39b57032dbb2335499a51e13470a7cd5d86b138
+    SELECTION_14:
+        sha1: 41cc2b15c662bc001c0eb92f6cc222934f0beeea
+    SELECTION_15:
+        sha1: d209430d6af54792371174e70e27dd11d3def7a7
+    SELECTION_16:
+        sha1: 1c6452026c56efd2c94cea7e0f671eb55515edb0
+    SELECTION_17:
+        sha1: c6b41d3afdcdcaf9f442bbe772f5da871801fd5a
+    SELECTION_18:
+        sha1: 4923d460e22fbbf165bbbaba168e5a46b8157d9f
+    SELECTION_19:
+        sha1: f201504bd96e81d0d350c3a8332593ee1c9e09de
+    SELECTION_2:
+        sha1: 53a44c2396d15c3a03723fa5e5db54cafd527635
+    SELECTION_20:
+        sha1: ddd2db1127632a2a52943a2fe516a2e7d05d70d2
+    SELECTION_3:
+        sha1: 9c5e496921e3bc882dc40694f1dcc3746a75db19
+    SELECTION_4:
+        sha1: aeb573accfd95758550cf30bf04f389a92922844
+    SELECTION_5:
+        sha1: 79ef78a797403a4ed1a616c68e07fff868a8650a
+    SELECTION_6:
+        sha1: 4f6f38b4cec35e895d91c052b1f5a83d665c2196
+    SELECTION_7:
+        sha1: 1e8c2cac2e4ce7cbd33c3858eb2e24531cb8a84d
+    SELECTION_8:
+        sha1: e841a63e47361a572db9a7334af459ddca11347a
+    SELECTION_9:
+        sha1: c28f606df28a9bc8df75a4d5e5837fc5522dd34d
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20))
+falsepositives:
+- unknown
+id: 440a56bf-7873-4439-940a-1c8a671073c2
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/09/19
+references:
+- https://www.microsoft.com/security/blog/2019/12/12/gallium-targeting-global-telecom/
+- https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn800669(v=ws.11)
+status: experimental
+tags:
+- attack.credential_access
+- attack.command_and_control
+yml_filename: process_creation_apt_gallium_sha1.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

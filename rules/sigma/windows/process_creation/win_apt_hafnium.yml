@@ -1,0 +1,97 @@
+title: Exchange Exploitation Activity
+author: Florian Roth
+date: 2021/03/09
+description: Detects activity observed by different researchers to be HAFNIUM group
+    activity (or related) on Exchange servers
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*Temp\__output*'
+    SELECTION_11:
+        CommandLine: '*%TEMP%\execute.bat*'
+    SELECTION_12:
+        Image: '*Users\Public\opera\Opera_browser.exe'
+    SELECTION_13:
+        Image: '*Opera_browser.exe'
+    SELECTION_14:
+        ParentImage: '*\services.exe'
+    SELECTION_15:
+        ParentImage: '*\svchost.exe'
+    SELECTION_16:
+        Image: '*\ProgramData\VSPerfMon\\*'
+    SELECTION_17:
+        CommandLine: '* -t7z *'
+    SELECTION_18:
+        CommandLine: '*C:\Programdata\pst*'
+    SELECTION_19:
+        CommandLine: '*\it.zip*'
+    SELECTION_2:
+        CommandLine: '*attrib*'
+    SELECTION_20:
+        Image: '*\makecab.exe'
+    SELECTION_21:
+        CommandLine: '*Microsoft\Exchange Server\\*'
+    SELECTION_22:
+        CommandLine: '*inetpub\wwwroot*'
+    SELECTION_23:
+        CommandLine: '*\Temp\xx.bat*'
+    SELECTION_24:
+        CommandLine: '*Windows\WwanSvcdcs*'
+    SELECTION_25:
+        CommandLine: '*Windows\Temp\cw.exe*'
+    SELECTION_26:
+        CommandLine: '*\comsvcs.dll*'
+    SELECTION_27:
+        CommandLine: '*Minidump*'
+    SELECTION_28:
+        CommandLine: '*\inetpub\wwwroot*'
+    SELECTION_29:
+        CommandLine: '*dsquery*'
+    SELECTION_3:
+        CommandLine: '* +h *'
+    SELECTION_30:
+        CommandLine: '* -uco *'
+    SELECTION_31:
+        CommandLine: '*\inetpub\wwwroot*'
+    SELECTION_4:
+        CommandLine: '* +s *'
+    SELECTION_5:
+        CommandLine: '* +r *'
+    SELECTION_6:
+        CommandLine: '*.aspx*'
+    SELECTION_7:
+        CommandLine: '*schtasks*'
+    SELECTION_8:
+        CommandLine: '*VSPerfMon*'
+    SELECTION_9:
+        CommandLine: '*vssadmin list shadows*'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4 and
+        SELECTION_5 and SELECTION_6) or (SELECTION_7 and SELECTION_8) or (SELECTION_9
+        and SELECTION_10) or SELECTION_11 or SELECTION_12 or (SELECTION_13 and (SELECTION_14
+        or SELECTION_15)) or SELECTION_16 or (SELECTION_17 and SELECTION_18 and SELECTION_19)
+        or (SELECTION_20 and (SELECTION_21 or SELECTION_22)) or (SELECTION_23 or SELECTION_24
+        or SELECTION_25) or (SELECTION_26 and SELECTION_27 and SELECTION_28) or (SELECTION_29
+        and SELECTION_30 and SELECTION_31)))
+falsepositives:
+- Unknown
+id: bbb2dedd-a0e3-46ab-ba6c-6c82ae7a9aa7
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/03/16
+references:
+- https://blog.truesec.com/2021/03/07/exchange-zero-day-proxylogon-and-hafnium/
+- https://www.microsoft.com/security/blog/2021/03/02/hafnium-targeting-exchange-servers/
+- https://discuss.elastic.co/t/detection-and-response-for-hafnium-activity/266289/3
+- https://twitter.com/GadixCRK/status/1369313704869834753?s=20
+- https://twitter.com/BleepinComputer/status/1372218235949617161
+status: experimental
+tags:
+- attack.persistence
+- attack.t1546
+- attack.t1053
+yml_filename: win_apt_hafnium.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

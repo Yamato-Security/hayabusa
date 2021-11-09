@@ -1,0 +1,29 @@
+title: RedMimicry Winnti Playbook Registry Manipulation
+author: Alexander Rausch
+date: 2020/06/24
+description: Detects actions caused by the RedMimicry Winnti playbook
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: '*HKLM\SOFTWARE\Microsoft\HTMLHelp\data*'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
+falsepositives:
+- Unknown
+id: 5b175490-b652-4b02-b1de-5b5b4083c5f8
+level: high
+logsource:
+    category: registry_event
+    product: windows
+references:
+- https://redmimicry.com
+tags:
+- attack.defense_evasion
+- attack.t1112
+yml_filename: sysmon_redmimicry_winnti_reg.yml
+yml_path: /home/itib/git/sigma/rules/windows/registry_event
+

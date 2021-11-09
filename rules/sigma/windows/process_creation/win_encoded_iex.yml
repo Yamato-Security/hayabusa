@@ -1,0 +1,53 @@
+title: Encoded IEX
+author: Florian Roth
+date: 2019/08/23
+description: Detects a base64 encoded IEX command string in a process command line
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*pZXggKE5ld*'
+    SELECTION_11:
+        CommandLine: '*SUVYIChOZX*'
+    SELECTION_12:
+        CommandLine: '*lFWCAoTmV3*'
+    SELECTION_13:
+        CommandLine: '*JRVggKE5ld*'
+    SELECTION_2:
+        CommandLine: '*SUVYIChb*'
+    SELECTION_3:
+        CommandLine: '*lFWCAoW*'
+    SELECTION_4:
+        CommandLine: '*JRVggKF*'
+    SELECTION_5:
+        CommandLine: '*aWV4IChb*'
+    SELECTION_6:
+        CommandLine: '*lleCAoW*'
+    SELECTION_7:
+        CommandLine: '*pZXggKF*'
+    SELECTION_8:
+        CommandLine: '*aWV4IChOZX*'
+    SELECTION_9:
+        CommandLine: '*lleCAoTmV3*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: 88f680b8-070e-402c-ae11-d2914f2257f1
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/08/29
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: win_encoded_iex.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,63 @@
+title: Query Registry
+author: Timur Zinniatullin, oscd.community
+date: 2019/10/21
+description: Adversaries may interact with the Windows Registry to gather information
+    about the system, configuration, and installed software.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*currentVersion\shellServiceObjectDelayLoad*'
+    SELECTION_11:
+        CommandLine: '*currentVersion\runOnce*'
+    SELECTION_12:
+        CommandLine: '*currentVersion\runOnceEx*'
+    SELECTION_13:
+        CommandLine: '*currentVersion\run*'
+    SELECTION_14:
+        CommandLine: '*currentVersion\policies\explorer\run*'
+    SELECTION_15:
+        CommandLine: '*currentcontrolset\services*'
+    SELECTION_2:
+        Image: '*\reg.exe'
+    SELECTION_3:
+        CommandLine: '*query*'
+    SELECTION_4:
+        CommandLine: '*save*'
+    SELECTION_5:
+        CommandLine: '*export*'
+    SELECTION_6:
+        CommandLine: '*currentVersion\windows*'
+    SELECTION_7:
+        CommandLine: '*currentVersion\runServicesOnce*'
+    SELECTION_8:
+        CommandLine: '*currentVersion\runServices*'
+    SELECTION_9:
+        CommandLine: '*winlogon\\*'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5)
+        and (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15))
+fields:
+- Image
+- CommandLine
+- User
+- LogonGuid
+- Hashes
+- ParentProcessGuid
+- ParentCommandLine
+id: 970007b7-ce32-49d0-a4a4-fbef016950bd
+level: low
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/11/04
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1012/T1012.md
+status: experimental
+tags:
+- attack.discovery
+- attack.t1012
+- attack.t1007
+yml_filename: win_query_registry.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

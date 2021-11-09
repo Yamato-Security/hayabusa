@@ -1,0 +1,32 @@
+title: Invoke-Obfuscation Via Stdin
+author: Nikita Nazarov, oscd.community
+date: 2020/10/12
+description: Detects Obfuscated Powershell via Stdin in Scripts
+detection:
+    SELECTION_1:
+        ServiceFileName|re: (?i).*(set).*&&\s?set.*(environment|invoke|\${?input).*&&.*"
+    SELECTION_2:
+        EventID: 4697
+    condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: 80b708f3-d034-40e4-a6c8-d23b7a7db3d1
+level: high
+logsource:
+    product: windows
+    service: security
+modified: 2021/09/18
+references:
+- https://github.com/Neo23x0/sigma/issues/1009
+related:
+-   id: 487c7524-f892-4054-b263-8a0ace63fc25
+    type: derived
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001
+yml_filename: win_invoke_obfuscation_via_stdin_services_security.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

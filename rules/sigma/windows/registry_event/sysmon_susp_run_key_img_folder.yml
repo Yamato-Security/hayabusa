@@ -1,0 +1,57 @@
+title: New RUN Key Pointing to Suspicious Folder
+author: Florian Roth, Markus Neis, Sander Wiebing
+date: 2018/08/25
+description: Detects suspicious new RUN key element pointing to an executable in a
+    suspicious folder
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_10:
+        Details: '*C:\Users\Default\\*'
+    SELECTION_11:
+        Details: '*C:\Users\Desktop\\*'
+    SELECTION_12:
+        Details: '%Public%\\*'
+    SELECTION_13:
+        Details: wscript*
+    SELECTION_14:
+        Details: cscript*
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\\*'
+    SELECTION_5:
+        TargetObject: '*\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce\\*'
+    SELECTION_6:
+        Details: '*C:\Windows\Temp\\*'
+    SELECTION_7:
+        Details: '*C:\$Recycle.bin\\*'
+    SELECTION_8:
+        Details: '*C:\Temp\\*'
+    SELECTION_9:
+        Details: '*C:\Users\Public\\*'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5)
+        and ((SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11) or (SELECTION_12 or SELECTION_13 or SELECTION_14)))
+falsepositives:
+- Software using weird folders for updates
+fields:
+- Image
+id: 02ee49e2-e294-4d0f-9278-f5b3212fc588
+level: high
+logsource:
+    category: registry_event
+    product: windows
+modified: 2020/09/06
+references:
+- https://www.fireeye.com/blog/threat-research/2018/08/fin7-pursuing-an-enigmatic-and-evasive-global-criminal-operation.html
+status: experimental
+tags:
+- attack.persistence
+- attack.t1060
+- attack.t1547.001
+yml_filename: sysmon_susp_run_key_img_folder.yml
+yml_path: /home/itib/git/sigma/rules/windows/registry_event
+

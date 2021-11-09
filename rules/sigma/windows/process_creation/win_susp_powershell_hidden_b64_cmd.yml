@@ -1,0 +1,136 @@
+title: Malicious Base64 Encoded PowerShell Keywords in Command Lines
+author: John Lambert (rule)
+date: 2019/01/16
+description: Detects base64 encoded strings used in hidden malicious PowerShell command
+    lines
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*AGMAaAB1AG4AawBfAHMAaQB6AGUA*'
+    SELECTION_11:
+        CommandLine: '*JABjAGgAdQBuAGsAXwBzAGkAegBlA*'
+    SELECTION_12:
+        CommandLine: '*JGNodW5rX3Npem*'
+    SELECTION_13:
+        CommandLine: '*QAYwBoAHUAbgBrAF8AcwBpAHoAZQ*'
+    SELECTION_14:
+        CommandLine: '*RjaHVua19zaXpl*'
+    SELECTION_15:
+        CommandLine: '*Y2h1bmtfc2l6Z*'
+    SELECTION_16:
+        CommandLine: '*AE8ALgBDAG8AbQBwAHIAZQBzAHMAaQBvAG4A*'
+    SELECTION_17:
+        CommandLine: '*kATwAuAEMAbwBtAHAAcgBlAHMAcwBpAG8Abg*'
+    SELECTION_18:
+        CommandLine: '*lPLkNvbXByZXNzaW9u*'
+    SELECTION_19:
+        CommandLine: '*SQBPAC4AQwBvAG0AcAByAGUAcwBzAGkAbwBuA*'
+    SELECTION_2:
+        Image: '*\powershell.exe'
+    SELECTION_20:
+        CommandLine: '*SU8uQ29tcHJlc3Npb2*'
+    SELECTION_21:
+        CommandLine: '*Ty5Db21wcmVzc2lvb*'
+    SELECTION_22:
+        CommandLine: '*AE8ALgBNAGUAbQBvAHIAeQBTAHQAcgBlAGEAbQ*'
+    SELECTION_23:
+        CommandLine: '*kATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtA*'
+    SELECTION_24:
+        CommandLine: '*lPLk1lbW9yeVN0cmVhb*'
+    SELECTION_25:
+        CommandLine: '*SQBPAC4ATQBlAG0AbwByAHkAUwB0AHIAZQBhAG0A*'
+    SELECTION_26:
+        CommandLine: '*SU8uTWVtb3J5U3RyZWFt*'
+    SELECTION_27:
+        CommandLine: '*Ty5NZW1vcnlTdHJlYW*'
+    SELECTION_28:
+        CommandLine: '*4ARwBlAHQAQwBoAHUAbgBrA*'
+    SELECTION_29:
+        CommandLine: '*5HZXRDaHVua*'
+    SELECTION_3:
+        CommandLine: '* hidden *'
+    SELECTION_30:
+        CommandLine: '*AEcAZQB0AEMAaAB1AG4Aaw*'
+    SELECTION_31:
+        CommandLine: '*LgBHAGUAdABDAGgAdQBuAGsA*'
+    SELECTION_32:
+        CommandLine: '*LkdldENodW5r*'
+    SELECTION_33:
+        CommandLine: '*R2V0Q2h1bm*'
+    SELECTION_34:
+        CommandLine: '*AEgAUgBFAEEARABfAEkATgBGAE8ANgA0A*'
+    SELECTION_35:
+        CommandLine: '*QASABSAEUAQQBEAF8ASQBOAEYATwA2ADQA*'
+    SELECTION_36:
+        CommandLine: '*RIUkVBRF9JTkZPNj*'
+    SELECTION_37:
+        CommandLine: '*SFJFQURfSU5GTzY0*'
+    SELECTION_38:
+        CommandLine: '*VABIAFIARQBBAEQAXwBJAE4ARgBPADYANA*'
+    SELECTION_39:
+        CommandLine: '*VEhSRUFEX0lORk82N*'
+    SELECTION_4:
+        CommandLine: '*AGkAdABzAGEAZABtAGkAbgAgAC8AdAByAGEAbgBzAGYAZQByA*'
+    SELECTION_40:
+        CommandLine: '*AHIAZQBhAHQAZQBSAGUAbQBvAHQAZQBUAGgAcgBlAGEAZA*'
+    SELECTION_41:
+        CommandLine: '*cmVhdGVSZW1vdGVUaHJlYW*'
+    SELECTION_42:
+        CommandLine: '*MAcgBlAGEAdABlAFIAZQBtAG8AdABlAFQAaAByAGUAYQBkA*'
+    SELECTION_43:
+        CommandLine: '*NyZWF0ZVJlbW90ZVRocmVhZ*'
+    SELECTION_44:
+        CommandLine: '*Q3JlYXRlUmVtb3RlVGhyZWFk*'
+    SELECTION_45:
+        CommandLine: '*QwByAGUAYQB0AGUAUgBlAG0AbwB0AGUAVABoAHIAZQBhAGQA*'
+    SELECTION_46:
+        CommandLine: '*0AZQBtAG0AbwB2AGUA*'
+    SELECTION_47:
+        CommandLine: '*1lbW1vdm*'
+    SELECTION_48:
+        CommandLine: '*AGUAbQBtAG8AdgBlA*'
+    SELECTION_49:
+        CommandLine: '*bQBlAG0AbQBvAHYAZQ*'
+    SELECTION_5:
+        CommandLine: '*aXRzYWRtaW4gL3RyYW5zZmVy*'
+    SELECTION_50:
+        CommandLine: '*bWVtbW92Z*'
+    SELECTION_51:
+        CommandLine: '*ZW1tb3Zl*'
+    SELECTION_6:
+        CommandLine: '*IAaQB0AHMAYQBkAG0AaQBuACAALwB0AHIAYQBuAHMAZgBlAHIA*'
+    SELECTION_7:
+        CommandLine: '*JpdHNhZG1pbiAvdHJhbnNmZX*'
+    SELECTION_8:
+        CommandLine: '*YgBpAHQAcwBhAGQAbQBpAG4AIAAvAHQAcgBhAG4AcwBmAGUAcg*'
+    SELECTION_9:
+        CommandLine: '*Yml0c2FkbWluIC90cmFuc2Zlc*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39 or SELECTION_40
+        or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44 or SELECTION_45
+        or SELECTION_46 or SELECTION_47 or SELECTION_48 or SELECTION_49 or SELECTION_50
+        or SELECTION_51))
+falsepositives:
+- Penetration tests
+id: f26c6093-6f14-4b12-800f-0fcb46f5ffd0
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- http://www.leeholmes.com/blog/2017/09/21/searching-for-content-in-base-64-strings/
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: win_susp_powershell_hidden_b64_cmd.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,46 @@
+title: Disable Microsoft Office Security Features
+author: frack113
+date: 2021/06/08
+description: Disable Microsoft Office Security Features by registry
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_10:
+        Details: DWORD (0x00000001)
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        EventType: SetValue
+    SELECTION_5:
+        TargetObject: '*\SOFTWARE\Microsoft\Office\\*'
+    SELECTION_6:
+        TargetObject: '*VBAWarnings'
+    SELECTION_7:
+        TargetObject: '*DisableInternetFilesInPV'
+    SELECTION_8:
+        TargetObject: '*DisableUnsafeLocationsInPV'
+    SELECTION_9:
+        TargetObject: '*DisableAttachementsInPV'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5
+        and (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9) and SELECTION_10)
+falsepositives:
+- unknown
+id: 7c637634-c95d-4bbf-b26c-a82510874b34
+level: high
+logsource:
+    category: registry_event
+    definition: key must be add to the sysmon configuration to works
+    product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1562.001/T1562.001.md
+- https://unit42.paloaltonetworks.com/unit42-gorgon-group-slithering-nation-state-cybercrime/
+- https://yoroi.company/research/cyber-criminal-espionage-operation-insists-on-italian-manufacturing/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.001
+yml_filename: sysmon_disable_microsoft_office_security_features.yml
+yml_path: /home/itib/git/sigma/rules/windows/registry_event
+

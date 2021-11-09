@@ -1,0 +1,43 @@
+title: File or Folder Permissions Modifications
+author: Jakob Weinzettl, oscd.community
+date: 2019/10/23
+description: Detects a file or folder's permissions being modified.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\takeown.exe'
+    SELECTION_3:
+        Image: '*\cacls.exe'
+    SELECTION_4:
+        Image: '*\icacls.exe'
+    SELECTION_5:
+        CommandLine: '*/grant*'
+    SELECTION_6:
+        Image: '*\attrib.exe'
+    SELECTION_7:
+        CommandLine: '*-r*'
+    condition: (SELECTION_1 and (((SELECTION_2 or SELECTION_3 or SELECTION_4) and
+        SELECTION_5) or (SELECTION_6 and SELECTION_7)))
+falsepositives:
+- Users interacting with the files on their own (unlikely unless privileged users).
+fields:
+- ComputerName
+- User
+- CommandLine
+id: 37ae075c-271b-459b-8d7b-55ad5f993dd8
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/11/08
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1222.001/T1222.001.md
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1222.001
+- attack.t1222
+yml_filename: win_file_permission_modifications.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

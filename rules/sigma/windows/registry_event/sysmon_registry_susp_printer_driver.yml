@@ -1,0 +1,37 @@
+title: Suspicious Printer Driver Empty Manufacturer
+author: Florian Roth
+date: 2020/07/01
+description: Detects a suspicious printer driver installation with an empty Manufacturer
+    value
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: '*\Control\Print\Environments\Windows x64\Drivers*'
+    SELECTION_5:
+        TargetObject: '*\Manufacturer*'
+    SELECTION_6:
+        Details: (Empty)
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5
+        and SELECTION_6)
+falsepositives:
+- Alerts on legitimate printer drivers that do not set any more details in the Manufacturer
+    value
+id: e0813366-0407-449a-9869-a2db1119dc41
+level: high
+logsource:
+    category: registry_event
+    product: windows
+references:
+- https://twitter.com/SBousseaden/status/1410545674773467140
+- https://nvd.nist.gov/vuln/detail/cve-2021-1675
+status: experimental
+tags:
+- attack.privilege_escalation
+yml_filename: sysmon_registry_susp_printer_driver.yml
+yml_path: /home/itib/git/sigma/rules/windows/registry_event
+

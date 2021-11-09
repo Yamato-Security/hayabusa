@@ -1,0 +1,86 @@
+title: Suspicious PowerShell Cmdline
+author: Teymur Kheirkhabarov (idea), Vasiliy Burov (rule), oscd.community
+date: 2020/10/11
+description: Detects the PowerShell command lines with reversed strings
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*golon*'
+    SELECTION_11:
+        CommandLine: '*tninon*'
+    SELECTION_12:
+        CommandLine: '*eddih*'
+    SELECTION_13:
+        CommandLine: '*tpircS*'
+    SELECTION_14:
+        CommandLine: '*ssecorp*'
+    SELECTION_15:
+        CommandLine: '*llehsrewop*'
+    SELECTION_16:
+        CommandLine: '*esnopser*'
+    SELECTION_17:
+        CommandLine: '*daolnwod*'
+    SELECTION_18:
+        CommandLine: '*tneilCbeW*'
+    SELECTION_19:
+        CommandLine: '*tneilc*'
+    SELECTION_2:
+        Image: '*\powershell.exe'
+    SELECTION_20:
+        CommandLine: '*ptth*'
+    SELECTION_21:
+        CommandLine: '*elifotevas*'
+    SELECTION_22:
+        CommandLine: '*46esab*'
+    SELECTION_23:
+        CommandLine: '*htaPpmeTteG*'
+    SELECTION_24:
+        CommandLine: '*tcejbO*'
+    SELECTION_25:
+        CommandLine: '*maerts*'
+    SELECTION_26:
+        CommandLine: '*hcaerof*'
+    SELECTION_27:
+        CommandLine: '*ekovni*'
+    SELECTION_28:
+        CommandLine: '*retupmoc*'
+    SELECTION_3:
+        CommandLine: '*hctac*'
+    SELECTION_4:
+        CommandLine: '*kearb*'
+    SELECTION_5:
+        CommandLine: '*dnammoc*'
+    SELECTION_6:
+        CommandLine: '*ekovn*'
+    SELECTION_7:
+        CommandLine: '*eliFd*'
+    SELECTION_8:
+        CommandLine: '*rahc*'
+    SELECTION_9:
+        CommandLine: '*etirw*'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28))
+falsepositives:
+- Unlikely
+id: b6b49cd1-34d6-4ead-b1bf-176e9edba9a4
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://2019.offzone.moscow/ru/report/hunting-for-powershell-abuses/
+- https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=66
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001
+yml_filename: win_powershell_cmdline_reversed_strings.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

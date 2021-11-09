@@ -1,0 +1,69 @@
+title: Suspicious Werfault.exe Network Connection Outbound
+author: Sreeman
+date: 2021/03/09
+description: Adversaries can migrate cobalt strike/metasploit/C2 beacons on compromised
+    systems to legitimate werfault.exe process to avoid detection.
+detection:
+    SELECTION_1:
+        EventID: 3
+    SELECTION_10:
+        DestinationIp: 13.88.21.125
+    SELECTION_11:
+        DestinationIp: 40.88.32.150
+    SELECTION_12:
+        DestinationIp: 52.147.198.201
+    SELECTION_13:
+        DestinationIp: 52.239.207.100
+    SELECTION_14:
+        DestinationIp: 52.176.224.96
+    SELECTION_15:
+        DestinationIp: 2607:7700:0:24:0:1:287e:1894
+    SELECTION_16:
+        DestinationIp: 10.*
+    SELECTION_17:
+        DestinationIp: 192.168.*
+    SELECTION_18:
+        DestinationIp: 127.*
+    SELECTION_19:
+        DestinationHostname: '*.windowsupdate.com*'
+    SELECTION_2:
+        Image: werfault.exe
+    SELECTION_20:
+        DestinationHostname: '*.microsoft.com*'
+    SELECTION_3:
+        EventID: 3
+    SELECTION_4:
+        ParentImage: svchost.exe
+    SELECTION_5:
+        DestinationIp: 104.42.151.234
+    SELECTION_6:
+        DestinationIp: 104.43.193.48
+    SELECTION_7:
+        DestinationIp: 52.255.188.83
+    SELECTION_8:
+        DestinationIp: 13.64.90.137
+    SELECTION_9:
+        DestinationIp: 168.61.161.212
+    condition: (SELECTION_1 and SELECTION_2 and  not ((SELECTION_3 and SELECTION_4
+        and (SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
+        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18) and (SELECTION_19
+        or SELECTION_20))))
+falsepositives:
+- Communication to other corporate systems that use IP addresses from public address
+    spaces and Microsoft IP spaces
+id: e12c75f2-d09e-43f6-90e4-6a23842907af
+level: medium
+logsource:
+    category: network_connection
+    product: windows
+modified: 2021/06/11
+references:
+- https://thedfirreport.com/2021/03/08/bazar-drops-the-anchor/
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1571
+yml_filename: win_suspicious_werfault_connection_outbound.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

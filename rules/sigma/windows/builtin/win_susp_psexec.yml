@@ -1,0 +1,43 @@
+title: Suspicious PsExec Execution
+author: Samir Bousseaden
+date: 2019/04/03
+description: detects execution of psexec or paexec with renamed service name, this
+    rule helps to filter out the noise if psexec is used for legit purposes or if
+    attacker uses a different psexec client other than sysinternal one
+detection:
+    SELECTION_1:
+        EventID: 5145
+    SELECTION_2:
+        ShareName: \\*\IPC$
+    SELECTION_3:
+        RelativeTargetName: '*-stdin'
+    SELECTION_4:
+        RelativeTargetName: '*-stdout'
+    SELECTION_5:
+        RelativeTargetName: '*-stderr'
+    SELECTION_6:
+        EventID: 5145
+    SELECTION_7:
+        ShareName: \\*\IPC$
+    SELECTION_8:
+        RelativeTargetName: PSEXESVC*
+    condition: ((SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5))
+        and  not (SELECTION_6 and SELECTION_7 and SELECTION_8))
+falsepositives:
+- nothing observed so far
+id: c462f537-a1e3-41a6-b5fc-b2c2cef9bf82
+level: high
+logsource:
+    definition: The advanced audit policy setting "Object Access > Audit Detailed
+        File Share" must be configured for Success/Failure
+    product: windows
+    service: security
+references:
+- https://blog.menasec.net/2019/02/threat-hunting-3-detecting-psexec.html
+tags:
+- attack.lateral_movement
+- attack.t1077
+- attack.t1021.002
+yml_filename: win_susp_psexec.yml
+yml_path: /home/itib/git/sigma/rules/windows/builtin
+

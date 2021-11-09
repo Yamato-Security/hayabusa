@@ -1,0 +1,32 @@
+title: Disabled Volume Snapshots
+author: Florian Roth
+date: 2021/01/28
+description: Detects commands that temporarily turn off Volume Snapshots
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*reg*'
+    SELECTION_3:
+        CommandLine: '* add *'
+    SELECTION_4:
+        CommandLine: '*\Services\VSS\Diag*'
+    SELECTION_5:
+        CommandLine: '*/d Disabled*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Legitimate administration
+id: dee4af55-1f22-4e1d-a9d2-4bdc7ecb472a
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://twitter.com/0gtweet/status/1354766164166115331
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.001
+yml_filename: win_susp_volsnap_disable.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

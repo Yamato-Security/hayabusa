@@ -1,0 +1,59 @@
+title: Windows Shell Spawning Suspicious Program
+author: Florian Roth
+date: 2018/04/06
+description: Detects a suspicious child process of a Windows shell
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\certutil.exe'
+    SELECTION_11:
+        Image: '*\bitsadmin.exe'
+    SELECTION_12:
+        Image: '*\mshta.exe'
+    SELECTION_13:
+        CurrentDirectory: '*\ccmcache\\*'
+    SELECTION_2:
+        ParentImage: '*\mshta.exe'
+    SELECTION_3:
+        ParentImage: '*\powershell.exe'
+    SELECTION_4:
+        ParentImage: '*\rundll32.exe'
+    SELECTION_5:
+        ParentImage: '*\cscript.exe'
+    SELECTION_6:
+        ParentImage: '*\wscript.exe'
+    SELECTION_7:
+        ParentImage: '*\wmiprvse.exe'
+    SELECTION_8:
+        Image: '*\schtasks.exe'
+    SELECTION_9:
+        Image: '*\nslookup.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7) and (SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12)) and  not (SELECTION_13))
+falsepositives:
+- Administrative scripts
+- Microsoft SCCM
+fields:
+- CommandLine
+- ParentCommandLine
+id: 3a6586ad-127a-4d3b-a677-1e6eacdf8fde
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/06
+references:
+- https://mgreen27.github.io/posts/2018/04/02/DownloadCradle.html
+status: experimental
+tags:
+- attack.execution
+- attack.defense_evasion
+- attack.t1064
+- attack.t1059.005
+- attack.t1059.001
+- attack.t1218
+yml_filename: win_shell_spawn_susp_program.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

@@ -1,0 +1,34 @@
+title: Office Application Startup - Office Test
+author: omkar72
+date: 2020/10/25
+description: Detects the addition of office test registry that allows a user to specify
+    an arbitrary DLL that will be executed every time an Office application is started
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: HKCU\Software\Microsoft\Office test\Special\Perf
+    SELECTION_5:
+        TargetObject: HKLM\Software\Microsoft\Office test\Special\Perf
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5))
+falsepositives:
+- Unlikely
+id: 3d27f6dd-1c74-4687-b4fa-ca849d128d1c
+level: medium
+logsource:
+    category: registry_event
+    product: windows
+modified: 2021/09/13
+references:
+- https://attack.mitre.org/techniques/T1137/002/
+status: experimental
+tags:
+- attack.persistence
+- attack.t1137.002
+yml_filename: sysmon_office_test_regadd.yml
+yml_path: /home/itib/git/sigma/rules/windows/registry_event
+

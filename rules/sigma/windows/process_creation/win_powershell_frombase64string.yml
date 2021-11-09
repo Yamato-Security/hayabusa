@@ -1,0 +1,29 @@
+title: FromBase64String Command Line
+author: Florian Roth
+date: 2020/01/29
+description: Detects suspicious FromBase64String expressions in command line arguments
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*::FromBase64String(*'
+    condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Administrative script libraries
+id: e32d4572-9826-4738-b651-95fa63747e8a
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/06
+references:
+- https://gist.github.com/Neo23x0/6af876ee72b51676c82a2db8d2cd3639
+status: experimental
+tags:
+- attack.t1027
+- attack.defense_evasion
+- attack.t1140
+- attack.t1059.001
+yml_filename: win_powershell_frombase64string.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

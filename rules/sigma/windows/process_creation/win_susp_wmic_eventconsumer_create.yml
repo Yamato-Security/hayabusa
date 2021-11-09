@@ -1,0 +1,33 @@
+title: Suspicious WMIC ActiveScriptEventConsumer Creation
+author: Florian Roth
+date: 2021/06/25
+description: Detects WMIC executions in which a event consumer gets created in order
+    to establish persistence
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*ActiveScriptEventConsumer*'
+    SELECTION_3:
+        CommandLine: '* CREATE *'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate software creating script event consumers
+fields:
+- CommandLine
+- ParentCommandLine
+id: ebef4391-1a81-4761-a40a-1db446c0e625
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://twitter.com/johnlatwc/status/1408062131321270282?s=12
+- https://www.fireeye.com/content/dam/fireeye-www/global/en/current-threats/pdfs/wp-windows-management-instrumentation.pdf
+status: experimental
+tags:
+- attack.persistence
+- attack.t1546.003
+yml_filename: win_susp_wmic_eventconsumer_create.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+

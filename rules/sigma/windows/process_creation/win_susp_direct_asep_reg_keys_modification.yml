@@ -1,0 +1,59 @@
+title: Direct Autorun Keys Modification
+author: Victor Sergeev, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/25
+description: Detects direct modification of autostart extensibility point (ASEP) in
+    registry using reg.exe.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*\software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell*'
+    SELECTION_11:
+        CommandLine: '*\software\Microsoft\Windows NT\CurrentVersion\Windows*'
+    SELECTION_12:
+        CommandLine: '*\software\Microsoft\Windows\CurrentVersion\Explorer\User Shell
+            Folders*'
+    SELECTION_13:
+        CommandLine: '*\system\CurrentControlSet\Control\SafeBoot\AlternateShell*'
+    SELECTION_2:
+        Image: '*\reg.exe'
+    SELECTION_3:
+        CommandLine: '*add*'
+    SELECTION_4:
+        CommandLine: '*\software\Microsoft\Windows\CurrentVersion\Run*'
+    SELECTION_5:
+        CommandLine: '*\software\Microsoft\Windows\CurrentVersion\RunOnce*'
+    SELECTION_6:
+        CommandLine: '*\software\Microsoft\Windows\CurrentVersion\RunOnceEx*'
+    SELECTION_7:
+        CommandLine: '*\software\Microsoft\Windows\CurrentVersion\RunServices*'
+    SELECTION_8:
+        CommandLine: '*\software\Microsoft\Windows\CurrentVersion\RunServicesOnce*'
+    SELECTION_9:
+        CommandLine: '*\software\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13))
+falsepositives:
+- Legitimate software automatically (mostly, during installation) sets up autorun
+    keys for legitimate reasons.
+- Legitimate administrator sets up autorun keys for legitimate reasons.
+fields:
+- CommandLine
+- ParentCommandLine
+id: 24357373-078f-44ed-9ac4-6d334a668a11
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/11/10
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1547.001/T1547.001.md
+status: experimental
+tags:
+- attack.persistence
+- attack.t1547.001
+- attack.t1060
+yml_filename: win_susp_direct_asep_reg_keys_modification.yml
+yml_path: /home/itib/git/sigma/rules/windows/process_creation
+
