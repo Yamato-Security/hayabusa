@@ -27,9 +27,25 @@ fn main() {
     }
 
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
+        if !filepath.ends_with(".evtx") {
+            let stdout = std::io::stdout();
+            let mut stdout = stdout.lock();
+            AlertMessage::alert(
+                &mut stdout,
+                "--filepath is only accepted evtx file.".to_owned(),
+            )
+            .ok();
+            return;
+        }
         analysis_files(vec![PathBuf::from(filepath)]);
     } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
         let evtx_files = collect_evtxfiles(&directory);
+        if evtx_files.len() == 0 {
+            let stdout = std::io::stdout();
+            let mut stdout = stdout.lock();
+            AlertMessage::alert(&mut stdout, "No exist evtx file.".to_owned()).ok();
+            return;
+        }
         analysis_files(evtx_files);
     } else if configs::CONFIG.read().unwrap().args.is_present("credits") {
         print_credits();
