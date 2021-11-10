@@ -50,7 +50,7 @@ impl Message {
         event_detail: String,
     ) {
         let detect_info = DetectInfo {
-            filepath: target_file,
+            filepath: target_file.replace(".evtx", ""),
             rulepath: rule_path,
             level: level,
             computername: computername,
