@@ -65,7 +65,14 @@ class HayabusaBackend(SingleTextQueryBackend):
         # `|re`オプションに対応
         if type(value) == SigmaRegularExpressionModifier:
             fieldname = fieldname + "|re"
-            return self.generateNode((fieldname,value.value))
+            
+            # pythonとかの正規表現では/(スラッシュ)や"(ダブルクオート)をエスケープしてもエラーが出ないが、Rustの正規表現エンジンではスラッシュやダブルクオートをエスケープするとエラーが出てしまう
+            # そこでスラッシュやダブルクオートのエスケープは消しておく。
+            # あと、この実装は結構怪しいので、将来バージョンではこの実装を無くして、hayabusa側で使用する正規表現エンジンを普通のpythonとかで使われているやつに変えた方がいいと思う。
+            regex_value = value.value.replace('\/','/')
+            regex_value = regex_value.replace("\\\"","\"")
+            
+            return self.generateNode((fieldname, regex_value))
         else:
             raise NotImplementedError("Type modifier '{}' is not supported by backend".format(value.identifier))
 
@@ -126,6 +133,7 @@ class HayabusaBackend(SingleTextQueryBackend):
             ## 順番固定してもいいかも
             bs.write("title: " + parsed_yaml["title"]+"\n")
             del parsed_yaml["title"]
+            del parsed_yaml["yml_path"]
 
             ## detectionの部分だけ変更して出力する。
             parsed_yaml["detection"] = {}

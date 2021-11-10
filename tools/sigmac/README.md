@@ -1,4 +1,4 @@
-# hayabusaGenerator
+# hayabusaGenerater
 [![python](https://img.shields.io/badge/python-3.8-blue)](https://www.python.org/)
 ![version](https://img.shields.io/badge/Platform-Win-green)
 ![version](https://img.shields.io/badge/Platform-Lin-green)
@@ -6,7 +6,7 @@
 
 [English](./README-en.md)
 
-`hayabusaGenerator.py` はSIGMAルールをHayabusaに対応したルールセットに変更することができます。
+`hayabusaGenerater.py` はSIGMAルールをHayabusaに対応したルールセットに変更することができます。
 SIGMAの持つ多くの検知ルールをHayabusaのルールセットに追加することでルールを作成する手間を省くことができます。
 
 ## sigma
@@ -24,7 +24,7 @@ git clone https://github.com/SigmaHQ/sigma.git
 
 ## 使い方
 
-hayabusaGenerator.pyをSIGMAのbackendとして登録します。
+hayabusaGenerater.pyをSIGMAのbackendとして登録します。
 
 ```sh
 export sigma_path=/path/to/sigma_repository
