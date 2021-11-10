@@ -1,6 +1,7 @@
 extern crate serde_derive;
 extern crate yaml_rust;
 
+use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use std::ffi::OsStr;
 use std::fs;
@@ -31,7 +32,7 @@ impl ParseYaml {
         Ok(file_content)
     }
 
-    pub fn read_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<String> {
+    pub fn read_dir<P: AsRef<Path>>(&mut self, path: P, level: &str) -> io::Result<String> {
         Ok(fs::read_dir(path)?
             .filter_map(|entry| {
                 let entry = entry.ok()?;
@@ -46,7 +47,18 @@ impl ParseYaml {
                                 Ok(docs) => {
                                     for i in docs {
                                         // If there is no "enabled" it does not load
-                                        if i["ignore"].as_bool().unwrap_or(false) {
+                                        if i["ignore"].as_bool().unwrap_or(false)
+                                            || configs::LEVELMAP
+                                                .get(
+                                                    &i["level"]
+                                                        .as_str()
+                                                        .unwrap_or("INFO")
+                                                        .to_string()
+                                                        .to_uppercase(),
+                                                )
+                                                .unwrap_or(&1)
+                                                <= &(configs::LEVELMAP.get(level).unwrap_or(&1) - 1)
+                                        {
                                             continue;
                                         }
                                         &self
@@ -73,7 +85,7 @@ impl ParseYaml {
                     };
                 }
                 if entry.file_type().ok()?.is_dir() {
-                    let _ = self.read_dir(entry.path());
+                    let _ = self.read_dir(entry.path(), &level);
                 }
                 Some("")
             })
@@ -91,7 +103,7 @@ mod tests {
     #[test]
     fn test_read_dir_yaml() {
         let mut yaml = yaml::ParseYaml::new();
-        &yaml.read_dir("test_files/rules/yaml/".to_string());
+        &yaml.read_dir("test_files/rules/yaml/".to_string(), &"".to_owned());
         assert_ne!(yaml.files.len(), 0);
     }
 
@@ -119,5 +131,51 @@ mod tests {
         let ret = yaml.read_file(path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret);
         assert_eq!(rule.is_err(), true);
+    }
+
+    #[test]
+    /// no specifed "level" arguments value is adapted default level(INFO)
+    fn test_default_level_read_yaml() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/level_yaml");
+        yaml.read_dir(path.to_path_buf(), &"").unwrap();
+        assert_eq!(yaml.files.len(), 5);
+    }
+
+    #[test]
+    fn test_info_level_read_yaml() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/level_yaml");
+        yaml.read_dir(path.to_path_buf(), &"INFO").unwrap();
+        assert_eq!(yaml.files.len(), 5);
+    }
+    #[test]
+    fn test_low_level_read_yaml() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/level_yaml");
+
+        yaml.read_dir(path.to_path_buf(), &"LOW").unwrap();
+        assert_eq!(yaml.files.len(), 4);
+    }
+    #[test]
+    fn test_medium_level_read_yaml() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/level_yaml");
+        yaml.read_dir(path.to_path_buf(), &"MEDIUM").unwrap();
+        assert_eq!(yaml.files.len(), 3);
+    }
+    #[test]
+    fn test_high_level_read_yaml() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/level_yaml");
+        yaml.read_dir(path.to_path_buf(), &"HIGH").unwrap();
+        assert_eq!(yaml.files.len(), 2);
+    }
+    #[test]
+    fn test_critical_level_read_yaml() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/level_yaml");
+        yaml.read_dir(path.to_path_buf(), &"CRITICAL").unwrap();
+        assert_eq!(yaml.files.len(), 1);
     }
 }

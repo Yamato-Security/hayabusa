@@ -104,7 +104,15 @@ fn print_credits() {
 }
 
 fn analysis_files(evtx_files: Vec<PathBuf>) {
-    let mut detection = detection::Detection::new(detection::Detection::parse_rule_files());
+    let mut detection = detection::Detection::new(detection::Detection::parse_rule_files(
+        configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .value_of("level")
+            .unwrap_or("INFO")
+            .to_uppercase(),
+    ));
 
     for evtx_file in evtx_files {
         let ret = analysis_file(evtx_file, detection);
