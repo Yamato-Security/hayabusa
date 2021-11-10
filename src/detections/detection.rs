@@ -67,10 +67,8 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let stdout = std::io::stdout();
                 let mut stdout = stdout.lock();
-                let errmsg_body = format!(
-                    "Failed to parse Rule file. (Error Rule Title : {})",
-                    rule.yaml["title"].as_str().unwrap_or("")
-                );
+                let errmsg_body =
+                    format!("Failed to parse Rule file. (FilePath : {})", rule.rulepath);
                 AlertMessage::alert(&mut stdout, errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
