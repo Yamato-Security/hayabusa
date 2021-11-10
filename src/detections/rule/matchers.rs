@@ -228,7 +228,11 @@ impl DefaultMatcher {
 
 impl LeafMatcher for DefaultMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        return key_list.len() == 1;
+        if key_list.len() == 1 {
+            return true;
+        }
+
+        return key_list.get(1).unwrap_or(&"".to_string()) == "value";
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -1542,5 +1546,65 @@ mod tests {
     fn test_pipe_pattern_wildcard_many_backshashs() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
         assert_eq!(r"\\\\.*ho\\\\.*ge\\\\\\", value);
+    }
+
+    #[test]
+    fn test_detect_value_keyword() {
+        // 文字列っぽいデータでも確認
+        // 完全一致なので、前方一致しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    value: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_value_keyword() {
+        // 文字列っぽいデータでも確認
+        // 完全一致なので、前方一致しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    value: Securiteen
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
     }
 }

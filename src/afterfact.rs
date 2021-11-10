@@ -167,7 +167,7 @@ fn test_emit_csv() {
     let expect = "Time,Filepath,Rulepath,Level,Computername,Eventid,Alert,Details\n".to_string()
         + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
         + ","
-        + testfilepath
+        + &testfilepath.replace(".evtx", "").to_string()
         + ","
         + testrulepath
         + ","
