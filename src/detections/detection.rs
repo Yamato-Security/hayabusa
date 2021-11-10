@@ -67,10 +67,8 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let stdout = std::io::stdout();
                 let mut stdout = stdout.lock();
-                let errmsg_body = format!(
-                    "Failed to parse Rule file. (Error Rule Title : {})",
-                    rule.yaml["title"].as_str().unwrap_or("")
-                );
+                let errmsg_body =
+                    format!("Failed to parse Rule file. (FilePath : {})", rule.rulepath);
                 AlertMessage::alert(&mut stdout, errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
@@ -159,6 +157,10 @@ impl Detection {
             rule.rulepath.to_string(),
             &record_info.record,
             rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            record_info.record["Event"]["System"]["Computer"]
+                .to_string()
+                .replace("\"", ""),
+            record_info.record["Event"]["System"]["EventID"].to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
@@ -172,6 +174,8 @@ impl Detection {
             rule.rulepath.to_string(),
             agg_result.start_timedate,
             rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            "-".to_string(),
+            "-".to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             output.to_string(),
         )
