@@ -159,6 +159,10 @@ impl Detection {
             rule.rulepath.to_string(),
             &record_info.record,
             rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            record_info.record["Event"]["System"]["Computer"]
+                .to_string()
+                .replace("\"", ""),
+            record_info.record["Event"]["System"]["EventID"].to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
@@ -172,6 +176,8 @@ impl Detection {
             rule.rulepath.to_string(),
             agg_result.start_timedate,
             rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            "-".to_string(),
+            "-".to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             output.to_string(),
         )

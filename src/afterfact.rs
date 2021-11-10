@@ -17,8 +17,10 @@ pub struct CsvFormat<'a> {
     filepath: &'a str,
     rulepath: &'a str,
     level: &'a str,
-    title: &'a str,
-    message: &'a str,
+    computername: &'a str,
+    eventid: &'a str,
+    alert: &'a str,
+    details: &'a str,
 }
 
 pub fn after_fact() {
@@ -82,8 +84,10 @@ fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
                 filepath: &detect_info.filepath,
                 rulepath: &detect_info.rulepath,
                 level: &detect_info.level,
-                title: &detect_info.title,
-                message: &detect_info.detail,
+                computername: &detect_info.computername,
+                eventid: &detect_info.eventid,
+                alert: &detect_info.alert,
+                details: &detect_info.detail,
             })?;
         }
         detect_count += detect_infos.len();
@@ -123,6 +127,8 @@ fn test_emit_csv() {
     let testrulepath: &str = "test-rule.yml";
     let test_title = "test_title";
     let test_level = "high";
+    let test_computername = "testcomputer";
+    let test_eventid = "1111";
     let output = "pokepoke";
     {
         let mut messages = print::MESSAGES.lock().unwrap();
@@ -147,6 +153,8 @@ fn test_emit_csv() {
             testrulepath.to_string(),
             &event,
             test_level.to_string(),
+            test_computername.to_string(),
+            test_eventid.to_string(),
             test_title.to_string(),
             output.to_string(),
         );
@@ -156,7 +164,7 @@ fn test_emit_csv() {
         .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
         .unwrap();
     let expect_tz = expect_time.with_timezone(&Local);
-    let expect = "Time,Filepath,Rulepath,Level,Title,Message\n".to_string()
+    let expect = "Time,Filepath,Rulepath,Level,Computername,Eventid,Alert,Details\n".to_string()
         + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
         + ","
         + testfilepath
@@ -164,6 +172,10 @@ fn test_emit_csv() {
         + testrulepath
         + ","
         + test_level
+        + ","
+        + test_computername
+        + ","
+        + test_eventid
         + ","
         + test_title
         + ","
