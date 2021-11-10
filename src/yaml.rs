@@ -2,6 +2,7 @@ extern crate serde_derive;
 extern crate yaml_rust;
 
 use crate::detections::print::AlertMessage;
+use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::io::{BufReader, Read};
@@ -34,7 +35,9 @@ impl ParseYaml {
         Ok(fs::read_dir(path)?
             .filter_map(|entry| {
                 let entry = entry.ok()?;
-                if entry.file_type().ok()?.is_file() {
+                if entry.file_type().ok()?.is_file()
+                    && entry.path().extension().unwrap_or(OsStr::new("")) == "yml"
+                {
                     let stdout = std::io::stdout();
                     let mut stdout = stdout.lock();
                     match self.read_file(entry.path()) {
