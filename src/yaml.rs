@@ -34,7 +34,7 @@ impl ParseYaml {
         Ok(fs::read_dir(path)?
             .filter_map(|entry| {
                 let entry = entry.ok()?;
-                if entry.file_type().ok()?.is_file() {
+                if entry.file_type().ok()?.is_file() && entry.path().extension().unwrap() == "yml" {
                     let stdout = std::io::stdout();
                     let mut stdout = stdout.lock();
                     match self.read_file(entry.path()) {
