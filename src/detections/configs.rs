@@ -51,7 +51,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --csv-timeline=[CSV_TIMELINE] 'Csv output timeline'
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     -l --lang=[LANG] 'Output language'
-    -L --level= 'Specified execute rule level(default: experimental)'
+    -L --level= 'Specified execute rule level(default: INFO)'
     -u --utc 'Output time in UTC format(default: local time)'
     -d --directory=[DIRECTORY] 'Event log files directory'
     -s --statistics 'Prints statistics for event logs'
