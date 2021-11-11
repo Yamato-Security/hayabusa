@@ -9,7 +9,7 @@ use std::io;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use yaml_rust::Yaml;
-use yaml_rust::{YamlLoader};
+use yaml_rust::YamlLoader;
 
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
@@ -91,7 +91,7 @@ impl ParseYaml {
             return io::Result::Ok(ret);
         })?;
 
-        let files:Vec<(String,Yaml)> = yaml_docs
+        let files: Vec<(String, Yaml)> = yaml_docs
             .into_iter()
             .filter_map(|(filepath, yaml_doc)| {
                 // ignoreフラグがONになっているルールは無視する。
