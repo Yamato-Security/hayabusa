@@ -30,10 +30,8 @@ fn main() {
     let analysis_start_time: DateTime<Utc> = Utc::now();
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
         if !filepath.ends_with(".evtx") {
-            let stdout = std::io::stdout();
-            let mut stdout = stdout.lock();
             AlertMessage::alert(
-                &mut stdout,
+                &mut std::io::stderr().lock(),
                 "--filepath is only accepted evtx file.".to_owned(),
             )
             .ok();
@@ -43,9 +41,11 @@ fn main() {
     } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
         let evtx_files = collect_evtxfiles(&directory);
         if evtx_files.len() == 0 {
-            let stdout = std::io::stdout();
-            let mut stdout = stdout.lock();
-            AlertMessage::alert(&mut stdout, "No exist evtx file.".to_owned()).ok();
+            AlertMessage::alert(
+                &mut std::io::stderr().lock(),
+                "No exist evtx file.".to_owned(),
+            )
+            .ok();
             return;
         }
         analysis_files(evtx_files);
@@ -62,9 +62,9 @@ fn main() {
 fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
     let entries = fs::read_dir(dirpath);
     if entries.is_err() {
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, format!("{}", entries.unwrap_err())).ok();
+        let stderr = std::io::stderr();
+        let mut stderr = stderr.lock();
+        AlertMessage::alert(&mut stderr, format!("{}", entries.unwrap_err())).ok();
         return vec![];
     }
 
@@ -93,12 +93,10 @@ fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
 }
 
 fn print_credits() {
-    let stdout = std::io::stdout();
-    let mut stdout = stdout.lock();
     match fs::read_to_string("./credits.txt") {
         Ok(contents) => println!("{}", contents),
         Err(err) => {
-            AlertMessage::alert(&mut stdout, format!("{}", err)).ok();
+            AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err)).ok();
         }
     }
 }
@@ -153,7 +151,7 @@ fn analysis_file(
                     evtx_filepath,
                     record_result.unwrap_err()
                 );
-                AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
+                AlertMessage::alert(&mut std::io::stderr().lock(), errmsg).ok();
                 continue;
             }
 
