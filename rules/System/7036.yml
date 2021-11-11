@@ -6,7 +6,7 @@ detection:
         Channel: System
         EventID: 7036
         param1:
-            regexes: ./regexes.txt
+            regexes: ./config/regex/regexes_suspicous_service.txt
     condition: selection
 falsepositives:
     - unknown

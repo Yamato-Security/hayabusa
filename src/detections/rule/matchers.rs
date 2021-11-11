@@ -519,8 +519,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
-                    regexes: ./regexes.txt
-                    allowlist: ./allowlist.txt
+                    regexes: ./config/regex/regexes_suspicous_service.txt
+                    allowlist: ./config/regex/allowlist_google.txt
         falsepositives:
             - unknown
         level: medium
@@ -1081,7 +1081,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: allowlist.txt
+                    - allowlist: ./config/regex/allowlist_google.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1113,7 +1113,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: allowlist.txt
+                    - allowlist: ./config/regex/allowlist_google.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1145,7 +1145,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: allowlist.txt
+                    - allowlist: ./config/regex/allowlist_google.txt
         output: 'command=%CommandLine%'
         "#;
 
