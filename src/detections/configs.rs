@@ -5,6 +5,15 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
+    pub static ref LEVELMAP: HashMap<String, u8> = {
+        let mut levelmap = HashMap::new();
+        levelmap.insert("INFO".to_owned(), 1);
+        levelmap.insert("LOW".to_owned(), 2);
+        levelmap.insert("MEDIUM".to_owned(), 3);
+        levelmap.insert("HIGH".to_owned(), 4);
+        levelmap.insert("CRITICAL".to_owned(), 5);
+        return levelmap;
+    };
 }
 
 #[derive(Clone)]
@@ -42,6 +51,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --csv-timeline=[CSV_TIMELINE] 'Csv output timeline'
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     -l --lang=[LANG] 'Output language'
+    -L --level=[LEVEL] 'Specified execute rule level(default: INFO)'
     -u --utc 'Output time in UTC format(default: local time)'
     -d --directory=[DIRECTORY] 'Event log files directory'
     -s --statistics 'Prints statistics for event logs'

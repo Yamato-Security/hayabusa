@@ -46,10 +46,10 @@ impl Detection {
     }
 
     // ルールファイルをパースします。
-    pub fn parse_rule_files() -> Vec<RuleNode> {
+    pub fn parse_rule_files(level: String) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
-        let resutl_readdir = rulefile_loader.read_dir(DIRPATH_RULES);
+        let resutl_readdir = rulefile_loader.read_dir(DIRPATH_RULES, &level);
         if resutl_readdir.is_err() {
             let stdout = std::io::stdout();
             let mut stdout = stdout.lock();
