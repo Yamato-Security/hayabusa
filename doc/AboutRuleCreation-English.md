@@ -1,10 +1,10 @@
-# ルールファイル
-HayabusaはWindowsEventログの検知ルールをYAML形式のファイルに記載します。
-単なる文字列一致だけでなく、正規表現やANDやOR等の条件を組み合わせることができ、複雑な検知ルールも表現できるようになっています。
-ここではその検知ルールの書き方について説明します。
+# Rule files
+Hayabusa uses detection rules for Windows Event logs in a YAML format file.
+It can express complex detection rules by combining not only simple string matching but also regular expressions, AND, OR, and other conditions.
+In this section, we will explain how to write the detection rules.
 
-# ルールファイルのフォーマット
-ルールファイルのフォーマットは下記の通りです。
+# Rule file format
+The rule file format is described below.
 
 ``````
 title: PowerShell Execution Pipeline
@@ -22,25 +22,25 @@ creation_date: 2020/11/8
 updated_date: 2020/11/8
 ``````
 
-* title [required]: ルールファイルのタイトルを入力します。
-* description [optional]: ルールファイルの説明を入力します。
-* author [optional]: ルールファイルの作者を入力します。
-* detection  [required]: 検知ルールを入力します。
-* falsepositives [optional]: 誤検知に関する情報を入力します。例：System Administrator、Normal User Usage、Security Team等々。
-* level [optional]: リスクレベルを入力します。指定する値は`info`,`low`,`medium`,`high`,`critical`のいづれかです。
-* output [required]: イベントログが検知した場合に表示されるメッセージを入力します。
-* creation_date [optional]: ルールファイルの作成日を入力します。
-* updated_date [optional]: ルールファイルの更新日を入力します。
+* title [required]: Rule file title. This will also be the name of the alert that gets displayed so the briefer the better.
+* description [optional]: A description of the rule. This does not get displayed so you can make this long.
+* author [optional]: The name of the person or persons who created the logic for the rule.
+* detection  [required]: The detection logic goes here.
+* falsepositives [optional]: The possibilities for false positives. For example: unknown、system administrator、normal user usage、normal system usage、legacy application、security team. If it is unknown, write "unknown".
+* level [optional]: Risk level. Please write one of the following: `info`,`low`,`medium`,`high`,`critical`
+* output [required]: The details of the alert. (Please output any and only useful fields in the Windows event log for easy analysis.)
+* creation_date [optional]: The creation date.
+* updated_date [optional]: The date of the last revision.
 
-# detectionの記法について
-## detectionの基本
-まず、detectionの基本的な書き方について説明します。
+# About detection notation
+## Detection fundamentals
+First, the fundamentals of how to create a detection rule will be explained.
 
-### AND条件とOR条件の書き方
-AND条件を記載する場合はYAMLのハッシュを用いて記載します。
-下記のようにdetectionを記載すると、以下`両方の条件を満たす`イベントログを検知します。
-* EventIDが`7040`に完全一致する
-* Channelが`System`に完全一致する
+### How to write AND and OR logic
+To write AND logic, we use the YAML hash.
+The detection rule below defines that *both conditions* have to be true in order for the rule to match.
+* EventID has to exactly be `7040`.
+* Channel has to exactly be `System`.
 
 ``````
 detection:
@@ -49,10 +49,10 @@ detection:
         Event.System.Channel: System
 ``````
 
-OR条件を記載する場合は配列を利用します。
-下記のようにdetectionを記載すると、以下`いずれの条件を満たす`イベントログを検知します。
-* EventIDが`7040`に完全一致する
-* Channelが`System`に完全一致する
+To write OR logic, we use arrays.
+In the detection rule below, *either one* of the conditions will result in the rule being triggered.
+* EventID has to exactly be `7040`.
+* Channel has to exactly be `System`.
 
 ``````
 detection:
@@ -61,10 +61,10 @@ detection:
         - Event.System.Channel: System
 ``````
 
-また、下記のように記載することもできます。
-この場合、以下`両方の条件を満たす`イベントログを検知します。
-* EventIDが`7040`又は`7041`に完全一致する
-* Channelが`System`に完全一致する
+We can also combine AND and OR logic as shown below.
+In this case, the rule matches when the following two conditions are both true.
+* EventID is either exactly `7040` or `7041`.
+* Channel is exactly `System`.
 
 ``````
 detection:
@@ -75,8 +75,8 @@ detection:
         Event.System.Channel: System
 ``````
 
-### eventkey
-WindowsイベントログをXML形式で一部抜粋で出力すると、下記のようになります。ルールファイルの例に含まれる`Event.System.Channel`は、XMLの`<Event><System><Channel>System<Channel><System></Event>`を指しています。今回の例のように、XML形式のWindowsイベントログについて、入れ子になったXMLのタグに含まれる値をルールの条件に指定する場合、`.`でつなげて指定します。ルールファイルでは、この`.`でつなげた文字列をeventkeyと呼んでいます。
+### Eventkey
+The following is an excerpt of a Windows event log, formatted in the original XML. The `Event.System.Channel` in the rule file example refers to the XML `<Event><System><Channel>System<Channel><System></Event>`. For Windows event logs in XML format, as in this example, if you want to specify the values contained in the nested XML tags as the condition of the rule, you can specify them by connecting them with a dot (`. `). In the rule file, these strings connected together with dots are called `eventkeys`.
 
 ``````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -86,13 +86,13 @@ WindowsイベントログをXML形式で一部抜粋で出力すると、下記�
     </System>
     <EventData>
         <Data Name='param1'>Background Intelligent Transfer Service</Data>
-        <Data Name='param2'>自動的な開始</Data>
+        <Data Name='param2'>auto start</Data>
     </EventData>
 </Event>
 ``````
 
-### eventkeyのalias
-`.`でつなげたeventkeyは長い文字列になってしまうことがあるため、hayabusaではeventkeyに対するエイリアスを使用できます。エイリアスは`config\eventkey_alias.txt`というファイルに定義されています。ファイルはCSV形式であり、aliasとevent_keyという列から構成されています。aliasにはエイリアスを定義し、event_keyには`.`でつなげたeventkeyを指定します。このエイリアスを用いると、最初に例に挙げたdetectionは以下のように書き換えることができます。
+### Eventkey Aliases
+Long eventkeys with many `.` seperations are common, so hayabusa will use aliases to make them easier to work with. Aliases are defined in the `config\eventkey_alias.txt` file. This file is a CSV file made up of `alias` and `event_key` mappings. You can rewrite the rule above as shown below with aliases making the rule easier to read.
 
 ``````
 detection:
@@ -100,8 +100,9 @@ detection:
         EventID: 7040
         Channel: System
 ``````
-### XMLの属性(attribute)をルールの条件にする方法
-WindowsEventログをXML形式で出力すると、XMLの属性に値が設定されている場合もあります。下記の例だと、ProviderタグのNameがXMLの属性です。
+
+### How to use XML attributes in conditions
+When Windows event logs are output in XML format, the XML attributes may have values set in them. In the example below, `Name` in `Provider Name` is an XML attribute.
 
 ````````````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -114,8 +115,7 @@ WindowsEventログをXML形式で出力すると、XMLの属性に値が設定�
     </System>
 </Event>
 ````````````
-
-XMLの属性をeventkeyで指定するには、{eventkey}_attributes.{attribute_name}という形式で指定します。例えば、ProviderタグのName属性をルールファイルに指定する場合、下記のようになります。
+To specify XML attributes in an eventkey, use the format `{eventkey}_attributes.{attribute_name}`. For example, to specify the `Name` attribute of the `Provider` tag in the rule file, it would look like this:
 
 ``````
 detection:
@@ -126,7 +126,8 @@ detection:
 ``````
 
 ### EventData
-WindowsEventログをXML形式で出力すると、EventDataというタグが使用されている場合があります。(EventDataタグは様々なEventIDのログで頻繁に利用されます。)このEventDataにネストされたタグの名前は全て`Data`となっており、ここまで説明してきたeventkeyではSubjectUserSidやSubjectUserNameを区別することができません。
+Windows event logs are divided into two parts: the `System` part where the fundamental data (Event ID, Timestamp, Record ID, Log name (aka Channel)) is written, and the `EventData` part where arbitrary data is written depending on the Event ID. The problem is that the names of the tags nested in EventData are all `Data` so the eventkeys described so far cannot distinguish between `SubjectUserSid` and `SubjectUserName`.
+
 ````````````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
@@ -145,7 +146,7 @@ WindowsEventログをXML形式で出力すると、EventDataというタグが�
 </Event>
 ````````````
 
-この問題に対応するため、eventkeyで`Data`の代わりに`Name`に指定されている値をeventkeyに指定できるようになっています。例えば、EventData内のSubjectUserNameとSubjectDomainNameをルールの条件とする場合、下記のように記載します。
+To deal with this problem, you can specify the value specified for `Name` in the eventkey instead of `Data`. For example, if you want to use `SubjectUserName` and `SubjectDomainName` in the EventData as a condition of the rule, you can describe it as follows:
 
 ``````
 detection:
@@ -156,8 +157,9 @@ detection:
         Event.EventData.SubjectDomainName: DESKTOP-HAYBUSA
 ``````
 
-### EventDataの特殊なパターン
-EventDataというタグにネストされたタグの中には、Name属性が存在しないタグもあります。
+### Special patterns in EventData
+Some of the tags nested in EventData do not have a Name attribute.
+
 ``````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
@@ -173,7 +175,8 @@ EventDataというタグにネストされたタグの中には、Name属性が�
 </Event>
 ``````
 
-上記のようなイベントログを検知する場合、`EventData`というeventkeyを指定します。この場合、EventDataタグにネストされているName属性の指定されてないタグのうち、いずれか一つでも一致するタグがあれば、条件に一致したものとして処理されます。
+To detect an event log like the one above, you can specify an eventkey named `EventData`. In this case, the condition will matach as long as any one of the nested tags without a Name attribute matches.
+
 ``````
 detection:
     selection:
@@ -182,8 +185,8 @@ detection:
         EventData: None
 ``````
 
-## パイプ
-eventkeyにはパイプを指定することができます。ここまで説明した書き方では完全一致しか表現できませんでしたが、パイプを使うことでより柔軟な検知ルールを記載できるようになります。下記の例ではCommandLineの値が`yamato.*hayabusa`という正規表現にマッチする場合、条件に一致したものとして処理されます。
+## Pipes
+A pipe can be used with eventkeys as shown below. All of the conditions we have described so far use exact matches, but by using pipes, you can describe more flexible detection rules. In the following example, if the value of `CommandLine` matches the regular expression `yamato.*hayabusa`, it will match the condition.
 
 ``````
 detection:
@@ -193,14 +196,15 @@ detection:
         CommandLine|re: yamato.*hayabusa
 ``````
 
-使用できるパイプの一覧です。なお、v1.0.0時点では、複数のパイプをつなげて使用することはできません。
-* startswith: 先頭一致
-* endswith: 後方一致
-* contains: 部分一致
-* re: 正規表現(正規表現の処理にはregexクレートを使用しています。正規表現の詳細記法についてはhttps://docs.rs/regex/1.5.4/regex/を参照してください。)
+This is a list of what you can specify after the pipe. At the moment, hayabusa does not support chaining multiple pipes together.
+* startswith: Checks the string from the beginning
+* endswith: Checks the end of the string
+* contains: Checks if a word is contained in the data
+* re: Use regular expressions. (We are using the regex crate so please out the documentation at https://docs.rs/regex/1.5.4/regex/ on how to write regular expressions.)
 
-## ワイルドカード
-eventkeyに対応する値にはワイルドカードを指定することができます。下記の例ではCommandLineがhayabusaという文字列で始まっていれば、条件に一致したものとして処理されます。基本的にはsigmaルールのwildcardと同じ仕様になっています。
+## Wildcards
+Wildcards can be specified for the value corresponding to eventkey. In the example below, if the CommandLine starts with the string "hayabusa", it will be processed as if it matches the condition. 
+The specification is fundamentally the same as SIGMA rule wildcards.
 
 ``````
 detection:
@@ -210,17 +214,18 @@ detection:
         CommandLine: hayabusa*
 ``````
 
-使用できるワイルドカードの一覧です。
-* `*`: 任意の0文字以上の文字列にマッチします。(内部的には`.*`という正規表現に変換されます。)
-* `?`: 任意の1文字にマッチします。(内部的には`.`という正規表現に変換されます。)
+The following wildcards can be used.
+* `*`: Matches any string of zero or more characters. (Internally it is converted to the regular expression `. *`.)
+* `? `: Matches any single character. (Internally converted to the regular expression `. `.)
 
-ワイルドカードを使用する場合、下記のルールに則って解釈されます。
-* ワイルドカード(`*`と`?`)をエスケープするにはバックスラッシュ(`/`)を使用します。
-* ワイルドカードの直前に文字としてのバックスラッシュ(`/`)を使用する場合、`\\*`又は`\\?`と記載してください。
-* バックスラッシュを単体で使う分にはエスケープ不要です。
+When wildcards are used, they will be interpreted according to the following rules.
+* Wildcards (`*` and `? `) can be escaped by using a backslash (`/`).
+* If you want to use a backslash right before a wildcard then write `\\*` or `\\?`.
+* No escaping is required if you are using backslashes by themselves.
 
-## eventkeyにネストできるキーワード
-eventkeyには特定のキーワードをネストさせることができます。下記の例ではCommandLineの値が`aa*bb`というワイルドカードにマッチした上で文字列長が10以上である場合、条件に一致したものと処理されます。
+## Nesting keywords in the eventkey
+The eventkey can be nested with specific keywords. 
+In the example below, if the value of CommandLine matches the wildcard `aa*bb` and the length of the string is 10 or more, the condition will match.
 
 ``````
 detection:
@@ -232,19 +237,22 @@ detection:
             min_length: 10
 ``````
 
-現状では下記のキーワードを指定できます。
-* value: 文字列による一致(ワイルドカードやパイプを指定することもできます)
-* min_length: 指定した文字数以上である場合、条件に一致したものとして処理されます。
-* regexes: 指定したファイルに記載された正規表現のリストにひとつでも一致すれば、`条件に一致した`ものとして処理されます。
-* allowlist: 指定したファイルに記載された正規表現のリストにひとつでも一致すれば、`条件に一致していない`ものとして処理されます。
+Currently, the following keywords can be specified.
+* value: matches by string (wildcards and pipes can also be specified).
+* min_length: matches when the number of characters is greater than or equal to the specified number.
+* regexes: matches if one of the regular expressions in the file that you specify in this field matches.
+* allowlist: rule will be skipped if there is any match found in the list of regular expressions in the file that you specify in this field.
 
-### regexes.txtとallowlist.txt
-hayabusaではregexesやallowlistを使用した組み込みのルールを用意しており、それらのルールはregexes.txtとallowlist.txtを参照しています。regexes.txtとallowlist.txtを書き換えることで、参照する全てのルールの挙動を一度に変更することが可能です。
+### regexes.txt and allowlist.txt
+Hayabusa provides built-in rules using regular expressions (defined in `regexes.txt`) and allowlisting (defined in `allowlist.txt`).
+regexes.txt and allowlist.txt can be edited to change the behavior of all referenced rules at once. 
 
-また、regexesやallowlistに指定するファイルは、ユーザーが独自に作成することも可能です。作成する場合、regexes.txtとallowlist.txtを参考にしてください。
+You can also specify to use different regexes and allowlist textfiles.
+Please refer to the default regexes.txt and allowlist.txt when creating your own.
 
 ## condition
-これまでの記法を用いると、AND条件やOR条件を表現することができますが、ANDやOR等が複雑に入り組んだ条件を定義することは難しい場合があります。その場合、conditionというキーワードを使用することで、複雑な条件式を定義することができます。
+With the notation we explained above, you can express AND and OR logic but it will be confusing if you are trying to define complex logic.
+When you want to make more complex rules, you should use `condition` as shown below.
 
 ``````
 detection:
@@ -264,16 +272,18 @@ detection:
     condition: ( selection_1 or selection_2 ) and selection_3 and ( selection_4 or selection_5 ) and ( not selection_6 ) 
 ``````
 
-conditionには以下のキーワードを使用することができます。
-* {expression1} and {expression2}: {expression1}と{expression2}のAND条件を表します。
-* {expression1} or {expression2}: {expression1}と{expression2}のOR条件を表します。
-* not {expression}: {expression}の条件式の真偽を逆転させます。
-* ( {expression} ) : {expression}の条件式を優先して評価します。数学等で現れる括弧と同じです。
+The following keywords can be used for `condition`.
+* {expression1} and {expression2}: Require both {expression1} AND {expression2}
+* {expression1} or {expression2}: Require either {expression1} OR {expression2}
+* not {expression}: Reverse the logic of {expression}
+* ( {expression} ) : Set precedance of {expression}. It follows the same precedance logic as in mathematics.
 
-なお、上記の例では、条件式をグルーピングするためにselection_1やselection_2といった名前を使用していますが、selectionというprefixを付ける必要はなく、ユーザーが任意の名前を定義できます。ただし、使用可能な文字は`\w`という正規表現にマッチする文字のみです。
+In the above example, names such as selection_1 and selection_2 are used for grouping conditional expressions, but there is no need to add the prefix "selection", and the user can define any name. However, the only characters that can be used are those that match the regular expression `\w`.
 
 ## aggregation condition
-上記で説明したconditionには、andやor条件だけでなく、検知したイベントログを集計するような機能も実装されています。この機能をaggregation conditionと呼んでおり、conditionの後にパイプでつなげて指定します。下記の例では、DestinationIpの値が3種類以上あるかどうかをSubjectUserName毎に判定する条件式になります。
+The condition field described above implements not only the AND and OR conditions, but also a function to aggregate the detected event logs. 
+This function is called the aggregation condition, and is specified by connecting it with a pipe after the condition. 
+In the example below, a conditional expression is used to determine if there are three or more `DestinationIp` values for each `SubjectUserName`.
 
 ``````
 detection:
@@ -283,32 +293,34 @@ detection:
     condition: selection | count(DestinationIp) by SubjectUserName >= 3
 ``````
 
-aggregation conditionは下記の形式で定義できます。なお、{number}には数値を指定します。
-* `count() {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、一致したログ数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+The aggregation condition can be defined in the following format. Note that {number} must be a number.
+* `count() {operator} {number}`: For log events that match the first condition before the pipe, the condition will match if the number of matched logs satisfies the condition expression specified by {operator} and {number}.
 
 ![](count1.png)
 
-* `count() by {eventkey_2} {operator} {number}`: conditionのパイプ以前の条件に一致したログを{eventkey_2}毎にグルーピングし、グルーピング毎に一致したログ数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+* `count() by {eventkey_2} {operator} {number}`: Log events that match the first condition before pipe are grouped by {eventkey_2}, and if the number of matched events for each grouping satisfies the condition expression specified by {operator} and {number}, the condition will match.
 
 ![](count2.png)
 
-* `count({eventkey}) {operator} {number}`: conditionのパイプ以前の条件に一致したログについて、{eventkey}の値が何種類存在するか数えます。その数が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+* `count({eventkey}) {operator} {number}`: Counts how many different values of {eventkey} exist in the log event that match the condition before the condition pipe. If the number satisfies the conditional expression specified in {operator} and {number}, the condition is considered to have been met.
 
 ![](count3.png)
 
-* `count({eventkey_1}) by {eventkey_2} {operator} {number}`: conditionのパイプ以前の条件に一致したログを{eventkey_2}毎にグルーピングし、そのグループ毎に{eventkey_1}の値が何種類存在するか数えます。そのグルーピング毎に数えた値が{operator}と{number}で指定した条件式を満たす場合に、条件に一致したものとして処理されます。
+* `count({eventkey_1}) by {eventkey_2} {operator} {number}`: The logs that match the condition before the condition pipe are grouped by {eventkey_2}, and the number of values of {eventkey_1} in each group is counted. If the values counted for each grouping satisfy the conditional expression specified by {operator} and {number}, the condition is considered to have been met.
 
 ![](count4.png)
 
-また、上記のoperatorには下記を指定できます。
-* `==`: 指定された値と等しい場合、条件に一致したものと処理されます。
-* `>=`: 指定された値以上である場合、条件に一致したものと処理されます。
-* `>`: 指定された値より大きい場合、条件に一致したものと処理されます。
-* `<=`: 指定された値以下である場合、条件に一致したものと処理されます。
-* `<`: 指定された値より小さい場合、条件に一致したものと処理されます。
+In addition, the following can be specified for the above operator:
+* `==`: If the value is equal to the specified value, it is treated as matching the condition.
+* `>=`: If the value is greater than or equal to the specified value, the condition is considered to have been met.
+* `>`: If the value is greater than the specified value, the condition is considered to have been met.
+* `<=`: If the value is less than or equal to the specified value, the condition is considered to have been met.
+* `<`: If the value is less than the specified value, it will be treated as if the condition is met.
 
-# outputの記法
-detectionの条件に一致した場合に、出力されるメッセージを指定できます。固定の文字列が出力できる他、eventkeyを%で囲むことにより、検知したログの値を表示することも可能です。下記の例では検知した際のメッセージにScriptBlockTextというeventkeyの値を使用しています。
+# output notation
+You can specify the message that will be outputted when the detection condition is met. 
+In addition to outputting a fixed string, it is also possible to display the value in the event log by enclosing the eventkey in a `%`. 
+In the example below, the eventkey value ScriptBlockText is used in the message when a detection is made.
 
 ``````
 output: 'command=%ScriptBlockText%'
