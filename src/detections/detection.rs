@@ -51,9 +51,11 @@ impl Detection {
         let mut rulefile_loader = ParseYaml::new();
         let resutl_readdir = rulefile_loader.read_dir(DIRPATH_RULES, &level);
         if resutl_readdir.is_err() {
-            let stdout = std::io::stdout();
-            let mut stdout = stdout.lock();
-            AlertMessage::alert(&mut stdout, format!("{}", resutl_readdir.unwrap_err())).ok();
+            AlertMessage::alert(
+                &mut std::io::stderr().lock(),
+                format!("{}", resutl_readdir.unwrap_err()),
+            )
+            .ok();
             return vec![];
         }
 
@@ -65,14 +67,12 @@ impl Detection {
 
             // ruleファイルのパースに失敗した場合はエラー出力
             err_msgs_result.err().iter().for_each(|err_msgs| {
-                let stdout = std::io::stdout();
-                let mut stdout = stdout.lock();
                 let errmsg_body =
                     format!("Failed to parse Rule file. (FilePath : {})", rule.rulepath);
-                AlertMessage::alert(&mut stdout, errmsg_body).ok();
+                AlertMessage::alert(&mut std::io::stderr().lock(), errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
-                    AlertMessage::alert(&mut stdout, err_msg.to_string()).ok();
+                    AlertMessage::alert(&mut std::io::stderr().lock(), err_msg.to_string()).ok();
                 });
                 println!(""); // 一行開けるためのprintln
             });

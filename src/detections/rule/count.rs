@@ -69,10 +69,8 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
                 key.push_str(&value.to_string().replace("\"", ""));
             }
             None => {
-                let stdout = std::io::stdout();
-                let mut stdout = stdout.lock();
                 AlertMessage::alert(
-                    &mut stdout,
+                    &mut std::io::stderr().lock(),
                     format!("field_value alias not found.value:{}", field_value),
                 )
                 .ok();
@@ -87,10 +85,8 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
                 key.push_str(&value.to_string().replace("\"", ""));
             }
             None => {
-                let stdout = std::io::stdout();
-                let mut stdout = stdout.lock();
                 AlertMessage::alert(
-                    &mut stdout,
+                    &mut std::io::stderr().lock(),
                     format!("by_field_value alias not found.value:{}", by_field_value),
                 )
                 .ok();
@@ -177,10 +173,8 @@ impl TimeFrameInfo {
             ttype = "d".to_owned();
             tnum.retain(|c| c != 'd');
         } else {
-            let stdout = std::io::stdout();
-            let mut stdout = stdout.lock();
             AlertMessage::alert(
-                &mut stdout,
+                &mut std::io::stderr().lock(),
                 format!("timeframe is invalid.input value:{}", value),
             )
             .ok();
@@ -211,10 +205,8 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
             }
         }
         Err(err) => {
-            let stdout = std::io::stdout();
-            let mut stdout = stdout.lock();
             AlertMessage::alert(
-                &mut stdout,
+                &mut std::io::stderr().lock(),
                 format!("timeframe num is invalid. timeframe.{}", err),
             )
             .ok();

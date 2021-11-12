@@ -25,9 +25,11 @@ pub struct CsvFormat<'a> {
 
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, format!("Failed to write CSV. {}", err)).ok();
+        AlertMessage::alert(
+            &mut std::io::stderr().lock(),
+            format!("Failed to write CSV. {}", err),
+        )
+        .ok();
         process::exit(1);
     };
 
@@ -56,9 +58,11 @@ pub fn after_fact() {
             match File::create(csv_path) {
                 Ok(file) => Box::new(file),
                 Err(err) => {
-                    let stdout = std::io::stdout();
-                    let mut stdout = stdout.lock();
-                    AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
+                    AlertMessage::alert(
+                        &mut std::io::stderr().lock(),
+                        format!("Failed to open file. {}", err),
+                    )
+                    .ok();
                     process::exit(1);
                 }
             }

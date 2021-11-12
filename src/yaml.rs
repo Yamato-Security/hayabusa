@@ -34,8 +34,6 @@ impl ParseYaml {
     }
 
     pub fn read_dir<P: AsRef<Path>>(&mut self, path: P, level: &str) -> io::Result<String> {
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
         let mut entries = fs::read_dir(path)?;
         let yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
             let entry = entry?;
@@ -59,7 +57,7 @@ impl ParseYaml {
             let read_content = self.read_file(path);
             if read_content.is_err() {
                 AlertMessage::alert(
-                    &mut stdout,
+                    &mut std::io::stderr().lock(),
                     format!(
                         "fail to read file: {}\n{} ",
                         entry.path().display(),
@@ -73,7 +71,7 @@ impl ParseYaml {
             let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
             if yaml_contents.is_err() {
                 AlertMessage::alert(
-                    &mut stdout,
+                    &mut std::io::stderr().lock(),
                     format!(
                         "fail to parse as yaml: {}\n{} ",
                         entry.path().display(),
