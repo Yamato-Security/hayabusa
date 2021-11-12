@@ -520,7 +520,7 @@ mod tests {
                 ImagePath:
                     min_length: 1234321
                     regexes: ./config/regex/regexes_suspicous_service.txt
-                    allowlist: ./config/regex/allowlist_google.txt
+                    allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         falsepositives:
             - unknown
         level: medium
@@ -1081,7 +1081,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_google.txt
+                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1113,7 +1113,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_google.txt
+                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1145,7 +1145,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_google.txt
+                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         output: 'command=%CommandLine%'
         "#;
 

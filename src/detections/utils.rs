@@ -168,7 +168,7 @@ mod tests {
     #[test]
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let allowlist = utils::read_txt("./config/regex/allowlist_google.txt")
+        let allowlist = utils::read_txt("./config/regex/allowlist_legimate_serviceimage.txt")
             .unwrap()
             .into_iter()
             .map(|allow_str| Regex::new(&allow_str).unwrap())

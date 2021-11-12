@@ -9,7 +9,7 @@ detection:
             regexes: ./config/regex/regexes_suspicous_service.txt
         ImagePath:
             min_length: 1000
-            allowlist: ./config/regex/allowlist_google.txt
+            allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
     condition: selection
 falsepositives:
     - unknown
