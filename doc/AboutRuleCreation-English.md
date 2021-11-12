@@ -243,12 +243,12 @@ Currently, the following keywords can be specified.
 * regexes: matches if one of the regular expressions in the file that you specify in this field matches.
 * allowlist: rule will be skipped if there is any match found in the list of regular expressions in the file that you specify in this field.
 
-### regexes.txt and allowlist.txt
-Hayabusa provides built-in rules using regular expressions (defined in `regexes.txt`) and allowlisting (defined in `allowlist.txt`).
-regexes.txt and allowlist.txt can be edited to change the behavior of all referenced rules at once. 
+### regexes and allowlist
+Hayabusa provides built-in rules using regular expressions (defined in `config/regex/regexes_suspicous_service.txt`) and allowlisting (defined in `config/regex/allowlist_legimate_serviceimage.txt`).
+regexes and allowlist can be edited to change the behavior of all referenced rules at once.
 
 You can also specify to use different regexes and allowlist textfiles.
-Please refer to the default regexes.txt and allowlist.txt when creating your own.
+Please refer to the default regexes_suspicous_service.txt and allowlist_legimate_serviceimage.txt when creating your own.
 
 ## condition
 With the notation we explained above, you can express AND and OR logic but it will be confusing if you are trying to define complex logic.

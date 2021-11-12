@@ -6,10 +6,10 @@ detection:
         Channel: System
         EventID: 7045
         ServiceName:
-            regexes: ./regexes.txt
+            regexes: ./config/regex/regexes_suspicous_service.txt
         ImagePath:
             min_length: 1000
-            allowlist: ./allowlist.txt
+            allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
     condition: selection
 falsepositives:
     - unknown
