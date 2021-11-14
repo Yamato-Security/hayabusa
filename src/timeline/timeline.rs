@@ -11,11 +11,12 @@ pub struct Timeline {
 impl Timeline {
     pub fn new() -> Timeline {
         let totalcnt = 0;
+        let filepath = "".to_owned();
         let starttm = "".to_string();
         let endtm = "".to_string();
         let statslst = HashMap::new();
 
-        let statistic = EventStatistics::new(totalcnt, starttm, endtm, statslst);
+        let statistic = EventStatistics::new(totalcnt, filepath, starttm, endtm, statslst);
         return Timeline { stats: statistic };
     }
 
@@ -36,6 +37,7 @@ impl Timeline {
         //println!("map -> {:#?}", evtstat_map);
         let mut sammsges: Vec<String> = Vec::new();
         sammsges.push("---------------------------------------".to_string());
+        sammsges.push(format!("Evtx_File_Path:{}", self.stats.filepath));
         sammsges.push(format!("Total_counts : {}\n", self.stats.total));
         sammsges.push(format!("firstevent_time: {}", self.stats.start_time));
         sammsges.push(format!("lastevent_time: {}\n", self.stats.end_time));
