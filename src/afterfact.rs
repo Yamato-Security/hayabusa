@@ -118,8 +118,10 @@ where
 {
     if configs::CONFIG.read().unwrap().args.is_present("rfc-2822") {
         return time.to_rfc2822();
-    } else {
+    } else if configs::CONFIG.read().unwrap().args.is_present("rfc-3339") {
         return time.to_rfc3339();
+    } else {
+        return time.format("%Y-%m-%d %H:%M:%S%.3f").to_string();
     }
 }
 
@@ -169,7 +171,10 @@ fn test_emit_csv() {
         .unwrap();
     let expect_tz = expect_time.with_timezone(&Local);
     let expect = "Time,Filepath,Rulepath,Level,Computername,Eventid,Alert,Details\n".to_string()
-        + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
+        + &expect_tz
+            .clone()
+            .format("%Y-%m-%d %H:%M:%S%.3f")
+            .to_string()
         + ","
         + &testfilepath.replace(".evtx", "").to_string()
         + ","
