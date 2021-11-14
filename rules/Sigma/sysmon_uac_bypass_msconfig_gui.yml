@@ -1,0 +1,29 @@
+title: UAC Bypass Using MSConfig Token Modification - File
+author: Christian Burkard
+date: 2021/08/30
+description: Detects the pattern of UAC Bypass using a msconfig GUI hack (UACMe 55)
+detection:
+    SELECTION_1:
+        EventID: 11
+    SELECTION_2:
+        TargetFilename: C:\Users\\*
+    SELECTION_3:
+        TargetFilename: '*\AppData\Local\Temp\pkgmgr.exe'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 41bb431f-56d8-4691-bb56-ed34e390906f
+level: high
+logsource:
+    category: file_event
+    product: windows
+references:
+- https://github.com/hfiref0x/UACME
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1548.002
+yml_filename: sysmon_uac_bypass_msconfig_gui.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/file_event
+

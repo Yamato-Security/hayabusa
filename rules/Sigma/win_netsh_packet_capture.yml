@@ -1,0 +1,33 @@
+title: Capture a Network Trace with netsh.exe
+author: Kutepov Anton, oscd.community
+date: 2019/10/24
+description: Detects capture a network trace via netsh.exe trace functionality
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*netsh*'
+    SELECTION_3:
+        CommandLine: '*trace*'
+    SELECTION_4:
+        CommandLine: '*start*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Legitimate administrator or user uses netsh.exe trace functionality for legitimate
+    reason
+id: d3c3861d-c504-4c77-ba55-224ba82d0118
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/01
+references:
+- https://blogs.msdn.microsoft.com/canberrapfe/2012/03/30/capture-a-network-trace-without-installing-anything-capture-a-network-trace-of-a-reboot/
+status: experimental
+tags:
+- attack.discovery
+- attack.credential_access
+- attack.t1040
+yml_filename: win_netsh_packet_capture.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

@@ -1,0 +1,109 @@
+title: Quick Execution of a Series of Suspicious Commands
+author: juju4
+date: 2019/01/16
+description: Detects multiple suspicious process in a limited timeframe
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*nbtstat.exe*'
+    SELECTION_11:
+        CommandLine: '*net.exe*'
+    SELECTION_12:
+        CommandLine: '*netsh.exe*'
+    SELECTION_13:
+        CommandLine: '*nslookup.exe*'
+    SELECTION_14:
+        CommandLine: '*ping.exe*'
+    SELECTION_15:
+        CommandLine: '*quser.exe*'
+    SELECTION_16:
+        CommandLine: '*qwinsta.exe*'
+    SELECTION_17:
+        CommandLine: '*reg.exe*'
+    SELECTION_18:
+        CommandLine: '*runas.exe*'
+    SELECTION_19:
+        CommandLine: '*sc.exe*'
+    SELECTION_2:
+        CommandLine: '*arp.exe*'
+    SELECTION_20:
+        CommandLine: '*schtasks.exe*'
+    SELECTION_21:
+        CommandLine: '*ssh.exe*'
+    SELECTION_22:
+        CommandLine: '*systeminfo.exe*'
+    SELECTION_23:
+        CommandLine: '*taskkill.exe*'
+    SELECTION_24:
+        CommandLine: '*telnet.exe*'
+    SELECTION_25:
+        CommandLine: '*tracert.exe*'
+    SELECTION_26:
+        CommandLine: '*wscript.exe*'
+    SELECTION_27:
+        CommandLine: '*xcopy.exe*'
+    SELECTION_28:
+        CommandLine: '*pscp.exe*'
+    SELECTION_29:
+        CommandLine: '*copy.exe*'
+    SELECTION_3:
+        CommandLine: '*at.exe*'
+    SELECTION_30:
+        CommandLine: '*robocopy.exe*'
+    SELECTION_31:
+        CommandLine: '*certutil.exe*'
+    SELECTION_32:
+        CommandLine: '*vssadmin.exe*'
+    SELECTION_33:
+        CommandLine: '*powershell.exe*'
+    SELECTION_34:
+        CommandLine: '*wevtutil.exe*'
+    SELECTION_35:
+        CommandLine: '*psexec.exe*'
+    SELECTION_36:
+        CommandLine: '*bcedit.exe*'
+    SELECTION_37:
+        CommandLine: '*wbadmin.exe*'
+    SELECTION_38:
+        CommandLine: '*icacls.exe*'
+    SELECTION_39:
+        CommandLine: '*diskpart.exe*'
+    SELECTION_4:
+        CommandLine: '*attrib.exe*'
+    SELECTION_5:
+        CommandLine: '*cscript.exe*'
+    SELECTION_6:
+        CommandLine: '*dsquery.exe*'
+    SELECTION_7:
+        CommandLine: '*hostname.exe*'
+    SELECTION_8:
+        CommandLine: '*ipconfig.exe*'
+    SELECTION_9:
+        CommandLine: '*mimikatz.exe*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39))| count()
+        by MachineName > 5
+falsepositives:
+- False positives depend on scripts and administrative tools used in the monitored
+    environment
+id: 61ab5496-748e-4818-a92f-de78e20fe7f1
+level: low
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/06/13
+references:
+- https://car.mitre.org/wiki/CAR-2013-04-002
+status: experimental
+tags:
+- car.2013-04-002
+yml_filename: win_multiple_suspicious_cli.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

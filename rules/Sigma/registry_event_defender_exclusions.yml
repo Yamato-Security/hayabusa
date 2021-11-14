@@ -1,0 +1,37 @@
+title: Windows Defender Exclusions Added
+author: Christian Burkard
+date: 2021/07/06
+description: Detects the Setting of Windows Defender Exclusions
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        EventType: SetValue
+    SELECTION_5:
+        TargetObject: '*\Microsoft\Windows Defender\Exclusions*'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Administrator actions
+id: a982fc9c-6333-4ffb-a51d-addb04e8b529
+level: medium
+logsource:
+    category: registry_event
+    product: windows
+modified: 2021/09/21
+references:
+- https://twitter.com/_nullbind/status/1204923340810543109
+related:
+-   id: 1321dc4e-a1fe-481d-a016-52c45f0c8b4f
+    type: derived
+status: test
+tags:
+- attack.defense_evasion
+- attack.t1089
+- attack.t1562.001
+yml_filename: registry_event_defender_exclusions.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/registry_event
+

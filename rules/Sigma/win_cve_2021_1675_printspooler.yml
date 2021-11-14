@@ -1,0 +1,36 @@
+title: CVE-2021-1675 Print Spooler Exploitation Filename Pattern
+author: Florian Roth
+date: 2021/06/29
+description: Detects the default filename used in PoC code against print spooler vulnerability
+    CVE-2021-1675
+detection:
+    SELECTION_1:
+        EventID: 11
+    SELECTION_2:
+        TargetFilename: '*C:\Windows\System32\spool\drivers\x64\3\old\1\123*'
+    SELECTION_3:
+        TargetFilename: '*C:\Windows\System32\spool\drivers\x64\3\New\\*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- TargetFilename
+id: 2131cfb3-8c12-45e8-8fa0-31f5924e9f07
+level: critical
+logsource:
+    category: file_event
+    product: windows
+modified: 2021/07/01
+references:
+- https://github.com/hhlxf/PrintNightmare
+- https://github.com/afwu/PrintNightmare
+- https://github.com/cube0x0/CVE-2021-1675
+status: experimental
+tags:
+- attack.execution
+- attack.privilege_escalation
+- cve.2021.1675
+yml_filename: win_cve_2021_1675_printspooler.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/file_event
+

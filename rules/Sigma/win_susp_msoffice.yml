@@ -1,0 +1,35 @@
+title: Malicious Payload Download via Office Binaries
+author: Beyu Denis, oscd.community
+date: 2019/10/26
+description: Downloads payload from remote server
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\powerpnt.exe'
+    SELECTION_3:
+        Image: '*\winword.exe'
+    SELECTION_4:
+        Image: '*\excel.exe'
+    SELECTION_5:
+        CommandLine: '*http*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4) and SELECTION_5)
+falsepositives:
+- Unknown
+id: 0c79148b-118e-472b-bdb7-9b57b444cc19
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/11/04
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OtherMSBinaries/Powerpnt.yml
+- https://medium.com/@reegun/unsanitized-file-validation-leads-to-malicious-payload-download-via-office-binaries-202d02db7191
+- Reegun J (OCBC Bank)
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1105
+yml_filename: win_susp_msoffice.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

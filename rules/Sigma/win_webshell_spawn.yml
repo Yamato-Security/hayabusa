@@ -1,0 +1,53 @@
+title: Shells Spawned by Web Servers
+author: Thomas Patzke
+date: 2019/01/16
+description: Web servers that spawn shell processes could be the result of a successfully
+    placed web shell or an other attack
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\bash.exe'
+    SELECTION_11:
+        Image: '*\powershell.exe'
+    SELECTION_12:
+        Image: '*\bitsadmin.exe'
+    SELECTION_2:
+        ParentImage: '*\w3wp.exe'
+    SELECTION_3:
+        ParentImage: '*\httpd.exe'
+    SELECTION_4:
+        ParentImage: '*\nginx.exe'
+    SELECTION_5:
+        ParentImage: '*\php-cgi.exe'
+    SELECTION_6:
+        ParentImage: '*\tomcat.exe'
+    SELECTION_7:
+        ParentImage: '*\UMWorkerProcess.exe'
+    SELECTION_8:
+        Image: '*\cmd.exe'
+    SELECTION_9:
+        Image: '*\sh.exe'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7) and (SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12))
+falsepositives:
+- Particular web applications may spawn a shell process legitimately
+fields:
+- CommandLine
+- ParentCommandLine
+id: 8202070f-edeb-4d31-a010-a26c72ac5600
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/03/25
+status: experimental
+tags:
+- attack.persistence
+- attack.t1505.003
+- attack.privilege_escalation
+- attack.t1190
+yml_filename: win_webshell_spawn.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

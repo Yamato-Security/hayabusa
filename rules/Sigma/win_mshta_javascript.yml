@@ -1,0 +1,35 @@
+title: Mshta JavaScript Execution
+author: E.M. Anhaus (originally from Atomic Blue Detections, Endgame), oscd.community
+date: 2019/10/24
+description: Identifies suspicious mshta.exe commands.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\mshta.exe'
+    SELECTION_3:
+        CommandLine: '*javascript*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- unknown
+fields:
+- ComputerName
+- User
+- CommandLine
+id: 67f113fa-e23d-4271-befa-30113b3e08b1
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/01
+references:
+- https://eqllib.readthedocs.io/en/latest/analytics/6bc283c4-21f2-4aed-a05c-a9a3ffa95dd4.html
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1218.005/T1218.005.md
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1170
+- attack.t1218.005
+yml_filename: win_mshta_javascript.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

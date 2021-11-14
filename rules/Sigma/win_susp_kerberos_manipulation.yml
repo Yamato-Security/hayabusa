@@ -1,0 +1,94 @@
+title: Kerberos Manipulation
+author: Florian Roth
+date: 2017/02/10
+description: This method triggers on rare Kerberos Failure Codes caused by manipulations
+    of Kerberos messages
+detection:
+    SELECTION_1:
+        EventID: 675
+    SELECTION_10:
+        FailureCode: '0x11'
+    SELECTION_11:
+        FailureCode: '0x13'
+    SELECTION_12:
+        FailureCode: '0x14'
+    SELECTION_13:
+        FailureCode: '0x1A'
+    SELECTION_14:
+        FailureCode: '0x1F'
+    SELECTION_15:
+        FailureCode: '0x21'
+    SELECTION_16:
+        FailureCode: '0x22'
+    SELECTION_17:
+        FailureCode: '0x23'
+    SELECTION_18:
+        FailureCode: '0x24'
+    SELECTION_19:
+        FailureCode: '0x26'
+    SELECTION_2:
+        EventID: 4768
+    SELECTION_20:
+        FailureCode: '0x27'
+    SELECTION_21:
+        FailureCode: '0x28'
+    SELECTION_22:
+        FailureCode: '0x29'
+    SELECTION_23:
+        FailureCode: '0x2C'
+    SELECTION_24:
+        FailureCode: '0x2D'
+    SELECTION_25:
+        FailureCode: '0x2E'
+    SELECTION_26:
+        FailureCode: '0x2F'
+    SELECTION_27:
+        FailureCode: '0x31'
+    SELECTION_28:
+        FailureCode: '0x32'
+    SELECTION_29:
+        FailureCode: '0x3E'
+    SELECTION_3:
+        EventID: 4769
+    SELECTION_30:
+        FailureCode: '0x3F'
+    SELECTION_31:
+        FailureCode: '0x40'
+    SELECTION_32:
+        FailureCode: '0x41'
+    SELECTION_33:
+        FailureCode: '0x43'
+    SELECTION_34:
+        FailureCode: '0x44'
+    SELECTION_4:
+        EventID: 4771
+    SELECTION_5:
+        FailureCode: '0x9'
+    SELECTION_6:
+        FailureCode: '0xA'
+    SELECTION_7:
+        FailureCode: '0xB'
+    SELECTION_8:
+        FailureCode: '0xF'
+    SELECTION_9:
+        FailureCode: '0x10'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3 or SELECTION_4) and (SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34))
+falsepositives:
+- Faulty legacy applications
+id: f7644214-0eb0-4ace-9455-331ec4c09253
+level: high
+logsource:
+    product: windows
+    service: security
+tags:
+- attack.credential_access
+- attack.t1212
+yml_filename: win_susp_kerberos_manipulation.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/builtin
+

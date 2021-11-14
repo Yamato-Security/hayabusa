@@ -1,0 +1,54 @@
+title: Rubeus Hack Tool
+author: Florian Roth
+date: 2018/12/19
+description: Detects command line parameters used by Rubeus hack tool
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '* harvest /interval:*'
+    SELECTION_11:
+        CommandLine: '* s4u /user:*'
+    SELECTION_12:
+        CommandLine: '* s4u /ticket:*'
+    SELECTION_13:
+        CommandLine: '* hash /password:*'
+    SELECTION_2:
+        CommandLine: '* asreproast *'
+    SELECTION_3:
+        CommandLine: '* dump /service:krbtgt *'
+    SELECTION_4:
+        CommandLine: '* kerberoast *'
+    SELECTION_5:
+        CommandLine: '* createnetonly /program:*'
+    SELECTION_6:
+        CommandLine: '* ptt /ticket:*'
+    SELECTION_7:
+        CommandLine: '* /impersonateuser:*'
+    SELECTION_8:
+        CommandLine: '* renew /ticket:*'
+    SELECTION_9:
+        CommandLine: '* asktgt /user:*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13))
+falsepositives:
+- unlikely
+id: 7ec2c172-dceb-4c10-92c9-87c1881b7e18
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.harmj0y.net/blog/redteaming/from-kekeo-to-rubeus/
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1558.003
+- attack.t1558
+- attack.lateral_movement
+- attack.t1550.003
+- attack.t1097
+yml_filename: win_hack_rubeus.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

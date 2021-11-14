@@ -1,0 +1,35 @@
+title: DLL Execution Via Register-cimprovider.exe
+author: Ivan Dyachkov, Yulia Fomina, oscd.community
+date: 2020/10/07
+description: Detects using register-cimprovider.exe to execute arbitrary dll file.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\register-cimprovider.exe'
+    SELECTION_3:
+        CommandLine: '*-path*'
+    SELECTION_4:
+        CommandLine: '*dll*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+id: a2910908-e86f-4687-aeba-76a5f996e652
+level: medium
+logsource:
+    category: process_creation
+    definition: 'Requirements: Sysmon ProcessCreation logging must be activated and
+        Windows audit msut Include command line in process creation events'
+    product: windows
+references:
+- https://twitter.com/PhilipTsukerman/status/992021361106268161
+- https://github.com/api0cradle/LOLBAS/blob/master/OSBinaries/Register-cimprovider.md
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1574
+yml_filename: win_susp_register_cimprovider.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

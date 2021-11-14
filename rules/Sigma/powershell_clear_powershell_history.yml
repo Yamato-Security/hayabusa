@@ -1,0 +1,43 @@
+title: Clear PowerShell History
+author: Ilyas Ochkov, Jonhnathan Ribeiro, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/25
+description: Detects keywords that could indicate clearing PowerShell history
+detection:
+    SELECTION_1:
+        Payload: '*del*'
+    SELECTION_2:
+        Payload: '*Remove-Item*'
+    SELECTION_3:
+        Payload: '*rm*'
+    SELECTION_4:
+        Payload: '*(Get-PSReadlineOption).HistorySavePath*'
+    SELECTION_5:
+        Payload: '*Set-PSReadlineOption*'
+    SELECTION_6:
+        Payload: "*\u2013HistorySaveStyle*"
+    SELECTION_7:
+        Payload: '*SaveNothing*'
+    condition: (((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4) or (SELECTION_5
+        and SELECTION_6 and SELECTION_7))
+falsepositives:
+- Legitimate PowerShell scripts
+id: f99276ad-d122-4989-a09a-d00904a5f9d2
+level: medium
+logsource:
+    category: ps_module
+    definition: PowerShell Module Logging must be enabled
+    product: windows
+modified: 2021/10/16
+references:
+- https://gist.github.com/hook-s3c/7363a856c3cdbadeb71085147f042c1a
+related:
+-   id: dfba4ce1-e0ea-495f-986e-97140f31af2d
+    type: derived
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1070.003
+- attack.t1146
+yml_filename: powershell_clear_powershell_history.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/powershell/powershell_module
+

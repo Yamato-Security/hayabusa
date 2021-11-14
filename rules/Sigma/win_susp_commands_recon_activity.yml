@@ -1,0 +1,69 @@
+title: Reconnaissance Activity with Net Command
+author: Florian Roth, Markus Neis
+date: 2018/08/22
+description: Detects a set of commands often used in recon stages by different attack
+    groups
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: hostname.exe
+    SELECTION_11:
+        CommandLine: netstat -an
+    SELECTION_12:
+        CommandLine: '*\net1 start'
+    SELECTION_13:
+        CommandLine: '*\net1 user /domain'
+    SELECTION_14:
+        CommandLine: '*\net1 group /domain'
+    SELECTION_15:
+        CommandLine: '*\net1 group "domain admins" /domain'
+    SELECTION_16:
+        CommandLine: '*\net1 group "Exchange Trusted Subsystem" /domain'
+    SELECTION_17:
+        CommandLine: '*\net1 accounts /domain'
+    SELECTION_18:
+        CommandLine: '*\net1 user net localgroup administrators'
+    SELECTION_2:
+        CommandLine: tasklist
+    SELECTION_3:
+        CommandLine: net time
+    SELECTION_4:
+        CommandLine: systeminfo
+    SELECTION_5:
+        CommandLine: whoami
+    SELECTION_6:
+        CommandLine: nbtstat
+    SELECTION_7:
+        CommandLine: net start
+    SELECTION_8:
+        CommandLine: qprocess
+    SELECTION_9:
+        CommandLine: nslookup
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11) or (SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18)))| count() by CommandLine
+        > 4
+falsepositives:
+- False positives depend on scripts and administrative tools used in the monitored
+    environment
+id: 2887e914-ce96-435f-8105-593937e90757
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/11/28
+references:
+- https://twitter.com/haroonmeer/status/939099379834658817
+- https://twitter.com/c_APT_ure/status/939475433711722497
+- https://www.fireeye.com/blog/threat-research/2016/05/targeted_attacksaga.html
+status: experimental
+tags:
+- attack.discovery
+- attack.t1087
+- attack.t1082
+- car.2016-03-001
+yml_filename: win_susp_commands_recon_activity.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

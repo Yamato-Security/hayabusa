@@ -1,0 +1,36 @@
+title: Correct Execution of Nltest.exe
+author: Arun Chauhan
+date: 2021/10/04
+description: The attacker might use LOLBAS nltest.exe for discovery of domain controllers,
+    domain trusts, parent domain and the current user permissions.
+detection:
+    SELECTION_1:
+        EventID: 4689
+    SELECTION_2:
+        ProcessName: '*nltest.exe'
+    SELECTION_3:
+        Status: '0x0'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Red team activity
+- rare legitimate use by an administrator
+fields:
+- SubjectUserName
+- SubjectDomainName
+id: eeb66bbb-3dde-4582-815a-584aee9fe6d1
+level: high
+logsource:
+    product: windows
+    service: security
+references:
+- https://jpcertcc.github.io/ToolAnalysisResultSheet/details/nltest.htm
+- https://attack.mitre.org/software/S0359/
+status: experimental
+tags:
+- attack.discovery
+- attack.t1482
+- attack.t1018
+- attack.t1016
+yml_filename: win_lolbas_execution_of_nltest.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/builtin
+

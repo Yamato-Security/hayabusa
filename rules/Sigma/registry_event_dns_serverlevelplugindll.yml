@@ -1,0 +1,42 @@
+title: DNS ServerLevelPluginDll Install
+author: Florian Roth
+date: 2017/05/08
+description: Detects the installation of a plugin DLL via ServerLevelPluginDll parameter
+    in Registry, which can be used to execute code in context of the DNS server (restart
+    required)
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: '*\services\DNS\Parameters\ServerLevelPluginDll'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
+falsepositives:
+- unknown
+fields:
+- EventID
+- CommandLine
+- ParentCommandLine
+- Image
+- User
+- TargetObject
+id: e61e8a88-59a9-451c-874e-70fcc9740d67
+level: high
+logsource:
+    category: registry_event
+    product: windows
+modified: 2021/09/12
+references:
+- https://medium.com/@esnesenon/feature-not-bug-dnsadmin-to-dc-compromise-in-one-line-a0f779b8dc83
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1073
+- attack.t1574.002
+- attack.t1112
+yml_filename: registry_event_dns_serverlevelplugindll.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/registry_event
+

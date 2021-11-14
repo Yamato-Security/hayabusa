@@ -1,0 +1,52 @@
+title: Suspicious WSMAN Provider Image Loads
+author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
+date: 2020/06/24
+description: Detects signs of potential use of the WSMAN provider from uncommon processes
+    locally and remote execution.
+detection:
+    SELECTION_1:
+        EventID: 7
+    SELECTION_10:
+        Image: '*\svchost.exe'
+    SELECTION_11:
+        OriginalFileName: WsmWmiPl.dll
+    SELECTION_2:
+        EventID: 7
+    SELECTION_3:
+        ImageLoaded: '*\WsmSvc.dll'
+    SELECTION_4:
+        ImageLoaded: '*\WsmAuto.dll'
+    SELECTION_5:
+        ImageLoaded: '*\Microsoft.WSMan.Management.ni.dll'
+    SELECTION_6:
+        OriginalFileName: WsmSvc.dll
+    SELECTION_7:
+        OriginalFileName: WSMANAUTOMATION.DLL
+    SELECTION_8:
+        OriginalFileName: Microsoft.WSMan.Management.dll
+    SELECTION_9:
+        Image: '*\powershell.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 and ((SELECTION_3 or SELECTION_4 or
+        SELECTION_5) or (SELECTION_6 or SELECTION_7 or SELECTION_8)) and  not (SELECTION_9))
+        or (SELECTION_10 and SELECTION_11)))
+falsepositives:
+- Unknown
+id: ad1f4bb9-8dfb-4765-adb6-2a7cfb6c0f94
+level: medium
+logsource:
+    category: image_load
+    product: windows
+references:
+- https://twitter.com/chadtilbury/status/1275851297770610688
+- https://bohops.com/2020/05/12/ws-management-com-another-approach-for-winrm-lateral-movement/
+- https://docs.microsoft.com/en-us/windows/win32/winrm/windows-remote-management-architecture
+- https://github.com/bohops/WSMan-WinRM
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.lateral_movement
+- attack.t1021.003
+yml_filename: sysmon_wsman_provider_image_load.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/image_load
+

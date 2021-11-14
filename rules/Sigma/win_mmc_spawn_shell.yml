@@ -1,0 +1,50 @@
+title: MMC Spawning Windows Shell
+author: Karneades, Swisscom CSIRT
+date: 2019/08/05
+description: Detects a Windows command line executable started from MMC
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\regsvr32.exe'
+    SELECTION_11:
+        Image: '*\BITSADMIN*'
+    SELECTION_2:
+        ParentImage: '*\mmc.exe'
+    SELECTION_3:
+        Image: '*\cmd.exe'
+    SELECTION_4:
+        Image: '*\powershell.exe'
+    SELECTION_5:
+        Image: '*\wscript.exe'
+    SELECTION_6:
+        Image: '*\cscript.exe'
+    SELECTION_7:
+        Image: '*\sh.exe'
+    SELECTION_8:
+        Image: '*\bash.exe'
+    SELECTION_9:
+        Image: '*\reg.exe'
+    condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+        or (SELECTION_11)))
+fields:
+- CommandLine
+- Image
+- ParentCommandLine
+id: 05a2ab7e-ce11-4b63-86db-ab32e763e11d
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/01
+references:
+- https://enigma0x3.net/2017/01/05/lateral-movement-using-the-mmc20-application-com-object/
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1175
+- attack.t1021.003
+yml_filename: win_mmc_spawn_shell.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

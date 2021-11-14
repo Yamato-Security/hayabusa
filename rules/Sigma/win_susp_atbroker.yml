@@ -1,0 +1,90 @@
+title: Suspicious Atbroker Execution
+author: Mateusz Wydra, oscd.community
+date: 2020/10/12
+description: Atbroker executing non-deafualt Assistive Technology applications
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*filterkeys*'
+    SELECTION_11:
+        CommandLine: '*focusborderheight*'
+    SELECTION_12:
+        CommandLine: '*focusborderwidth*'
+    SELECTION_13:
+        CommandLine: '*highcontrast*'
+    SELECTION_14:
+        CommandLine: '*keyboardcues*'
+    SELECTION_15:
+        CommandLine: '*keyboardpref*'
+    SELECTION_16:
+        CommandLine: '*magnifierpane*'
+    SELECTION_17:
+        CommandLine: '*messageduration*'
+    SELECTION_18:
+        CommandLine: '*minimumhitradius*'
+    SELECTION_19:
+        CommandLine: '*mousekeys*'
+    SELECTION_2:
+        Image: '*AtBroker.exe'
+    SELECTION_20:
+        CommandLine: '*Narrator*'
+    SELECTION_21:
+        CommandLine: '*osk*'
+    SELECTION_22:
+        CommandLine: '*overlappedcontent*'
+    SELECTION_23:
+        CommandLine: '*showsounds*'
+    SELECTION_24:
+        CommandLine: '*soundsentry*'
+    SELECTION_25:
+        CommandLine: '*stickykeys*'
+    SELECTION_26:
+        CommandLine: '*togglekeys*'
+    SELECTION_27:
+        CommandLine: '*windowarranging*'
+    SELECTION_28:
+        CommandLine: '*windowtracking*'
+    SELECTION_29:
+        CommandLine: '*windowtrackingtimeout*'
+    SELECTION_3:
+        CommandLine: '*start*'
+    SELECTION_30:
+        CommandLine: '*windowtrackingzorder*'
+    SELECTION_4:
+        CommandLine: '*animations*'
+    SELECTION_5:
+        CommandLine: '*audiodescription*'
+    SELECTION_6:
+        CommandLine: '*caretbrowsing*'
+    SELECTION_7:
+        CommandLine: '*caretwidth*'
+    SELECTION_8:
+        CommandLine: '*colorfiltering*'
+    SELECTION_9:
+        CommandLine: '*cursorscheme*'
+    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
+        or SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
+        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
+        or SELECTION_20 or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24
+        or SELECTION_25 or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29
+        or SELECTION_30)))
+falsepositives:
+- Legitimate, non-default assistive technology applications execution
+id: f24bcaea-0cd1-11eb-adc1-0242ac120002
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/08/14
+references:
+- http://www.hexacorn.com/blog/2016/07/22/beyond-good-ol-run-key-part-42/
+- https://lolbas-project.github.io/lolbas/Binaries/Atbroker/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218
+yml_filename: win_susp_atbroker.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

@@ -1,0 +1,57 @@
+title: Suspicious ScreenSave Change by Reg.exe
+author: frack113
+date: 2021/08/19
+description: |
+    Adversaries may establish persistence by executing malicious content triggered by user inactivity.
+    Screensavers are programs that execute after a configurable time of user inactivity and consist of Portable Executable (PE) files with a .scr file extension
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*/d *'
+    SELECTION_11:
+        CommandLine: '*/v ScreenSaverIsSecure*'
+    SELECTION_12:
+        CommandLine: '*/d 0*'
+    SELECTION_13:
+        CommandLine: '*/v SCRNSAVE.EXE*'
+    SELECTION_14:
+        CommandLine: '*/d *'
+    SELECTION_15:
+        CommandLine: '*.scr*'
+    SELECTION_2:
+        Image: '*reg.exe'
+    SELECTION_3:
+        CommandLine: '*HKEY_CURRENT_USER\Control Panel\Desktop*'
+    SELECTION_4:
+        CommandLine: '*HKCU\Control Panel\Desktop*'
+    SELECTION_5:
+        CommandLine: '*/t REG_SZ*'
+    SELECTION_6:
+        CommandLine: '*/f*'
+    SELECTION_7:
+        CommandLine: '*/v ScreenSaveActive*'
+    SELECTION_8:
+        CommandLine: '*/d 1*'
+    SELECTION_9:
+        CommandLine: '*/v ScreenSaveTimeout*'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4) and SELECTION_5
+        and SELECTION_6 and ((SELECTION_7 and SELECTION_8) or (SELECTION_9 and SELECTION_10)
+        or (SELECTION_11 and SELECTION_12) or (SELECTION_13 and SELECTION_14 and SELECTION_15)))
+falsepositives:
+- GPO
+id: 0fc35fc3-efe6-4898-8a37-0b233339524f
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1546.002/T1546.002.md
+- https://www.welivesecurity.com/wp-content/uploads/2017/08/eset-gazer.pdf
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.t1546.002
+yml_filename: win_susp_screensaver_reg.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

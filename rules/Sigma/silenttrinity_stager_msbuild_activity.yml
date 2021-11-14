@@ -1,0 +1,32 @@
+title: Silenttrinity Stager Msbuild Activity
+author: Kiran kumar s, oscd.community
+date: 2020/10/11
+description: Detects a possible remote connections to Silenttrinity c2
+detection:
+    SELECTION_1:
+        EventID: 3
+    SELECTION_2:
+        Image: '*\msbuild.exe'
+    SELECTION_3:
+        DestinationPort: '80'
+    SELECTION_4:
+        DestinationPort: '443'
+    SELECTION_5:
+        Initiated: 'true'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4) and SELECTION_5)
+falsepositives:
+- unknown
+id: 50e54b8d-ad73-43f8-96a1-5191685b17a4
+level: high
+logsource:
+    category: network_connection
+    product: windows
+references:
+- https://www.blackhillsinfosec.com/my-first-joyride-with-silenttrinity/
+status: experimental
+tags:
+- attack.execution
+- attack.t1127.001
+yml_filename: silenttrinity_stager_msbuild_activity.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/network_connection
+

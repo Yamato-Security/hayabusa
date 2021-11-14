@@ -1,0 +1,72 @@
+title: Grabbing Sensitive Hives via Reg Utility
+author: Teymur Kheirkhabarov, Endgame, JHasenbusch, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/22
+description: Dump sam, system or security hives using REG.exe utility
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: "*hkey_\u02EAocal_machine*"
+    SELECTION_11:
+        CommandLine: "*hkey_loca\u02EA_machine*"
+    SELECTION_12:
+        CommandLine: "*hkey_\u02EAoca\u02EA_machine*"
+    SELECTION_13:
+        CommandLine: '*\system'
+    SELECTION_14:
+        CommandLine: '*\sam'
+    SELECTION_15:
+        CommandLine: '*\security'
+    SELECTION_16:
+        CommandLine: "*\\\u02E2ystem"
+    SELECTION_17:
+        CommandLine: "*\\sy\u02E2tem"
+    SELECTION_18:
+        CommandLine: "*\\\u02E2y\u02E2tem"
+    SELECTION_19:
+        CommandLine: "*\\\u02E2am"
+    SELECTION_2:
+        Image: '*\reg.exe'
+    SELECTION_20:
+        CommandLine: "*\\\u02E2ecurity"
+    SELECTION_3:
+        CommandLine: '*save*'
+    SELECTION_4:
+        CommandLine: '*export*'
+    SELECTION_5:
+        CommandLine: "*\u02E2ave*"
+    SELECTION_6:
+        CommandLine: "*e\u02E3port*"
+    SELECTION_7:
+        CommandLine: '*hklm*'
+    SELECTION_8:
+        CommandLine: "*hk\u02EAm*"
+    SELECTION_9:
+        CommandLine: '*hkey_local_machine*'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6) and (SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12) and (SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20))
+falsepositives:
+- Dumping hives for legitimate purpouse i.e. backup or forensic investigation
+id: fd877b94-9bb5-4191-bb25-d79cbd93c167
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+- https://eqllib.readthedocs.io/en/latest/analytics/aed95fc6-5e3f-49dc-8b35-06508613f979.html
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003/T1003.md
+- https://www.wietzebeukema.nl/blog/windows-command-line-obfuscation
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003.002
+- attack.t1003.004
+- attack.t1003.005
+- attack.t1003
+- car.2013-07-001
+yml_filename: win_grabbing_sensitive_hives_via_reg.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

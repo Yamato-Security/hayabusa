@@ -1,0 +1,57 @@
+title: Bloodhound and Sharphound Hack Tool
+author: Florian Roth
+date: 2019/12/20
+description: Detects command line parameters used by Bloodhound and Sharphound hack
+    tools
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '* DCOnly *'
+    SELECTION_11:
+        CommandLine: '* --NoSaveCache *'
+    SELECTION_2:
+        Image: '*\Bloodhound.exe*'
+    SELECTION_3:
+        Image: '*\SharpHound.exe*'
+    SELECTION_4:
+        CommandLine: '* -CollectionMethod All *'
+    SELECTION_5:
+        CommandLine: '*.exe -c All -d *'
+    SELECTION_6:
+        CommandLine: '*Invoke-Bloodhound*'
+    SELECTION_7:
+        CommandLine: '*Get-BloodHoundData*'
+    SELECTION_8:
+        CommandLine: '* -JsonFolder *'
+    SELECTION_9:
+        CommandLine: '* -ZipFileName *'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) or (SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7) or (SELECTION_8 and SELECTION_9) or (SELECTION_10
+        and SELECTION_11)))
+falsepositives:
+- Other programs that use these command line option and accepts an 'All' parameter
+id: f376c8a7-a2d0-4ddc-aa0c-16c17236d962
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/12/21
+references:
+- https://github.com/BloodHoundAD/BloodHound
+- https://github.com/BloodHoundAD/SharpHound
+tags:
+- attack.discovery
+- attack.t1087.001
+- attack.t1087.002
+- attack.t1087
+- attack.t1482
+- attack.t1069.001
+- attack.t1069.002
+- attack.t1069
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: win_hack_bloodhound.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

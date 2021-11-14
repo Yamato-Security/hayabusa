@@ -1,0 +1,52 @@
+title: Lazarus Loaders
+author: Florian Roth, wagga
+date: 2020/12/23
+description: Detects different loaders as described in various threat reports on Lazarus
+    group activity
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*.dat,*'
+    SELECTION_11:
+        CommandLine: '*.io,*'
+    SELECTION_12:
+        CommandLine: '*.ini,*'
+    SELECTION_13:
+        CommandLine: '*.db,*'
+    SELECTION_2:
+        CommandLine: '*cmd.exe /c *'
+    SELECTION_3:
+        CommandLine: '* -p 0x*'
+    SELECTION_4:
+        CommandLine: '*C:\ProgramData\\*'
+    SELECTION_5:
+        CommandLine: '*C:\RECYCLER\\*'
+    SELECTION_6:
+        CommandLine: '*rundll32.exe *'
+    SELECTION_7:
+        CommandLine: '*C:\ProgramData\\*'
+    SELECTION_8:
+        CommandLine: '*.bin,*'
+    SELECTION_9:
+        CommandLine: '*.tmp,*'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and (SELECTION_4 or
+        SELECTION_5)) or (SELECTION_6 and SELECTION_7 and (SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13))))
+falsepositives:
+- unknown
+id: 7b49c990-4a9a-4e65-ba95-47c9cc448f6e
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/06/27
+references:
+- https://www.hvs-consulting.de/lazarus-report/
+- https://securelist.com/lazarus-covets-covid-19-related-intelligence/99906/
+status: experimental
+tags:
+- attack.g0032
+yml_filename: win_apt_lazarus_loader.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

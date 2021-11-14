@@ -1,0 +1,55 @@
+title: Non-privileged Usage of Reg or Powershell
+author: Teymur Kheirkhabarov (idea), Ryan Plas (rule), oscd.community
+date: 2020/10/05
+description: Search for usage of reg or Powershell by non-priveleged users to modify
+    service configuration in registry
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*Services*'
+    SELECTION_11:
+        CommandLine: '*ImagePath*'
+    SELECTION_12:
+        CommandLine: '*FailureCommand*'
+    SELECTION_13:
+        CommandLine: '*ServiceDLL*'
+    SELECTION_2:
+        IntegrityLevel: Medium
+    SELECTION_3:
+        CommandLine: '*reg*'
+    SELECTION_4:
+        CommandLine: '*add*'
+    SELECTION_5:
+        CommandLine: '*powershell*'
+    SELECTION_6:
+        CommandLine: '*set-itemproperty*'
+    SELECTION_7:
+        CommandLine: '* sp *'
+    SELECTION_8:
+        CommandLine: '*new-itemproperty*'
+    SELECTION_9:
+        CommandLine: '*ControlSet*'
+    condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4) or
+        (SELECTION_5 and (SELECTION_6 or SELECTION_7 or SELECTION_8))) and SELECTION_9
+        and SELECTION_10 and (SELECTION_11 or SELECTION_12 or SELECTION_13))
+falsepositives:
+- Unknown
+fields:
+- EventID
+- IntegrityLevel
+- CommandLine
+id: 8f02c935-effe-45b3-8fc9-ef8696a9e41d
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://image.slidesharecdn.com/kheirkhabarovoffzonefinal-181117201458/95/hunting-for-privilege-escalation-in-windows-environment-20-638.jpg
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1112
+yml_filename: win_non_priv_reg_or_ps.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

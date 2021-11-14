@@ -1,0 +1,41 @@
+title: Registry Entries For Azorult Malware
+author: Trent Liffick
+date: 2020/05/08
+description: Detects the presence of a registry key created during Azorult execution
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        EventID: 12
+    SELECTION_5:
+        EventID: 13
+    SELECTION_6:
+        TargetObject: '*SYSTEM\\*'
+    SELECTION_7:
+        TargetObject: '*\services\localNETService'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5)
+        and SELECTION_6 and SELECTION_7)
+falsepositives:
+- unknown
+fields:
+- Image
+- TargetObject
+- TargetDetails
+id: f7f9ab88-7557-4a69-b30e-0a8f91b3a0e7
+level: critical
+logsource:
+    category: registry_event
+    product: windows
+references:
+- https://www.trendmicro.com/vinfo/us/threat-encyclopedia/malware/trojan.win32.azoruit.a
+status: experimental
+tags:
+- attack.execution
+- attack.t1112
+yml_filename: registry_event_mal_azorult.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/malware
+

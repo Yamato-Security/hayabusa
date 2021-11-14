@@ -1,0 +1,49 @@
+title: Cabinet File Expansion
+author: Bhabesh Raj
+date: 2021/07/30
+description: Adversaries can use the inbuilt expand utility to decompress cab files
+    as seen in recent Iranian MeteorExpress attack
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\expand.exe'
+    SELECTION_3:
+        CommandLine: '*.cab*'
+    SELECTION_4:
+        CommandLine: '*/F:*'
+    SELECTION_5:
+        CommandLine: '*-F:*'
+    SELECTION_6:
+        CommandLine: '*C:\ProgramData\\*'
+    SELECTION_7:
+        CommandLine: '*C:\Public\\*'
+    SELECTION_8:
+        CommandLine: '*\AppData\Local\Temp\\*'
+    SELECTION_9:
+        CommandLine: '*\AppData\Roaming\Temp\\*'
+    condition: (SELECTION_1 and (SELECTION_2) and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9))
+falsepositives:
+- System administrator Usage
+fields:
+- ComputerName
+- User
+- CommandLine
+- ParentCommandLine
+id: 9f107a84-532c-41af-b005-8d12a607639f
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/08/31
+references:
+- https://labs.sentinelone.com/meteorexpress-mysterious-wiper-paralyzes-iranian-trains-with-epic-troll
+- https://blog.malwarebytes.com/threat-intelligence/2021/08/new-variant-of-konni-malware-used-in-campaign-targetting-russia/
+status: experimental
+tags:
+- attack.execution
+- attack.t1218
+yml_filename: sysmon_expand_cabinet_files.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

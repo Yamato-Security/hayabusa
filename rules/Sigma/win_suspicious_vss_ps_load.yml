@@ -1,0 +1,53 @@
+title: Image Load of VSS_PS.dll by Uncommon Executable
+author: Markus Neis, @markus_neis
+date: 2021/07/07
+description: Detects the image load of vss_ps.dll by uncommon executables using OriginalFileName
+    datapoint
+detection:
+    SELECTION_1:
+        EventID: 7
+    SELECTION_10:
+        Image: '*dismhost.exe'
+    SELECTION_11:
+        Image: '*taskhostw.exe'
+    SELECTION_12:
+        Image: '*\clussvc.exe'
+    SELECTION_13:
+        Image: '*c:\windows\\*'
+    SELECTION_2:
+        ImageLoaded: '*\vss_ps.dll'
+    SELECTION_3:
+        Image: '*\svchost.exe'
+    SELECTION_4:
+        Image: '*\msiexec.exe'
+    SELECTION_5:
+        Image: '*\vssvc.exe'
+    SELECTION_6:
+        Image: '*\srtasks.exe'
+    SELECTION_7:
+        Image: '*\tiworker.exe'
+    SELECTION_8:
+        Image: '*\dllhost.exe'
+    SELECTION_9:
+        Image: '*\searchindexer.exe'
+    condition: (SELECTION_1 and (SELECTION_2) and  not ((SELECTION_3 or SELECTION_4
+        or SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12) and SELECTION_13))
+falsepositives:
+- unknown
+id: 333cdbe8-27bb-4246-bf82-b41a0dca4b70
+level: high
+logsource:
+    category: image_load
+    product: windows
+references:
+- 1bd85e1caa1415ebdc8852c91e37bbb7
+- https://twitter.com/am0nsec/status/1412232114980982787
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.impact
+- attack.t1490
+yml_filename: win_suspicious_vss_ps_load.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/image_load
+

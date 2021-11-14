@@ -1,0 +1,50 @@
+title: MS Office Product Spawning Exe in User Dir
+author: Jason Lynch
+date: 2019/04/02
+description: Detects an executable in the users directory started from Microsoft Word,
+    Excel, Powerpoint, Publisher or Visio
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        ParentImage: '*\WINWORD.EXE'
+    SELECTION_3:
+        ParentImage: '*\EXCEL.EXE'
+    SELECTION_4:
+        ParentImage: '*\POWERPNT.exe'
+    SELECTION_5:
+        ParentImage: '*\MSPUB.exe'
+    SELECTION_6:
+        ParentImage: '*\VISIO.exe'
+    SELECTION_7:
+        Image: C:\users\\*
+    SELECTION_8:
+        Image: '*.exe'
+    SELECTION_9:
+        Image: '*\Teams.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6) and SELECTION_7 and SELECTION_8) and  not (SELECTION_9))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: aa3a6f94-890e-4e22-b634-ffdfd54792cc
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/04/01
+references:
+- sha256=23160972c6ae07f740800fa28e421a81d7c0ca5d5cab95bc082b4a986fbac57c
+- https://blog.morphisec.com/fin7-not-finished-morphisec-spots-new-campaign
+status: experimental
+tags:
+- attack.execution
+- attack.t1204
+- attack.t1204.002
+- attack.g0046
+- car.2013-05-002
+yml_filename: win_office_spawn_exe_from_users_directory.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

@@ -1,0 +1,122 @@
+title: Executable Used by PlugX in Uncommon Location
+author: Florian Roth
+date: 2017/06/12
+description: Detects the execution of an executable that is typically used by PlugX
+    for DLL side loading started from an uncommon location
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\Windows Media Player\\*'
+    SELECTION_11:
+        Image: '*\hcc.exe'
+    SELECTION_12:
+        Image: '*\HTML Help Workshop\\*'
+    SELECTION_13:
+        Image: '*\hkcmd.exe'
+    SELECTION_14:
+        Image: '*\System32\\*'
+    SELECTION_15:
+        Image: '*\SysNative\\*'
+    SELECTION_16:
+        Image: '*\SysWowo64\\*'
+    SELECTION_17:
+        Image: '*\Mc.exe'
+    SELECTION_18:
+        Image: '*\Microsoft Visual Studio*'
+    SELECTION_19:
+        Image: '*\Microsoft SDK*'
+    SELECTION_2:
+        Image: '*\CamMute.exe'
+    SELECTION_20:
+        Image: '*\Windows Kit*'
+    SELECTION_21:
+        Image: '*\MsMpEng.exe'
+    SELECTION_22:
+        Image: '*\Microsoft Security Client\\*'
+    SELECTION_23:
+        Image: '*\Windows Defender\\*'
+    SELECTION_24:
+        Image: '*\AntiMalware\\*'
+    SELECTION_25:
+        Image: '*\msseces.exe'
+    SELECTION_26:
+        Image: '*\Microsoft Security Center\\*'
+    SELECTION_27:
+        Image: '*\Microsoft Security Client\\*'
+    SELECTION_28:
+        Image: '*\Microsoft Security Essentials\\*'
+    SELECTION_29:
+        Image: '*\OInfoP11.exe'
+    SELECTION_3:
+        Image: '*\Lenovo\Communication Utility\\*'
+    SELECTION_30:
+        Image: '*\Common Files\Microsoft Shared\\*'
+    SELECTION_31:
+        Image: '*\OleView.exe'
+    SELECTION_32:
+        Image: '*\Microsoft Visual Studio*'
+    SELECTION_33:
+        Image: '*\Microsoft SDK*'
+    SELECTION_34:
+        Image: '*\Windows Kit*'
+    SELECTION_35:
+        Image: '*\Windows Resource Kit\\*'
+    SELECTION_36:
+        Image: '*\rc.exe'
+    SELECTION_37:
+        Image: '*\Microsoft Visual Studio*'
+    SELECTION_38:
+        Image: '*\Microsoft SDK*'
+    SELECTION_39:
+        Image: '*\Windows Kit*'
+    SELECTION_4:
+        Image: '*\Lenovo\Communications Utility\\*'
+    SELECTION_40:
+        Image: '*\Windows Resource Kit\\*'
+    SELECTION_41:
+        Image: '*\Microsoft.NET\\*'
+    SELECTION_5:
+        Image: '*\chrome_frame_helper.exe'
+    SELECTION_6:
+        Image: '*\Google\Chrome\application\\*'
+    SELECTION_7:
+        Image: '*\dvcemumanager.exe'
+    SELECTION_8:
+        Image: '*\Microsoft Device Emulator\\*'
+    SELECTION_9:
+        Image: '*\Gadget.exe'
+    condition: (SELECTION_1 and ((((((((((((SELECTION_2 and  not ((SELECTION_3 or
+        SELECTION_4))) or (SELECTION_5 and  not (SELECTION_6))) or (SELECTION_7 and  not
+        (SELECTION_8))) or (SELECTION_9 and  not (SELECTION_10))) or (SELECTION_11
+        and  not (SELECTION_12))) or (SELECTION_13 and  not ((SELECTION_14 or SELECTION_15
+        or SELECTION_16)))) or (SELECTION_17 and  not ((SELECTION_18 or SELECTION_19
+        or SELECTION_20)))) or (SELECTION_21 and  not ((SELECTION_22 or SELECTION_23
+        or SELECTION_24)))) or (SELECTION_25 and  not ((SELECTION_26 or SELECTION_27
+        or SELECTION_28)))) or (SELECTION_29 and  not (SELECTION_30))) or (SELECTION_31
+        and  not ((SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35))))
+        or (SELECTION_36 and  not ((SELECTION_37 or SELECTION_38 or SELECTION_39 or
+        SELECTION_40 or SELECTION_41)))))
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: aeab5ec5-be14-471a-80e8-e344418305c2
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/11/28
+references:
+- http://www.hexacorn.com/blog/2016/03/10/beyond-good-ol-run-key-part-36/
+- https://countuponsecurity.com/2017/06/07/threat-hunting-in-the-enterprise-with-appcompatprocessor/
+status: experimental
+tags:
+- attack.s0013
+- attack.defense_evasion
+- attack.t1073
+- attack.t1574.002
+yml_filename: win_plugx_susp_exe_locations.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

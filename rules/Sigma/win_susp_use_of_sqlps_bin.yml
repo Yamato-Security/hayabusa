@@ -1,0 +1,41 @@
+title: Detection of PowerShell Execution via Sqlps.exe
+author: Agro (@agro_sev) oscd.community
+date: 2020/10/10
+description: This rule detects execution of a PowerShell code through the sqlps.exe
+    utility, which is included in the standard set of utilities supplied with the
+    MSSQL Server. Script blocks are not logged in this case, so this utility helps
+    to bypass protection mechanisms based on the analysis of these logs.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\sqlps.exe'
+    SELECTION_3:
+        ParentImage: '*\sqlps.exe'
+    SELECTION_4:
+        OriginalFileName: \sqlps.exe
+    SELECTION_5:
+        ParentImage: '*\sqlagent.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) or (SELECTION_4 and  not
+        (SELECTION_5))))
+falsepositives:
+- Direct PS command execution through SQLPS.exe is uncommon, childprocess sqlps.exe
+    spawned by sqlagent.exe is a legitimate action.
+id: 0152550d-3a26-4efd-9f0e-54a0b28ae2f3
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://docs.microsoft.com/en-us/sql/tools/sqlps-utility?view=sql-server-ver15
+- https://lolbas-project.github.io/lolbas/OtherMSBinaries/Sqlps/
+- https://twitter.com/bryon_/status/975835709587075072
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.defense_evasion
+- attack.t1127
+yml_filename: win_susp_use_of_sqlps_bin.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

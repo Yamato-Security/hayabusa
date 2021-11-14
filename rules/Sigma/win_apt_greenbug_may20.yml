@@ -1,0 +1,79 @@
+title: Greenbug Campaign Indicators
+author: Florian Roth
+date: 2020/05/20
+description: Detects tools and process executions as observed in a Greenbug campaign
+    in May 2020
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*[Net.CredentialCache]::DefaultCredentials;IEX *'
+    SELECTION_11:
+        CommandLine: '* -nop -w hidden -c $m=new-object net.webclient;$m*'
+    SELECTION_12:
+        CommandLine: '*-noninteractive -executionpolicy bypass whoami*'
+    SELECTION_13:
+        CommandLine: '*-noninteractive -executionpolicy bypass netstat -a*'
+    SELECTION_14:
+        CommandLine: '*L3NlcnZlcj1*'
+    SELECTION_15:
+        Image: '*\adobe\Adobe.exe'
+    SELECTION_16:
+        Image: '*\oracle\local.exe'
+    SELECTION_17:
+        Image: '*\revshell.exe'
+    SELECTION_18:
+        Image: '*infopagesbackup\ncat.exe'
+    SELECTION_19:
+        Image: '*CSIDL_SYSTEM\cmd.exe'
+    SELECTION_2:
+        CommandLine: '*bitsadmin*'
+    SELECTION_20:
+        Image: '*\programdata\oracle\java.exe'
+    SELECTION_21:
+        Image: '*CSIDL_COMMON_APPDATA\comms\comms.exe'
+    SELECTION_22:
+        Image: '*\Programdata\VMware\Vmware.exe'
+    SELECTION_3:
+        CommandLine: '*/transfer*'
+    SELECTION_4:
+        CommandLine: '*CSIDL_APPDATA*'
+    SELECTION_5:
+        CommandLine: '*CSIDL_SYSTEM_DRIVE*'
+    SELECTION_6:
+        CommandLine: '*\msf.ps1*'
+    SELECTION_7:
+        CommandLine: '*8989 -e cmd.exe*'
+    SELECTION_8:
+        CommandLine: '*system.Data.SqlClient.SqlDataAdapter($cmd); [void]$da.fill*'
+    SELECTION_9:
+        CommandLine: '*-nop -w hidden -c $k=new-object*'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4) or
+        (SELECTION_5) or (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14)
+        or (SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
+        or SELECTION_20 or SELECTION_21 or SELECTION_22)))
+falsepositives:
+- Unknown
+id: 3711eee4-a808-4849-8a14-faf733da3612
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/09/21
+references:
+- https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence/greenbug-espionage-telco-south-asia
+status: experimental
+tags:
+- attack.g0049
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+- attack.command_and_control
+- attack.t1105
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.005
+yml_filename: win_apt_greenbug_may20.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

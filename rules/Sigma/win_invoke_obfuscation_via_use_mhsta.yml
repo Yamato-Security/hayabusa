@@ -1,0 +1,28 @@
+title: Invoke-Obfuscation Via Use MSHTA
+author: Nikita Nazarov, oscd.community
+date: 2020/10/08
+description: Detects Obfuscated Powershell via use MSHTA in Scripts
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine|re: (?i).*(set).*(&&).*(mshta).*(vbscript:createobject).*(\.run).*\(window\.close\).*"
+    condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: ac20ae82-8758-4f38-958e-b44a3140ca88
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/Neo23x0/sigma/issues/1009
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001
+yml_filename: win_invoke_obfuscation_via_use_mhsta.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

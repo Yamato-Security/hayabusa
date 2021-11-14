@@ -1,0 +1,59 @@
+title: Suspicious Serv-U Process Pattern
+author: Florian Roth
+date: 2021/07/14
+description: Detects a suspicious process pattern which could be a sign of an exploited
+    Serv-U service
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\regsvr32.exe'
+    SELECTION_11:
+        Image: '*\wmic.exe'
+    SELECTION_12:
+        Image: '*\mshta.exe'
+    SELECTION_13:
+        Image: '*\rundll32.exe'
+    SELECTION_14:
+        Image: '*\msiexec.exe'
+    SELECTION_15:
+        Image: '*\forfiles.exe'
+    SELECTION_16:
+        Image: '*\scriptrunner.exe'
+    SELECTION_2:
+        ParentImage: '*\Serv-U.exe'
+    SELECTION_3:
+        Image: '*\cmd.exe'
+    SELECTION_4:
+        Image: '*\powershell.exe'
+    SELECTION_5:
+        Image: '*\wscript.exe'
+    SELECTION_6:
+        Image: '*\cscript.exe'
+    SELECTION_7:
+        Image: '*\sh.exe'
+    SELECTION_8:
+        Image: '*\bash.exe'
+    SELECTION_9:
+        Image: '*\schtasks.exe'
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16))
+falsepositives:
+- Legitimate uses in which users or programs use the SSH service of Serv-U for remote
+    command execution
+id: 58f4ea09-0fc2-4520-ba18-b85c540b0eaf
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.microsoft.com/security/blog/2021/07/13/microsoft-discovers-threat-actor-targeting-solarwinds-serv-u-software-with-0-day-exploit/
+status: experimental
+tags:
+- attack.credential_access
+- cve.2021.35211
+yml_filename: win_susp_servu_process_pattern.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

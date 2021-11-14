@@ -1,0 +1,36 @@
+title: Recon Information for Export with Command Prompt
+author: frack113
+date: 2021/07/30
+description: Once established within a system or network, an adversary may use automated
+    techniques for collecting internal data.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\tree.com'
+    SELECTION_3:
+        Image: '*\WMIC.exe'
+    SELECTION_4:
+        Image: '*\doskey.exe'
+    SELECTION_5:
+        Image: '*\sc.exe'
+    SELECTION_6:
+        ParentCommandLine: '* > %TEMP%\\*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
+        and SELECTION_6)
+falsepositives:
+- Unknown
+id: aa2efee7-34dd-446e-8a37-40790a66efd7
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1119/T1119.md
+status: experimental
+tags:
+- attack.collection
+- attack.t1119
+yml_filename: process_creation_susp_recon.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

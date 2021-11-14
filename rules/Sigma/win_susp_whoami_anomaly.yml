@@ -1,0 +1,53 @@
+title: Whoami Execution Anomaly
+author: Florian Roth
+date: 2021/08/12
+description: Detects the execution of whoami with suspicious parents or parameters
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*whoami /all*'
+    SELECTION_11:
+        CommandLine: '*whoami.exe -all*'
+    SELECTION_12:
+        CommandLine: '*whoami.exe /all*'
+    SELECTION_2:
+        EventID: 1
+    SELECTION_3:
+        Image: '*\whoami.exe'
+    SELECTION_4:
+        ParentImage: '*\cmd.exe'
+    SELECTION_5:
+        ParentImage: '*\powershell.exe'
+    SELECTION_6:
+        ParentImage: C:\Program Files\Microsoft Monitoring Agent\Agent\MonitoringHost.exe
+    SELECTION_7:
+        ParentImage: ''
+    SELECTION_8:
+        ParentImage|re: ^$
+    SELECTION_9:
+        CommandLine: '*whoami -all*'
+    condition: (SELECTION_1 and ((SELECTION_2 and ((SELECTION_3 and  not ((SELECTION_4
+        or SELECTION_5))) and  not ((SELECTION_6 or SELECTION_7))) and  not (SELECTION_8))
+        or (SELECTION_9 or SELECTION_10 or SELECTION_11 or SELECTION_12)))
+falsepositives:
+- Admin activity
+- Scripts and administrative tools used in the monitored environment
+- Monitoring activity
+id: 8de1cbe8-d6f5-496d-8237-5f44a721c7a0
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/08/26
+references:
+- https://brica.de/alerts/alert/public/1247926/agent-tesla-keylogger-delivered-inside-a-power-iso-daa-archive/
+- https://app.any.run/tasks/7eaba74e-c1ea-400f-9c17-5e30eee89906/
+status: experimental
+tags:
+- attack.discovery
+- attack.t1033
+- car.2016-03-001
+yml_filename: win_susp_whoami_anomaly.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

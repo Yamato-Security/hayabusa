@@ -1,0 +1,137 @@
+title: Antivirus Relevant File Paths Alerts
+author: Florian Roth, Arnim Rupp
+date: 2018/09/09
+description: Detects an Antivirus alert in a highly relevant file path or with a relevant
+    file name
+detection:
+    SELECTION_1:
+        FileName: C:\Windows\\*
+    SELECTION_10:
+        FileName: '*apache*'
+    SELECTION_11:
+        FileName: '*tomcat*'
+    SELECTION_12:
+        FileName: '*nginx*'
+    SELECTION_13:
+        FileName: '*weblogic*'
+    SELECTION_14:
+        Filename: '*.ps1'
+    SELECTION_15:
+        Filename: '*.psm1'
+    SELECTION_16:
+        Filename: '*.vbs'
+    SELECTION_17:
+        Filename: '*.bat'
+    SELECTION_18:
+        Filename: '*.cmd'
+    SELECTION_19:
+        Filename: '*.sh'
+    SELECTION_2:
+        FileName: C:\Temp\\*
+    SELECTION_20:
+        Filename: '*.chm'
+    SELECTION_21:
+        Filename: '*.xml'
+    SELECTION_22:
+        Filename: '*.txt'
+    SELECTION_23:
+        Filename: '*.jsp'
+    SELECTION_24:
+        Filename: '*.jspx'
+    SELECTION_25:
+        Filename: '*.asp'
+    SELECTION_26:
+        Filename: '*.aspx'
+    SELECTION_27:
+        Filename: '*.ashx'
+    SELECTION_28:
+        Filename: '*.asax'
+    SELECTION_29:
+        Filename: '*.asmx'
+    SELECTION_3:
+        FileName: C:\PerfLogs\\*
+    SELECTION_30:
+        Filename: '*.php'
+    SELECTION_31:
+        Filename: '*.cfm'
+    SELECTION_32:
+        Filename: '*.py'
+    SELECTION_33:
+        Filename: '*.pyc'
+    SELECTION_34:
+        Filename: '*.pl'
+    SELECTION_35:
+        Filename: '*.rb'
+    SELECTION_36:
+        Filename: '*.cgi'
+    SELECTION_37:
+        Filename: '*.war'
+    SELECTION_38:
+        Filename: '*.ear'
+    SELECTION_39:
+        Filename: '*.hta'
+    SELECTION_4:
+        FileName: C:\Users\Public\\*
+    SELECTION_40:
+        Filename: '*.lnk'
+    SELECTION_41:
+        Filename: '*.scf'
+    SELECTION_42:
+        Filename: '*.sct'
+    SELECTION_43:
+        Filename: '*.vbe'
+    SELECTION_44:
+        Filename: '*.wsf'
+    SELECTION_45:
+        Filename: '*.wsh'
+    SELECTION_46:
+        Filename: '*.gif'
+    SELECTION_47:
+        Filename: '*.png'
+    SELECTION_48:
+        Filename: '*.jpg'
+    SELECTION_49:
+        Filename: '*.jpeg'
+    SELECTION_5:
+        FileName: C:\Users\Default\\*
+    SELECTION_50:
+        Filename: '*.svg'
+    SELECTION_51:
+        Filename: '*.dat'
+    SELECTION_6:
+        FileName: '*\Client\\*'
+    SELECTION_7:
+        FileName: '*\tsclient\\*'
+    SELECTION_8:
+        FileName: '*\inetpub\\*'
+    SELECTION_9:
+        FileName: '*/www/*'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
+        or (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13) or (SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39 or SELECTION_40
+        or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44 or SELECTION_45
+        or SELECTION_46 or SELECTION_47 or SELECTION_48 or SELECTION_49 or SELECTION_50
+        or SELECTION_51))
+falsepositives:
+- Unlikely
+fields:
+- Signature
+- User
+id: c9a88268-0047-4824-ba6e-4d81ce0b907c
+level: high
+logsource:
+    product: antivirus
+modified: 2021/05/09
+references:
+- https://www.nextron-systems.com/2021/03/25/antivirus-event-analysis-cheat-sheet-v1-8/
+tags:
+- attack.resource_development
+- attack.t1588
+yml_filename: av_relevant_files.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/malware
+

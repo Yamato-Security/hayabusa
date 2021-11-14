@@ -1,0 +1,51 @@
+title: CobaltStrike Service Installations
+author: Florian Roth, Wojciech Lesicki
+date: 2021/05/26
+description: Detects known malicious service installs that appear in cases in which
+    a Cobalt Strike beacon elevates privileges or lateral movement
+detection:
+    SELECTION_1:
+        EventID: 7045
+    SELECTION_10:
+        ImagePath: '*JRVggKE5ldy1PYmplY3QgTmV0LldlYmNsaWVudCkuRG93bmxvYWRTdHJpbmcoJ2h0dHA6Ly8xMjcuMC4wLjE6*'
+    SELECTION_2:
+        ImagePath: '*ADMIN$*'
+    SELECTION_3:
+        ImagePath: '*.exe*'
+    SELECTION_4:
+        ImagePath: '*%COMSPEC%*'
+    SELECTION_5:
+        ImagePath: '*start*'
+    SELECTION_6:
+        ImagePath: '*powershell*'
+    SELECTION_7:
+        ImagePath: '*powershell -nop -w hidden -encodedcommand*'
+    SELECTION_8:
+        ImagePath: '*SUVYIChOZXctT2JqZWN0IE5ldC5XZWJjbGllbnQpLkRvd25sb2FkU3RyaW5nKCdodHRwOi8vMTI3LjAuMC4xO*'
+    SELECTION_9:
+        ImagePath: '*lFWCAoTmV3LU9iamVjdCBOZXQuV2ViY2xpZW50KS5Eb3dubG9hZFN0cmluZygnaHR0cDovLzEyNy4wLjAuMT*'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and
+        SELECTION_5 and SELECTION_6) or SELECTION_7 or (SELECTION_8 or SELECTION_9
+        or SELECTION_10)))
+falsepositives:
+- Unknown
+id: 5a105d34-05fc-401e-8553-272b45c1522d
+level: critical
+logsource:
+    product: windows
+    service: system
+modified: 2021/09/21
+references:
+- https://www.sans.org/webcasts/119395
+- https://www.crowdstrike.com/blog/getting-the-bacon-from-cobalt-strike-beacon/
+- https://thedfirreport.com/2021/08/29/cobalt-strike-a-defenders-guide/
+tags:
+- attack.execution
+- attack.privilege_escalation
+- attack.lateral_movement
+- attack.t1021.002
+- attack.t1543.003
+- attack.t1569.002
+yml_filename: win_cobaltstrike_service_installs.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/builtin
+

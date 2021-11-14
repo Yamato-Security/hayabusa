@@ -1,0 +1,179 @@
+title: Malicious Nishang PowerShell Commandlets
+author: Alec Costello
+date: 2019/05/16
+description: Detects Commandlet names and arguments from the Nishang exploitation
+    framework
+detection:
+    SELECTION_1:
+        ScriptBlockText: '*Add-ConstrainedDelegationBackdoor*'
+    SELECTION_10:
+        ScriptBlockText: '*Out-HTA*'
+    SELECTION_11:
+        ScriptBlockText: '*Out-SCF*'
+    SELECTION_12:
+        ScriptBlockText: '*Out-SCT*'
+    SELECTION_13:
+        ScriptBlockText: '*Out-Shortcut*'
+    SELECTION_14:
+        ScriptBlockText: '*Out-WebQuery*'
+    SELECTION_15:
+        ScriptBlockText: '*Out-Word*'
+    SELECTION_16:
+        ScriptBlockText: '*Enable-Duplication*'
+    SELECTION_17:
+        ScriptBlockText: '*Remove-Update*'
+    SELECTION_18:
+        ScriptBlockText: '*Download-Execute-PS*'
+    SELECTION_19:
+        ScriptBlockText: '*Download_Execute*'
+    SELECTION_2:
+        ScriptBlockText: '*Set-DCShadowPermissions*'
+    SELECTION_20:
+        ScriptBlockText: '*Execute-Command-MSSQL*'
+    SELECTION_21:
+        ScriptBlockText: '*Execute-DNSTXT-Code*'
+    SELECTION_22:
+        ScriptBlockText: '*Out-RundllCommand*'
+    SELECTION_23:
+        ScriptBlockText: '*Copy-VSS*'
+    SELECTION_24:
+        ScriptBlockText: '*FireBuster*'
+    SELECTION_25:
+        ScriptBlockText: '*FireListener*'
+    SELECTION_26:
+        ScriptBlockText: '*Get-Information*'
+    SELECTION_27:
+        ScriptBlockText: '*Get-PassHints*'
+    SELECTION_28:
+        ScriptBlockText: '*Get-WLAN-Keys*'
+    SELECTION_29:
+        ScriptBlockText: '*Get-Web-Credentials*'
+    SELECTION_3:
+        ScriptBlockText: '*DNS_TXT_Pwnage*'
+    SELECTION_30:
+        ScriptBlockText: '*Invoke-CredentialsPhish*'
+    SELECTION_31:
+        ScriptBlockText: '*Invoke-MimikatzWDigestDowngrade*'
+    SELECTION_32:
+        ScriptBlockText: '*Invoke-SSIDExfil*'
+    SELECTION_33:
+        ScriptBlockText: '*Invoke-SessionGopher*'
+    SELECTION_34:
+        ScriptBlockText: '*Keylogger*'
+    SELECTION_35:
+        ScriptBlockText: '*Invoke-Interceptor*'
+    SELECTION_36:
+        ScriptBlockText: '*Create-MultipleSessions*'
+    SELECTION_37:
+        ScriptBlockText: '*Invoke-NetworkRelay*'
+    SELECTION_38:
+        ScriptBlockText: '*Run-EXEonRemote*'
+    SELECTION_39:
+        ScriptBlockText: '*Invoke-Prasadhak*'
+    SELECTION_4:
+        ScriptBlockText: '*Execute-OnTime*'
+    SELECTION_40:
+        ScriptBlockText: '*Invoke-BruteForce*'
+    SELECTION_41:
+        ScriptBlockText: '*Password-List*'
+    SELECTION_42:
+        ScriptBlockText: '*Invoke-JSRatRegsvr*'
+    SELECTION_43:
+        ScriptBlockText: '*Invoke-JSRatRundll*'
+    SELECTION_44:
+        ScriptBlockText: '*Invoke-PoshRatHttps*'
+    SELECTION_45:
+        ScriptBlockText: '*Invoke-PowerShellIcmp*'
+    SELECTION_46:
+        ScriptBlockText: '*Invoke-PowerShellUdp*'
+    SELECTION_47:
+        ScriptBlockText: '*Invoke-PSGcat*'
+    SELECTION_48:
+        ScriptBlockText: '*Invoke-PsGcatAgent*'
+    SELECTION_49:
+        ScriptBlockText: '*Remove-PoshRat*'
+    SELECTION_5:
+        ScriptBlockText: '*HTTP-Backdoor*'
+    SELECTION_50:
+        ScriptBlockText: '*Add-Persistance*'
+    SELECTION_51:
+        ScriptBlockText: '*ExetoText*'
+    SELECTION_52:
+        ScriptBlockText: '*Invoke-Decode*'
+    SELECTION_53:
+        ScriptBlockText: '*Invoke-Encode*'
+    SELECTION_54:
+        ScriptBlockText: '*Parse_Keys*'
+    SELECTION_55:
+        ScriptBlockText: '*Remove-Persistence*'
+    SELECTION_56:
+        ScriptBlockText: '*StringtoBase64*'
+    SELECTION_57:
+        ScriptBlockText: '*TexttoExe*'
+    SELECTION_58:
+        ScriptBlockText: '*Powerpreter*'
+    SELECTION_59:
+        ScriptBlockText: '*Nishang*'
+    SELECTION_6:
+        ScriptBlockText: '*Set-RemotePSRemoting*'
+    SELECTION_60:
+        ScriptBlockText: '*DataToEncode*'
+    SELECTION_61:
+        ScriptBlockText: '*LoggedKeys*'
+    SELECTION_62:
+        ScriptBlockText: '*OUT-DNSTXT*'
+    SELECTION_63:
+        ScriptBlockText: '*ExfilOption*'
+    SELECTION_64:
+        ScriptBlockText: '*DumpCerts*'
+    SELECTION_65:
+        ScriptBlockText: '*DumpCreds*'
+    SELECTION_66:
+        ScriptBlockText: '*Shellcode32*'
+    SELECTION_67:
+        ScriptBlockText: '*Shellcode64*'
+    SELECTION_68:
+        ScriptBlockText: '*NotAllNameSpaces*'
+    SELECTION_69:
+        ScriptBlockText: '*exfill*'
+    SELECTION_7:
+        ScriptBlockText: '*Set-RemoteWMI*'
+    SELECTION_70:
+        ScriptBlockText: '*FakeDC*'
+    SELECTION_8:
+        ScriptBlockText: '*Invoke-AmsiBypass*'
+    SELECTION_9:
+        ScriptBlockText: '*Out-CHM*'
+    condition: (SELECTION_1 or SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39 or SELECTION_40
+        or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44 or SELECTION_45
+        or SELECTION_46 or SELECTION_47 or SELECTION_48 or SELECTION_49 or SELECTION_50
+        or SELECTION_51 or SELECTION_52 or SELECTION_53 or SELECTION_54 or SELECTION_55
+        or SELECTION_56 or SELECTION_57 or SELECTION_58 or SELECTION_59 or SELECTION_60
+        or SELECTION_61 or SELECTION_62 or SELECTION_63 or SELECTION_64 or SELECTION_65
+        or SELECTION_66 or SELECTION_67 or SELECTION_68 or SELECTION_69 or SELECTION_70)
+falsepositives:
+- Penetration testing
+id: f772cee9-b7c2-4cb2-8f07-49870adc02e0
+level: high
+logsource:
+    category: ps_script
+    definition: Script block logging must be enabled
+    product: windows
+modified: 2021/10/16
+references:
+- https://github.com/samratashok/nishang
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: powershell_nishang_malicious_commandlets.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/powershell/powershell_script
+

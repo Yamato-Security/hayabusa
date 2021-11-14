@@ -1,0 +1,65 @@
+title: Windows Processes Suspicious Parent Directory
+author: vburov
+date: 2019/02/23
+description: Detect suspicious parent processes of well-known Windows processes
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\winlogon.exe'
+    SELECTION_11:
+        ParentImage: '*\SavService.exe'
+    SELECTION_12:
+        ParentImage: '*\System32\\*'
+    SELECTION_13:
+        ParentImage: '*\SysWOW64\\*'
+    SELECTION_14:
+        ParentImage: '*\Windows Defender\\*'
+    SELECTION_15:
+        ParentImage: '*\Microsoft Security Client\\*'
+    SELECTION_16:
+        ParentImage: '*\MsMpEng.exe'
+    SELECTION_17:
+        ParentImage|re: ^$
+    SELECTION_2:
+        Image: '*\svchost.exe'
+    SELECTION_3:
+        Image: '*\taskhost.exe'
+    SELECTION_4:
+        Image: '*\lsm.exe'
+    SELECTION_5:
+        Image: '*\lsass.exe'
+    SELECTION_6:
+        Image: '*\services.exe'
+    SELECTION_7:
+        Image: '*\lsaiso.exe'
+    SELECTION_8:
+        Image: '*\csrss.exe'
+    SELECTION_9:
+        Image: '*\wininit.exe'
+    condition: (SELECTION_1 and (((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+        and  not (SELECTION_11 or (SELECTION_12 or SELECTION_13))) and  not ((SELECTION_14
+        or SELECTION_15) and SELECTION_16)) and  not (SELECTION_17))
+falsepositives:
+- Some security products seem to spawn these
+id: 96036718-71cc-4027-a538-d1587e0006a7
+level: low
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/11/28
+references:
+- https://securitybytes.io/blue-team-fundamentals-part-two-windows-processes-759fe15965e2
+- https://www.carbonblack.com/2014/06/10/screenshot-demo-hunt-evil-faster-than-ever-with-carbon-black/
+- https://www.13cubed.com/downloads/windows_process_genealogy_v2.pdf
+- https://attack.mitre.org/techniques/T1036/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.003
+- attack.t1036.005
+yml_filename: win_proc_wrong_parent.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+
