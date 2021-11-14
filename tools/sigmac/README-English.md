@@ -88,3 +88,7 @@ win_susp_failed_logons_single_source_ntlm2.yml
 win_susp_failed_remote_logons_single_source.yml
 win_susp_samr_pwset.yml
 ```
+
+## Sigma rule parsing errors
+
+Some rules will have been able to be converted but will cause parsing errors. We will continue to fix these bugs but for the meantime the majority of Sigma rules do work so please ignore the errors for now.

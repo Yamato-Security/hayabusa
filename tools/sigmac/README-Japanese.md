@@ -88,3 +88,8 @@ win_susp_failed_logons_single_source_ntlm2.yml
 win_susp_failed_remote_logons_single_source.yml
 win_susp_samr_pwset.yml
 ```
+
+## Sigmaルールのパースエラーについて
+
+一部のルールは変換できたものの、パースエラーが発生しています。
+これらのバグは引き続き修正していきますが、当面はSigmaのルールの大部分は動作しますので、今のところエラーは無視してください。
