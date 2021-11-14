@@ -50,6 +50,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     let usages = "-f --filepath=[FILEPATH] 'Event file path'
     --csv-timeline=[CSV_TIMELINE] 'Csv output timeline'
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
+    --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
     -l --lang=[LANG] 'Output language'
     -L --level=[LEVEL] 'Specified execute rule level(default: INFO)'
     -u --utc 'Output time in UTC format(default: local time)'
