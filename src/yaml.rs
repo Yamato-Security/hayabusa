@@ -96,7 +96,9 @@ impl ParseYaml {
                 if yaml_doc["ignore"].as_bool().unwrap_or(false) {
                     return Option::None;
                 }
-
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    println!("Loaded yml FilePath: {}", filepath);
+                }
                 // 指定されたレベルより低いルールは無視する
                 let doc_level = &yaml_doc["level"]
                     .as_str()
