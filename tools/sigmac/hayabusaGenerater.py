@@ -5,7 +5,7 @@ import yaml
 import re
 
 from sigma.backends.base import SingleTextQueryBackend
-from sigma.parser.condition import SigmaAggregationParser
+from sigma.parser.condition import SigmaAggregationParser, ConditionOR, ConditionAND
 from sigma.parser.modifiers.base import SigmaTypeModifier
 from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
 
@@ -29,7 +29,7 @@ class HayabusaBackend(SingleTextQueryBackend):
     name_idx = 1
     selection_prefix = "SELECTION_{0}"
     name_2_selection = OrderedDict()
-    
+
     def __init__(self, sigmaconfig, options):
         super().__init__(sigmaconfig)
         
@@ -56,8 +56,7 @@ class HayabusaBackend(SingleTextQueryBackend):
             return self.generateNode((transformed_fieldname+"|re","^$")) #nullは正規表現で表す。これでいいのかちょっと不安
         else:
             raise TypeError("Backend does not support map values of type " + str(type(value)))
-        
-        
+
     def generateMapItemTypedNode(self, fieldname, value):
         # `|re`オプションに対応
         if type(value) == SigmaRegularExpressionModifier:
@@ -79,20 +78,20 @@ class HayabusaBackend(SingleTextQueryBackend):
                     regex_value += prev_regex[idx:idx+2]
                     idx += 2
                     continue
-                
+
                 ch = prev_regex[idx]
                 ## エスケープ不要な}はここに来ないように、以降の処理でidxを調整している。なのでここにくる}はエスケープが必要。
                 if ch == "}":
                     regex_value += "\\}"
                     idx += 1
                     continue
-                
+
                 ## {じゃない場合はそのまま足すだけ
                 if ch != "{":
                     regex_value += ch
                     idx += 1
                     continue
-                
+
                 ## {の場合の処理
                 reg_match = SPECIAL_REGEX.match(prev_regex[idx:])
                 if reg_match == None:
@@ -143,6 +142,36 @@ class HayabusaBackend(SingleTextQueryBackend):
             return node
         else:
             return self.valueExpression % (self.cleanValue(str(node)))
+
+    def generateANDNode(self, node):
+        if type(node) == ConditionAND and type(node.items[0]) != tuple:
+            name = self.create_new_selection()
+            self.name_2_selection[name] = [(None, val) for val in node]
+            return name
+        generated = [ self.generateNode(val) for val in node ]
+        filtered = [ g for g in generated if g is not None ]
+        if filtered:
+            if self.sort_condition_lists:
+                filtered = sorted(filtered)
+            return self.andToken.join(filtered)
+        else:
+            return None
+
+    def generateORNode(self, node):
+        if type(node) == ConditionOR and type(node.items[0]) != tuple:
+            name = self.create_new_selection()
+            self.name_2_selection[name] = [(None, val) for val in node]
+            return name
+
+        generated = [ self.generateNode(val) for val in node ]
+        filtered = [ g for g in generated if g is not None ]
+        if filtered:
+            if self.sort_condition_lists:
+                filtered = sorted(filtered)
+            return self.orToken.join(filtered)
+        else:
+            return None
+
     def generateQuery(self, parsed):
         result = self.generateNode(parsed.parsedSearch)
         if parsed.parsedAgg:
@@ -164,8 +193,15 @@ class HayabusaBackend(SingleTextQueryBackend):
             parsed_yaml["detection"]["condition"] = result
             for key, values in self.name_2_selection.items():
                 parsed_yaml["detection"][key] = {}
+                if values[0][0]:
+                    parsed_yaml["detection"][key] = {}
+                else:
+                    parsed_yaml["detection"][key] = []
                 for fieldname, value in values:
-                    parsed_yaml["detection"][key][fieldname] = value
+                    if fieldname == None:
+                        parsed_yaml["detection"][key].append(value)
+                    else:
+                        parsed_yaml["detection"][key][fieldname] = value
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
         return ret
