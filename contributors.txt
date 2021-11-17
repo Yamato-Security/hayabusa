@@ -1,0 +1,38 @@
+Hayabusa was possible thanks to the following people (in alphabetical order):
+
+Akira Nishikawa (@nishikawaakira): Previous lead developer, record ID gap analysis, slack channel notification, core hayabusa rule support, etc...
+Dai (@__da13__): Developer
+DustInDark(@hitenkoku): Core developer, project management, sigma count implementation, rule creation, countless feature additions and fixes, etc… 
+Garigariganzy (@garigariganzy31): Developer, event ID statistics implementation, etc... 
+ItiB (@itiB_S144) :  Core developer, sigmac hayabusa backend, rule creation, etc...
+James Takai / hachiyone(@hach1yon): Current lead developer, tokio multi-threading, sigma aggregation logic, sigmac backend, rule creation, etc…
+Kazuminn (@k2warugaki): Developer
+Mimura (@mimura1133): Developer
+Yusuke Matsui (@apt773): AD hacking working group leader, rule testing, documentation, research, support, etc...
+Siam (@siamease): Developer
+Tsubokku (@ytsuboi0322): Japanese translations
+Zach Mathis (@yamatosecurity, Yamato Security Founder): Project leader, tool and concept design, rule creation and tuning, etc…
+
+
+Hayabusa would not have been possible without first creating RustyBlue, so we would also like to thank the RustyBlue contributors:
+
+Zach Mathis (@yamatosecurity, Yamato Security Founder): Project Leader
+Nishikawa Akira (@nishikawaakira): Lead Developer
+kazuminn (@k2warugaki): Core Developer
+itiB (@itiB_S144): Core Developer
+James Takai / hachiyone (@hach1yon): Developer
+DustInDark (@hitenkoku): Core Developer
+garigariganzy (@garigariganzy31): Developer
+7itoh (@yNitocrypto22): Developer
+dai (@__da13__): Developer
+siam (@siamease): Developer
+mimura (@mimura1133): Developer
+Yusuke Matsui (@apt773): AD hacking working group leader, rule testing and supporter
+Hiroki Takizawa (@hr_zwtk): Rule testing and supporter
+su (@su-10): Supporter
+lisbun (@lisbun): Supporter
+Tsubokku (@ytsuboi0322): Supporter
+Handy (@asasawqv): Supporter
+Sachiel (@sachielarcangel): Supporter
+Segacchi (@TakahikoSega): Supporter
+tanabe (@rtanab): Supporter
