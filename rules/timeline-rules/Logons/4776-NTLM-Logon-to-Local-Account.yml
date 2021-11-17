@@ -1,0 +1,14 @@
+title: NTLM Logon to Local Account
+description: Prints logon information
+author: Zach Mathis
+level: info
+detection:
+    selection:
+        Channel: Security
+        EventID: 4776
+
+falsepositives:
+    - normal system usage
+output: 'Username: %TargetUserName% Workstation %WorkstationName% Status: %Status%'
+creation_date: 2021/11/17
+updated_date: 2021/11/17

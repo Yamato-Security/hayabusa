@@ -1,0 +1,14 @@
+title: Logoff - User Initiated
+description: Prints logon information
+author: Zach Mathis
+level: info
+detection:
+    selection:
+        Channel: Security
+        EventID: 4647
+    
+falsepositives:
+    - normal system usage
+output: 'Username: %TargetUserName% LogonID: %TargetLogonId%'
+creation_date: 2021/11/17
+updated_date: 2021/11/17

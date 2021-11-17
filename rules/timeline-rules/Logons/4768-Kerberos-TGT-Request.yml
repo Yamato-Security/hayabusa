@@ -1,0 +1,14 @@
+title: Kerberos TGT was requested
+description: Prints logon information
+author: Zach Mathis
+level: info
+detection:
+    selection:
+        Channel: Security
+        EventID: 4768
+
+falsepositives:
+    - normal system usage
+output: 'tUsername: %TargetUserName% Service Name: %ServiceName% IP Address: %IpAddress% Status: %Status% PreAuthType: %PreAuthType%'
+creation_date: 2021/11/17
+updated_date: 2021/11/17

@@ -1,0 +1,15 @@
+title: Logon Type 8 - NetworkCleartext
+description: Prints logon information
+author: Zach Mathis
+level: low
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 8
+
+falsepositives:
+    - normal system usage
+output: 'User: %TargetUserName% Workstation: %WorkstationName% IP Address: %IpAddress% Port: %IpPort% LogonID: %TargetLogonId%'
+creation_date: 2021/11/17
+updated_date: 2021/11/17
