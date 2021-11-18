@@ -1,6 +1,6 @@
-title: Check for unsigned EXEs/DLLs
-description: hogehoge
-author: DeepblueCLI, Zach Mathis
+title: Unsigned EXEs/DLLs
+description: Detects usage of unsigned exe and dlls.
+author: Eric Conrad, Zach Mathis
 detection:
     selection:
         Channel: Sysmon
@@ -9,6 +9,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-output: 'Message: Unsigned Image(DLL)¥n Result : Loaded by: %event_data.Image%¥nCommand : %event_data.ImageLoaded%'
+output: 'Unsigned Image(DLL): %event_data.Image  :  Command: %event_data.ImageLoaded%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+uodated_date: 2021/11/8

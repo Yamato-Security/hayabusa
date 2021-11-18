@@ -1,6 +1,7 @@
-title: A service was installed in the system
-description: hogehoge
-author: DeepblueCLI, Zach Mathis
+title: Service installed
+description: A service was installed. Malware often will install itself as malware.
+author: Eric Conrad, Zach Mathis
+level: low
 detection:
     selection:
         Channel: System
@@ -13,6 +14,6 @@ detection:
     condition: selection
 falsepositives:
     - unknown
-output: 'New Service Created¥n%ImagePath¥nService name: %ServiceName%'
+output: 'Service: %ServiceName%  :  Image path: %ImagePath'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+uodated_date: 2021/11/8

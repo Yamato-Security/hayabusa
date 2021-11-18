@@ -1,7 +1,7 @@
 title: Admin Logon
 description: Prints logon information
 author: Zach Mathis
-level: info
+level: informational
 detection:
     selection:
         Channel: Security
@@ -17,6 +17,6 @@ detection:
 
 falsepositives:
     - normal system usage
-output: 'User: %SubjectUserName% LogonID: %SubjectLogonId%'
+output: 'User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
 creation_date: 2021/11/17
 updated_date: 2021/11/17

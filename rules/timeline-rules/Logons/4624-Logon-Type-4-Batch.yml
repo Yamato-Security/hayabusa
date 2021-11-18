@@ -1,7 +1,7 @@
 title: Logon Type 4 - Batch
 description: Prints logon information
 author: Zach Mathis
-level: info
+level: informational
 detection:
     selection:
         Channel: Security
@@ -10,6 +10,6 @@ detection:
 
 falsepositives:
     - normal system usage
-output: 'User: %TargetUserName% Workstation: %WorkstationName% IP Address: %IpAddress% Port: %IpPort% LogonID: %TargetLogonId%'
+output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%'
 creation_date: 2021/11/17
 updated_date: 2021/11/17

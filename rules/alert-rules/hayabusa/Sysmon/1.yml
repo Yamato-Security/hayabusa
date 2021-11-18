@@ -1,6 +1,6 @@
-title: Sysmon Check command lines
-description: hogehoge
-author: DeepblueCLI, Zach Mathis
+title: Command line execution
+description: Command line execution
+author: Eric Conrad, Zach Mathis
 detection:
     selection:
         Channel: Sysmon
@@ -9,7 +9,7 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-output: 'CommandLine=%CommandLine%¥nParentImage=%ParentImage%'
+output: 'CommandLine: %CommandLine%  :  ParentImage:%ParentImage%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+uodated_date: 2021/11/8
 

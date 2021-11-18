@@ -1,6 +1,7 @@
-title: The start type of the Windows Event Log service was changed from auto start to disabled
-description: hogehoge
-author: DeepblueCLI, Zach Mathis
+title: Windows Event Log service start type changed from auto start to disabled
+description: Possible anti-forensics disabling the log service.
+author: Eric Conrad, Zach Mathis
+level: high
 detection:
     selection:
         Channel: System
@@ -12,6 +13,6 @@ detection:
     condition: selection
 falsepositives:
     - unknown
-output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+output: 'Service: %param1%'
 creation_date: 2020/11/8
-uodated_date: 2020/11/8
+uodated_date: 2021/11/8

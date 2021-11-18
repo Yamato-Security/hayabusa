@@ -1,6 +1,7 @@
 title: Sensitive Privilede Use (Mimikatz)
 description: hogehoge
-author: DeepblueCLI, Zach Mathis
+author: Eric Conrad, Zach Mathis
+level: medium
 detection:
     selection:
         Channel: Security

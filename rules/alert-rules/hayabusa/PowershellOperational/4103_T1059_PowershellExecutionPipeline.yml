@@ -16,7 +16,7 @@ detection:
     # condition: selection
 falsepositives:
     - normal system usage
-output: 'Command = %CommandLine%'
-output_jp: 'コマンド = %CommandLine%'
+output: 'Command:%CommandLine%'
+output_jp: 'コマンド:%CommandLine%'
 creation_date: 2020/11/08
-updated_date:  2021/11/06
+updated_date:  2021/11/18

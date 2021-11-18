@@ -2,7 +2,7 @@ title: Security log was cleared
 title_jp: セキュリティログがクリアされた
 description: Somebody has cleared the Security event log.
 description_jp: 誰かがセキュリティログをクリアした。
-author: Eric Contrad
+author: Eric Conrad
 contributor: Zach Mathis, Akira Nishikawa, James Takai
 mitre_attack: T1070.001
 level: high

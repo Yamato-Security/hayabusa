@@ -1,7 +1,7 @@
 title: Logon Type 0 - System
 description: Prints logon information
 author: Zach Mathis
-level: info
+level: informational
 detection:
     selection:
         Channel: Security

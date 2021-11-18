@@ -1,6 +1,7 @@
-title: A member was added to a security-enabled local group.
-description: hogehoge
-author: DeepblueCLI, Zach Mathis
+title: User added to local Administrators group
+description: User added to local Administrators group
+author: Eric Conrad, Zach Mathis
+level: high
 detection:
     selection:
         Channel: Security
@@ -9,6 +10,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+output: 'UserName: %MemberName%  :  SID: %MemberSid%'
 creation_date: 2020/11/8
-updated_date: 2020/11/8
+updated_date: 2021/11/18

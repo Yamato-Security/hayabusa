@@ -1,6 +1,7 @@
-title: This service may not function properly
-description: hogehoge
-author: DeepblueCLI, Zach Mathis
+title: Interactive service may not function properly
+description: Uses a blocklist of suspicious services to detect malware. 7030 happens when a service is marked as an interactive service but the system is not configured to allow interactive services so it might not function properly.
+author: Eric Conrad, Zach Mathis
+level: low
 detection:
     selection:
         Channel: System
@@ -10,6 +11,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-output: 'Interactive service warning¥nService name: %ServiceName%¥nMalware (and some third party software) trigger this warning'
+output: 'Service: %ServiceName%'
 creation_date: 2020/11/8
 uodated_date: 2020/11/8

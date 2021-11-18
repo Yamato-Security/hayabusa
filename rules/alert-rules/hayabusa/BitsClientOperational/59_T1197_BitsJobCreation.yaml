@@ -12,7 +12,7 @@ detection:
         EventID: 59
 falsepositives:
     - normal system usage
-output: 'Job Title:%JobTitle% URL:%Url%'
-output_jp: 'Job名:%JobTitle% URL:%Url%'
+output: 'Job Title:%JobTitle%  :  URL:%Url%'
+output_jp: 'Job名:%JobTitle%  :  URL:%Url%'
 creation_date: 2021/07/15
-updated_date:  2021/11/06
+updated_date:  2021/11/18

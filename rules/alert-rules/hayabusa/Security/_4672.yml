@@ -1,7 +1,7 @@
 title: Command Line Logging
-description: hogehoge
+description: Command Line Logging
 ignore: true
-author: DeepblueCLI, Zach Mathis
+author: Eric Conrad, Zach Mathis
 detection:
     selection:
         Channel: Security
@@ -10,6 +10,6 @@ detection:
     # condition: selection
 falsepositives:
     - unknown
-output: 'CommandLine:%CommandLine% ParentProcessName:%ParentProcessName%'
+output: 'CommandLine:%CommandLine%  :  ParentProcessName:%ParentProcessName%'
 creation_date: 2020/11/8
 updated_date: 2020/11/8

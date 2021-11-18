@@ -1,5 +1,5 @@
-title: AS-REP Roasting
-title_jp: AS-REPロースティング
+title: Possible AS-REP Roasting
+title_jp: AS-REPロースティングの可能性
 description: For each account found without preauthentication, an adversary may send an AS-REQ message without the encrypted timestamp and receive an AS-REP message with TGT data which may be encrypted with an insecure algorithm such as RC4.
 description_jp: For each account found without preauthentication, an adversary may send an AS-REQ message without the encrypted timestamp and receive an AS-REP message with TGT data which may be encrypted with an insecure algorithm such as RC4.
 author: Matsui

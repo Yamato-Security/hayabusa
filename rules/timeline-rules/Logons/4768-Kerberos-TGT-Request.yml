@@ -1,7 +1,7 @@
 title: Kerberos TGT was requested
 description: Prints logon information
 author: Zach Mathis
-level: info
+level: informational
 detection:
     selection:
         Channel: Security
@@ -9,6 +9,6 @@ detection:
 
 falsepositives:
     - normal system usage
-output: 'tUsername: %TargetUserName% Service Name: %ServiceName% IP Address: %IpAddress% Status: %Status% PreAuthType: %PreAuthType%'
+output: 'User: %TargetUserName%  :  Service: %ServiceName%  :  IP Address: %IpAddress%  :  Status: %Status%  :  PreAuthType: %PreAuthType%'
 creation_date: 2021/11/17
 updated_date: 2021/11/17
