@@ -152,6 +152,15 @@ impl Detection {
 
     /// 条件に合致したレコードを表示するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
+        // eventid is Number type or String type.
+        let eventid_str = if record_info.record["Event"]["System"]["EventID"].is_number() {
+            record_info.record["Event"]["System"]["EventID"].to_string()
+        } else {
+            record_info.record["Event"]["System"]["EventID"]
+                .as_str()
+                .unwrap_or("-")
+                .to_string()
+        };
         MESSAGES.lock().unwrap().insert(
             record_info.evtx_filepath.to_string(),
             rule.rulepath.to_string(),
@@ -160,10 +169,7 @@ impl Detection {
             record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            record_info.record["Event"]["System"]["EventID"]
-                .as_str()
-                .unwrap_or("")
-                .to_string(),
+            eventid_str,
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
