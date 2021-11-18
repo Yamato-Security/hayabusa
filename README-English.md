@@ -84,20 +84,6 @@ If you have rust installed, you can compile from source with the following comma
 cargo build --release
 ````
 
-# How to send alerts to a Slack channel
-
-Slackチャンネルへの通知にはSlackでのWEBHOOKURLの設定と実行マシンの環境変数(WEBHOOKURL、CHANNEL)への追加が必要です。
-
-1. Add an "Incoming Webhook" to the slack workspace you want to send alerts to.
-2. 「チャンネルへの投稿」で投稿するチャンネルを選択し 「Incoming Webhookインテグレーションの追加」をクリックします。
-3. 遷移後のぺージの「Webhook URL」の内容(https:hooks.slack.com/services/xxx...)を環境変数の`WEBHOOK_URL` に代入してください。
-4. 投入するchannelを#付きで環境変数の`CHANNEL`に代入してください。
-5. 以下のコマンドで実行をするとCHANNELで指定したチャンネルに検知情報の通知が送付されます。
-
-````
-hayabusa.exe --slack 
-````
-
 # Other Windows event log analyzers and related projects
 There is no "one tool to rule them all" and we have found that each have their own merits so we recommend checking out these other great tools and projects and see which ones you like.
 
