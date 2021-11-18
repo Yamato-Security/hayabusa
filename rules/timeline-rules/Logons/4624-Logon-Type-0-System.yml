@@ -1,0 +1,15 @@
+title: Logon Type 0 - System
+description: Prints logon information
+author: Zach Mathis
+level: informational
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 0
+
+falsepositives:
+    - normal system usage
+output: 'Bootup'
+creation_date: 2021/11/17
+updated_date: 2021/11/17

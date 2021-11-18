@@ -1,0 +1,19 @@
+title: Service installed
+description: A service was installed. Malware often will install itself as malware.
+author: Eric Conrad, Zach Mathis
+level: low
+detection:
+    selection:
+        Channel: System
+        EventID: 7045
+        ServiceName:
+            regexes: ./config/regex/regexes_suspicous_service.txt
+        ImagePath:
+            min_length: 1000
+            allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
+    condition: selection
+falsepositives:
+    - unknown
+output: 'Service: %ServiceName%  :  Image path: %ImagePath'
+creation_date: 2020/11/8
+uodated_date: 2021/11/8

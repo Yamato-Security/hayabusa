@@ -1,0 +1,22 @@
+title: Admin Logon
+description: Prints logon information
+author: Zach Mathis
+level: informational
+detection:
+    selection:
+        Channel: Security
+        EventID: 4672
+    
+    filter:
+        - SubjectUserName: "SYSTEM"
+        - SubjectUserName: "LOCAL SERVICE"
+        - SubjectUserName: "NETWORK SERVICE"
+        - SubjectUserName|endswith: "$"
+
+    condition: selection and not filter
+
+falsepositives:
+    - normal system usage
+output: 'User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
+creation_date: 2021/11/17
+updated_date: 2021/11/17
