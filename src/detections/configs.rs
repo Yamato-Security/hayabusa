@@ -56,7 +56,6 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -d --directory=[DIRECTORY] 'Event log files directory'
     -s --statistics 'Prints statistics for event logs'
     -t --threadnum=[NUM] 'Thread number'
-    --slack 'Slack notification'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("hayabusa. Aiming to be the world's greatest Windows event log analysis tool!")
