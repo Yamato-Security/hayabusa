@@ -89,6 +89,15 @@ pub fn get_event_id_key() -> String {
     return "Event.System.EventID".to_string();
 }
 
+/// serde:Valueの型を確認し、文字列を返します。
+pub fn get_serde_number_to_string(value: &serde_json::Value) -> String {
+    if value.is_number() {
+        return value.to_string();
+    } else {
+        return value.as_str().unwrap_or("").to_string();
+    }
+}
+
 // alias.txtについて、指定されたevent_keyに対応するaliasを取得します。
 pub fn get_alias(event_key: &String) -> Option<String> {
     let conf = configs::CONFIG.read().unwrap();

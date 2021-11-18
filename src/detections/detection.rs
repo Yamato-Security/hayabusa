@@ -8,6 +8,7 @@ use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
+use crate::detections::utils::get_serde_number_to_string;
 use crate::yaml::ParseYaml;
 
 use std::sync::Arc;
@@ -152,15 +153,6 @@ impl Detection {
 
     /// 条件に合致したレコードを表示するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
-        // eventid is Number type or String type.
-        let eventid_str = if record_info.record["Event"]["System"]["EventID"].is_number() {
-            record_info.record["Event"]["System"]["EventID"].to_string()
-        } else {
-            record_info.record["Event"]["System"]["EventID"]
-                .as_str()
-                .unwrap_or("-")
-                .to_string()
-        };
         MESSAGES.lock().unwrap().insert(
             record_info.evtx_filepath.to_string(),
             rule.rulepath.to_string(),
@@ -169,7 +161,7 @@ impl Detection {
             record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            eventid_str,
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"]),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
