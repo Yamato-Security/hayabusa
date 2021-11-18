@@ -1,0 +1,14 @@
+title: Logon Failure
+description: Prints logon information
+author: Zach Mathis
+level: low
+detection:
+    selection:
+        Channel: Security
+        EventID: 4625
+
+falsepositives:
+    - normal system usage
+output: 'User: %TargetUserName%  :  Type: %LogonType%  :  Workstation: %Workstation%  :  IP Address: %IpAddress%  :  SubStatus: %SubStatus%  :  AuthPackage: %AuthenticationPackageName%'
+creation_date: 2021/11/17
+updated_date: 2021/11/17

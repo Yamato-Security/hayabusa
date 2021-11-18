@@ -1,0 +1,14 @@
+title: An account failed to log on
+description: Logon Failure
+ignore: true
+author: Eric Conrad, Zach Mathis
+detection:
+    selection:
+        Channel: Security
+        EventID: 4625
+    # condition: selection | count(TargetUserName) > 3
+falsepositives:
+    - unknown
+output: 'High number of logon failures for one account UserName:%event_data.SubjectUserName% Total logon faiures:%count%'
+creation_date: 2020/11/8
+updated_date: 2020/11/8

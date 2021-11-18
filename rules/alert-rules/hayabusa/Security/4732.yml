@@ -1,0 +1,15 @@
+title: User added to local Administrators group
+description: User added to local Administrators group
+author: Eric Conrad, Zach Mathis
+level: high
+detection:
+    selection:
+        Channel: Security
+        EventID: 4732
+        TargetUserName: Administrators
+    # condition: selection
+falsepositives:
+    - unknown
+output: 'UserName: %MemberName%  :  SID: %MemberSid%'
+creation_date: 2020/11/8
+updated_date: 2021/11/18
