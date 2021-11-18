@@ -103,8 +103,8 @@ impl ParseYaml {
                     .unwrap_or("LOW")
                     .to_string()
                     .to_uppercase();
-                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
-                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
+                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&2);
+                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&2);
                 if doc_level_num < args_level_num {
                     return Option::None;
                 }
