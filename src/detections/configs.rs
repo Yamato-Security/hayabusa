@@ -57,7 +57,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -s --statistics 'Prints statistics for event logs'
     -t --threadnum=[NUM] 'Thread number'
     --slack 'Slack notification'
-    --credits 'Prints credits'";
+    --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("hayabusa. Aiming to be the world's greatest Windows event log analysis tool!")
         .version("1.0.0")
