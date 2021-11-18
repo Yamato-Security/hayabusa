@@ -156,11 +156,14 @@ impl Detection {
             record_info.evtx_filepath.to_string(),
             rule.rulepath.to_string(),
             &record_info.record,
-            rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            rule.yaml["level"].as_str().unwrap_or("-").to_string(),
             record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            record_info.record["Event"]["System"]["EventID"].to_string(),
+            record_info.record["Event"]["System"]["EventID"]
+                .as_str()
+                .unwrap_or("")
+                .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
