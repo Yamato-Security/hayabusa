@@ -100,7 +100,7 @@ impl ParseYaml {
                 // 指定されたレベルより低いルールは無視する
                 let doc_level = &yaml_doc["level"]
                     .as_str()
-                    .unwrap_or("INFO")
+                    .unwrap_or("LOW")
                     .to_string()
                     .to_uppercase();
                 let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
@@ -159,12 +159,12 @@ mod tests {
     }
 
     #[test]
-    /// no specifed "level" arguments value is adapted default level(INFO)
+    /// no specifed "level" arguments value is adapted default level(LOW)
     fn test_default_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
         yaml.read_dir(path.to_path_buf(), &"").unwrap();
-        assert_eq!(yaml.files.len(), 5);
+        assert_eq!(yaml.files.len(), 4);
     }
 
     #[test]
