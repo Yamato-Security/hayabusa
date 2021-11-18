@@ -5,7 +5,7 @@ import yaml
 import re
 
 from sigma.backends.base import SingleTextQueryBackend
-from sigma.parser.condition import SigmaAggregationParser, ConditionOR, ConditionAND
+from sigma.parser.condition import SigmaAggregationParser
 from sigma.parser.modifiers.base import SigmaTypeModifier
 from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
 
@@ -29,18 +29,26 @@ class HayabusaBackend(SingleTextQueryBackend):
     name_idx = 1
     selection_prefix = "SELECTION_{0}"
     name_2_selection = OrderedDict()
-
+    
     def __init__(self, sigmaconfig, options):
         super().__init__(sigmaconfig)
+        self.re_init()
         
+    def re_init(self):
+        self.name_idx = 1
+        self.name_2_selection = OrderedDict()
+    
     def cleanValue(self, val):
         return val
+    
     def generateListNode(self, node):
         return self.generateORNode(node)
+    
     def create_new_selection(self):
         name = self.selection_prefix.format(self.name_idx)
         self.name_idx+=1
         return name
+    
     def generateMapItemNode(self, node):
         fieldname, value = node
         transformed_fieldname = self.fieldNameMapping(fieldname, value)
@@ -56,7 +64,7 @@ class HayabusaBackend(SingleTextQueryBackend):
             return self.generateNode((transformed_fieldname+"|re","^$")) #nullは正規表現で表す。これでいいのかちょっと不安
         else:
             raise TypeError("Backend does not support map values of type " + str(type(value)))
-
+        
     def generateMapItemTypedNode(self, fieldname, value):
         # `|re`オプションに対応
         if type(value) == SigmaRegularExpressionModifier:
@@ -78,20 +86,20 @@ class HayabusaBackend(SingleTextQueryBackend):
                     regex_value += prev_regex[idx:idx+2]
                     idx += 2
                     continue
-
+                
                 ch = prev_regex[idx]
                 ## エスケープ不要な}はここに来ないように、以降の処理でidxを調整している。なのでここにくる}はエスケープが必要。
                 if ch == "}":
                     regex_value += "\\}"
                     idx += 1
                     continue
-
+                
                 ## {じゃない場合はそのまま足すだけ
                 if ch != "{":
                     regex_value += ch
                     idx += 1
                     continue
-
+                
                 ## {の場合の処理
                 reg_match = SPECIAL_REGEX.match(prev_regex[idx:])
                 if reg_match == None:
@@ -123,6 +131,7 @@ class HayabusaBackend(SingleTextQueryBackend):
         for sub_node in value:
             list_values.append((fieldname,sub_node))
         return self.subExpression % self.generateORNode(list_values) 
+    
     def generateAggregation(self, agg):
         # python3 tools/sigmac rules/windows/process_creation/win_dnscat2_powershell_implementation.yml --config tools/config/generic/sysmon.yml --target hayabusa
         if agg == None:
@@ -131,10 +140,28 @@ class HayabusaBackend(SingleTextQueryBackend):
             # condition の中に "|" は1つのみ
             # | 以降をそのまま出力する
             target = '|'
-            index = agg.parser.parsedyaml["detection"]["condition"].find(target)
-            return agg.parser.parsedyaml["detection"]["condition"][index:]
+            condition = agg.parser.parsedyaml["detection"]["condition"]
+            
+            ### conditionはなんと複数指定されることもあるらしい!!!!!
+            ### If multiple conditions are given, they are logically linked with OR.と仕様書に書いてある。詳細はSigmaRuleの仕様を参照のこと。
+            ### とりあえず、複数指定のconditionは未対応ということでエラーにするとして、(なお、デフォルトのbase.pyの実装で複数指定のconditionはexceptionがraiseされるので、そのような処理は追加で実装しなくてよい)
+            ### 問題となるのはagg.parser.parsedyaml["detection"]["condition"]の型
+            ###
+            ### 下記のように指定すると、agg.parser.parsedyaml["detection"]["condition"]の型はstringになるが
+            ### conditon: selection1
+            ###
+            ### 下記のように指定すると、agg.parser.parsedyaml["detection"]["condition"]の型はlistになる
+            ### conditon: 
+            ###  - selection1
+            ###
+            ### なのでlistのケースも想定して、下記のような実装とする。
+            if type(condition) == list: 
+                condition = condition[0]
+            index = condition.find(target)
+            return condition[index:]
         ## count以外は対応していないので、エラーを返す
         raise NotImplementedError("This rule contains aggregation operator not implemented for this backend")
+    
     def generateValueNode(self, node):
         ## このメソッドをオーバーライドしておかないとint型もstr型として扱われてしまうので、int型やint型として、str型はstr型として処理するために実装した。
         ## このメソッドは最悪無くてもいいような気もする。
@@ -142,41 +169,12 @@ class HayabusaBackend(SingleTextQueryBackend):
             return node
         else:
             return self.valueExpression % (self.cleanValue(str(node)))
-
-    def generateANDNode(self, node):
-        if type(node) == ConditionAND and type(node.items[0]) != tuple:
-            name = self.create_new_selection()
-            self.name_2_selection[name] = [(None, val) for val in node]
-            return name
-        generated = [ self.generateNode(val) for val in node ]
-        filtered = [ g for g in generated if g is not None ]
-        if filtered:
-            if self.sort_condition_lists:
-                filtered = sorted(filtered)
-            return self.andToken.join(filtered)
-        else:
-            return None
-
-    def generateORNode(self, node):
-        if type(node) == ConditionOR and type(node.items[0]) != tuple:
-            name = self.create_new_selection()
-            self.name_2_selection[name] = [(None, val) for val in node]
-            return name
-
-        generated = [ self.generateNode(val) for val in node ]
-        filtered = [ g for g in generated if g is not None ]
-        if filtered:
-            if self.sort_condition_lists:
-                filtered = sorted(filtered)
-            return self.orToken.join(filtered)
-        else:
-            return None
-
+        
     def generateQuery(self, parsed):
         result = self.generateNode(parsed.parsedSearch)
         if parsed.parsedAgg:
             res = self.generateAggregation(parsed.parsedAgg)
-            result += res
+            result += " " + res
         ret = ""
         with StringIO() as bs:
             ## 元のyamlをいじるとこの後の処理に影響を与える可能性があるので、deepCopyする
@@ -193,15 +191,11 @@ class HayabusaBackend(SingleTextQueryBackend):
             parsed_yaml["detection"]["condition"] = result
             for key, values in self.name_2_selection.items():
                 parsed_yaml["detection"][key] = {}
-                if values[0][0]:
-                    parsed_yaml["detection"][key] = {}
-                else:
-                    parsed_yaml["detection"][key] = []
                 for fieldname, value in values:
-                    if fieldname == None:
-                        parsed_yaml["detection"][key].append(value)
-                    else:
-                        parsed_yaml["detection"][key][fieldname] = value
+                    parsed_yaml["detection"][key][fieldname] = value
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
+        
+        self.re_init()
+        
         return ret
