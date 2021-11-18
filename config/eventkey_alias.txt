@@ -170,3 +170,5 @@ Workstation,Event.EventData.Workstation
 WorkstationName,Event.EventData.WorkstationName
 JobTitle,Event.EventData.name
 Url,Event.EventData.url
+IpPort,Event.EventData.IpPort
+Substatus,Event.EventData.Substatus
