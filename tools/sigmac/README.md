@@ -16,7 +16,7 @@ SIGMAの持つ多くの検知ルールをHayabusaのルールセットに追加�
 ## 環境設定
 
 hayabusaGeneratorはSIGMAリポジトリの中にある`sigmac`を使います。
-事前に任意のディレクトリにSIGMAリポジトリをcloneしてください。
+事前に任意のディレクトリにSIGMAリポジトリをcloneし、SIGMAのドキュメントに沿って環境設定を行ってください。
 
 ```sh
 git clone https://github.com/SigmaHQ/sigma.git
@@ -24,28 +24,27 @@ git clone https://github.com/SigmaHQ/sigma.git
 
 ## 使い方
 
-hayabusaGenerater.pyをSIGMAのbackendとして登録します。
+### 各種ファイルの設置
+下記のコマンドを実行してください。
 
 ```sh
 export sigma_path=/path/to/sigma_repository
 cp hayabusaGenerater.py $sigma_path/tools/sigma/backends
 ```
 
-### 単体のルールを変換
+### pythonライブラリのインストール
+下記のコマンドを実行してください。
 
 ```sh
-python3 $sigma_path/tools/sigmac <変換対象ruleの指定> --config <configの指定> --target hayabusa
+pip install pyyaml
 ```
 
-サンプル
-```sh
-python3 $sigma_path/tools/sigmac $sigma/rules/windows/create_remote_thread/sysmon_cactustorch.yml --config $sigma_path/tools/config/generic/sysmon.yml --target hayabusa > sysmon_cactustorch.yml
-```
-
-### 複数のルールを変換
-
-現在のディレクトリ内に指定したディレクトリ内のルールファイルを作成するコマンドサンプルです。
+### ルールの変換
+convert.shを実行することでルールの変換が実行されます。変換されたルールはhayabusa_rulesフォルダに作成されます。
 
 ```sh
-find $sigma/rules/windows/* | grep yml | xargs -I{} sh -c 'python $sigma/tools/sigmac {} --config $sigma/tools/config/generic/sysmon.yml --target hayabusa > "$(basename {})"'
+export sigma_path=/path/to/sigma_repository
+cp hayabusaGenerater.py $sigma_path/tools/sigma/backends
 ```
+
+ルールの変換に利用しているsigmacには様々なオプションが用意されています。オプションを変更する場合はconvert.shを編集してください。

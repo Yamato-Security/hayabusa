@@ -260,7 +260,6 @@ class HayabusaBackend(SingleTextQueryBackend):
             ## 順番固定してもいいかも
             bs.write("title: " + parsed_yaml["title"]+"\n")
             del parsed_yaml["title"]
-            del parsed_yaml["yml_path"]
 
             ## detectionの部分だけ変更して出力する。
             parsed_yaml["detection"] = {}
@@ -283,6 +282,5 @@ class HayabusaBackend(SingleTextQueryBackend):
                         parsed_yaml["detection"][key][fieldname] = value
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
-        
         
         return ret
