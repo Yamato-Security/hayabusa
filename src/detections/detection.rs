@@ -209,3 +209,10 @@ fn test_parse_rule_files() {
     let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path);
     assert_eq!(5, cole.len());
 }
+
+#[test]
+fn test_parse_rule_files_no_specified() {
+    let level = "INFO";
+    let cole = Detection::parse_rule_files(level.to_owned(), None);
+    assert_eq!(1045, cole.len());
+}
