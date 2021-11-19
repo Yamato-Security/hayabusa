@@ -20,6 +20,7 @@ use std::{
 const MAX_DETECT_RECORDS: usize = 40000;
 
 fn main() {
+    output_logo();
     if configs::CONFIG.read().unwrap().args.args.len() == 0 {
         println!(
             "{}",
@@ -197,6 +198,12 @@ fn evtx_to_jsons(evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {
 
 fn _output_with_omikuji(omikuji: Omikuji) {
     let fp = &format!("art/omikuji/{}", omikuji);
+    let content = fs::read_to_string(fp).unwrap();
+    println!("{}", content);
+}
+
+fn output_logo() {
+    let fp = &format!("art/logo.txt");
     let content = fs::read_to_string(fp).unwrap();
     println!("{}", content);
 }
