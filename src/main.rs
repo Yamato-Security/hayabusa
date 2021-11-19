@@ -109,7 +109,10 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .value_of("level")
         .unwrap_or("INFO")
         .to_uppercase();
-    let rule_files = detection::Detection::parse_rule_files(level);
+    let rule_files = detection::Detection::parse_rule_files(
+        level,
+        configs::CONFIG.read().unwrap().args.value_of("rules"),
+    );
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
         detection = analysis_file(evtx_file, detection);
