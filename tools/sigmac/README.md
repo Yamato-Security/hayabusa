@@ -30,6 +30,8 @@ git clone https://github.com/SigmaHQ/sigma.git
 ```sh
 export sigma_path=/path/to/sigma_repository
 cp hayabusaGenerater.py $sigma_path/tools/sigma/backends
+cp convert.sh $sigma_path
+cp splitter.py $sigma_path
 ```
 
 ### pythonライブラリのインストール
@@ -44,7 +46,8 @@ convert.shを実行することでルールの変換が実行されます。変�
 
 ```sh
 export sigma_path=/path/to/sigma_repository
-cp hayabusaGenerater.py $sigma_path/tools/sigma/backends
+cd $sigma_path
+sh convert.sh
 ```
 
 ルールの変換に利用しているsigmacには様々なオプションが用意されています。オプションを変更する場合はconvert.shを編集してください。
