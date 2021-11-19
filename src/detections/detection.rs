@@ -69,10 +69,10 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse Rule file. (FilePath : {})", rule.rulepath);
-                AlertMessage::alert(&mut std::io::stderr().lock(), errmsg_body).ok();
+                AlertMessage::warn(&mut std::io::stdout().lock(), errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
-                    AlertMessage::alert(&mut std::io::stderr().lock(), err_msg.to_string()).ok();
+                    AlertMessage::warn(&mut std::io::stdout().lock(), err_msg.to_string()).ok();
                 });
                 println!(""); // 一行開けるためのprintln
             });

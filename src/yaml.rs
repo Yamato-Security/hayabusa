@@ -56,8 +56,8 @@ impl ParseYaml {
             // 個別のファイルの読み込みは即終了としない。
             let read_content = self.read_file(path);
             if read_content.is_err() {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                AlertMessage::warn(
+                    &mut std::io::stdout().lock(),
                     format!(
                         "fail to read file: {}\n{} ",
                         entry.path().display(),
@@ -70,8 +70,8 @@ impl ParseYaml {
             // ここも個別のファイルの読み込みは即終了としない。
             let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
             if yaml_contents.is_err() {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                AlertMessage::warn(
+                    &mut std::io::stdout().lock(),
                     format!(
                         "fail to parse as yaml: {}\n{} ",
                         entry.path().display(),
