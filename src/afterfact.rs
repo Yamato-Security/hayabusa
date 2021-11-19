@@ -176,7 +176,7 @@ fn test_emit_csv() {
             .format("%Y-%m-%d %H:%M:%S%.3f %:z")
             .to_string()
         + ","
-        + &testfilepath.replace(".evtx", "").to_string()
+        + &testfilepath.to_string()
         + ","
         + testrulepath
         + ","
