@@ -49,11 +49,11 @@ impl Detection {
     pub fn parse_rule_files(level: String) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
-        let resutl_readdir = rulefile_loader.read_dir(DIRPATH_RULES, &level);
-        if resutl_readdir.is_err() {
+        let result_readdir = rulefile_loader.read_dir(DIRPATH_RULES, &level);
+        if result_readdir.is_err() {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                format!("{}", resutl_readdir.unwrap_err()),
+                format!("{}", result_readdir.unwrap_err()),
             )
             .ok();
             return vec![];
