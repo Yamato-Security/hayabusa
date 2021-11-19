@@ -5,7 +5,7 @@ import yaml
 import re
 
 from sigma.backends.base import SingleTextQueryBackend
-from sigma.parser.condition import SigmaAggregationParser
+from sigma.parser.condition import SigmaAggregationParser, ConditionOR, ConditionAND
 from sigma.parser.modifiers.base import SigmaTypeModifier
 from sigma.parser.modifiers.type import SigmaRegularExpressionModifier
 
@@ -127,10 +127,21 @@ class HayabusaBackend(SingleTextQueryBackend):
         ###     EventID: 1 or 2
         ### 上記のようにならないように、修正している。
         ### なお、generateMapItemListNode()を有効にするために、self.mapListsSpecialHandling = Trueとしている
+        if self._is_all_str(value):
+            name = self.create_new_selection()
+            self.name_2_selection[name] = [(fieldname,value)]
+            return name
+
         list_values = list()
         for sub_node in value:
             list_values.append((fieldname,sub_node))
         return self.subExpression % self.generateORNode(list_values) 
+    
+    def _is_all_str(self, values):
+        for value in values:
+            if type(value) != str:
+                return False
+        return True
     
     def generateAggregation(self, agg):
         # python3 tools/sigmac rules/windows/process_creation/win_dnscat2_powershell_implementation.yml --config tools/config/generic/sysmon.yml --target hayabusa
@@ -169,8 +180,73 @@ class HayabusaBackend(SingleTextQueryBackend):
             return node
         else:
             return self.valueExpression % (self.cleanValue(str(node)))
+    
+    ### 全部strかどうかを判定
+    def is_keyword_list(self, node ):
+        if type(node) != ConditionOR:
+            return False
+        
+        for item in node.items:
+            if type(item) != str:
+                return False
+        
+        return True
+    
+    def generateANDNode(self, node):        
+        generated = list()
+        for val in node:
+            if type(val) == str:
+                ### 普通はtupleでkeyとvalueのペアであるが、これはkeyが指定されていないケース
+                ### keyが指定されていない場合は、EventLog全体をgrep検索することになっている。(詳細はSigmaルールの仕様書を参照のこと)
+                ### 具体的には"all of"とか使うとこの分岐に来る
+                name = self.create_new_selection()
+                self.name_2_selection[name] = [(None, val)]
+                generated_node = name
+            else:
+                ### 普通はこっちにくる
+                generated_node = self.generateNode(val)
+            generated.append(generated_node)
+        filtered = [ g for g in generated if g is not None ]
+        if filtered:
+            if self.sort_condition_lists:
+                filtered = sorted(filtered)
+            return self.andToken.join(filtered)
+        else:
+            return None
+        
+    def generateORNode(self, node):
+        if self.is_keyword_list(node) == True:
+            ## 普通はtupleでkeyとvalueのペアであるが、これはkeyが指定されていないケース
+            ## 全てkeyが指定されていない場合はここに来る。
+            name = self.create_new_selection()
+            self.name_2_selection[name] = [(None, val) for val in node]
+            return name
+        
+        name = None
+        generated = list()
+        for val in node:
+            ### 普通はtupleでkeyとvalueのペアであるが、これはkeyが指定されていないケース
+            if type(val) == str:
+                if name is None:
+                    name = self.create_new_selection()
+                    self.name_2_selection[name] = list()
+                self.name_2_selection[name].append((None,val))
+            else:
+                generated.append(self.generateNode(val))
+        if name is not None:
+            generated.append(name)
+
+        filtered = [ g for g in generated if g is not None ]
+        if filtered:
+            if self.sort_condition_lists:
+                filtered = sorted(filtered)
+            return self.orToken.join(filtered)
+        else:
+            return None
         
     def generateQuery(self, parsed):
+        ### このクラスのインスタンスは再利用されるので、内部のメンバ変数をresetする。
+        self.re_init()
         result = self.generateNode(parsed.parsedSearch)
         if parsed.parsedAgg:
             res = self.generateAggregation(parsed.parsedAgg)
@@ -190,12 +266,23 @@ class HayabusaBackend(SingleTextQueryBackend):
             parsed_yaml["detection"] = {}
             parsed_yaml["detection"]["condition"] = result
             for key, values in self.name_2_selection.items():
-                parsed_yaml["detection"][key] = {}
+                ### fieldnameの有無を確認している
+                if values[0][0]:
+                    ## 通常はfieldnameがあってその場合は連想配列で初期化
+                    parsed_yaml["detection"][key] = {}
+                else:
+                    ## is_keyword_list() == Trueの場合だけ、ここにくる
+                    parsed_yaml["detection"][key] = []
+                    
                 for fieldname, value in values:
-                    parsed_yaml["detection"][key][fieldname] = value
+                    if fieldname == None:
+                        ## is_keyword_list() == Trueの場合
+                        parsed_yaml["detection"][key].append(value)
+                    else:
+                        ## is_keyword_list() == Falseの場合
+                        parsed_yaml["detection"][key][fieldname] = value
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
         
-        self.re_init()
         
         return ret
