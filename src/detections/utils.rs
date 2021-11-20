@@ -91,10 +91,10 @@ pub fn get_event_id_key() -> String {
 
 /// serde:Valueの型を確認し、文字列を返します。
 pub fn get_serde_number_to_string(value: &serde_json::Value) -> String {
-    if value.is_number() {
-        return value.to_string();
-    } else {
+    if value.is_string() {
         return value.as_str().unwrap_or("").to_string();
+    } else {
+        return value.to_string();
     }
 }
 
