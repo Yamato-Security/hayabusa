@@ -20,8 +20,10 @@ use std::{
 const MAX_DETECT_RECORDS: usize = 40000;
 
 fn main() {
-    output_logo();
-    println!("");
+    if !configs::CONFIG.read().unwrap().args.is_present("q") {
+        output_logo();
+        println!("");
+    }
     if configs::CONFIG.read().unwrap().args.args.len() == 0 {
         println!(
             "{}",
