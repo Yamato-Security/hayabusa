@@ -170,7 +170,7 @@ fn test_emit_csv() {
         + ","
         + testrulepath
         + ","
-        + &testfilepath.replace(".evtx", "").to_string()
+        + &testfilepath.to_string()
         + "\n";
 
     let mut file: Box<dyn io::Write> =
