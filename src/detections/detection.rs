@@ -8,6 +8,7 @@ use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
+use crate::detections::utils::get_serde_number_to_string;
 use crate::yaml::ParseYaml;
 
 use std::sync::Arc;
@@ -156,11 +157,11 @@ impl Detection {
             record_info.evtx_filepath.to_string(),
             rule.rulepath.to_string(),
             &record_info.record,
-            rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            rule.yaml["level"].as_str().unwrap_or("-").to_string(),
             record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            record_info.record["Event"]["System"]["EventID"].to_string(),
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"]),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );

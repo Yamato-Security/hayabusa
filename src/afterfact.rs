@@ -12,13 +12,13 @@ use std::process;
 #[serde(rename_all = "PascalCase")]
 pub struct CsvFormat<'a> {
     time: &'a str,
-    filepath: &'a str,
-    rulepath: &'a str,
-    level: &'a str,
     computername: &'a str,
     eventid: &'a str,
+    level: &'a str,
     alert: &'a str,
     details: &'a str,
+    rulepath: &'a str,
+    filepath: &'a str,
 }
 
 pub fn after_fact() {
@@ -152,25 +152,25 @@ fn test_emit_csv() {
         .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
         .unwrap();
     let expect_tz = expect_time.with_timezone(&Local);
-    let expect = "Time,Filepath,Rulepath,Level,Computername,Eventid,Alert,Details\n".to_string()
+    let expect = "Time,Computername,Eventid,Level,Alert,Details,Rulepath,Filepath\n".to_string()
         + &expect_tz
             .clone()
             .format("%Y-%m-%d %H:%M:%S%.3f %:z")
             .to_string()
         + ","
-        + &testfilepath.to_string()
-        + ","
-        + testrulepath
-        + ","
-        + test_level
-        + ","
         + test_computername
         + ","
         + test_eventid
         + ","
+        + test_level
+        + ","
         + test_title
         + ","
         + output
+        + ","
+        + testrulepath
+        + ","
+        + &testfilepath.to_string()
         + "\n";
 
     let mut file: Box<dyn io::Write> =
