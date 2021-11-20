@@ -282,5 +282,6 @@ class HayabusaBackend(SingleTextQueryBackend):
                         parsed_yaml["detection"][key][fieldname] = value
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
+            ret += "---\n"
         
         return ret

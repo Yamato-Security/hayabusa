@@ -38,7 +38,7 @@ cp splitter.py $sigma_path
 下記のコマンドを実行してください。
 
 ```sh
-pip install pyyaml
+pip install ruamel.yaml
 ```
 
 ### ルールの変換
