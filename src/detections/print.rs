@@ -193,6 +193,9 @@ impl AlertMessage {
     pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
         writeln!(w, "[ERROR] {}", contents)
     }
+    pub fn warn<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
+        writeln!(w, "[WARN] {}", contents)
+    }
 }
 
 #[cfg(test)]
@@ -314,5 +317,13 @@ mod tests {
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
         AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
+    }
+
+    #[test]
+    fn test_warn_message() {
+        let input = "TESTWarn!";
+        let stdout = std::io::stdout();
+        let mut stdout = stdout.lock();
+        AlertMessage::alert(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
     }
 }
