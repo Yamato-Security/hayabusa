@@ -7,7 +7,7 @@
 </div>
 
 # Hayabusa
-Hayabusa is a very fast Windows event analyzer used for creating forensic timelines and performing threat hunting based on IoCs written in either hayabusa or SIGMA rules. It can be run live, offline, pushed out as agents to be run on endpoints in an enterprise after an incident or even periodically reporting back alerts on slack.
+Hayabusa is a very fast Windows event analyzer used for creating forensic timelines and performing threat hunting based on IoCs written in either hayabusa or SIGMA rules. It can be run live, offline, pushed out as agents to be run on endpoints in an enterprise after an incident.
 
 # About Hayabusa
 Hayabusa ("falcon" in Japanese) was written by the Yamato Security group in Japan. First inspired by the DeepblueCLI Windows event log analyzer, we started in 2020 porting it over to Rust for the RustyBlue project, then created SIGMA-like flexible signatures based in YAML, and then added a backend to SIGMA to support converting SIGMA rules into hayabusa rules. Supporting multi-threading, (to our knowledge) it is currently the fastest forensics timeline generator and threat hunting tool as well supports the most features in SIGMA. It can analyze multiple Windows event logs and consolidate the results into one timeline for easy analysis. It will output in CSV to be imported into tools like Timeline Explorer and Excel for analysis.
@@ -20,7 +20,6 @@ Add screenshots here.
 * Faster than a hayabusa falcon!
 * English and Japanese support
 * Multi-thread support
-* Enterprise-wide threat hunting via alerts to Slack
 * Creating event timelines for forensic investigations and incident response
 * Threat hunting based on IoC signatures written in easy to read/create/edit YAML based hayabusa rules
 * SIGMA support to convert SIGMA rules to hayabusa rules
@@ -39,7 +38,6 @@ FLAGS:
         --credits       Prints a list of contributors
     -h, --help          Prints help information
         --rfc-2822      Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600
-        --slack         Sends alerts to Slack
     -s, --statistics    Prints statistics for event logs
     -u, --utc           Output time in UTC format (default: local time)
     -V, --version       Prints version information
@@ -82,20 +80,6 @@ If you have rust installed, you can compile from source with the following comma
 
 ````
 cargo build --release
-````
-
-# How to send alerts to a Slack channel
-
-Slackチャンネルへの通知にはSlackでのWEBHOOKURLの設定と実行マシンの環境変数(WEBHOOKURL、CHANNEL)への追加が必要です。
-
-1. Add an "Incoming Webhook" to the slack workspace you want to send alerts to.
-2. 「チャンネルへの投稿」で投稿するチャンネルを選択し 「Incoming Webhookインテグレーションの追加」をクリックします。
-3. 遷移後のぺージの「Webhook URL」の内容(https:hooks.slack.com/services/xxx...)を環境変数の`WEBHOOK_URL` に代入してください。
-4. 投入するchannelを#付きで環境変数の`CHANNEL`に代入してください。
-5. 以下のコマンドで実行をするとCHANNELで指定したチャンネルに検知情報の通知が送付されます。
-
-````
-hayabusa.exe --slack 
 ````
 
 # Other Windows event log analyzers and related projects

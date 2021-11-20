@@ -1,5 +1,6 @@
 extern crate lazy_static;
 use crate::detections::configs;
+use crate::detections::utils::get_serde_number_to_string;
 use chrono::{DateTime, TimeZone, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -50,7 +51,7 @@ impl Message {
         event_detail: String,
     ) {
         let detect_info = DetectInfo {
-            filepath: target_file.replace(".evtx", ""),
+            filepath: target_file,
             rulepath: rule_path,
             level: level,
             computername: computername,
@@ -125,7 +126,7 @@ impl Message {
                 }
                 hash_map.insert(
                     full_target_str.to_string(),
-                    tmp_event_record.as_str().unwrap_or("").to_string(),
+                    get_serde_number_to_string(tmp_event_record),
                 );
             }
         }
@@ -192,6 +193,9 @@ impl Message {
 impl AlertMessage {
     pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
         writeln!(w, "[ERROR] {}", contents)
+    }
+    pub fn warn<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
+        writeln!(w, "[WARN] {}", contents)
     }
 }
 
@@ -314,5 +318,13 @@ mod tests {
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
         AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
+    }
+
+    #[test]
+    fn test_warn_message() {
+        let input = "TESTWarn!";
+        let stdout = std::io::stdout();
+        let mut stdout = stdout.lock();
+        AlertMessage::alert(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
     }
 }

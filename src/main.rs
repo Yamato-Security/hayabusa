@@ -51,8 +51,13 @@ fn main() {
             return;
         }
         analysis_files(evtx_files);
-    } else if configs::CONFIG.read().unwrap().args.is_present("credits") {
-        print_credits();
+    } else if configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("contributors")
+    {
+        print_contributors();
         return;
     }
     let analysis_end_time: DateTime<Utc> = Utc::now();
@@ -94,8 +99,8 @@ fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
     return ret;
 }
 
-fn print_credits() {
-    match fs::read_to_string("./credits.txt") {
+fn print_contributors() {
+    match fs::read_to_string("./contributors.txt") {
         Ok(contents) => println!("{}", contents),
         Err(err) => {
             AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err)).ok();
@@ -111,9 +116,15 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .value_of("level")
         .unwrap_or("INFO")
         .to_uppercase();
-    let rule_files = detection::Detection::parse_rule_files(level);
+    let rule_files = detection::Detection::parse_rule_files(
+        level,
+        configs::CONFIG.read().unwrap().args.value_of("rules"),
+    );
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
+        if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+            println!("check target evtx FilePath: {:?}", &evtx_file);
+        }
         detection = analysis_file(evtx_file, detection);
     }
 

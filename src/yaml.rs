@@ -58,8 +58,8 @@ impl ParseYaml {
             // 個別のファイルの読み込みは即終了としない。
             let read_content = self.read_file(path);
             if read_content.is_err() {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                AlertMessage::warn(
+                    &mut std::io::stdout().lock(),
                     format!(
                         "fail to read file: {}\n{} ",
                         entry.path().display(),
@@ -73,8 +73,8 @@ impl ParseYaml {
             // ここも個別のファイルの読み込みは即終了としない。
             let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
             if yaml_contents.is_err() {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                AlertMessage::warn(
+                    &mut std::io::stdout().lock(),
                     format!(
                         "fail to parse as yaml: {}\n{} ",
                         entry.path().display(),
@@ -116,14 +116,17 @@ impl ParseYaml {
                         .unwrap_or(&0)
                         + 1,
                 );
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    println!("Loaded yml FilePath: {}", filepath);
+                }
                 // 指定されたレベルより低いルールは無視する
                 let doc_level = &yaml_doc["level"]
                     .as_str()
-                    .unwrap_or("INFO")
+                    .unwrap_or("LOW")
                     .to_string()
                     .to_uppercase();
-                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
-                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
+                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&2);
+                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&2);
                 if doc_level_num < args_level_num {
                     return Option::None;
                 }
@@ -181,12 +184,12 @@ mod tests {
     }
 
     #[test]
-    /// no specifed "level" arguments value is adapted default level(INFO)
+    /// no specifed "level" arguments value is adapted default level(LOW)
     fn test_default_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
         yaml.read_dir(path.to_path_buf(), &"").unwrap();
-        assert_eq!(yaml.files.len(), 5);
+        assert_eq!(yaml.files.len(), 4);
     }
 
     #[test]
