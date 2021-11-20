@@ -26,7 +26,7 @@ TicketEncryptionType,Event.EventData.TicketEncryptionType
 PreAuthType,Event.EventData.PreAuthType
 TaskName,Event.EventData.TaskName
 WorkStationName,Event.EventData.WorkStationName
-Workstation,Event.EventData.WorkStation
+Workstation,Event.EventData.WorkstationName
 UserName,Event.EventData.UserName
 ServiceFileName,Event.EventData.ServiceFileName
 ComputerName,Event.System.Computer
@@ -170,3 +170,6 @@ Workstation,Event.EventData.Workstation
 WorkstationName,Event.EventData.WorkstationName
 JobTitle,Event.EventData.name
 Url,Event.EventData.url
+IpPort,Event.EventData.IpPort
+SubStatus,Event.EventData.SubStatus
+TargetDomainName,Event.EventData.TargetDomainName

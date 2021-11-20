@@ -1,5 +1,6 @@
 extern crate lazy_static;
 use crate::detections::configs;
+use crate::detections::utils::get_serde_number_to_string;
 use chrono::{DateTime, TimeZone, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -125,7 +126,7 @@ impl Message {
                 }
                 hash_map.insert(
                     full_target_str.to_string(),
-                    tmp_event_record.as_str().unwrap_or("").to_string(),
+                    get_serde_number_to_string(tmp_event_record),
                 );
             }
         }
