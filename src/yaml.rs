@@ -56,8 +56,8 @@ impl ParseYaml {
             // 個別のファイルの読み込みは即終了としない。
             let read_content = self.read_file(path);
             if read_content.is_err() {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                AlertMessage::warn(
+                    &mut std::io::stdout().lock(),
                     format!(
                         "fail to read file: {}\n{} ",
                         entry.path().display(),
@@ -70,8 +70,8 @@ impl ParseYaml {
             // ここも個別のファイルの読み込みは即終了としない。
             let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
             if yaml_contents.is_err() {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                AlertMessage::warn(
+                    &mut std::io::stdout().lock(),
                     format!(
                         "fail to parse as yaml: {}\n{} ",
                         entry.path().display(),
@@ -96,7 +96,9 @@ impl ParseYaml {
                 if yaml_doc["ignore"].as_bool().unwrap_or(false) {
                     return Option::None;
                 }
-
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    println!("Loaded yml FilePath: {}", filepath);
+                }
                 // 指定されたレベルより低いルールは無視する
                 let doc_level = &yaml_doc["level"]
                     .as_str()
