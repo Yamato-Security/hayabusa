@@ -14,11 +14,19 @@ use yaml_rust::YamlLoader;
 
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
+    pub rulecounter: HashMap<String, u128>,
+    pub ignore_count: u128,
+    pub parseerror_count: u128,
 }
 
 impl ParseYaml {
     pub fn new() -> ParseYaml {
-        ParseYaml { files: Vec::new() }
+        ParseYaml {
+            files: Vec::new(),
+            rulecounter: HashMap::new(),
+            ignore_count: 0,
+            parseerror_count: 0,
+        }
     }
 
     pub fn read_file(&self, path: PathBuf) -> Result<String, String> {
@@ -36,7 +44,6 @@ impl ParseYaml {
 
     pub fn read_dir<P: AsRef<Path>>(&mut self, path: P, level: &str) -> io::Result<String> {
         let mut entries = fs::read_dir(path)?;
-        let mut errorcount = 0;
         let yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
             let entry = entry?;
             // フォルダは再帰的に呼び出す。
@@ -66,7 +73,7 @@ impl ParseYaml {
                         read_content.unwrap_err()
                     ),
                 )?;
-                errorcount += 1;
+                self.parseerror_count += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -81,7 +88,7 @@ impl ParseYaml {
                         yaml_contents.unwrap_err()
                     ),
                 )?;
-                errorcount += 1;
+                self.parseerror_count += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -93,20 +100,20 @@ impl ParseYaml {
             return io::Result::Ok(ret);
         })?;
 
-        let mut rulecounter: HashMap<String, u128> = HashMap::new();
         let files: Vec<(String, Yaml)> = yaml_docs
             .into_iter()
             .filter_map(|(filepath, yaml_doc)| {
                 // ignoreフラグがONになっているルールは無視する。
                 if yaml_doc["ignore"].as_bool().unwrap_or(false) {
+                    self.ignore_count += 1;
                     return Option::None;
                 }
-                rulecounter.insert(
+                self.rulecounter.insert(
                     yaml_doc["rulesection"]
                         .as_str()
                         .unwrap_or("other")
                         .to_string(),
-                    rulecounter
+                    self.rulecounter
                         .get(
                             &yaml_doc["rulesection"]
                                 .as_str()
@@ -135,10 +142,6 @@ impl ParseYaml {
             })
             .collect();
         self.files.extend(files);
-        rulecounter.into_iter().for_each(|(key, value)| {
-            println!("{:?} Rules: {:?}", key, value);
-        });
-        println!("Rule Parsing Errors: {:?}", errorcount);
         return io::Result::Ok(String::default());
     }
 }
