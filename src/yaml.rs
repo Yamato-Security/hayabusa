@@ -3,6 +3,7 @@ extern crate yaml_rust;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -35,6 +36,7 @@ impl ParseYaml {
 
     pub fn read_dir<P: AsRef<Path>>(&mut self, path: P, level: &str) -> io::Result<String> {
         let mut entries = fs::read_dir(path)?;
+        let mut errorcount = 0;
         let yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
             let entry = entry?;
             // フォルダは再帰的に呼び出す。
@@ -64,6 +66,7 @@ impl ParseYaml {
                         read_content.unwrap_err()
                     ),
                 )?;
+                errorcount += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -78,6 +81,7 @@ impl ParseYaml {
                         yaml_contents.unwrap_err()
                     ),
                 )?;
+                errorcount += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -89,6 +93,7 @@ impl ParseYaml {
             return io::Result::Ok(ret);
         })?;
 
+        let mut rulecounter: HashMap<String, u128> = HashMap::new();
         let files: Vec<(String, Yaml)> = yaml_docs
             .into_iter()
             .filter_map(|(filepath, yaml_doc)| {
@@ -96,7 +101,21 @@ impl ParseYaml {
                 if yaml_doc["ignore"].as_bool().unwrap_or(false) {
                     return Option::None;
                 }
-
+                rulecounter.insert(
+                    yaml_doc["rulesection"]
+                        .as_str()
+                        .unwrap_or("other")
+                        .to_string(),
+                    rulecounter
+                        .get(
+                            &yaml_doc["rulesection"]
+                                .as_str()
+                                .unwrap_or("other")
+                                .to_string(),
+                        )
+                        .unwrap_or(&0)
+                        + 1,
+                );
                 // 指定されたレベルより低いルールは無視する
                 let doc_level = &yaml_doc["level"]
                     .as_str()
@@ -113,7 +132,10 @@ impl ParseYaml {
             })
             .collect();
         self.files.extend(files);
-
+        rulecounter.into_iter().for_each(|(key, value)| {
+            println!("{:?} Rules: {:?}", key, value);
+        });
+        println!("Rule Parsing Errors: {:?}", errorcount);
         return io::Result::Ok(String::default());
     }
 }
