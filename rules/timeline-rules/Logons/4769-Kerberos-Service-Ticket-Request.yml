@@ -1,0 +1,14 @@
+title: Kerberos Service Ticket Requested
+description: Prints logon information
+author: Zach Mathis
+level: informational
+detection:
+    selection:
+        Channel: Security
+        EventID: 4769
+
+falsepositives:
+    - normal system usage
+output: 'User: %TargetUserName%  :  Service: %ServiceName%  :  IP Address: %IpAddress%  :  Status: %Status%'
+creation_date: 2021/11/17
+updated_date: 2021/11/17

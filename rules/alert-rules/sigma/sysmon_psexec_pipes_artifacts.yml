@@ -1,0 +1,41 @@
+title: PsExec Pipes Artifacts
+author: Nikita Nazarov, oscd.community
+date: 2020/05/10
+description: Detecting use PsExec via Pipe Creation/Access to pipes
+detection:
+    SELECTION_1:
+        EventID: 17
+    SELECTION_2:
+        EventID: 18
+    SELECTION_3:
+        PipeName: psexec*
+    SELECTION_4:
+        PipeName: paexec*
+    SELECTION_5:
+        PipeName: remcom*
+    SELECTION_6:
+        PipeName: csexec*
+    condition: ((SELECTION_1 or SELECTION_2) and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6))
+falsepositives:
+- Legitimate Administrator activity
+id: 9e77ed63-2ecf-4c7b-b09d-640834882028
+level: medium
+logsource:
+    category: pipe_created
+    definition: Note that you have to configure logging for Named Pipe Events in Sysmon
+        config (Event ID 17 and Event ID 18). The basic configuration is in popular
+        sysmon configuration (https://github.com/SwiftOnSecurity/sysmon-config), but
+        it is worth verifying. You can also use other repo, e.g. https://github.com/Neo23x0/sysmon-config,
+        https://github.com/olafhartong/sysmon-modular. How to test detection? You
+        can check powershell script from this site https://svch0st.medium.com/guide-to-named-pipes-and-hunting-for-cobalt-strike-pipes-dc46b2c5f575
+    product: windows
+references:
+- https://drive.google.com/file/d/1lKya3_mLnR3UQuCoiYruO3qgu052_iS_/view
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1021.002
+yml_filename: sysmon_psexec_pipes_artifacts.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/pipe_created
+

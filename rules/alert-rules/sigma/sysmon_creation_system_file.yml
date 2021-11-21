@@ -1,0 +1,102 @@
+title: File Created with System Process Name
+author: Sander Wiebing
+date: 2020/05/26
+description: Detects the creation of an executable with a system process name in a
+    suspicious folder
+detection:
+    SELECTION_1:
+        EventID: 11
+    SELECTION_10:
+        TargetFilename: '*\csrss.exe'
+    SELECTION_11:
+        TargetFilename: '*\conhost.exe'
+    SELECTION_12:
+        TargetFilename: '*\wininit.exe'
+    SELECTION_13:
+        TargetFilename: '*\lsm.exe'
+    SELECTION_14:
+        TargetFilename: '*\winlogon.exe'
+    SELECTION_15:
+        TargetFilename: '*\explorer.exe'
+    SELECTION_16:
+        TargetFilename: '*\taskhost.exe'
+    SELECTION_17:
+        TargetFilename: '*\Taskmgr.exe'
+    SELECTION_18:
+        TargetFilename: '*\taskmgr.exe'
+    SELECTION_19:
+        TargetFilename: '*\sihost.exe'
+    SELECTION_2:
+        TargetFilename: '*\svchost.exe'
+    SELECTION_20:
+        TargetFilename: '*\RuntimeBroker.exe'
+    SELECTION_21:
+        TargetFilename: '*\runtimebroker.exe'
+    SELECTION_22:
+        TargetFilename: '*\smartscreen.exe'
+    SELECTION_23:
+        TargetFilename: '*\dllhost.exe'
+    SELECTION_24:
+        TargetFilename: '*\audiodg.exe'
+    SELECTION_25:
+        TargetFilename: '*\wlanext.exe'
+    SELECTION_26:
+        TargetFilename: C:\Windows\System32\\*
+    SELECTION_27:
+        TargetFilename: C:\Windows\system32\\*
+    SELECTION_28:
+        TargetFilename: C:\Windows\SysWow64\\*
+    SELECTION_29:
+        TargetFilename: C:\Windows\SysWOW64\\*
+    SELECTION_3:
+        TargetFilename: '*\rundll32.exe'
+    SELECTION_30:
+        TargetFilename: C:\Windows\winsxs\\*
+    SELECTION_31:
+        TargetFilename: C:\Windows\WinSxS\\*
+    SELECTION_32:
+        TargetFilename: \SystemRoot\System32\\*
+    SELECTION_33:
+        Image: '*\Windows\System32\dism.exe'
+    SELECTION_34:
+        TargetFilename: C:\$WINDOWS.~BT\\*
+    SELECTION_35:
+        Image: C:\$WINDOWS.~BT\Sources\SetupHost.exe
+    SELECTION_4:
+        TargetFilename: '*\services.exe'
+    SELECTION_5:
+        TargetFilename: '*\powershell.exe'
+    SELECTION_6:
+        TargetFilename: '*\regsvr32.exe'
+    SELECTION_7:
+        TargetFilename: '*\spoolsv.exe'
+    SELECTION_8:
+        TargetFilename: '*\lsass.exe'
+    SELECTION_9:
+        TargetFilename: '*\smss.exe'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25)
+        and  not ((SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or
+        SELECTION_30 or SELECTION_31 or SELECTION_32) and SELECTION_33)) and  not
+        (SELECTION_34 and SELECTION_35))
+falsepositives:
+- System processes copied outside the default folder
+fields:
+- Image
+id: d5866ddf-ce8f-4aea-b28e-d96485a20d3d
+level: high
+logsource:
+    category: file_event
+    product: windows
+modified: 2021/10/28
+status: test
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.005
+yml_filename: sysmon_creation_system_file.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/file_event
+

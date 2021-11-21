@@ -1,0 +1,62 @@
+title: PrinterNightmare Mimimkatz Driver Name
+author: Markus Neis, @markus_neis, Florian Roth
+date: 2021/07/04
+description: Detects static QMS 810 and mimikatz driver name used by Mimikatz as exploited
+    in CVE-2021-1675 and CVE-2021-34527
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_10:
+        EventID: 14
+    SELECTION_11:
+        TargetObject: '*\Control\Print\Environments*'
+    SELECTION_12:
+        TargetObject: '*\CurrentVersion\Print\Printers*'
+    SELECTION_13:
+        TargetObject: '*Gentil Kiwi*'
+    SELECTION_14:
+        TargetObject: '*mimikatz printer*'
+    SELECTION_15:
+        TargetObject: '*Kiwi Legit Printer*'
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: '*\Control\Print\Environments\Windows x64\Drivers\Version-3\QMS
+            810\\*'
+    SELECTION_5:
+        TargetObject: '*\Control\Print\Environments\Windows x64\Drivers\Version-3\mimikatz*'
+    SELECTION_6:
+        TargetObject: '*legitprinter*'
+    SELECTION_7:
+        TargetObject: '*\Control\Print\Environments\Windows*'
+    SELECTION_8:
+        EventID: 12
+    SELECTION_9:
+        EventID: 13
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (((SELECTION_4 or
+        SELECTION_5) or (SELECTION_6 and SELECTION_7)) or ((SELECTION_8 or SELECTION_9
+        or SELECTION_10) and (SELECTION_11 or SELECTION_12) and (SELECTION_13 or SELECTION_14
+        or SELECTION_15))))
+falsepositives:
+- Legitimate installation of printer driver QMS 810, Texas Instruments microLaser
+    printer (unlikely)
+id: ba6b9e43-1d45-4d3c-a504-1043a64c8469
+level: critical
+logsource:
+    category: registry_event
+    product: windows
+modified: 2021/07/28
+references:
+- https://github.com/gentilkiwi/mimikatz/commit/c21276072b3f2a47a21e215a46962a17d54b3760
+- https://www.lexjansen.com/sesug/1993/SESUG93035.pdf
+- https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rprn/4464eaf0-f34f-40d5-b970-736437a21913
+status: experimental
+tags:
+- attack.execution
+- cve.2021.1675
+- cve.2021.34527
+yml_filename: win_registry_mimikatz_printernightmare.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/registry_event
+

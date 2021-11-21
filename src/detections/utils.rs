@@ -24,14 +24,9 @@ pub fn concat_selection_key(key_list: &Vec<String>) -> String {
         });
 }
 
-pub fn check_regex(string: &str, regex_list: &Vec<String>) -> bool {
-    for line in regex_list {
-        if line.is_empty() {
-            continue;
-        }
-
-        let re = Regex::new(line);
-        if re.is_err() || re.unwrap().is_match(string) == false {
+pub fn check_regex(string: &str, regex_list: &Vec<Regex>) -> bool {
+    for regex in regex_list {
+        if regex.is_match(string) == false {
             continue;
         }
 
@@ -41,14 +36,9 @@ pub fn check_regex(string: &str, regex_list: &Vec<String>) -> bool {
     return false;
 }
 
-pub fn check_allowlist(target: &str, allowlist: &Vec<String>) -> bool {
-    for line in allowlist {
-        if line.is_empty() {
-            continue;
-        }
-
-        let r = Regex::new(line);
-        if r.is_ok() && r.unwrap().is_match(target) {
+pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
+    for regex in regexes {
+        if regex.is_match(target) {
             return true;
         }
     }
@@ -97,6 +87,15 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
 
 pub fn get_event_id_key() -> String {
     return "Event.System.EventID".to_string();
+}
+
+/// serde:Valueの型を確認し、文字列を返します。
+pub fn get_serde_number_to_string(value: &serde_json::Value) -> String {
+    if value.is_string() {
+        return value.as_str().unwrap_or("").to_string();
+    } else {
+        return value.to_string();
+    }
 }
 
 // alias.txtについて、指定されたevent_keyに対応するaliasを取得します。
@@ -159,9 +158,15 @@ pub fn create_tokio_runtime() -> Runtime {
 #[cfg(test)]
 mod tests {
     use crate::detections::utils;
+    use regex::Regex;
+
     #[test]
     fn test_check_regex() {
-        let regexes = utils::read_txt("regexes.txt").unwrap();
+        let regexes = utils::read_txt("./config/regex/regexes_suspicous_service.txt")
+            .unwrap()
+            .into_iter()
+            .map(|regex_str| Regex::new(&regex_str).unwrap())
+            .collect();
         let regextext = utils::check_regex("\\cvtres.exe", &regexes);
         assert!(regextext == true);
 
@@ -172,7 +177,11 @@ mod tests {
     #[test]
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let allowlist = utils::read_txt("allowlist.txt").unwrap();
+        let allowlist = utils::read_txt("./config/regex/allowlist_legimate_serviceimage.txt")
+            .unwrap()
+            .into_iter()
+            .map(|allow_str| Regex::new(&allow_str).unwrap())
+            .collect();
         assert!(true == utils::check_allowlist(commandline, &allowlist));
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";

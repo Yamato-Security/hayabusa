@@ -1,0 +1,38 @@
+title: Turla Group Lateral Movement
+author: Markus Neis
+date: 2017/11/07
+description: Detects automated lateral movement by Turla group
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: net use \\%DomainController%\C$ "P@ssw0rd" *
+    SELECTION_3:
+        CommandLine: dir c:\\*.doc* /s
+    SELECTION_4:
+        CommandLine: dir %TEMP%\\*.exe
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4))
+falsepositives:
+- Unknown
+id: c601f20d-570a-4cde-a7d6-e17f99cb8e7f
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/09/19
+references:
+- https://securelist.com/the-epic-turla-operation/65545/
+status: experimental
+tags:
+- attack.g0010
+- attack.execution
+- attack.t1059
+- attack.lateral_movement
+- attack.t1077
+- attack.t1021.002
+- attack.discovery
+- attack.t1083
+- attack.t1135
+yml_filename: process_creation_apt_turla_commands_critical.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

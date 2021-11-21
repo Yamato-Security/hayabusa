@@ -1,0 +1,14 @@
+title: An account failed to log on
+description: hogehoge
+ignore: true
+author: Eric Conrad, Zach Mathis
+detection:
+    selection:
+        Channel: Security
+        EventID: 4648
+    # condition: selection | count(TargetUserName) > 3
+falsepositives:
+    - unknown
+output: 'Distributed Account Explicit Credential Use (Password Spray Attack)¥n The use of multiple user account access attempts with explicit credentials is ¥nan indicator of a password spray attack.¥nTarget Usernames:%TargetUserName$¥nAccessing Username: %SubjectUserName%¥nAccessing Host Name: %SubjectDomainName%'
+creation_date: 2020/11/8
+updated_date: 2020/11/8

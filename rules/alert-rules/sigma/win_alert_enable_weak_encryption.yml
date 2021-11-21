@@ -1,0 +1,136 @@
+title: Weak Encryption Enabled and Kerberoast
+author: '@neu5ron'
+date: 2017/07/30
+description: Detects scenario where weak encryption is enabled for a user profile
+    which could be used for hash/password cracking.
+detection:
+    SELECTION_1:
+        EventID: 4738
+    SELECTION_10:
+        OldUacValue: '*8???'
+    SELECTION_11:
+        OldUacValue: '*9???'
+    SELECTION_12:
+        OldUacValue: '*A???'
+    SELECTION_13:
+        OldUacValue: '*B???'
+    SELECTION_14:
+        OldUacValue: '*C???'
+    SELECTION_15:
+        OldUacValue: '*D???'
+    SELECTION_16:
+        OldUacValue: '*E???'
+    SELECTION_17:
+        OldUacValue: '*F???'
+    SELECTION_18:
+        NewUacValue: '*1????'
+    SELECTION_19:
+        NewUacValue: '*3????'
+    SELECTION_2:
+        NewUacValue: '*8???'
+    SELECTION_20:
+        NewUacValue: '*5????'
+    SELECTION_21:
+        NewUacValue: '*7????'
+    SELECTION_22:
+        NewUacValue: '*9????'
+    SELECTION_23:
+        NewUacValue: '*B????'
+    SELECTION_24:
+        NewUacValue: '*D????'
+    SELECTION_25:
+        NewUacValue: '*F????'
+    SELECTION_26:
+        OldUacValue: '*1????'
+    SELECTION_27:
+        OldUacValue: '*3????'
+    SELECTION_28:
+        OldUacValue: '*5????'
+    SELECTION_29:
+        OldUacValue: '*7????'
+    SELECTION_3:
+        NewUacValue: '*9???'
+    SELECTION_30:
+        OldUacValue: '*9????'
+    SELECTION_31:
+        OldUacValue: '*B????'
+    SELECTION_32:
+        OldUacValue: '*D????'
+    SELECTION_33:
+        OldUacValue: '*F????'
+    SELECTION_34:
+        NewUacValue: '*8??'
+    SELECTION_35:
+        NewUacValue: '*9??'
+    SELECTION_36:
+        NewUacValue: '*A??'
+    SELECTION_37:
+        NewUacValue: '*B??'
+    SELECTION_38:
+        NewUacValue: '*C??'
+    SELECTION_39:
+        NewUacValue: '*D??'
+    SELECTION_4:
+        NewUacValue: '*A???'
+    SELECTION_40:
+        NewUacValue: '*E??'
+    SELECTION_41:
+        NewUacValue: '*F??'
+    SELECTION_42:
+        OldUacValue: '*8??'
+    SELECTION_43:
+        OldUacValue: '*9??'
+    SELECTION_44:
+        OldUacValue: '*A??'
+    SELECTION_45:
+        OldUacValue: '*B??'
+    SELECTION_46:
+        OldUacValue: '*C??'
+    SELECTION_47:
+        OldUacValue: '*D??'
+    SELECTION_48:
+        OldUacValue: '*E??'
+    SELECTION_49:
+        OldUacValue: '*F??'
+    SELECTION_5:
+        NewUacValue: '*B???'
+    SELECTION_6:
+        NewUacValue: '*C???'
+    SELECTION_7:
+        NewUacValue: '*D???'
+    SELECTION_8:
+        NewUacValue: '*E???'
+    SELECTION_9:
+        NewUacValue: '*F???'
+    condition: (SELECTION_1 and ((((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9) and  not ((SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17))) or ((SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25)
+        and  not ((SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or
+        SELECTION_30 or SELECTION_31 or SELECTION_32 or SELECTION_33)))) or ((SELECTION_34
+        or SELECTION_35 or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39
+        or SELECTION_40 or SELECTION_41) and  not ((SELECTION_42 or SELECTION_43 or
+        SELECTION_44 or SELECTION_45 or SELECTION_46 or SELECTION_47 or SELECTION_48
+        or SELECTION_49)))))
+falsepositives:
+- Unknown
+id: f6de9536-0441-4b3f-a646-f4e00f300ffd
+level: high
+logsource:
+    definition: 'Requirements: Audit Policy : Account Management > Audit User Account
+        Management, Group Policy : Computer Configuration\Windows Settings\Security
+        Settings\Advanced Audit Policy Configuration\Audit Policies\Account Management\Audit
+        User Account Management'
+    product: windows
+    service: security
+references:
+- https://adsecurity.org/?p=2053
+- https://www.harmj0y.net/blog/activedirectory/roasting-as-reps/
+tags:
+- attack.defense_evasion
+- attack.t1089
+- attack.t1562.001
+yml_filename: win_alert_enable_weak_encryption.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/builtin
+

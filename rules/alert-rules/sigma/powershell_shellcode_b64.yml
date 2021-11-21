@@ -1,0 +1,34 @@
+title: PowerShell ShellCode
+author: David Ledbetter (shellcode), Florian Roth (rule)
+date: 2018/11/17
+description: Detects Base64 encoded Shellcode
+detection:
+    SELECTION_1:
+        ScriptBlockText: '*AAAAYInlM*'
+    SELECTION_2:
+        ScriptBlockText: '*OiCAAAAYInlM*'
+    SELECTION_3:
+        ScriptBlockText: '*OiJAAAAYInlM*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
+falsepositives:
+- Unknown
+id: 16b37b70-6fcf-4814-a092-c36bd3aafcbd
+level: critical
+logsource:
+    category: ps_script
+    definition: Script block logging must be enabled
+    product: windows
+modified: 2021/10/16
+references:
+- https://twitter.com/cyb3rops/status/1063072865992523776
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1055
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: powershell_shellcode_b64.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/powershell/powershell_script
+

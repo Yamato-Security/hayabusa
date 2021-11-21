@@ -1,0 +1,34 @@
+title: Procdump Usage
+author: Florian Roth
+date: 2021/08/16
+description: Detects uses of the SysInternals Procdump utility
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\procdump.exe'
+    SELECTION_3:
+        Image: '*\procdump64.exe'
+    SELECTION_4:
+        CommandLine: '* -ma *'
+    SELECTION_5:
+        CommandLine: '*.exe*'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) or (SELECTION_4 and
+        SELECTION_5)))
+falsepositives:
+- Legitimate use of procdump by a developer or administrator
+id: 2e65275c-8288-4ab4-aeb7-6274f58b6b20
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- Internal Research
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1003.001
+yml_filename: win_procdump.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

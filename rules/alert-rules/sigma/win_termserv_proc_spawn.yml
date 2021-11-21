@@ -1,0 +1,35 @@
+title: Terminal Service Process Spawn
+author: Florian Roth
+date: 2019/05/22
+description: Detects a process spawned by the terminal service server process (this
+    could be an indicator for an exploitation of CVE-2019-0708)
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        ParentCommandLine: '*\svchost.exe*'
+    SELECTION_3:
+        ParentCommandLine: '*termsvcs*'
+    SELECTION_4:
+        Image: '*\rdpclip.exe'
+    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+falsepositives:
+- Unknown
+id: 1012f107-b8f1-4271-af30-5aed2de89b39
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/08/29
+references:
+- https://securingtomorrow.mcafee.com/other-blogs/mcafee-labs/rdp-stands-for-really-do-patch-understanding-the-wormable-rdp-vulnerability-cve-2019-0708/
+status: experimental
+tags:
+- attack.initial_access
+- attack.t1190
+- attack.lateral_movement
+- attack.t1210
+- car.2013-07-002
+yml_filename: win_termserv_proc_spawn.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

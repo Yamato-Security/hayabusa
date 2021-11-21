@@ -1,0 +1,15 @@
+title: The ... service entered the stopped|running state
+description: hogehoge
+author: DeepblueCLI, Zach Mathis
+detection:
+    selection:
+        Channel: System
+        EventID: 7036
+        param1:
+            regexes: ./config/regex/regexes_suspicous_service.txt
+    condition: selection
+falsepositives:
+    - unknown
+output: 'Suspicious Service Name¥nService name: %ServiceName%'
+creation_date: 2020/11/8
+uodated_date: 2020/11/8

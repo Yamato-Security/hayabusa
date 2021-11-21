@@ -1,0 +1,116 @@
+title: Suspicious PowerShell Parameter Substring
+author: Florian Roth (rule), Daniel Bohannon (idea), Roberto Rodriguez (Fix)
+date: 2019/01/16
+description: Detects suspicious PowerShell invocation with a parameter substring
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '* -win h*'
+    SELECTION_11:
+        CommandLine: '* -wi h*'
+    SELECTION_12:
+        CommandLine: '* -win h *'
+    SELECTION_13:
+        CommandLine: '* -win hi *'
+    SELECTION_14:
+        CommandLine: '* -win hid *'
+    SELECTION_15:
+        CommandLine: '* -win hidd *'
+    SELECTION_16:
+        CommandLine: '* -win hidde *'
+    SELECTION_17:
+        CommandLine: '* -NoPr *'
+    SELECTION_18:
+        CommandLine: '* -NoPro *'
+    SELECTION_19:
+        CommandLine: '* -NoProf *'
+    SELECTION_2:
+        Image: '*\Powershell.exe'
+    SELECTION_20:
+        CommandLine: '* -NoProfi *'
+    SELECTION_21:
+        CommandLine: '* -NoProfil *'
+    SELECTION_22:
+        CommandLine: '* -nonin *'
+    SELECTION_23:
+        CommandLine: '* -nonint *'
+    SELECTION_24:
+        CommandLine: '* -noninte *'
+    SELECTION_25:
+        CommandLine: '* -noninter *'
+    SELECTION_26:
+        CommandLine: '* -nonintera *'
+    SELECTION_27:
+        CommandLine: '* -noninterac *'
+    SELECTION_28:
+        CommandLine: '* -noninteract *'
+    SELECTION_29:
+        CommandLine: '* -noninteracti *'
+    SELECTION_3:
+        CommandLine: '* -windowstyle h *'
+    SELECTION_30:
+        CommandLine: '* -noninteractiv *'
+    SELECTION_31:
+        CommandLine: '* -ec *'
+    SELECTION_32:
+        CommandLine: '* -encodedComman *'
+    SELECTION_33:
+        CommandLine: '* -encodedComma *'
+    SELECTION_34:
+        CommandLine: '* -encodedComm *'
+    SELECTION_35:
+        CommandLine: '* -encodedCom *'
+    SELECTION_36:
+        CommandLine: '* -encodedCo *'
+    SELECTION_37:
+        CommandLine: '* -encodedC *'
+    SELECTION_38:
+        CommandLine: '* -encoded *'
+    SELECTION_39:
+        CommandLine: '* -encode *'
+    SELECTION_4:
+        CommandLine: '* -windowstyl h*'
+    SELECTION_40:
+        CommandLine: '* -encod *'
+    SELECTION_41:
+        CommandLine: '* -enco *'
+    SELECTION_42:
+        CommandLine: '* -en *'
+    SELECTION_5:
+        CommandLine: '* -windowsty h*'
+    SELECTION_6:
+        CommandLine: '* -windowst h*'
+    SELECTION_7:
+        CommandLine: '* -windows h*'
+    SELECTION_8:
+        CommandLine: '* -windo h*'
+    SELECTION_9:
+        CommandLine: '* -wind h*'
+    condition: (SELECTION_1 and (SELECTION_2) and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
+        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
+        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
+        or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35
+        or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39 or SELECTION_40
+        or SELECTION_41 or SELECTION_42))
+falsepositives:
+- Penetration tests
+id: 36210e0d-5b19-485d-a087-c096088885f0
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/07/14
+references:
+- http://www.danielbohannon.com/blog-1/2017/3/12/powershell-execution-argument-obfuscation-how-it-can-make-detection-easier
+status: experimental
+tags:
+- attack.execution
+- attack.t1086
+- attack.t1059.001
+yml_filename: win_powershell_suspicious_parameter_variation.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

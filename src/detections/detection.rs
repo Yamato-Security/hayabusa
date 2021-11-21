@@ -2,12 +2,14 @@ extern crate csv;
 
 use crate::detections::rule::AggResult;
 use serde_json::Value;
+use std::collections::HashMap;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
+use crate::detections::utils::get_serde_number_to_string;
 use crate::yaml::ParseYaml;
 
 use std::sync::Arc;
@@ -48,14 +50,21 @@ impl Detection {
     }
 
     // ルールファイルをパースします。
-    pub fn parse_rule_files() -> Vec<RuleNode> {
+    pub fn parse_rule_files(level: String, rulespath: Option<&str>) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
-        let resutl_readdir = rulefile_loader.read_dir(DIRPATH_RULES);
-        if resutl_readdir.is_err() {
-            let stdout = std::io::stdout();
-            let mut stdout = stdout.lock();
-            AlertMessage::alert(&mut stdout, format!("{}", resutl_readdir.unwrap_err())).ok();
+        let result_readdir = rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level);
+        Detection::print_rule_load_info(
+            rulefile_loader.rulecounter,
+            rulefile_loader.parseerror_count,
+            rulefile_loader.ignore_count,
+        );
+        if result_readdir.is_err() {
+            AlertMessage::alert(
+                &mut std::io::stderr().lock(),
+                format!("{}", result_readdir.unwrap_err()),
+            )
+            .ok();
             return vec![];
         }
 
@@ -67,16 +76,12 @@ impl Detection {
 
             // ruleファイルのパースに失敗した場合はエラー出力
             err_msgs_result.err().iter().for_each(|err_msgs| {
-                let stdout = std::io::stdout();
-                let mut stdout = stdout.lock();
-                let errmsg_body = format!(
-                    "Failed to parse Rule file. (Error Rule Title : {})",
-                    rule.yaml["title"].as_str().unwrap_or("")
-                );
-                AlertMessage::alert(&mut stdout, errmsg_body).ok();
+                let errmsg_body =
+                    format!("Failed to parse Rule file. (FilePath : {})", rule.rulepath);
+                AlertMessage::warn(&mut std::io::stdout().lock(), errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
-                    AlertMessage::alert(&mut stdout, err_msg.to_string()).ok();
+                    AlertMessage::warn(&mut std::io::stdout().lock(), err_msg.to_string()).ok();
                 });
                 println!(""); // 一行開けるためのprintln
             });
@@ -160,7 +165,11 @@ impl Detection {
             record_info.evtx_filepath.to_string(),
             rule.rulepath.to_string(),
             &record_info.record,
-            rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            rule.yaml["level"].as_str().unwrap_or("-").to_string(),
+            record_info.record["Event"]["System"]["Computer"]
+                .to_string()
+                .replace("\"", ""),
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"]),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
@@ -174,6 +183,8 @@ impl Detection {
             rule.rulepath.to_string(),
             agg_result.start_timedate,
             rule.yaml["level"].as_str().unwrap_or("").to_string(),
+            "-".to_string(),
+            "-".to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             output.to_string(),
         )
@@ -198,4 +209,27 @@ impl Detection {
         ));
         return ret;
     }
+    pub fn print_rule_load_info(
+        rc: HashMap<String, u128>,
+        parseerror_count: u128,
+        ignore_count: u128,
+    ) {
+        let mut total = parseerror_count + ignore_count;
+        rc.into_iter().for_each(|(key, value)| {
+            println!("{} Rules: {}", key, value);
+            total += value;
+        });
+        println!("Ignored Rule Count: {}", ignore_count);
+        println!("Rule Parse Errors Count: {}", parseerror_count);
+        println!("Total Detection Rules: {}", total);
+        println!("");
+    }
+}
+
+#[test]
+fn test_parse_rule_files() {
+    let level = "INFO";
+    let opt_rule_path = Some("./test_files/rules/level_yaml");
+    let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path);
+    assert_eq!(5, cole.len());
 }

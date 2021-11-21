@@ -1,0 +1,33 @@
+title: Recon Information for Export with PowerShell
+author: frack113
+date: 2021/07/30
+description: Once established within a system or network, an adversary may use automated
+    techniques for collecting internal data
+detection:
+    SELECTION_1:
+        ScriptBlockText: '*Get-Service *'
+    SELECTION_2:
+        ScriptBlockText: '*Get-ChildItem *'
+    SELECTION_3:
+        ScriptBlockText: '*Get-Process *'
+    SELECTION_4:
+        ScriptBlockText: '*> $env:TEMP\\*'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
+falsepositives:
+- Unknown
+id: a9723fcc-881c-424c-8709-fd61442ab3c3
+level: medium
+logsource:
+    category: ps_script
+    definition: Script block logging must be enabled
+    product: windows
+modified: 2021/10/16
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1119/T1119.md
+status: experimental
+tags:
+- attack.collection
+- attack.t1119
+yml_filename: powershell_suspicious_recon.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/powershell/powershell_script
+

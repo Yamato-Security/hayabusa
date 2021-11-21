@@ -1,0 +1,34 @@
+title: Bypass UAC via Fodhelper.exe
+author: E.M. Anhaus (originally from Atomic Blue Detections, Tony Lambert), oscd.community
+date: 2019/10/24
+description: Identifies use of Fodhelper.exe to bypass User Account Control. Adversaries
+    use this technique to execute privileged processes.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        ParentImage: '*\fodhelper.exe'
+    condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Legitimate use of fodhelper.exe utility by legitimate user
+fields:
+- ComputerName
+- User
+- CommandLine
+id: 7f741dcf-fc22-4759-87b4-9ae8376676a2
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2019/11/11
+references:
+- https://eqllib.readthedocs.io/en/latest/analytics/e491ce22-792f-11e9-8f5c-d46d6d62a49e.html
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1088/T1088.md
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.t1548.002
+- attack.t1088
+yml_filename: win_uac_fodhelper.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

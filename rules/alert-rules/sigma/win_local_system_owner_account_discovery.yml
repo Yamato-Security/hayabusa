@@ -1,0 +1,90 @@
+title: Local Accounts Discovery
+author: Timur Zinniatullin, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/21
+description: Local accounts, System Owner/User discovery using operating systems utilities
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\cmd.exe'
+    SELECTION_11:
+        CommandLine: '*/c*'
+    SELECTION_12:
+        CommandLine: '*dir *'
+    SELECTION_13:
+        CommandLine: '*\Users\\*'
+    SELECTION_14:
+        CommandLine: '* rmdir *'
+    SELECTION_15:
+        Image: '*\net.exe'
+    SELECTION_16:
+        Image: '*\net1.exe'
+    SELECTION_17:
+        CommandLine: '*user*'
+    SELECTION_18:
+        CommandLine: '*/domain*'
+    SELECTION_19:
+        CommandLine: '*/add*'
+    SELECTION_2:
+        Image: '*\whoami.exe'
+    SELECTION_20:
+        CommandLine: '*/delete*'
+    SELECTION_21:
+        CommandLine: '*/active*'
+    SELECTION_22:
+        CommandLine: '*/expires*'
+    SELECTION_23:
+        CommandLine: '*/passwordreq*'
+    SELECTION_24:
+        CommandLine: '*/scriptpath*'
+    SELECTION_25:
+        CommandLine: '*/times*'
+    SELECTION_26:
+        CommandLine: '*/workstations*'
+    SELECTION_3:
+        Image: '*\wmic.exe'
+    SELECTION_4:
+        CommandLine: '*useraccount*'
+    SELECTION_5:
+        CommandLine: '*get*'
+    SELECTION_6:
+        Image: '*\quser.exe'
+    SELECTION_7:
+        Image: '*\qwinsta.exe'
+    SELECTION_8:
+        Image: '*\cmdkey.exe'
+    SELECTION_9:
+        CommandLine: '*/list*'
+    condition: (SELECTION_1 and (((SELECTION_2 or (SELECTION_3 and SELECTION_4 and
+        SELECTION_5) or (SELECTION_6 or SELECTION_7) or (SELECTION_8 and SELECTION_9)
+        or (SELECTION_10 and SELECTION_11 and SELECTION_12 and SELECTION_13)) and  not
+        ((SELECTION_14))) or (((SELECTION_15 or SELECTION_16) and SELECTION_17) and  not
+        ((SELECTION_18 or SELECTION_19 or SELECTION_20 or SELECTION_21 or SELECTION_22
+        or SELECTION_23 or SELECTION_24 or SELECTION_25 or SELECTION_26)))))
+falsepositives:
+- Legitimate administrator or user enumerates local users for legitimate reason
+fields:
+- Image
+- CommandLine
+- User
+- LogonGuid
+- Hashes
+- ParentProcessGuid
+- ParentCommandLine
+id: 502b42de-4306-40b4-9596-6f590c81f073
+level: low
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/01
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1033/T1033.md
+status: experimental
+tags:
+- attack.discovery
+- attack.t1033
+- attack.t1087.001
+- attack.t1087
+yml_filename: win_local_system_owner_account_discovery.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

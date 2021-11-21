@@ -1,0 +1,55 @@
+title: MSHTA Spawning Windows Shell
+author: Michael Haag
+date: 2019/01/16
+description: Detects a Windows command line executable started from MSHTA
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\regsvr32.exe'
+    SELECTION_11:
+        Image: '*\BITSADMIN*'
+    SELECTION_2:
+        ParentImage: '*\mshta.exe'
+    SELECTION_3:
+        Image: '*\cmd.exe'
+    SELECTION_4:
+        Image: '*\powershell.exe'
+    SELECTION_5:
+        Image: '*\wscript.exe'
+    SELECTION_6:
+        Image: '*\cscript.exe'
+    SELECTION_7:
+        Image: '*\sh.exe'
+    SELECTION_8:
+        Image: '*\bash.exe'
+    SELECTION_9:
+        Image: '*\reg.exe'
+    condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+        or (SELECTION_11)))
+falsepositives:
+- Printer software / driver installations
+- HP software
+fields:
+- CommandLine
+- ParentCommandLine
+id: 03cc0c25-389f-4bf8-b48d-11878079f1ca
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/09/01
+references:
+- https://www.trustedsec.com/july-2015/malicious-htas/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1170
+- attack.t1218.005
+- car.2013-02-003
+- car.2013-03-001
+- car.2014-04-003
+yml_filename: win_mshta_spawn_shell.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

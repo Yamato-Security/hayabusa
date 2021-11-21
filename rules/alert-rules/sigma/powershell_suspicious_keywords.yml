@@ -1,0 +1,50 @@
+title: Suspicious PowerShell Keywords
+author: Florian Roth, Perez Diego (@darkquassar)
+date: 2019/02/11
+description: Detects keywords that could indicate the use of some PowerShell exploitation
+    framework
+detection:
+    SELECTION_1:
+        ScriptBlockText: '*System.Reflection.Assembly.Load($*'
+    SELECTION_10:
+        ScriptBlockText: '*http://127.0.0.1*'
+    SELECTION_2:
+        ScriptBlockText: '*[System.Reflection.Assembly]::Load($*'
+    SELECTION_3:
+        ScriptBlockText: '*[Reflection.Assembly]::Load($*'
+    SELECTION_4:
+        ScriptBlockText: '*System.Reflection.AssemblyName*'
+    SELECTION_5:
+        ScriptBlockText: '*Reflection.Emit.AssemblyBuilderAccess*'
+    SELECTION_6:
+        ScriptBlockText: '*Runtime.InteropServices.DllImportAttribute*'
+    SELECTION_7:
+        ScriptBlockText: '*SuspendThread*'
+    SELECTION_8:
+        ScriptBlockText: '*rundll32*'
+    SELECTION_9:
+        ScriptBlockText: '*Invoke-WMIMethod*'
+    condition: (SELECTION_1 or SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+falsepositives:
+- Penetration tests
+id: 1f49f2ab-26bc-48b3-96cc-dcffbc93eadf
+level: high
+logsource:
+    category: ps_script
+    definition: Script block logging must be enabled for 4104
+    product: windows
+modified: 2021/10/16
+references:
+- https://posts.specterops.io/entering-a-covenant-net-command-and-control-e11038bcf462
+- https://github.com/PowerShellMafia/PowerSploit/blob/master/CodeExecution/Invoke-ReflectivePEInjection.ps1
+- https://github.com/hlldz/Invoke-Phant0m/blob/master/Invoke-Phant0m.ps1
+- https://gist.github.com/MHaggis/0dbe00ad401daa7137c81c99c268cfb7
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: powershell_suspicious_keywords.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/powershell/powershell_script
+

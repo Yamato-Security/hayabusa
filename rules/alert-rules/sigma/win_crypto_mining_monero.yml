@@ -1,0 +1,56 @@
+title: Windows Crypto Mining Indicators
+author: Florian Roth
+date: 2021/10/26
+description: Detects command line parameters or strings often used by crypto miners
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*0tZG9uYXRlLWxldmVsP*'
+    SELECTION_11:
+        CommandLine: '*tLWRvbmF0ZS1sZXZlbD*'
+    SELECTION_12:
+        CommandLine: '*c3RyYXR1bSt0Y3A6Ly*'
+    SELECTION_13:
+        CommandLine: '*N0cmF0dW0rdGNwOi8v*'
+    SELECTION_14:
+        CommandLine: '*zdHJhdHVtK3RjcDovL*'
+    SELECTION_15:
+        CommandLine: '*c3RyYXR1bSt1ZHA6Ly*'
+    SELECTION_16:
+        CommandLine: '*N0cmF0dW0rdWRwOi8v*'
+    SELECTION_17:
+        CommandLine: '*zdHJhdHVtK3VkcDovL*'
+    SELECTION_2:
+        CommandLine: '* --cpu-priority=*'
+    SELECTION_3:
+        CommandLine: '*--donate-level=0*'
+    SELECTION_4:
+        CommandLine: '* -o pool.*'
+    SELECTION_5:
+        CommandLine: '* --nicehash*'
+    SELECTION_6:
+        CommandLine: '* --algo=rx/0 *'
+    SELECTION_7:
+        CommandLine: '*stratum+tcp://*'
+    SELECTION_8:
+        CommandLine: '*stratum+udp://*'
+    SELECTION_9:
+        CommandLine: '*LS1kb25hdGUtbGV2ZWw9*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16 or SELECTION_17))
+falsepositives:
+- Legitimate use of crypto miners
+id: 66c3b204-9f88-4d0a-a7f7-8a57d521ca55
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.poolwatch.io/coin/monero
+status: stable
+yml_filename: win_crypto_mining_monero.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

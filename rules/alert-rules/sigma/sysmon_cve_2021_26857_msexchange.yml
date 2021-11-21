@@ -1,0 +1,33 @@
+title: CVE-2021-26857 Exchange Exploitation
+author: Bhabesh Raj
+date: 2021/03/03
+description: "Detects possible successful exploitation for vulnerability described\
+    \ in CVE-2021-26857 by looking for | abnormal subprocesses spawning by Exchange\
+    \ Server\u2019s Unified Messaging service"
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        ParentImage: '*UMWorkerProcess.exe'
+    SELECTION_3:
+        Image: '*wermgr.exe'
+    SELECTION_4:
+        Image: '*WerFault.exe'
+    condition: (SELECTION_1 and SELECTION_2 and  not ((SELECTION_3 or SELECTION_4)))
+falsepositives:
+- Unknown
+id: cd479ccc-d8f0-4c66-ba7d-e06286f3f887
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://www.microsoft.com/security/blog/2021/03/02/hafnium-targeting-exchange-servers/
+status: experimental
+tags:
+- attack.t1203
+- attack.execution
+- cve.2021.26857
+yml_filename: sysmon_cve_2021_26857_msexchange.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

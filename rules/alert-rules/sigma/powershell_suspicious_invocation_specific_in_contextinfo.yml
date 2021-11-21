@@ -1,0 +1,96 @@
+title: Suspicious PowerShell Invocations - Specific
+author: Florian Roth (rule), Jonhnathan Ribeiro
+date: 2017/03/05
+description: Detects suspicious PowerShell invocation command parameters
+detection:
+    SELECTION_1:
+        ContextInfo: '*-nop*'
+    SELECTION_10:
+        ContextInfo: '* -c *'
+    SELECTION_11:
+        ContextInfo: '*iex*'
+    SELECTION_12:
+        ContextInfo: '*New-Object*'
+    SELECTION_13:
+        ContextInfo: '* -w *'
+    SELECTION_14:
+        ContextInfo: '*hidden*'
+    SELECTION_15:
+        ContextInfo: '*-ep*'
+    SELECTION_16:
+        ContextInfo: '*bypass*'
+    SELECTION_17:
+        ContextInfo: '*-Enc*'
+    SELECTION_18:
+        ContextInfo: '*powershell*'
+    SELECTION_19:
+        ContextInfo: '*reg*'
+    SELECTION_2:
+        ContextInfo: '* -w *'
+    SELECTION_20:
+        ContextInfo: '*add*'
+    SELECTION_21:
+        ContextInfo: '*HKCU\software\microsoft\windows\currentversion\run*'
+    SELECTION_22:
+        ContextInfo: '*bypass*'
+    SELECTION_23:
+        ContextInfo: '*-noprofile*'
+    SELECTION_24:
+        ContextInfo: '*-windowstyle*'
+    SELECTION_25:
+        ContextInfo: '*hidden*'
+    SELECTION_26:
+        ContextInfo: '*new-object*'
+    SELECTION_27:
+        ContextInfo: '*system.net.webclient*'
+    SELECTION_28:
+        ContextInfo: '*.download*'
+    SELECTION_29:
+        ContextInfo: '*iex*'
+    SELECTION_3:
+        ContextInfo: '*hidden*'
+    SELECTION_30:
+        ContextInfo: '*New-Object*'
+    SELECTION_31:
+        ContextInfo: '*Net.WebClient*'
+    SELECTION_32:
+        ContextInfo: '*.Download*'
+    SELECTION_4:
+        ContextInfo: '* -c *'
+    SELECTION_5:
+        ContextInfo: '*[Convert]::FromBase64String*'
+    SELECTION_6:
+        ContextInfo: '* -w *'
+    SELECTION_7:
+        ContextInfo: '*hidden*'
+    SELECTION_8:
+        ContextInfo: '*-noni*'
+    SELECTION_9:
+        ContextInfo: '*-nop*'
+    condition: ((SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+        or (SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9 and SELECTION_10
+        and SELECTION_11 and SELECTION_12) or (SELECTION_13 and SELECTION_14 and SELECTION_15
+        and SELECTION_16 and SELECTION_17) or (SELECTION_18 and SELECTION_19 and SELECTION_20
+        and SELECTION_21) or (SELECTION_22 and SELECTION_23 and SELECTION_24 and SELECTION_25
+        and SELECTION_26 and SELECTION_27 and SELECTION_28) or (SELECTION_29 and SELECTION_30
+        and SELECTION_31 and SELECTION_32))
+falsepositives:
+- Penetration tests
+id: 8ff28fdd-e2fa-4dfa-aeda-ef3d61c62090
+level: high
+logsource:
+    category: ps_module
+    definition: Script block logging must be enabled
+    product: windows
+modified: 2021/10/18
+related:
+-   id: fce5f582-cc00-41e1-941a-c6fabf0fdb8c
+    type: derived
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+yml_filename: powershell_suspicious_invocation_specific_in_contextinfo.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/powershell/powershell_module
+

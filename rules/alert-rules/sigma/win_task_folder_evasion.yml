@@ -1,0 +1,49 @@
+title: Tasks Folder Evasion
+author: Sreeman
+date: 2020/01/13
+description: The Tasks folder in system32 and syswow64 are globally writable paths.
+    Adversaries can take advantage of this and load or influence any script hosts
+    or ANY .NET Application in Tasks to load and execute a custom assembly into cscript,
+    wscript, regsvr32, mshta, eventvwr
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*echo *'
+    SELECTION_3:
+        CommandLine: '*copy *'
+    SELECTION_4:
+        CommandLine: '*type *'
+    SELECTION_5:
+        CommandLine: '*file createnew*'
+    SELECTION_6:
+        CommandLine: '* C:\Windows\System32\Tasks\\*'
+    SELECTION_7:
+        CommandLine: '* C:\Windows\SysWow64\Tasks\\*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
+        and (SELECTION_6 or SELECTION_7))
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+- ParentProcess
+id: cc4e02ba-9c06-48e2-b09e-2500cace9ae0
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/11/06
+references:
+- https://twitter.com/subTee/status/1216465628946563073
+- https://gist.github.com/am0nsec/8378da08f848424e4ab0cc5b317fdd26
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.persistence
+- attack.execution
+- attack.t1574.002
+- attack.t1059
+- attack.t1064
+yml_filename: win_task_folder_evasion.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

@@ -1,0 +1,43 @@
+title: Execution in Webserver Root Folder
+author: Florian Roth
+date: 2019/01/16
+description: Detects a suspicious program execution in a web service root folder (filter
+    out false positives)
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\wwwroot\\*'
+    SELECTION_3:
+        Image: '*\wmpub\\*'
+    SELECTION_4:
+        Image: '*\htdocs\\*'
+    SELECTION_5:
+        Image: '*bin\\*'
+    SELECTION_6:
+        Image: '*\Tools\\*'
+    SELECTION_7:
+        Image: '*\SMSComponent\\*'
+    SELECTION_8:
+        ParentImage: '*\services.exe'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4) and  not
+        ((SELECTION_5 or SELECTION_6 or SELECTION_7) and (SELECTION_8)))
+falsepositives:
+- Various applications
+- Tools that include ping or nslookup command invocations
+fields:
+- CommandLine
+- ParentCommandLine
+id: 35efb964-e6a5-47ad-bbcd-19661854018d
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+status: experimental
+tags:
+- attack.persistence
+- attack.t1505.003
+- attack.t1100
+yml_filename: win_susp_execution_path_webserver.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

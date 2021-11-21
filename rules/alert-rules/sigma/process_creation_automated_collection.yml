@@ -1,0 +1,56 @@
+title: Automated Collection Command Prompt
+author: frack113
+date: 2021/07/28
+description: Once established within a system or network, an adversary may use automated
+    techniques for collecting internal data.
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*.txt*'
+    SELECTION_11:
+        CommandLine: '*dir *'
+    SELECTION_12:
+        CommandLine: '* /b *'
+    SELECTION_13:
+        CommandLine: '* /s *'
+    SELECTION_14:
+        OriginalFileName: FINDSTR.EXE
+    SELECTION_15:
+        CommandLine: '* /e *'
+    SELECTION_2:
+        CommandLine: '*.doc*'
+    SELECTION_3:
+        CommandLine: '*.docx*'
+    SELECTION_4:
+        CommandLine: '*.xls*'
+    SELECTION_5:
+        CommandLine: '*.xlsx*'
+    SELECTION_6:
+        CommandLine: '*.ppt*'
+    SELECTION_7:
+        CommandLine: '*.pptx*'
+    SELECTION_8:
+        CommandLine: '*.rtf*'
+    SELECTION_9:
+        CommandLine: '*.pdf*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+        and ((SELECTION_11 and SELECTION_12 and SELECTION_13) or (SELECTION_14 and
+        SELECTION_15)))
+falsepositives:
+- Unknown
+id: f576a613-2392-4067-9d1a-9345fb58d8d1
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1119/T1119.md
+status: experimental
+tags:
+- attack.collection
+- attack.t1119
+yml_filename: process_creation_automated_collection.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

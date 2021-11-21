@@ -1,0 +1,51 @@
+title: Suspicious Program Location with Network Connections
+author: Florian Roth
+date: 2017/03/19
+description: Detects programs with network connections running in suspicious files
+    system locations
+detection:
+    SELECTION_1:
+        EventID: 3
+    SELECTION_10:
+        Image: '*\Windows\addins\\*'
+    SELECTION_11:
+        Image: '*\$Recycle.bin'
+    SELECTION_12:
+        Image: C:\Perflogs\\*
+    SELECTION_2:
+        Image: '*\Users\All Users\\*'
+    SELECTION_3:
+        Image: '*\Users\Default\\*'
+    SELECTION_4:
+        Image: '*\Users\Public\\*'
+    SELECTION_5:
+        Image: '*\Users\Contacts\\*'
+    SELECTION_6:
+        Image: '*\Users\Searches\\*'
+    SELECTION_7:
+        Image: '*\config\systemprofile\\*'
+    SELECTION_8:
+        Image: '*\Windows\Fonts\\*'
+    SELECTION_9:
+        Image: '*\Windows\IME\\*'
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+        or (SELECTION_11) or (SELECTION_12)))
+falsepositives:
+- unknown
+id: 7b434893-c57d-4f41-908d-6a17bf1ae98f
+level: high
+logsource:
+    category: network_connection
+    definition: Use the following config to generate the necessary Event ID 3 Network
+        Connection events
+    product: windows
+references:
+- https://docs.google.com/spreadsheets/d/17pSTDNpa0sf6pHeRhusvWG6rThciE8CsXTSlDUAZDyo
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1105
+yml_filename: sysmon_susp_prog_location_network_connection.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/network_connection
+

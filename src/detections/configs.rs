@@ -5,6 +5,15 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
+    pub static ref LEVELMAP: HashMap<String, u8> = {
+        let mut levelmap = HashMap::new();
+        levelmap.insert("INFO".to_owned(), 1);
+        levelmap.insert("LOW".to_owned(), 2);
+        levelmap.insert("MEDIUM".to_owned(), 3);
+        levelmap.insert("HIGH".to_owned(), 4);
+        levelmap.insert("CRITICAL".to_owned(), 5);
+        return levelmap;
+    };
 }
 
 #[derive(Clone)]
@@ -41,13 +50,16 @@ fn build_app<'a>() -> ArgMatches<'a> {
     let usages = "-f --filepath=[FILEPATH] 'Event file path'
     --csv-timeline=[CSV_TIMELINE] 'Csv output timeline'
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
-    -l --lang=[LANG] 'Output language'
+    --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
+    --verbose 'Output check information to target event file path and rule file.'
+    -q 'Quiet Output Logo'
+    -r --rules=[RULEDIRECTORY] 'using target of rule file directory'
+    -L --level=[LEVEL] 'Specified execute rule level(default: LOW)'
     -u --utc 'Output time in UTC format(default: local time)'
     -d --directory=[DIRECTORY] 'Event log files directory'
     -s --statistics 'Prints statistics for event logs'
     -t --threadnum=[NUM] 'Thread number'
-    --slack 'Slack notification'
-    --credits 'Prints credits'";
+    --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("hayabusa. Aiming to be the world's greatest Windows event log analysis tool!")
         .version("1.0.0")

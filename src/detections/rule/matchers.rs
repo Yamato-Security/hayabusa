@@ -72,14 +72,12 @@ impl LeafMatcher for MinlengthMatcher {
 /// 正規表現のリストが記載されたファイルを読み取って、比較するロジックを表すクラス
 /// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 pub struct RegexesFileMatcher {
-    regexes_csv_content: Vec<String>,
+    regexes: Vec<Regex>,
 }
 
 impl RegexesFileMatcher {
     pub fn new() -> RegexesFileMatcher {
-        return RegexesFileMatcher {
-            regexes_csv_content: vec![],
-        };
+        return RegexesFileMatcher { regexes: vec![] };
     }
 }
 
@@ -107,11 +105,15 @@ impl LeafMatcher for RegexesFileMatcher {
             return Result::Err(vec![errmsg]);
         }
 
-        let regexes_csv_content = utils::read_txt(&value.unwrap());
-        if regexes_csv_content.is_err() {
-            return Result::Err(vec![regexes_csv_content.unwrap_err()]);
+        let regexes_strs = utils::read_txt(&value.unwrap());
+        if regexes_strs.is_err() {
+            return Result::Err(vec![regexes_strs.unwrap_err()]);
         }
-        self.regexes_csv_content = regexes_csv_content.unwrap();
+        let regexes_strs = regexes_strs.unwrap();
+        self.regexes = regexes_strs
+            .into_iter()
+            .map(|regex_str| Regex::new(&regex_str).unwrap())
+            .collect();
 
         return Result::Ok(());
     }
@@ -119,8 +121,8 @@ impl LeafMatcher for RegexesFileMatcher {
     fn is_match(&self, event_value: Option<&Value>, _recinfo: &EvtxRecordInfo) -> bool {
         //TODO Wildcardの場合、CaseInsensitiveなので、ToLowerする。
         return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_regex(s, &self.regexes_csv_content),
-            Value::Number(n) => !utils::check_regex(&n.to_string(), &self.regexes_csv_content),
+            Value::String(s) => !utils::check_regex(s, &self.regexes),
+            Value::Number(n) => !utils::check_regex(&n.to_string(), &self.regexes),
             _ => false,
         };
     }
@@ -129,14 +131,12 @@ impl LeafMatcher for RegexesFileMatcher {
 /// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
 /// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 pub struct AllowlistFileMatcher {
-    allowlist_csv_content: Vec<String>,
+    regexes: Vec<Regex>,
 }
 
 impl AllowlistFileMatcher {
     pub fn new() -> AllowlistFileMatcher {
-        return AllowlistFileMatcher {
-            allowlist_csv_content: vec![],
-        };
+        return AllowlistFileMatcher { regexes: vec![] };
     }
 }
 
@@ -164,22 +164,24 @@ impl LeafMatcher for AllowlistFileMatcher {
             return Result::Err(vec![errmsg]);
         }
 
-        let allowlist_content = utils::read_txt(&value.unwrap());
-        if allowlist_content.is_err() {
-            return Result::Err(vec![allowlist_content.unwrap_err()]);
+        let regexes_strs = utils::read_txt(&value.unwrap());
+        if regexes_strs.is_err() {
+            return Result::Err(vec![regexes_strs.unwrap_err()]);
         }
-        self.allowlist_csv_content = allowlist_content.unwrap();
+        self.regexes = regexes_strs
+            .unwrap()
+            .into_iter()
+            .map(|regex_str| Regex::new(&regex_str).unwrap())
+            .collect();
 
         return Result::Ok(());
     }
 
     fn is_match(&self, event_value: Option<&Value>, _recinfo: &EvtxRecordInfo) -> bool {
         return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_allowlist(s, &self.allowlist_csv_content),
-            Value::Number(n) => {
-                !utils::check_allowlist(&n.to_string(), &self.allowlist_csv_content)
-            }
-            Value::Bool(b) => !utils::check_allowlist(&b.to_string(), &self.allowlist_csv_content),
+            Value::String(s) => !utils::check_allowlist(s, &self.regexes),
+            Value::Number(n) => !utils::check_allowlist(&n.to_string(), &self.regexes),
+            Value::Bool(b) => !utils::check_allowlist(&b.to_string(), &self.regexes),
             _ => true,
         };
     }
@@ -228,7 +230,11 @@ impl DefaultMatcher {
 
 impl LeafMatcher for DefaultMatcher {
     fn is_target_key(&self, key_list: &Vec<String>) -> bool {
-        return key_list.len() <= 1;
+        if key_list.len() <= 1 {
+            return true;
+        }
+
+        return key_list.get(1).unwrap_or(&"".to_string()) == "value";
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -531,8 +537,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
-                    regexes: ./regexes.txt
-                    allowlist: ./allowlist.txt
+                    regexes: ./config/regex/regexes_suspicous_service.txt
+                    allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         falsepositives:
             - unknown
         level: medium
@@ -669,15 +675,15 @@ mod tests {
                     .unwrap();
 
                 // regexes.txtの中身と一致していることを確認
-                let csvcontent = &ancestor_matcher.regexes_csv_content;
+                let csvcontent = &ancestor_matcher.regexes;
+
                 assert_eq!(csvcontent.len(), 17);
                 assert_eq!(
-                    csvcontent[0],
+                    csvcontent[0].as_str().to_string(),
                     r"^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$"
                 );
-
                 assert_eq!(
-                    csvcontent[14],
+                    csvcontent[14].as_str().to_string(),
                     r"\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp"
                 );
             }
@@ -696,15 +702,15 @@ mod tests {
                     .downcast_ref::<AllowlistFileMatcher>()
                     .unwrap();
 
-                let csvcontent = &ancestor_matcher.allowlist_csv_content;
+                let csvcontent = &ancestor_matcher.regexes;
                 assert_eq!(csvcontent.len(), 2);
 
                 assert_eq!(
-                    csvcontent[0],
+                    csvcontent[0].as_str().to_string(),
                     r#"^"C:\\Program Files\\Google\\Chrome\\Application\\chrome\.exe""#.to_string()
                 );
                 assert_eq!(
-                    csvcontent[1],
+                    csvcontent[1].as_str().to_string(),
                     r#"^"C:\\Program Files\\Google\\Update\\GoogleUpdate\.exe""#.to_string()
                 );
             }
@@ -1158,7 +1164,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: allowlist.txt
+                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1195,7 +1201,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: allowlist.txt
+                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1232,7 +1238,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: allowlist.txt
+                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1685,6 +1691,7 @@ mod tests {
         assert_eq!(r"\\\\.*ho\\\\.*ge\\\\\\", value);
     }
 
+
     #[test]
     fn test_grep_match() {
         // wildcardは大文字小文字関係なくマッチする。
@@ -1746,6 +1753,76 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: rec,
                     data_string: recstr,
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_value_keyword() {
+        // 文字列っぽいデータでも確認
+        // 完全一致なので、前方一致しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    value: Security
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+            }
+            Err(_) => {
+                assert!(false, "failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_notdetect_value_keyword() {
+        // 文字列っぽいデータでも確認
+        // 完全一致なので、前方一致しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    value: Securiteen
+        output: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }

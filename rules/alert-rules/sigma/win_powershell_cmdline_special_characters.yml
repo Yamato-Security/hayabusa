@@ -1,0 +1,39 @@
+title: Suspicious PowerShell Command Line
+author: Teymur Kheirkhabarov (idea), Vasiliy Burov (rule), oscd.community
+date: 2020/10/15
+description: Detects the PowerShell command lines with special characters
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\powershell.exe'
+    SELECTION_3:
+        CommandLine|re: .*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*
+    SELECTION_4:
+        CommandLine|re: .*\{.*\{.*\{.*\{.*\{.*\{.*\{.*\{.*\{.*\{.*
+    SELECTION_5:
+        CommandLine|re: .*{.*{.*{.*{.*{.*
+    SELECTION_6:
+        CommandLine|re: .*\^.*\^.*\^.*\^.*\^.*
+    SELECTION_7:
+        CommandLine|re: .*`.*`.*`.*`.*`.*
+    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7))
+falsepositives:
+- Unlikely
+id: d7bcd677-645d-4691-a8d4-7a5602b780d1
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=64
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001
+yml_filename: win_powershell_cmdline_special_characters.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

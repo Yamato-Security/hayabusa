@@ -1,0 +1,33 @@
+title: Windows Update Client LOLBIN
+author: FPT.EagleEye Team
+date: 2020/10/17
+description: Detects code execution via the Windows Update client (wuauclt)
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        CommandLine: '*/UpdateDeploymentProvider*'
+    SELECTION_3:
+        CommandLine: '*/RunHandlerComServer*'
+    SELECTION_4:
+        Image: '*\wuauclt.exe'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4))
+falsepositives:
+- Unknown
+id: d7825193-b70a-48a4-b992-8b5b3015cc11
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/11/09
+references:
+- https://dtm.uk/wuauclt/
+status: experimental
+tags:
+- attack.command_and_control
+- attack.execution
+- attack.t1105
+- attack.t1218
+yml_filename: win_susp_wuauclt.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

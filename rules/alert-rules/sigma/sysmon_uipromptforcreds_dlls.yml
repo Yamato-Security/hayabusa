@@ -1,0 +1,36 @@
+title: UIPromptForCredentials DLLs
+author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
+date: 2020/10/20
+description: Detects potential use of UIPromptForCredentials functions by looking
+    for some of the DLLs needed for it.
+detection:
+    SELECTION_1:
+        EventID: 7
+    SELECTION_2:
+        ImageLoaded: '*\credui.dll'
+    SELECTION_3:
+        ImageLoaded: '*\wincredui.dll'
+    SELECTION_4:
+        OriginalFileName: credui.dll
+    SELECTION_5:
+        OriginalFileName: wincredui.dll
+    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) or (SELECTION_4 or SELECTION_5)))
+falsepositives:
+- other legitimate processes loading those DLLs in your environment.
+id: 9ae01559-cf7e-4f8e-8e14-4c290a1b4784
+level: medium
+logsource:
+    category: image_load
+    product: windows
+references:
+- https://securitydatasets.com/notebooks/small/windows/06_credential_access/SDWIN-201020013208.html
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1056.002/T1056.002.md#atomic-test-2---powershell---prompt-user-for-password
+- https://docs.microsoft.com/en-us/windows/win32/api/wincred/nf-wincred-creduipromptforcredentialsa
+status: experimental
+tags:
+- attack.credential_access
+- attack.collection
+- attack.t1056.002
+yml_filename: sysmon_uipromptforcreds_dlls.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/image_load
+

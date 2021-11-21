@@ -1,0 +1,75 @@
+title: Suspicious DNS Query for IP Lookup Service APIs
+author: Brandon George (blog post), Thomas Patzke (rule)
+date: 2021/07/08
+description: Detects DNS queries for ip lookup services such as api.ipify.org not
+    originating from a browser process.
+detection:
+    SELECTION_1:
+        EventID: 22
+    SELECTION_10:
+        QueryName: api.ipify.org
+    SELECTION_11:
+        QueryName: ip-api.com
+    SELECTION_12:
+        QueryName: checkip.amazonaws.com
+    SELECTION_13:
+        QueryName: ipecho.net
+    SELECTION_14:
+        QueryName: ipinfo.io
+    SELECTION_15:
+        QueryName: ipv4bot.whatismyipaddress.com
+    SELECTION_16:
+        QueryName: freegeoip.app
+    SELECTION_17:
+        Image: '*\chrome.exe'
+    SELECTION_18:
+        Image: '*\iexplore.exe'
+    SELECTION_19:
+        Image: '*\firefox.exe'
+    SELECTION_2:
+        QueryName: canireachthe.net
+    SELECTION_20:
+        Image: '*\brave.exe'
+    SELECTION_21:
+        Image: '*\opera.exe'
+    SELECTION_22:
+        Image: '*\msedge.exe'
+    SELECTION_23:
+        Image: '*\vivaldi.exe'
+    SELECTION_3:
+        QueryName: ipv4.icanhazip.com
+    SELECTION_4:
+        QueryName: ip.anysrc.net
+    SELECTION_5:
+        QueryName: edns.ip-api.com
+    SELECTION_6:
+        QueryName: wtfismyip.com
+    SELECTION_7:
+        QueryName: checkip.dyndns.org
+    SELECTION_8:
+        QueryName: api.2ip.ua
+    SELECTION_9:
+        QueryName: icanhazip.com
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
+        or SELECTION_16) and  not ((SELECTION_17 or SELECTION_18 or SELECTION_19 or
+        SELECTION_20 or SELECTION_21 or SELECTION_22 or SELECTION_23)))
+falsepositives:
+- Legitimate usage of ip lookup services such as ipify API
+id: ec82e2a5-81ea-4211-a1f8-37a0286df2c2
+level: medium
+logsource:
+    category: dns_query
+    product: windows
+modified: 2021/09/10
+references:
+- https://www.binarydefense.com/analysis-of-hancitor-when-boring-begets-beacon
+- https://twitter.com/neonprimetime/status/1436376497980428318
+status: experimental
+tags:
+- attack.reconnaissance
+- attack.t1590
+yml_filename: dns_net_susp_ipify.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/dns_query
+

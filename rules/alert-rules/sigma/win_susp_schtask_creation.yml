@@ -1,0 +1,41 @@
+title: Scheduled Task Creation
+author: Florian Roth
+date: 2019/01/16
+description: Detects the creation of scheduled tasks in user session
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\schtasks.exe'
+    SELECTION_3:
+        CommandLine: '* /create *'
+    SELECTION_4:
+        User: NT AUTHORITY\SYSTEM*
+    SELECTION_5:
+        User: AUTORITE NT\Sys*
+    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
+        or SELECTION_5)))
+falsepositives:
+- Administrative activity
+- Software installation
+fields:
+- CommandLine
+- ParentCommandLine
+id: 92626ddd-662c-49e3-ac59-f6535f12d189
+level: low
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/08/26
+status: experimental
+tags:
+- attack.execution
+- attack.persistence
+- attack.privilege_escalation
+- attack.t1053.005
+- attack.t1053
+- attack.s0111
+- car.2013-08-001
+yml_filename: win_susp_schtask_creation.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

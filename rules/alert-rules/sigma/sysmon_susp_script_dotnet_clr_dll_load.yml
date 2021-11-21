@@ -1,0 +1,40 @@
+title: CLR DLL Loaded Via Scripting Applications
+author: omkar72, oscd.community
+date: 2020/10/14
+description: Detects CLR DLL being loaded by an scripting applications
+detection:
+    SELECTION_1:
+        EventID: 7
+    SELECTION_2:
+        Image: '*\wscript.exe'
+    SELECTION_3:
+        Image: '*\cscript.exe'
+    SELECTION_4:
+        Image: '*\mshta.exe'
+    SELECTION_5:
+        ImageLoaded: '*\clr.dll'
+    SELECTION_6:
+        ImageLoaded: '*\mscoree.dll'
+    SELECTION_7:
+        ImageLoaded: '*\mscorlib.dll'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4) and (SELECTION_5
+        or SELECTION_6 or SELECTION_7))
+falsepositives:
+- unknown
+id: 4508a70e-97ef-4300-b62b-ff27992990ea
+level: high
+logsource:
+    category: image_load
+    product: windows
+references:
+- https://github.com/tyranid/DotNetToJScript
+- https://thewover.github.io/Introducing-Donut/
+- https://blog.menasec.net/2019/07/interesting-difr-traces-of-net-clr.html
+status: experimental
+tags:
+- attack.execution
+- attack.privilege_escalation
+- attack.t1055
+yml_filename: sysmon_susp_script_dotnet_clr_dll_load.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/image_load
+

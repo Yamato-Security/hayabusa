@@ -1,0 +1,15 @@
+title: Logon Type 2 - Interactive
+description: Prints logon information
+author: Zach Mathis
+level: informational
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 2
+
+falsepositives:
+    - normal system usage
+output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%  :  (Warning: Credentials are stored in memory.)'
+creation_date: 2021/11/17
+updated_date: 2021/11/17

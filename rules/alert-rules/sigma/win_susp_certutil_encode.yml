@@ -1,0 +1,33 @@
+title: Certutil Encode
+author: Florian Roth, Jonhnathan Ribeiro, oscd.community
+date: 2019/02/24
+description: Detects suspicious a certutil command that used to encode files, which
+    is sometimes used for data exfiltration
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\certutil.exe'
+    SELECTION_3:
+        CommandLine: '*-f*'
+    SELECTION_4:
+        CommandLine: '*-encode*'
+    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- unknown
+id: e62a9f0c-ca1e-46b2-85d5-a6da77f86d1a
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+modified: 2020/11/28
+references:
+- https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certutil
+- https://unit42.paloaltonetworks.com/new-babyshark-malware-targets-u-s-national-security-think-tanks/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+yml_filename: win_susp_certutil_encode.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

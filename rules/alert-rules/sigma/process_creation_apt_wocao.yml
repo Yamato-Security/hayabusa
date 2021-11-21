@@ -1,0 +1,60 @@
+title: Operation Wocao Activity
+author: Florian Roth, frack113
+date: 2019/12/20
+description: Detects activity mentioned in Operation Wocao report
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*iie.exe iie.txt*'
+    SELECTION_11:
+        CommandLine: '*reg query HKEY_CURRENT_USER\Software\\*\PuTTY\Sessions\\*'
+    SELECTION_2:
+        CommandLine: '*checkadmin.exe 127.0.0.1 -all*'
+    SELECTION_3:
+        CommandLine: '*netsh advfirewall firewall add rule name=powershell dir=in*'
+    SELECTION_4:
+        CommandLine: '*cmd /c powershell.exe -ep bypass -file c:\s.ps1*'
+    SELECTION_5:
+        CommandLine: '*/tn win32times /f*'
+    SELECTION_6:
+        CommandLine: '*create win32times binPath=*'
+    SELECTION_7:
+        CommandLine: '*\c$\windows\system32\devmgr.dll*'
+    SELECTION_8:
+        CommandLine: '* -exec bypass -enc JgAg*'
+    SELECTION_9:
+        CommandLine: '*type *keepass\KeePass.config.xml*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11))
+falsepositives:
+- Administrators that use checkadmin.exe tool to enumerate local administrators
+id: 1cfac73c-be78-4f9a-9b08-5bde0c3953ab
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/09/19
+references:
+- https://www.fox-it.com/en/news/whitepapers/operation-wocao-shining-a-light-on-one-of-chinas-hidden-hacking-groups/
+- https://twitter.com/SBousseaden/status/1207671369963646976
+related:
+-   id: 74ad4314-482e-4c3e-b237-3f7ed3b9ca8d
+    type: derived
+status: experimental
+tags:
+- attack.discovery
+- attack.t1012
+- attack.defense_evasion
+- attack.t1036.004
+- attack.t1036
+- attack.t1027
+- attack.execution
+- attack.t1053.005
+- attack.t1053
+- attack.t1059.001
+- attack.t1086
+yml_filename: process_creation_apt_wocao.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

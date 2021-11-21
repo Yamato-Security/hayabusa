@@ -1,0 +1,35 @@
+title: CVE-2021-40444 Process Pattern
+author: '@neonprimetime, Florian Roth'
+date: 2021/09/08
+description: Detects a suspicious process pattern found in CVE-2021-40444 exploitation
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        Image: '*\control.exe'
+    SELECTION_3:
+        ParentImage: '*\winword.exe'
+    SELECTION_4:
+        ParentImage: '*\powerpnt.exe'
+    SELECTION_5:
+        ParentImage: '*\excel.exe'
+    SELECTION_6:
+        CommandLine: '*\control.exe input.dll'
+    condition: (SELECTION_1 and (SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5))
+        and  not (SELECTION_6))
+falsepositives:
+- Unknown
+id: 894397c6-da03-425c-a589-3d09e7d1f750
+level: critical
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/09/09
+references:
+- https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-40444
+- https://twitter.com/neonprimetime/status/1435584010202255375
+- https://www.joesandbox.com/analysis/476188/1/iochtml
+status: experimental
+yml_filename: win_susp_control_cve_2021_40444.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

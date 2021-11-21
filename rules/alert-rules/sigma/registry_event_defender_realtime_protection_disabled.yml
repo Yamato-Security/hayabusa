@@ -1,0 +1,59 @@
+title: Windows Defender Real-Time Protection Disabled
+author: AlertIQ
+date: 2021/10/18
+description: Detects disabling Windows Defender Real-Time Protection by modifying
+    registry
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_10:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\SpyNet\DisableBlockAtFirstSeen
+    SELECTION_11:
+        Details: DWORD (0x00000001)
+    SELECTION_12:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\SpyNet\SpynetReporting
+    SELECTION_13:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\SpyNet\SubmitSamplesConsent
+    SELECTION_14:
+        Details: DWORD (0x00000000)
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        EventType: SetValue
+    SELECTION_5:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time
+            Protection\DisableBehaviorMonitoring
+    SELECTION_6:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time
+            Protection\DisableIOAVProtection
+    SELECTION_7:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time
+            Protection\DisableOnAccessProtection
+    SELECTION_8:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time
+            Protection\DisableRealtimeMonitoring
+    SELECTION_9:
+        TargetObject: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time
+            Protection\DisableScanOnRealtimeEnable
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and (((SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
+        and SELECTION_11) or ((SELECTION_12 or SELECTION_13) and SELECTION_14)))
+falsepositives:
+- Administrator actions
+id: fd115e64-97c7-491f-951c-fc8da7e042fa
+level: high
+logsource:
+    category: registry_event
+    product: windows
+references:
+- https://thedfirreport.com/2021/10/18/icedid-to-xinglocker-ransomware-in-24-hours/
+- https://gist.github.com/anadr/7465a9fde63d41341136949f14c21105
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.001
+yml_filename: registry_event_defender_realtime_protection_disabled.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/registry_event
+

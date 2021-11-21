@@ -1,0 +1,31 @@
+title: Change PowerShell Policies to a Unsecure Level
+author: frack113
+date: 2021/10/20
+description: Detects use of Set-ExecutionPolicy to set a unsecure policies
+detection:
+    SELECTION_1:
+        ScriptBlockText: '*Set-ExecutionPolicy*'
+    SELECTION_2:
+        ScriptBlockText: '*Unrestricted*'
+    SELECTION_3:
+        ScriptBlockText: '*bypass*'
+    SELECTION_4:
+        ScriptBlockText: '*RemoteSigned*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4))
+falsepositives:
+- Administrator script
+id: 61d0475c-173f-4844-86f7-f3eebae1c66b
+level: high
+logsource:
+    category: ps_script
+    product: windows
+references:
+- https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-7.1
+- https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7.1
+- https://adsecurity.org/?p=2604
+tags:
+- attack.execution
+- attack.t1059.001
+yml_filename: powershell_set_policies_to_unsecure_level.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/powershell/powershell_script
+

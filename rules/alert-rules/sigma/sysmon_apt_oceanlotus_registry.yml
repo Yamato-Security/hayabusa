@@ -1,0 +1,59 @@
+title: OceanLotus Registry Activity
+author: megan201296, Jonhnathan Ribeiro
+date: 2019/04/14
+description: Detects registry keys created in OceanLotus (also known as APT32) attacks
+detection:
+    SELECTION_1:
+        EventID: 12
+    SELECTION_10:
+        TargetObject: '*Application'
+    SELECTION_11:
+        TargetObject: '*DefaultIcon'
+    SELECTION_12:
+        TargetObject: HKCU\\*
+    SELECTION_13:
+        TargetObject: '*Classes\AppXc52346ec40fb4061ad96be0e6cb7d16a\\*'
+    SELECTION_14:
+        TargetObject: '*Classes\AppX3bbba44c6cae4d9695755183472171e2\\*'
+    SELECTION_15:
+        TargetObject: '*Classes\CLSID\{E3517E26-8E93-458D-A6DF-8030BC80528B}\\*'
+    SELECTION_16:
+        TargetObject: '*Classes\CLSID\{E08A0F4B-1F65-4D4D-9A09-BD4625B9C5A1}\Model*'
+    SELECTION_2:
+        EventID: 13
+    SELECTION_3:
+        EventID: 14
+    SELECTION_4:
+        TargetObject: HKCU\SOFTWARE\Classes\CLSID\{E08A0F4B-1F65-4D4D-9A09-BD4625B9C5A1}\Model
+    SELECTION_5:
+        TargetObject: HKCU\SOFTWARE\App\\*
+    SELECTION_6:
+        TargetObject: HKLM\SOFTWARE\App\\*
+    SELECTION_7:
+        TargetObject: '*AppXbf13d4ea2945444d8b13e2121cb6b663\\*'
+    SELECTION_8:
+        TargetObject: '*AppX70162486c7554f7f80f481985d67586d\\*'
+    SELECTION_9:
+        TargetObject: '*AppX37cc7fdccd644b4f85f4b22d5a3f105a\\*'
+    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and ((SELECTION_4 or ((SELECTION_5
+        or SELECTION_6) and (SELECTION_7 or SELECTION_8 or SELECTION_9) and (SELECTION_10
+        or SELECTION_11))) or ((SELECTION_12) and (SELECTION_13 or SELECTION_14 or
+        SELECTION_15 or SELECTION_16))))
+falsepositives:
+- Unknown
+id: 4ac5fc44-a601-4c06-955b-309df8c4e9d4
+level: critical
+logsource:
+    category: registry_event
+    product: windows
+modified: 2021/09/17
+references:
+- https://www.welivesecurity.com/2019/03/20/fake-or-fake-keeping-up-with-oceanlotus-decoys/
+- https://github.com/eset/malware-ioc/tree/master/oceanlotus
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1112
+yml_filename: sysmon_apt_oceanlotus_registry.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/registry_event
+

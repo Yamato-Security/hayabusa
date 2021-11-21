@@ -1,0 +1,35 @@
+title: Taskmgr as Parent
+author: Florian Roth
+date: 2018/03/13
+description: Detects the creation of a process from Windows task manager
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_2:
+        ParentImage: '*\taskmgr.exe'
+    SELECTION_3:
+        Image: '*\resmon.exe'
+    SELECTION_4:
+        Image: '*\mmc.exe'
+    SELECTION_5:
+        Image: '*\taskmgr.exe'
+    condition: (SELECTION_1 and SELECTION_2 and  not ((SELECTION_3 or SELECTION_4
+        or SELECTION_5)))
+falsepositives:
+- Administrative activity
+fields:
+- Image
+- CommandLine
+- ParentCommandLine
+id: 3d7679bd-0c00-440c-97b0-3f204273e6c7
+level: low
+logsource:
+    category: process_creation
+    product: windows
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+yml_filename: win_susp_taskmgr_parent.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

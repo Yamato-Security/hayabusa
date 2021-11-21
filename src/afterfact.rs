@@ -1,73 +1,61 @@
 use crate::detections::configs;
 use crate::detections::print;
 use crate::detections::print::AlertMessage;
-use crate::notify::slack::SlackNotify;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use std::io;
-use std::io::BufWriter;
 use std::process;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct CsvFormat<'a> {
     time: &'a str,
-    filepath: &'a str,
-    rulepath: &'a str,
+    computername: &'a str,
+    eventid: &'a str,
     level: &'a str,
-    title: &'a str,
-    message: &'a str,
+    alert: &'a str,
+    details: &'a str,
+    rulepath: &'a str,
+    filepath: &'a str,
 }
 
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, format!("Failed to write CSV. {}", err)).ok();
+        AlertMessage::alert(
+            &mut std::io::stderr().lock(),
+            format!("Failed to write CSV. {}", err),
+        )
+        .ok();
         process::exit(1);
     };
 
-    // slack通知する場合はemit_csvした後に
-    if configs::CONFIG.read().unwrap().args.is_present("slack") {
-        let mut buf = vec![];
-        let mut writer = BufWriter::new(buf);
-        if let Err(err) = emit_csv(&mut writer) {
-            fn_emit_csv_err(err);
-        } else {
-            buf = writer.into_inner().unwrap();
-            let s = std::str::from_utf8(&buf).unwrap();
-            if SlackNotify::notify(s.to_string()).is_err() {
-                eprintln!("slack notification failed!!");
+    let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .value_of("csv-timeline")
+    {
+        // ファイル出力する場合
+        match File::create(csv_path) {
+            Ok(file) => Box::new(file),
+            Err(err) => {
+                AlertMessage::alert(
+                    &mut std::io::stderr().lock(),
+                    format!("Failed to open file. {}", err),
+                )
+                .ok();
+                process::exit(1);
             }
-            println!("{}", s.to_string());
         }
     } else {
-        let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .value_of("csv-timeline")
-        {
-            // ファイル出力する場合
-            match File::create(csv_path) {
-                Ok(file) => Box::new(file),
-                Err(err) => {
-                    let stdout = std::io::stdout();
-                    let mut stdout = stdout.lock();
-                    AlertMessage::alert(&mut stdout, format!("Failed to open file. {}", err)).ok();
-                    process::exit(1);
-                }
-            }
-        } else {
-            // 標準出力に出力する場合
-            Box::new(io::stdout())
-        };
+        // 標準出力に出力する場合
+        Box::new(io::stdout())
+    };
 
-        if let Err(err) = emit_csv(&mut target) {
-            fn_emit_csv_err(err);
-        }
+    if let Err(err) = emit_csv(&mut target) {
+        fn_emit_csv_err(err);
     }
 }
 
@@ -82,17 +70,19 @@ fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
                 filepath: &detect_info.filepath,
                 rulepath: &detect_info.rulepath,
                 level: &detect_info.level,
-                title: &detect_info.title,
-                message: &detect_info.detail,
+                computername: &detect_info.computername,
+                eventid: &detect_info.eventid,
+                alert: &detect_info.alert,
+                details: &detect_info.detail,
             })?;
         }
         detect_count += detect_infos.len();
     }
     println!("");
-    println!("Events Detected:{:?}", detect_count);
-    println!("");
 
     wtr.flush()?;
+    println!("");
+    println!("Events Detected:{:?}", detect_count);
     Ok(())
 }
 
@@ -110,8 +100,10 @@ where
 {
     if configs::CONFIG.read().unwrap().args.is_present("rfc-2822") {
         return time.to_rfc2822();
-    } else {
+    } else if configs::CONFIG.read().unwrap().args.is_present("rfc-3339") {
         return time.to_rfc3339();
+    } else {
+        return time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string();
     }
 }
 
@@ -123,6 +115,8 @@ fn test_emit_csv() {
     let testrulepath: &str = "test-rule.yml";
     let test_title = "test_title";
     let test_level = "high";
+    let test_computername = "testcomputer";
+    let test_eventid = "1111";
     let output = "pokepoke";
     {
         let mut messages = print::MESSAGES.lock().unwrap();
@@ -147,6 +141,8 @@ fn test_emit_csv() {
             testrulepath.to_string(),
             &event,
             test_level.to_string(),
+            test_computername.to_string(),
+            test_eventid.to_string(),
             test_title.to_string(),
             output.to_string(),
         );
@@ -156,18 +152,25 @@ fn test_emit_csv() {
         .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
         .unwrap();
     let expect_tz = expect_time.with_timezone(&Local);
-    let expect = "Time,Filepath,Rulepath,Level,Title,Message\n".to_string()
-        + &expect_tz.clone().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
+    let expect = "Time,Computername,Eventid,Level,Alert,Details,Rulepath,Filepath\n".to_string()
+        + &expect_tz
+            .clone()
+            .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+            .to_string()
         + ","
-        + testfilepath
+        + test_computername
         + ","
-        + testrulepath
+        + test_eventid
         + ","
         + test_level
         + ","
         + test_title
         + ","
         + output
+        + ","
+        + testrulepath
+        + ","
+        + &testfilepath.to_string()
         + "\n";
 
     let mut file: Box<dyn io::Write> =

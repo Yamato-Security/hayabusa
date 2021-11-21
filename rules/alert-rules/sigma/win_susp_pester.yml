@@ -1,0 +1,47 @@
+title: Execute Code with Pester.bat
+author: Julia Fomina, oscd.community
+date: 2020/10/08
+description: Detects code execution via Pester.bat (Pester - Powershell Modulte for
+    testing)
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*?*'
+    SELECTION_2:
+        Image: '*\powershell.exe'
+    SELECTION_3:
+        CommandLine: '*Pester*'
+    SELECTION_4:
+        CommandLine: '*Get-Help*'
+    SELECTION_5:
+        EventID: 1
+    SELECTION_6:
+        Image: '*\cmd.exe'
+    SELECTION_7:
+        CommandLine: '*pester*'
+    SELECTION_8:
+        CommandLine: '*;*'
+    SELECTION_9:
+        CommandLine: '*help*'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4) or
+        (SELECTION_5 and SELECTION_6 and SELECTION_7 and SELECTION_8 and (SELECTION_9
+        or SELECTION_10))))
+falsepositives:
+- Legitimate use of Pester for writing tests for Powershell scripts and modules
+id: 59e938ff-0d6d-4dc3-b13f-36cc28734d4e
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://twitter.com/Oddvarmoe/status/993383596244258816
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.defense_evasion
+- attack.t1216
+yml_filename: win_susp_pester.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

@@ -1,6 +1,7 @@
 extern crate serde;
 extern crate serde_derive;
 
+use chrono::{DateTime, Utc};
 use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection;
 use hayabusa::detections::detection::EvtxRecordInfo;
@@ -8,6 +9,7 @@ use hayabusa::detections::print::AlertMessage;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
+use hhmmss::Hhmmss;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -18,6 +20,10 @@ use std::{
 const MAX_DETECT_RECORDS: usize = 40000;
 
 fn main() {
+    if !configs::CONFIG.read().unwrap().args.is_present("q") {
+        output_logo();
+        println!("");
+    }
     if configs::CONFIG.read().unwrap().args.args.len() == 0 {
         println!(
             "{}",
@@ -25,23 +31,49 @@ fn main() {
         );
         return;
     }
-
+    let analysis_start_time: DateTime<Utc> = Utc::now();
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
+        if !filepath.ends_with(".evtx") {
+            AlertMessage::alert(
+                &mut std::io::stderr().lock(),
+                "--filepath is only accepted evtx file.".to_owned(),
+            )
+            .ok();
+            return;
+        }
         analysis_files(vec![PathBuf::from(filepath)]);
     } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
         let evtx_files = collect_evtxfiles(&directory);
+        if evtx_files.len() == 0 {
+            AlertMessage::alert(
+                &mut std::io::stderr().lock(),
+                "No exist evtx file.".to_owned(),
+            )
+            .ok();
+            return;
+        }
         analysis_files(evtx_files);
-    } else if configs::CONFIG.read().unwrap().args.is_present("credits") {
-        print_credits();
+    } else if configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("contributors")
+    {
+        print_contributors();
+        return;
     }
+    let analysis_end_time: DateTime<Utc> = Utc::now();
+    let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
+    println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
+    println!("");
 }
 
 fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
     let entries = fs::read_dir(dirpath);
     if entries.is_err() {
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, format!("{}", entries.unwrap_err())).ok();
+        let stderr = std::io::stderr();
+        let mut stderr = stderr.lock();
+        AlertMessage::alert(&mut stderr, format!("{}", entries.unwrap_err())).ok();
         return vec![];
     }
 
@@ -69,23 +101,34 @@ fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
     return ret;
 }
 
-fn print_credits() {
-    let stdout = std::io::stdout();
-    let mut stdout = stdout.lock();
-    match fs::read_to_string("./credits.txt") {
+fn print_contributors() {
+    match fs::read_to_string("./contributors.txt") {
         Ok(contents) => println!("{}", contents),
         Err(err) => {
-            AlertMessage::alert(&mut stdout, format!("{}", err)).ok();
+            AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err)).ok();
         }
     }
 }
 
 fn analysis_files(evtx_files: Vec<PathBuf>) {
-    let mut detection = detection::Detection::new(detection::Detection::parse_rule_files());
-
+    let level = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .value_of("level")
+        .unwrap_or("INFO")
+        .to_uppercase();
+    println!("Analyzing Event Files: {:?}", evtx_files.len());
+    let rule_files = detection::Detection::parse_rule_files(
+        level,
+        configs::CONFIG.read().unwrap().args.value_of("rules"),
+    );
+    let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
-        let ret = analysis_file(evtx_file, detection);
-        detection = ret;
+        if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+            println!("check target evtx FilePath: {:?}", &evtx_file);
+        }
+        detection = analysis_file(evtx_file, detection);
     }
 
     after_fact();
@@ -124,7 +167,7 @@ fn analysis_file(
                     evtx_filepath,
                     record_result.unwrap_err()
                 );
-                AlertMessage::alert(&mut std::io::stdout().lock(), errmsg).ok();
+                AlertMessage::alert(&mut std::io::stderr().lock(), errmsg).ok();
                 continue;
             }
 
@@ -171,6 +214,12 @@ fn evtx_to_jsons(evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {
 
 fn _output_with_omikuji(omikuji: Omikuji) {
     let fp = &format!("art/omikuji/{}", omikuji);
+    let content = fs::read_to_string(fp).unwrap();
+    println!("{}", content);
+}
+
+fn output_logo() {
+    let fp = &format!("art/logo.txt");
     let content = fs::read_to_string(fp).unwrap();
     println!("{}", content);
 }

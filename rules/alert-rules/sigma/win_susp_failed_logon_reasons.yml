@@ -1,0 +1,46 @@
+title: Account Tampering - Suspicious Failed Logon Reasons
+author: Florian Roth
+date: 2017/02/19
+description: This method uses uncommon error codes on failed logons to determine suspicious
+    activity and tampering with accounts that have been disabled or somehow restricted.
+detection:
+    SELECTION_1:
+        EventID: 4625
+    SELECTION_2:
+        EventID: 4776
+    SELECTION_3:
+        Status: '0xC0000072'
+    SELECTION_4:
+        Status: '0xC000006F'
+    SELECTION_5:
+        Status: '0xC0000070'
+    SELECTION_6:
+        Status: '0xC0000413'
+    SELECTION_7:
+        Status: '0xC000018C'
+    SELECTION_8:
+        Status: '0xC000015B'
+    SELECTION_9:
+        SubjectUserSid: S-1-0-0
+    condition: (((SELECTION_1 or SELECTION_2) and (SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8)) and  not (SELECTION_9))
+falsepositives:
+- User using a disabled account
+id: 9eb99343-d336-4020-a3cd-67f3819e68ee
+level: high
+logsource:
+    product: windows
+    service: security
+modified: 2021/10/29
+references:
+- https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4625
+- https://twitter.com/SBousseaden/status/1101431884540710913
+tags:
+- attack.persistence
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.initial_access
+- attack.t1078
+yml_filename: win_susp_failed_logon_reasons.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/builtin
+

@@ -1,0 +1,65 @@
+title: Windows Webshell Creation
+author: Beyu Denis, oscd.community
+date: 2019/10/22
+description: Possible webshell file creation on a static web site
+detection:
+    SELECTION_1:
+        EventID: 11
+    SELECTION_10:
+        TargetFilename: '*\html\\*'
+    SELECTION_11:
+        TargetFilename: '*.ph*'
+    SELECTION_12:
+        TargetFilename: '*\AppData\Local\Temp\\*'
+    SELECTION_13:
+        TargetFilename: '*\Windows\Temp\\*'
+    SELECTION_14:
+        TargetFilename: '*.jsp'
+    SELECTION_15:
+        TargetFilename: '*\cgi-bin\\*'
+    SELECTION_16:
+        TargetFilename: '*.pl*'
+    SELECTION_17:
+        TargetFilename: '*\AppData\Local\Temp\\*'
+    SELECTION_18:
+        TargetFilename: '*\Windows\Temp\\*'
+    SELECTION_2:
+        TargetFilename: '*\inetpub\wwwroot\\*'
+    SELECTION_3:
+        TargetFilename: '*.asp*'
+    SELECTION_4:
+        TargetFilename: '*.ashx*'
+    SELECTION_5:
+        TargetFilename: '*.ph*'
+    SELECTION_6:
+        TargetFilename: '*\AppData\Local\Temp\\*'
+    SELECTION_7:
+        TargetFilename: '*\Windows\Temp\\*'
+    SELECTION_8:
+        TargetFilename: '*\www\\*'
+    SELECTION_9:
+        TargetFilename: '*\htdocs\\*'
+    condition: (SELECTION_1 and ((((SELECTION_2 and (SELECTION_3 or SELECTION_4 or
+        SELECTION_5)) and  not ((SELECTION_6 or SELECTION_7))) or (((SELECTION_8 or
+        SELECTION_9 or SELECTION_10) and SELECTION_11) and  not ((SELECTION_12 or
+        SELECTION_13)))) or ((SELECTION_14 or (SELECTION_15 and SELECTION_16)) and  not
+        ((SELECTION_17 or SELECTION_18)))))
+falsepositives:
+- Legitimate administrator or developer creating legitimate executable files in a
+    web application folder
+id: 39f1f9f2-9636-45de-98f6-a4046aa8e4b9
+level: critical
+logsource:
+    category: file_event
+    product: windows
+modified: 2020/08/23
+references:
+- PT ESC rule and personal experience
+status: experimental
+tags:
+- attack.persistence
+- attack.t1100
+- attack.t1505.003
+yml_filename: sysmon_webshell_creation_detect.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/file_event
+

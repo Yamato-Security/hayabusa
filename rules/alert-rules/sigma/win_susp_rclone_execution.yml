@@ -1,0 +1,92 @@
+title: Rclone Execution via Command Line or PowerShell
+author: Bhabesh Raj, Sittikorn S, Aaron Greetham (@beardofbinary) - NCC Group
+date: 2021/05/10
+description: Detects execution of RClone utility for exfiltration as used by various
+    ransomwares strains like REvil, Conti, FiveHands, etc
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*lsd*'
+    SELECTION_11:
+        CommandLine: '*remote*'
+    SELECTION_12:
+        CommandLine: '*ls*'
+    SELECTION_13:
+        CommandLine: '*mega*'
+    SELECTION_14:
+        CommandLine: '*pcloud*'
+    SELECTION_15:
+        CommandLine: '*ftp*'
+    SELECTION_16:
+        CommandLine: '*ignore-existing*'
+    SELECTION_17:
+        CommandLine: '*auto-confirm*'
+    SELECTION_18:
+        CommandLine: '*transfers*'
+    SELECTION_19:
+        CommandLine: '*multi-thread-streams*'
+    SELECTION_2:
+        CommandLine: '*--config *'
+    SELECTION_20:
+        CommandLine: '*no-check-certificate *'
+    SELECTION_21:
+        EventID: 1
+    SELECTION_22:
+        Description: Rsync for cloud storage
+    SELECTION_23:
+        Image: '*\rclone.exe'
+    SELECTION_24:
+        ParentImage: '*\PowerShell.exe'
+    SELECTION_25:
+        ParentImage: '*\cmd.exe'
+    SELECTION_3:
+        CommandLine: '*--no-check-certificate *'
+    SELECTION_4:
+        CommandLine: '* copy *'
+    SELECTION_5:
+        CommandLine: '*pass*'
+    SELECTION_6:
+        CommandLine: '*user*'
+    SELECTION_7:
+        CommandLine: '*copy*'
+    SELECTION_8:
+        CommandLine: '*sync*'
+    SELECTION_9:
+        CommandLine: '*config*'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4) or
+        ((SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
+        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
+        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
+        or SELECTION_20) and SELECTION_21 and (SELECTION_22 or (SELECTION_23 and (SELECTION_24
+        or SELECTION_25))))))
+falsepositives:
+- Legitimate RClone use
+fields:
+- CommandLine
+- ParentCommandLine
+- Details
+id: e37db05d-d1f9-49c8-b464-cee1a4b11638
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/10/24
+references:
+- https://research.nccgroup.com/2021/05/27/detecting-rclone-an-effective-tool-for-exfiltration/
+- https://thedfirreport.com/2021/03/29/sodinokibi-aka-revil-ransomware
+- https://us-cert.cisa.gov/ncas/analysis-reports/ar21-126a
+- https://labs.sentinelone.com/egregor-raas-continues-the-chaos-with-cobalt-strike-and-rclone
+- https://www.splunk.com/en_us/blog/security/darkside-ransomware-splunk-threat-update-and-detections.html
+related:
+-   id: a0d63692-a531-4912-ad39-4393325b2a9c
+    type: obsoletes
+-   id: cb7286ba-f207-44ab-b9e6-760d82b84253
+    type: obsoletes
+status: experimental
+tags:
+- attack.exfiltration
+- attack.t1567.002
+yml_filename: win_susp_rclone_execution.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

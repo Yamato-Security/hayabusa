@@ -1,0 +1,54 @@
+title: CobaltStrike Process Patterns
+author: Florian Roth
+date: 2021/07/27
+description: Detects process patterns found in Cobalt Strike beacon activity (see
+    reference for more details)
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        CommandLine: '*\whoami.exe*'
+    SELECTION_11:
+        ParentImage: '*\dllhost.exe'
+    SELECTION_12:
+        Image: '*\cmd.exe'
+    SELECTION_13:
+        ParentImage: '*\runonce.exe'
+    SELECTION_14:
+        ParentCommandLine: '*\runonce.exe'
+    SELECTION_2:
+        CommandLine: '*\cmd.exe /C whoami*'
+    SELECTION_3:
+        ParentImage: C:\Temp*
+    SELECTION_4:
+        CommandLine: '*conhost.exe 0xffffffff -ForceV1*'
+    SELECTION_5:
+        ParentCommandLine: '*/C whoami*'
+    SELECTION_6:
+        ParentCommandLine: '*cmd.exe /C echo*'
+    SELECTION_7:
+        ParentCommandLine: '* > \\.\pipe*'
+    SELECTION_8:
+        CommandLine: '*cmd.exe /c echo*'
+    SELECTION_9:
+        CommandLine: '*> \\.\pipe*'
+    condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and
+        (SELECTION_5 or SELECTION_6 or SELECTION_7)) or ((SELECTION_8 or SELECTION_9
+        or SELECTION_10) and SELECTION_11) or (SELECTION_12 and SELECTION_13 and SELECTION_14)))
+falsepositives:
+- Other programs that cause these patterns (please report)
+id: f35c5d71-b489-4e22-a115-f003df287317
+level: high
+logsource:
+    category: process_creation
+    product: windows
+modified: 2021/08/30
+references:
+- https://hausec.com/2021/07/26/cobalt-strike-and-tradecraft/
+- https://thedfirreport.com/2021/08/29/cobalt-strike-a-defenders-guide/
+status: experimental
+tags:
+- attack.execution
+yml_filename: win_cobaltstrike_process_patterns.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

@@ -1,0 +1,52 @@
+title: Suspicious Service Binary Directory
+author: Florian Roth
+date: 2021/03/09
+description: Detects a service binary running in a suspicious directory
+detection:
+    SELECTION_1:
+        EventID: 1
+    SELECTION_10:
+        Image: '*\Windows\Fonts\\*'
+    SELECTION_11:
+        Image: '*\Windows\IME\\*'
+    SELECTION_12:
+        Image: '*\Windows\addins\\*'
+    SELECTION_13:
+        ParentImage: '*\services.exe'
+    SELECTION_14:
+        ParentImage: '*\svchost.exe'
+    SELECTION_2:
+        Image: '*\Users\Public\\*'
+    SELECTION_3:
+        Image: '*\$Recycle.bin*'
+    SELECTION_4:
+        Image: '*\Users\All Users\\*'
+    SELECTION_5:
+        Image: '*\Users\Default\\*'
+    SELECTION_6:
+        Image: '*\Users\Contacts\\*'
+    SELECTION_7:
+        Image: '*\Users\Searches\\*'
+    SELECTION_8:
+        Image: '*C:\Perflogs\\*'
+    SELECTION_9:
+        Image: '*\config\systemprofile\\*'
+    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
+        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
+        or SELECTION_11 or SELECTION_12) and (SELECTION_13 or SELECTION_14))
+falsepositives:
+- Unknown
+id: 883faa95-175a-4e22-8181-e5761aeb373c
+level: high
+logsource:
+    category: process_creation
+    product: windows
+references:
+- https://blog.truesec.com/2021/03/07/exchange-zero-day-proxylogon-and-hafnium/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1202
+yml_filename: win_susp_service_dir.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/process_creation
+

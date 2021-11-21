@@ -1,0 +1,21 @@
+title: Addition of Domain Trusts
+author: Thomas Patzke
+date: 2019/12/03
+description: Addition of domains is seldom and should be verified for legitimacy.
+detection:
+    SELECTION_1:
+        EventID: 4706
+    condition: SELECTION_1
+falsepositives:
+- Legitimate extension of domain structure
+id: 0255a820-e564-4e40-af2b-6ac61160335c
+level: medium
+logsource:
+    product: windows
+    service: security
+status: stable
+tags:
+- attack.persistence
+yml_filename: win_susp_add_domain_trust.yml
+yml_path: /Users/user/Documents/YamatoSecurity/sigma/rules/windows/builtin
+
