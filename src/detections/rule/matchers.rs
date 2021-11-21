@@ -1691,7 +1691,6 @@ mod tests {
         assert_eq!(r"\\\\.*ho\\\\.*ge\\\\\\", value);
     }
 
-
     #[test]
     fn test_grep_match() {
         // wildcardは大文字小文字関係なくマッチする。
