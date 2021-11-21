@@ -1,0 +1,88 @@
+
+title: Suspicious Remote Thread Created
+author: Perez Diego (@darkquassar), oscd.community
+date: 2019/10/27
+description: Offensive tradecraft is switching away from using APIs like "CreateRemoteThread",
+  however, this is still largely observed in the wild. This rule aims to detect suspicious
+  processes (those we would not expect to behave in this way like word.exe or outlook.exe)
+  creating remote threads on other processes. It is a generalistic rule, but it should
+  have a low FP ratio due to the selected range of processes.
+detection:
+  SELECTION_1:
+    EventID: 8
+  SELECTION_2:
+    SourceImage:
+    - '*\bash.exe'
+    - '*\cvtres.exe'
+    - '*\defrag.exe'
+    - '*\dnx.exe'
+    - '*\esentutl.exe'
+    - '*\excel.exe'
+    - '*\expand.exe'
+    - '*\explorer.exe'
+    - '*\find.exe'
+    - '*\findstr.exe'
+    - '*\forfiles.exe'
+    - '*\git.exe'
+    - '*\gpupdate.exe'
+    - '*\hh.exe'
+    - '*\iexplore.exe'
+    - '*\installutil.exe'
+    - '*\lync.exe'
+    - '*\makecab.exe'
+    - '*\mDNSResponder.exe'
+    - '*\monitoringhost.exe'
+    - '*\msbuild.exe'
+    - '*\mshta.exe'
+    - '*\msiexec.exe'
+    - '*\mspaint.exe'
+    - '*\outlook.exe'
+    - '*\ping.exe'
+    - '*\powerpnt.exe'
+    - '*\powershell.exe'
+    - '*\provtool.exe'
+    - '*\python.exe'
+    - '*\regsvr32.exe'
+    - '*\robocopy.exe'
+    - '*\runonce.exe'
+    - '*\sapcimc.exe'
+    - '*\schtasks.exe'
+    - '*\smartscreen.exe'
+    - '*\spoolsv.exe'
+    - '*\tstheme.exe'
+    - '*\userinit.exe'
+    - '*\vssadmin.exe'
+    - '*\vssvc.exe'
+    - '*\w3wp.exe'
+    - '*\winlogon.exe'
+    - '*\winscp.exe'
+    - '*\wmic.exe'
+    - '*\word.exe'
+    - '*\wscript.exe'
+  SELECTION_3:
+    SourceImage: '*Visual Studio*'
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- User
+- SourceImage
+- TargetImage
+id: 66d31e5f-52d6-40a4-9615-002d3789a119
+level: high
+logsource:
+  category: create_remote_thread
+  product: windows
+modified: 2021/06/27
+notes:
+- MonitoringHost.exe is a process that loads .NET CLR by default and thus a favorite
+  for process injection for .NET in-memory offensive tools.
+references:
+- Personal research, statistical analysis
+- https://lolbas-project.github.io
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.defense_evasion
+- attack.t1055

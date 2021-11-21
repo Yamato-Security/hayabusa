@@ -1,0 +1,26 @@
+
+title: WMI Persistence - Script Event Consumer File Write
+author: Thomas Patzke
+date: 2018/03/07
+description: Detects file writes of WMI script event consumer
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    Image: C:\WINDOWS\system32\wbem\scrcons.exe
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Dell Power Manager (C:\Program Files\Dell\PowerManager\DpmPowerPlanSetup.exe)
+id: 33f41cdd-35ac-4ba8-814b-c6a4244a1ad4
+level: high
+logsource:
+  category: file_event
+  product: windows
+modified: 2020/08/23
+references:
+- https://www.eideon.com/2018-03-02-THL03-WMIBackdoors/
+status: experimental
+tags:
+- attack.t1084
+- attack.t1546.003
+- attack.persistence

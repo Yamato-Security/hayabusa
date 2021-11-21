@@ -1,0 +1,30 @@
+
+title: Conhost Parent Process Executions
+author: omkar72
+date: 2020/10/25
+description: Detects the conhost execution as parent process. Can be used to evaded
+  defense mechanism.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*\conhost.exe'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unlikely, conhost is a child less process
+fields:
+- Image
+- CommandLine
+- ParentCommandLine
+id: 7dc2dedd-7603-461a-bc13-15803d132355
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/06/27
+references:
+- http://www.hexacorn.com/blog/2020/05/25/how-to-con-your-host/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1202

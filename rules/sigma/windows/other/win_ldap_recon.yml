@@ -1,0 +1,81 @@
+
+title: LDAP Reconnaissance / Active Directory Enumeration
+author: Adeem Mawani
+date: 2021/06/22
+description: Detects possible Active Directory enumeration via LDAP
+detection:
+  SELECTION_1:
+    EventID: 30
+  SELECTION_2:
+    SearchFilter:
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483648)*'
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483656)*'
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483652)*'
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483650)*'
+    - '*(sAMAccountType=805306369)*'
+    - '*(sAMAccountType=805306368)*'
+    - '*(sAMAccountType=536870913)*'
+    - '*(sAMAccountType=536870912)*'
+    - '*(sAMAccountType=268435457)*'
+    - '*(sAMAccountType=268435456)*'
+    - '*(objectCategory=groupPolicyContainer)*'
+    - '*(objectCategory=organizationalUnit)*'
+    - '*(objectCategory=Computer)*'
+    - '*(objectCategory=nTDSDSA)*'
+    - '*(objectCategory=server)*'
+    - '*(objectCategory=domain)*'
+    - '*(objectCategory=person)*'
+    - '*(objectCategory=group)*'
+    - '*(objectCategory=user)*'
+    - '*(objectClass=trustedDomain)*'
+    - '*(objectClass=computer)*'
+    - '*(objectClass=server)*'
+    - '*(objectClass=group)*'
+    - '*(objectClass=user)*'
+    - '*(primaryGroupID=521)*'
+    - '*(primaryGroupID=516)*'
+    - '*(primaryGroupID=515)*'
+    - '*(primaryGroupID=512)*'
+    - '*Domain Admins*'
+  SELECTION_3:
+    EventID: 30
+  SELECTION_4:
+    SearchFilter:
+    - '*(domainSid=*)*'
+    - '*(objectSid=*)*'
+  SELECTION_5:
+    EventID: 30
+  SELECTION_6:
+    SearchFilter:
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=4194304)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=2097152)*'
+    - '*!(userAccountControl:1.2.840.113556.1.4.803:=1048574)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=524288)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=65536)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=8192)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=544)*'
+    - '*!(UserAccountControl:1.2.840.113556.1.4.803:=2)*'
+    - '*msDS-AllowedToActOnBehalfOfOtherIdentity*'
+    - '*msDS-AllowedToDelegateTo*'
+    - '*(accountExpires=9223372036854775807)*'
+    - '*(accountExpires=0)*'
+    - '*(adminCount=1)*'
+    - '*ms-MCS-AdmPwd*'
+  condition: (((SELECTION_1 and SELECTION_2) and  not (SELECTION_3 and SELECTION_4))
+    or (SELECTION_5 and SELECTION_6))
+id: 31d68132-4038-47c7-8f8e-635a39a7c174
+level: medium
+logsource:
+  category: ldap_query
+  definition: Requires Microsoft-Windows-LDAP-Client/Debug ETW logging
+  product: windows
+references:
+- https://techcommunity.microsoft.com/t5/microsoft-defender-for-endpoint/hunting-for-reconnaissance-activities-using-ldap-search-filters/ba-p/824726
+- https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1
+- https://github.com/BloodHoundAD/SharpHound3/blob/master/SharpHound3/LdapBuilder.cs
+status: experimental
+tags:
+- attack.discovery
+- attack.t1069.002
+- attack.t1087.002
+- attack.t1482

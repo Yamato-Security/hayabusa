@@ -1,0 +1,35 @@
+
+title: Shadow Copies Creation Using Operating Systems Utilities
+author: Teymur Kheirkhabarov, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/22
+description: Shadow Copies creation using operating systems utilities, possible credential
+  access
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\powershell.exe'
+    - '*\wmic.exe'
+    - '*\vssadmin.exe'
+  SELECTION_3:
+    CommandLine: '*shadow*'
+  SELECTION_4:
+    CommandLine: '*create*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Legitimate administrator working with shadow copies, access for backup purposes
+id: b17ea6f7-6e90-447e-a799-e6c0a493d6ce
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+- https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/tutorial-for-ntds-goodness-vssadmin-wmis-ntdsdit-system/
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1003.002
+- attack.t1003.003

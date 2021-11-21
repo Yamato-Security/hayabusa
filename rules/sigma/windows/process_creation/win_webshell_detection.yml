@@ -1,0 +1,84 @@
+
+title: Webshell Detection With Command Line Keywords
+author: Florian Roth, Jonhnathan Ribeiro, Anton Kutepov, oscd.community
+date: 2017/01/01
+description: Detects certain command line parameters often used during reconnaissance
+  activity via web shells
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    Image: '*\wmic.exe'
+  SELECTION_11:
+    CommandLine: '* /node:*'
+  SELECTION_12:
+    Image:
+    - '*\whoami.exe'
+    - '*\systeminfo.exe'
+    - '*\quser.exe'
+    - '*\ipconfig.exe'
+    - '*\pathping.exe'
+    - '*\tracert.exe'
+    - '*\netstat.exe'
+    - '*\schtasks.exe'
+    - '*\vssadmin.exe'
+    - '*\wevtutil.exe'
+    - '*\tasklist.exe'
+  SELECTION_13:
+    CommandLine:
+    - '* Test-NetConnection *'
+    - '*dir \\*'
+  SELECTION_2:
+    ParentImage:
+    - '*\w3wp.exe'
+    - '*\php-cgi.exe'
+    - '*\nginx.exe'
+    - '*\httpd.exe'
+  SELECTION_3:
+    ParentImage:
+    - '*\apache*'
+    - '*\tomcat*'
+  SELECTION_4:
+    EventID: 1
+  SELECTION_5:
+    Image:
+    - '*\net.exe'
+    - '*\net1.exe'
+  SELECTION_6:
+    CommandLine:
+    - '* user *'
+    - '* use *'
+    - '* group *'
+  SELECTION_7:
+    Image: '*\ping.exe'
+  SELECTION_8:
+    CommandLine: '* -n *'
+  SELECTION_9:
+    CommandLine:
+    - '*&cd&echo*'
+    - '*cd /d *'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 and (((SELECTION_5
+    and SELECTION_6) or (SELECTION_7 and SELECTION_8) or SELECTION_9) or (SELECTION_10
+    and SELECTION_11) or SELECTION_12 or SELECTION_13)))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: bed2a484-9348-4143-8a8a-b801c979301c
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/03/02
+references:
+- https://www.fireeye.com/blog/threat-research/2013/08/breaking-down-the-china-chopper-web-shell-part-ii.html
+- https://unit42.paloaltonetworks.com/bumblebee-webshell-xhunt-campaign/
+tags:
+- attack.persistence
+- attack.t1505.003
+- attack.t1018
+- attack.t1033
+- attack.t1087
+- attack.privilege_escalation
+- attack.t1100

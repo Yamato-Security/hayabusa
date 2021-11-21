@@ -1,0 +1,45 @@
+
+title: Automated Collection Command Prompt
+author: frack113
+date: 2021/07/28
+description: Once established within a system or network, an adversary may use automated
+  techniques for collecting internal data.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*.doc*'
+    - '*.docx*'
+    - '*.xls*'
+    - '*.xlsx*'
+    - '*.ppt*'
+    - '*.pptx*'
+    - '*.rtf*'
+    - '*.pdf*'
+    - '*.txt*'
+  SELECTION_3:
+    CommandLine: '*dir *'
+  SELECTION_4:
+    CommandLine: '* /b *'
+  SELECTION_5:
+    CommandLine: '* /s *'
+  SELECTION_6:
+    OriginalFileName: FINDSTR.EXE
+  SELECTION_7:
+    CommandLine: '* /e *'
+  condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7)))
+falsepositives:
+- Unknown
+id: f576a613-2392-4067-9d1a-9345fb58d8d1
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1119/T1119.md
+status: experimental
+tags:
+- attack.collection
+- attack.t1119

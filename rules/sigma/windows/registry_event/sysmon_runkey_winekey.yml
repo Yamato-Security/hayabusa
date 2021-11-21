@@ -1,0 +1,34 @@
+
+title: WINEKEY Registry Modification
+author: omkar72
+date: 2020/10/30
+description: Detects potential malicious modification of run keys by winekey or team9
+  backdoor
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject:
+    - '*Software\Microsoft\Windows\CurrentVersion\Run\Backup Mgr'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- Image
+- EventType
+- TargetObject
+id: b98968aa-dbc0-4a9c-ac35-108363cbf8d5
+level: high
+logsource:
+  category: registry_event
+  product: windows
+references:
+- https://www.fireeye.com/blog/threat-research/2020/10/kegtap-and-singlemalt-with-a-ransomware-chaser.html
+tags:
+- attack.persistence
+- attack.t1547

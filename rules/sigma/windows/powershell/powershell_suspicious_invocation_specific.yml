@@ -1,0 +1,78 @@
+
+title: Suspicious PowerShell Invocations - Specific
+author: Florian Roth (rule), Jonhnathan Ribeiro
+date: 2017/03/05
+description: Detects suspicious PowerShell invocation command parameters
+detection:
+  SELECTION_1:
+  - ' -w '
+  SELECTION_10:
+  - bypass
+  SELECTION_11:
+  - -Enc
+  SELECTION_12:
+  - powershell
+  SELECTION_13:
+  - reg
+  SELECTION_14:
+  - add
+  SELECTION_15:
+  - HKCU\software\microsoft\windows\currentversion\run
+  SELECTION_16:
+  - bypass
+  SELECTION_17:
+  - -noprofile
+  SELECTION_18:
+  - -windowstyle
+  SELECTION_19:
+  - hidden
+  SELECTION_2:
+  - hidden
+  SELECTION_20:
+  - new-object
+  SELECTION_21:
+  - system.net.webclient
+  SELECTION_22:
+  - .download
+  SELECTION_23:
+  - iex
+  SELECTION_24:
+  - New-Object
+  SELECTION_25:
+  - Net.WebClient
+  SELECTION_26:
+  - .Download
+  SELECTION_3:
+  - -nop
+  SELECTION_4:
+  - ' -c '
+  SELECTION_5:
+  - '[Convert]::FromBase64String'
+  SELECTION_6:
+  - -noni
+  SELECTION_7:
+  - iex
+  SELECTION_8:
+  - New-Object
+  SELECTION_9:
+  - -ep
+  condition: ((((SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4 and
+    ((SELECTION_6 and SELECTION_7 and SELECTION_8) or SELECTION_5)) or (SELECTION_9
+    and SELECTION_10 and SELECTION_11))) or (SELECTION_12 and SELECTION_13 and SELECTION_14
+    and SELECTION_15)) or (SELECTION_16 and SELECTION_17 and SELECTION_18 and SELECTION_19
+    and SELECTION_20 and SELECTION_21 and SELECTION_22)) or (SELECTION_23 and SELECTION_24
+    and SELECTION_25 and SELECTION_26))
+falsepositives:
+- Penetration tests
+id: fce5f582-cc00-41e1-941a-c6fabf0fdb8c
+level: high
+logsource:
+  definition: Script block logging must be enabled for 4104, Module Logging must be
+    enabled for 4103
+  product: windows
+  service: powershell
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086

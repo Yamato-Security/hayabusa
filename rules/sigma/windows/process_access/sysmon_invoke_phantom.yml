@@ -1,0 +1,33 @@
+
+title: Suspect Svchost Memory Asccess
+author: Tim Burrell
+date: 2020/01/02
+description: Detects suspect access to svchost process memory such as that used by
+  Invoke-Phantom to kill the winRM windows event logging service.
+detection:
+  SELECTION_1:
+    EventID: 10
+  SELECTION_2:
+    TargetImage: '*\windows\system32\svchost.exe'
+  SELECTION_3:
+    GrantedAccess: '0x1f3fff'
+  SELECTION_4:
+    CallTrace:
+    - '*unknown*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- unknown
+id: 166e9c50-8cd9-44af-815d-d1f0c0e90dde
+level: high
+logsource:
+  category: process_access
+  product: windows
+modified: 2020/08/24
+references:
+- https://github.com/hlldz/Invoke-Phant0m
+- https://twitter.com/timbmsft/status/900724491076214784
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.002
+- attack.t1089

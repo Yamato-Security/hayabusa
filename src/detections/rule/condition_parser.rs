@@ -506,6 +506,7 @@ impl ConditionCompiler {
 mod tests {
     use yaml_rust::YamlLoader;
 
+    use crate::detections::detection::EvtxRecordInfo;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
 
@@ -537,8 +538,13 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_str) {
             Ok(record) => {
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
                 assert_eq!(
-                    rule_node.select(&"testpath".to_owned(), &record),
+                    rule_node.select(&"testpath".to_owned(), &recinfo),
                     expect_select
                 );
             }
@@ -581,7 +587,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
                 assert!(false, "failed to parse json record.");
@@ -623,7 +634,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
                 assert!(false, "failed to parse json record.");

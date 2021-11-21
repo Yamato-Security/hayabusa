@@ -1,0 +1,34 @@
+
+title: PowerShell Called from an Executable Version Mismatch
+author: Sean Metcalf (source), Florian Roth (rule)
+date: 2017/03/05
+description: Detects PowerShell called from an executable by the version mismatch
+  method
+detection:
+  SELECTION_1:
+    EventID: 400
+  SELECTION_2:
+    EngineVersion:
+    - 2.*
+    - 4.*
+    - 5.*
+  SELECTION_3:
+    HostVersion: 3.*
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Penetration Tests
+- Unknown
+id: c70e019b-1479-4b65-b0cc-cd0c6093a599
+level: high
+logsource:
+  definition: fields have to be extract from event
+  product: windows
+  service: powershell-classic
+references:
+- https://adsecurity.org/?p=2921
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.execution
+- attack.t1059.001
+- attack.t1086

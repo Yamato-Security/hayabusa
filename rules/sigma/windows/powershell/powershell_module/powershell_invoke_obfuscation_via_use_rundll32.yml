@@ -1,0 +1,31 @@
+
+title: Invoke-Obfuscation Via Use Rundll32
+author: Nikita Nazarov, oscd.community
+date: 2019/10/08
+description: Detects Obfuscated Powershell via use Rundll32 in Scripts
+detection:
+  SELECTION_1:
+    EventID: 4103
+  SELECTION_2:
+    Payload|re: (?i).*&&.*rundll32.*shell32\.dll.*shellexec_rundll.*(value|invoke|comspec|iex).*"
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: 88a22f69-62f9-4b8a-aa00-6b0212f2f05a
+level: high
+logsource:
+  definition: PowerShell Module Logging must be enabled
+  product: windows
+  service: powershell
+modified: 2021/10/07
+references:
+- https://github.com/Neo23x0/sigma/issues/1009
+related:
+- id: a5a30a6e-75ca-4233-8b8c-42e0f2037d3b
+  type: derived
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001

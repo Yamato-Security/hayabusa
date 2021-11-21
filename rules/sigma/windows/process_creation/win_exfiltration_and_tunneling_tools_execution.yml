@@ -1,0 +1,31 @@
+
+title: Exfiltration and Tunneling Tools Execution
+author: Daniil Yugoslavskiy, oscd.community
+date: 2019/10/24
+description: Execution of well known tools for data exfiltration and tunneling
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\plink.exe'
+    - '*\socat.exe'
+    - '*\stunnel.exe'
+    - '*\httptunnel.exe'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Legitimate Administrator using tools
+id: c75309a3-59f8-4a8d-9c2c-4c927ad50555
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/08/29
+status: experimental
+tags:
+- attack.exfiltration
+- attack.command_and_control
+- attack.t1043
+- attack.t1041
+- attack.t1572
+- attack.t1071.001

@@ -1,0 +1,98 @@
+
+title: Malicious Nishang PowerShell Commandlets
+author: Alec Costello
+date: 2019/05/16
+description: Detects Commandlet names and arguments from the Nishang exploitation
+  framework
+detection:
+  SELECTION_1:
+    EventID: 4104
+  SELECTION_2:
+    ScriptBlockText:
+    - '*Add-ConstrainedDelegationBackdoor*'
+    - '*Set-DCShadowPermissions*'
+    - '*DNS_TXT_Pwnage*'
+    - '*Execute-OnTime*'
+    - '*HTTP-Backdoor*'
+    - '*Set-RemotePSRemoting*'
+    - '*Set-RemoteWMI*'
+    - '*Invoke-AmsiBypass*'
+    - '*Out-CHM*'
+    - '*Out-HTA*'
+    - '*Out-SCF*'
+    - '*Out-SCT*'
+    - '*Out-Shortcut*'
+    - '*Out-WebQuery*'
+    - '*Out-Word*'
+    - '*Enable-Duplication*'
+    - '*Remove-Update*'
+    - '*Download-Execute-PS*'
+    - '*Download_Execute*'
+    - '*Execute-Command-MSSQL*'
+    - '*Execute-DNSTXT-Code*'
+    - '*Out-RundllCommand*'
+    - '*Copy-VSS*'
+    - '*FireBuster*'
+    - '*FireListener*'
+    - '*Get-Information*'
+    - '*Get-PassHints*'
+    - '*Get-WLAN-Keys*'
+    - '*Get-Web-Credentials*'
+    - '*Invoke-CredentialsPhish*'
+    - '*Invoke-MimikatzWDigestDowngrade*'
+    - '*Invoke-SSIDExfil*'
+    - '*Invoke-SessionGopher*'
+    - '*Keylogger*'
+    - '*Invoke-Interceptor*'
+    - '*Create-MultipleSessions*'
+    - '*Invoke-NetworkRelay*'
+    - '*Run-EXEonRemote*'
+    - '*Invoke-Prasadhak*'
+    - '*Invoke-BruteForce*'
+    - '*Password-List*'
+    - '*Invoke-JSRatRegsvr*'
+    - '*Invoke-JSRatRundll*'
+    - '*Invoke-PoshRatHttps*'
+    - '*Invoke-PowerShellIcmp*'
+    - '*Invoke-PowerShellUdp*'
+    - '*Invoke-PSGcat*'
+    - '*Invoke-PsGcatAgent*'
+    - '*Remove-PoshRat*'
+    - '*Add-Persistance*'
+    - '*ExetoText*'
+    - '*Invoke-Decode*'
+    - '*Invoke-Encode*'
+    - '*Parse_Keys*'
+    - '*Remove-Persistence*'
+    - '*StringtoBase64*'
+    - '*TexttoExe*'
+    - '*Powerpreter*'
+    - '*Nishang*'
+    - '*DataToEncode*'
+    - '*LoggedKeys*'
+    - '*OUT-DNSTXT*'
+    - '*ExfilOption*'
+    - '*DumpCerts*'
+    - '*DumpCreds*'
+    - '*Shellcode32*'
+    - '*Shellcode64*'
+    - '*NotAllNameSpaces*'
+    - '*exfill*'
+    - '*FakeDC*'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Penetration testing
+id: f772cee9-b7c2-4cb2-8f07-49870adc02e0
+level: high
+logsource:
+  definition: Script block logging must be enabled
+  product: windows
+  service: powershell
+modified: 2021/08/21
+references:
+- https://github.com/samratashok/nishang
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086

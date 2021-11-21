@@ -1,0 +1,29 @@
+
+title: Outlook C2 Macro Creation
+author: '@ScoubiMtl'
+date: 2021/04/05
+description: Detects the creation of a macro file for Outlook. Goes with win_outlook_c2_registry_key.
+  VbaProject.OTM is explicitly mentioned in T1137. Particularly interesting if both
+  events Registry & File Creation happens at the same time.
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: '*\Microsoft\Outlook\VbaProject.OTM'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- User genuinly creates a VB Macro for their email
+id: 8c31f563-f9a7-450c-bfa8-35f8f32f1f61
+level: medium
+logsource:
+  category: file_event
+  product: windows
+references:
+- https://www.mdsec.co.uk/2020/11/a-fresh-outlook-on-mail-based-persistence/
+status: experimental
+tags:
+- attack.persistence
+- attack.command_and_control
+- attack.t1137
+- attack.t1008
+- attack.t1546

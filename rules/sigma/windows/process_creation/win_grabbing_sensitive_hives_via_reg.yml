@@ -1,0 +1,55 @@
+
+title: Grabbing Sensitive Hives via Reg Utility
+author: Teymur Kheirkhabarov, Endgame, JHasenbusch, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/22
+description: Dump sam, system or security hives using REG.exe utility
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\reg.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*save*'
+    - '*export*'
+    - '*ˢave*'
+    - '*eˣport*'
+  SELECTION_4:
+    CommandLine:
+    - '*hklm*'
+    - '*hk˪m*'
+    - '*hkey_local_machine*'
+    - '*hkey_˪ocal_machine*'
+    - '*hkey_loca˪_machine*'
+    - '*hkey_˪oca˪_machine*'
+  SELECTION_5:
+    CommandLine:
+    - '*\system'
+    - '*\sam'
+    - '*\security'
+    - '*\ˢystem'
+    - '*\syˢtem'
+    - '*\ˢyˢtem'
+    - '*\ˢam'
+    - '*\ˢecurity'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Dumping hives for legitimate purpouse i.e. backup or forensic investigation
+id: fd877b94-9bb5-4191-bb25-d79cbd93c167
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+- https://eqllib.readthedocs.io/en/latest/analytics/aed95fc6-5e3f-49dc-8b35-06508613f979.html
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003/T1003.md
+- https://www.wietzebeukema.nl/blog/windows-command-line-obfuscation
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003.002
+- attack.t1003.004
+- attack.t1003.005
+- attack.t1003
+- car.2013-07-001

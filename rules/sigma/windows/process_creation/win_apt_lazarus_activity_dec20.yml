@@ -1,0 +1,43 @@
+
+title: Lazarus Activity
+author: Florian Roth
+date: 2020/12/23
+description: Detects different process creation events as described in various threat
+  reports on Lazarus group activity
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*reg.exe save hklm\sam %temp%\~reg_sam.save*'
+    - '*1q2w3e4r@#$@#$@#$*'
+    - '* -hp1q2w3e4 *'
+    - '*.dat data03 10000 -p *'
+  SELECTION_3:
+    CommandLine: '*process call create*'
+  SELECTION_4:
+    CommandLine: '* > %temp%\~*'
+  SELECTION_5:
+    CommandLine: '*netstat -aon | find *'
+  SELECTION_6:
+    CommandLine: '* > %temp%\~*'
+  SELECTION_7:
+    CommandLine:
+    - '*.255 10 C:\ProgramData\\*'
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4) or (SELECTION_5
+    and SELECTION_6) or SELECTION_7))
+falsepositives:
+- Overlap with legitimate process activity in some cases (especially selection 3 and
+  4)
+id: 24c4d154-05a4-4b99-b57d-9b977472443a
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/06/27
+references:
+- https://securelist.com/lazarus-covets-covid-19-related-intelligence/99906/
+- https://www.hvs-consulting.de/lazarus-report/
+status: experimental
+tags:
+- attack.g0032

@@ -1,0 +1,45 @@
+
+title: Suspicious Service Installed
+author: xknow (@xknow_infosec), xorxes (@xor_xes)
+date: 2019/04/08
+description: Detects installation of NalDrv or PROCEXP152 services via registry-keys
+  to non-system32 folders. Both services are used in the tool Ghost-In-The-Logs (https://github.com/bats3c/Ghost-In-The-Logs),
+  which uses KDU (https://github.com/hfiref0x/KDU)
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject:
+    - HKLM\System\CurrentControlSet\Services\NalDrv\ImagePath
+    - HKLM\System\CurrentControlSet\Services\PROCEXP152\ImagePath
+  SELECTION_5:
+    Image:
+    - '*\procexp64.exe'
+    - '*\procexp.exe'
+    - '*\procmon64.exe'
+    - '*\procmon.exe'
+  SELECTION_6:
+    Details:
+    - '*\WINDOWS\system32\Drivers\PROCEXP152.SYS*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 and  not
+    (SELECTION_5)) and  not (SELECTION_6))
+falsepositives:
+- Other legimate tools using this service names and drivers. Note - clever attackers
+  may easily bypass this detection by just renaming the services. Therefore just Medium-level
+  and don't rely on it.
+id: f2485272-a156-4773-82d7-1d178bc4905b
+level: medium
+logsource:
+  category: registry_event
+  product: windows
+references:
+- https://blog.dylan.codes/evading-sysmon-and-windows-event-logging/
+status: experimental
+tags:
+- attack.t1089
+- attack.t1562.001
+- attack.defense_evasion

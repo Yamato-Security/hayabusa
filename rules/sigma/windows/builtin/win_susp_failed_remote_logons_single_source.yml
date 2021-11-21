@@ -1,0 +1,32 @@
+
+title: Multiple Users Remotely Failing To Authenticate From Single Source
+author: Mauricio Velazco
+date: 2021/06/01
+description: Detects a source system failing to authenticate against a remote host
+  with multiple users.
+detection:
+  SELECTION_1:
+    EventID: 4625
+  SELECTION_2:
+    LogonType: 3
+  SELECTION_3:
+    IpAddress: '-'
+  condition: ((SELECTION_1 and SELECTION_2) and  not (SELECTION_3)) | count(TargetUserName)
+    by IpAddress > 10
+falsepositives:
+- Terminal servers
+- Jump servers
+- Other multiuser systems like Citrix server farms
+- Workstations with frequently changing users
+id: add2ef8d-dc91-4002-9e7e-f2702369f53a
+level: medium
+logsource:
+  product: windows
+  service: security
+modified: 2021/07/09
+references:
+- https://docs.splunk.com/Documentation/ESSOC/3.22.0/stories/UseCase#Active_directory_password_spraying
+tags:
+- attack.t1110.003
+- attack.initial_access
+- attack.privilege_escalation

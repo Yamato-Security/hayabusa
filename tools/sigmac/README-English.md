@@ -13,8 +13,11 @@ Please refer to this documentation to convert rules on your own for local testin
 
 ## Python requirements
 
-You need Python 3.8+ and the following modules: `pyyaml`, `ruamel_yaml`, `requests`. 
-You can install the modules with `pip3 install -r requirements.txt`.
+You need Python 3.8+ and the following modules: `pyyaml`, `ruamel.yaml`, `requests`. 
+
+```sh
+pip3 install -r requirements.txt
+```
 
 ## About Sigma
 
@@ -36,33 +39,25 @@ Create an environmental variable `$sigma_path` that points to the Sigma reposito
 ```sh
 export sigma_path=/path/to/sigma_repository
 cp hayabusa.py $sigma_path/tools/sigma/backends
+cp convert.sh $sigma_path
+cp splitter.py $sigma_path
 ```
 
 * Caution：Be sure to specify the path to your Sigma repository in place of `/path/to/sigma_repository`.
 
-### Converting a single rule
+### Convert Rule
 
-You can convert a single rule with the following syntax:
-
-```sh
-python3 $sigma_path/tools/sigmac <Target Rule> --config <Config File Name> --target hayabusa
-```
-
-Example:
-```sh
-python3 $sigma_path/tools/sigmac $sigma_path/rules/windows/create_remote_thread/sysmon_cactustorch.yml --config $sigma_path/tools/config/generic/sysmon.yml --target hayabusa > sysmon_cactustorch.yml
-```
-
-### Converting multiple rules
-
-This example will convert all Sigma rules for Windows event logs to hayabusa rules and save them to the current directory.
-Please run this command from the `./rules/Sigma` directory.
+Conversion rules can be created by executing `convert.sh`.
+The rules will be created to hayabusa_rules folder.
 
 ```sh
-find $sigma_path/rules/windows/ -type f -name '*.yml' -exec sh -c 'python3 $sigma_path/tools/sigmac {} --config $sigma_path/tools/config/generic/sysmon.yml --target hayabusa > "$(basename {})"' \;
+export sigma_path=/path/to/sigma_repository
+cd $sigma_path
+sh convert.sh
 ```
 
-※  It takes around 30 minutes to convert all rules.
+`sigmac` which we use for convert rule files has many options.
+If you want to use some option, edit `convert.sh`
 
 ## Currently unsupported rules
 
@@ -72,21 +67,6 @@ The following rules currently cannot be automatically converted because it conta
 sigma/rules/windows/builtin/win_susp_samr_pwset.yml
 sigma/rules/windows/image_load/sysmon_mimikatz_inmemory_detection.yml
 sigma/rules/windows/process_creation/process_creation_apt_turla_commands_medium.yml
-```
-
-Also, the following rules cannot be automatically converted：
-```
-process_creation_apt_turla_commands_medium.yml
-sysmon_mimikatz_inmemory_detection.yml
-win_susp_failed_logons_explicit_credentials.yml
-win_susp_failed_logons_single_process.yml
-win_susp_failed_logons_single_source_kerberos.yml
-win_susp_failed_logons_single_source_kerberos2.yml
-win_susp_failed_logons_single_source_kerberos3.yml
-win_susp_failed_logons_single_source_ntlm.yml
-win_susp_failed_logons_single_source_ntlm2.yml
-win_susp_failed_remote_logons_single_source.yml
-win_susp_samr_pwset.yml
 ```
 
 ## Sigma rule parsing errors

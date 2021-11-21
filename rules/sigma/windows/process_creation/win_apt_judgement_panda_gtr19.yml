@@ -1,0 +1,42 @@
+
+title: Judgement Panda Exfil Activity
+author: Florian Roth
+date: 2019/02/21
+description: Detects Judgement Panda activity as described in Global Threat Report
+  2019 by Crowdstrike
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*eprod.ldf'
+  SELECTION_3:
+    CommandLine:
+    - '*\ldifde.exe -f -n *'
+    - '*\7za.exe a 1.7z *'
+    - '*\aaaa\procdump64.exe*'
+    - '*\aaaa\netsess.exe*'
+    - '*\aaaa\7za.exe*'
+    - '*copy .\1.7z \\*'
+    - '*copy \\client\c$\aaaa\\*'
+  SELECTION_4:
+    Image: C:\Users\Public\7za.exe
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4))
+falsepositives:
+- unknown
+id: 03e2746e-2b31-42f1-ab7a-eb39365b2422
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/08/27
+references:
+- https://www.crowdstrike.com/resources/reports/2019-crowdstrike-global-threat-report/
+tags:
+- attack.lateral_movement
+- attack.g0010
+- attack.credential_access
+- attack.t1003
+- attack.t1003.001
+- attack.exfiltration
+- attack.t1002
+- attack.t1560.001

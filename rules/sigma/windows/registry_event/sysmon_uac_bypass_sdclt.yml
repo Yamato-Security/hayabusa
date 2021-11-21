@@ -1,0 +1,39 @@
+
+title: UAC Bypass via Sdclt
+author: Omer Yampel, Christian Burkard
+date: 2017/03/17
+description: Detects the pattern of UAC Bypass using registry key manipulation of
+  sdclt.exe (e.g. UACMe 53)
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject: '*Software\Classes\exefile\shell\runas\command\isolatedCommand'
+  SELECTION_5:
+    TargetObject: '*Software\Classes\Folder\shell\open\command\SymbolicLinkValue'
+  SELECTION_6:
+    Details: '*-1???\Software\Classes\\*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or (SELECTION_5
+    and SELECTION_6)))
+falsepositives:
+- unknown
+id: 5b872a46-3b90-45c1-8419-f675db8053aa
+level: high
+logsource:
+  category: registry_event
+  product: windows
+modified: 2021/09/17
+references:
+- https://enigma0x3.net/2017/03/17/fileless-uac-bypass-using-sdclt-exe/
+- https://github.com/hfiref0x/UACME
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1088
+- attack.t1548.002
+- car.2019-04-001

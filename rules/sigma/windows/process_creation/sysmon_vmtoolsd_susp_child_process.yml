@@ -1,0 +1,45 @@
+
+title: VMToolsd Suspicious Child Process
+author: behops, Bhabesh Raj
+date: 2021/10/08
+description: Detects suspicious child process creations of VMware Tools process which
+  may indicate persistence setup
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*\vmtoolsd.exe'
+  SELECTION_3:
+    Image:
+    - '*\cmd.exe'
+    - '*\powershell.exe'
+    - '*\rundll32.exe'
+    - '*\regsvr32.exe'
+    - '*\wscript.exe'
+    - '*\cscript.exe'
+  SELECTION_4:
+    CommandLine:
+    - '*\VMware\VMware Tools\poweron-vm-default.bat*'
+    - '*\VMware\VMware Tools\poweroff-vm-default.bat*'
+    - '*\VMware\VMware Tools\resume-vm-default.bat*'
+    - '*\VMware\VMware Tools\suspend-vm-default.bat*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+falsepositives:
+- Legitimate use by adminstrator
+fields:
+- CommandLine
+- ParentCommandLine
+- Details
+id: 5687f942-867b-4578-ade7-1e341c46e99a
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/10/10
+references:
+- https://bohops.com/2021/10/08/analyzing-and-detecting-a-vmtools-persistence-technique/
+status: experimental
+tags:
+- attack.execution
+- attack.persistence
+- attack.t1059

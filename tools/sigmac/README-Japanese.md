@@ -14,8 +14,12 @@ Sigmaからhayabusa形式に変換されたルールが`./rules/Sigma`ディレ�
 
 ## Pythonの環境依存
 
-Python 3.8以上と次のモジュールが必要です：`pyyaml`、`ruamel_yaml`、`requests` 
-`pip3 install -r requirements.txt`というコマンドでインストールできます。
+Python 3.8以上と次のモジュールが必要です：`pyyaml`、`ruamel.yaml`、`requests` 
+以下のコマンドでインストール可能です。
+
+```sh
+pip3 install -r requirements.txt
+```
 
 ## Sigmaについて
 
@@ -37,32 +41,22 @@ Sigmaレポジトリのパスが書いてある`$sigma_path`という環境変�
 ```sh
 export sigma_path=/path/to/sigma_repository
 cp hayabusa.py $sigma_path/tools/sigma/backends
+cp convert.sh $sigma_path
+cp splitter.py $sigma_path
 ```
 
 * 注意：`/path/to/sigma_repository`そのままではなくて、自分のSigmaレポジトリのパスを指定してください。
 
-### 単体のルールを変換
-
-以下のシンタクスで単体のルールを変換できます：
-
-```sh
-python3 $sigma_path/tools/sigmac <変換対象ruleの指定> --config <configの指定> --target hayabusa
-```
-
-例：
-```sh
-python3 $sigma_path/tools/sigmac $sigma_path/rules/windows/create_remote_thread/sysmon_cactustorch.yml --config $sigma_path/tools/config/generic/sysmon.yml --target hayabusa > sysmon_cactustorch.yml
-```
-
-### 複数のルールを変換
-
-以下のように、SigmaのすべてのWindowsイベントログルールをhayabusaルールに変換して、カレントディレクトリに保存します。`./rules/Sigma`ディレクトリから実行して下さい。
+### ルールの変換
+convert.shを実行することでルールの変換が実行されます。変換されたルールはhayabusa_rulesフォルダに作成されます。
 
 ```sh
-find $sigma_path/rules/windows/ -type f -name '*.yml' -exec sh -c 'python3 $sigma_path/tools/sigmac {} --config $sigma_path/tools/config/generic/sysmon.yml --target hayabusa > "$(basename {})"' \;
+export sigma_path=/path/to/sigma_repository
+cd $sigma_path
+sh convert.sh
 ```
 
-※ すべてのルールを変換するのに、約30分かかります。
+ルールの変換に利用しているsigmacには様々なオプションが用意されています。オプションを変更する場合はconvert.shを編集してください。
 
 ## 現在サポートされていないルール
 
@@ -72,21 +66,6 @@ find $sigma_path/rules/windows/ -type f -name '*.yml' -exec sh -c 'python3 $sigm
 sigma/rules/windows/builtin/win_susp_samr_pwset.yml
 sigma/rules/windows/image_load/sysmon_mimikatz_inmemory_detection.yml
 sigma/rules/windows/process_creation/process_creation_apt_turla_commands_medium.yml
-```
-
-また、以下のルールも現在変換できません：
-```
-process_creation_apt_turla_commands_medium.yml
-sysmon_mimikatz_inmemory_detection.yml
-win_susp_failed_logons_explicit_credentials.yml
-win_susp_failed_logons_single_process.yml
-win_susp_failed_logons_single_source_kerberos.yml
-win_susp_failed_logons_single_source_kerberos2.yml
-win_susp_failed_logons_single_source_kerberos3.yml
-win_susp_failed_logons_single_source_ntlm.yml
-win_susp_failed_logons_single_source_ntlm2.yml
-win_susp_failed_remote_logons_single_source.yml
-win_susp_samr_pwset.yml
 ```
 
 ## Sigmaルールのパースエラーについて

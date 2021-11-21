@@ -1,0 +1,46 @@
+
+title: Reg Disable Security Service
+author: Florian Roth, John Lambert (idea)
+date: 2021/07/14
+description: Detects a suspicious reg.exe invocation that looks as if it would disable
+  an important security service
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*reg*'
+  SELECTION_3:
+    CommandLine: '*add*'
+  SELECTION_4:
+    CommandLine: '* /d 4*'
+  SELECTION_5:
+    CommandLine: '* /v Start*'
+  SELECTION_6:
+    CommandLine:
+    - '*\Sense *'
+    - '*\WinDefend*'
+    - '*\MsMpSvc*'
+    - '*\NisSrv*'
+    - '*\WdBoot *'
+    - '*\WdNisDrv*'
+    - '*\WdNisSvc*'
+    - '*\wscsvc *'
+    - '*\SecurityHealthService*'
+    - '*\wuauserv*'
+    - '*\UsoSvc *'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)
+falsepositives:
+- Unknown
+- Other security solution installers
+id: 5e95028c-5229-4214-afae-d653d573d0ec
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://twitter.com/JohnLaTwC/status/1415295021041979392
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.001

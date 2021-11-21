@@ -1,0 +1,35 @@
+
+title: PortProxy Registry Key
+author: Andreas Hunkeler (@Karneades)
+date: 2021/06/22
+description: Detects the modification of PortProxy registry key which is used for
+  port forwarding. For command execution see rule win_netsh_port_fwd.yml.
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject: HKLM\SYSTEM\CurrentControlSet\Services\PortProxy\v4tov4\tcp
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
+falsepositives:
+- WSL2 network bridge PowerShell script used for WSL/Kubernetes/Docker (e.g. https://github.com/microsoft/WSL/issues/4150#issuecomment-504209723)
+- Synergy Software KVM (https://symless.com/synergy)
+id: a54f842a-3713-4b45-8c84-5f136fdebd3c
+level: medium
+logsource:
+  category: registry_event
+  product: windows
+modified: 2021/09/13
+references:
+- https://www.fireeye.com/blog/threat-research/2019/01/bypassing-network-restrictions-through-rdp-tunneling.html
+- https://adepts.of0x.cc/netsh-portproxy-code/
+- https://www.dfirnotes.net/portproxy_detection/
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.defense_evasion
+- attack.command_and_control
+- attack.t1090

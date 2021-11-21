@@ -1,0 +1,76 @@
+
+title: Suspicious In-Memory Module Execution
+author: Perez Diego (@darkquassar), oscd.community, Jonhnathan Ribeiro
+date: 2019/10/27
+description: Detects the access to processes by other suspicious processes which have
+  reflectively loaded libraries in their memory space. An example is SilentTrinity
+  C2 behaviour. Generally speaking, when Sysmon EventID 10 cannot reference a stack
+  call to a dll loaded from disk (the standard way), it will display "UNKNOWN" as
+  the module name. Usually this means the stack call points to a module that was reflectively
+  loaded in memory. Adding to this, it is not common to see such few calls in the
+  stack (ntdll.dll --> kernelbase.dll --> unknown) which essentially means that most
+  of the functions required by the process to execute certain routines are already
+  present in memory, not requiring any calls to external libraries. The latter should
+  also be considered suspicious.
+detection:
+  SELECTION_1:
+    EventID: 10
+  SELECTION_10:
+    EventID: 10
+  SELECTION_11:
+    CallTrace: '*UNKNOWN*'
+  SELECTION_12:
+    GrantedAccess:
+    - '0x1F0FFF'
+    - '0x1F1FFF'
+    - '0x143A'
+    - '0x1410'
+    - '0x1010'
+    - '0x1F2FFF'
+    - '0x1F3FFF'
+    - '0x1FFFFF'
+  SELECTION_13:
+    SourceImage:
+    - '*\Windows\System32\sdiagnhost.exe'
+  SELECTION_2:
+    EventID: 10
+  SELECTION_3:
+    CallTrace: '*C:\\Windows\\SYSTEM32\\ntdll.dll+*'
+  SELECTION_4:
+    CallTrace: '*|C:\\Windows\\System32\\KERNELBASE.dll+*'
+  SELECTION_5:
+    CallTrace: '*|UNKNOWN(*'
+  SELECTION_6:
+    CallTrace: '*)*'
+  SELECTION_7:
+    CallTrace: '*UNKNOWN(*'
+  SELECTION_8:
+    CallTrace: '*)|UNKNOWN(*'
+  SELECTION_9:
+    CallTrace: '*)'
+  condition: (SELECTION_1 and ((SELECTION_2 and ((SELECTION_3 and SELECTION_4 and
+    SELECTION_5 and SELECTION_6) or (SELECTION_7 and SELECTION_8 and SELECTION_9)))
+    or ((SELECTION_10 and SELECTION_11 and SELECTION_12) and  not (SELECTION_13))))
+falsepositives:
+- Low
+fields:
+- ComputerName
+- User
+- SourceImage
+- TargetImage
+- CallTrace
+id: 5f113a8f-8b61-41ca-b90f-d374fa7e4a39
+level: critical
+logsource:
+  category: process_access
+  product: windows
+modified: 2021/05/16
+references:
+- https://azure.microsoft.com/en-ca/blog/detecting-in-memory-attacks-with-sysmon-and-azure-security-center/
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.defense_evasion
+- attack.t1055.001
+- attack.t1055.002
+- attack.t1055

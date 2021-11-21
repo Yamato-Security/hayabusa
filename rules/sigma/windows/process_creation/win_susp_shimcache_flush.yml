@@ -1,0 +1,41 @@
+
+title: ShimCache Flush
+author: Florian Roth
+date: 2021/02/01
+description: Detects actions that clear the local ShimCache and remove forensic evidence
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*rundll32*'
+  SELECTION_3:
+    CommandLine: '*apphelp.dll*'
+  SELECTION_4:
+    CommandLine:
+    - '*ShimFlushCache*'
+    - '*#250*'
+  SELECTION_5:
+    CommandLine: '*kernel32.dll*'
+  SELECTION_6:
+    CommandLine:
+    - '*BaseFlushAppcompatCache*'
+    - '*#46*'
+  condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4) or (SELECTION_5
+    and SELECTION_6)))
+falsepositives:
+- Unknown
+fields:
+- Image
+- CommandLine
+- ParentCommandLine
+id: b0524451-19af-4efa-a46f-562a977f792e
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://medium.com/@blueteamops/shimcache-flush-89daff28d15e
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1112

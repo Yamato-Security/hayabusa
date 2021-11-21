@@ -1,0 +1,65 @@
+
+title: Squirrel Lolbin
+author: Karneades / Markus Neis, Jonhnathan Ribeiro, oscd.community
+date: 2019/11/12
+description: Detects Possible Squirrel Packages Manager as Lolbin
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\update.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*--processStart*'
+    - '*--processStartAndWait*'
+    - '*--createShortcut*'
+  SELECTION_4:
+    CommandLine: '*.exe*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- 1Clipboard
+- Beaker Browser
+- Caret
+- Collectie
+- Discord
+- Figma
+- Flow
+- Ghost
+- GitHub Desktop
+- GitKraken
+- Hyper
+- Insomnia
+- JIBO
+- Kap
+- Kitematic
+- Now Desktop
+- Postman
+- PostmanCanary
+- Rambox
+- Simplenote
+- Skype
+- Slack
+- SourceTree
+- Stride
+- Svgsus
+- WebTorrent
+- WhatsApp
+- WordPress.com
+- atom
+- gitkraken
+- slack
+- teams
+id: fa4b21c9-0057-4493-b289-2556416ae4d7
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/11/28
+references:
+- http://www.hexacorn.com/blog/2019/03/30/sqirrel-packages-manager-as-a-lolbin-a-k-a-many-electron-apps-are-lolbins-by-default/
+- http://www.hexacorn.com/blog/2018/08/16/squirrel-as-a-lolbin/
+status: experimental
+tags:
+- attack.execution
+- attack.defense_evasion
+- attack.t1218

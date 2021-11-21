@@ -1,0 +1,51 @@
+
+title: Execute From Alternate Data Streams
+author: frack113
+date: 2021/09/01
+description: Adversaries may use NTFS file attributes to hide their malicious data
+  in order to evade detection
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '* /E *'
+  SELECTION_11:
+    CommandLine: '*esentutl *'
+  SELECTION_12:
+    CommandLine: '* /y *'
+  SELECTION_13:
+    CommandLine: '* /d *'
+  SELECTION_14:
+    CommandLine: '* /o *'
+  SELECTION_2:
+    CommandLine: '*txt:*'
+  SELECTION_3:
+    CommandLine: '*type *'
+  SELECTION_4:
+    CommandLine: '* > *'
+  SELECTION_5:
+    CommandLine: '*makecab *'
+  SELECTION_6:
+    CommandLine: '*.cab*'
+  SELECTION_7:
+    CommandLine: '*reg *'
+  SELECTION_8:
+    CommandLine: '* export *'
+  SELECTION_9:
+    CommandLine: '*regedit *'
+  condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4) or (SELECTION_5
+    and SELECTION_6) or (SELECTION_7 and SELECTION_8) or (SELECTION_9 and SELECTION_10)
+    or (SELECTION_11 and SELECTION_12 and SELECTION_13 and SELECTION_14)))
+falsepositives:
+- Unknown
+id: 7f43c430-5001-4f8b-aaa9-c3b88f18fa5c
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1564.004/T1564.004.md
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1564.004

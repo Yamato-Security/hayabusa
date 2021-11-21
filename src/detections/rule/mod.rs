@@ -5,7 +5,6 @@ use chrono::{DateTime, Utc};
 
 use std::{collections::HashMap, fmt::Debug, sync::Arc, vec};
 
-use serde_json::Value;
 use yaml_rust::Yaml;
 
 mod matchers;
@@ -17,6 +16,8 @@ use self::aggregation_parser::AggregationParseInfo;
 mod condition_parser;
 mod count;
 use self::count::TimeFrameInfo;
+
+use super::detection::EvtxRecordInfo;
 
 pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
     return RuleNode::new(rulepath, yaml);
@@ -71,13 +72,13 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&mut self, filepath: &String, event_record: &Value) -> bool {
+    pub fn select(&mut self, filepath: &String, event_record: &EvtxRecordInfo) -> bool {
         if self.detection.is_none() {
             return false;
         }
         let result = self.detection.as_ref().unwrap().select(event_record);
         if result {
-            count::count(self, filepath, event_record);
+            count::count(self, filepath, &event_record.record);
         }
         return result;
     }
@@ -174,7 +175,7 @@ impl DetectionNode {
         }
     }
 
-    pub fn select(&self, event_record: &Value) -> bool {
+    pub fn select(&self, event_record: &EvtxRecordInfo) -> bool {
         if self.condition.is_none() {
             return false;
         }
@@ -313,7 +314,7 @@ impl AggResult {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::create_rule;
+    use crate::detections::{detection::EvtxRecordInfo, rule::create_rule};
     use yaml_rust::YamlLoader;
 
     use super::RuleNode;
@@ -348,7 +349,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -376,7 +382,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -404,7 +415,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -485,7 +501,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -542,7 +563,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -606,7 +632,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -648,7 +679,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -691,7 +727,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -753,7 +794,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -815,7 +861,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -859,7 +910,12 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
                 assert!(false, "failed to parse json record.");
@@ -915,7 +971,12 @@ mod tests {
         let _init = rule_node.init();
         match serde_json::from_str(record_str) {
             Ok(record) => {
-                let result = rule_node.select(&"testpath".to_string(), &record);
+                let recinfo = EvtxRecordInfo {
+                    evtx_filepath: "testpath".to_owned(),
+                    record: record,
+                    data_string: String::default(),
+                };
+                let result = rule_node.select(&"testpath".to_string(), &recinfo);
                 assert_eq!(
                     rule_node.detection.unwrap().aggregation_condition.is_some(),
                     true

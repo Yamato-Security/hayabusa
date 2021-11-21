@@ -1,0 +1,35 @@
+
+title: Renamed jusched.exe
+author: Markus Neis, Swisscom
+date: 2019/06/04
+description: Detects renamed jusched.exe used by cobalt group
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    EventID: 1
+  SELECTION_3:
+    Description: Java Update Scheduler
+  SELECTION_4:
+    Description: Java(TM) Update Scheduler
+  SELECTION_5:
+    Image:
+    - '*\jusched.exe'
+  condition: (SELECTION_1 and (SELECTION_2 and (SELECTION_3 or SELECTION_4)) and  not
+    (SELECTION_5))
+falsepositives:
+- penetration tests, red teaming
+id: edd8a48c-1b9f-4ba1-83aa-490338cd1ccb
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/09/06
+references:
+- https://www.bitdefender.com/files/News/CaseStudies/study/262/Bitdefender-WhitePaper-An-APT-Blueprint-Gaining-New-Visibility-into-Financial-Threats-interactive.pdf
+status: experimental
+tags:
+- attack.execution
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.003

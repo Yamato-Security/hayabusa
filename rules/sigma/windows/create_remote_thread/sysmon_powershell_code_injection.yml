@@ -1,0 +1,26 @@
+
+title: Accessing WinAPI in PowerShell. Code Injection.
+author: Nikita Nazarov, oscd.community
+date: 2020/10/06
+description: Detecting Code injection with PowerShell in another process
+detection:
+  SELECTION_1:
+    EventID: 8
+  SELECTION_2:
+    SourceImage: '*\powershell.exe'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: eeb2e3dc-c1f4-40dd-9bd5-149ee465ad50
+level: high
+logsource:
+  category: create_remote_thread
+  definition: Note that you have to configure logging for CreateRemoteThread in Symson
+    config
+  product: windows
+references:
+- https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001

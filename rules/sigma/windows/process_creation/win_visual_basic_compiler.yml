@@ -1,0 +1,27 @@
+
+title: Visual Basic Command Line Compiler Usage
+author: Ensar Şamil, @sblmsrsn, @oscd_initiative
+date: 2020/10/07
+description: Detects successful code compilation via Visual Basic Command Line Compiler
+  that utilizes Windows Resource to Object Converter.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*\vbc.exe'
+  SELECTION_3:
+    Image: '*\cvtres.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Utilization of this tool should not be seen in enterprise environment
+id: 7b10f171-7f04-47c7-9fa2-5be43c76e535
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://lolbas-project.github.io/lolbas/Binaries/Vbc/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027.004

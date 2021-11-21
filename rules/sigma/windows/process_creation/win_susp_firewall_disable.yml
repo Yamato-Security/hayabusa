@@ -1,0 +1,29 @@
+
+title: Firewall Disabled via Netsh
+author: Fatih Sirin
+date: 2019/11/01
+description: Detects netsh commands that turns off the Windows firewall
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - netsh firewall set opmode mode=disable
+    - netsh advfirewall set * state off
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Legitimate administration
+id: 57c4bf16-227f-4394-8ec7-1b745ee061c3
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/08/30
+references:
+- https://www.winhelponline.com/blog/enable-and-disable-windows-firewall-quickly-using-command-line/
+- https://app.any.run/tasks/210244b9-0b6b-4a2c-83a3-04bd3175d017/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.004
+- attack.s0108

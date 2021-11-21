@@ -1,0 +1,28 @@
+
+title: F-Secure C3 Load by Rundll32
+author: Alfie Champion (ajpc500)
+date: 2021/06/02
+description: F-Secure C3 produces DLLs with a default exported StartNodeRelay function.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*rundll32.exe*'
+  SELECTION_3:
+    CommandLine: '*.dll*'
+  SELECTION_4:
+    CommandLine: '*StartNodeRelay*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Unknown
+id: b18c9d4c-fac9-4708-bd06-dd5bfacf200f
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/FSecureLABS/C3/blob/master/Src/NodeRelayDll/NodeRelayDll.cpp#L12
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218.011

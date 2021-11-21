@@ -1,0 +1,107 @@
+
+title: Executable Used by PlugX in Uncommon Location
+author: Florian Roth
+date: 2017/06/12
+description: Detects the execution of an executable that is typically used by PlugX
+  for DLL side loading started from an uncommon location
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    Image: '*\hcc.exe'
+  SELECTION_11:
+    Image: '*\HTML Help Workshop\\*'
+  SELECTION_12:
+    Image: '*\hkcmd.exe'
+  SELECTION_13:
+    Image:
+    - '*\System32\\*'
+    - '*\SysNative\\*'
+    - '*\SysWowo64\\*'
+  SELECTION_14:
+    Image: '*\Mc.exe'
+  SELECTION_15:
+    Image:
+    - '*\Microsoft Visual Studio*'
+    - '*\Microsoft SDK*'
+    - '*\Windows Kit*'
+  SELECTION_16:
+    Image: '*\MsMpEng.exe'
+  SELECTION_17:
+    Image:
+    - '*\Microsoft Security Client\\*'
+    - '*\Windows Defender\\*'
+    - '*\AntiMalware\\*'
+  SELECTION_18:
+    Image: '*\msseces.exe'
+  SELECTION_19:
+    Image:
+    - '*\Microsoft Security Center\\*'
+    - '*\Microsoft Security Client\\*'
+    - '*\Microsoft Security Essentials\\*'
+  SELECTION_2:
+    Image: '*\CamMute.exe'
+  SELECTION_20:
+    Image: '*\OInfoP11.exe'
+  SELECTION_21:
+    Image: '*\Common Files\Microsoft Shared\\*'
+  SELECTION_22:
+    Image: '*\OleView.exe'
+  SELECTION_23:
+    Image:
+    - '*\Microsoft Visual Studio*'
+    - '*\Microsoft SDK*'
+    - '*\Windows Kit*'
+    - '*\Windows Resource Kit\\*'
+  SELECTION_24:
+    Image: '*\rc.exe'
+  SELECTION_25:
+    Image:
+    - '*\Microsoft Visual Studio*'
+    - '*\Microsoft SDK*'
+    - '*\Windows Kit*'
+    - '*\Windows Resource Kit\\*'
+    - '*\Microsoft.NET\\*'
+  SELECTION_3:
+    Image:
+    - '*\Lenovo\Communication Utility\\*'
+    - '*\Lenovo\Communications Utility\\*'
+  SELECTION_4:
+    Image: '*\chrome_frame_helper.exe'
+  SELECTION_5:
+    Image: '*\Google\Chrome\application\\*'
+  SELECTION_6:
+    Image: '*\dvcemumanager.exe'
+  SELECTION_7:
+    Image: '*\Microsoft Device Emulator\\*'
+  SELECTION_8:
+    Image: '*\Gadget.exe'
+  SELECTION_9:
+    Image: '*\Windows Media Player\\*'
+  condition: (SELECTION_1 and ((((((((((((SELECTION_2 and  not (SELECTION_3)) or (SELECTION_4
+    and  not (SELECTION_5))) or (SELECTION_6 and  not (SELECTION_7))) or (SELECTION_8
+    and  not (SELECTION_9))) or (SELECTION_10 and  not (SELECTION_11))) or (SELECTION_12
+    and  not (SELECTION_13))) or (SELECTION_14 and  not (SELECTION_15))) or (SELECTION_16
+    and  not (SELECTION_17))) or (SELECTION_18 and  not (SELECTION_19))) or (SELECTION_20
+    and  not (SELECTION_21))) or (SELECTION_22 and  not (SELECTION_23))) or (SELECTION_24
+    and  not (SELECTION_25))))
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: aeab5ec5-be14-471a-80e8-e344418305c2
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/11/28
+references:
+- http://www.hexacorn.com/blog/2016/03/10/beyond-good-ol-run-key-part-36/
+- https://countuponsecurity.com/2017/06/07/threat-hunting-in-the-enterprise-with-appcompatprocessor/
+status: experimental
+tags:
+- attack.s0013
+- attack.defense_evasion
+- attack.t1073
+- attack.t1574.002

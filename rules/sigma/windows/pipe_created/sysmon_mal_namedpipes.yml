@@ -1,0 +1,49 @@
+
+title: Malicious Named Pipe
+author: Florian Roth, blueteam0ps
+date: 2017/11/06
+description: Detects the creation of a named pipe used by known APT malware
+detection:
+  SELECTION_1:
+    EventID: 17
+  SELECTION_2:
+    EventID: 18
+  SELECTION_3:
+    PipeName:
+    - \isapi_http
+    - \isapi_dg
+    - \isapi_dg2
+    - \sdlrpc
+    - \ahexec
+    - \winsession
+    - \lsassw
+    - \46a676ab7f179e511e30dd2dc41bd388
+    - \9f81f59bc58452127884ce513865ed20
+    - \e710f28d59aa529d6792ca6ff0ca1b34
+    - \rpchlp_3
+    - \NamePipe_MoreWindows
+    - \pcheap_reuse
+    - \gruntsvc
+    - \583da945-62af-10e8-4902-a8f205c72b2e
+    - \bizkaz
+    - \svcctl
+    - \Posh*
+    - \jaccdpqnvbrrxlaf
+    - \csexecsvc
+    - \6e7645c4-32c5-4fe3-aabf-e94c2f4370e7
+  condition: ((SELECTION_1 or SELECTION_2) and SELECTION_3)
+falsepositives:
+- Unknown
+id: fe3ac066-98bb-432a-b1e7-a5229cb39d4a
+level: critical
+logsource:
+  category: pipe_created
+  definition: Note that you have to configure logging for PipeEvents in Sysmon config
+  product: windows
+references:
+- Various sources
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1055

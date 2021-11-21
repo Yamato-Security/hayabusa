@@ -341,6 +341,7 @@ pub fn judge_timeframe(
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::detection::EvtxRecordInfo;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use std::collections::HashMap;
@@ -666,7 +667,12 @@ mod tests {
         for record in target {
             match serde_json::from_str(record) {
                 Ok(rec) => {
-                    let _result = rule_node.select(&"testpath".to_string(), &rec);
+                    let recinfo = EvtxRecordInfo {
+                        evtx_filepath: "testpath".to_owned(),
+                        record: rec,
+                        data_string: String::default(),
+                    };
+                    let _result = rule_node.select(&"testpath".to_string(), &recinfo);
                 }
                 Err(_rec) => {
                     assert!(false, "failed to parse json record.");
@@ -754,7 +760,12 @@ mod tests {
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
-                    let result = &rule_node.select(&"testpath".to_owned(), &record);
+                    let recinfo = EvtxRecordInfo {
+                        evtx_filepath: "testpath".to_owned(),
+                        record: record,
+                        data_string: String::default(),
+                    };
+                    let result = &rule_node.select(&"testpath".to_owned(), &recinfo);
                     assert_eq!(result, &true);
                 }
                 Err(_rec) => {

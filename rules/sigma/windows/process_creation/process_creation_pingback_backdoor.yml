@@ -1,0 +1,36 @@
+
+title: Pingback Backdoor
+author: Bhabesh Raj
+date: 2021/05/05
+description: Detects the use of Pingback backdoor that creates ICMP tunnel for C2
+  as described in the trustwave report
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*updata.exe'
+  SELECTION_3:
+    CommandLine: '*config*'
+  SELECTION_4:
+    CommandLine: '*msdtc*'
+  SELECTION_5:
+    CommandLine: '*start*'
+  SELECTION_6:
+    CommandLine: '*auto*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)
+falsepositives:
+- Very unlikely
+id: b2400ffb-7680-47c0-b08a-098a7de7e7a9
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/09/09
+references:
+- https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/backdoor-at-the-end-of-the-icmp-tunnel
+- https://app.any.run/tasks/4a54c651-b70b-4b72-84d7-f34d301d6406
+status: experimental
+tags:
+- attack.persistence
+- attack.t1574.001

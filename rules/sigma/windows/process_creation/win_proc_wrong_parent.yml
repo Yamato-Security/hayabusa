@@ -1,0 +1,54 @@
+
+title: Windows Processes Suspicious Parent Directory
+author: vburov
+date: 2019/02/23
+description: Detect suspicious parent processes of well-known Windows processes
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\svchost.exe'
+    - '*\taskhost.exe'
+    - '*\lsm.exe'
+    - '*\lsass.exe'
+    - '*\services.exe'
+    - '*\lsaiso.exe'
+    - '*\csrss.exe'
+    - '*\wininit.exe'
+    - '*\winlogon.exe'
+  SELECTION_3:
+    ParentImage: '*\SavService.exe'
+  SELECTION_4:
+    ParentImage:
+    - '*\System32\\*'
+    - '*\SysWOW64\\*'
+  SELECTION_5:
+    ParentImage:
+    - '*\Windows Defender\\*'
+    - '*\Microsoft Security Client\\*'
+  SELECTION_6:
+    ParentImage: '*\MsMpEng.exe'
+  SELECTION_7:
+    ParentImage|re: ^$
+  condition: (SELECTION_1 and ((SELECTION_2 and  not (SELECTION_3 or SELECTION_4))
+    and  not (SELECTION_5 and SELECTION_6)) and  not (SELECTION_7))
+falsepositives:
+- Some security products seem to spawn these
+id: 96036718-71cc-4027-a538-d1587e0006a7
+level: low
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/11/28
+references:
+- https://securitybytes.io/blue-team-fundamentals-part-two-windows-processes-759fe15965e2
+- https://www.carbonblack.com/2014/06/10/screenshot-demo-hunt-evil-faster-than-ever-with-carbon-black/
+- https://www.13cubed.com/downloads/windows_process_genealogy_v2.pdf
+- https://attack.mitre.org/techniques/T1036/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.003
+- attack.t1036.005

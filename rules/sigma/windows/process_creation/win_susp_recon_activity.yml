@@ -1,0 +1,40 @@
+
+title: Suspicious Reconnaissance Activity
+analysis:
+  recommendation: Check if the user that executed the commands is suspicious (e.g.
+    service accounts, LOCAL_SYSTEM)
+author: Florian Roth, omkar72
+date: 2019/01/16
+description: Detects suspicious command line activity on Windows systems
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - net group "domain admins" /dom
+    - net localgroup administrators
+    - net group "enterprise admins" /dom
+    - net accounts /dom
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Inventory tool runs
+- Penetration tests
+- Administrative activity
+fields:
+- CommandLine
+- ParentCommandLine
+id: d95de845-b83c-4a9a-8a6a-4fc802ebf6c0
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/08/09
+references:
+- https://redcanary.com/blog/how-one-hospital-thwarted-a-ryuk-ransomware-outbreak/
+- https://thedfirreport.com/2020/10/18/ryuk-in-5-hours/
+status: experimental
+tags:
+- attack.discovery
+- attack.t1087.001
+- attack.t1087.002
+- attack.t1087

@@ -1,0 +1,46 @@
+
+title: Wmiprvse Spawning Process
+author: Roberto Rodriguez @Cyb3rWard0g
+date: 2019/08/15
+description: Detects wmiprvse spawning processes
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*\WmiPrvSe.exe'
+  SELECTION_3:
+    LogonId:
+    - '0x3e7'
+    - 'null'
+  SELECTION_4:
+    SubjectLogonId:
+    - '0x3e7'
+    - 'null'
+  SELECTION_5:
+    User:
+    - NT AUTHORITY\SYSTEM*
+    - AUTORITE NT\Sys*
+  SELECTION_6:
+    Image:
+    - '*\WmiPrvSE.exe'
+    - '*\WerFault.exe'
+  SELECTION_7:
+    LogonId|re: ^$
+  SELECTION_8:
+    SubjectLogonId|re: ^$
+  condition: (SELECTION_1 and ((SELECTION_2 and  not (SELECTION_3 or SELECTION_4 or
+    SELECTION_5 or SELECTION_6)) and  not (SELECTION_7)) and  not (SELECTION_8))
+falsepositives:
+- Unknown
+id: d21374ff-f574-44a7-9998-4a8c8bf33d7d
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/08/26
+references:
+- https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190810201010.html
+status: experimental
+tags:
+- attack.execution
+- attack.t1047

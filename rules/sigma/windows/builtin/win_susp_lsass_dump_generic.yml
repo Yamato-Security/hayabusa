@@ -1,0 +1,81 @@
+
+title: Generic Password Dumper Activity on LSASS
+author: Roberto Rodriguez, Teymur Kheirkhabarov, Dimitrios Slamaris, Mark Russinovich,
+  Aleksey Potapov, oscd.community (update)
+date: 2019/11/01
+description: Detects process handle on LSASS process with certain access mask
+detection:
+  SELECTION_1:
+    ObjectName: '*\lsass.exe'
+  SELECTION_2:
+    EventID: 4656
+  SELECTION_3:
+    AccessMask:
+    - '*0x40*'
+    - '*0x1400*'
+    - '*0x1000*'
+    - '*0x100000*'
+    - '*0x1410*'
+    - '*0x1010*'
+    - '*0x1438*'
+    - '*0x143a*'
+    - '*0x1418*'
+    - '*0x1f0fff*'
+    - '*0x1f1fff*'
+    - '*0x1f2fff*'
+    - '*0x1f3fff*'
+  SELECTION_4:
+    EventID: 4663
+  SELECTION_5:
+    AccessList:
+    - '*4484*'
+    - '*4416*'
+  SELECTION_6:
+    ProcessName:
+    - '*\wmiprvse.exe'
+    - '*\taskmgr.exe'
+    - '*\procexp64.exe'
+    - '*\procexp.exe'
+    - '*\lsm.exe'
+    - '*\csrss.exe'
+    - '*\wininit.exe'
+    - '*\vmtoolsd.exe'
+    - '*\minionhost.exe'
+    - '*\VsTskMgr.exe'
+    - '*\thor64.exe'
+  SELECTION_7:
+    ProcessName:
+    - C:\Windows\System32\\*
+    - C:\Windows\SysWow64\\*
+    - C:\Windows\SysNative\\*
+    - C:\Program Files\\*
+    - C:\Windows\Temp\asgard2-agent\\*
+  SELECTION_8:
+    ProcessName:
+    - C:\Program Files*
+  condition: (((SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and
+    SELECTION_5))) and  not (SELECTION_6 and SELECTION_7)) and  not (SELECTION_8))
+falsepositives:
+- Legitimate software accessing LSASS process for legitimate reason; update the whitelist
+  with it
+fields:
+- ComputerName
+- SubjectDomainName
+- SubjectUserName
+- ProcessName
+- ProcessID
+id: 4a1b6da0-d94f-4fc3-98fc-2d9cb9e5ee76
+level: high
+logsource:
+  product: windows
+  service: security
+modified: 2021/04/19
+references:
+- https://cyberwardog.blogspot.com/2017/03/chronicles-of-threat-hunter-hunting-for_22.html
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003
+- car.2019-04-004
+- attack.t1003.001

@@ -1,0 +1,36 @@
+
+title: Outlook C2 Registry Key
+author: '@ScoubiMtl'
+date: 2021/04/05
+description: Detects the modification of Outlook Security Setting to allow unprompted
+  execution. Goes with win_outlook_c2_macro_creation.yml and is particularly interesting
+  if both events occur near to each other.
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject: HKCU\Software\Microsoft\Office\16.0\Outlook\Security\Level
+  SELECTION_5:
+    Details: '*0x00000001*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Unlikely
+id: e3b50fa5-3c3f-444e-937b-0a99d33731cd
+level: medium
+logsource:
+  category: registry_event
+  product: windows
+modified: 2021/09/13
+references:
+- https://www.mdsec.co.uk/2020/11/a-fresh-outlook-on-mail-based-persistence/
+status: experimental
+tags:
+- attack.persistence
+- attack.command_and_control
+- attack.t1137
+- attack.t1008
+- attack.t1546

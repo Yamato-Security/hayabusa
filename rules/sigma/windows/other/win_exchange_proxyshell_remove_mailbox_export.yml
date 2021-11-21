@@ -1,0 +1,27 @@
+
+title: Remove Exported Mailbox from Exchange Webserver
+author: Christian Burkard
+date: 2021/08/27
+description: Detects removal of an exported Exchange mailbox which could be to cover
+  tracks from ProxyShell exploit
+detection:
+  SELECTION_1:
+  - Remove-MailboxExportRequest
+  SELECTION_2:
+  - ' -Identity '
+  SELECTION_3:
+  - ' -Confirm "False"'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- unknown
+id: 09570ae5-889e-43ea-aac0-0e1221fb3d95
+level: high
+logsource:
+  product: windows
+  service: msexchange-management
+references:
+- https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/windows/http/exchange_proxyshell_rce.rb#L430
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1070
