@@ -1,4 +1,4 @@
-use crate::detections::utils;
+use crate::detections::{detection::EvtxRecordInfo, utils};
 use mopa::mopafy;
 use serde_json::Value;
 use std::{sync::Arc, vec};
@@ -10,7 +10,7 @@ use super::matchers;
 pub trait SelectionNode: mopa::Any {
     // 引数で指定されるイベントログのレコードが、条件に一致するかどうかを判定する
     // このトレイトを実装する構造体毎に適切な判定処理を書く必要がある。
-    fn select(&self, event_record: &Value) -> bool;
+    fn select(&self, event_record: &EvtxRecordInfo) -> bool;
 
     // 初期化処理を行う
     // 戻り値としてエラーを返却できるようになっているので、Ruleファイルが間違っていて、SelectionNodeを構成出来ない時はここでエラーを出す
@@ -43,7 +43,7 @@ impl AndSelectionNode {
 }
 
 impl SelectionNode for AndSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
         return self.child_nodes.iter().all(|child_node| {
             return child_node.select(event_record);
         });
@@ -119,7 +119,7 @@ impl OrSelectionNode {
 }
 
 impl SelectionNode for OrSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
         return self.child_nodes.iter().any(|child_node| {
             return child_node.select(event_record);
         });
@@ -193,7 +193,7 @@ impl NotSelectionNode {
 }
 
 impl SelectionNode for NotSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
         return !self.node.select(event_record);
     }
 
@@ -230,7 +230,7 @@ impl RefSelectionNode {
 }
 
 impl SelectionNode for RefSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
         return self.selection_node.select(event_record);
     }
 
@@ -278,8 +278,9 @@ impl LeafSelectionNode {
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
     fn get_event_value<'a>(&self, event_value: &'a Value) -> Option<&'a Value> {
+        // keyが指定されたいない場合は
         if self.key_list.is_empty() {
-            return Option::None;
+            return Option::Some(event_value);
         }
 
         return utils::get_event_value(&self.get_key(), event_value);
@@ -298,7 +299,7 @@ impl LeafSelectionNode {
 }
 
 impl SelectionNode for LeafSelectionNode {
-    fn select(&self, event_record: &Value) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
         if self.matcher.is_none() {
             return false;
         }
@@ -324,9 +325,9 @@ impl SelectionNode for LeafSelectionNode {
                 }
         */
         if self.get_key() == "EventData" {
-            let values = utils::get_event_value(&"Event.EventData.Data".to_string(), event_record);
+            let values = utils::get_event_value(&"Event.EventData.Data".to_string(), &event_record.record);
             if values.is_none() {
-                return self.matcher.as_ref().unwrap().is_match(Option::None);
+                return self.matcher.as_ref().unwrap().is_match(Option::None, event_record);
             }
 
             // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
@@ -337,7 +338,7 @@ impl SelectionNode for LeafSelectionNode {
                     .matcher
                     .as_ref()
                     .unwrap()
-                    .is_match(Option::Some(eventdata_data));
+                    .is_match(Option::Some(eventdata_data), event_record);
             }
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
@@ -350,15 +351,15 @@ impl SelectionNode for LeafSelectionNode {
                             .matcher
                             .as_ref()
                             .unwrap()
-                            .is_match(Option::Some(ary_element));
+                            .is_match(Option::Some(ary_element), event_record);
                     });
             } else {
-                return self.matcher.as_ref().unwrap().is_match(Option::None);
+                return self.matcher.as_ref().unwrap().is_match(Option::None, event_record);
             }
         }
 
-        let event_value = self.get_event_value(event_record);
-        return self.matcher.as_ref().unwrap().is_match(event_value);
+        let event_value = self.get_event_value(&event_record.record);
+        return self.matcher.as_ref().unwrap().is_match(event_value, event_record);
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -401,7 +402,7 @@ impl SelectionNode for LeafSelectionNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::rule::tests::parse_rule_from_str;
+    use crate::detections::{detection::EvtxRecordInfo, rule::tests::parse_rule_from_str};
 
     #[test]
     fn test_detect_mutiple_regex_and() {
@@ -424,7 +425,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -455,7 +457,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -485,7 +488,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -515,7 +519,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), true);
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -545,7 +550,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &record), false);
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");

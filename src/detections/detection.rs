@@ -139,7 +139,7 @@ impl Detection {
         let records = &*records;
         let agg_condition = rule.has_agg_condition();
         for record_info in records {
-            let result = rule.select(&record_info.evtx_filepath, &record_info.record);
+            let result = rule.select(&record_info.evtx_filepath, &record_info);
             if !result {
                 continue;
             }
