@@ -2,6 +2,7 @@ extern crate csv;
 
 use crate::detections::rule::AggResult;
 use serde_json::Value;
+use std::collections::HashMap;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use crate::detections::print::AlertMessage;
@@ -51,6 +52,11 @@ impl Detection {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
         let result_readdir = rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level);
+        Detection::print_rule_load_info(
+            rulefile_loader.rulecounter,
+            rulefile_loader.parseerror_count,
+            rulefile_loader.ignore_count,
+        );
         if result_readdir.is_err() {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
@@ -200,6 +206,21 @@ impl Detection {
             rule.yaml["timeframe"].as_str().unwrap_or(""),
         ));
         return ret;
+    }
+    pub fn print_rule_load_info(
+        rc: HashMap<String, u128>,
+        parseerror_count: u128,
+        ignore_count: u128,
+    ) {
+        let mut total = parseerror_count + ignore_count;
+        rc.into_iter().for_each(|(key, value)| {
+            println!("{} Rules: {}", key, value);
+            total += value;
+        });
+        println!("Ignored Rule Count: {}", ignore_count);
+        println!("Rule Parse Errors Count: {}", parseerror_count);
+        println!("Total Detection Rules: {}", total);
+        println!("");
     }
 }
 

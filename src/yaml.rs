@@ -3,6 +3,7 @@ extern crate yaml_rust;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -13,11 +14,19 @@ use yaml_rust::YamlLoader;
 
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
+    pub rulecounter: HashMap<String, u128>,
+    pub ignore_count: u128,
+    pub parseerror_count: u128,
 }
 
 impl ParseYaml {
     pub fn new() -> ParseYaml {
-        ParseYaml { files: Vec::new() }
+        ParseYaml {
+            files: Vec::new(),
+            rulecounter: HashMap::new(),
+            ignore_count: 0,
+            parseerror_count: 0,
+        }
     }
 
     pub fn read_file(&self, path: PathBuf) -> Result<String, String> {
@@ -64,6 +73,7 @@ impl ParseYaml {
                         read_content.unwrap_err()
                     ),
                 )?;
+                self.parseerror_count += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -78,6 +88,7 @@ impl ParseYaml {
                         yaml_contents.unwrap_err()
                     ),
                 )?;
+                self.parseerror_count += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -94,8 +105,24 @@ impl ParseYaml {
             .filter_map(|(filepath, yaml_doc)| {
                 // ignoreフラグがONになっているルールは無視する。
                 if yaml_doc["ignore"].as_bool().unwrap_or(false) {
+                    self.ignore_count += 1;
                     return Option::None;
                 }
+                self.rulecounter.insert(
+                    yaml_doc["rulesection"]
+                        .as_str()
+                        .unwrap_or("other")
+                        .to_string(),
+                    self.rulecounter
+                        .get(
+                            &yaml_doc["rulesection"]
+                                .as_str()
+                                .unwrap_or("other")
+                                .to_string(),
+                        )
+                        .unwrap_or(&0)
+                        + 1,
+                );
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
                     println!("Loaded yml FilePath: {}", filepath);
                 }
@@ -115,7 +142,6 @@ impl ParseYaml {
             })
             .collect();
         self.files.extend(files);
-
         return io::Result::Ok(String::default());
     }
 }
