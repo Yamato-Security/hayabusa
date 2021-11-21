@@ -130,8 +130,7 @@ fn analysis_file(
 
             let data = record_result.unwrap().data;
             let data_string = data.to_string();
-            let record_info =
-                EvtxRecordInfo::new((&filepath_disp).to_string(), data, data_string);
+            let record_info = EvtxRecordInfo::new((&filepath_disp).to_string(), data, data_string);
             records_per_detect.push(record_info);
         }
         if records_per_detect.len() == 0 {
