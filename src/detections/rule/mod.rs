@@ -5,7 +5,6 @@ use chrono::{DateTime, Utc};
 
 use std::{collections::HashMap, fmt::Debug, sync::Arc, vec};
 
-use serde_json::Value;
 use yaml_rust::Yaml;
 
 mod matchers;
@@ -350,7 +349,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -379,7 +378,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -408,7 +407,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -490,7 +489,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -548,7 +547,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record , data_string: String::default()};
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -613,7 +612,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -656,7 +655,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -700,7 +699,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -763,7 +762,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -826,7 +825,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -871,7 +870,7 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
@@ -928,7 +927,7 @@ mod tests {
         let _init = rule_node.init();
         match serde_json::from_str(record_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                 let result = rule_node.select(&"testpath".to_string(), &recinfo);
                 assert_eq!(
                     rule_node.detection.unwrap().aggregation_condition.is_some(),

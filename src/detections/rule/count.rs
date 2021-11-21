@@ -675,7 +675,7 @@ mod tests {
         for record in target {
             match serde_json::from_str(record) {
                 Ok(rec) => {
-                    let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: rec };
+                    let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: rec, data_string: String::default() };
                     let _result = rule_node.select(&"testpath".to_string(), &recinfo);
                 }
                 Err(_rec) => {
@@ -764,7 +764,7 @@ mod tests {
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
-                    let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record };
+                    let recinfo = EvtxRecordInfo{ evtx_filepath: "testpath".to_owned(), record: record, data_string: String::default() };
                     let result = &rule_node.select(&"testpath".to_owned(), &recinfo);
                     assert_eq!(result, &true);
                 }
