@@ -1,46 +1,46 @@
+
 title: Active Directory User Backdoors
 author: '@neu5ron'
 date: 2017/04/13
 description: Detects scenarios where one can control another users or computers account
-    without having to use their credentials.
+  without having to use their credentials.
 detection:
-    SELECTION_1:
-        EventID: 4738
-    SELECTION_10:
-        AttributeLDAPDisplayName: msDS-AllowedToActOnBehalfOfOtherIdentity
-    SELECTION_2:
-        AllowedToDelegateTo: '-'
-    SELECTION_3:
-        AllowedToDelegateTo|re: ^$
-    SELECTION_4:
-        EventID: 5136
-    SELECTION_5:
-        AttributeLDAPDisplayName: msDS-AllowedToDelegateTo
-    SELECTION_6:
-        EventID: 5136
-    SELECTION_7:
-        ObjectClass: user
-    SELECTION_8:
-        AttributeLDAPDisplayName: servicePrincipalName
-    SELECTION_9:
-        EventID: 5136
-    condition: (((((SELECTION_1 and  not (SELECTION_2)) and  not (SELECTION_3)) or
-        (SELECTION_4 and SELECTION_5)) or (SELECTION_6 and SELECTION_7 and SELECTION_8))
-        or (SELECTION_9 and SELECTION_10))
+  SELECTION_1:
+    EventID: 4738
+  SELECTION_10:
+    AttributeLDAPDisplayName: msDS-AllowedToActOnBehalfOfOtherIdentity
+  SELECTION_2:
+    AllowedToDelegateTo: '-'
+  SELECTION_3:
+    AllowedToDelegateTo|re: ^$
+  SELECTION_4:
+    EventID: 5136
+  SELECTION_5:
+    AttributeLDAPDisplayName: msDS-AllowedToDelegateTo
+  SELECTION_6:
+    EventID: 5136
+  SELECTION_7:
+    ObjectClass: user
+  SELECTION_8:
+    AttributeLDAPDisplayName: servicePrincipalName
+  SELECTION_9:
+    EventID: 5136
+  condition: (((((SELECTION_1 and  not (SELECTION_2)) and  not (SELECTION_3)) or (SELECTION_4
+    and SELECTION_5)) or (SELECTION_6 and SELECTION_7 and SELECTION_8)) or (SELECTION_9
+    and SELECTION_10))
 falsepositives:
 - Unknown
 id: 300bac00-e041-4ee2-9c36-e262656a6ecc
 level: high
 logsource:
-    definition: 'Requirements: Audit Policy : Account Management > Audit User Account
-        Management, Group Policy : Computer Configuration\Windows Settings\Security
-        Settings\Advanced Audit Policy Configuration\Audit Policies\Account Management\Audit
-        User Account Management, DS Access > Audit Directory Service Changes, Group
-        Policy : Computer Configuration\Windows Settings\Security Settings\Advanced
-        Audit Policy Configuration\Audit Policies\DS Access\Audit Directory Service
-        Changes'
-    product: windows
-    service: security
+  definition: 'Requirements: Audit Policy : Account Management > Audit User Account
+    Management, Group Policy : Computer Configuration\Windows Settings\Security Settings\Advanced
+    Audit Policy Configuration\Audit Policies\Account Management\Audit User Account
+    Management, DS Access > Audit Directory Service Changes, Group Policy : Computer
+    Configuration\Windows Settings\Security Settings\Advanced Audit Policy Configuration\Audit
+    Policies\DS Access\Audit Directory Service Changes'
+  product: windows
+  service: security
 modified: 2020/08/23
 references:
 - https://msdn.microsoft.com/en-us/library/cc220234.aspx
@@ -49,6 +49,3 @@ references:
 tags:
 - attack.t1098
 - attack.persistence
-yml_filename: win_alert_ad_user_backdoors.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

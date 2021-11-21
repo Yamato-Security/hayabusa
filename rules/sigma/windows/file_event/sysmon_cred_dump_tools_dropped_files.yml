@@ -1,71 +1,48 @@
+
 title: Cred Dump Tools Dropped Files
 author: Teymur Kheirkhabarov, oscd.community
 date: 2019/11/01
 description: Files with well-known filenames (parts of credential dump software or
-    files produced by them) creation
+  files produced by them) creation
 detection:
-    SELECTION_1:
-        EventID: 11
-    SELECTION_10:
-        TargetFilename: '*\lsremora.dll'
-    SELECTION_11:
-        TargetFilename: '*\fgexec.exe'
-    SELECTION_12:
-        TargetFilename: '*\wceaux.dll'
-    SELECTION_13:
-        TargetFilename: '*\SAM.out'
-    SELECTION_14:
-        TargetFilename: '*\SECURITY.out'
-    SELECTION_15:
-        TargetFilename: '*\SYSTEM.out'
-    SELECTION_16:
-        TargetFilename: '*\NTDS.out'
-    SELECTION_17:
-        TargetFilename: '*\DumpExt.dll'
-    SELECTION_18:
-        TargetFilename: '*\DumpSvc.exe'
-    SELECTION_19:
-        TargetFilename: '*\cachedump64.exe'
-    SELECTION_2:
-        TargetFilename: '*\pwdump*'
-    SELECTION_20:
-        TargetFilename: '*\cachedump.exe'
-    SELECTION_21:
-        TargetFilename: '*\pstgdump.exe'
-    SELECTION_22:
-        TargetFilename: '*\servpw.exe'
-    SELECTION_23:
-        TargetFilename: '*\servpw64.exe'
-    SELECTION_24:
-        TargetFilename: '*\pwdump.exe'
-    SELECTION_25:
-        TargetFilename: '*\procdump64.exe'
-    SELECTION_3:
-        TargetFilename: '*\kirbi*'
-    SELECTION_4:
-        TargetFilename: '*\pwhashes*'
-    SELECTION_5:
-        TargetFilename: '*\wce_ccache*'
-    SELECTION_6:
-        TargetFilename: '*\wce_krbtkts*'
-    SELECTION_7:
-        TargetFilename: '*\fgdump-log*'
-    SELECTION_8:
-        TargetFilename: '*\test.pwd'
-    SELECTION_9:
-        TargetFilename: '*\lsremora64.dll'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7) and (SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
-        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
-        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25))
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename:
+    - '*\pwdump*'
+    - '*\kirbi*'
+    - '*\pwhashes*'
+    - '*\wce_ccache*'
+    - '*\wce_krbtkts*'
+    - '*\fgdump-log*'
+  SELECTION_3:
+    TargetFilename:
+    - '*\test.pwd'
+    - '*\lsremora64.dll'
+    - '*\lsremora.dll'
+    - '*\fgexec.exe'
+    - '*\wceaux.dll'
+    - '*\SAM.out'
+    - '*\SECURITY.out'
+    - '*\SYSTEM.out'
+    - '*\NTDS.out'
+    - '*\DumpExt.dll'
+    - '*\DumpSvc.exe'
+    - '*\cachedump64.exe'
+    - '*\cachedump.exe'
+    - '*\pstgdump.exe'
+    - '*\servpw.exe'
+    - '*\servpw64.exe'
+    - '*\pwdump.exe'
+    - '*\procdump64.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Legitimate Administrator using tool for password recovery
 id: 8fbf3271-1ef6-4e94-8210-03c2317947f6
 level: high
 logsource:
-    category: file_event
-    product: windows
+  category: file_event
+  product: windows
 modified: 2020/08/23
 references:
 - https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
@@ -78,6 +55,3 @@ tags:
 - attack.t1003.003
 - attack.t1003.004
 - attack.t1003.005
-yml_filename: sysmon_cred_dump_tools_dropped_files.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

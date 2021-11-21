@@ -1,27 +1,27 @@
+
 title: Possible DC Shadow
 author: Ilyas Ochkov, oscd.community, Chakib Gzenayi (@Chak092), Hosni Mribah
 date: 2019/10/25
 description: Detects DCShadow via create new SPN
 detection:
-    SELECTION_1:
-        EventID: 4742
-    SELECTION_2:
-        ServicePrincipalNames: '*GC/*'
-    SELECTION_3:
-        EventID: 5136
-    SELECTION_4:
-        AttributeLDAPDisplayName: servicePrincipalName
-    SELECTION_5:
-        AttributeValue: GC/*
-    condition: ((SELECTION_1 and SELECTION_2) or (SELECTION_3 and SELECTION_4 and
-        SELECTION_5))
+  SELECTION_1:
+    EventID: 4742
+  SELECTION_2:
+    ServicePrincipalNames: '*GC/*'
+  SELECTION_3:
+    EventID: 5136
+  SELECTION_4:
+    AttributeLDAPDisplayName: servicePrincipalName
+  SELECTION_5:
+    AttributeValue: GC/*
+  condition: ((SELECTION_1 and SELECTION_2) or (SELECTION_3 and SELECTION_4 and SELECTION_5))
 falsepositives:
 - Exclude known DCs
 id: 32e19d25-4aed-4860-a55a-be99cb0bf7ed
 level: high
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 modified: 2021/07/06
 references:
 - https://github.com/Neo23x0/sigma/blob/ec5bb710499caae6667c7f7311ca9e92c03b9039/rules/windows/builtin/win_dcsync.yml
@@ -32,6 +32,3 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1207
-yml_filename: win_possible_dc_shadow.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

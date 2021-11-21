@@ -1,20 +1,21 @@
+
 title: MavInject Process Injection
 author: Florian Roth
 date: 2018/12/12
 description: Detects process injection using the signed Windows tool Mavinject32.exe
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '* /INJECTRUNNING *'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '* /INJECTRUNNING *'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - unknown
 id: 17eb8e57-9983-420d-ad8a-2c4976c22eb8
 level: critical
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/09/01
 references:
 - https://twitter.com/gN3mes1s/status/941315826107510784
@@ -25,6 +26,3 @@ tags:
 - attack.t1055
 - attack.t1055.001
 - attack.t1218
-yml_filename: win_mavinject_proc_inj.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

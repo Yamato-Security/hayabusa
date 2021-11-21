@@ -1,38 +1,35 @@
+
 title: AWL Bypass with Winrm.vbs and Malicious WsmPty.xsl/WsmTxt.xsl
 author: Julia Fomina, oscd.community
 date: 2020/10/06
 description: Detects execution of attacker-controlled WsmPty.xsl or WsmTxt.xsl via
-    winrm.vbs and copied cscript.exe (can be renamed)
+  winrm.vbs and copied cscript.exe (can be renamed)
 detection:
-    SELECTION_1:
-        EventID: 11
-    SELECTION_2:
-        TargetFilename: '*WsmPty.xsl'
-    SELECTION_3:
-        TargetFilename: '*WsmTxt.xsl'
-    SELECTION_4:
-        TargetFilename: C:\Windows\System32\\*
-    SELECTION_5:
-        TargetFilename: C:\Windows\SysWOW64\\*
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and  not ((SELECTION_4
-        or SELECTION_5)))
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename:
+    - '*WsmPty.xsl'
+    - '*WsmTxt.xsl'
+  SELECTION_3:
+    TargetFilename:
+    - C:\Windows\System32\\*
+    - C:\Windows\SysWOW64\\*
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
 falsepositives:
 - Unlikely
 id: d353dac0-1b41-46c2-820c-d7d2561fc6ed
 level: medium
 logsource:
-    category: file_event
-    product: windows
+  category: file_event
+  product: windows
 modified: 2021/09/19
 references:
 - https://posts.specterops.io/application-whitelisting-bypass-and-arbitrary-unsigned-code-execution-technique-in-winrm-vbs-c8c24fb40404
 related:
--   id: 074e0ded-6ced-4ebd-8b4d-53f55908119
-    type: derived
+- id: 074e0ded-6ced-4ebd-8b4d-53f55908119
+  type: derived
 status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1216
-yml_filename: file_event_winrm_awl_bypass.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

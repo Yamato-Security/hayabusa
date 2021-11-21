@@ -1,46 +1,36 @@
+
 title: Created Files by Office Applications
 author: Vadim Khrykov (ThreatIntel), Cyb3rEng (Rule)
 date: 2021/08/23
 description: This rule will monitor executable and script file creation by office
-    applications. Please add more file extensions or magic bytes to the logic of your
-    choice.
+  applications. Please add more file extensions or magic bytes to the logic of your
+  choice.
 detection:
-    SELECTION_1:
-        Image: '*winword.exe'
-    SELECTION_10:
-        TargetFileName: '*.sys'
-    SELECTION_11:
-        TargetFileName: '*.bat'
-    SELECTION_12:
-        TargetFileName: '*.scr'
-    SELECTION_13:
-        TargetFileName: '*.proj'
-    SELECTION_2:
-        Image: '*excel.exe'
-    SELECTION_3:
-        Image: '*powerpnt.exe'
-    SELECTION_4:
-        TargetFileName: '*.exe'
-    SELECTION_5:
-        TargetFileName: '*.dll'
-    SELECTION_6:
-        TargetFileName: '*.ocx'
-    SELECTION_7:
-        TargetFileName: '*.com'
-    SELECTION_8:
-        TargetFileName: '*.ps1'
-    SELECTION_9:
-        TargetFileName: '*.vbs'
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13))
+  SELECTION_1:
+    Image:
+    - '*winword.exe'
+    - '*excel.exe'
+    - '*powerpnt.exe'
+  SELECTION_2:
+    TargetFileName:
+    - '*.exe'
+    - '*.dll'
+    - '*.ocx'
+    - '*.com'
+    - '*.ps1'
+    - '*.vbs'
+    - '*.sys'
+    - '*.bat'
+    - '*.scr'
+    - '*.proj'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Unknown
 id: c7a74c80-ba5a-486e-9974-ab9e682bc5e4
 level: high
 logsource:
-    category: file_event
-    product: Windows
+  category: file_event
+  product: Windows
 references:
 - https://thedfirreport.com/2021/03/29/sodinokibi-aka-revil-ransomware/
 - https://github.com/vadim-hunter/Detection-Ideas-Rules/blob/main/Threat%20Intelligence/The%20DFIR%20Report/20210329_Sodinokibi_(aka_REvil)_Ransomware.yaml
@@ -51,6 +41,3 @@ tags:
 - attack.t1218.010
 - attack.execution
 - attack.defense_evasion
-yml_filename: file_event_script_creation_by_office_using_file_ext.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

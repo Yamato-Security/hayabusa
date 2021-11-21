@@ -1,29 +1,27 @@
+
 title: SILENTTRINITY Stager Execution
 author: Aleksey Potapov, oscd.community
 date: 2019/10/22
 description: Detects SILENTTRINITY stager use
 detection:
-    SELECTION_1:
-        EventID: 7
-    SELECTION_2:
-        Description: '*st2stager*'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    Description: '*st2stager*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - unknown
 id: 75c505b1-711d-4f68-a357-8c3fe37dbf2d
 level: high
 logsource:
-    category: image_load
-    product: windows
+  category: image_load
+  product: windows
 modified: 2021/10/04
 references:
 - https://github.com/byt3bl33d3r/SILENTTRINITY
 related:
--   id: 03552375-cc2c-4883-bbe4-7958d5a980be
-    type: derived
+- id: 03552375-cc2c-4883-bbe4-7958d5a980be
+  type: derived
 status: experimental
 tags:
 - attack.command_and_control
-yml_filename: image_load_silenttrinity_stage_use.yml
-yml_path: /home/itib/git/sigma/rules/windows/image_load
-

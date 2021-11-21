@@ -1,25 +1,26 @@
+
 title: Modification of Boot Configuration
 author: E.M. Anhaus (originally from Atomic Blue Detections, Endgame), oscd.community
 date: 2019/10/24
 description: Identifies use of the bcdedit command to delete boot configuration data.
-    This tactic is sometimes used as by malware or an attacker as a destructive technique.
+  This tactic is sometimes used as by malware or an attacker as a destructive technique.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\bcdedit.exe'
-    SELECTION_3:
-        CommandLine: '*set*'
-    SELECTION_4:
-        CommandLine: '*bootstatuspolicy*'
-    SELECTION_5:
-        CommandLine: '*ignoreallfailures*'
-    SELECTION_6:
-        CommandLine: '*recoveryenabled*'
-    SELECTION_7:
-        CommandLine: '*no*'
-    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and ((SELECTION_4 and
-        SELECTION_5) or (SELECTION_6 and SELECTION_7)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\bcdedit.exe'
+  SELECTION_3:
+    CommandLine: '*set*'
+  SELECTION_4:
+    CommandLine: '*bootstatuspolicy*'
+  SELECTION_5:
+    CommandLine: '*ignoreallfailures*'
+  SELECTION_6:
+    CommandLine: '*recoveryenabled*'
+  SELECTION_7:
+    CommandLine: '*no*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and ((SELECTION_4 and
+    SELECTION_5) or (SELECTION_6 and SELECTION_7)))
 falsepositives:
 - Unlikely
 fields:
@@ -29,8 +30,8 @@ fields:
 id: 1444443e-6757-43e4-9ea4-c8fc705f79a2
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2019/11/11
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1490/T1490.md
@@ -39,6 +40,3 @@ status: experimental
 tags:
 - attack.impact
 - attack.t1490
-yml_filename: win_bootconf_mod.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

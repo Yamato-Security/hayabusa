@@ -1,19 +1,20 @@
+
 title: Indirect Command Execution
 author: E.M. Anhaus (originally from Atomic Blue Detections, Endgame), oscd.community
 date: 2019/10/24
 description: Detect indirect command execution via Program Compatibility Assistant
-    (pcalua.exe or forfiles.exe).
+  (pcalua.exe or forfiles.exe).
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        ParentImage: '*\pcalua.exe'
-    SELECTION_3:
-        ParentImage: '*\forfiles.exe'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage:
+    - '*\pcalua.exe'
+    - '*\forfiles.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Need to use extra processing with 'unique_count' / 'filter' to focus on outliers
-    as opposed to commonly seen artifacts.
+  as opposed to commonly seen artifacts.
 - Legitimate usage of scripts.
 fields:
 - ComputerName
@@ -23,8 +24,8 @@ fields:
 id: fa47597e-90e9-41cd-ab72-c3b74cfb0d02
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2019/11/11
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1202/T1202.md
@@ -33,6 +34,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1202
-yml_filename: win_indirect_cmd.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

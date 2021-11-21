@@ -1,35 +1,33 @@
+
 title: WSF/JSE/JS/VBA/VBE File Execution
 author: Michael Haag
 date: 2019/01/16
 description: Detects suspicious file execution by wscript and cscript
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\wscript.exe'
-    SELECTION_3:
-        Image: '*\cscript.exe'
-    SELECTION_4:
-        CommandLine: '*.jse*'
-    SELECTION_5:
-        CommandLine: '*.vbe*'
-    SELECTION_6:
-        CommandLine: '*.js*'
-    SELECTION_7:
-        CommandLine: '*.vba*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\wscript.exe'
+    - '*\cscript.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*.jse*'
+    - '*.vbe*'
+    - '*.js*'
+    - '*.vba*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Will need to be tuned. I recommend adding the user profile path in CommandLine if
-    it is getting too noisy.
+  it is getting too noisy.
 fields:
 - CommandLine
 - ParentCommandLine
 id: 1e33157c-53b1-41ad-bbcc-780b80b58288
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/08/28
 status: experimental
 tags:
@@ -37,6 +35,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.007
 - attack.t1064
-yml_filename: win_susp_script_execution.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

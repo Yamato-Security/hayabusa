@@ -1,40 +1,35 @@
+
 title: Credential Dumping Tools Service Execution
 author: Florian Roth, Teymur Kheirkhabarov, Daniil Yugoslavskiy, oscd.community
 date: 2017/03/05
 description: Detects well-known credential dumping tools execution via service execution
-    events
+  events
 detection:
-    SELECTION_1:
-        EventID: 6
-    SELECTION_2:
-        ImagePath: '*fgexec*'
-    SELECTION_3:
-        ImagePath: '*dumpsvc*'
-    SELECTION_4:
-        ImagePath: '*cachedump*'
-    SELECTION_5:
-        ImagePath: '*mimidrv*'
-    SELECTION_6:
-        ImagePath: '*gsecdump*'
-    SELECTION_7:
-        ImagePath: '*servpw*'
-    SELECTION_8:
-        ImagePath: '*pwdump*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8))
+  SELECTION_1:
+    EventID: 6
+  SELECTION_2:
+    ImagePath:
+    - '*fgexec*'
+    - '*dumpsvc*'
+    - '*cachedump*'
+    - '*mimidrv*'
+    - '*gsecdump*'
+    - '*servpw*'
+    - '*pwdump*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Legitimate Administrator using credential dumping tool for password recovery
 id: df5ff0a5-f83f-4a5b-bba1-3e6a3f6f6ea2
 level: critical
 logsource:
-    category: driver_load
-    product: windows
+  category: driver_load
+  product: windows
 modified: 2021/10/14
 references:
 - https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
 related:
--   id: 4976aa50-8f41-45c6-8b15-ab3fc10e79ed
-    type: derived
+- id: 4976aa50-8f41-45c6-8b15-ab3fc10e79ed
+  type: derived
 tags:
 - attack.credential_access
 - attack.execution
@@ -47,6 +42,3 @@ tags:
 - attack.t1035
 - attack.t1569.002
 - attack.s0005
-yml_filename: driver_load_mal_creddumper.yml
-yml_path: /home/itib/git/sigma/rules/windows/driver_load
-

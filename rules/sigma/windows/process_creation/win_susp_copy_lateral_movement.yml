@@ -1,36 +1,34 @@
+
 title: Copy from Admin Share
 author: Florian Roth, oscd.community, Teymur Kheirkhabarov @HeirhabarovT, Zach Stanford
-    @svch0st
+  @svch0st
 date: 2019/12/30
 description: Detects a suspicious copy command to or from an Admin share
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '* cp *'
-    SELECTION_11:
-        CommandLine: '*\\\\\*'
-    SELECTION_12:
-        CommandLine: '*$*'
-    SELECTION_2:
-        Image: '*\robocopy.exe'
-    SELECTION_3:
-        Image: '*\xcopy.exe'
-    SELECTION_4:
-        Image: '*\cmd.exe'
-    SELECTION_5:
-        CommandLine: '*copy*'
-    SELECTION_6:
-        Image: '*\powershell*'
-    SELECTION_7:
-        CommandLine: '*copy-item*'
-    SELECTION_8:
-        CommandLine: '*copy*'
-    SELECTION_9:
-        CommandLine: '*cpi *'
-    condition: (SELECTION_1 and (((SELECTION_2 or SELECTION_3) or (SELECTION_4 and
-        SELECTION_5)) or (SELECTION_6 and (SELECTION_7 or SELECTION_8 or SELECTION_9
-        or SELECTION_10))) and (SELECTION_11 and SELECTION_12))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\robocopy.exe'
+    - '*\xcopy.exe'
+  SELECTION_3:
+    Image: '*\cmd.exe'
+  SELECTION_4:
+    CommandLine: '*copy*'
+  SELECTION_5:
+    Image: '*\powershell*'
+  SELECTION_6:
+    CommandLine:
+    - '*copy-item*'
+    - '*copy*'
+    - '*cpi *'
+    - '* cp *'
+  SELECTION_7:
+    CommandLine: '*\\\\\*'
+  SELECTION_8:
+    CommandLine: '*$*'
+  condition: (SELECTION_1 and ((SELECTION_2 or (SELECTION_3 and SELECTION_4)) or (SELECTION_5
+    and SELECTION_6)) and (SELECTION_7 and SELECTION_8))
 falsepositives:
 - Administrative scripts
 fields:
@@ -39,8 +37,8 @@ fields:
 id: 855bc8b5-2ae8-402e-a9ed-b889e6df1900
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/11/28
 references:
 - https://twitter.com/SBousseaden/status/1211636381086339073
@@ -54,6 +52,3 @@ tags:
 - attack.t1105
 - attack.t1048
 - attack.t1021.002
-yml_filename: win_susp_copy_lateral_movement.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

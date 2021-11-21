@@ -1,34 +1,35 @@
+
 title: Microsoft Office Add-In Loading
 author: NVISO
 date: 2020/05/11
 description: Detects add-ins that load when Microsoft Word or Excel starts (.wll/.xll
-    are simply .dll fit for Word or Excel).
+  are simply .dll fit for Word or Excel).
 detection:
-    SELECTION_1:
-        EventID: 11
-    SELECTION_2:
-        TargetFilename: '*\Microsoft\Word\Startup\\*'
-    SELECTION_3:
-        TargetFilename: '*.wll'
-    SELECTION_4:
-        TargetFilename: '*\Microsoft\Excel\Startup\\*'
-    SELECTION_5:
-        TargetFilename: '*.xll'
-    SELECTION_6:
-        TargetFilename: '*\Microsoft\Addins\\*'
-    SELECTION_7:
-        TargetFilename: '*.xlam'
-    SELECTION_8:
-        TargetFilename: '*.xla'
-    condition: (SELECTION_1 and (((SELECTION_2 and SELECTION_3) or (SELECTION_4 and
-        SELECTION_5)) or (SELECTION_6 and (SELECTION_7 or SELECTION_8))))
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: '*\Microsoft\Word\Startup\\*'
+  SELECTION_3:
+    TargetFilename: '*.wll'
+  SELECTION_4:
+    TargetFilename: '*\Microsoft\Excel\Startup\\*'
+  SELECTION_5:
+    TargetFilename: '*.xll'
+  SELECTION_6:
+    TargetFilename: '*\Microsoft\Addins\\*'
+  SELECTION_7:
+    TargetFilename:
+    - '*.xlam'
+    - '*.xla'
+  condition: (SELECTION_1 and (((SELECTION_2 and SELECTION_3) or (SELECTION_4 and
+    SELECTION_5)) or (SELECTION_6 and SELECTION_7)))
 falsepositives:
 - Legitimate add-ins
 id: 8e1cb247-6cf6-42fa-b440-3f27d57e9936
 level: high
 logsource:
-    category: file_event
-    product: windows
+  category: file_event
+  product: windows
 modified: 2020/08/23
 references:
 - Internal Research
@@ -37,6 +38,3 @@ tags:
 - attack.persistence
 - attack.t1137
 - attack.t1137.006
-yml_filename: sysmon_office_persistence.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

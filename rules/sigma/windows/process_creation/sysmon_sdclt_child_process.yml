@@ -1,21 +1,22 @@
+
 title: Sdclt Child Processes
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/05/02
 description: A General detection for sdclt spawning new processes. This could be an
-    indicator of sdclt being used for bypass UAC techniques.
+  indicator of sdclt being used for bypass UAC techniques.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        ParentImage: '*\sdclt.exe'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*\sdclt.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - unknown
 id: da2738f2-fadb-4394-afa7-0a0674885afa
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://github.com/OTRF/detection-hackathon-apt29/issues/6
 - https://threathunterplaybook.com/evals/apt29/detections/3.B.2_C36B49B5-DF58-4A34-9FE9-56189B9DEFEA.html
@@ -23,6 +24,3 @@ status: experimental
 tags:
 - attack.privilege_escalation
 - attack.t1548.002
-yml_filename: sysmon_sdclt_child_process.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

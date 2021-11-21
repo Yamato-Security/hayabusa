@@ -1,39 +1,37 @@
+
 title: Credential Dumping by Pypykatz
 author: Bhabesh Raj
 date: 2021/08/03
 description: Detects LSASS process access by pypykatz for credential dumping.
 detection:
-    SELECTION_1:
-        EventID: 10
-    SELECTION_2:
-        TargetImage: '*\lsass.exe'
-    SELECTION_3:
-        CallTrace: '*C:\Windows\SYSTEM32\ntdll.dll+*'
-    SELECTION_4:
-        CallTrace: '*C:\Windows\System32\KERNELBASE.dll+*'
-    SELECTION_5:
-        CallTrace: '*libffi-7.dll*'
-    SELECTION_6:
-        CallTrace: '*_ctypes.pyd+*'
-    SELECTION_7:
-        CallTrace: '*python3*.dll+*'
-    SELECTION_8:
-        GrantedAccess: '0x1FFFFF'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
-        and SELECTION_6 and SELECTION_7 and SELECTION_8)
+  SELECTION_1:
+    EventID: 10
+  SELECTION_2:
+    TargetImage: '*\lsass.exe'
+  SELECTION_3:
+    CallTrace: '*C:\Windows\SYSTEM32\ntdll.dll+*'
+  SELECTION_4:
+    CallTrace: '*C:\Windows\System32\KERNELBASE.dll+*'
+  SELECTION_5:
+    CallTrace: '*libffi-7.dll*'
+  SELECTION_6:
+    CallTrace: '*_ctypes.pyd+*'
+  SELECTION_7:
+    CallTrace: '*python3*.dll+*'
+  SELECTION_8:
+    GrantedAccess: '0x1FFFFF'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7 and SELECTION_8)
 falsepositives:
 - Unknown
 id: 7186e989-4ed7-4f4e-a656-4674b9e3e48b
 level: critical
 logsource:
-    category: process_access
-    product: windows
+  category: process_access
+  product: windows
 references:
 - https://github.com/skelsec/pypykatz
 status: experimental
 tags:
 - attack.credential_access
 - attack.t1003.001
-yml_filename: sysmon_pypykatz_cred_dump_lsass_access.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_access
-

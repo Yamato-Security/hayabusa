@@ -1,37 +1,32 @@
+
 title: Windows Management Instrumentation DLL Loaded Via Microsoft Word
 author: Michael R. (@nahamike01)
 date: 2019/12/26
 description: Detects DLL's Loaded Via Word Containing VBA Macros Executing WMI Commands
 detection:
-    SELECTION_1:
-        EventID: 7
-    SELECTION_10:
-        ImageLoaded: '*\wbemsvc.dll'
-    SELECTION_2:
-        Image: '*\winword.exe'
-    SELECTION_3:
-        Image: '*\powerpnt.exe'
-    SELECTION_4:
-        Image: '*\excel.exe'
-    SELECTION_5:
-        Image: '*\outlook.exe'
-    SELECTION_6:
-        ImageLoaded: '*\wmiutils.dll'
-    SELECTION_7:
-        ImageLoaded: '*\wbemcomn.dll'
-    SELECTION_8:
-        ImageLoaded: '*\wbemprox.dll'
-    SELECTION_9:
-        ImageLoaded: '*\wbemdisp.dll'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
-        and (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10))
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    Image:
+    - '*\winword.exe'
+    - '*\powerpnt.exe'
+    - '*\excel.exe'
+    - '*\outlook.exe'
+  SELECTION_3:
+    ImageLoaded:
+    - '*\wmiutils.dll'
+    - '*\wbemcomn.dll'
+    - '*\wbemprox.dll'
+    - '*\wbemdisp.dll'
+    - '*\wbemsvc.dll'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Possible. Requires further testing.
 id: a457f232-7df9-491d-898f-b5aabd2cbe2f
 level: high
 logsource:
-    category: image_load
-    product: windows
+  category: image_load
+  product: windows
 references:
 - https://medium.com/threatpunter/detecting-adversary-tradecraft-with-image-load-event-logging-and-eql-8de93338c16
 - https://www.carbonblack.com/2019/04/24/cb-tau-threat-intelligence-notification-emotet-utilizing-wmi-to-launch-powershell-encoded-code/
@@ -40,6 +35,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1047
-yml_filename: sysmon_susp_winword_wmidll_load.yml
-yml_path: /home/itib/git/sigma/rules/windows/image_load
-

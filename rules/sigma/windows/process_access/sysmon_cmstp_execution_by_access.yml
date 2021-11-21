@@ -1,14 +1,15 @@
+
 title: CMSTP Execution Process Access
 author: Nik Seetharaman
 date: 2018/07/16
 description: Detects various indicators of Microsoft Connection Manager Profile Installer
-    execution
+  execution
 detection:
-    SELECTION_1:
-        EventID: 10
-    SELECTION_2:
-        CallTrace: '*cmlua.dll*'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 10
+  SELECTION_2:
+    CallTrace: '*cmlua.dll*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Legitimate CMSTP use (unlikely in modern enterprise environments)
 fields:
@@ -18,8 +19,8 @@ fields:
 id: 3b4b232a-af90-427c-a22f-30b0c0837b95
 level: high
 logsource:
-    category: process_access
-    product: windows
+  category: process_access
+  product: windows
 modified: 2021/06/27
 references:
 - https://web.archive.org/web/20190720093911/http://www.endurant.io/cmstp/detecting-cmstp-enabled-code-execution-and-uac-bypass-with-sysmon/
@@ -34,6 +35,3 @@ tags:
 - attack.g0069
 - attack.g0080
 - car.2019-04-001
-yml_filename: sysmon_cmstp_execution_by_access.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_access
-

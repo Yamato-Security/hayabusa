@@ -1,30 +1,29 @@
+
 title: Mustang Panda Dropper
 author: Florian Roth, oscd.community
 date: 2019/10/30
 description: Detects specific process parameters as used by Mustang Panda droppers
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        Image: '*Temp\winwsh.exe'
-    SELECTION_2:
-        CommandLine: '*Temp\wtask.exe /create*'
-    SELECTION_3:
-        CommandLine: '*%windir:~-3,1%%PUBLIC:~-9,1%*'
-    SELECTION_4:
-        CommandLine: '*/tn "Security Script *'
-    SELECTION_5:
-        CommandLine: '*%windir:~-1,1%*'
-    SELECTION_6:
-        CommandLine: '*/E:vbscript*'
-    SELECTION_7:
-        CommandLine: '*C:\Users\\*'
-    SELECTION_8:
-        CommandLine: '*.txt*'
-    SELECTION_9:
-        CommandLine: '*/F*'
-    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
-        or (SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9) or SELECTION_10))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*Temp\wtask.exe /create*'
+    - '*%windir:~-3,1%%PUBLIC:~-9,1%*'
+    - '*/tn "Security Script *'
+    - '*%windir:~-1,1%*'
+  SELECTION_3:
+    CommandLine: '*/E:vbscript*'
+  SELECTION_4:
+    CommandLine: '*C:\Users\\*'
+  SELECTION_5:
+    CommandLine: '*.txt*'
+  SELECTION_6:
+    CommandLine: '*/F*'
+  SELECTION_7:
+    Image: '*Temp\winwsh.exe'
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6) or SELECTION_7))
 falsepositives:
 - Unlikely
 fields:
@@ -33,8 +32,8 @@ fields:
 id: 2d87d610-d760-45ee-a7e6-7a6f2a65de00
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://app.any.run/tasks/7ca5661d-a67b-43ec-98c1-dd7a8103c256/
 - https://app.any.run/tasks/b12cccf3-1c22-4e28-9d3e-c7a6062f3914/
@@ -43,6 +42,3 @@ status: experimental
 tags:
 - attack.t1587.001
 - attack.resource_development
-yml_filename: win_apt_mustangpanda.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

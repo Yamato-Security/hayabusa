@@ -1,23 +1,42 @@
+
 title: Relevant Anti-Virus Event
 author: Florian Roth
 date: 2017/02/19
 description: This detection method points out highly relevant Antivirus events
 detection:
-    condition: ((HTool- or Hacktool or ASP/Backdoor or JSP/Backdoor or PHP/Backdoor
-        or Backdoor.ASP or Backdoor.JSP or Backdoor.PHP or Webshell or Portscan or
-        Mimikatz or WinCred or PlugX or Korplug or Pwdump or Chopper or WmiExec or
-        Xscan or Clearlog or ASPXSpy) and  not (Keygen or Crack))
+  SELECTION_1:
+  - HTool-
+  - Hacktool
+  - ASP/Backdoor
+  - JSP/Backdoor
+  - PHP/Backdoor
+  - Backdoor.ASP
+  - Backdoor.JSP
+  - Backdoor.PHP
+  - Webshell
+  - Portscan
+  - Mimikatz
+  - WinCred
+  - PlugX
+  - Korplug
+  - Pwdump
+  - Chopper
+  - WmiExec
+  - Xscan
+  - Clearlog
+  - ASPXSpy
+  SELECTION_2:
+  - Keygen
+  - Crack
+  condition: ((SELECTION_1) and  not (SELECTION_2))
 falsepositives:
 - Some software piracy tools (key generators, cracks) are classified as hack tools
 id: 78bc5783-81d9-4d73-ac97-59f6db4f72a8
 level: high
 logsource:
-    product: windows
-    service: application
+  product: windows
+  service: application
 modified: 2021/07/28
 tags:
 - attack.resource_development
 - attack.t1588
-yml_filename: win_av_relevant_match.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

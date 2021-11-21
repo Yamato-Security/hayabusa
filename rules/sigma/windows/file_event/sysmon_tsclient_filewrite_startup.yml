@@ -1,27 +1,25 @@
+
 title: Hijack Legit RDP Session to Move Laterally
 author: Samir Bousseaden
 date: 2019/02/21
 description: Detects the usage of tsclient share to place a backdoor on the RDP source
-    machine's startup folder
+  machine's startup folder
 detection:
-    SELECTION_1:
-        EventID: 11
-    SELECTION_2:
-        Image: '*\mstsc.exe'
-    SELECTION_3:
-        TargetFilename: '*\Microsoft\Windows\Start Menu\Programs\Startup\\*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    Image: '*\mstsc.exe'
+  SELECTION_3:
+    TargetFilename: '*\Microsoft\Windows\Start Menu\Programs\Startup\\*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - unknown
 id: 52753ea4-b3a0-4365-910d-36cff487b789
 level: high
 logsource:
-    category: file_event
-    product: windows
+  category: file_event
+  product: windows
 status: experimental
 tags:
 - attack.command_and_control
 - attack.t1219
-yml_filename: sysmon_tsclient_filewrite_startup.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

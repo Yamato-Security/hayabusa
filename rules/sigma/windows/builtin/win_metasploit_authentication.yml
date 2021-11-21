@@ -1,33 +1,34 @@
+
 title: Metasploit SMB Authentication
 author: Chakib Gzenayi (@Chak092), Hosni Mribah
 date: 2020/05/06
 description: Alerts on Metasploit host's authentications on the domain.
 detection:
-    SELECTION_1:
-        EventID: 4625
-    SELECTION_2:
-        EventID: 4624
-    SELECTION_3:
-        LogonType: 3
-    SELECTION_4:
-        AuthenticationPackageName: NTLM
-    SELECTION_5:
-        WorkstationName|re: ^[A-Za-z0-9]{16}$
-    SELECTION_6:
-        ProcessName|re: ^$
-    SELECTION_7:
-        EventID: 4776
-    SELECTION_8:
-        Workstation|re: ^[A-Za-z0-9]{16}$
-    condition: (((SELECTION_1 or SELECTION_2) and SELECTION_3 and SELECTION_4 and
-        SELECTION_5) or (SELECTION_6 and SELECTION_7 and SELECTION_8))
+  SELECTION_1:
+    EventID: 4625
+  SELECTION_2:
+    EventID: 4624
+  SELECTION_3:
+    LogonType: 3
+  SELECTION_4:
+    AuthenticationPackageName: NTLM
+  SELECTION_5:
+    WorkstationName|re: ^[A-Za-z0-9]{16}$
+  SELECTION_6:
+    ProcessName|re: ^$
+  SELECTION_7:
+    EventID: 4776
+  SELECTION_8:
+    Workstation|re: ^[A-Za-z0-9]{16}$
+  condition: (((SELECTION_1 or SELECTION_2) and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7 and SELECTION_8))
 falsepositives:
 - Linux hostnames composed of 16 characters.
 id: 72124974-a68b-4366-b990-d30e0b2a190d
 level: high
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 modified: 2021/07/07
 references:
 - https://github.com/rapid7/metasploit-framework/blob/master/lib/rex/proto/smb/client.rb
@@ -35,6 +36,3 @@ tags:
 - attack.lateral_movement
 - attack.t1077
 - attack.t1021.002
-yml_filename: win_metasploit_authentication.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

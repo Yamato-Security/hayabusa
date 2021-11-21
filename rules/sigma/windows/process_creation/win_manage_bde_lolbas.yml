@@ -1,23 +1,24 @@
+
 title: Suspicious Usage of the Manage-bde.wsf Script
 author: oscd.community, Natalia Shornikova
 date: 2020/10/13
 description: Detects a usage of the manage-bde.wsf script that may indicate an attempt
-    of proxy execution from script
+  of proxy execution from script
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*cscript*'
-    SELECTION_3:
-        CommandLine: '*manage-bde.wsf*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*cscript*'
+  SELECTION_3:
+    CommandLine: '*manage-bde.wsf*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Unknown
 id: c363385c-f75d-4753-a108-c1a8e28bdbda
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/05/21
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSScripts/Manage-bde.yml
@@ -29,6 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1216
-yml_filename: win_manage_bde_lolbas.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

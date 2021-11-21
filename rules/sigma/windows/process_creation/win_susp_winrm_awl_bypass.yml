@@ -1,34 +1,32 @@
+
 title: AWL Bypass with Winrm.vbs and Malicious WsmPty.xsl/WsmTxt.xsl
 author: Julia Fomina, oscd.community
 date: 2020/10/06
 description: Detects execution of attacker-controlled WsmPty.xsl or WsmTxt.xsl via
-    winrm.vbs and copied cscript.exe (can be renamed)
+  winrm.vbs and copied cscript.exe (can be renamed)
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*winrm*'
-    SELECTION_3:
-        CommandLine: '*format:pretty*'
-    SELECTION_4:
-        CommandLine: '*format:"pretty"*'
-    SELECTION_5:
-        CommandLine: '*format:"text"*'
-    SELECTION_6:
-        CommandLine: '*format:text*'
-    SELECTION_7:
-        Image: C:\Windows\System32\\*
-    SELECTION_8:
-        Image: C:\Windows\SysWOW64\\*
-    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6) and  not ((SELECTION_7 or SELECTION_8)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*winrm*'
+  SELECTION_3:
+    CommandLine:
+    - '*format:pretty*'
+    - '*format:"pretty"*'
+    - '*format:"text"*'
+    - '*format:text*'
+  SELECTION_4:
+    Image:
+    - C:\Windows\System32\\*
+    - C:\Windows\SysWOW64\\*
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and  not (SELECTION_4))
 falsepositives:
 - Unlikely
 id: 074e0ded-6ced-4ebd-8b4d-53f55908119d
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/09/19
 references:
 - https://posts.specterops.io/application-whitelisting-bypass-and-arbitrary-unsigned-code-execution-technique-in-winrm-vbs-c8c24fb40404
@@ -36,6 +34,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1216
-yml_filename: win_susp_winrm_awl_bypass.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

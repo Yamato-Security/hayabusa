@@ -1,17 +1,18 @@
+
 title: Verclsid.exe Runs COM Object
 author: Victor Sergeev, oscd.community
 date: 2020/10/09
 description: Detects when verclsid.exe is used to run COM object via GUID
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\verclsid.exe'
-    SELECTION_3:
-        CommandLine: '*/C*'
-    SELECTION_4:
-        CommandLine: '*/S*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\verclsid.exe'
+  SELECTION_3:
+    CommandLine: '*/C*'
+  SELECTION_4:
+    CommandLine: '*/S*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - Unknown
 fields:
@@ -19,8 +20,8 @@ fields:
 id: d06be4b9-8045-428b-a567-740a26d9db25
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Verclsid.yml
 - https://gist.github.com/NickTyrer/0598b60112eaafe6d07789f7964290d5
@@ -29,6 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-yml_filename: win_verclsid_runs_com.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

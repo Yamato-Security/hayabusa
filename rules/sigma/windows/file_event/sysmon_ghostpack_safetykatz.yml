@@ -1,20 +1,21 @@
+
 title: Detection of SafetyKatz
 author: Markus Neis
 date: 2018/07/24
 description: Detects possible SafetyKatz Behaviour
 detection:
-    SELECTION_1:
-        EventID: 11
-    SELECTION_2:
-        TargetFilename: '*\Temp\debug.bin'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: '*\Temp\debug.bin'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Unknown
 id: e074832a-eada-4fd7-94a1-10642b130e16
 level: high
 logsource:
-    category: file_event
-    product: windows
+  category: file_event
+  product: windows
 modified: 2020/08/23
 references:
 - https://github.com/GhostPack/SafetyKatz
@@ -23,6 +24,3 @@ tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.001
-yml_filename: sysmon_ghostpack_safetykatz.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

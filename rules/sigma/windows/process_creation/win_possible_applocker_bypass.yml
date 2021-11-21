@@ -1,35 +1,31 @@
+
 title: Possible Applocker Bypass
 author: juju4
 date: 2019/01/16
 description: Detects execution of executables that can be used to bypass Applocker
-    whitelisting
+  whitelisting
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*\msdt.exe*'
-    SELECTION_3:
-        CommandLine: '*\installutil.exe*'
-    SELECTION_4:
-        CommandLine: '*\regsvcs.exe*'
-    SELECTION_5:
-        CommandLine: '*\regasm.exe*'
-    SELECTION_6:
-        CommandLine: '*\msbuild.exe*'
-    SELECTION_7:
-        CommandLine: '*\ieexec.exe*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*\msdt.exe*'
+    - '*\installutil.exe*'
+    - '*\regsvcs.exe*'
+    - '*\regasm.exe*'
+    - '*\msbuild.exe*'
+    - '*\ieexec.exe*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
-    environment
+  environment
 - Using installutil to add features for .NET applications (primarily would occur in
-    developer environments)
+  developer environments)
 id: 82a19e3a-2bfe-4a91-8c0d-5d4c98fbb719
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/09/01
 references:
 - https://github.com/subTee/ApplicationWhitelistBypassTechniques/blob/master/TheList.txt
@@ -47,6 +43,3 @@ tags:
 - attack.t1170
 - attack.t1218.005
 - attack.t1218
-yml_filename: win_possible_applocker_bypass.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

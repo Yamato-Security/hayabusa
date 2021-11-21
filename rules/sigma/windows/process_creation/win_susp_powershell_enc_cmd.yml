@@ -1,62 +1,55 @@
+
 title: Suspicious Encoded PowerShell Command Line
 author: Florian Roth, Markus Neis, Jonhnathan Ribeiro, Daniil Yugoslavskiy, Anton
-    Kutepov, oscd.community
+  Kutepov, oscd.community
 date: 2018/09/03
 description: Detects suspicious powershell process starts with base64 encoded commands
-    (e.g. Emotet)
+  (e.g. Emotet)
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '* BA^J*'
-    SELECTION_11:
-        CommandLine: '* SUVYI*'
-    SELECTION_12:
-        CommandLine: '* SQBFAFgA*'
-    SELECTION_13:
-        CommandLine: '* aQBlAHgA*'
-    SELECTION_14:
-        CommandLine: '* aWV4I*'
-    SELECTION_15:
-        CommandLine: '* IAA*'
-    SELECTION_16:
-        CommandLine: '* IAB*'
-    SELECTION_17:
-        CommandLine: '* UwB*'
-    SELECTION_18:
-        CommandLine: '* cwB*'
-    SELECTION_19:
-        CommandLine: '*.exe -ENCOD *'
-    SELECTION_2:
-        EventID: 1
-    SELECTION_20:
-        CommandLine: '* -ExecutionPolicy*'
-    SELECTION_21:
-        CommandLine: '*remotesigned *'
-    SELECTION_3:
-        EventID: 1
-    SELECTION_4:
-        CommandLine: '* -e*'
-    SELECTION_5:
-        CommandLine: '* JAB*'
-    SELECTION_6:
-        CommandLine: '* -w*'
-    SELECTION_7:
-        CommandLine: '* hidden *'
-    SELECTION_8:
-        EventID: 1
-    SELECTION_9:
-        CommandLine: '* -e*'
-    condition: (SELECTION_1 and (SELECTION_2 and ((SELECTION_3 and SELECTION_4 and
-        SELECTION_5 and SELECTION_6 and SELECTION_7) or (SELECTION_8 and SELECTION_9
-        and (SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
-        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18)) or (SELECTION_19)))
-        and  not (SELECTION_20 and SELECTION_21))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine:
+    - '* BA^J*'
+    - '* SUVYI*'
+    - '* SQBFAFgA*'
+    - '* aQBlAHgA*'
+    - '* aWV4I*'
+    - '* IAA*'
+    - '* IAB*'
+    - '* UwB*'
+    - '* cwB*'
+  SELECTION_11:
+    CommandLine:
+    - '*.exe -ENCOD *'
+  SELECTION_12:
+    CommandLine: '* -ExecutionPolicy*'
+  SELECTION_13:
+    CommandLine: '*remotesigned *'
+  SELECTION_2:
+    EventID: 1
+  SELECTION_3:
+    EventID: 1
+  SELECTION_4:
+    CommandLine: '* -e*'
+  SELECTION_5:
+    CommandLine: '* JAB*'
+  SELECTION_6:
+    CommandLine: '* -w*'
+  SELECTION_7:
+    CommandLine: '* hidden *'
+  SELECTION_8:
+    EventID: 1
+  SELECTION_9:
+    CommandLine: '* -e*'
+  condition: (SELECTION_1 and (SELECTION_2 and ((SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7) or (SELECTION_8 and SELECTION_9 and SELECTION_10)
+    or SELECTION_11)) and  not (SELECTION_12 and SELECTION_13))
 id: ca2092a1-c273-4878-9b4b-0d60115bf5ea
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/03/02
 references:
 - https://app.any.run/tasks/6217d77d-3189-4db2-a957-8ab239f3e01e
@@ -65,6 +58,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-yml_filename: win_susp_powershell_enc_cmd.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

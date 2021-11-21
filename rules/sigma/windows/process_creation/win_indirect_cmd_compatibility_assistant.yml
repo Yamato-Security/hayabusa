@@ -1,17 +1,18 @@
+
 title: Indirect Command Execution By Program Compatibility Wizard
 author: A. Sungurov , oscd.community
 date: 2020/10/12
 description: Detect indirect command execution via Program Compatibility Assistant
-    pcwrun.exe
+  pcwrun.exe
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        ParentImage: '*\pcwrun.exe'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*\pcwrun.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Need to use extra processing with 'unique_count' / 'filter' to focus on outliers
-    as opposed to commonly seen artifacts
+  as opposed to commonly seen artifacts
 - Legit usage of scripts
 fields:
 - ComputerName
@@ -21,8 +22,8 @@ fields:
 id: b97cd4b1-30b8-4a9d-bd72-6293928d52bc
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://twitter.com/pabraeken/status/991335019833708544
 - https://lolbas-project.github.io/lolbas/Binaries/Pcwrun/
@@ -31,6 +32,3 @@ tags:
 - attack.defense_evasion
 - attack.t1218
 - attack.execution
-yml_filename: win_indirect_cmd_compatibility_assistant.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

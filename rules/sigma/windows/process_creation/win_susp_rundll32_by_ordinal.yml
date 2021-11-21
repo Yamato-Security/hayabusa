@@ -1,29 +1,30 @@
+
 title: Suspicious Call by Ordinal
 author: Florian Roth
 date: 2019/10/22
 description: Detects suspicious calls of DLLs in rundll32.dll exports by ordinal
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*\rundll32.exe*'
-    SELECTION_3:
-        CommandLine: '*,#*'
-    SELECTION_4:
-        CommandLine: '*EDGEHTML.dll*'
-    SELECTION_5:
-        CommandLine: '*#141*'
-    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4
-        and SELECTION_5))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*\rundll32.exe*'
+  SELECTION_3:
+    CommandLine: '*,#*'
+  SELECTION_4:
+    CommandLine: '*EDGEHTML.dll*'
+  SELECTION_5:
+    CommandLine: '*#141*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4
+    and SELECTION_5))
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
-    environment
+  environment
 - Windows control panel elements have been identified as source (mmc)
 id: e79a9e79-eb72-4e78-a628-0e7e8f59e89c
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/04/29
 references:
 - https://techtalk.pcmatic.com/2017/11/30/running-dll-files-malware-analysis/
@@ -35,6 +36,3 @@ tags:
 - attack.execution
 - attack.t1218.011
 - attack.t1085
-yml_filename: win_susp_rundll32_by_ordinal.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

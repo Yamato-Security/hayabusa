@@ -1,49 +1,46 @@
+
 title: Ngrok Usage
 author: Florian Roth
 date: 2021/05/14
 description: Detects the use of Ngrok, a utility used for port forwarding and tunneling,
-    often used by threat actors to make local protected services publicly available.
-    Involved domains are bin.equinox.io for download and *.ngrok.io for connections.
+  often used by threat actors to make local protected services publicly available.
+  Involved domains are bin.equinox.io for download and *.ngrok.io for connections.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '*.yml*'
-    SELECTION_11:
-        Image: '*ngrok.exe'
-    SELECTION_12:
-        CommandLine: '* tcp *'
-    SELECTION_13:
-        CommandLine: '* http *'
-    SELECTION_14:
-        CommandLine: '* authtoken *'
-    SELECTION_2:
-        CommandLine: '* tcp 139*'
-    SELECTION_3:
-        CommandLine: '* tcp 445*'
-    SELECTION_4:
-        CommandLine: '* tcp 3389*'
-    SELECTION_5:
-        CommandLine: '* tcp 5985*'
-    SELECTION_6:
-        CommandLine: '* tcp 5986*'
-    SELECTION_7:
-        CommandLine: '* start *'
-    SELECTION_8:
-        CommandLine: '*--all*'
-    SELECTION_9:
-        CommandLine: '*--config*'
-    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6) or (SELECTION_7 and SELECTION_8 and SELECTION_9 and SELECTION_10)
-        or ((SELECTION_11) and (SELECTION_12 or SELECTION_13 or SELECTION_14))))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '* tcp 139*'
+    - '* tcp 445*'
+    - '* tcp 3389*'
+    - '* tcp 5985*'
+    - '* tcp 5986*'
+  SELECTION_3:
+    CommandLine: '* start *'
+  SELECTION_4:
+    CommandLine: '*--all*'
+  SELECTION_5:
+    CommandLine: '*--config*'
+  SELECTION_6:
+    CommandLine: '*.yml*'
+  SELECTION_7:
+    Image:
+    - '*ngrok.exe'
+  SELECTION_8:
+    CommandLine:
+    - '* tcp *'
+    - '* http *'
+    - '* authtoken *'
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6) or (SELECTION_7 and SELECTION_8)))
 falsepositives:
 - Another tool that uses the command line switches of Ngrok
 - ngrok http 3978 (https://docs.microsoft.com/en-us/azure/bot-service/bot-service-debug-channel-ngrok?view=azure-bot-service-4.0)
 id: ee37eb7c-a4e7-4cd5-8fa4-efa27f1c3f31
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/06/07
 references:
 - https://ngrok.com/docs
@@ -55,6 +52,3 @@ status: experimental
 tags:
 - attack.command_and_control
 - attack.t1572
-yml_filename: win_susp_ngrok_pua.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

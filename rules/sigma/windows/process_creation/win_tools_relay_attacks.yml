@@ -1,58 +1,42 @@
+
 title: SMB Relay Attack Tools
 author: Florian Roth
 date: 2021/07/24
 description: Detects different hacktools used for relay attacks on Windows for privilege
-    escalation
+  escalation
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        Image: '*\SpoolSample.exe*'
-    SELECTION_11:
-        Image: '*\Responder.exe*'
-    SELECTION_12:
-        Image: '*\smbrelayx*'
-    SELECTION_13:
-        Image: '*\ntlmrelayx*'
-    SELECTION_14:
-        CommandLine: '*Invoke-Tater*'
-    SELECTION_15:
-        CommandLine: '* smbrelay*'
-    SELECTION_16:
-        CommandLine: '* ntlmrelay*'
-    SELECTION_17:
-        CommandLine: '*cme smb *'
-    SELECTION_18:
-        CommandLine: '* /ntlm:NTLMhash *'
-    SELECTION_19:
-        CommandLine: '*Invoke-PetitPotam*'
-    SELECTION_2:
-        Image: '*PetitPotam*'
-    SELECTION_3:
-        Image: '*RottenPotato*'
-    SELECTION_4:
-        Image: '*HotPotato*'
-    SELECTION_5:
-        Image: '*JuicyPotato*'
-    SELECTION_6:
-        Image: '*\just_dce_*'
-    SELECTION_7:
-        Image: '*Juicy Potato*'
-    SELECTION_8:
-        Image: '*\temp\rot.exe*'
-    SELECTION_9:
-        Image: '*\Potato.exe*'
-    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13) or (SELECTION_14 or SELECTION_15
-        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*PetitPotam*'
+    - '*RottenPotato*'
+    - '*HotPotato*'
+    - '*JuicyPotato*'
+    - '*\just_dce_*'
+    - '*Juicy Potato*'
+    - '*\temp\rot.exe*'
+    - '*\Potato.exe*'
+    - '*\SpoolSample.exe*'
+    - '*\Responder.exe*'
+    - '*\smbrelayx*'
+    - '*\ntlmrelayx*'
+  SELECTION_3:
+    CommandLine:
+    - '*Invoke-Tater*'
+    - '* smbrelay*'
+    - '* ntlmrelay*'
+    - '*cme smb *'
+    - '* /ntlm:NTLMhash *'
+    - '*Invoke-PetitPotam*'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
 falsepositives:
 - Legitimate files with these rare hacktool names
 id: 5589ab4f-a767-433c-961d-c91f3f704db1
 level: critical
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/07/26
 references:
 - https://attack.mitre.org/techniques/T1557/001/
@@ -65,6 +49,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1557.001
-yml_filename: win_tools_relay_attacks.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

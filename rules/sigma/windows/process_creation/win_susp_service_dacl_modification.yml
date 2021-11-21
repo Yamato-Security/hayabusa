@@ -1,36 +1,34 @@
+
 title: Suspicious Service DACL Modification
 author: Jonhnathan Ribeiro, oscd.community
 date: 2020/10/16
 description: Detects suspicious DACL modifications that can  be used to hide services
-    or make them unstopable
+  or make them unstopable
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\sc.exe'
-    SELECTION_3:
-        CommandLine: '*sdset*'
-    SELECTION_4:
-        CommandLine: '*D;;*'
-    SELECTION_5:
-        CommandLine: '*;;;IU*'
-    SELECTION_6:
-        CommandLine: '*;;;SU*'
-    SELECTION_7:
-        CommandLine: '*;;;BA*'
-    SELECTION_8:
-        CommandLine: '*;;;SY*'
-    SELECTION_9:
-        CommandLine: '*;;;WD*'
-    condition: (SELECTION_1 and (SELECTION_2) and SELECTION_3 and SELECTION_4 and
-        (SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\sc.exe'
+  SELECTION_3:
+    CommandLine: '*sdset*'
+  SELECTION_4:
+    CommandLine: '*D;;*'
+  SELECTION_5:
+    CommandLine:
+    - '*;;;IU*'
+    - '*;;;SU*'
+    - '*;;;BA*'
+    - '*;;;SY*'
+    - '*;;;WD*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
 falsepositives:
 - Unknown
 id: 99cf1e02-00fb-4c0d-8375-563f978dfd37
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://www.sans.org/blog/red-team-tactics-hiding-windows-services/
 - https://docs.microsoft.com/pt-br/windows/win32/secauthz/sid-strings
@@ -38,6 +36,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1543.003
-yml_filename: win_susp_service_dacl_modification.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

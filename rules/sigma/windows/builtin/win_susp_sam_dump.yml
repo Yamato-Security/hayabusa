@@ -1,25 +1,27 @@
+
 title: SAM Dump to AppData
 author: Florian Roth
 date: 2018/01/27
 description: Detects suspicious SAM dump activity as cause by QuarksPwDump and other
-    password dumpers
+  password dumpers
 detection:
-    SELECTION_1:
-        EventID: 16
-    condition: (SELECTION_1 and \AppData\Local\Temp\SAM- and .dmp)
+  SELECTION_1:
+    EventID: 16
+  SELECTION_2:
+  - \AppData\Local\Temp\SAM-
+  SELECTION_3:
+  - .dmp
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Penetration testing
 id: 839dd1e8-eda8-4834-8145-01beeee33acd
 level: high
 logsource:
-    definition: The source of this type of event is Kernel-General
-    product: windows
-    service: system
+  definition: The source of this type of event is Kernel-General
+  product: windows
+  service: system
 status: experimental
 tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.002
-yml_filename: win_susp_sam_dump.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

@@ -1,34 +1,31 @@
+
 title: Registry Persistence via Explorer Run Key
 author: Florian Roth, oscd.community
 date: 2018/07/18
 description: Detects a possible persistence mechanism using RUN key for Windows Explorer
-    and pointing to a suspicious folder
+  and pointing to a suspicious folder
 detection:
-    SELECTION_1:
-        EventID: 12
-    SELECTION_10:
-        Details: C:\Users\Default\\*
-    SELECTION_11:
-        Details: '*\AppData\\*'
-    SELECTION_2:
-        EventID: 13
-    SELECTION_3:
-        EventID: 14
-    SELECTION_4:
-        TargetObject: '*\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run'
-    SELECTION_5:
-        Details: C:\Windows\Temp\\*
-    SELECTION_6:
-        Details: C:\ProgramData\\*
-    SELECTION_7:
-        Details: C:\$Recycle.bin\\*
-    SELECTION_8:
-        Details: C:\Temp\\*
-    SELECTION_9:
-        Details: C:\Users\Public\\*
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and ((SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10)
-        or (SELECTION_11)))
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject: '*\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run'
+  SELECTION_5:
+    Details:
+    - C:\Windows\Temp\\*
+    - C:\ProgramData\\*
+    - C:\$Recycle.bin\\*
+    - C:\Temp\\*
+    - C:\Users\Public\\*
+    - C:\Users\Default\\*
+  SELECTION_6:
+    Details:
+    - '*\AppData\\*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and (SELECTION_5
+    or SELECTION_6))
 falsepositives:
 - Unknown
 fields:
@@ -37,8 +34,8 @@ fields:
 id: b7916c2a-fa2f-4795-9477-32b731f70f11
 level: high
 logsource:
-    category: registry_event
-    product: windows
+  category: registry_event
+  product: windows
 modified: 2020/09/06
 references:
 - https://researchcenter.paloaltonetworks.com/2018/07/unit42-upatre-continues-evolve-new-anti-analysis-techniques/
@@ -47,6 +44,3 @@ tags:
 - attack.persistence
 - attack.t1060
 - attack.t1547.001
-yml_filename: sysmon_susp_reg_persist_explorer_run.yml
-yml_path: /home/itib/git/sigma/rules/windows/registry_event
-

@@ -1,55 +1,42 @@
+
 title: Suspicious Script Execution From Temp Folder
 author: Florian Roth, Max Altgelt
 date: 2021/07/14
 description: Detects a suspicious script executions from temporary folder
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '*%TEMP%*'
-    SELECTION_11:
-        CommandLine: '*%TMP%*'
-    SELECTION_12:
-        CommandLine: '*%LocalAppData%\Temp*'
-    SELECTION_13:
-        CommandLine: '* >*'
-    SELECTION_14:
-        CommandLine: '*Out-File*'
-    SELECTION_15:
-        CommandLine: '*ConvertTo-Json*'
-    SELECTION_2:
-        Image: '*\powershell.exe'
-    SELECTION_3:
-        Image: '*\mshta.exe'
-    SELECTION_4:
-        Image: '*\wscript.exe'
-    SELECTION_5:
-        Image: '*\cscript.exe'
-    SELECTION_6:
-        CommandLine: '*\Windows\Temp*'
-    SELECTION_7:
-        CommandLine: '*\Temporary Internet*'
-    SELECTION_8:
-        CommandLine: '*\AppData\Local\Temp*'
-    SELECTION_9:
-        CommandLine: '*\AppData\Roaming\Temp*'
-    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
-        and (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12)) and  not ((SELECTION_13 or SELECTION_14
-        or SELECTION_15)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\powershell.exe'
+    - '*\mshta.exe'
+    - '*\wscript.exe'
+    - '*\cscript.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*\Windows\Temp*'
+    - '*\Temporary Internet*'
+    - '*\AppData\Local\Temp*'
+    - '*\AppData\Roaming\Temp*'
+    - '*%TEMP%*'
+    - '*%TMP%*'
+    - '*%LocalAppData%\Temp*'
+  SELECTION_4:
+    CommandLine:
+    - '* >*'
+    - '*Out-File*'
+    - '*ConvertTo-Json*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
 falsepositives:
 - Administrative scripts
 id: a6a39bdb-935c-4f0a-ab77-35f4bbf44d33
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/08/10
 references:
 - https://www.microsoft.com/security/blog/2021/07/13/microsoft-discovers-threat-actor-targeting-solarwinds-serv-u-software-with-0-day-exploit/
 status: experimental
 tags:
 - attack.execution
-yml_filename: win_susp_script_exec_from_temp.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

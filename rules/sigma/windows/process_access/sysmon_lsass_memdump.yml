@@ -1,27 +1,28 @@
+
 title: LSASS Memory Dump
 author: Samir Bousseaden
 date: 2019/04/03
 description: Detects process LSASS memory dump using procdump or taskmgr based on
-    the CallTrace pointing to dbghelp.dll or dbgcore.dll for win10
+  the CallTrace pointing to dbghelp.dll or dbgcore.dll for win10
 detection:
-    SELECTION_1:
-        EventID: 10
-    SELECTION_2:
-        TargetImage: '*\lsass.exe'
-    SELECTION_3:
-        GrantedAccess: '0x1fffff'
-    SELECTION_4:
-        CallTrace: '*dbghelp.dll*'
-    SELECTION_5:
-        CallTrace: '*dbgcore.dll*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4 or SELECTION_5))
+  SELECTION_1:
+    EventID: 10
+  SELECTION_2:
+    TargetImage: '*\lsass.exe'
+  SELECTION_3:
+    GrantedAccess: '0x1fffff'
+  SELECTION_4:
+    CallTrace:
+    - '*dbghelp.dll*'
+    - '*dbgcore.dll*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - unknown
 id: 5ef9853e-4d0e-4a70-846f-a9ca37d876da
 level: high
 logsource:
-    category: process_access
-    product: windows
+  category: process_access
+  product: windows
 modified: 2021/06/21
 references:
 - https://blog.menasec.net/2019/02/threat-hunting-21-procdump-or-taskmgr.html
@@ -31,6 +32,3 @@ tags:
 - attack.t1003.001
 - attack.t1003
 - attack.s0002
-yml_filename: sysmon_lsass_memdump.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_access
-

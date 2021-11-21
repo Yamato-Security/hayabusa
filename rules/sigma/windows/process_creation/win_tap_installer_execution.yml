@@ -1,25 +1,23 @@
+
 title: Tap Installer Execution
 author: Daniil Yugoslavskiy, Ian Davis, oscd.community
 date: 2019/10/24
 description: Well-known TAP software installation. Possible preparation for data exfiltration
-    using tunneling techniques
+  using tunneling techniques
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\tapinstall.exe'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\tapinstall.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Legitimate OpenVPN TAP insntallation
 id: 99793437-3e16-439b-be0f-078782cf953d
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 status: experimental
 tags:
 - attack.exfiltration
 - attack.t1048
-yml_filename: win_tap_installer_execution.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

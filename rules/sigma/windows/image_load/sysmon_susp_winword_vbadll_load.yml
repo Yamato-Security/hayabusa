@@ -1,33 +1,30 @@
+
 title: VBA DLL Loaded Via Microsoft Word
 author: Antonlovesdnb
 date: 2020/02/19
 description: Detects DLL's Loaded Via Word Containing VBA Macros
 detection:
-    SELECTION_1:
-        EventID: 7
-    SELECTION_2:
-        Image: '*\winword.exe'
-    SELECTION_3:
-        Image: '*\powerpnt.exe'
-    SELECTION_4:
-        Image: '*\excel.exe'
-    SELECTION_5:
-        Image: '*\outlook.exe'
-    SELECTION_6:
-        ImageLoaded: '*\VBE7.DLL'
-    SELECTION_7:
-        ImageLoaded: '*\VBEUI.DLL'
-    SELECTION_8:
-        ImageLoaded: '*\VBE7INTL.DLL'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
-        and (SELECTION_6 or SELECTION_7 or SELECTION_8))
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    Image:
+    - '*\winword.exe'
+    - '*\powerpnt.exe'
+    - '*\excel.exe'
+    - '*\outlook.exe'
+  SELECTION_3:
+    ImageLoaded:
+    - '*\VBE7.DLL'
+    - '*\VBEUI.DLL'
+    - '*\VBE7INTL.DLL'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Alerts on legitimate macro usage as well, will need to filter as appropriate
 id: e6ce8457-68b1-485b-9bdd-3c2b5d679aa9
 level: high
 logsource:
-    category: image_load
-    product: windows
+  category: image_load
+  product: windows
 modified: 2020/08/23
 references:
 - https://medium.com/threatpunter/detecting-adversary-tradecraft-with-image-load-event-logging-and-eql-8de93338c16
@@ -36,6 +33,3 @@ tags:
 - attack.execution
 - attack.t1204
 - attack.t1204.002
-yml_filename: sysmon_susp_winword_vbadll_load.yml
-yml_path: /home/itib/git/sigma/rules/windows/image_load
-

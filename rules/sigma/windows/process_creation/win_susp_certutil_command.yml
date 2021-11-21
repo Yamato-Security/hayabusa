@@ -1,52 +1,43 @@
+
 title: Suspicious Certutil Command
 author: Florian Roth, juju4, keepwatch
 date: 2019/01/16
 description: Detects a suspicious Microsoft certutil execution with sub commands like
-    'decode' sub command, which is sometimes used to decode malicious code with the
-    built-in certutil utility
+  'decode' sub command, which is sometimes used to decode malicious code with the
+  built-in certutil utility
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '* /verifyctl *'
-    SELECTION_11:
-        CommandLine: '* /encode *'
-    SELECTION_12:
-        Image: '*\certutil.exe'
-    SELECTION_13:
-        CommandLine: '*URL*'
-    SELECTION_14:
-        CommandLine: '*ping*'
-    SELECTION_2:
-        CommandLine: '* -decode *'
-    SELECTION_3:
-        CommandLine: '* -decodehex *'
-    SELECTION_4:
-        CommandLine: '* -urlcache *'
-    SELECTION_5:
-        CommandLine: '* -verifyctl *'
-    SELECTION_6:
-        CommandLine: '* -encode *'
-    SELECTION_7:
-        CommandLine: '* /decode *'
-    SELECTION_8:
-        CommandLine: '* /decodehex *'
-    SELECTION_9:
-        CommandLine: '* /urlcache *'
-    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11) or (SELECTION_12 and (SELECTION_13 or SELECTION_14))))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '* -decode *'
+    - '* -decodehex *'
+    - '* -urlcache *'
+    - '* -verifyctl *'
+    - '* -encode *'
+    - '* /decode *'
+    - '* /decodehex *'
+    - '* /urlcache *'
+    - '* /verifyctl *'
+    - '* /encode *'
+  SELECTION_3:
+    Image: '*\certutil.exe'
+  SELECTION_4:
+    CommandLine:
+    - '*URL*'
+    - '*ping*'
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4)))
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
-    environment
+  environment
 fields:
 - CommandLine
 - ParentCommandLine
 id: e011a729-98a6-4139-b5c4-bf6f6dd8239a
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/04/23
 references:
 - https://twitter.com/JohnLaTwC/status/835149808817991680
@@ -67,6 +58,3 @@ tags:
 - attack.g0049
 - attack.g0075
 - attack.g0096
-yml_filename: win_susp_certutil_command.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

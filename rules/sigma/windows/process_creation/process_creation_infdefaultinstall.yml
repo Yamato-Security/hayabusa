@@ -1,16 +1,17 @@
+
 title: InfDefaultInstall.exe .inf Execution
 author: frack113
 date: 2021/07/13
 description: Executes SCT script using scrobj.dll from a command in entered into a
-    specially prepared INF file.
+  specially prepared INF file.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*InfDefaultInstall.exe *'
-    SELECTION_3:
-        CommandLine: '*.inf*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*InfDefaultInstall.exe *'
+  SELECTION_3:
+    CommandLine: '*.inf*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Unknown
 fields:
@@ -21,8 +22,8 @@ fields:
 id: ce7cf472-6fcc-490a-9481-3786840b5d9b
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1218/T1218.md
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Infdefaultinstall.yml
@@ -30,6 +31,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-yml_filename: process_creation_infdefaultinstall.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

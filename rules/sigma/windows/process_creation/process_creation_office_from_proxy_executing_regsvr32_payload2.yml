@@ -1,48 +1,44 @@
+
 title: Excel Proxy Executing Regsvr32 With Payload
 author: Vadim Khrykov (ThreatIntel), Cyb3rEng (Rule)
 date: 2021/08/23
 description: Excel called wmic to finally proxy execute regsvr32 with the payload.
-    An attacker wanted to break suspicious parent-child chain (Office app spawns LOLBin).But
-    we have command-line in the event which allow us to "restore" this suspicious
-    parent-child chain and detect it. Monitor process creation with "wmic process
-    call create" and LOLBins in command-line with parent Office application processes.
+  An attacker wanted to break suspicious parent-child chain (Office app spawns LOLBin).But
+  we have command-line in the event which allow us to "restore" this suspicious parent-child
+  chain and detect it. Monitor process creation with "wmic process call create" and
+  LOLBins in command-line with parent Office application processes.
 detection:
-    SELECTION_1:
-        ProcessCommandLine: '*regsvr32*'
-    SELECTION_10:
-        ParentImage: '*powerpnt.exe'
-    SELECTION_11:
-        processCommandLine: '*process*'
-    SELECTION_12:
-        processCommandLine: '*create*'
-    SELECTION_13:
-        processCommandLine: '*call*'
-    SELECTION_2:
-        ProcessCommandLine: '*rundll32*'
-    SELECTION_3:
-        ProcessCommandLine: '*msiexec*'
-    SELECTION_4:
-        ProcessCommandLine: '*mshta*'
-    SELECTION_5:
-        ProcessCommandLine: '*verclsid*'
-    SELECTION_6:
-        Image: '*\wbem\WMIC.exe'
-    SELECTION_7:
-        ProcessCommandLine: '*wmic *'
-    SELECTION_8:
-        ParentImage: '*winword.exe'
-    SELECTION_9:
-        ParentImage: '*excel.exe'
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
-        and (SELECTION_6 or SELECTION_7) and (SELECTION_8 or SELECTION_9 or SELECTION_10)
-        and SELECTION_11 and SELECTION_12 and SELECTION_13)
+  SELECTION_1:
+    ProcessCommandLine:
+    - '*regsvr32*'
+    - '*rundll32*'
+    - '*msiexec*'
+    - '*mshta*'
+    - '*verclsid*'
+  SELECTION_2:
+    Image: '*\wbem\WMIC.exe'
+  SELECTION_3:
+    ProcessCommandLine: '*wmic *'
+  SELECTION_4:
+    ParentImage:
+    - '*winword.exe'
+    - '*excel.exe'
+    - '*powerpnt.exe'
+  SELECTION_5:
+    processCommandLine: '*process*'
+  SELECTION_6:
+    processCommandLine: '*create*'
+  SELECTION_7:
+    processCommandLine: '*call*'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7)
 falsepositives:
 - Unknown
 id: c0e1c3d5-4381-4f18-8145-2583f06a1fe5
 level: high
 logsource:
-    category: process_creation
-    product: Windows
+  category: process_creation
+  product: Windows
 references:
 - https://thedfirreport.com/2021/03/29/sodinokibi-aka-revil-ransomware/
 - https://github.com/vadim-hunter/Detection-Ideas-Rules/blob/main/Threat%20Intelligence/The%20DFIR%20Report/20210329_Sodinokibi_(aka_REvil)_Ransomware.yaml
@@ -53,6 +49,3 @@ tags:
 - attack.t1218.010
 - attack.execution
 - attack.defense_evasion
-yml_filename: process_creation_office_from_proxy_executing_regsvr32_payload2.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

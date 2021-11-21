@@ -1,21 +1,22 @@
+
 title: Advanced IP Scanner
 author: '@ROxPinTeddy'
 date: 2020/05/12
 description: Detects the use of Advanced IP Scanner. Seems to be a popular tool for
-    ransomware groups.
+  ransomware groups.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\advanced_ip_scanner*'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\advanced_ip_scanner*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Legitimate administrative use
 id: bef37fa2-f205-4a7b-b484-0759bfd5f86f
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/09/12
 references:
 - https://news.sophos.com/en-us/2019/12/09/snatch-ransomware-reboots-pcs-into-safe-mode-to-bypass-protection/
@@ -27,6 +28,3 @@ status: experimental
 tags:
 - attack.discovery
 - attack.t1046
-yml_filename: process_creation_advanced_ip_scanner.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

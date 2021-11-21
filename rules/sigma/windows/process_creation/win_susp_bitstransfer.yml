@@ -1,23 +1,22 @@
+
 title: Suspicious Bitstransfer via PowerShell
 author: Austin Songer @austinsonger
 date: 2021/08/19
 description: Detects transferring files from system on a server bitstransfer Powershell
-    cmdlets
+  cmdlets
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\powershell.exe'
-    SELECTION_3:
-        Image: '*\powershell_ise.exe'
-    SELECTION_4:
-        Image: '*\pwsh.exe'
-    SELECTION_5:
-        CommandLine: '*Get-BitsTransfer*'
-    SELECTION_6:
-        CommandLine: '*Add-BitsFile*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4) and (SELECTION_5
-        or SELECTION_6))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\powershell.exe'
+    - '*\powershell_ise.exe'
+    - '*\pwsh.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*Get-BitsTransfer*'
+    - '*Add-BitsFile*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Unknown
 fields:
@@ -27,8 +26,8 @@ fields:
 id: cd5c8085-4070-4e22-908d-a5b3342deb74
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://docs.microsoft.com/en-us/powershell/module/bitstransfer/add-bitsfile?view=windowsserver2019-ps
 status: experimental
@@ -36,6 +35,3 @@ tags:
 - attack.exfiltration
 - attack.persistence
 - attack.t1197
-yml_filename: win_susp_bitstransfer.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

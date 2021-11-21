@@ -1,17 +1,18 @@
+
 title: Esentutl Gather Credentials
 author: sam0x90
 date: 2021/08/06
 description: Conti recommendation to its affiliates to use esentult to access NTDS
-    dumped file. Trickbot also uses this utilities to get MSEdge info via its module
-    pwgrab.
+  dumped file. Trickbot also uses this utilities to get MSEdge info via its module
+  pwgrab.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*esentutl*'
-    SELECTION_3:
-        CommandLine: '* /p*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*esentutl*'
+  SELECTION_3:
+    CommandLine: '* /p*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - To be determined
 fields:
@@ -22,8 +23,8 @@ fields:
 id: 7df1713a-1a5b-4a4b-a071-dc83b144a101
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://twitter.com/vxunderground/status/1423336151860002816
 - https://attack.mitre.org/software/S0404/
@@ -33,6 +34,3 @@ tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.003
-yml_filename: process_susp_esentutl_params.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

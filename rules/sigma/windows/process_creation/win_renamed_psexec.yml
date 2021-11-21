@@ -1,29 +1,29 @@
+
 title: Renamed PsExec
 author: Florian Roth
 date: 2019/05/21
 description: Detects the execution of a renamed PsExec often used by attackers or
-    malware
+  malware
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Description: Execute processes remotely
-    SELECTION_3:
-        Product: Sysinternals PsExec
-    SELECTION_4:
-        Image: '*\PsExec.exe'
-    SELECTION_5:
-        Image: '*\PsExec64.exe'
-    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
-        or SELECTION_5)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Description: Execute processes remotely
+  SELECTION_3:
+    Product: Sysinternals PsExec
+  SELECTION_4:
+    Image:
+    - '*\PsExec.exe'
+    - '*\PsExec64.exe'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
 falsepositives:
 - Software that illegaly integrates PsExec in a renamed form
 - Administrators that have renamed PsExec and no one knows why
 id: a7a7e0e5-1d57-49df-9c58-9fe5bc0346a2
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/09/06
 references:
 - https://www.trendmicro.com/vinfo/hk-en/security/news/cybercrime-and-digital-threats/megacortex-ransomware-spotted-attacking-enterprise-networks
@@ -33,6 +33,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.003
-yml_filename: win_renamed_psexec.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

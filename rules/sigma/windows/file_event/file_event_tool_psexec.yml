@@ -1,14 +1,15 @@
+
 title: PsExec Tool Execution
 author: Thomas Patzke
 date: 2017/06/12
 description: Detects PsExec service installation and execution events (service and
-    Sysmon)
+  Sysmon)
 detection:
-    SELECTION_1:
-        EventID: 11
-    SELECTION_2:
-        TargetFilename: '*\PSEXESVC.exe'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: '*\PSEXESVC.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - unknown
 fields:
@@ -22,21 +23,18 @@ fields:
 id: 259e5a6a-b8d2-4c38-86e2-26c5e651361d
 level: low
 logsource:
-    category: file_event
-    product: windows
+  category: file_event
+  product: windows
 modified: 2021/09/21
 references:
 - https://www.jpcert.or.jp/english/pub/sr/ir_research.html
 - https://jpcertcc.github.io/ToolAnalysisResultSheet
 related:
--   id: 42c575ea-e41e-41f1-b248-8093c3e82a28
-    type: derived
+- id: 42c575ea-e41e-41f1-b248-8093c3e82a28
+  type: derived
 status: experimental
 tags:
 - attack.execution
 - attack.t1035
 - attack.t1569.002
 - attack.s0029
-yml_filename: file_event_tool_psexec.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

@@ -1,25 +1,26 @@
+
 title: Non Interactive PowerShell
 author: Roberto Rodriguez @Cyb3rWard0g (rule), oscd.community (improvements)
 date: 2019/09/12
 description: Detects non-interactive PowerShell activity by looking at powershell.exe
-    with not explorer.exe as a parent.
+  with not explorer.exe as a parent.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\powershell.exe'
-    SELECTION_3:
-        ParentImage: '*\explorer.exe'
-    SELECTION_4:
-        ParentImage: '*\CompatTelRunner.exe'
-    condition: (SELECTION_1 and SELECTION_2 and  not ((SELECTION_3 or SELECTION_4)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\powershell.exe'
+  SELECTION_3:
+    ParentImage:
+    - '*\explorer.exe'
+    - '*\CompatTelRunner.exe'
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
 falsepositives:
 - Legitimate programs executing PowerShell scripts
 id: f4bbd493-b796-416e-bbf2-121235348529
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/05/10
 references:
 - https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190410151110.html
@@ -28,6 +29,3 @@ tags:
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-yml_filename: win_non_interactive_powershell.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

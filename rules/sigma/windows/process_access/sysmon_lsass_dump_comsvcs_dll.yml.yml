@@ -1,25 +1,26 @@
+
 title: Lsass Memory Dump via Comsvcs DLL
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/10/20
 description: Detects adversaries leveraging the MiniDump export function from comsvcs.dll
-    via rundll32 to perform a memory dump from lsass.
+  via rundll32 to perform a memory dump from lsass.
 detection:
-    SELECTION_1:
-        EventID: 10
-    SELECTION_2:
-        TargetImage: '*\lsass.exe'
-    SELECTION_3:
-        SourceImage: C:\Windows\System32\rundll32.exe
-    SELECTION_4:
-        CallTrace: '*comsvcs.dll*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+  SELECTION_1:
+    EventID: 10
+  SELECTION_2:
+    TargetImage: '*\lsass.exe'
+  SELECTION_3:
+    SourceImage: C:\Windows\System32\rundll32.exe
+  SELECTION_4:
+    CallTrace: '*comsvcs.dll*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - Unknown
 id: a49fa4d5-11db-418c-8473-1e014a8dd462
 level: critical
 logsource:
-    category: process_access
-    product: windows
+  category: process_access
+  product: windows
 modified: 2021/06/21
 references:
 - https://twitter.com/shantanukhande/status/1229348874298388484
@@ -28,6 +29,3 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1003.001
-yml_filename: sysmon_lsass_dump_comsvcs_dll.yml.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_access
-

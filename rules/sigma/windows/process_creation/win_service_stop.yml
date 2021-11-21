@@ -1,19 +1,19 @@
+
 title: Stop Windows Service
 author: Jakob Weinzettl, oscd.community
 date: 2019/10/23
 description: Detects a windows service to be stopped
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\sc.exe'
-    SELECTION_3:
-        Image: '*\net.exe'
-    SELECTION_4:
-        Image: '*\net1.exe'
-    SELECTION_5:
-        CommandLine: '*stop*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4) and SELECTION_5)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\sc.exe'
+    - '*\net.exe'
+    - '*\net1.exe'
+  SELECTION_3:
+    CommandLine: '*stop*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Administrator shutting down the service due to upgrade or removal purposes
 fields:
@@ -23,13 +23,10 @@ fields:
 id: eb87818d-db5d-49cc-a987-d5da331fbd90
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/08/14
 status: experimental
 tags:
 - attack.impact
 - attack.t1489
-yml_filename: win_service_stop.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

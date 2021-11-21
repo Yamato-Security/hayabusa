@@ -1,23 +1,24 @@
+
 title: Suspicious File Characteristics Due to Missing Fields
 author: Markus Neis, Sander Wiebing
 date: 2018/11/22
 description: Detects Executables in the Downloads folder without FileVersion,Description,Product,Company
-    likely created with py2exe
+  likely created with py2exe
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Description: \?
-    SELECTION_3:
-        FileVersion: \?
-    SELECTION_4:
-        Product: \?
-    SELECTION_5:
-        Company: \?
-    SELECTION_6:
-        Image: '*\Downloads\\*'
-    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5)
-        and SELECTION_6)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Description: \?
+  SELECTION_3:
+    FileVersion: \?
+  SELECTION_4:
+    Product: \?
+  SELECTION_5:
+    Company: \?
+  SELECTION_6:
+    Image: '*\Downloads\\*'
+  condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5)
+    and SELECTION_6)
 falsepositives:
 - Unknown
 fields:
@@ -26,8 +27,8 @@ fields:
 id: 9637e8a5-7131-4f7f-bdc7-2b05d8670c43
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/06/27
 references:
 - https://securelist.com/muddywater/88059/
@@ -38,6 +39,3 @@ tags:
 - attack.t1059.006
 - attack.defense_evasion
 - attack.t1064
-yml_filename: win_susp_file_characteristics.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

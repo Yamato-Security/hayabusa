@@ -1,64 +1,63 @@
+
 title: Windows Registry Persistence COM Search Order Hijacking
-author: "Maxime Thiebaut (@0xThiebaut), oscd.community, C\xE9dric Hien"
+author: Maxime Thiebaut (@0xThiebaut), oscd.community, Cédric Hien
 date: 2020/04/14
 description: Detects potential COM object hijacking leveraging the COM Search Order
 detection:
-    SELECTION_1:
-        EventID: 12
-    SELECTION_10:
-        Details: '*%%systemroot%%\system32\\*'
-    SELECTION_11:
-        Details: '*%%systemroot%%\SysWow64\\*'
-    SELECTION_12:
-        EventID: 12
-    SELECTION_13:
-        EventID: 13
-    SELECTION_14:
-        EventID: 14
-    SELECTION_15:
-        Details: '*\AppData\Local\Microsoft\OneDrive\\*'
-    SELECTION_16:
-        Details: '*\FileCoAuthLib64.dll*'
-    SELECTION_17:
-        Details: '*\FileSyncShell64.dll*'
-    SELECTION_18:
-        Details: '*\FileSyncApi64.dll*'
-    SELECTION_19:
-        Details: '*\AppData\Local\Microsoft\TeamsMeetingAddin\\*'
-    SELECTION_2:
-        EventID: 13
-    SELECTION_20:
-        Details: '*\Microsoft.Teams.AddinLoader.dll*'
-    SELECTION_21:
-        Details: '*\AppData\Roaming\Dropbox\\*'
-    SELECTION_22:
-        Details: '*\DropboxExt64.*.dll*'
-    SELECTION_3:
-        EventID: 14
-    SELECTION_4:
-        TargetObject: HKCR\CLSID\\*
-    SELECTION_5:
-        TargetObject: HKCU\Software\Classes\CLSID\\*
-    SELECTION_6:
-        TargetObject: '*\InprocServer32\(Default)'
-    SELECTION_7:
-        EventID: 12
-    SELECTION_8:
-        EventID: 13
-    SELECTION_9:
-        EventID: 14
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and ((SELECTION_4 or SELECTION_5)
-        and SELECTION_6) and  not (((SELECTION_7 or SELECTION_8 or SELECTION_9) and
-        ((((SELECTION_10 or SELECTION_11) or ((SELECTION_12 or SELECTION_13 or SELECTION_14)
-        and SELECTION_15 and (SELECTION_16 or SELECTION_17 or SELECTION_18))) or (SELECTION_19
-        and SELECTION_20)) or (SELECTION_21 and SELECTION_22)))))
+  SELECTION_1:
+    EventID: 12
+  SELECTION_10:
+    EventID: 12
+  SELECTION_11:
+    EventID: 13
+  SELECTION_12:
+    EventID: 14
+  SELECTION_13:
+    Details: '*\AppData\Local\Microsoft\OneDrive\\*'
+  SELECTION_14:
+    Details:
+    - '*\FileCoAuthLib64.dll*'
+    - '*\FileSyncShell64.dll*'
+    - '*\FileSyncApi64.dll*'
+  SELECTION_15:
+    Details: '*\AppData\Local\Microsoft\TeamsMeetingAddin\\*'
+  SELECTION_16:
+    Details: '*\Microsoft.Teams.AddinLoader.dll*'
+  SELECTION_17:
+    Details: '*\AppData\Roaming\Dropbox\\*'
+  SELECTION_18:
+    Details: '*\DropboxExt64.*.dll*'
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject:
+    - HKCR\CLSID\\*
+    - HKCU\Software\Classes\CLSID\\*
+  SELECTION_5:
+    TargetObject: '*\InprocServer32\(Default)'
+  SELECTION_6:
+    EventID: 12
+  SELECTION_7:
+    EventID: 13
+  SELECTION_8:
+    EventID: 14
+  SELECTION_9:
+    Details:
+    - '*%%systemroot%%\system32\\*'
+    - '*%%systemroot%%\SysWow64\\*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 and SELECTION_5)
+    and  not (((SELECTION_6 or SELECTION_7 or SELECTION_8) and (((SELECTION_9 or ((SELECTION_10
+    or SELECTION_11 or SELECTION_12) and SELECTION_13 and SELECTION_14)) or (SELECTION_15
+    and SELECTION_16)) or (SELECTION_17 and SELECTION_18)))))
 falsepositives:
 - Some installed utilities (i.e. OneDrive) may serve new COM objects at user-level
 id: a0ff33d8-79e4-4cef-b4f3-9dc4133ccd12
 level: medium
 logsource:
-    category: registry_event
-    product: windows
+  category: registry_event
+  product: windows
 modified: 2021/09/16
 references:
 - https://www.cyberbit.com/blog/endpoint-security/com-hijacking-windows-overlooked-security-vulnerability/
@@ -67,6 +66,3 @@ tags:
 - attack.persistence
 - attack.t1038
 - attack.t1574.001
-yml_filename: sysmon_registry_persistence_search_order.yml
-yml_path: /home/itib/git/sigma/rules/windows/registry_event
-

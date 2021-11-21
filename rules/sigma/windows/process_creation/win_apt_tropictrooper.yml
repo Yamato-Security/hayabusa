@@ -1,19 +1,20 @@
+
 title: TropicTrooper Campaign November 2018
 author: '@41thexplorer, Microsoft Defender ATP'
 date: 2019/11/12
 description: Detects TropicTrooper activity, an actor who targeted high-profile organizations
-    in the energy and food and beverage sectors in Asia
+  in the energy and food and beverage sectors in Asia
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*abCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCc*'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*abCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCc*'
+  condition: (SELECTION_1 and SELECTION_2)
 id: 8c7090c3-e0a0-4944-bd08-08c3a0cecf79
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/08/27
 references:
 - https://cloudblogs.microsoft.com/microsoftsecure/2018/11/28/windows-defender-atp-device-risk-score-exposes-new-cyberattack-drives-conditional-access-to-protect-networks/
@@ -22,6 +23,3 @@ tags:
 - attack.execution
 - attack.t1059
 - attack.t1059.001
-yml_filename: win_apt_tropictrooper.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

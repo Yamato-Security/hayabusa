@@ -1,28 +1,28 @@
+
 title: Lazarus Session Highjacker
 author: Trent Liffick (@tliffick), Bartlomiej Czyz (@bczyz1)
 date: 2020/06/03
 description: Detects executables launched outside their default directories as used
-    by Lazarus Group (Bluenoroff)
+  by Lazarus Group (Bluenoroff)
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\msdtc.exe'
-    SELECTION_3:
-        Image: '*\gpvc.exe'
-    SELECTION_4:
-        Image: C:\Windows\System32\\*
-    SELECTION_5:
-        Image: C:\Windows\SysWOW64\\*
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and  not ((SELECTION_4
-        or SELECTION_5)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\msdtc.exe'
+    - '*\gpvc.exe'
+  SELECTION_3:
+    Image:
+    - C:\Windows\System32\\*
+    - C:\Windows\SysWOW64\\*
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
 falsepositives:
 - unknown
 id: 3f7f5b0b-5b16-476c-a85f-ab477f6dd24b
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2018/03/07180244/Lazarus_Under_The_Hood_PDF_final.pdf
 status: experimental
@@ -30,6 +30,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.005
-yml_filename: win_apt_lazarus_session_highjack.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

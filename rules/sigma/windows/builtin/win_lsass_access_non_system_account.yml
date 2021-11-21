@@ -1,80 +1,52 @@
+
 title: LSASS Access from Non System Account
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/06/20
 description: Detects potential mimikatz-like tools accessing LSASS from non system
-    account
+  account
 detection:
-    SELECTION_1:
-        EventID: 4663
-    SELECTION_10:
-        AccessMask: '0x143a'
-    SELECTION_11:
-        AccessMask: '0x1418'
-    SELECTION_12:
-        AccessMask: '0x1f0fff'
-    SELECTION_13:
-        AccessMask: '0x1f1fff'
-    SELECTION_14:
-        AccessMask: '0x1f2fff'
-    SELECTION_15:
-        AccessMask: '0x1f3fff'
-    SELECTION_16:
-        AccessMask: '40'
-    SELECTION_17:
-        AccessMask: '1400'
-    SELECTION_18:
-        AccessMask: '1000'
-    SELECTION_19:
-        AccessMask: '100000'
-    SELECTION_2:
-        EventID: 4656
-    SELECTION_20:
-        AccessMask: '1410'
-    SELECTION_21:
-        AccessMask: '1010'
-    SELECTION_22:
-        AccessMask: '1438'
-    SELECTION_23:
-        AccessMask: 143a
-    SELECTION_24:
-        AccessMask: '1418'
-    SELECTION_25:
-        AccessMask: 1f0fff
-    SELECTION_26:
-        AccessMask: 1f1fff
-    SELECTION_27:
-        AccessMask: 1f2fff
-    SELECTION_28:
-        AccessMask: 1f3fff
-    SELECTION_29:
-        ObjectType: Process
-    SELECTION_3:
-        AccessMask: '0x40'
-    SELECTION_30:
-        ObjectName: '*\lsass.exe'
-    SELECTION_31:
-        SubjectUserName: '*$'
-    SELECTION_32:
-        ProcessName: C:\Program Files*
-    SELECTION_4:
-        AccessMask: '0x1400'
-    SELECTION_5:
-        AccessMask: '0x1000'
-    SELECTION_6:
-        AccessMask: '0x100000'
-    SELECTION_7:
-        AccessMask: '0x1410'
-    SELECTION_8:
-        AccessMask: '0x1010'
-    SELECTION_9:
-        AccessMask: '0x1438'
-    condition: ((((SELECTION_1 or SELECTION_2) and (SELECTION_3 or SELECTION_4 or
-        SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or
-        SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
-        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
-        or SELECTION_20 or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24
-        or SELECTION_25 or SELECTION_26 or SELECTION_27 or SELECTION_28) and SELECTION_29
-        and SELECTION_30) and  not (SELECTION_31)) and  not (SELECTION_32))
+  SELECTION_1:
+    EventID: 4663
+  SELECTION_2:
+    EventID: 4656
+  SELECTION_3:
+    AccessMask:
+    - '0x40'
+    - '0x1400'
+    - '0x1000'
+    - '0x100000'
+    - '0x1410'
+    - '0x1010'
+    - '0x1438'
+    - '0x143a'
+    - '0x1418'
+    - '0x1f0fff'
+    - '0x1f1fff'
+    - '0x1f2fff'
+    - '0x1f3fff'
+    - '40'
+    - '1400'
+    - '1000'
+    - '100000'
+    - '1410'
+    - '1010'
+    - '1438'
+    - 143a
+    - '1418'
+    - 1f0fff
+    - 1f1fff
+    - 1f2fff
+    - 1f3fff
+  SELECTION_4:
+    ObjectType: Process
+  SELECTION_5:
+    ObjectName: '*\lsass.exe'
+  SELECTION_6:
+    SubjectUserName: '*$'
+  SELECTION_7:
+    ProcessName: C:\Program Files*
+  condition: ((((SELECTION_1 or SELECTION_2) and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    and  not (SELECTION_6)) and  not (SELECTION_7))
 falsepositives:
 - Unknown
 fields:
@@ -85,8 +57,8 @@ fields:
 id: 962fe167-e48d-4fd6-9974-11e5b9a5d6d1
 level: critical
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 modified: 2021/03/17
 references:
 - https://threathunterplaybook.com/notebooks/windows/06_credential_access/WIN-170105221010.html
@@ -95,6 +67,3 @@ tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.001
-yml_filename: win_lsass_access_non_system_account.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

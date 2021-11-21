@@ -1,46 +1,39 @@
+
 title: PowerShell Downgrade Attack
 author: Harish Segar (rule)
 date: 2020/03/20
 description: Detects PowerShell downgrade attack by comparing the host versions with
-    the actually used engine version 2.0
+  the actually used engine version 2.0
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '* -version 2 *'
-    SELECTION_3:
-        CommandLine: '* -versio 2 *'
-    SELECTION_4:
-        CommandLine: '* -versi 2 *'
-    SELECTION_5:
-        CommandLine: '* -vers 2 *'
-    SELECTION_6:
-        CommandLine: '* -ver 2 *'
-    SELECTION_7:
-        CommandLine: '* -ve 2 *'
-    SELECTION_8:
-        Image: '*\powershell.exe'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7) and SELECTION_8)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '* -version 2 *'
+    - '* -versio 2 *'
+    - '* -versi 2 *'
+    - '* -vers 2 *'
+    - '* -ver 2 *'
+    - '* -ve 2 *'
+  SELECTION_3:
+    Image: '*\powershell.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Penetration Test
 - Unknown
 id: b3512211-c67e-4707-bedc-66efc7848863
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - http://www.leeholmes.com/blog/2017/03/17/detecting-and-preventing-powershell-downgrade-attacks/
 related:
--   id: 6331d09b-4785-4c13-980f-f96661356249
-    type: derived
+- id: 6331d09b-4785-4c13-980f-f96661356249
+  type: derived
 status: experimental
 tags:
 - attack.defense_evasion
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-yml_filename: win_powershell_downgrade_attack.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

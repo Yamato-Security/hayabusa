@@ -1,31 +1,31 @@
+
 title: Suspicious Use of Procdump on LSASS
 author: Florian Roth
 date: 2018/10/30
 description: Detects suspicious uses of the SysInternals Procdump utility by using
-    a special command line parameter in combination with the lsass.exe process. This
-    way we're also able to catch cases in which the attacker has renamed the procdump
-    executable.
+  a special command line parameter in combination with the lsass.exe process. This
+  way we're also able to catch cases in which the attacker has renamed the procdump
+  executable.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '* -ma *'
-    SELECTION_3:
-        EventID: 1
-    SELECTION_4:
-        CommandLine: '* lsass*'
-    SELECTION_5:
-        CommandLine: '* ls*'
-    condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4) or
-        SELECTION_5))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '* -ma *'
+  SELECTION_3:
+    EventID: 1
+  SELECTION_4:
+    CommandLine: '* lsass*'
+  SELECTION_5:
+    CommandLine: '* ls*'
+  condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4) or SELECTION_5))
 falsepositives:
 - Unlikely, because no one should dump an lsass process memory
 - Another tool that uses the command line switches of Procdump
 id: 5afee48e-67dd-4e03-a783-f74259dcf998
 level: critical
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/02/02
 references:
 - Internal Research
@@ -37,6 +37,3 @@ tags:
 - attack.t1003.001
 - attack.t1003
 - car.2013-05-009
-yml_filename: win_susp_procdump_lsass.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

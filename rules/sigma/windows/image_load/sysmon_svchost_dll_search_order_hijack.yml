@@ -1,33 +1,34 @@
+
 title: Svchost DLL Search Order Hijack
 author: SBousseaden
 date: 2019/10/28
 description: IKEEXT and SessionEnv service, as they call LoadLibrary on files that
-    do not exist within C:\Windows\System32\ by default. An attacker can place their
-    malicious logic within the PROCESS_ATTACH block of their library and restart the
-    aforementioned services "svchost.exe -k netsvcs" to gain code execution on a remote
-    machine.
+  do not exist within C:\Windows\System32\ by default. An attacker can place their
+  malicious logic within the PROCESS_ATTACH block of their library and restart the
+  aforementioned services "svchost.exe -k netsvcs" to gain code execution on a remote
+  machine.
 detection:
-    SELECTION_1:
-        EventID: 7
-    SELECTION_2:
-        Image: '*\svchost.exe'
-    SELECTION_3:
-        ImageLoaded: '*\tsmsisrv.dll'
-    SELECTION_4:
-        ImageLoaded: '*\tsvipsrv.dll'
-    SELECTION_5:
-        ImageLoaded: '*\wlbsctrl.dll'
-    SELECTION_6:
-        ImageLoaded: C:\Windows\WinSxS\\*
-    condition: (SELECTION_1 and ((SELECTION_2) and (SELECTION_3 or SELECTION_4 or
-        SELECTION_5)) and  not ((SELECTION_6)))
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    Image:
+    - '*\svchost.exe'
+  SELECTION_3:
+    ImageLoaded:
+    - '*\tsmsisrv.dll'
+    - '*\tsvipsrv.dll'
+    - '*\wlbsctrl.dll'
+  SELECTION_4:
+    ImageLoaded:
+    - C:\Windows\WinSxS\\*
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
 falsepositives:
 - Pentest
 id: 602a1f13-c640-4d73-b053-be9a2fa58b77
 level: high
 logsource:
-    category: image_load
-    product: windows
+  category: image_load
+  product: windows
 modified: 2020/08/23
 references:
 - https://posts.specterops.io/lateral-movement-scm-and-dll-hijacking-primer-d2f61e8ab992
@@ -39,6 +40,3 @@ tags:
 - attack.t1574.002
 - attack.t1038
 - attack.t1574.001
-yml_filename: sysmon_svchost_dll_search_order_hijack.yml
-yml_path: /home/itib/git/sigma/rules/windows/image_load
-

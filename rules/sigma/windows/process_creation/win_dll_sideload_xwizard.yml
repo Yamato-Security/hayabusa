@@ -1,23 +1,24 @@
+
 title: Xwizard DLL Sideloading
 author: Christian Burkard
 date: 2021/09/20
 description: Detects the execution of Xwizard tool from the non-default directory
-    which can be used to sideload a custom xwizards.dll
+  which can be used to sideload a custom xwizards.dll
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\xwizard.exe'
-    SELECTION_3:
-        Image: C:\Windows\System32\\*
-    condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\xwizard.exe'
+  SELECTION_3:
+    Image: C:\Windows\System32\\*
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
 falsepositives:
 - Windows installed on non-C drive
 id: 193d5ccd-6f59-40c6-b5b0-8e32d5ddd3d1
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://lolbas-project.github.io/lolbas/Binaries/Xwizard/
 - http://www.hexacorn.com/blog/2017/07/31/the-wizard-of-x-oppa-plugx-style/
@@ -25,6 +26,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1574.002
-yml_filename: win_dll_sideload_xwizard.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

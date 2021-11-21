@@ -1,30 +1,28 @@
+
 title: Windows Defender Threat Detected
-author: "J\xE1n Tren\u010Dansk\xFD"
+author: Ján Trenčanský
 date: 2020/07/28
 description: Detects all actions taken by Windows Defender malware detection engines
 detection:
-    SELECTION_1:
-        EventID: 1006
-    SELECTION_2:
-        EventID: 1116
-    SELECTION_3:
-        EventID: 1015
-    SELECTION_4:
-        EventID: 1117
-    condition: (SELECTION_1 or SELECTION_2 or SELECTION_3 or SELECTION_4)
+  SELECTION_1:
+    EventID: 1006
+  SELECTION_2:
+    EventID: 1116
+  SELECTION_3:
+    EventID: 1015
+  SELECTION_4:
+    EventID: 1117
+  condition: (SELECTION_1 or SELECTION_2 or SELECTION_3 or SELECTION_4)
 falsepositives:
 - unlikely
 id: 57b649ef-ff42-4fb0-8bf6-62da243a1708
 level: high
 logsource:
-    product: windows
-    service: windefend
+  product: windows
+  service: windefend
 references:
 - https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-antivirus/troubleshoot-windows-defender-antivirus
 status: stable
 tags:
 - attack.execution
 - attack.t1059
-yml_filename: win_defender_threat.yml
-yml_path: /home/itib/git/sigma/rules/windows/other
-

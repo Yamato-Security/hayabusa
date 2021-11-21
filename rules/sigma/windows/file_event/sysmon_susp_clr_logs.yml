@@ -1,39 +1,33 @@
+
 title: Suspcious CLR Logs Creation
 author: omkar72, oscd.community
 date: 2020/10/12
 description: Detects suspicious .NET assembly executions
 detection:
-    SELECTION_1:
-        EventID: 11
-    SELECTION_2:
-        TargetFilename: '*\AppData\Local\Microsoft\CLR*'
-    SELECTION_3:
-        TargetFilename: '*\UsageLogs\\*'
-    SELECTION_4:
-        TargetFilename: '*mshta*'
-    SELECTION_5:
-        TargetFilename: '*cscript*'
-    SELECTION_6:
-        TargetFilename: '*wscript*'
-    SELECTION_7:
-        TargetFilename: '*regsvr32*'
-    SELECTION_8:
-        TargetFilename: '*wmic*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8))
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: '*\AppData\Local\Microsoft\CLR*'
+  SELECTION_3:
+    TargetFilename: '*\UsageLogs\\*'
+  SELECTION_4:
+    TargetFilename:
+    - '*mshta*'
+    - '*cscript*'
+    - '*wscript*'
+    - '*regsvr32*'
+    - '*wmic*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - Unknown
 id: e4b63079-6198-405c-abd7-3fe8b0ce3263
 level: high
 logsource:
-    category: file_event
-    product: windows
+  category: file_event
+  product: windows
 references:
 - https://blog.menasec.net/2019/07/interesting-difr-traces-of-net-clr.html
 status: experimental
 tags:
 - attack.execution
 - attack.t1059.001
-yml_filename: sysmon_susp_clr_logs.yml
-yml_path: /home/itib/git/sigma/rules/windows/file_event
-

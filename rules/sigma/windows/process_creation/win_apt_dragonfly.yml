@@ -1,25 +1,24 @@
+
 title: CrackMapExecWin
 author: Markus Neis
 date: 2018/04/08
 description: Detects CrackMapExecWin Activity as Described by NCSC
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\crackmapexec.exe'
-    condition: (SELECTION_1 and (SELECTION_2))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\crackmapexec.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - None
 id: 04d9079e-3905-4b70-ad37-6bdf11304965
 level: critical
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://www.ncsc.gov.uk/alerts/hostile-state-actors-compromising-uk-organisations-focus-engineering-and-industrial-control
 status: experimental
 tags:
 - attack.g0035
-yml_filename: win_apt_dragonfly.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

@@ -1,16 +1,17 @@
+
 title: Modifies the Registry From a File
 author: Eli Salem, Sander Wiebing, oscd.community
 date: 2020/10/08
 description: Detects the execution of regini.exe which can be used to modify registry
-    keys, the changes are imported from one or more text files.
+  keys, the changes are imported from one or more text files.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\regini.exe'
-    SELECTION_3:
-        CommandLine|re: :[^ \\\\]
-    condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\regini.exe'
+  SELECTION_3:
+    CommandLine|re: :[^ \\\\]
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
 falsepositives:
 - Legitimate modification of keys
 fields:
@@ -19,8 +20,8 @@ fields:
 id: 5f60740a-f57b-4e76-82a1-15b6ff2cb134
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/05/24
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Regini.yml
@@ -30,6 +31,3 @@ status: experimental
 tags:
 - attack.t1112
 - attack.defense_evasion
-yml_filename: win_regini.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

@@ -1,30 +1,31 @@
+
 title: Pingback Backdoor
 author: Bhabesh Raj
 date: 2021/05/05
 description: Detects the use of Pingback backdoor that creates ICMP tunnel for C2
-    as described in the trustwave report
+  as described in the trustwave report
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        ParentImage: '*updata.exe'
-    SELECTION_3:
-        CommandLine: '*config*'
-    SELECTION_4:
-        CommandLine: '*msdtc*'
-    SELECTION_5:
-        CommandLine: '*start*'
-    SELECTION_6:
-        CommandLine: '*auto*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
-        and SELECTION_6)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*updata.exe'
+  SELECTION_3:
+    CommandLine: '*config*'
+  SELECTION_4:
+    CommandLine: '*msdtc*'
+  SELECTION_5:
+    CommandLine: '*start*'
+  SELECTION_6:
+    CommandLine: '*auto*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)
 falsepositives:
 - Very unlikely
 id: b2400ffb-7680-47c0-b08a-098a7de7e7a9
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/09/09
 references:
 - https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/backdoor-at-the-end-of-the-icmp-tunnel
@@ -33,6 +34,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1574.001
-yml_filename: process_creation_pingback_backdoor.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

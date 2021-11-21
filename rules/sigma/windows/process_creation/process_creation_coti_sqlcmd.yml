@@ -1,31 +1,30 @@
+
 title: Conti Backup Database
 author: frack113
 date: 2021/08/16
 description: Detects a command used by conti to dump database
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*sqlcmd *'
-    SELECTION_3:
-        CommandLine: '*sqlcmd.exe*'
-    SELECTION_4:
-        CommandLine: '* -S localhost *'
-    SELECTION_5:
-        CommandLine: '*sys.sysprocesses*'
-    SELECTION_6:
-        CommandLine: '*master.dbo.sysdatabases*'
-    SELECTION_7:
-        CommandLine: '*BACKUP DATABASE*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and SELECTION_4 and (SELECTION_5
-        or SELECTION_6 or SELECTION_7))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*sqlcmd *'
+    - '*sqlcmd.exe*'
+  SELECTION_3:
+    CommandLine: '* -S localhost *'
+  SELECTION_4:
+    CommandLine:
+    - '*sys.sysprocesses*'
+    - '*master.dbo.sysdatabases*'
+    - '*BACKUP DATABASE*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - Unknown
 id: 2f47f1fd-0901-466e-a770-3b7092834a1b
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://twitter.com/vxunderground/status/1423336151860002816?s=20
 - https://www.virustotal.com/gui/file/03e9b8c2e86d6db450e5eceec057d7e369ee2389b9daecaf06331a95410aa5f8/detection
@@ -33,6 +32,3 @@ references:
 status: experimental
 tags:
 - attack.collection
-yml_filename: process_creation_coti_sqlcmd.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

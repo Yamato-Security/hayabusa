@@ -1,46 +1,42 @@
+
 title: Suspicious Scripting in a WMI Consumer
 author: Florian Roth, Jonhnathan Ribeiro
 date: 2019/04/15
 description: Detects suspicious scripting in WMI Event Consumers
 detection:
-    SELECTION_1:
-        EventID: 19
-    SELECTION_10:
-        Destination: '* iex(*'
-    SELECTION_11:
-        Destination: '*WScript.shell*'
-    SELECTION_12:
-        Destination: '* -nop *'
-    SELECTION_13:
-        Destination: '* -noprofile *'
-    SELECTION_14:
-        Destination: '* -decode *'
-    SELECTION_15:
-        Destination: '* -enc *'
-    SELECTION_16:
-        Destination: '*WScript.Shell*'
-    SELECTION_17:
-        Destination: '*System.Security.Cryptography.FromBase64Transform*'
-    SELECTION_2:
-        EventID: 20
-    SELECTION_3:
-        EventID: 21
-    SELECTION_4:
-        Destination: '*new-object*'
-    SELECTION_5:
-        Destination: '*net.webclient*'
-    SELECTION_6:
-        Destination: '*.downloadstring*'
-    SELECTION_7:
-        Destination: '*new-object*'
-    SELECTION_8:
-        Destination: '*net.webclient*'
-    SELECTION_9:
-        Destination: '*.downloadfile*'
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and ((SELECTION_4 and
-        SELECTION_5 and SELECTION_6) or (SELECTION_7 and SELECTION_8 and SELECTION_9)
-        or (SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
-        or SELECTION_15) or (SELECTION_16 or SELECTION_17)))
+  SELECTION_1:
+    EventID: 19
+  SELECTION_10:
+    Destination:
+    - '* iex(*'
+    - '*WScript.shell*'
+    - '* -nop *'
+    - '* -noprofile *'
+    - '* -decode *'
+    - '* -enc *'
+  SELECTION_11:
+    Destination:
+    - '*WScript.Shell*'
+    - '*System.Security.Cryptography.FromBase64Transform*'
+  SELECTION_2:
+    EventID: 20
+  SELECTION_3:
+    EventID: 21
+  SELECTION_4:
+    Destination: '*new-object*'
+  SELECTION_5:
+    Destination: '*net.webclient*'
+  SELECTION_6:
+    Destination: '*.downloadstring*'
+  SELECTION_7:
+    Destination: '*new-object*'
+  SELECTION_8:
+    Destination: '*net.webclient*'
+  SELECTION_9:
+    Destination: '*.downloadfile*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and ((SELECTION_4 and SELECTION_5
+    and SELECTION_6) or (SELECTION_7 and SELECTION_8 and SELECTION_9) or SELECTION_10
+    or SELECTION_11))
 falsepositives:
 - Administrative scripts
 fields:
@@ -49,8 +45,8 @@ fields:
 id: fe21810c-2a8c-478f-8dd3-5a287fb2a0e0
 level: high
 logsource:
-    category: wmi_event
-    product: windows
+  category: wmi_event
+  product: windows
 modified: 2021/09/01
 references:
 - https://in.security/an-intro-into-abusing-and-identifying-wmi-event-subscriptions-for-persistence/
@@ -61,6 +57,3 @@ tags:
 - attack.t1086
 - attack.execution
 - attack.t1059.005
-yml_filename: sysmon_wmi_susp_scripting.yml
-yml_path: /home/itib/git/sigma/rules/windows/wmi_event
-

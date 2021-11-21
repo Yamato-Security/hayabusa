@@ -1,20 +1,21 @@
+
 title: Windows Defender Exclusions Added
 author: Christian Burkard
 date: 2021/07/06
 description: Detects the Setting of Windows Defender Exclusions
 detection:
-    SELECTION_1:
-        EventID: 5007
-    SELECTION_2:
-        New Value: '*\Microsoft\Windows Defender\Exclusions*'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 5007
+  SELECTION_2:
+    New Value: '*\Microsoft\Windows Defender\Exclusions*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Administrator actions
 id: 1321dc4e-a1fe-481d-a016-52c45f0c8b4f
 level: medium
 logsource:
-    product: windows
-    service: windefend
+  product: windows
+  service: windefend
 modified: 2021/09/21
 references:
 - https://twitter.com/_nullbind/status/1204923340810543109
@@ -23,6 +24,3 @@ tags:
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.001
-yml_filename: win_defender_exclusions.yml
-yml_path: /home/itib/git/sigma/rules/windows/other
-

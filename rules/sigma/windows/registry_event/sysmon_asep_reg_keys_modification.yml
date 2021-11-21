@@ -1,324 +1,211 @@
+
 title: Autorun Keys Modification
 author: Victor Sergeev, Daniil Yugoslavskiy, Gleb Sukhodolskiy, Timur Zinniatullin,
-    oscd.community
+  oscd.community
 date: 2019/10/25
 description: Detects modification of autostart extensibility point (ASEP) in registry.
 detection:
-    SELECTION_1:
-        EventID: 12
-    SELECTION_10:
-        TargetObject: '*\Software\Microsoft\Ctf\LangBarAddin*'
-    SELECTION_100:
-        TargetObject: '*\CLSID\{ABE3B9A4-257D-4B97-BD1A-294AF496222E}\Instance*'
-    SELECTION_101:
-        TargetObject: '*\CLSID\{7ED96837-96F0-4812-B211-F13C24117ED3}\Instance*'
-    SELECTION_102:
-        TargetObject: '*\CLSID\{083863F1-70DE-11d0-BD40-00A0C911CE86}\Instance*'
-    SELECTION_103:
-        TargetObject: '*\AllFileSystemObjects\ShellEx\DragDropHandlers*'
-    SELECTION_104:
-        TargetObject: '*\ShellEx\PropertySheetHandlers*'
-    SELECTION_105:
-        TargetObject: '*\ShellEx\ContextMenuHandlers*'
-    SELECTION_106:
-        TargetObject: '*\Software\Classes*'
-    SELECTION_107:
-        TargetObject: '*\Folder\ShellEx\ExtShellFolderViews*'
-    SELECTION_108:
-        TargetObject: '*\Folder\ShellEx\DragDropHandlers*'
-    SELECTION_109:
-        TargetObject: '*\Folder\Shellex\ColumnHandlers*'
-    SELECTION_11:
-        TargetObject: '*\Software\Microsoft\Command Processor\Autorun*'
-    SELECTION_110:
-        TargetObject: '*\Filter*'
-    SELECTION_111:
-        TargetObject: '*\Exefile\Shell\Open\Command\(Default)*'
-    SELECTION_112:
-        TargetObject: '*\Directory\Shellex\DragDropHandlers*'
-    SELECTION_113:
-        TargetObject: '*\Directory\Shellex\CopyHookHandlers*'
-    SELECTION_114:
-        TargetObject: '*\CLSID\{AC757296-3522-4E11-9862-C17BE5A1767E}\Instance*'
-    SELECTION_115:
-        TargetObject: '*\CLSID\{ABE3B9A4-257D-4B97-BD1A-294AF496222E}\Instance*'
-    SELECTION_116:
-        TargetObject: '*\CLSID\{7ED96837-96F0-4812-B211-F13C24117ED3}\Instance*'
-    SELECTION_117:
-        TargetObject: '*\CLSID\{083863F1-70DE-11d0-BD40-00A0C911CE86}\Instance*'
-    SELECTION_118:
-        TargetObject: '*\Classes\AllFileSystemObjects\ShellEx\DragDropHandlers*'
-    SELECTION_119:
-        TargetObject: '*\.exe*'
-    SELECTION_12:
-        TargetObject: '*\SOFTWARE\Microsoft\Active Setup\Installed Components*'
-    SELECTION_120:
-        TargetObject: '*\.cmd*'
-    SELECTION_121:
-        TargetObject: '*\ShellEx\PropertySheetHandlers*'
-    SELECTION_122:
-        TargetObject: '*\ShellEx\ContextMenuHandlers*'
-    SELECTION_123:
-        TargetObject: '*\Software\Policies\Microsoft\Windows\System\Scripts*'
-    SELECTION_124:
-        TargetObject: '*\Startup*'
-    SELECTION_125:
-        TargetObject: '*\Shutdown*'
-    SELECTION_126:
-        TargetObject: '*\Logon*'
-    SELECTION_127:
-        TargetObject: '*\Logoff*'
-    SELECTION_128:
-        TargetObject: '*\System\CurrentControlSet\Services\WinSock2\Parameters*'
-    SELECTION_129:
-        TargetObject: '*\Protocol_Catalog9\Catalog_Entries*'
-    SELECTION_13:
-        TargetObject: '*\SOFTWARE\Classes\Protocols\Handler*'
-    SELECTION_130:
-        TargetObject: '*\NameSpace_Catalog5\Catalog_Entries*'
-    SELECTION_131:
-        TargetObject: '*\SYSTEM\CurrentControlSet\Control*'
-    SELECTION_132:
-        TargetObject: '*\Terminal Server\WinStations\RDP-Tcp\InitialProgram*'
-    SELECTION_133:
-        TargetObject: '*\Terminal Server\Wds\rdpwd\StartupPrograms*'
-    SELECTION_134:
-        TargetObject: '*\SecurityProviders\SecurityProviders*'
-    SELECTION_135:
-        TargetObject: '*\SafeBoot\AlternateShell*'
-    SELECTION_136:
-        TargetObject: '*\Print\Providers*'
-    SELECTION_137:
-        TargetObject: '*\Print\Monitors*'
-    SELECTION_138:
-        TargetObject: '*\NetworkProvider\Order*'
-    SELECTION_139:
-        TargetObject: '*\Lsa\Notification Packages*'
-    SELECTION_14:
-        TargetObject: '*\SOFTWARE\Classes\Protocols\Filter*'
-    SELECTION_140:
-        TargetObject: '*\Lsa\Authentication Packages*'
-    SELECTION_141:
-        TargetObject: '*\BootVerificationProgram\ImagePath*'
-    SELECTION_15:
-        TargetObject: '*\SOFTWARE\Classes\Htmlfile\Shell\Open\Command\(Default)*'
-    SELECTION_16:
-        TargetObject: '*\Environment\UserInitMprLogonScript*'
-    SELECTION_17:
-        TargetObject: '*\SOFTWARE\Policies\Microsoft\Windows\Control Panel\Desktop\Scrnsave.exe*'
-    SELECTION_18:
-        TargetObject: '*\Software\Microsoft\Internet Explorer\UrlSearchHooks*'
-    SELECTION_19:
-        TargetObject: '*\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components*'
-    SELECTION_2:
-        EventID: 13
-    SELECTION_20:
-        TargetObject: '*\Software\Classes\Clsid\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}\Inprocserver32*'
-    SELECTION_21:
-        TargetObject: '*\Control Panel\Desktop\Scrnsave.exe*'
-    SELECTION_22:
-        TargetObject: '*\System\CurrentControlSet\Control\Session Manager*'
-    SELECTION_23:
-        TargetObject: '*\SetupExecute*'
-    SELECTION_24:
-        TargetObject: '*\S0InitialCommand*'
-    SELECTION_25:
-        TargetObject: '*\KnownDlls*'
-    SELECTION_26:
-        TargetObject: '*\Execute*'
-    SELECTION_27:
-        TargetObject: '*\BootExecute*'
-    SELECTION_28:
-        TargetObject: '*\AppCertDlls*'
-    SELECTION_29:
-        TargetObject: '*\SOFTWARE\Microsoft\Windows\CurrentVersion*'
-    SELECTION_3:
-        EventID: 14
-    SELECTION_30:
-        TargetObject: '*\ShellServiceObjectDelayLoad*'
-    SELECTION_31:
-        TargetObject: '*\Run*'
-    SELECTION_32:
-        TargetObject: '*\Policies\System\Shell*'
-    SELECTION_33:
-        TargetObject: '*\Policies\Explorer\Run*'
-    SELECTION_34:
-        TargetObject: '*\Group Policy\Scripts\Startup*'
-    SELECTION_35:
-        TargetObject: '*\Group Policy\Scripts\Shutdown*'
-    SELECTION_36:
-        TargetObject: '*\Group Policy\Scripts\Logon*'
-    SELECTION_37:
-        TargetObject: '*\Group Policy\Scripts\Logoff*'
-    SELECTION_38:
-        TargetObject: '*\Explorer\ShellServiceObjects*'
-    SELECTION_39:
-        TargetObject: '*\Explorer\ShellIconOverlayIdentifiers*'
-    SELECTION_4:
-        TargetObject: '*\SOFTWARE\Wow6432Node\Microsoft\Windows CE Services\AutoStart*'
-    SELECTION_40:
-        TargetObject: '*\Explorer\ShellExecuteHooks*'
-    SELECTION_41:
-        TargetObject: '*\Explorer\SharedTaskScheduler*'
-    SELECTION_42:
-        TargetObject: '*\Explorer\Browser Helper Objects*'
-    SELECTION_43:
-        TargetObject: '*\Authentication\PLAP Providers*'
-    SELECTION_44:
-        TargetObject: '*\Authentication\Credential Providers*'
-    SELECTION_45:
-        TargetObject: '*\Authentication\Credential Provider Filters*'
-    SELECTION_46:
-        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion*'
-    SELECTION_47:
-        TargetObject: '*\Winlogon\VmApplet*'
-    SELECTION_48:
-        TargetObject: '*\Winlogon\Userinit*'
-    SELECTION_49:
-        TargetObject: '*\Winlogon\Taskman*'
-    SELECTION_5:
-        TargetObject: '*\Software\Wow6432Node\Microsoft\Command Processor\Autorun*'
-    SELECTION_50:
-        TargetObject: '*\Winlogon\Shell*'
-    SELECTION_51:
-        TargetObject: '*\Winlogon\GpExtensions*'
-    SELECTION_52:
-        TargetObject: '*\Winlogon\AppSetup*'
-    SELECTION_53:
-        TargetObject: '*\Winlogon\AlternateShells\AvailableShells*'
-    SELECTION_54:
-        TargetObject: '*\Windows\IconServiceLib*'
-    SELECTION_55:
-        TargetObject: '*\Windows\Appinit_Dlls*'
-    SELECTION_56:
-        TargetObject: '*\Image File Execution Options*'
-    SELECTION_57:
-        TargetObject: '*\Font Drivers*'
-    SELECTION_58:
-        TargetObject: '*\Drivers32*'
-    SELECTION_59:
-        TargetObject: '*\Windows\Run*'
-    SELECTION_6:
-        TargetObject: '*\SOFTWARE\Wow6432Node\Microsoft\Active Setup\Installed Components*'
-    SELECTION_60:
-        TargetObject: '*\Windows\Load*'
-    SELECTION_61:
-        TargetObject: '*\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion*'
-    SELECTION_62:
-        TargetObject: '*\ShellServiceObjectDelayLoad*'
-    SELECTION_63:
-        TargetObject: '*\Run*'
-    SELECTION_64:
-        TargetObject: '*\Explorer\ShellServiceObjects*'
-    SELECTION_65:
-        TargetObject: '*\Explorer\ShellIconOverlayIdentifiers*'
-    SELECTION_66:
-        TargetObject: '*\Explorer\ShellExecuteHooks*'
-    SELECTION_67:
-        TargetObject: '*\Explorer\SharedTaskScheduler*'
-    SELECTION_68:
-        TargetObject: '*\Explorer\Browser Helper Objects*'
-    SELECTION_69:
-        TargetObject: '*\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion*'
-    SELECTION_7:
-        TargetObject: '*\SOFTWARE\Microsoft\Windows CE Services\AutoStartOnDisconnect*'
-    SELECTION_70:
-        TargetObject: '*\Windows\Appinit_Dlls*'
-    SELECTION_71:
-        TargetObject: '*\Image File Execution Options*'
-    SELECTION_72:
-        TargetObject: '*\Drivers32*'
-    SELECTION_73:
-        EventID: 12
-    SELECTION_74:
-        EventID: 13
-    SELECTION_75:
-        EventID: 14
-    SELECTION_76:
-        TargetObject: '*\Software\Wow6432Node\Microsoft\Office*'
-    SELECTION_77:
-        TargetObject: '*\Software\Microsoft\Office*'
-    SELECTION_78:
-        TargetObject: '*\Word\Addins*'
-    SELECTION_79:
-        TargetObject: '*\PowerPoint\Addins*'
-    SELECTION_8:
-        TargetObject: '*\SOFTWARE\Microsoft\Windows CE Services\AutoStartOnConnect*'
-    SELECTION_80:
-        TargetObject: '*\Outlook\Addins*'
-    SELECTION_81:
-        TargetObject: '*\Onenote\Addins*'
-    SELECTION_82:
-        TargetObject: '*\Excel\Addins*'
-    SELECTION_83:
-        TargetObject: '*\Access\Addins*'
-    SELECTION_84:
-        TargetObject: '*test\Special\Perf*'
-    SELECTION_85:
-        EventID: 12
-    SELECTION_86:
-        EventID: 13
-    SELECTION_87:
-        EventID: 14
-    SELECTION_88:
-        TargetObject: '*\Software\Wow6432Node\Microsoft\Internet Explorer*'
-    SELECTION_89:
-        TargetObject: '*\Software\Microsoft\Internet Explorer*'
-    SELECTION_9:
-        TargetObject: '*\SYSTEM\Setup\CmdLine*'
-    SELECTION_90:
-        TargetObject: '*\Toolbar*'
-    SELECTION_91:
-        TargetObject: '*\Extensions*'
-    SELECTION_92:
-        TargetObject: '*\Explorer Bars*'
-    SELECTION_93:
-        TargetObject: '*\Software\Wow6432Node\Classes*'
-    SELECTION_94:
-        TargetObject: '*\Folder\ShellEx\ExtShellFolderViews*'
-    SELECTION_95:
-        TargetObject: '*\Folder\ShellEx\DragDropHandlers*'
-    SELECTION_96:
-        TargetObject: '*\Folder\ShellEx\ColumnHandlers*'
-    SELECTION_97:
-        TargetObject: '*\Directory\Shellex\DragDropHandlers*'
-    SELECTION_98:
-        TargetObject: '*\Directory\Shellex\CopyHookHandlers*'
-    SELECTION_99:
-        TargetObject: '*\CLSID\{AC757296-3522-4E11-9862-C17BE5A1767E}\Instance*'
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (((((((((((((SELECTION_4
-        or SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9
-        or SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
-        or SELECTION_15 or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19
-        or SELECTION_20 or SELECTION_21) or (SELECTION_22 and (SELECTION_23 or SELECTION_24
-        or SELECTION_25 or SELECTION_26 or SELECTION_27 or SELECTION_28))) or (SELECTION_29
-        and (SELECTION_30 or SELECTION_31 or SELECTION_32 or SELECTION_33 or SELECTION_34
-        or SELECTION_35 or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39
-        or SELECTION_40 or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44
-        or SELECTION_45))) or (SELECTION_46 and (SELECTION_47 or SELECTION_48 or SELECTION_49
-        or SELECTION_50 or SELECTION_51 or SELECTION_52 or SELECTION_53 or SELECTION_54
-        or SELECTION_55 or SELECTION_56 or SELECTION_57 or SELECTION_58 or SELECTION_59
-        or SELECTION_60))) or (SELECTION_61 and (SELECTION_62 or SELECTION_63 or SELECTION_64
-        or SELECTION_65 or SELECTION_66 or SELECTION_67 or SELECTION_68))) or (SELECTION_69
-        and (SELECTION_70 or SELECTION_71 or SELECTION_72))) or ((SELECTION_73 or
-        SELECTION_74 or SELECTION_75) and (SELECTION_76 or SELECTION_77) and (SELECTION_78
-        or SELECTION_79 or SELECTION_80 or SELECTION_81 or SELECTION_82 or SELECTION_83
-        or SELECTION_84))) or ((SELECTION_85 or SELECTION_86 or SELECTION_87) and
-        (SELECTION_88 or SELECTION_89) and (SELECTION_90 or SELECTION_91 or SELECTION_92)))
-        or (SELECTION_93 and (SELECTION_94 or SELECTION_95 or SELECTION_96 or SELECTION_97
-        or SELECTION_98 or SELECTION_99 or SELECTION_100 or SELECTION_101 or SELECTION_102
-        or SELECTION_103 or SELECTION_104 or SELECTION_105))) or (SELECTION_106 and
-        (SELECTION_107 or SELECTION_108 or SELECTION_109 or SELECTION_110 or SELECTION_111
-        or SELECTION_112 or SELECTION_113 or SELECTION_114 or SELECTION_115 or SELECTION_116
-        or SELECTION_117 or SELECTION_118 or SELECTION_119 or SELECTION_120 or SELECTION_121
-        or SELECTION_122))) or (SELECTION_123 and (SELECTION_124 or SELECTION_125
-        or SELECTION_126 or SELECTION_127))) or (SELECTION_128 and (SELECTION_129
-        or SELECTION_130))) or (SELECTION_131 and (SELECTION_132 or SELECTION_133
-        or SELECTION_134 or SELECTION_135 or SELECTION_136 or SELECTION_137 or SELECTION_138
-        or SELECTION_139 or SELECTION_140 or SELECTION_141))))
+  SELECTION_1:
+    EventID: 12
+  SELECTION_10:
+    TargetObject:
+    - '*\Winlogon\VmApplet*'
+    - '*\Winlogon\Userinit*'
+    - '*\Winlogon\Taskman*'
+    - '*\Winlogon\Shell*'
+    - '*\Winlogon\GpExtensions*'
+    - '*\Winlogon\AppSetup*'
+    - '*\Winlogon\AlternateShells\AvailableShells*'
+    - '*\Windows\IconServiceLib*'
+    - '*\Windows\Appinit_Dlls*'
+    - '*\Image File Execution Options*'
+    - '*\Font Drivers*'
+    - '*\Drivers32*'
+    - '*\Windows\Run*'
+    - '*\Windows\Load*'
+  SELECTION_11:
+    TargetObject: '*\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion*'
+  SELECTION_12:
+    TargetObject:
+    - '*\ShellServiceObjectDelayLoad*'
+    - '*\Run*'
+    - '*\Explorer\ShellServiceObjects*'
+    - '*\Explorer\ShellIconOverlayIdentifiers*'
+    - '*\Explorer\ShellExecuteHooks*'
+    - '*\Explorer\SharedTaskScheduler*'
+    - '*\Explorer\Browser Helper Objects*'
+  SELECTION_13:
+    TargetObject: '*\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion*'
+  SELECTION_14:
+    TargetObject:
+    - '*\Windows\Appinit_Dlls*'
+    - '*\Image File Execution Options*'
+    - '*\Drivers32*'
+  SELECTION_15:
+    EventID: 12
+  SELECTION_16:
+    EventID: 13
+  SELECTION_17:
+    EventID: 14
+  SELECTION_18:
+    TargetObject: '*\Software\Wow6432Node\Microsoft\Office*'
+  SELECTION_19:
+    TargetObject: '*\Software\Microsoft\Office*'
+  SELECTION_2:
+    EventID: 13
+  SELECTION_20:
+    TargetObject:
+    - '*\Word\Addins*'
+    - '*\PowerPoint\Addins*'
+    - '*\Outlook\Addins*'
+    - '*\Onenote\Addins*'
+    - '*\Excel\Addins*'
+    - '*\Access\Addins*'
+    - '*test\Special\Perf*'
+  SELECTION_21:
+    EventID: 12
+  SELECTION_22:
+    EventID: 13
+  SELECTION_23:
+    EventID: 14
+  SELECTION_24:
+    TargetObject: '*\Software\Wow6432Node\Microsoft\Internet Explorer*'
+  SELECTION_25:
+    TargetObject: '*\Software\Microsoft\Internet Explorer*'
+  SELECTION_26:
+    TargetObject:
+    - '*\Toolbar*'
+    - '*\Extensions*'
+    - '*\Explorer Bars*'
+  SELECTION_27:
+    TargetObject: '*\Software\Wow6432Node\Classes*'
+  SELECTION_28:
+    TargetObject:
+    - '*\Folder\ShellEx\ExtShellFolderViews*'
+    - '*\Folder\ShellEx\DragDropHandlers*'
+    - '*\Folder\ShellEx\ColumnHandlers*'
+    - '*\Directory\Shellex\DragDropHandlers*'
+    - '*\Directory\Shellex\CopyHookHandlers*'
+    - '*\CLSID\{AC757296-3522-4E11-9862-C17BE5A1767E}\Instance*'
+    - '*\CLSID\{ABE3B9A4-257D-4B97-BD1A-294AF496222E}\Instance*'
+    - '*\CLSID\{7ED96837-96F0-4812-B211-F13C24117ED3}\Instance*'
+    - '*\CLSID\{083863F1-70DE-11d0-BD40-00A0C911CE86}\Instance*'
+    - '*\AllFileSystemObjects\ShellEx\DragDropHandlers*'
+    - '*\ShellEx\PropertySheetHandlers*'
+    - '*\ShellEx\ContextMenuHandlers*'
+  SELECTION_29:
+    TargetObject: '*\Software\Classes*'
+  SELECTION_3:
+    EventID: 14
+  SELECTION_30:
+    TargetObject:
+    - '*\Folder\ShellEx\ExtShellFolderViews*'
+    - '*\Folder\ShellEx\DragDropHandlers*'
+    - '*\Folder\Shellex\ColumnHandlers*'
+    - '*\Filter*'
+    - '*\Exefile\Shell\Open\Command\(Default)*'
+    - '*\Directory\Shellex\DragDropHandlers*'
+    - '*\Directory\Shellex\CopyHookHandlers*'
+    - '*\CLSID\{AC757296-3522-4E11-9862-C17BE5A1767E}\Instance*'
+    - '*\CLSID\{ABE3B9A4-257D-4B97-BD1A-294AF496222E}\Instance*'
+    - '*\CLSID\{7ED96837-96F0-4812-B211-F13C24117ED3}\Instance*'
+    - '*\CLSID\{083863F1-70DE-11d0-BD40-00A0C911CE86}\Instance*'
+    - '*\Classes\AllFileSystemObjects\ShellEx\DragDropHandlers*'
+    - '*\.exe*'
+    - '*\.cmd*'
+    - '*\ShellEx\PropertySheetHandlers*'
+    - '*\ShellEx\ContextMenuHandlers*'
+  SELECTION_31:
+    TargetObject: '*\Software\Policies\Microsoft\Windows\System\Scripts*'
+  SELECTION_32:
+    TargetObject:
+    - '*\Startup*'
+    - '*\Shutdown*'
+    - '*\Logon*'
+    - '*\Logoff*'
+  SELECTION_33:
+    TargetObject: '*\System\CurrentControlSet\Services\WinSock2\Parameters*'
+  SELECTION_34:
+    TargetObject:
+    - '*\Protocol_Catalog9\Catalog_Entries*'
+    - '*\NameSpace_Catalog5\Catalog_Entries*'
+  SELECTION_35:
+    TargetObject: '*\SYSTEM\CurrentControlSet\Control*'
+  SELECTION_36:
+    TargetObject:
+    - '*\Terminal Server\WinStations\RDP-Tcp\InitialProgram*'
+    - '*\Terminal Server\Wds\rdpwd\StartupPrograms*'
+    - '*\SecurityProviders\SecurityProviders*'
+    - '*\SafeBoot\AlternateShell*'
+    - '*\Print\Providers*'
+    - '*\Print\Monitors*'
+    - '*\NetworkProvider\Order*'
+    - '*\Lsa\Notification Packages*'
+    - '*\Lsa\Authentication Packages*'
+    - '*\BootVerificationProgram\ImagePath*'
+  SELECTION_4:
+    TargetObject:
+    - '*\SOFTWARE\Wow6432Node\Microsoft\Windows CE Services\AutoStart*'
+    - '*\Software\Wow6432Node\Microsoft\Command Processor\Autorun*'
+    - '*\SOFTWARE\Wow6432Node\Microsoft\Active Setup\Installed Components*'
+    - '*\SOFTWARE\Microsoft\Windows CE Services\AutoStartOnDisconnect*'
+    - '*\SOFTWARE\Microsoft\Windows CE Services\AutoStartOnConnect*'
+    - '*\SYSTEM\Setup\CmdLine*'
+    - '*\Software\Microsoft\Ctf\LangBarAddin*'
+    - '*\Software\Microsoft\Command Processor\Autorun*'
+    - '*\SOFTWARE\Microsoft\Active Setup\Installed Components*'
+    - '*\SOFTWARE\Classes\Protocols\Handler*'
+    - '*\SOFTWARE\Classes\Protocols\Filter*'
+    - '*\SOFTWARE\Classes\Htmlfile\Shell\Open\Command\(Default)*'
+    - '*\Environment\UserInitMprLogonScript*'
+    - '*\SOFTWARE\Policies\Microsoft\Windows\Control Panel\Desktop\Scrnsave.exe*'
+    - '*\Software\Microsoft\Internet Explorer\UrlSearchHooks*'
+    - '*\SOFTWARE\Microsoft\Internet Explorer\Desktop\Components*'
+    - '*\Software\Classes\Clsid\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}\Inprocserver32*'
+    - '*\Control Panel\Desktop\Scrnsave.exe*'
+  SELECTION_5:
+    TargetObject: '*\System\CurrentControlSet\Control\Session Manager*'
+  SELECTION_6:
+    TargetObject:
+    - '*\SetupExecute*'
+    - '*\S0InitialCommand*'
+    - '*\KnownDlls*'
+    - '*\Execute*'
+    - '*\BootExecute*'
+    - '*\AppCertDlls*'
+  SELECTION_7:
+    TargetObject: '*\SOFTWARE\Microsoft\Windows\CurrentVersion*'
+  SELECTION_8:
+    TargetObject:
+    - '*\ShellServiceObjectDelayLoad*'
+    - '*\Run*'
+    - '*\Policies\System\Shell*'
+    - '*\Policies\Explorer\Run*'
+    - '*\Group Policy\Scripts\Startup*'
+    - '*\Group Policy\Scripts\Shutdown*'
+    - '*\Group Policy\Scripts\Logon*'
+    - '*\Group Policy\Scripts\Logoff*'
+    - '*\Explorer\ShellServiceObjects*'
+    - '*\Explorer\ShellIconOverlayIdentifiers*'
+    - '*\Explorer\ShellExecuteHooks*'
+    - '*\Explorer\SharedTaskScheduler*'
+    - '*\Explorer\Browser Helper Objects*'
+    - '*\Authentication\PLAP Providers*'
+    - '*\Authentication\Credential Providers*'
+    - '*\Authentication\Credential Provider Filters*'
+  SELECTION_9:
+    TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and ((((((((((((SELECTION_4
+    or (SELECTION_5 and SELECTION_6)) or (SELECTION_7 and SELECTION_8)) or (SELECTION_9
+    and SELECTION_10)) or (SELECTION_11 and SELECTION_12)) or (SELECTION_13 and SELECTION_14))
+    or ((SELECTION_15 or SELECTION_16 or SELECTION_17) and (SELECTION_18 or SELECTION_19)
+    and SELECTION_20)) or ((SELECTION_21 or SELECTION_22 or SELECTION_23) and (SELECTION_24
+    or SELECTION_25) and SELECTION_26)) or (SELECTION_27 and SELECTION_28)) or (SELECTION_29
+    and SELECTION_30)) or (SELECTION_31 and SELECTION_32)) or (SELECTION_33 and SELECTION_34))
+    or (SELECTION_35 and SELECTION_36)))
 falsepositives:
 - Legitimate software automatically (mostly, during installation) sets up autorun
-    keys for legitimate reason
+  keys for legitimate reason
 - Legitimate administrator sets up autorun keys for legitimate reason
 fields:
 - SecurityID
@@ -328,8 +215,8 @@ fields:
 id: 17f878b8-9968-4578-b814-c4217fc5768c
 level: medium
 logsource:
-    category: registry_event
-    product: windows
+  category: registry_event
+  product: windows
 modified: 2020/11/04
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1547.001/T1547.001.md
@@ -340,6 +227,3 @@ tags:
 - attack.persistence
 - attack.t1547.001
 - attack.t1060
-yml_filename: sysmon_asep_reg_keys_modification.yml
-yml_path: /home/itib/git/sigma/rules/windows/registry_event
-

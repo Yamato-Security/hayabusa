@@ -1,28 +1,28 @@
+
 title: Exports Registry Key To a File
 author: Oddvar Moe, Sander Wiebing, oscd.community
 date: 2020/10/07
 description: Detects the export of the target Registry key to a file.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\regedit.exe'
-    SELECTION_3:
-        CommandLine: '* /E *'
-    SELECTION_4:
-        EventID: 1
-    SELECTION_5:
-        CommandLine: '*hklm*'
-    SELECTION_6:
-        CommandLine: '*hkey_local_machine*'
-    SELECTION_7:
-        CommandLine: '*\system'
-    SELECTION_8:
-        CommandLine: '*\sam'
-    SELECTION_9:
-        CommandLine: '*\security'
-    condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
-        and (SELECTION_5 or SELECTION_6) and (SELECTION_7 or SELECTION_8 or SELECTION_9))))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\regedit.exe'
+  SELECTION_3:
+    CommandLine: '* /E *'
+  SELECTION_4:
+    EventID: 1
+  SELECTION_5:
+    CommandLine:
+    - '*hklm*'
+    - '*hkey_local_machine*'
+  SELECTION_6:
+    CommandLine:
+    - '*\system'
+    - '*\sam'
+    - '*\security'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
+    and SELECTION_5 and SELECTION_6)))
 falsepositives:
 - Legitimate export of keys
 fields:
@@ -31,8 +31,8 @@ fields:
 id: f0e53e89-8d22-46ea-9db5-9d4796ee2f8a
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Regedit.yml
 - https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f
@@ -40,6 +40,3 @@ status: experimental
 tags:
 - attack.exfiltration
 - attack.t1012
-yml_filename: win_regedit_export_keys.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

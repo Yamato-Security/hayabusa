@@ -1,19 +1,20 @@
+
 title: Net.exe User Account Creation
 author: Endgame, JHasenbusch (adapted to Sigma for oscd.community)
 date: 2018/10/30
 description: Identifies creation of local users via the net.exe command.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\net.exe'
-    SELECTION_3:
-        Image: '*\net1.exe'
-    SELECTION_4:
-        CommandLine: '*user*'
-    SELECTION_5:
-        CommandLine: '*add*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\net.exe'
+    - '*\net1.exe'
+  SELECTION_3:
+    CommandLine: '*user*'
+  SELECTION_4:
+    CommandLine: '*add*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - Legitimate user creation.
 - Better use event IDs for user creation rather than command line rules.
@@ -24,8 +25,8 @@ fields:
 id: cd219ff3-fa99-45d4-8380-a7d15116c6dc
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/09/01
 references:
 - https://eqllib.readthedocs.io/en/latest/analytics/014c3f51-89c6-40f1-ac9c-5688f26090ab.html
@@ -35,6 +36,3 @@ tags:
 - attack.persistence
 - attack.t1136
 - attack.t1136.001
-yml_filename: win_net_user_add.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

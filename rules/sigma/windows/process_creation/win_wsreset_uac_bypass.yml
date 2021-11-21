@@ -1,14 +1,16 @@
+
 title: Wsreset UAC Bypass
 author: Florian Roth
 date: 2020/01/30
 description: Detects a method that uses Wsreset.exe tool that can be used to reset
-    the Windows Store to bypass UAC
+  the Windows Store to bypass UAC
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        ParentImage: '*\WSreset.exe'
-    condition: (SELECTION_1 and (SELECTION_2))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage:
+    - '*\WSreset.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Unknown sub processes of Wsreset.exe
 fields:
@@ -16,8 +18,8 @@ fields:
 id: bdc8918e-a1d5-49d1-9db7-ea0fd91aa2ae
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/08/29
 references:
 - https://lolbas-project.github.io/lolbas/Binaries/Wsreset/
@@ -29,6 +31,3 @@ tags:
 - attack.defense_evasion
 - attack.t1548.002
 - attack.t1088
-yml_filename: win_wsreset_uac_bypass.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

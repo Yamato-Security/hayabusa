@@ -1,25 +1,23 @@
+
 title: Login with WMI
 author: Thomas Patzke
 date: 2019/12/04
 description: Detection of logins performed with WMI
 detection:
-    SELECTION_1:
-        EventID: 4624
-    SELECTION_2:
-        ProcessName: '*\WmiPrvSE.exe'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 4624
+  SELECTION_2:
+    ProcessName: '*\WmiPrvSE.exe'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Monitoring tools
 - Legitimate system administration
 id: 5af54681-df95-4c26-854f-2565e13cfab0
 level: low
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 status: stable
 tags:
 - attack.execution
 - attack.t1047
-yml_filename: win_susp_wmi_login.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

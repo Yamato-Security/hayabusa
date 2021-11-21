@@ -1,40 +1,29 @@
+
 title: Suspicious Access to Sensitive File Extensions
 author: Samir Bousseaden
 date: 2019/04/03
 description: Detects known sensitive file extensions accessed on a network share
 detection:
-    SELECTION_1:
-        EventID: 5145
-    SELECTION_10:
-        RelativeTargetName: '*.dmp'
-    SELECTION_11:
-        RelativeTargetName: '*.kirbi'
-    SELECTION_12:
-        RelativeTargetName: '*\groups.xml'
-    SELECTION_13:
-        RelativeTargetName: '*.rdp'
-    SELECTION_2:
-        RelativeTargetName: '*.pst'
-    SELECTION_3:
-        RelativeTargetName: '*.ost'
-    SELECTION_4:
-        RelativeTargetName: '*.msg'
-    SELECTION_5:
-        RelativeTargetName: '*.nst'
-    SELECTION_6:
-        RelativeTargetName: '*.oab'
-    SELECTION_7:
-        RelativeTargetName: '*.edb'
-    SELECTION_8:
-        RelativeTargetName: '*.nsf'
-    SELECTION_9:
-        RelativeTargetName: '*.bak'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13))
+  SELECTION_1:
+    EventID: 5145
+  SELECTION_2:
+    RelativeTargetName:
+    - '*.pst'
+    - '*.ost'
+    - '*.msg'
+    - '*.nst'
+    - '*.oab'
+    - '*.edb'
+    - '*.nsf'
+    - '*.bak'
+    - '*.dmp'
+    - '*.kirbi'
+    - '*\groups.xml'
+    - '*.rdp'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Help Desk operator doing backup or re-imaging end user machine or pentest or backup
-    software
+  software
 - Users working with these data types or exchanging message files
 fields:
 - ComputerName
@@ -44,12 +33,9 @@ fields:
 id: 91c945bc-2ad1-4799-a591-4d00198a1215
 level: medium
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 modified: 2021/08/09
 tags:
 - attack.collection
 - attack.t1039
-yml_filename: win_susp_raccess_sensitive_fext.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

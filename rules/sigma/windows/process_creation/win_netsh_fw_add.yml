@@ -1,24 +1,25 @@
+
 title: Netsh Port or Application Allowed
 author: Markus Neis, Sander Wiebing
 date: 2019/01/29
 description: Allow Incoming Connections by Port or Application on Windows Firewall
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\netsh.exe'
-    SELECTION_3:
-        CommandLine: '*firewall*'
-    SELECTION_4:
-        CommandLine: '*add*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\netsh.exe'
+  SELECTION_3:
+    CommandLine: '*firewall*'
+  SELECTION_4:
+    CommandLine: '*add*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - Legitimate administration
 id: cd5cfd80-aa5f-44c0-9c20-108c4ae12e3c
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/09/01
 references:
 - https://attack.mitre.org/software/S0246/ (Lazarus HARDRAIN)
@@ -28,6 +29,3 @@ tags:
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.004
-yml_filename: win_netsh_fw_add.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

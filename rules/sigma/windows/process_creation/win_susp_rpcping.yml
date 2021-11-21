@@ -1,43 +1,44 @@
+
 title: Capture Credentials with Rpcping.exe
 author: Julia Fomina, oscd.community
 date: 2020/10/09
 description: Detects using Rpcping.exe to send a RPC test connection to the target
-    server (-s) and force the NTLM hash to be sent in the process.
+  server (-s) and force the NTLM hash to be sent in the process.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '*ncacn_np*'
-    SELECTION_11:
-        CommandLine: '*/t*'
-    SELECTION_12:
-        CommandLine: '*ncacn_np*'
-    SELECTION_2:
-        Image: '*\rpcping.exe'
-    SELECTION_3:
-        CommandLine: '*-s*'
-    SELECTION_4:
-        CommandLine: '*/s*'
-    SELECTION_5:
-        CommandLine: '*-u*'
-    SELECTION_6:
-        CommandLine: '*NTLM*'
-    SELECTION_7:
-        CommandLine: '*/u*'
-    SELECTION_8:
-        CommandLine: '*NTLM*'
-    SELECTION_9:
-        CommandLine: '*-t*'
-    condition: (SELECTION_1 and (SELECTION_2 and (SELECTION_3 or SELECTION_4)) and
-        ((SELECTION_5 and SELECTION_6) or (SELECTION_7 and SELECTION_8) or (SELECTION_9
-        and SELECTION_10) or (SELECTION_11 and SELECTION_12)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '*/t*'
+  SELECTION_11:
+    CommandLine: '*ncacn_np*'
+  SELECTION_2:
+    Image: '*\rpcping.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*-s*'
+    - '*/s*'
+  SELECTION_4:
+    CommandLine: '*-u*'
+  SELECTION_5:
+    CommandLine: '*NTLM*'
+  SELECTION_6:
+    CommandLine: '*/u*'
+  SELECTION_7:
+    CommandLine: '*NTLM*'
+  SELECTION_8:
+    CommandLine: '*-t*'
+  SELECTION_9:
+    CommandLine: '*ncacn_np*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and ((SELECTION_4 and
+    SELECTION_5) or (SELECTION_6 and SELECTION_7) or (SELECTION_8 and SELECTION_9)
+    or (SELECTION_10 and SELECTION_11)))
 falsepositives:
 - Unlikely
 id: 93671f99-04eb-4ab4-a161-70d446a84003
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://lolbas-project.github.io/lolbas/Binaries/Rpcping/
 - https://twitter.com/vysecurity/status/974806438316072960
@@ -47,6 +48,3 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1003
-yml_filename: win_susp_rpcping.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

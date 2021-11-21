@@ -1,120 +1,74 @@
+
 title: LDAP Reconnaissance / Active Directory Enumeration
 author: Adeem Mawani
 date: 2021/06/22
 description: Detects possible Active Directory enumeration via LDAP
 detection:
-    SELECTION_1:
-        EventID: 30
-    SELECTION_10:
-        SearchFilter: '*(sAMAccountType=268435457)*'
-    SELECTION_11:
-        SearchFilter: '*(sAMAccountType=268435456)*'
-    SELECTION_12:
-        SearchFilter: '*(objectCategory=groupPolicyContainer)*'
-    SELECTION_13:
-        SearchFilter: '*(objectCategory=organizationalUnit)*'
-    SELECTION_14:
-        SearchFilter: '*(objectCategory=Computer)*'
-    SELECTION_15:
-        SearchFilter: '*(objectCategory=nTDSDSA)*'
-    SELECTION_16:
-        SearchFilter: '*(objectCategory=server)*'
-    SELECTION_17:
-        SearchFilter: '*(objectCategory=domain)*'
-    SELECTION_18:
-        SearchFilter: '*(objectCategory=person)*'
-    SELECTION_19:
-        SearchFilter: '*(objectCategory=group)*'
-    SELECTION_2:
-        SearchFilter: '*(groupType:1.2.840.113556.1.4.803:=2147483648)*'
-    SELECTION_20:
-        SearchFilter: '*(objectCategory=user)*'
-    SELECTION_21:
-        SearchFilter: '*(objectClass=trustedDomain)*'
-    SELECTION_22:
-        SearchFilter: '*(objectClass=computer)*'
-    SELECTION_23:
-        SearchFilter: '*(objectClass=server)*'
-    SELECTION_24:
-        SearchFilter: '*(objectClass=group)*'
-    SELECTION_25:
-        SearchFilter: '*(objectClass=user)*'
-    SELECTION_26:
-        SearchFilter: '*(primaryGroupID=521)*'
-    SELECTION_27:
-        SearchFilter: '*(primaryGroupID=516)*'
-    SELECTION_28:
-        SearchFilter: '*(primaryGroupID=515)*'
-    SELECTION_29:
-        SearchFilter: '*(primaryGroupID=512)*'
-    SELECTION_3:
-        SearchFilter: '*(groupType:1.2.840.113556.1.4.803:=2147483656)*'
-    SELECTION_30:
-        SearchFilter: '*Domain Admins*'
-    SELECTION_31:
-        EventID: 30
-    SELECTION_32:
-        SearchFilter: '*(domainSid=*)*'
-    SELECTION_33:
-        SearchFilter: '*(objectSid=*)*'
-    SELECTION_34:
-        EventID: 30
-    SELECTION_35:
-        SearchFilter: '*(userAccountControl:1.2.840.113556.1.4.803:=4194304)*'
-    SELECTION_36:
-        SearchFilter: '*(userAccountControl:1.2.840.113556.1.4.803:=2097152)*'
-    SELECTION_37:
-        SearchFilter: '*!(userAccountControl:1.2.840.113556.1.4.803:=1048574)*'
-    SELECTION_38:
-        SearchFilter: '*(userAccountControl:1.2.840.113556.1.4.803:=524288)*'
-    SELECTION_39:
-        SearchFilter: '*(userAccountControl:1.2.840.113556.1.4.803:=65536)*'
-    SELECTION_4:
-        SearchFilter: '*(groupType:1.2.840.113556.1.4.803:=2147483652)*'
-    SELECTION_40:
-        SearchFilter: '*(userAccountControl:1.2.840.113556.1.4.803:=8192)*'
-    SELECTION_41:
-        SearchFilter: '*(userAccountControl:1.2.840.113556.1.4.803:=544)*'
-    SELECTION_42:
-        SearchFilter: '*!(UserAccountControl:1.2.840.113556.1.4.803:=2)*'
-    SELECTION_43:
-        SearchFilter: '*msDS-AllowedToActOnBehalfOfOtherIdentity*'
-    SELECTION_44:
-        SearchFilter: '*msDS-AllowedToDelegateTo*'
-    SELECTION_45:
-        SearchFilter: '*(accountExpires=9223372036854775807)*'
-    SELECTION_46:
-        SearchFilter: '*(accountExpires=0)*'
-    SELECTION_47:
-        SearchFilter: '*(adminCount=1)*'
-    SELECTION_48:
-        SearchFilter: '*ms-MCS-AdmPwd*'
-    SELECTION_5:
-        SearchFilter: '*(groupType:1.2.840.113556.1.4.803:=2147483650)*'
-    SELECTION_6:
-        SearchFilter: '*(sAMAccountType=805306369)*'
-    SELECTION_7:
-        SearchFilter: '*(sAMAccountType=805306368)*'
-    SELECTION_8:
-        SearchFilter: '*(sAMAccountType=536870913)*'
-    SELECTION_9:
-        SearchFilter: '*(sAMAccountType=536870912)*'
-    condition: (((SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
-        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
-        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
-        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30))
-        and  not (SELECTION_31 and (SELECTION_32 or SELECTION_33))) or (SELECTION_34
-        and (SELECTION_35 or SELECTION_36 or SELECTION_37 or SELECTION_38 or SELECTION_39
-        or SELECTION_40 or SELECTION_41 or SELECTION_42 or SELECTION_43 or SELECTION_44
-        or SELECTION_45 or SELECTION_46 or SELECTION_47 or SELECTION_48)))
+  SELECTION_1:
+    EventID: 30
+  SELECTION_2:
+    SearchFilter:
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483648)*'
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483656)*'
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483652)*'
+    - '*(groupType:1.2.840.113556.1.4.803:=2147483650)*'
+    - '*(sAMAccountType=805306369)*'
+    - '*(sAMAccountType=805306368)*'
+    - '*(sAMAccountType=536870913)*'
+    - '*(sAMAccountType=536870912)*'
+    - '*(sAMAccountType=268435457)*'
+    - '*(sAMAccountType=268435456)*'
+    - '*(objectCategory=groupPolicyContainer)*'
+    - '*(objectCategory=organizationalUnit)*'
+    - '*(objectCategory=Computer)*'
+    - '*(objectCategory=nTDSDSA)*'
+    - '*(objectCategory=server)*'
+    - '*(objectCategory=domain)*'
+    - '*(objectCategory=person)*'
+    - '*(objectCategory=group)*'
+    - '*(objectCategory=user)*'
+    - '*(objectClass=trustedDomain)*'
+    - '*(objectClass=computer)*'
+    - '*(objectClass=server)*'
+    - '*(objectClass=group)*'
+    - '*(objectClass=user)*'
+    - '*(primaryGroupID=521)*'
+    - '*(primaryGroupID=516)*'
+    - '*(primaryGroupID=515)*'
+    - '*(primaryGroupID=512)*'
+    - '*Domain Admins*'
+  SELECTION_3:
+    EventID: 30
+  SELECTION_4:
+    SearchFilter:
+    - '*(domainSid=*)*'
+    - '*(objectSid=*)*'
+  SELECTION_5:
+    EventID: 30
+  SELECTION_6:
+    SearchFilter:
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=4194304)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=2097152)*'
+    - '*!(userAccountControl:1.2.840.113556.1.4.803:=1048574)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=524288)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=65536)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=8192)*'
+    - '*(userAccountControl:1.2.840.113556.1.4.803:=544)*'
+    - '*!(UserAccountControl:1.2.840.113556.1.4.803:=2)*'
+    - '*msDS-AllowedToActOnBehalfOfOtherIdentity*'
+    - '*msDS-AllowedToDelegateTo*'
+    - '*(accountExpires=9223372036854775807)*'
+    - '*(accountExpires=0)*'
+    - '*(adminCount=1)*'
+    - '*ms-MCS-AdmPwd*'
+  condition: (((SELECTION_1 and SELECTION_2) and  not (SELECTION_3 and SELECTION_4))
+    or (SELECTION_5 and SELECTION_6))
 id: 31d68132-4038-47c7-8f8e-635a39a7c174
 level: medium
 logsource:
-    category: ldap_query
-    definition: Requires Microsoft-Windows-LDAP-Client/Debug ETW logging
-    product: windows
+  category: ldap_query
+  definition: Requires Microsoft-Windows-LDAP-Client/Debug ETW logging
+  product: windows
 references:
 - https://techcommunity.microsoft.com/t5/microsoft-defender-for-endpoint/hunting-for-reconnaissance-activities-using-ldap-search-filters/ba-p/824726
 - https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1
@@ -125,6 +79,3 @@ tags:
 - attack.t1069.002
 - attack.t1087.002
 - attack.t1482
-yml_filename: win_ldap_recon.yml
-yml_path: /home/itib/git/sigma/rules/windows/other
-

@@ -1,37 +1,28 @@
+
 title: Script Event Consumer Spawning Process
 author: Sittikorn S
 date: 2021/06/21
 description: Detects a suspicious child process of Script Event Consumer (scrcons.exe).
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        Image: '*\mshta.exe'
-    SELECTION_11:
-        Image: '*\rundll32.exe'
-    SELECTION_12:
-        Image: '*\msiexec.exe'
-    SELECTION_13:
-        Image: '*\msbuild.exe'
-    SELECTION_2:
-        ParentImage: '*\scrcons.exe'
-    SELECTION_3:
-        Image: '*\svchost.exe'
-    SELECTION_4:
-        Image: '*\dllhost.exe'
-    SELECTION_5:
-        Image: '*\powershell.exe'
-    SELECTION_6:
-        Image: '*\wscript.exe'
-    SELECTION_7:
-        Image: '*\cscript.exe'
-    SELECTION_8:
-        Image: '*\schtasks.exe'
-    SELECTION_9:
-        Image: '*\regsvr32.exe'
-    condition: (SELECTION_1 and (SELECTION_2) and (SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage:
+    - '*\scrcons.exe'
+  SELECTION_3:
+    Image:
+    - '*\svchost.exe'
+    - '*\dllhost.exe'
+    - '*\powershell.exe'
+    - '*\wscript.exe'
+    - '*\cscript.exe'
+    - '*\schtasks.exe'
+    - '*\regsvr32.exe'
+    - '*\mshta.exe'
+    - '*\rundll32.exe'
+    - '*\msiexec.exe'
+    - '*\msbuild.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - unknown
 fields:
@@ -40,8 +31,8 @@ fields:
 id: f6d1dd2f-b8ce-40ca-bc23-062efb686b34
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://redcanary.com/blog/child-processes/
 - https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-analytics-alert-reference/cortex-xdr-analytics-alert-reference/scrcons-exe-rare-child-process.html
@@ -49,6 +40,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1047
-yml_filename: win_script_event_consumer_spawn.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

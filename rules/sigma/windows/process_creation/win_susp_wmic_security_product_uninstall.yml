@@ -1,50 +1,41 @@
+
 title: Wmic Uninstall Security Product
 author: Florian Roth
 date: 2021/01/30
 description: Detects deinstallation of security products using WMIC utility
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '*Windows Defender*'
-    SELECTION_11:
-        CommandLine: '*VirusScan*'
-    SELECTION_12:
-        CommandLine: '*Threat Protection*'
-    SELECTION_13:
-        CommandLine: '*Endpoint Sensor*'
-    SELECTION_2:
-        CommandLine: '*wmic*'
-    SELECTION_3:
-        CommandLine: '*product where name=*'
-    SELECTION_4:
-        CommandLine: '*call uninstall*'
-    SELECTION_5:
-        CommandLine: '*/nointeractive*'
-    SELECTION_6:
-        CommandLine: '*Antivirus*'
-    SELECTION_7:
-        CommandLine: '*Endpoint Security*'
-    SELECTION_8:
-        CommandLine: '*Endpoint Detection*'
-    SELECTION_9:
-        CommandLine: '*Crowdstrike Sensor*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
-        and (SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*wmic*'
+  SELECTION_3:
+    CommandLine: '*product where name=*'
+  SELECTION_4:
+    CommandLine: '*call uninstall*'
+  SELECTION_5:
+    CommandLine: '*/nointeractive*'
+  SELECTION_6:
+    CommandLine:
+    - '*Antivirus*'
+    - '*Endpoint Security*'
+    - '*Endpoint Detection*'
+    - '*Crowdstrike Sensor*'
+    - '*Windows Defender*'
+    - '*VirusScan*'
+    - '*Threat Protection*'
+    - '*Endpoint Sensor*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)
 falsepositives:
 - Legitimate administration
 id: 847d5ff3-8a31-4737-a970-aeae8fe21765
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://twitter.com/cglyer/status/1355171195654709249
 status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-yml_filename: win_susp_wmic_security_product_uninstall.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

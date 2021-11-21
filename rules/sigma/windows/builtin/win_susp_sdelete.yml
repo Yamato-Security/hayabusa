@@ -1,26 +1,27 @@
+
 title: Secure Deletion with SDelete
 author: Thomas Patzke
 date: 2017/06/14
 description: Detects renaming of file while deletion with SDelete tool.
 detection:
-    SELECTION_1:
-        EventID: 4656
-    SELECTION_2:
-        EventID: 4663
-    SELECTION_3:
-        EventID: 4658
-    SELECTION_4:
-        ObjectName: '*.AAA'
-    SELECTION_5:
-        ObjectName: '*.ZZZ'
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5))
+  SELECTION_1:
+    EventID: 4656
+  SELECTION_2:
+    EventID: 4663
+  SELECTION_3:
+    EventID: 4658
+  SELECTION_4:
+    ObjectName:
+    - '*.AAA'
+    - '*.ZZZ'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
 falsepositives:
 - Legitimate usage of SDelete
 id: 39a80702-d7ca-4a83-b776-525b1f86a36d
 level: medium
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 modified: 2020/08/02
 references:
 - https://jpcertcc.github.io/ToolAnalysisResultSheet/details/sdelete.htm
@@ -37,6 +38,3 @@ tags:
 - attack.t1485
 - attack.t1553.002
 - attack.s0195
-yml_filename: win_susp_sdelete.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

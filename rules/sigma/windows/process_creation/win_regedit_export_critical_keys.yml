@@ -1,26 +1,25 @@
+
 title: Exports Critical Registry Keys To a File
 author: Oddvar Moe, Sander Wiebing, oscd.community
 date: 2020/10/12
 description: Detects the export of a crital Registry key to a file.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\regedit.exe'
-    SELECTION_3:
-        CommandLine: '* /E *'
-    SELECTION_4:
-        CommandLine: '*hklm*'
-    SELECTION_5:
-        CommandLine: '*hkey_local_machine*'
-    SELECTION_6:
-        CommandLine: '*\system'
-    SELECTION_7:
-        CommandLine: '*\sam'
-    SELECTION_8:
-        CommandLine: '*\security'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4 or SELECTION_5)
-        and (SELECTION_6 or SELECTION_7 or SELECTION_8))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\regedit.exe'
+  SELECTION_3:
+    CommandLine: '* /E *'
+  SELECTION_4:
+    CommandLine:
+    - '*hklm*'
+    - '*hkey_local_machine*'
+  SELECTION_5:
+    CommandLine:
+    - '*\system'
+    - '*\sam'
+    - '*\security'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
 falsepositives:
 - Dumping hives for legitimate purpouse i.e. backup or forensic investigation
 fields:
@@ -29,8 +28,8 @@ fields:
 id: 82880171-b475-4201-b811-e9c826cd5eaa
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Regedit.yml
 - https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f
@@ -38,6 +37,3 @@ status: experimental
 tags:
 - attack.exfiltration
 - attack.t1012
-yml_filename: win_regedit_export_critical_keys.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

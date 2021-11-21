@@ -1,22 +1,22 @@
+
 title: Suspicious Service Path Modification
 author: Victor Sergeev, oscd.community
 date: 2019/10/21
 description: Detects service path modification to PowerShell or cmd.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\sc.exe'
-    SELECTION_3:
-        CommandLine: '*config*'
-    SELECTION_4:
-        CommandLine: '*binpath*'
-    SELECTION_5:
-        CommandLine: '*powershell*'
-    SELECTION_6:
-        CommandLine: '*cmd*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and (SELECTION_5
-        or SELECTION_6))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\sc.exe'
+  SELECTION_3:
+    CommandLine: '*config*'
+  SELECTION_4:
+    CommandLine: '*binpath*'
+  SELECTION_5:
+    CommandLine:
+    - '*powershell*'
+    - '*cmd*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
 falsepositives:
 - Unknown
 fields:
@@ -25,8 +25,8 @@ fields:
 id: 138d3531-8793-4f50-a2cd-f291b2863d78
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/08/28
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1543.003/T1543.003.md
@@ -36,6 +36,3 @@ tags:
 - attack.privilege_escalation
 - attack.t1543.003
 - attack.t1031
-yml_filename: win_susp_service_path_modification.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

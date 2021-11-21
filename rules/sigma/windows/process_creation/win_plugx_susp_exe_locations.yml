@@ -1,102 +1,90 @@
+
 title: Executable Used by PlugX in Uncommon Location
 author: Florian Roth
 date: 2017/06/12
 description: Detects the execution of an executable that is typically used by PlugX
-    for DLL side loading started from an uncommon location
+  for DLL side loading started from an uncommon location
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        Image: '*\Windows Media Player\\*'
-    SELECTION_11:
-        Image: '*\hcc.exe'
-    SELECTION_12:
-        Image: '*\HTML Help Workshop\\*'
-    SELECTION_13:
-        Image: '*\hkcmd.exe'
-    SELECTION_14:
-        Image: '*\System32\\*'
-    SELECTION_15:
-        Image: '*\SysNative\\*'
-    SELECTION_16:
-        Image: '*\SysWowo64\\*'
-    SELECTION_17:
-        Image: '*\Mc.exe'
-    SELECTION_18:
-        Image: '*\Microsoft Visual Studio*'
-    SELECTION_19:
-        Image: '*\Microsoft SDK*'
-    SELECTION_2:
-        Image: '*\CamMute.exe'
-    SELECTION_20:
-        Image: '*\Windows Kit*'
-    SELECTION_21:
-        Image: '*\MsMpEng.exe'
-    SELECTION_22:
-        Image: '*\Microsoft Security Client\\*'
-    SELECTION_23:
-        Image: '*\Windows Defender\\*'
-    SELECTION_24:
-        Image: '*\AntiMalware\\*'
-    SELECTION_25:
-        Image: '*\msseces.exe'
-    SELECTION_26:
-        Image: '*\Microsoft Security Center\\*'
-    SELECTION_27:
-        Image: '*\Microsoft Security Client\\*'
-    SELECTION_28:
-        Image: '*\Microsoft Security Essentials\\*'
-    SELECTION_29:
-        Image: '*\OInfoP11.exe'
-    SELECTION_3:
-        Image: '*\Lenovo\Communication Utility\\*'
-    SELECTION_30:
-        Image: '*\Common Files\Microsoft Shared\\*'
-    SELECTION_31:
-        Image: '*\OleView.exe'
-    SELECTION_32:
-        Image: '*\Microsoft Visual Studio*'
-    SELECTION_33:
-        Image: '*\Microsoft SDK*'
-    SELECTION_34:
-        Image: '*\Windows Kit*'
-    SELECTION_35:
-        Image: '*\Windows Resource Kit\\*'
-    SELECTION_36:
-        Image: '*\rc.exe'
-    SELECTION_37:
-        Image: '*\Microsoft Visual Studio*'
-    SELECTION_38:
-        Image: '*\Microsoft SDK*'
-    SELECTION_39:
-        Image: '*\Windows Kit*'
-    SELECTION_4:
-        Image: '*\Lenovo\Communications Utility\\*'
-    SELECTION_40:
-        Image: '*\Windows Resource Kit\\*'
-    SELECTION_41:
-        Image: '*\Microsoft.NET\\*'
-    SELECTION_5:
-        Image: '*\chrome_frame_helper.exe'
-    SELECTION_6:
-        Image: '*\Google\Chrome\application\\*'
-    SELECTION_7:
-        Image: '*\dvcemumanager.exe'
-    SELECTION_8:
-        Image: '*\Microsoft Device Emulator\\*'
-    SELECTION_9:
-        Image: '*\Gadget.exe'
-    condition: (SELECTION_1 and ((((((((((((SELECTION_2 and  not ((SELECTION_3 or
-        SELECTION_4))) or (SELECTION_5 and  not (SELECTION_6))) or (SELECTION_7 and  not
-        (SELECTION_8))) or (SELECTION_9 and  not (SELECTION_10))) or (SELECTION_11
-        and  not (SELECTION_12))) or (SELECTION_13 and  not ((SELECTION_14 or SELECTION_15
-        or SELECTION_16)))) or (SELECTION_17 and  not ((SELECTION_18 or SELECTION_19
-        or SELECTION_20)))) or (SELECTION_21 and  not ((SELECTION_22 or SELECTION_23
-        or SELECTION_24)))) or (SELECTION_25 and  not ((SELECTION_26 or SELECTION_27
-        or SELECTION_28)))) or (SELECTION_29 and  not (SELECTION_30))) or (SELECTION_31
-        and  not ((SELECTION_32 or SELECTION_33 or SELECTION_34 or SELECTION_35))))
-        or (SELECTION_36 and  not ((SELECTION_37 or SELECTION_38 or SELECTION_39 or
-        SELECTION_40 or SELECTION_41)))))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    Image: '*\hcc.exe'
+  SELECTION_11:
+    Image: '*\HTML Help Workshop\\*'
+  SELECTION_12:
+    Image: '*\hkcmd.exe'
+  SELECTION_13:
+    Image:
+    - '*\System32\\*'
+    - '*\SysNative\\*'
+    - '*\SysWowo64\\*'
+  SELECTION_14:
+    Image: '*\Mc.exe'
+  SELECTION_15:
+    Image:
+    - '*\Microsoft Visual Studio*'
+    - '*\Microsoft SDK*'
+    - '*\Windows Kit*'
+  SELECTION_16:
+    Image: '*\MsMpEng.exe'
+  SELECTION_17:
+    Image:
+    - '*\Microsoft Security Client\\*'
+    - '*\Windows Defender\\*'
+    - '*\AntiMalware\\*'
+  SELECTION_18:
+    Image: '*\msseces.exe'
+  SELECTION_19:
+    Image:
+    - '*\Microsoft Security Center\\*'
+    - '*\Microsoft Security Client\\*'
+    - '*\Microsoft Security Essentials\\*'
+  SELECTION_2:
+    Image: '*\CamMute.exe'
+  SELECTION_20:
+    Image: '*\OInfoP11.exe'
+  SELECTION_21:
+    Image: '*\Common Files\Microsoft Shared\\*'
+  SELECTION_22:
+    Image: '*\OleView.exe'
+  SELECTION_23:
+    Image:
+    - '*\Microsoft Visual Studio*'
+    - '*\Microsoft SDK*'
+    - '*\Windows Kit*'
+    - '*\Windows Resource Kit\\*'
+  SELECTION_24:
+    Image: '*\rc.exe'
+  SELECTION_25:
+    Image:
+    - '*\Microsoft Visual Studio*'
+    - '*\Microsoft SDK*'
+    - '*\Windows Kit*'
+    - '*\Windows Resource Kit\\*'
+    - '*\Microsoft.NET\\*'
+  SELECTION_3:
+    Image:
+    - '*\Lenovo\Communication Utility\\*'
+    - '*\Lenovo\Communications Utility\\*'
+  SELECTION_4:
+    Image: '*\chrome_frame_helper.exe'
+  SELECTION_5:
+    Image: '*\Google\Chrome\application\\*'
+  SELECTION_6:
+    Image: '*\dvcemumanager.exe'
+  SELECTION_7:
+    Image: '*\Microsoft Device Emulator\\*'
+  SELECTION_8:
+    Image: '*\Gadget.exe'
+  SELECTION_9:
+    Image: '*\Windows Media Player\\*'
+  condition: (SELECTION_1 and ((((((((((((SELECTION_2 and  not (SELECTION_3)) or (SELECTION_4
+    and  not (SELECTION_5))) or (SELECTION_6 and  not (SELECTION_7))) or (SELECTION_8
+    and  not (SELECTION_9))) or (SELECTION_10 and  not (SELECTION_11))) or (SELECTION_12
+    and  not (SELECTION_13))) or (SELECTION_14 and  not (SELECTION_15))) or (SELECTION_16
+    and  not (SELECTION_17))) or (SELECTION_18 and  not (SELECTION_19))) or (SELECTION_20
+    and  not (SELECTION_21))) or (SELECTION_22 and  not (SELECTION_23))) or (SELECTION_24
+    and  not (SELECTION_25))))
 falsepositives:
 - Unknown
 fields:
@@ -105,8 +93,8 @@ fields:
 id: aeab5ec5-be14-471a-80e8-e344418305c2
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/11/28
 references:
 - http://www.hexacorn.com/blog/2016/03/10/beyond-good-ol-run-key-part-36/
@@ -117,6 +105,3 @@ tags:
 - attack.defense_evasion
 - attack.t1073
 - attack.t1574.002
-yml_filename: win_plugx_susp_exe_locations.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

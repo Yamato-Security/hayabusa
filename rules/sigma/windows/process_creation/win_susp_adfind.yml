@@ -1,31 +1,28 @@
+
 title: Suspicious AdFind Execution
 author: FPT.EagleEye Team, omkar72, oscd.community
 date: 2020/09/26
 description: Detects the execution of a AdFind for Active Directory enumeration
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*objectcategory*'
-    SELECTION_3:
-        CommandLine: '*trustdmp*'
-    SELECTION_4:
-        CommandLine: '*dcmodes*'
-    SELECTION_5:
-        CommandLine: '*dclist*'
-    SELECTION_6:
-        CommandLine: '*computers_pwdnotreqd*'
-    SELECTION_7:
-        Image: '*\adfind.exe'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6) and SELECTION_7)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*objectcategory*'
+    - '*trustdmp*'
+    - '*dcmodes*'
+    - '*dclist*'
+    - '*computers_pwdnotreqd*'
+  SELECTION_3:
+    Image: '*\adfind.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Administrative activity
 id: 75df3b17-8bcc-4565-b89b-c9898acef911
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/05/12
 references:
 - https://social.technet.microsoft.com/wiki/contents/articles/7535.adfind-command-examples.aspx
@@ -38,6 +35,3 @@ tags:
 - attack.t1087.002
 - attack.t1482
 - attack.t1069.002
-yml_filename: win_susp_adfind.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

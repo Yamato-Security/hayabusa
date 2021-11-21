@@ -1,43 +1,44 @@
+
 title: UAC Bypass Using Registry Shell Open Keys
 author: Christian Burkard
 date: 2021/08/30
 description: Detects the pattern of UAC Bypass using fodhelper.exe, computerdefaults.exe,
-    slui.exe via registry keys (e.g. UACMe 33 or 62)
+  slui.exe via registry keys (e.g. UACMe 33 or 62)
 detection:
-    SELECTION_1:
-        EventID: 12
-    SELECTION_10:
-        TargetObject: '*Classes\ms-settings\shell\open\command\(Default)'
-    SELECTION_11:
-        TargetObject: '*Classes\exefile\shell\open\command\(Default)'
-    SELECTION_12:
-        Details: (Empty)
-    SELECTION_2:
-        EventID: 13
-    SELECTION_3:
-        EventID: 14
-    SELECTION_4:
-        TargetObject: '*Classes\ms-settings\shell\open\command\SymbolicLinkValue'
-    SELECTION_5:
-        Details: '*\Software\Classes\{*'
-    SELECTION_6:
-        TargetObject: '*Classes\ms-settings\shell\open\command\DelegateExecute'
-    SELECTION_7:
-        EventID: 12
-    SELECTION_8:
-        EventID: 13
-    SELECTION_9:
-        EventID: 14
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (((SELECTION_4 and
-        SELECTION_5) or SELECTION_6) or ((SELECTION_7 or SELECTION_8 or SELECTION_9)
-        and (SELECTION_10 or SELECTION_11) and  not (SELECTION_12))))
+  SELECTION_1:
+    EventID: 12
+  SELECTION_10:
+    TargetObject:
+    - '*Classes\ms-settings\shell\open\command\(Default)'
+    - '*Classes\exefile\shell\open\command\(Default)'
+  SELECTION_11:
+    Details: (Empty)
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject: '*Classes\ms-settings\shell\open\command\SymbolicLinkValue'
+  SELECTION_5:
+    Details: '*\Software\Classes\{*'
+  SELECTION_6:
+    TargetObject: '*Classes\ms-settings\shell\open\command\DelegateExecute'
+  SELECTION_7:
+    EventID: 12
+  SELECTION_8:
+    EventID: 13
+  SELECTION_9:
+    EventID: 14
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (((SELECTION_4 and SELECTION_5)
+    or SELECTION_6) or ((SELECTION_7 or SELECTION_8 or SELECTION_9) and SELECTION_10
+    and  not (SELECTION_11))))
 falsepositives:
 - Unknown
 id: 152f3630-77c1-4284-bcc0-4cc68ab2f6e7
 level: high
 logsource:
-    category: registry_event
-    product: windows
+  category: registry_event
+  product: windows
 modified: 2021/09/17
 references:
 - https://github.com/hfiref0x/UACME
@@ -48,6 +49,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1548.002
-yml_filename: sysmon_uac_bypass_shell_open.yml
-yml_path: /home/itib/git/sigma/rules/windows/registry_event
-

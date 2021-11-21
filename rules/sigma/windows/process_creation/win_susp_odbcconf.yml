@@ -1,29 +1,29 @@
+
 title: Application Whitelisting Bypass via DLL Loaded by odbcconf.exe
 author: Kirill Kiryanov, Beyu Denis, Daniil Yugoslavskiy, oscd.community
 date: 2019/10/25
 description: Detects defence evasion attempt via odbcconf.exe execution to load DLL
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\odbcconf.exe'
-    SELECTION_3:
-        CommandLine: '*-f*'
-    SELECTION_4:
-        CommandLine: '*regsvr*'
-    SELECTION_5:
-        ParentImage: '*\odbcconf.exe'
-    SELECTION_6:
-        Image: '*\rundll32.exe'
-    condition: (SELECTION_1 and ((SELECTION_2 and (SELECTION_3 or SELECTION_4)) or
-        (SELECTION_5 and SELECTION_6)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\odbcconf.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*-f*'
+    - '*regsvr*'
+  SELECTION_4:
+    ParentImage: '*\odbcconf.exe'
+  SELECTION_5:
+    Image: '*\rundll32.exe'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and SELECTION_5)))
 falsepositives:
 - Legitimate use of odbcconf.exe by legitimate user
 id: 65d2be45-8600-4042-b4c0-577a1ff8a60e
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2019/11/07
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Odbcconf.yml
@@ -34,6 +34,3 @@ tags:
 - attack.t1218.008
 - attack.execution
 - attack.t1218
-yml_filename: win_susp_odbcconf.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

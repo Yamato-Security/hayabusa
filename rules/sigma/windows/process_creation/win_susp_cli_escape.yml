@@ -1,23 +1,24 @@
+
 title: Suspicious Commandline Escape
 author: juju4
 date: 2018/12/11
 description: Detects suspicious process that use escape characters
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*h^t^t^p*'
-    SELECTION_3:
-        CommandLine: '*h"t"t"p*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*h^t^t^p*'
+    - '*h"t"t"p*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
-    environment
+  environment
 id: f0cdd048-82dc-4f7a-8a7a-b87a52b6d0fd
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/03/14
 references:
 - https://twitter.com/vysecurity/status/885545634958385153
@@ -29,6 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1140
-yml_filename: win_susp_cli_escape.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

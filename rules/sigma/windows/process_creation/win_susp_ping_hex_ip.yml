@@ -1,15 +1,16 @@
+
 title: Ping Hex IP
 author: Florian Roth
 date: 2018/03/23
 description: Detects a ping command that uses a hex encoded IP address
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\ping.exe'
-    SELECTION_3:
-        CommandLine: '*0x*'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\ping.exe'
+  SELECTION_3:
+    CommandLine: '*0x*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Unlikely, because no sane admin pings IP addresses in a hexadecimal form
 fields:
@@ -17,8 +18,8 @@ fields:
 id: 1a0d4aba-7668-4365-9ce4-6d79ab088dfd
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/11/28
 references:
 - https://github.com/vysec/Aggressor-VYSEC/blob/master/ping.can
@@ -27,6 +28,3 @@ tags:
 - attack.defense_evasion
 - attack.t1140
 - attack.t1027
-yml_filename: win_susp_ping_hex_ip.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

@@ -1,0 +1,32 @@
+
+title: Remote PowerShell Session
+author: Roberto Rodriguez @Cyb3rWard0g
+date: 2019/08/10
+description: Detects remote PowerShell sessions
+detection:
+  SELECTION_1:
+    EventID: 4103
+  SELECTION_2:
+    ContextInfo: '* = ServerRemoteHost *'
+  SELECTION_3:
+    ContextInfo: '*wsmprovhost.exe*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate use remote PowerShell sessions
+id: 96b9f619-aa91-478f-bacb-c3e50f8df575
+level: high
+logsource:
+  definition: PowerShell Module Logging must be enabled
+  product: windows
+  service: powershell
+modified: 2021/09/21
+references:
+- https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190511223310.html
+status: test
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+- attack.lateral_movement
+- attack.t1021.006
+- attack.t1028

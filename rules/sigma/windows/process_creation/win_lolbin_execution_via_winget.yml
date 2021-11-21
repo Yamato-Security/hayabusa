@@ -1,27 +1,29 @@
+
 title: Monitoring Winget For LOLbin Execution
 author: Sreeman
 date: 2020/21/04
 description: Adversaries can abuse winget to download payloads remotely and execute
-    them without touching disk. Winget will be included by default in Windows 10 and
-    is already available in Windows 10 insider programs. The manifest option enables
-    you to install an application by passing in a YAML file directly to the client.
-    Winget can be used to download and install exe's, msi, msix files later.
+  them without touching disk. Winget will be included by default in Windows 10 and
+  is already available in Windows 10 insider programs. The manifest option enables
+  you to install an application by passing in a YAML file directly to the client.
+  Winget can be used to download and install exe's, msi, msix files later.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*.*(?i)winget install (--m|-m).*'
-    condition: (SELECTION_1 and (SELECTION_2))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*.*(?i)winget install (--m|-m).*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Admin activity installing packages not in the official Microsoft repo. Winget probably
-    won't be used by most users.
+  won't be used by most users.
 fields:
 - CommandLine
 id: 313d6012-51a0-4d93-8dfc-de8553239e25
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/06/11
 references:
 - https://docs.microsoft.com/en-us/windows/package-manager/winget/install#local-install
@@ -30,6 +32,3 @@ tags:
 - attack.defense_evasion
 - attack.execution
 - attack.t1059
-yml_filename: win_lolbin_execution_via_winget.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

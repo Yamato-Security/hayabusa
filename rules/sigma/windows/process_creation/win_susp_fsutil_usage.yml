@@ -1,29 +1,30 @@
+
 title: Fsutil Suspicious Invocation
 author: Ecco, E.M. Anhaus, oscd.community
 date: 2019/09/26
 description: Detects suspicious parameters of fsutil (deleting USN journal, configuring
-    it with small size, etc). Might be used by ransomwares during the attack (seen
-    by NotPetya and others).
+  it with small size, etc). Might be used by ransomwares during the attack (seen by
+  NotPetya and others).
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\fsutil.exe'
-    SELECTION_3:
-        OriginalFileName: fsutil.exe
-    SELECTION_4:
-        CommandLine: '*deletejournal*'
-    SELECTION_5:
-        CommandLine: '*createjournal*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\fsutil.exe'
+  SELECTION_3:
+    OriginalFileName: fsutil.exe
+  SELECTION_4:
+    CommandLine:
+    - '*deletejournal*'
+    - '*createjournal*'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and SELECTION_4)
 falsepositives:
 - Admin activity
 - Scripts and administrative tools used in the monitored environment
 id: add64136-62e5-48ea-807e-88638d02df1e
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2019/11/11
 references:
 - https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-usn
@@ -32,6 +33,3 @@ references:
 tags:
 - attack.defense_evasion
 - attack.t1070
-yml_filename: win_susp_fsutil_usage.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

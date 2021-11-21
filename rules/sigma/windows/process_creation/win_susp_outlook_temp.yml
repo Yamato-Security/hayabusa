@@ -1,13 +1,14 @@
+
 title: Execution in Outlook Temp Folder
 author: Florian Roth
 date: 2019/10/01
 description: Detects a suspicious program execution in Outlook temp folder
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\Temporary Internet Files\Content.Outlook\\*'
-    condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\Temporary Internet Files\Content.Outlook\\*'
+  condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Unknown
 fields:
@@ -16,14 +17,11 @@ fields:
 id: a018fdc3-46a3-44e5-9afb-2cd4af1d4b39
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/06/27
 status: experimental
 tags:
 - attack.initial_access
 - attack.t1566.001
 - attack.t1193
-yml_filename: win_susp_outlook_temp.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

@@ -1,24 +1,26 @@
+
 title: PurpleSharp Indicator
 author: Florian Roth
 date: 2021/06/18
 description: Detect
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        CommandLine: '*xyz123456.exe*'
-    SELECTION_3:
-        CommandLine: '*PurpleSharp*'
-    SELECTION_4:
-        OriginalFileName: PurpleSharp.exe
-    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) or (SELECTION_4)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*xyz123456.exe*'
+    - '*PurpleSharp*'
+  SELECTION_3:
+    OriginalFileName:
+    - PurpleSharp.exe
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
 falsepositives:
 - Unlikely
 id: ff23ffbc-3378-435e-992f-0624dcf93ab4
 level: critical
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2021/07/06
 references:
 - https://github.com/mvelazc0/PurpleSharp
@@ -26,6 +28,3 @@ status: experimental
 tags:
 - attack.t1587
 - attack.resource_development
-yml_filename: win_purplesharp_indicators.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

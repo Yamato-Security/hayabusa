@@ -1,95 +1,62 @@
+
 title: Suspicious PowerShell Parent Process
 author: Teymur Kheirkhabarov, Harish Segar (rule)
 date: 2020/03/20
 description: Detects a suspicious parents of powershell.exe
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        ParentImage: '*\msaccess.exe'
-    SELECTION_11:
-        ParentImage: '*\mspub.exe'
-    SELECTION_12:
-        ParentImage: '*\visio.exe'
-    SELECTION_13:
-        ParentImage: '*\outlook.exe'
-    SELECTION_14:
-        ParentImage: '*\amigo.exe'
-    SELECTION_15:
-        ParentImage: '*\chrome.exe'
-    SELECTION_16:
-        ParentImage: '*\firefox.exe'
-    SELECTION_17:
-        ParentImage: '*\iexplore.exe'
-    SELECTION_18:
-        ParentImage: '*\microsoftedgecp.exe'
-    SELECTION_19:
-        ParentImage: '*\microsoftedge.exe'
-    SELECTION_2:
-        ParentImage: '*\mshta.exe'
-    SELECTION_20:
-        ParentImage: '*\browser.exe'
-    SELECTION_21:
-        ParentImage: '*\vivaldi.exe'
-    SELECTION_22:
-        ParentImage: '*\safari.exe'
-    SELECTION_23:
-        ParentImage: '*\sqlagent.exe'
-    SELECTION_24:
-        ParentImage: '*\sqlserver.exe'
-    SELECTION_25:
-        ParentImage: '*\sqlservr.exe'
-    SELECTION_26:
-        ParentImage: '*\w3wp.exe'
-    SELECTION_27:
-        ParentImage: '*\httpd.exe'
-    SELECTION_28:
-        ParentImage: '*\nginx.exe'
-    SELECTION_29:
-        ParentImage: '*\php-cgi.exe'
-    SELECTION_3:
-        ParentImage: '*\rundll32.exe'
-    SELECTION_30:
-        ParentImage: '*\jbosssvc.exe'
-    SELECTION_31:
-        ParentImage: '*MicrosoftEdgeSH.exe'
-    SELECTION_32:
-        ParentImage: '*tomcat*'
-    SELECTION_33:
-        CommandLine: '*powershell*'
-    SELECTION_34:
-        CommandLine: '*pwsh*'
-    SELECTION_35:
-        Description: Windows PowerShell
-    SELECTION_36:
-        Product: PowerShell Core 6
-    SELECTION_4:
-        ParentImage: '*\regsvr32.exe'
-    SELECTION_5:
-        ParentImage: '*\services.exe'
-    SELECTION_6:
-        ParentImage: '*\winword.exe'
-    SELECTION_7:
-        ParentImage: '*\wmiprvse.exe'
-    SELECTION_8:
-        ParentImage: '*\powerpnt.exe'
-    SELECTION_9:
-        ParentImage: '*\excel.exe'
-    condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10
-        or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14 or SELECTION_15
-        or SELECTION_16 or SELECTION_17 or SELECTION_18 or SELECTION_19 or SELECTION_20
-        or SELECTION_21 or SELECTION_22 or SELECTION_23 or SELECTION_24 or SELECTION_25
-        or SELECTION_26 or SELECTION_27 or SELECTION_28 or SELECTION_29 or SELECTION_30
-        or SELECTION_31) or SELECTION_32) and ((SELECTION_33 or SELECTION_34) or SELECTION_35
-        or SELECTION_36))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage:
+    - '*\mshta.exe'
+    - '*\rundll32.exe'
+    - '*\regsvr32.exe'
+    - '*\services.exe'
+    - '*\winword.exe'
+    - '*\wmiprvse.exe'
+    - '*\powerpnt.exe'
+    - '*\excel.exe'
+    - '*\msaccess.exe'
+    - '*\mspub.exe'
+    - '*\visio.exe'
+    - '*\outlook.exe'
+    - '*\amigo.exe'
+    - '*\chrome.exe'
+    - '*\firefox.exe'
+    - '*\iexplore.exe'
+    - '*\microsoftedgecp.exe'
+    - '*\microsoftedge.exe'
+    - '*\browser.exe'
+    - '*\vivaldi.exe'
+    - '*\safari.exe'
+    - '*\sqlagent.exe'
+    - '*\sqlserver.exe'
+    - '*\sqlservr.exe'
+    - '*\w3wp.exe'
+    - '*\httpd.exe'
+    - '*\nginx.exe'
+    - '*\php-cgi.exe'
+    - '*\jbosssvc.exe'
+    - '*MicrosoftEdgeSH.exe'
+  SELECTION_3:
+    ParentImage: '*tomcat*'
+  SELECTION_4:
+    CommandLine:
+    - '*powershell*'
+    - '*pwsh*'
+  SELECTION_5:
+    Description: Windows PowerShell
+  SELECTION_6:
+    Product: PowerShell Core 6
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
+    or SELECTION_6))
 falsepositives:
 - Other scripts
 id: 754ed792-634f-40ae-b3bc-e0448d33f695
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 references:
 - https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=26
 status: experimental
@@ -97,6 +64,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-yml_filename: win_susp_powershell_parent_process.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

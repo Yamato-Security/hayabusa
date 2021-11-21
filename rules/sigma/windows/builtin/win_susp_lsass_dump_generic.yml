@@ -1,90 +1,63 @@
+
 title: Generic Password Dumper Activity on LSASS
 author: Roberto Rodriguez, Teymur Kheirkhabarov, Dimitrios Slamaris, Mark Russinovich,
-    Aleksey Potapov, oscd.community (update)
+  Aleksey Potapov, oscd.community (update)
 date: 2019/11/01
 description: Detects process handle on LSASS process with certain access mask
 detection:
-    SELECTION_1:
-        ObjectName: '*\lsass.exe'
-    SELECTION_10:
-        AccessMask: '*0x143a*'
-    SELECTION_11:
-        AccessMask: '*0x1418*'
-    SELECTION_12:
-        AccessMask: '*0x1f0fff*'
-    SELECTION_13:
-        AccessMask: '*0x1f1fff*'
-    SELECTION_14:
-        AccessMask: '*0x1f2fff*'
-    SELECTION_15:
-        AccessMask: '*0x1f3fff*'
-    SELECTION_16:
-        EventID: 4663
-    SELECTION_17:
-        AccessList: '*4484*'
-    SELECTION_18:
-        AccessList: '*4416*'
-    SELECTION_19:
-        ProcessName: '*\wmiprvse.exe'
-    SELECTION_2:
-        EventID: 4656
-    SELECTION_20:
-        ProcessName: '*\taskmgr.exe'
-    SELECTION_21:
-        ProcessName: '*\procexp64.exe'
-    SELECTION_22:
-        ProcessName: '*\procexp.exe'
-    SELECTION_23:
-        ProcessName: '*\lsm.exe'
-    SELECTION_24:
-        ProcessName: '*\csrss.exe'
-    SELECTION_25:
-        ProcessName: '*\wininit.exe'
-    SELECTION_26:
-        ProcessName: '*\vmtoolsd.exe'
-    SELECTION_27:
-        ProcessName: '*\minionhost.exe'
-    SELECTION_28:
-        ProcessName: '*\VsTskMgr.exe'
-    SELECTION_29:
-        ProcessName: '*\thor64.exe'
-    SELECTION_3:
-        AccessMask: '*0x40*'
-    SELECTION_30:
-        ProcessName: C:\Windows\System32\\*
-    SELECTION_31:
-        ProcessName: C:\Windows\SysWow64\\*
-    SELECTION_32:
-        ProcessName: C:\Windows\SysNative\\*
-    SELECTION_33:
-        ProcessName: C:\Program Files\\*
-    SELECTION_34:
-        ProcessName: C:\Windows\Temp\asgard2-agent\\*
-    SELECTION_35:
-        ProcessName: C:\Program Files*
-    SELECTION_4:
-        AccessMask: '*0x1400*'
-    SELECTION_5:
-        AccessMask: '*0x1000*'
-    SELECTION_6:
-        AccessMask: '*0x100000*'
-    SELECTION_7:
-        AccessMask: '*0x1410*'
-    SELECTION_8:
-        AccessMask: '*0x1010*'
-    SELECTION_9:
-        AccessMask: '*0x1438*'
-    condition: (((SELECTION_1 and ((SELECTION_2 and (SELECTION_3 or SELECTION_4 or
-        SELECTION_5 or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or
-        SELECTION_10 or SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14
-        or SELECTION_15)) or (SELECTION_16 and (SELECTION_17 or SELECTION_18)))) and  not
-        ((SELECTION_19 or SELECTION_20 or SELECTION_21 or SELECTION_22 or SELECTION_23
-        or SELECTION_24 or SELECTION_25 or SELECTION_26 or SELECTION_27 or SELECTION_28
-        or SELECTION_29) and (SELECTION_30 or SELECTION_31 or SELECTION_32 or SELECTION_33
-        or SELECTION_34))) and  not ((SELECTION_35)))
+  SELECTION_1:
+    ObjectName: '*\lsass.exe'
+  SELECTION_2:
+    EventID: 4656
+  SELECTION_3:
+    AccessMask:
+    - '*0x40*'
+    - '*0x1400*'
+    - '*0x1000*'
+    - '*0x100000*'
+    - '*0x1410*'
+    - '*0x1010*'
+    - '*0x1438*'
+    - '*0x143a*'
+    - '*0x1418*'
+    - '*0x1f0fff*'
+    - '*0x1f1fff*'
+    - '*0x1f2fff*'
+    - '*0x1f3fff*'
+  SELECTION_4:
+    EventID: 4663
+  SELECTION_5:
+    AccessList:
+    - '*4484*'
+    - '*4416*'
+  SELECTION_6:
+    ProcessName:
+    - '*\wmiprvse.exe'
+    - '*\taskmgr.exe'
+    - '*\procexp64.exe'
+    - '*\procexp.exe'
+    - '*\lsm.exe'
+    - '*\csrss.exe'
+    - '*\wininit.exe'
+    - '*\vmtoolsd.exe'
+    - '*\minionhost.exe'
+    - '*\VsTskMgr.exe'
+    - '*\thor64.exe'
+  SELECTION_7:
+    ProcessName:
+    - C:\Windows\System32\\*
+    - C:\Windows\SysWow64\\*
+    - C:\Windows\SysNative\\*
+    - C:\Program Files\\*
+    - C:\Windows\Temp\asgard2-agent\\*
+  SELECTION_8:
+    ProcessName:
+    - C:\Program Files*
+  condition: (((SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and
+    SELECTION_5))) and  not (SELECTION_6 and SELECTION_7)) and  not (SELECTION_8))
 falsepositives:
 - Legitimate software accessing LSASS process for legitimate reason; update the whitelist
-    with it
+  with it
 fields:
 - ComputerName
 - SubjectDomainName
@@ -94,8 +67,8 @@ fields:
 id: 4a1b6da0-d94f-4fc3-98fc-2d9cb9e5ee76
 level: high
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 modified: 2021/04/19
 references:
 - https://cyberwardog.blogspot.com/2017/03/chronicles-of-threat-hunter-hunting-for_22.html
@@ -106,6 +79,3 @@ tags:
 - attack.t1003
 - car.2019-04-004
 - attack.t1003.001
-yml_filename: win_susp_lsass_dump_generic.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

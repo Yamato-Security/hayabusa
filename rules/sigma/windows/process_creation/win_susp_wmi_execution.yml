@@ -1,42 +1,42 @@
+
 title: Suspicious WMI Execution
 author: Michael Haag, Florian Roth, juju4, oscd.community
 date: 2019/01/16
 description: Detects WMI executing suspicious commands
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '* get *'
-    SELECTION_2:
-        Image: '*\wmic.exe'
-    SELECTION_3:
-        CommandLine: '*process*'
-    SELECTION_4:
-        CommandLine: '*call*'
-    SELECTION_5:
-        CommandLine: '*create *'
-    SELECTION_6:
-        CommandLine: '* path *'
-    SELECTION_7:
-        CommandLine: '*AntiVirus*'
-    SELECTION_8:
-        CommandLine: '*Firewall*'
-    SELECTION_9:
-        CommandLine: '*Product*'
-    condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4 and
-        SELECTION_5) or (SELECTION_6 and (SELECTION_7 or SELECTION_8) and SELECTION_9
-        and SELECTION_10)))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\wmic.exe'
+  SELECTION_3:
+    CommandLine: '*process*'
+  SELECTION_4:
+    CommandLine: '*call*'
+  SELECTION_5:
+    CommandLine: '*create *'
+  SELECTION_6:
+    CommandLine: '* path *'
+  SELECTION_7:
+    CommandLine:
+    - '*AntiVirus*'
+    - '*Firewall*'
+  SELECTION_8:
+    CommandLine: '*Product*'
+  SELECTION_9:
+    CommandLine: '* get *'
+  condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9)))
 falsepositives:
 - If using Splunk, we recommend | stats count by Computer,CommandLine following for
-    easy hunting by Computer/CommandLine
+  easy hunting by Computer/CommandLine
 fields:
 - CommandLine
 - ParentCommandLine
 id: 526be59f-a573-4eea-b5f7-f0973207634d
 level: medium
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/11/28
 references:
 - https://digital-forensics.sans.org/blog/2010/06/04/wmic-draft/
@@ -47,6 +47,3 @@ tags:
 - attack.execution
 - attack.t1047
 - car.2016-03-002
-yml_filename: win_susp_wmi_execution.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

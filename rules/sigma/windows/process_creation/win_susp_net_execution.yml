@@ -1,34 +1,29 @@
+
 title: Net.exe Execution
 author: Michael Haag, Mark Woan (improvements), James Pemberton / @4A616D6573 / oscd.community
-    (improvements)
+  (improvements)
 date: 2019/01/16
 description: Detects execution of Net.exe, whether suspicious or benign.
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_10:
-        CommandLine: '* stop *'
-    SELECTION_2:
-        Image: '*\net.exe'
-    SELECTION_3:
-        Image: '*\net1.exe'
-    SELECTION_4:
-        CommandLine: '* group*'
-    SELECTION_5:
-        CommandLine: '* localgroup*'
-    SELECTION_6:
-        CommandLine: '* user*'
-    SELECTION_7:
-        CommandLine: '* view*'
-    SELECTION_8:
-        CommandLine: '* share*'
-    SELECTION_9:
-        CommandLine: '* accounts*'
-    condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9 or SELECTION_10))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\net.exe'
+    - '*\net1.exe'
+  SELECTION_3:
+    CommandLine:
+    - '* group*'
+    - '* localgroup*'
+    - '* user*'
+    - '* view*'
+    - '* share*'
+    - '* accounts*'
+    - '* stop *'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Will need to be tuned. If using Splunk, I recommend | stats count by Computer,CommandLine
-    following the search for easy hunting by computer/CommandLine.
+  following the search for easy hunting by computer/CommandLine.
 fields:
 - ComputerName
 - User
@@ -37,8 +32,8 @@ fields:
 id: 183e7ea8-ac4b-4c23-9aec-b3dac4e401ac
 level: low
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/11/28
 references:
 - https://pentest.blog/windows-privilege-escalation-methods-for-pentesters/
@@ -60,6 +55,3 @@ tags:
 - attack.t1021.002
 - attack.t1077
 - attack.s0039
-yml_filename: win_susp_net_execution.yml
-yml_path: /home/itib/git/sigma/rules/windows/process_creation
-

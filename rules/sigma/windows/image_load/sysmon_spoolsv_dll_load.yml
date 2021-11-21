@@ -1,24 +1,25 @@
+
 title: Windows Spooler Service Suspicious Binary Load
 author: FPT.EagleEye, Thomas Patzke (improvements)
 date: 2021/06/29
 description: Detect DLL Load from Spooler Service backup folder
 detection:
-    SELECTION_1:
-        EventID: 7
-    SELECTION_2:
-        Image: '*spoolsv.exe'
-    SELECTION_3:
-        ImageLoaded: '*\Windows\System32\spool\drivers\x64\3\\*'
-    SELECTION_4:
-        ImageLoaded: '*.dll'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    Image: '*spoolsv.exe'
+  SELECTION_3:
+    ImageLoaded: '*\Windows\System32\spool\drivers\x64\3\\*'
+  SELECTION_4:
+    ImageLoaded: '*.dll'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - Loading of legitimate driver
 id: 02fb90de-c321-4e63-a6b9-25f4b03dfd14
 level: informational
 logsource:
-    category: image_load
-    product: windows
+  category: image_load
+  product: windows
 modified: 2021/08/24
 references:
 - https://github.com/hhlxf/PrintNightmare
@@ -30,6 +31,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1574
-yml_filename: sysmon_spoolsv_dll_load.yml
-yml_path: /home/itib/git/sigma/rules/windows/image_load
-

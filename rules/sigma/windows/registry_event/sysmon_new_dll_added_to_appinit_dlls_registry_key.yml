@@ -1,26 +1,26 @@
+
 title: New DLL Added to AppInit_DLLs Registry Key
 author: Ilyas Ochkov, oscd.community
 date: 2019/10/25
 description: DLLs that are specified in the AppInit_DLLs value in the Registry key
-    HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows are loaded by user32.dll
-    into every process that loads user32.dll
+  HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows are loaded by user32.dll
+  into every process that loads user32.dll
 detection:
-    SELECTION_1:
-        EventID: 12
-    SELECTION_2:
-        EventID: 13
-    SELECTION_3:
-        EventID: 14
-    SELECTION_4:
-        TargetObject: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
-    SELECTION_5:
-        TargetObject: '*\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
-    SELECTION_6:
-        NewName: '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
-    SELECTION_7:
-        NewName: '*\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
-    condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and ((SELECTION_4 or SELECTION_5)
-        or (SELECTION_6 or SELECTION_7)))
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject:
+    - '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
+    - '*\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
+  SELECTION_5:
+    NewName:
+    - '*\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
+    - '*\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_Dlls'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5))
 falsepositives:
 - Unknown
 fields:
@@ -31,8 +31,8 @@ fields:
 id: 4f84b697-c9ed-4420-8ab5-e09af5b2345d
 level: medium
 logsource:
-    category: registry_event
-    product: windows
+  category: registry_event
+  product: windows
 modified: 2020/09/06
 references:
 - https://eqllib.readthedocs.io/en/latest/analytics/822dc4c5-b355-4df8-bd37-29c458997b8f.html
@@ -41,6 +41,3 @@ tags:
 - attack.persistence
 - attack.t1103
 - attack.t1546.010
-yml_filename: sysmon_new_dll_added_to_appinit_dlls_registry_key.yml
-yml_path: /home/itib/git/sigma/rules/windows/registry_event
-

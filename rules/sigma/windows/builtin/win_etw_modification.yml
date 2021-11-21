@@ -1,24 +1,25 @@
+
 title: COMPlus_ETWEnabled Registry Modification
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/06/05
 description: Potential adversaries stopping ETW providers recording loaded .NET assemblies.
 detection:
-    SELECTION_1:
-        EventID: 4657
-    SELECTION_2:
-        ObjectName: '*\SOFTWARE\Microsoft\.NETFramework'
-    SELECTION_3:
-        ObjectValueName: ETWEnabled
-    SELECTION_4:
-        NewValue: '0'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+  SELECTION_1:
+    EventID: 4657
+  SELECTION_2:
+    ObjectName: '*\SOFTWARE\Microsoft\.NETFramework'
+  SELECTION_3:
+    ObjectValueName: ETWEnabled
+  SELECTION_4:
+    NewValue: '0'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
 falsepositives:
 - unknown
 id: a4c90ea1-2634-4ca0-adbb-35eae169b6fc
 level: critical
 logsource:
-    product: windows
-    service: security
+  product: windows
+  service: security
 references:
 - https://twitter.com/_xpn_/status/1268712093928378368
 - https://social.msdn.microsoft.com/Forums/vstudio/en-US/0878832e-39d7-4eaf-8e16-a729c4c40975/what-can-i-use-e13c0d23ccbc4e12931bd9cc2eee27e4-for?forum=clr
@@ -33,6 +34,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1112
-yml_filename: win_etw_modification.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-

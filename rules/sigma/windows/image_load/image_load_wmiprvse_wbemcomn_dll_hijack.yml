@@ -1,23 +1,24 @@
+
 title: Wmiprvse Wbemcomn DLL Hijack
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/10/12
 description: Detects a threat actor creating a file named `wbemcomn.dll` in the `C:\Windows\System32\wbem\`
-    directory over the network and loading it for a WMI DLL Hijack scenario.
+  directory over the network and loading it for a WMI DLL Hijack scenario.
 detection:
-    SELECTION_1:
-        EventID: 7
-    SELECTION_2:
-        Image: '*\wmiprvse.exe'
-    SELECTION_3:
-        ImageLoaded: '*\wbem\wbemcomn.dll'
-    condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    Image: '*\wmiprvse.exe'
+  SELECTION_3:
+    ImageLoaded: '*\wbem\wbemcomn.dll'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Unknown
 id: 7707a579-e0d8-4886-a853-ce47e4575aaa
 level: critical
 logsource:
-    category: image_load
-    product: windows
+  category: image_load
+  product: windows
 modified: 2021/09/09
 references:
 - https://threathunterplaybook.com/notebooks/windows/08_lateral_movement/WIN-201009173318.html
@@ -27,6 +28,3 @@ tags:
 - attack.t1047
 - attack.lateral_movement
 - attack.t1021.002
-yml_filename: image_load_wmiprvse_wbemcomn_dll_hijack.yml
-yml_path: /home/itib/git/sigma/rules/windows/image_load
-

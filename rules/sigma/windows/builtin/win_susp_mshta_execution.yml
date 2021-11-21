@@ -1,37 +1,32 @@
+
 title: MSHTA Suspicious Execution 01
 author: Diego Perez (@darkquassar), Markus Neis, Swisscom (Improve Rule)
 date: 2019/02/22
 description: Detection for mshta.exe suspicious execution patterns sometimes involving
-    file polyglotism
+  file polyglotism
 detection:
-    SELECTION_1:
-        EventID: 1
-    SELECTION_2:
-        Image: '*\mshta.exe'
-    SELECTION_3:
-        CommandLine: '*vbscript*'
-    SELECTION_4:
-        CommandLine: '*.jpg*'
-    SELECTION_5:
-        CommandLine: '*.png*'
-    SELECTION_6:
-        CommandLine: '*.lnk*'
-    SELECTION_7:
-        CommandLine: '*.xls*'
-    SELECTION_8:
-        CommandLine: '*.doc*'
-    SELECTION_9:
-        CommandLine: '*.zip*'
-    condition: (SELECTION_1 and SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
-        or SELECTION_6 or SELECTION_7 or SELECTION_8 or SELECTION_9))
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\mshta.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*vbscript*'
+    - '*.jpg*'
+    - '*.png*'
+    - '*.lnk*'
+    - '*.xls*'
+    - '*.doc*'
+    - '*.zip*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
-    environment
+  environment
 id: cc7abbd0-762b-41e3-8a26-57ad50d2eea3
 level: high
 logsource:
-    category: process_creation
-    product: windows
+  category: process_creation
+  product: windows
 modified: 2020/08/23
 references:
 - http://blog.sevagas.com/?Hacking-around-HTA-files
@@ -43,6 +38,3 @@ tags:
 - attack.defense_evasion
 - attack.t1140
 - attack.t1218.005
-yml_filename: win_susp_mshta_execution.yml
-yml_path: /home/itib/git/sigma/rules/windows/builtin
-
