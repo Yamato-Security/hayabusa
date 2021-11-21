@@ -25,26 +25,31 @@ git clone https://github.com/SigmaHQ/sigma.git
 
 Regist hayabusaGenerater.py for SIGMA's backend.
 
+### set hayabusaGenerater files
+
 ```sh
 export sigma_path=/path/to/sigma_repository
 cp hayabusaGenerater.py $sigma_path/tools/sigma/backends
+cp convert.sh $sigma_path
+cp splitter.py $sigma_path
 ```
 
-### Convert Single Rule
+### install python librariy
+
+```
+pip install ruamel.yaml
+```
+
+### Convert Rule
+
+Conversion rules can be created by executing `convert.sh`.
+The rules will be created to hayabusa_rules folder.
 
 ```sh
-python3 $sigma_path/tools/sigmac <Target Rule> --config <config Name> --target hayabusa
+export sigma_path=/path/to/sigma_repository
+cd $sigma_path
+sh convert.sh
 ```
 
-Sample
-```sh
-python3 $sigma_path/tools/sigmac $sigma/rules/windows/create_remote_thread/sysmon_cactustorch.yml --config $sigma_path/tools/config/generic/sysmon.yml --target hayabusa > sysmon_cactustorch.yml
-```
-
-### Convert Multiple Rules
-
-This is a command sample that creates a rule file from the specified directory in the current directory.
-
-```sh
-find $sigma/rules/windows/* | grep yml | xargs -I{} sh -c 'python $sigma/tools/sigmac {} --config $sigma/tools/config/generic/sysmon.yml --target hayabusa > "$(basename {})"'
-```
+`sigmac` which we use for convert rule files has many options.
+If you want to use some option, edit `convert.sh`
