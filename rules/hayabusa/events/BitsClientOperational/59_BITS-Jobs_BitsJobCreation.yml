@@ -1,0 +1,33 @@
+#Author info
+author: James Takai, itiB
+contributor: Zach Mathis
+creation_date: 2020/11/08
+updated_date: 2021/11/22
+
+#Alert messages
+title: Bits Job Creation
+title_jp: Bits Jobの作成
+output: 'Job Title: %JobTitle%  :  URL: %Url%'
+output_jp: 'Job名: %JobTitle%  :  URL: %Url%'
+description: Adversaries may abuse BITS jobs to persistently execute or clean up after malicious payloads.
+description_jp: Adversaries may abuse BITS jobs to persistently execute or clean up after malicious payloads.
+
+#Detection rule
+id: d3fb8f7b-88b0-4ff4-bf9b-ca286ce19031
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Microsoft-Windows-Bits-Client/Operational
+        EventID: 59
+    condition: selection
+falsepositives:
+    - normal system usage
+tags:
+    - attack.defense_evasion
+    - attack.persistence
+    - attack.t1197
+    - lolbas
+references:
+    - https://attack.mitre.org/techniques/T1197/
+    - https://lolbas-project.github.io/lolbas/Binaries/Bitsadmin/

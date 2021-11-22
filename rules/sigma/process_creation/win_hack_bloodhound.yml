@@ -1,0 +1,53 @@
+
+title: Bloodhound and Sharphound Hack Tool
+author: Florian Roth
+date: 2019/12/20
+description: Detects command line parameters used by Bloodhound and Sharphound hack
+  tools
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\Bloodhound.exe*'
+    - '*\SharpHound.exe*'
+  SELECTION_3:
+    CommandLine:
+    - '* -CollectionMethod All *'
+    - '*.exe -c All -d *'
+    - '*Invoke-Bloodhound*'
+    - '*Get-BloodHoundData*'
+  SELECTION_4:
+    CommandLine: '* -JsonFolder *'
+  SELECTION_5:
+    CommandLine: '* -ZipFileName *'
+  SELECTION_6:
+    CommandLine: '* DCOnly *'
+  SELECTION_7:
+    CommandLine: '* --NoSaveCache *'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or (SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7)))
+falsepositives:
+- Other programs that use these command line option and accepts an 'All' parameter
+id: f376c8a7-a2d0-4ddc-aa0c-16c17236d962
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2019/12/21
+references:
+- https://github.com/BloodHoundAD/BloodHound
+- https://github.com/BloodHoundAD/SharpHound
+status: experimental
+tags:
+- attack.discovery
+- attack.t1087.001
+- attack.t1087.002
+- attack.t1087
+- attack.t1482
+- attack.t1069.001
+- attack.t1069.002
+- attack.t1069
+- attack.execution
+- attack.t1059.001
+- attack.t1086

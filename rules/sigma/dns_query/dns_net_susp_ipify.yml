@@ -1,0 +1,51 @@
+
+title: Suspicious DNS Query for IP Lookup Service APIs
+author: Brandon George (blog post), Thomas Patzke (rule)
+date: 2021/07/08
+description: Detects DNS queries for ip lookup services such as api.ipify.org not
+  originating from a browser process.
+detection:
+  SELECTION_1:
+    EventID: 22
+  SELECTION_2:
+    QueryName:
+    - canireachthe.net
+    - ipv4.icanhazip.com
+    - ip.anysrc.net
+    - edns.ip-api.com
+    - wtfismyip.com
+    - checkip.dyndns.org
+    - api.2ip.ua
+    - icanhazip.com
+    - api.ipify.org
+    - ip-api.com
+    - checkip.amazonaws.com
+    - ipecho.net
+    - ipinfo.io
+    - ipv4bot.whatismyipaddress.com
+    - freegeoip.app
+  SELECTION_3:
+    Image:
+    - '*\chrome.exe'
+    - '*\iexplore.exe'
+    - '*\firefox.exe'
+    - '*\brave.exe'
+    - '*\opera.exe'
+    - '*\msedge.exe'
+    - '*\vivaldi.exe'
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
+falsepositives:
+- Legitimate usage of ip lookup services such as ipify API
+id: ec82e2a5-81ea-4211-a1f8-37a0286df2c2
+level: medium
+logsource:
+  category: dns_query
+  product: windows
+modified: 2021/09/10
+references:
+- https://www.binarydefense.com/analysis-of-hancitor-when-boring-begets-beacon
+- https://twitter.com/neonprimetime/status/1436376497980428318
+status: experimental
+tags:
+- attack.reconnaissance
+- attack.t1590

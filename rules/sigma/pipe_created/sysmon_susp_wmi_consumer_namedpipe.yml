@@ -1,0 +1,32 @@
+
+title: WMI Event Consumer Created Named Pipe
+author: Florian Roth
+date: 2021/09/01
+description: Detects the WMI Event Consumer service scrcons.exe creating a named pipe
+detection:
+  SELECTION_1:
+    EventID: 17
+  SELECTION_2:
+    EventID: 18
+  SELECTION_3:
+    Image: '*\scrcons.exe'
+  condition: ((SELECTION_1 or SELECTION_2) and SELECTION_3)
+falsepositives:
+- Unknown
+id: 493fb4ab-cdcc-4c4f-818c-0e363bd1e4bb
+level: high
+logsource:
+  category: pipe_created
+  definition: Note that you have to configure logging for Named Pipe Events in Sysmon
+    config (Event ID 17 and Event ID 18). The basic configuration is in popular sysmon
+    configuration (https://github.com/SwiftOnSecurity/sysmon-config), but it is worth
+    verifying. You can also use other repo, e.g. https://github.com/Neo23x0/sysmon-config,
+    https://github.com/olafhartong/sysmon-modular. How to test detection? You can
+    check powershell script from this site https://svch0st.medium.com/guide-to-named-pipes-and-hunting-for-cobalt-strike-pipes-dc46b2c5f575
+  product: windows
+references:
+- https://github.com/RiccardoAncarani/LiquidSnake
+status: experimental
+tags:
+- attack.t1047
+- attack.execution
