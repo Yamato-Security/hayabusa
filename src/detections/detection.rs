@@ -54,11 +54,6 @@ impl Detection {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
         let result_readdir = rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level);
-        Detection::print_rule_load_info(
-            rulefile_loader.rulecounter,
-            rulefile_loader.parseerror_count,
-            rulefile_loader.ignore_count,
-        );
         if result_readdir.is_err() {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
@@ -67,7 +62,7 @@ impl Detection {
             .ok();
             return vec![];
         }
-
+        let mut parseerror_count = rulefile_loader.errorrule_count;
         let return_if_success = |mut rule: RuleNode| {
             let err_msgs_result = rule.init();
             if err_msgs_result.is_ok() {
@@ -83,18 +78,24 @@ impl Detection {
                 err_msgs.iter().for_each(|err_msg| {
                     AlertMessage::warn(&mut std::io::stdout().lock(), err_msg.to_string()).ok();
                 });
+                parseerror_count += 1;
                 println!(""); // 一行開けるためのprintln
             });
             return Option::None;
         };
-
         // parse rule files
-        return rulefile_loader
+        let ret = rulefile_loader
             .files
             .into_iter()
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
+        Detection::print_rule_load_info(
+            &rulefile_loader.rulecounter,
+            &parseerror_count,
+            &rulefile_loader.ignorerule_count,
+        );
+        return ret;
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
@@ -210,9 +211,9 @@ impl Detection {
         return ret;
     }
     pub fn print_rule_load_info(
-        rc: HashMap<String, u128>,
-        parseerror_count: u128,
-        ignore_count: u128,
+        rc: &HashMap<String, u128>,
+        parseerror_count: &u128,
+        ignore_count: &u128,
     ) {
         let mut total = parseerror_count + ignore_count;
         rc.into_iter().for_each(|(key, value)| {
