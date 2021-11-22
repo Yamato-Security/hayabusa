@@ -15,8 +15,8 @@ use yaml_rust::YamlLoader;
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
     pub rulecounter: HashMap<String, u128>,
-    pub ignore_count: u128,
-    pub parseerror_count: u128,
+    pub ignorerule_count: u128,
+    pub errorrule_count: u128,
 }
 
 impl ParseYaml {
@@ -24,8 +24,8 @@ impl ParseYaml {
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
-            ignore_count: 0,
-            parseerror_count: 0,
+            ignorerule_count: 0,
+            errorrule_count: 0,
         }
     }
 
@@ -73,7 +73,7 @@ impl ParseYaml {
                         read_content.unwrap_err()
                     ),
                 )?;
-                self.parseerror_count += 1;
+                self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -88,7 +88,7 @@ impl ParseYaml {
                         yaml_contents.unwrap_err()
                     ),
                 )?;
-                self.parseerror_count += 1;
+                self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }
 
