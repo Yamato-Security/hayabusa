@@ -105,21 +105,13 @@ impl ParseYaml {
             .filter_map(|(filepath, yaml_doc)| {
                 // ignoreフラグがONになっているルールは無視する。
                 if yaml_doc["ignore"].as_bool().unwrap_or(false) {
-                    self.ignore_count += 1;
+                    self.ignorerule_count += 1;
                     return Option::None;
                 }
                 self.rulecounter.insert(
-                    yaml_doc["rulesection"]
-                        .as_str()
-                        .unwrap_or("other")
-                        .to_string(),
+                    yaml_doc["ruletype"].as_str().unwrap_or("other").to_string(),
                     self.rulecounter
-                        .get(
-                            &yaml_doc["rulesection"]
-                                .as_str()
-                                .unwrap_or("other")
-                                .to_string(),
-                        )
+                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("other").to_string())
                         .unwrap_or(&0)
                         + 1,
                 );
