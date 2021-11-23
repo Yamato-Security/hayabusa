@@ -1,0 +1,34 @@
+#Author info
+author: Eric Conrad, Zach Mathis
+creation_date: 2020/11/08
+updated_date: 2021/11/23
+
+#Alert messages
+title: Malicious service installed
+title_jp: 悪意のあるサービスがインストールされた
+output: 'Service: %ServiceName%  :  Image path: %ImagePath'
+output_jp: 'サービス名: %ServiceName%  :  Imageパス: %ImagePath'
+description: Malicious service was installed based on suspicious entries in ./config/regex/regexes_suspicous_service.txt
+description_jp: Malicious service was installed based on suspicious entries in ./config/regex/regexes_suspicous_service.txt
+
+#Detection rule
+id: dbbfd9f3-9508-478b-887e-03ddb9236909
+level: high
+status: test
+detection:
+    selection:
+        Channel: System
+        EventID: 7045
+        ServiceName:
+            regexes: ./config/regex/regexes_suspicous_service.txt
+        ImagePath:
+            min_length: 1000
+            allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
+    condition: selection
+falsepositives:
+    - normal system usage
+tags:
+    - attack.persistence
+    - attack.t1543.003
+references:
+    - https://attack.mitre.org/techniques/T1543/003/

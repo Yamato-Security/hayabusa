@@ -1,0 +1,45 @@
+
+title: Suspicious Driver Install by pnputil.exe
+author: Hai Vaknin @LuxNoBulIshit, Avihay eldad  @aloneliassaf, Austin Songer @austinsonger
+date: 2021/09/30
+description: Detects when a possible suspicious driver is being installed via pnputil.exe
+  lolbin
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*-i*'
+    - '*/install*'
+    - '*-a*'
+    - '*/add-driver*'
+    - '*.inf*'
+  SELECTION_3:
+    Image:
+    - '*\pnputil.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Pnputil.exe being used may be performed by a system administrator.
+- Verify whether the user identity, user agent, and/or hostname should be making changes
+  in your environment.
+- Pnputil.exe being executed from unfamiliar users should be investigated. If known
+  behavior is causing false positives, it can be exempted from the rule.
+- Penetration Testing
+fields:
+- ComputerName
+- User
+- CommandLine
+- ParentCommandLine
+id: a2ea3ae7-d3d0-40a0-a55c-25a45c87cac1
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/pnputil-command-syntax
+- https://strontic.github.io/xcyclopedia/library/pnputil.exe-60EDC5E6BDBAEE441F2E3AEACD0340D2.html
+status: experimental
+tags:
+- attack.persistence
+- attack.t1547
+- attack.t1547.006

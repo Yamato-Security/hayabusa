@@ -1,0 +1,40 @@
+
+title: Account Tampering - Suspicious Failed Logon Reasons
+author: Florian Roth
+date: 2017/02/19
+description: This method uses uncommon error codes on failed logons to determine suspicious
+  activity and tampering with accounts that have been disabled or somehow restricted.
+detection:
+  SELECTION_1:
+    EventID: 4625
+  SELECTION_2:
+    EventID: 4776
+  SELECTION_3:
+    Status:
+    - '0xC0000072'
+    - '0xC000006F'
+    - '0xC0000070'
+    - '0xC0000413'
+    - '0xC000018C'
+    - '0xC000015B'
+  SELECTION_4:
+    SubjectUserSid: S-1-0-0
+  condition: (((SELECTION_1 or SELECTION_2) and SELECTION_3) and  not (SELECTION_4))
+falsepositives:
+- User using a disabled account
+id: 9eb99343-d336-4020-a3cd-67f3819e68ee
+level: high
+logsource:
+  product: windows
+  service: security
+modified: 2021/10/29
+references:
+- https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4625
+- https://twitter.com/SBousseaden/status/1101431884540710913
+status: experimental
+tags:
+- attack.persistence
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.initial_access
+- attack.t1078

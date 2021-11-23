@@ -1,0 +1,32 @@
+
+title: Netcat The Powershell Version
+author: frack113
+date: 2021/07/21
+description: Adversaries may use a non-application layer protocol for communication
+  between host and C2 server or among infected hosts within a network
+detection:
+  SELECTION_1:
+    HostApplication:
+    - '*powercat *'
+    - '*powercat.ps1*'
+  condition: SELECTION_1
+falsepositives:
+- Unknown
+id: c5b20776-639a-49bf-94c7-84f912b91c15
+level: medium
+logsource:
+  category: ps_classic_start
+  definition: fields have to be extract from event
+  product: windows
+modified: 2021/10/16
+references:
+- https://nmap.org/ncat/
+- https://github.com/besimorhino/powercat
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1095/T1095.md
+related:
+- id: bf7286e7-c0be-460b-a7e8-5b2e07ecc2f2
+  type: derived
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1095

@@ -1,0 +1,19 @@
+title: Powershell 2.0 Downgrade Attack
+title_jp: Powershell 2.0へのダウングレード攻撃
+description: An attacker may have started Powershell 2.0 to evade detection.
+description_jp: 攻撃者は検知されないようにPowershell 2.0を起動したリスクがある。
+author: Yuskue Matsui, Zach Mathis
+contributor: James Takai, itiB
+mitre_attack: T1562.010
+level: medium
+detection:
+    selection:
+        Channel: Microsoft-Windows-PowerShell/Operational
+        EventID: 400
+        EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
+falsepositives:
+    - legacy application
+output: 'Powershell 2.0 downgrade attack detected!'
+output_jp: 'Powershell 2.0へんおダウングレード攻撃は検知された！'
+creation_date: 2020/11/08
+updated_date:  2021/11/06

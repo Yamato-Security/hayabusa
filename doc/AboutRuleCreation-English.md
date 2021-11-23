@@ -26,7 +26,7 @@ updated_date: 2020/11/8
 * description [optional]: A description of the rule. This does not get displayed so you can make this long.
 * author [optional]: The name of the person or persons who created the logic for the rule.
 * detection  [required]: The detection logic goes here.
-* falsepositives [optional]: The possibilities for false positives. For example: unknown、system administrator、normal user usage、normal system usage、legacy application、security team. If it is unknown, write "unknown".
+* falsepositives [optional]: The possibilities for false positives. For example: `system administrator`, `normal user usage`, `normal system usage`, `legacy application`, `security team`. If it is unknown, write `unknown`.
 * level [optional]: Risk level. Please write one of the following: `info`,`low`,`medium`,`high`,`critical`
 * output [required]: The details of the alert. (Please output any and only useful fields in the Windows event log for easy analysis.)
 * creation_date [optional]: The creation date.
@@ -219,7 +219,7 @@ The following wildcards can be used.
 * `? `: Matches any single character. (Internally converted to the regular expression `. `.)
 
 When wildcards are used, they will be interpreted according to the following rules.
-* Wildcards (`*` and `? `) can be escaped by using a backslash (`/`).
+* Wildcards (`*` and `?`) can be escaped by using a backslash (`/`).
 * If you want to use a backslash right before a wildcard then write `\\*` or `\\?`.
 * No escaping is required if you are using backslashes by themselves.
 
@@ -317,8 +317,8 @@ In addition, the following can be specified for the above operator:
 * `<=`: If the value is less than or equal to the specified value, the condition is considered to have been met.
 * `<`: If the value is less than the specified value, it will be treated as if the condition is met.
 
-# output notation
-You can specify the message that will be outputted when the detection condition is met. 
+# Alert details
+You can specify the message (alert details) that will be outputted when the detection condition is met. 
 In addition to outputting a fixed string, it is also possible to display the value in the event log by enclosing the eventkey in a `%`. 
 In the example below, the eventkey value ScriptBlockText is used in the message when a detection is made.
 

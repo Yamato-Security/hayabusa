@@ -1,0 +1,35 @@
+
+title: Powershell WMI Persistence
+author: frack113
+date: 2021/08/19
+description: Adversaries may establish persistence and elevate privileges by executing
+  malicious content triggered by a Windows Management Instrumentation (WMI) event
+  subscription.
+detection:
+  SELECTION_1:
+    ScriptBlockText: '*New-CimInstance *'
+  SELECTION_2:
+    ScriptBlockText: '*-Namespace root/subscription *'
+  SELECTION_3:
+    ScriptBlockText: '*-Property *'
+  SELECTION_4:
+    ScriptBlockText: '*-ClassName __EventFilter *'
+  SELECTION_5:
+    ScriptBlockText: '*-ClassName CommandLineEventConsumer *'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (SELECTION_4 or SELECTION_5))
+falsepositives:
+- Unknown
+id: 9e07f6e7-83aa-45c6-998e-0af26efd0a85
+level: medium
+logsource:
+  category: ps_script
+  definition: EnableScriptBlockLogging must be set to enable
+  product: windows
+modified: 2021/10/16
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1546.003/T1546.003.md
+- https://github.com/EmpireProject/Empire/blob/master/data/module_source/persistence/Persistence.psm1#L545
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.t1546.003

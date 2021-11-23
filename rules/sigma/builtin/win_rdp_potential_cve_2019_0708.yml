@@ -1,0 +1,29 @@
+
+title: Potential RDP Exploit CVE-2019-0708
+author: Lionel PRAT, Christophe BROCAS, @atc_project (improvements)
+date: 2019/05/24
+description: Detect suspicious error on protocol RDP, potential CVE-2019-0708
+detection:
+  SELECTION_1:
+    EventID: 56
+  SELECTION_2:
+    EventID: 50
+  SELECTION_3:
+    Provider_Name: TermDD
+  condition: ((SELECTION_1 or SELECTION_2) and SELECTION_3)
+falsepositives:
+- Bad connections or network interruptions
+id: aaa5b30d-f418-420b-83a0-299cb6024885
+level: high
+logsource:
+  product: windows
+  service: system
+modified: 2021/10/13
+references:
+- https://github.com/zerosum0x0/CVE-2019-0708
+- https://github.com/Ekultek/BlueKeep
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1210
+- car.2013-07-002

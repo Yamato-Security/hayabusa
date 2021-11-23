@@ -1,0 +1,33 @@
+
+title: Detected Windows Software Discovery
+author: Nikita Nazarov, oscd.community
+date: 2020/10/16
+description: Adversaries may attempt to enumerate software for a variety of reasons,
+  such as figuring out what security measures are present or if the compromised system
+  has a version of software that is vulnerable.
+detection:
+  SELECTION_1:
+    ScriptBlockText: '*get-itemProperty*'
+  SELECTION_2:
+    ScriptBlockText: '*\software\\*'
+  SELECTION_3:
+    ScriptBlockText: '*select-object*'
+  SELECTION_4:
+    ScriptBlockText: '*format-table*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Legitimate administration activities
+id: 2650dd1a-eb2a-412d-ac36-83f06c4f2282
+level: medium
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/11/12
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1518/T1518.md
+- https://github.com/harleyQu1nn/AggressorScripts
+status: experimental
+tags:
+- attack.discovery
+- attack.t1518
