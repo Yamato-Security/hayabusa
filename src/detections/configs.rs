@@ -52,6 +52,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
     --verbose 'Output check information to target event file path and rule file.'
+    --start-time=[STARTTIME]
+    --end-time=[ENDTIME]
     -q 'Quiet Output Logo'
     -r --rules=[RULEDIRECTORY] 'using target of rule file directory'
     -L --level=[LEVEL] 'Specified execute rule level(default: LOW)'
