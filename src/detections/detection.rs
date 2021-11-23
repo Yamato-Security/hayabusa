@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
+use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
@@ -140,6 +141,34 @@ impl Detection {
                 Detection::insert_agg_message(rule, value);
             }
         }
+    }
+
+    pub fn print_unique_results(&self) {
+        let rules = &self.rules;
+        let levellabel = Vec::from(["Critical", "High", "Medium", "Low", "Info", "Undeifned"]);
+        // levclcounts is [(Undeifned), (Info), (Low),(Medium),(High),(Critical)]
+        let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
+        for rule in rules.into_iter() {
+            if rule.check_exist_countdata() {
+                let suffix = configs::LEVELMAP
+                    .get(
+                        &rule.yaml["level"]
+                            .as_str()
+                            .unwrap_or("")
+                            .to_owned()
+                            .to_uppercase(),
+                    )
+                    .unwrap_or(&0);
+                levelcounts[*suffix as usize] += 1;
+            }
+        }
+        let mut total_unique = 0;
+        levelcounts.reverse();
+        for (i, value) in levelcounts.iter().enumerate() {
+            println!("{} alerts {}", levellabel[i], value);
+            total_unique += value;
+        }
+        println!("Unique Events Detected: {}", total_unique);
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。

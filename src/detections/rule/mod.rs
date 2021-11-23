@@ -102,6 +102,9 @@ impl RuleNode {
         }
         return ret;
     }
+    pub fn check_exist_countdata(&self) -> bool {
+        self.countdata.len() > 0
+    }
 }
 
 /// Ruleファイルのdetectionを表すノード

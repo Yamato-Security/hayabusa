@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
-    pub static ref LEVELMAP: HashMap<String, u8> = {
+    pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
         levelmap.insert("INFO".to_owned(), 1);
         levelmap.insert("LOW".to_owned(), 2);
