@@ -161,7 +161,7 @@ impl Message {
             detect_count += detect_infos.len();
         }
         println!("");
-        println!("Events Detected:{:?}", detect_count);
+        println!("Total Events Detected:{:?}", detect_count);
     }
 
     pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<DetectInfo>> {

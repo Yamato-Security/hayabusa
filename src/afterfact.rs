@@ -82,7 +82,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
 
     wtr.flush()?;
     println!("");
-    println!("Events Detected:{:?}", detect_count);
+    println!("Total Events Detected:{:?}", detect_count);
     Ok(())
 }
 
