@@ -5,6 +5,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
+use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
@@ -54,11 +55,6 @@ impl Detection {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
         let result_readdir = rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level);
-        Detection::print_rule_load_info(
-            rulefile_loader.rulecounter,
-            rulefile_loader.parseerror_count,
-            rulefile_loader.ignore_count,
-        );
         if result_readdir.is_err() {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
@@ -67,7 +63,7 @@ impl Detection {
             .ok();
             return vec![];
         }
-
+        let mut parseerror_count = rulefile_loader.errorrule_count;
         let return_if_success = |mut rule: RuleNode| {
             let err_msgs_result = rule.init();
             if err_msgs_result.is_ok() {
@@ -83,18 +79,24 @@ impl Detection {
                 err_msgs.iter().for_each(|err_msg| {
                     AlertMessage::warn(&mut std::io::stdout().lock(), err_msg.to_string()).ok();
                 });
+                parseerror_count += 1;
                 println!(""); // 一行開けるためのprintln
             });
             return Option::None;
         };
-
         // parse rule files
-        return rulefile_loader
+        let ret = rulefile_loader
             .files
             .into_iter()
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
+        Detection::print_rule_load_info(
+            &rulefile_loader.rulecounter,
+            &parseerror_count,
+            &rulefile_loader.ignorerule_count,
+        );
+        return ret;
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
@@ -139,6 +141,34 @@ impl Detection {
                 Detection::insert_agg_message(rule, value);
             }
         }
+    }
+
+    pub fn print_unique_results(&self) {
+        let rules = &self.rules;
+        let levellabel = Vec::from(["Critical", "High", "Medium", "Low", "Info", "Undeifned"]);
+        // levclcounts is [(Undeifned), (Info), (Low),(Medium),(High),(Critical)]
+        let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
+        for rule in rules.into_iter() {
+            if rule.check_exist_countdata() {
+                let suffix = configs::LEVELMAP
+                    .get(
+                        &rule.yaml["level"]
+                            .as_str()
+                            .unwrap_or("")
+                            .to_owned()
+                            .to_uppercase(),
+                    )
+                    .unwrap_or(&0);
+                levelcounts[*suffix as usize] += 1;
+            }
+        }
+        let mut total_unique = 0;
+        levelcounts.reverse();
+        for (i, value) in levelcounts.iter().enumerate() {
+            println!("{} alerts {}", levellabel[i], value);
+            total_unique += value;
+        }
+        println!("Unique Events Detected: {}", total_unique);
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
@@ -210,9 +240,9 @@ impl Detection {
         return ret;
     }
     pub fn print_rule_load_info(
-        rc: HashMap<String, u128>,
-        parseerror_count: u128,
-        ignore_count: u128,
+        rc: &HashMap<String, u128>,
+        parseerror_count: &u128,
+        ignore_count: &u128,
     ) {
         let mut total = parseerror_count + ignore_count;
         rc.into_iter().for_each(|(key, value)| {

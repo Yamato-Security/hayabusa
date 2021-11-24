@@ -15,8 +15,8 @@ use yaml_rust::YamlLoader;
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
     pub rulecounter: HashMap<String, u128>,
-    pub ignore_count: u128,
-    pub parseerror_count: u128,
+    pub ignorerule_count: u128,
+    pub errorrule_count: u128,
 }
 
 impl ParseYaml {
@@ -24,8 +24,8 @@ impl ParseYaml {
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
-            ignore_count: 0,
-            parseerror_count: 0,
+            ignorerule_count: 0,
+            errorrule_count: 0,
         }
     }
 
@@ -73,7 +73,7 @@ impl ParseYaml {
                         read_content.unwrap_err()
                     ),
                 )?;
-                self.parseerror_count += 1;
+                self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -88,7 +88,7 @@ impl ParseYaml {
                         yaml_contents.unwrap_err()
                     ),
                 )?;
-                self.parseerror_count += 1;
+                self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }
 
@@ -105,21 +105,13 @@ impl ParseYaml {
             .filter_map(|(filepath, yaml_doc)| {
                 // ignoreフラグがONになっているルールは無視する。
                 if yaml_doc["ignore"].as_bool().unwrap_or(false) {
-                    self.ignore_count += 1;
+                    self.ignorerule_count += 1;
                     return Option::None;
                 }
                 self.rulecounter.insert(
-                    yaml_doc["rulesection"]
-                        .as_str()
-                        .unwrap_or("other")
-                        .to_string(),
+                    yaml_doc["ruletype"].as_str().unwrap_or("other").to_string(),
                     self.rulecounter
-                        .get(
-                            &yaml_doc["rulesection"]
-                                .as_str()
-                                .unwrap_or("other")
-                                .to_string(),
-                        )
+                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("other").to_string())
                         .unwrap_or(&0)
                         + 1,
                 );
