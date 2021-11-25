@@ -199,7 +199,7 @@ fn test_emit_csv() {
 
     let mut file: Box<dyn io::Write> =
         Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
-    assert!(emit_csv(&mut file, true).is_ok());
+    assert!(emit_csv(&mut file, false).is_ok());
 
     match read_to_string("./test_emit_csv.csv") {
         Err(_) => panic!("Failed to open file"),
