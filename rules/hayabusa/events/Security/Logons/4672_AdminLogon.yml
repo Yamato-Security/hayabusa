@@ -1,22 +1,30 @@
-title: Admin Logon
-description: Prints logon information
 author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Admin Logon
+title_jp: 管理者ログオン
+output: 'User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
+output_jp: 'ユーザ: %SubjectUserName%  :  ログオンID: %SubjectLogonId%'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: 7309e070-56b9-408b-a2f4-f1840f8f1ebf
 level: informational
+status: stable
 detection:
     selection:
         Channel: Security
         EventID: 4672
-    
     filter:
         - SubjectUserName: "SYSTEM"
         - SubjectUserName: "LOCAL SERVICE"
         - SubjectUserName: "NETWORK SERVICE"
         - SubjectUserName|endswith: "$"
-
     condition: selection and not filter
-
 falsepositives:
     - normal system usage
-output: 'User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
-creation_date: 2021/11/17
-updated_date: 2021/11/17
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

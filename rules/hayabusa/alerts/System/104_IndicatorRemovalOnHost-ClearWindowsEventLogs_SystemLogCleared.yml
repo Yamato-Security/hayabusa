@@ -1,18 +1,14 @@
-#Author info
-author: Eric Conrad, Zach Mathis
-contributor: Akira Nishikawa, James Takai
-creation_date: 2020/11/08
-uodated_date:  2021/11/22
+author: Eric Conrad, Yamato Security
+date: 2020/11/08
+modified:  2021/11/25
 
-#Alert messages
 title: System log file was cleared
 title_jp: システムログがクリアされた
-output: "User: %LogFileCleared%%SubjectUserName%"
-output_jp: "ユーザ名: %LogFileCleared%%SubjectUserName%"
+output: "User: %LogFileClearedSubjectUserName%"
+output_jp: "ユーザ名: %LogFileClearedSubjectUserName%"
 description: Somebody has cleared the System event log.
 description_jp: 誰かがシステムログをクリアした。
 
-#Detection rule
 id: c2f690ac-53f8-4745-8cfe-7127dda28c74
 level: high
 status: stable
@@ -28,3 +24,4 @@ tags:
     - attack.t1070.001
 references:
     - https://attack.mitre.org/techniques/T1070/001/
+ruletype: hayabusa
