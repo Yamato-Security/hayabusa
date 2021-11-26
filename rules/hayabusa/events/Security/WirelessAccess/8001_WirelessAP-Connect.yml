@@ -1,0 +1,24 @@
+author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Connection to wireless access point
+title_jp: ローカルアカウントへのNTLMログオン
+output: 'SSID: %SSID%  :  Type: %AuthenticationAlgorithm%  :  BSSType: %BSSType%'
+output_jp: 'SSID: %SSID%  :  タイプ: %AuthenticationAlgorithm%  :  BSSタイプ: %BSSType%'
+description: Prints connection info to wireless access points.
+description_jp: Prints connection info to wireless access points.
+
+id: 90dd0797-f481-453d-a97e-dd78436893f9
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Microsoft-Windows-WLAN-AutoConfig
+        EventID: 8001
+falsepositives:
+    - normal system usage
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

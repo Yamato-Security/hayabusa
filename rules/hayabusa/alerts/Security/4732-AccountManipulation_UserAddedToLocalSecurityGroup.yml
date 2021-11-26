@@ -1,0 +1,32 @@
+author: Eric Conrad, Zach Mathis
+creation_date: 2020/11/08
+updated_date: 2021/11/26
+
+title: User added to local security group
+title_jp: ユーザがローカルセキュリティグループに追加された
+output: 'User: %MemberName%  :  SID: %MemberSid%  :  Group: %TargetUserName%'
+output_jp: 'ユーザ: %MemberName%  :  SID: %MemberSid%  :  グループ名: %TargetUserName%'
+description: A user was added to a security-enabled local group.
+description_jp: ユーザがローカルセキュリティグループに追加された。
+
+id: 611e2e76-a28f-4255-812c-eb8836b2f5bb
+level: low
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4728
+    filter:
+        - TargetUserName: Administrators
+        - TargetUserName: None
+        - TargetUserName: Domain Admins
+    condition: selection and not filter
+falsepositives:
+    - system administrator
+tags:
+    - attack.persistence
+    - attack.t1098
+references:
+    - https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventid=4732
+sample-evtx: ./sample-evtx/EVTX-to-MITRE-Attack/TA0003-Persistence/T1098.xxx-Account manipulation/ID4728-Massive account group membership change.evtx
+ruletype: hayabusa
