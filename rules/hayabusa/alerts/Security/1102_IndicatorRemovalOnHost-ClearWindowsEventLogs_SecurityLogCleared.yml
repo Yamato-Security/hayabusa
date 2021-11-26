@@ -7,8 +7,8 @@ uodated_date:  2021/11/22
 #Alert messages
 title: Security log was cleared
 title_jp: セキュリティログがクリアされた
-output: "User: %LogFileCleared%%SubjectUserName%"
-output_jp: "ユーザ名: %LogFileCleared%%SubjectUserName%"
+output: "User: %LogFileClearedSubjectUserName%"
+output_jp: "ユーザ名: %LogFileClearedSubjectUserName%"
 description: Somebody has cleared the Security event log.
 description_jp: 誰かがセキュリティログをクリアした。
 
