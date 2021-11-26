@@ -17,8 +17,7 @@ ScriptBlockText,Event.EventData.ScriptBlockText
 MemberName,Event.EventData.MemberName
 MemberSid,Event.EventData.MemberSid
 TargetSid,Event.EventData.TargetSid
-LogFileCleared,Event.UserData.LogFileCleared.SubjectUserName
-LogFileClearedSubjectUserName,Event.UserData.SubjectUserName
+LogFileClearedSubjectUserName,Event.UserData.LogFileCleared.SubjectUserName
 SubjectUserName,Event.EventData.SubjectUserName
 SubjectUserSid,Event.EventData.SubjectUserSid
 DomainName,Event.EventData.SubjectDomainName
