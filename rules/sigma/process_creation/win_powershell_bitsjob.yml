@@ -31,3 +31,4 @@ tags:
 - attack.defense_evasion
 - attack.persistence
 - attack.t1197
+ruletype: SIGMA

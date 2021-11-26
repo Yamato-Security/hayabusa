@@ -33,3 +33,4 @@ tags:
 - attack.execution
 - attack.privilege_escalation
 - attack.t1055
+ruletype: SIGMA

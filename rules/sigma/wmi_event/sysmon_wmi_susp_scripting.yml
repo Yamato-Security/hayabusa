@@ -57,3 +57,4 @@ tags:
 - attack.t1086
 - attack.execution
 - attack.t1059.005
+ruletype: SIGMA

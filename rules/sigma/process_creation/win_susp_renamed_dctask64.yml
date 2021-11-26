@@ -35,3 +35,4 @@ tags:
 - attack.t1055.001
 - attack.t1202
 - attack.t1218
+ruletype: SIGMA

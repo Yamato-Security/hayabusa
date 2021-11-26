@@ -44,3 +44,4 @@ tags:
 - attack.discovery
 - attack.t1016
 - attack.t1482
+ruletype: SIGMA

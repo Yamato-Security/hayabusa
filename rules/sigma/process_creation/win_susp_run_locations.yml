@@ -37,3 +37,4 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - car.2013-05-002
+ruletype: SIGMA

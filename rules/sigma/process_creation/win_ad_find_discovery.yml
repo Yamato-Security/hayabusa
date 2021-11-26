@@ -45,3 +45,4 @@ tags:
 - attack.discovery
 - attack.t1482
 - attack.t1018
+ruletype: SIGMA

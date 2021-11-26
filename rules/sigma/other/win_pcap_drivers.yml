@@ -40,3 +40,4 @@ tags:
 - attack.discovery
 - attack.credential_access
 - attack.t1040
+ruletype: SIGMA

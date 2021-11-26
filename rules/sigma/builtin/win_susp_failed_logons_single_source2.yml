@@ -32,3 +32,4 @@ tags:
 - attack.persistence
 - attack.privilege_escalation
 - attack.t1078
+ruletype: SIGMA

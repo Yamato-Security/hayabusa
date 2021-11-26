@@ -38,3 +38,4 @@ tags:
 - attack.privilege_escalation
 - attack.initial_access
 - attack.t1078
+ruletype: SIGMA

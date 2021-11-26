@@ -35,3 +35,4 @@ status: stable
 tags:
 - attack.discovery
 - attack.t1018
+ruletype: SIGMA

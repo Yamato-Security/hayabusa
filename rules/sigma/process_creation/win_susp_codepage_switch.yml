@@ -31,3 +31,4 @@ status: experimental
 tags:
 - attack.t1036
 - attack.defense_evasion
+ruletype: SIGMA

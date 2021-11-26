@@ -27,3 +27,4 @@ tags:
 - attack.t1218
 - attack.defense_evasion
 - attack.execution
+ruletype: SIGMA

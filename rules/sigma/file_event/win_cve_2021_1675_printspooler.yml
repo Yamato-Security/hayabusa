@@ -34,3 +34,4 @@ tags:
 - attack.resource_development
 - attack.t1587
 - cve.2021.1675
+ruletype: SIGMA

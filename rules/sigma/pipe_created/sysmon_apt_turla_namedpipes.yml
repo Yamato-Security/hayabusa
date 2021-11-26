@@ -37,3 +37,4 @@ tags:
 - attack.g0010
 - attack.execution
 - attack.t1106
+ruletype: SIGMA

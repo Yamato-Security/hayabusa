@@ -32,3 +32,4 @@ status: experimental
 tags:
 - attack.impact
 - attack.t1486
+ruletype: SIGMA

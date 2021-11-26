@@ -63,3 +63,4 @@ tags:
 - car.2013-04-002
 - attack.execution
 - attack.t1059
+ruletype: SIGMA

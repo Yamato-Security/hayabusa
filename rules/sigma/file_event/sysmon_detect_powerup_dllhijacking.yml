@@ -30,3 +30,4 @@ tags:
 - attack.privilege_escalation
 - attack.defense_evasion
 - attack.t1574.001
+ruletype: SIGMA
