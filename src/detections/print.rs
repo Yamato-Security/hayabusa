@@ -118,16 +118,20 @@ impl Message {
                 .get_event_key(target_str.to_string())
             {
                 let split: Vec<&str> = array_str.split(".").collect();
+                let mut is_exist_event_key = false;
                 let mut tmp_event_record: &Value = event_record.into();
                 for s in split {
                     if let Some(record) = tmp_event_record.get(s) {
+                        is_exist_event_key = true;
                         tmp_event_record = record;
                     }
                 }
-                hash_map.insert(
-                    full_target_str.to_string(),
-                    get_serde_number_to_string(tmp_event_record),
-                );
+                if is_exist_event_key {
+                    let hash_value = get_serde_number_to_string(tmp_event_record);
+                    if hash_value.is_some() {
+                        hash_map.insert(full_target_str.to_string(), hash_value.unwrap());
+                    }
+                }
             }
         }
 
