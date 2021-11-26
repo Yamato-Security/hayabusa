@@ -90,11 +90,14 @@ pub fn get_event_id_key() -> String {
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
-pub fn get_serde_number_to_string(value: &serde_json::Value) -> String {
+pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     if value.is_string() {
-        return value.as_str().unwrap_or("").to_string();
+        return Option::Some(value.as_str().unwrap_or("").to_string());
+    } else if value.is_object() {
+        // Obect type  is not specified record value.
+        return Option::None;
     } else {
-        return value.to_string();
+        return Option::Some(value.to_string());
     }
 }
 
