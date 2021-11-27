@@ -83,7 +83,7 @@ impl ParseYaml {
                 AlertMessage::warn(
                     &mut std::io::stdout().lock(),
                     format!(
-                        "fail to parse as yaml: {}\n{} ",
+                        "Failed to parse yml: {}\n{} ",
                         entry.path().display(),
                         yaml_contents.unwrap_err()
                     ),
@@ -109,14 +109,14 @@ impl ParseYaml {
                     return Option::None;
                 }
                 self.rulecounter.insert(
-                    yaml_doc["ruletype"].as_str().unwrap_or("other").to_string(),
+                    yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
                     self.rulecounter
-                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("other").to_string())
+                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
                         .unwrap_or(&0)
                         + 1,
                 );
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    println!("Loaded yml FilePath: {}", filepath);
+                    println!("Loaded yml file path: {}", filepath);
                 }
                 // 指定されたレベルより低いルールは無視する
                 let doc_level = &yaml_doc["level"]

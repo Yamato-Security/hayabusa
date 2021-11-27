@@ -49,7 +49,7 @@ pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     let f = File::open(filename);
     if f.is_err() {
-        let errmsg = format!("cannot open file. [file:{}]", filename);
+        let errmsg = format!("Cannot open file. [file:{}]", filename);
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
@@ -62,7 +62,7 @@ pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
 }
 
 pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
-    let mut f = File::open(filename).expect("file not found!!!");
+    let mut f = File::open(filename).expect("File not found!!!");
     let mut contents: String = String::new();
     let mut ret = vec![];
     let read_res = f.read_to_string(&mut contents);

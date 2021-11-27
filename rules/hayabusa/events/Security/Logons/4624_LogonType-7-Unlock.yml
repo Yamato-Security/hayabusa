@@ -1,15 +1,25 @@
-title: Logon Type 7 - Unlock
-description: Prints logon information
 author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logon Type 7 - Unlock
+title_jp: ログオンタイプ 7 - アンロック
+output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%'
+output_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  ポート番号: %IpPort%  :  ログオンID: %TargetLogonId%'
+description: Prints logon information
+description_jp: Prints logon information
+
+id: b61bfa39-48ec-4bdf-9d4e-e7205f49acd2
 level: informational
+status: stable
 detection:
     selection:
         Channel: Security
         EventID: 4624
         LogonType: 7
-
 falsepositives:
     - normal system usage
-output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%'
-creation_date: 2021/11/17
-updated_date: 2021/11/17
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

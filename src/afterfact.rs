@@ -21,6 +21,17 @@ pub struct CsvFormat<'a> {
     filepath: &'a str,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct DisplayFormat<'a> {
+    time: &'a str,
+    computername: &'a str,
+    eventid: &'a str,
+    level: &'a str,
+    alert: &'a str,
+    details: &'a str,
+}
+
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
@@ -30,7 +41,7 @@ pub fn after_fact() {
         .ok();
         process::exit(1);
     };
-
+    let mut displayflag = false;
     let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
         .read()
         .unwrap()
@@ -50,31 +61,44 @@ pub fn after_fact() {
             }
         }
     } else {
+        displayflag = true;
         // 標準出力に出力する場合
         Box::new(io::stdout())
     };
 
-    if let Err(err) = emit_csv(&mut target) {
-        fn_emit_csv_err(err);
+    if let Err(err) = emit_csv(&mut target, displayflag) {
+        fn_emit_csv_err(Box::new(err));
     }
 }
 
-fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
+fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<()> {
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
     let messages = print::MESSAGES.lock().unwrap();
     let mut detect_count = 0;
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
-            wtr.serialize(CsvFormat {
-                time: &format_time(time),
-                filepath: &detect_info.filepath,
-                rulepath: &detect_info.rulepath,
-                level: &detect_info.level,
-                computername: &detect_info.computername,
-                eventid: &detect_info.eventid,
-                alert: &detect_info.alert,
-                details: &detect_info.detail,
-            })?;
+            if displayflag {
+                wtr.serialize(DisplayFormat {
+                    time: &format_time(time),
+                    level: &detect_info.level,
+                    computername: &detect_info.computername,
+                    eventid: &detect_info.eventid,
+                    alert: &detect_info.alert,
+                    details: &detect_info.detail,
+                })?;
+            } else {
+                // csv出力時フォーマット
+                wtr.serialize(CsvFormat {
+                    time: &format_time(time),
+                    filepath: &detect_info.filepath,
+                    rulepath: &detect_info.rulepath,
+                    level: &detect_info.level,
+                    computername: &detect_info.computername,
+                    eventid: &detect_info.eventid,
+                    alert: &detect_info.alert,
+                    details: &detect_info.detail,
+                })?;
+            }
         }
         detect_count += detect_infos.len();
     }
@@ -82,7 +106,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
 
     wtr.flush()?;
     println!("");
-    println!("Total Events Detected:{:?}", detect_count);
+    println!("Total events detected: {:?}", detect_count);
     Ok(())
 }
 
@@ -175,10 +199,10 @@ fn test_emit_csv() {
 
     let mut file: Box<dyn io::Write> =
         Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
-    assert!(emit_csv(&mut file).is_ok());
+    assert!(emit_csv(&mut file, false).is_ok());
 
     match read_to_string("./test_emit_csv.csv") {
-        Err(_) => panic!("Failed to open file"),
+        Err(_) => panic!("Failed to open file."),
         Ok(s) => {
             assert_eq!(s, expect);
         }

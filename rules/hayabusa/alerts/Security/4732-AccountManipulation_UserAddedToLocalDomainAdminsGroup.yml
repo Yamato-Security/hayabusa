@@ -1,0 +1,29 @@
+author: Zach Mathis
+creation_date: 2020/11/08
+updated_date: 2021/11/26
+
+title: User added to local Domain Admins group
+title_jp: ユーザがローカルドメイン管理者グループに追加された
+output: 'User: %MemberName%  :  SID: %MemberSid%  :  Group: %TargetUserName%'
+output_jp: 'ユーザ: %MemberName%  :  SID: %MemberSid%  :  グループ名: %TargetUserName%'
+description: A user was added to the local Domain Admins group.
+description_jp: ユーザがドメイン管理者グループに追加された。
+
+id: bc58e432-959f-464d-812e-d60ce5d46fa1
+level: high
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4728
+        TargetUserName: Domain Admins
+    condition: selection
+falsepositives:
+    - system administrator
+tags:
+    - attack.persistence
+    - attack.t1098
+references:
+    - https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventid=4732
+sample-evtx: ./sample-evtx/EVTX-to-MITRE-Attack/TA0003-Persistence/T1098.xxx-Account manipulation/ID4728-4756-Member added to sensitive domain groups.evtx
+ruletype: hayabusa

@@ -52,7 +52,7 @@ impl AggegationConditionCompiler {
         let result = self.compile_body(condition_str);
         if let Result::Err(msg) = result {
             return Result::Err(format!(
-                "aggregation condition parse error has occurred. {}",
+                "An aggregation condition parse error has occurred. {}",
                 msg
             ));
         } else {
@@ -137,7 +137,7 @@ impl AggegationConditionCompiler {
     ) -> Result<Option<AggregationParseInfo>, String> {
         if tokens.is_empty() {
             // パイプしか無いのはおかしいのでエラー
-            return Result::Err("There are no strings after pipe(|).".to_string());
+            return Result::Err("There are no strings after the pipe(|).".to_string());
         }
 
         let mut token_ite = tokens.into_iter();
@@ -150,14 +150,14 @@ impl AggegationConditionCompiler {
             }
         } else {
             // いろんなパターンがあるので難しいが、countというキーワードしか使えないことを説明しておく。
-            return Result::Err("aggregation condition can use count only.".to_string());
+            return Result::Err("The aggregation condition can only use count.".to_string());
         }
 
         let token = token_ite.next();
         if token.is_none() {
             // 論理演算子がないのはだめ
             return Result::Err(
-                "count keyword needs compare operator and number like '> 3'".to_string(),
+                "The count keyword needs a compare operator and number like '> 3'".to_string(),
             );
         }
 
@@ -168,14 +168,18 @@ impl AggegationConditionCompiler {
             let after_by = token_ite.next();
             if after_by.is_none() {
                 // BYの後に何もないのはだめ
-                return Result::Err("by keyword needs field name like 'by EventID'".to_string());
+                return Result::Err(
+                    "The by keyword needs a field name like 'by EventID'".to_string(),
+                );
             }
 
             if let AggregationConditionToken::KEYWORD(keyword) = after_by.unwrap() {
                 by_field_name = Option::Some(keyword);
                 token_ite.next()
             } else {
-                return Result::Err("by keyword needs field name like 'by EventID'".to_string());
+                return Result::Err(
+                    "The by keyword needs a field name like 'by EventID'".to_string(),
+                );
             }
         } else {
             Option::Some(token)
@@ -185,14 +189,14 @@ impl AggegationConditionCompiler {
         if token.is_none() {
             // 論理演算子がないのはだめ
             return Result::Err(
-                "count keyword needs compare operator and number like '> 3'".to_string(),
+                "The count keyword needs a compare operator and number like '> 3'".to_string(),
             );
         }
 
         let cmp_token = token.unwrap();
         if !self.is_cmp_op(&cmp_token) {
             return Result::Err(
-                "count keyword needs compare operator and number like '> 3'".to_string(),
+                "The count keyword needs a compare operator and number like '> 3'".to_string(),
             );
         }
 
@@ -201,17 +205,17 @@ impl AggegationConditionCompiler {
             let number: Result<i32, _> = number.parse();
             if number.is_err() {
                 // 比較演算子の後に数値が無い。
-                return Result::Err("compare operator needs a number like '> 3'.".to_string());
+                return Result::Err("The compare operator needs a number like '> 3'.".to_string());
             } else {
                 number.unwrap()
             }
         } else {
             // 比較演算子の後に数値が無い。
-            return Result::Err("compare operator needs a number like '> 3'.".to_string());
+            return Result::Err("The compare operator needs a number like '> 3'.".to_string());
         };
 
         if token_ite.next().is_some() {
-            return Result::Err("unnecessary word was found.".to_string());
+            return Result::Err("An unnecessary word was found.".to_string());
         }
 
         let info = AggregationParseInfo {
@@ -379,7 +383,7 @@ mod tests {
 
         assert_eq!(true, result.is_err());
         assert_eq!(
-            "aggregation condition parse error has occurred. There are no strings after pipe(|)."
+            "An aggregation condition parse error has occurred. There are no strings after the pipe(|)."
                 .to_string(),
             result.unwrap_err()
         );
@@ -393,7 +397,7 @@ mod tests {
 
         assert_eq!(true, result.is_err());
         assert_eq!(
-            "aggregation condition parse error has occurred. An unusable character was found."
+            "An aggregation condition parse error has occurred. An unusable character was found."
                 .to_string(),
             result.unwrap_err()
         );
@@ -407,7 +411,7 @@ mod tests {
             compiler.compile("select1 or select2 | by count( hogehoge) by snsn > 3".to_string());
 
         assert_eq!(true, result.is_err());
-        assert_eq!("aggregation condition parse error has occurred. aggregation condition can use count only.".to_string(),result.unwrap_err());
+        assert_eq!("An aggregation condition parse error has occurred. The aggregation condition can only use count.".to_string(),result.unwrap_err());
     }
 
     #[test]
@@ -417,7 +421,7 @@ mod tests {
         let result = compiler.compile("select1 or select2 | count( hogehoge) 3".to_string());
 
         assert_eq!(true, result.is_err());
-        assert_eq!("aggregation condition parse error has occurred. count keyword needs compare operator and number like '> 3'".to_string(),result.unwrap_err());
+        assert_eq!("An aggregation condition parse error has occurred. The count keyword needs a compare operator and number like '> 3'".to_string(),result.unwrap_err());
     }
 
     #[test]
@@ -427,7 +431,7 @@ mod tests {
         let result = compiler.compile("select1 or select2 | count( hogehoge) by".to_string());
 
         assert_eq!(true, result.is_err());
-        assert_eq!("aggregation condition parse error has occurred. by keyword needs field name like 'by EventID'".to_string(),result.unwrap_err());
+        assert_eq!("An aggregation condition parse error has occurred. The by keyword needs a field name like 'by EventID'".to_string(),result.unwrap_err());
     }
 
     #[test]
@@ -438,7 +442,7 @@ mod tests {
             compiler.compile("select1 or select2 | count( hogehoge ) by hoe >".to_string());
 
         assert_eq!(true, result.is_err());
-        assert_eq!("aggregation condition parse error has occurred. compare operator needs a number like '> 3'.".to_string(),result.unwrap_err());
+        assert_eq!("An aggregation condition parse error has occurred. The compare operator needs a number like '> 3'.".to_string(),result.unwrap_err());
     }
 
     #[test]
@@ -450,7 +454,7 @@ mod tests {
 
         assert_eq!(true, result.is_err());
         assert_eq!(
-            "aggregation condition parse error has occurred. unnecessary word was found."
+            "An aggregation condition parse error has occurred. An unnecessary word was found."
                 .to_string(),
             result.unwrap_err()
         );
