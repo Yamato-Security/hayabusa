@@ -27,9 +27,13 @@ pub struct DetectInfo {
 }
 
 pub struct AlertMessage {}
+pub struct AliasInRecordChecker {
+    printed_contents: Vec<String>,
+}
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
+    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
 }
 
 impl Message {
@@ -101,8 +105,7 @@ impl Message {
     fn parse_message(&mut self, event_record: &Value, output: String) -> String {
         let mut return_message: String = output;
         let mut hash_map: HashMap<String, String> = HashMap::new();
-        let re = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
-        for caps in re.captures_iter(&return_message) {
+        for caps in ALIASREGEX.captures_iter(&return_message) {
             let full_target_str = &caps[0];
             let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
             let target_str = full_target_str
