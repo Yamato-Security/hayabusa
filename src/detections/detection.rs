@@ -258,7 +258,7 @@ impl Detection {
 
 #[test]
 fn test_parse_rule_files() {
-    let level = "INFO";
+    let level = "informational";
     let opt_rule_path = Some("./test_files/rules/level_yaml");
     let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path);
     assert_eq!(5, cole.len());

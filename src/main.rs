@@ -116,7 +116,7 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .unwrap()
         .args
         .value_of("level")
-        .unwrap_or("INFO")
+        .unwrap_or("informational")
         .to_uppercase();
     println!("Analyzing Event Files: {:?}", evtx_files.len());
     let rule_files = detection::Detection::parse_rule_files(

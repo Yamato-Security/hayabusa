@@ -7,7 +7,7 @@ lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
-        levelmap.insert("INFO".to_owned(), 1);
+        levelmap.insert("INFORMATIONAL".to_owned(), 1);
         levelmap.insert("LOW".to_owned(), 2);
         levelmap.insert("MEDIUM".to_owned(), 3);
         levelmap.insert("HIGH".to_owned(), 4);
