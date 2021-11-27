@@ -311,7 +311,9 @@ impl ConditionCompiler {
         for (i, token) in tokens.into_iter().enumerate() {
             if (i % 2 == 1) != self.is_logical(&token) {
                 // インデックスが奇数の時はLogicalOperatorで、インデックスが偶数のときはOperandContainerになる
-                return Result::Err("The use of a logical operator(and, or) was wrong.".to_string());
+                return Result::Err(
+                    "The use of a logical operator(and, or) was wrong.".to_string(),
+                );
             }
 
             if i % 2 == 0 {
@@ -1226,7 +1228,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["A condition parse error has occured. An unusable character was found.".to_string()],
+            vec![
+                "A condition parse error has occured. An unusable character was found.".to_string(),
+            ],
         );
     }
 
@@ -1247,7 +1251,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["A condition parse error has occured. ')' was expected but not found.".to_string()],
+            vec![
+                "A condition parse error has occured. ')' was expected but not found.".to_string(),
+            ],
         );
     }
 
@@ -1268,7 +1274,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["A condition parse error has occured. '(' was expected but not found.".to_string()],
+            vec![
+                "A condition parse error has occured. '(' was expected but not found.".to_string(),
+            ],
         );
     }
 
@@ -1289,7 +1297,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["A condition parse error has occured. ')' was expected but not found.".to_string()],
+            vec![
+                "A condition parse error has occured. ')' was expected but not found.".to_string(),
+            ],
         );
     }
 

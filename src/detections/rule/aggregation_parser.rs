@@ -168,14 +168,18 @@ impl AggegationConditionCompiler {
             let after_by = token_ite.next();
             if after_by.is_none() {
                 // BYの後に何もないのはだめ
-                return Result::Err("The by keyword needs a field name like 'by EventID'".to_string());
+                return Result::Err(
+                    "The by keyword needs a field name like 'by EventID'".to_string(),
+                );
             }
 
             if let AggregationConditionToken::KEYWORD(keyword) = after_by.unwrap() {
                 by_field_name = Option::Some(keyword);
                 token_ite.next()
             } else {
-                return Result::Err("The by keyword needs a field name like 'by EventID'".to_string());
+                return Result::Err(
+                    "The by keyword needs a field name like 'by EventID'".to_string(),
+                );
             }
         } else {
             Option::Some(token)
