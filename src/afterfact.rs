@@ -78,11 +78,6 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
     let mut detect_count = 0;
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
-            alias_checker.output_not_registered_alias(
-                &detect_info.detail,
-                &detect_info.filepath,
-                &detect_info.rulepath,
-            );
             if displayflag {
                 wtr.serialize(DisplayFormat {
                     time: &format_time(time),

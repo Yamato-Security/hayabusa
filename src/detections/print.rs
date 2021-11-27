@@ -206,38 +206,6 @@ impl AlertMessage {
     }
 }
 
-impl AliasInRecordChecker {
-    pub fn new() -> Self {
-        AliasInRecordChecker {
-            printed_contents: Vec::new(),
-        }
-    }
-    /// outputの文字列内を検索し、変換されていないalias(%xxx%)の形式が存在した場合は出力します
-    pub fn output_not_registered_alias(
-        &mut self,
-        output_message: &String,
-        file_path: &String,
-        rule_path: &String,
-    ) {
-        for caps in ALIASREGEX.captures_iter(output_message) {
-            let full_target_str = &caps[0];
-            let key = format!("{}-{}", full_target_str, rule_path);
-            if !self.printed_contents.contains(&key) {
-                AlertMessage::warn(
-                    &mut std::io::stdout().lock(),
-                    format!(
-                        "{} is not exist in eventkey_alias. rulepath:{} filepath:{}",
-                        full_target_str, rule_path, file_path
-                    ),
-                )
-                .ok();
-                println!("");
-                self.printed_contents.push(key);
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::detections::print::{AlertMessage, Message};
