@@ -72,7 +72,6 @@ pub fn after_fact() {
 }
 
 fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<()> {
-    let mut alias_checker = print::AliasInRecordChecker::new();
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
     let messages = print::MESSAGES.lock().unwrap();
     let mut detect_count = 0;

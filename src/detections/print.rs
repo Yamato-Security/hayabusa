@@ -27,9 +27,6 @@ pub struct DetectInfo {
 }
 
 pub struct AlertMessage {}
-pub struct AliasInRecordChecker {
-    printed_contents: Vec<String>,
-}
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
