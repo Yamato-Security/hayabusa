@@ -943,7 +943,7 @@ mod tests {
         assert_eq!(
             rule_node.init(),
             Err(vec![
-                "unknown pipe element was specified. key:detection -> selection -> Channel|failed"
+                "An unknown pipe element was specified. key:detection -> selection -> Channel|failed"
                     .to_string()
             ])
         );
