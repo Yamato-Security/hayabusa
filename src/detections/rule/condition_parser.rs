@@ -130,7 +130,7 @@ impl ConditionCompiler {
 
         let result = self.compile_condition_body(condition_str, name_2_node);
         if let Result::Err(msg) = result {
-            return Result::Err(format!("condition parse error has occured. {}", msg));
+            return Result::Err(format!("A condition parse error has occured. {}", msg));
         } else {
             return result;
         }
@@ -269,7 +269,7 @@ impl ConditionCompiler {
             }
             // 最後までついても対応する右括弧が見つからないことを表している
             if left_cnt != right_cnt {
-                return Result::Err("expected ')'. but not found.".to_string());
+                return Result::Err("')' was expected but not found.".to_string());
             }
 
             // ここで再帰的に呼び出す。
@@ -284,7 +284,7 @@ impl ConditionCompiler {
             };
         });
         if is_right_left {
-            return Result::Err("expected '('. but not found.".to_string());
+            return Result::Err("'(' was expected but not found.".to_string());
         }
 
         return Result::Ok(ret);
@@ -294,7 +294,7 @@ impl ConditionCompiler {
     fn parse_and_or_operator(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
         if tokens.len() == 0 {
             // 長さ0は呼び出してはいけない
-            return Result::Err("unknown error.".to_string());
+            return Result::Err("Unknown error.".to_string());
         }
 
         // まず、selection1 and not selection2みたいな式のselection1やnot selection2のように、ANDやORでつながるトークンをまとめる。
@@ -302,7 +302,7 @@ impl ConditionCompiler {
 
         // 先頭又は末尾がAND/ORなのはだめ
         if self.is_logical(&tokens[0]) || self.is_logical(&tokens[tokens.len() - 1]) {
-            return Result::Err("illegal Logical Operator(and, or) was found.".to_string());
+            return Result::Err("An illegal logical operator(and, or) was found.".to_string());
         }
 
         // OperandContainerとLogicalOperator(AndとOR)が交互に並んでいるので、それぞれリストに投入
@@ -311,7 +311,9 @@ impl ConditionCompiler {
         for (i, token) in tokens.into_iter().enumerate() {
             if (i % 2 == 1) != self.is_logical(&token) {
                 // インデックスが奇数の時はLogicalOperatorで、インデックスが偶数のときはOperandContainerになる
-                return Result::Err("The use of logical operator(and, or) was wrong.".to_string());
+                return Result::Err(
+                    "The use of a logical operator(and, or) was wrong.".to_string(),
+                );
             }
 
             if i % 2 == 0 {
@@ -354,21 +356,21 @@ impl ConditionCompiler {
             // 上記の通り、3つ以上入っていることはないはず。
             if sub_tokens.len() >= 3 {
                 return Result::Err(
-                    "unknown error. maybe it's because there are multiple name of selection node."
+                    "Unknown error. Maybe it is because there are multiple names of selection nodes."
                         .to_string(),
                 );
             }
 
             // 0はありえないはず
             if sub_tokens.len() == 0 {
-                return Result::Err("unknown error.".to_string());
+                return Result::Err("Unknown error.".to_string());
             }
 
             // 1つだけ入っている場合、NOTはありえない。
             if sub_tokens.len() == 1 {
                 let operand_subtoken = sub_tokens.into_iter().next().unwrap();
                 if let ConditionToken::Not = operand_subtoken {
-                    return Result::Err("illegal not was found.".to_string());
+                    return Result::Err("An illegal not was found.".to_string());
                 }
 
                 return Result::Ok(operand_subtoken);
@@ -380,14 +382,14 @@ impl ConditionCompiler {
             let second_token = sub_tokens_ite.next().unwrap();
             if let ConditionToken::Not = first_token {
                 if let ConditionToken::Not = second_token {
-                    return Result::Err("not is continuous.".to_string());
+                    return Result::Err("Not is continuous.".to_string());
                 } else {
                     let not_container = ConditionToken::NotContainer(vec![second_token]);
                     return Result::Ok(not_container);
                 }
             } else {
                 return Result::Err(
-                    "unknown error. maybe it's because there are multiple name of selection node."
+                    "Unknown error. Maybe it is because there are multiple names of selection nodes."
                         .to_string(),
                 );
             }
@@ -450,7 +452,7 @@ impl ConditionCompiler {
         // NotSelectionNodeに変換
         if let ConditionToken::NotContainer(sub_tokens) = token {
             if sub_tokens.len() > 1 {
-                return Result::Err("unknown error".to_string());
+                return Result::Err("Unknown error".to_string());
             }
 
             let select_sub_node =
@@ -459,7 +461,7 @@ impl ConditionCompiler {
             return Result::Ok(Box::new(select_not_node));
         }
 
-        return Result::Err("unknown error".to_string());
+        return Result::Err("Unknown error".to_string());
     }
 
     /// ConditionTokenがAndまたはOrTokenならばTrue
@@ -549,7 +551,7 @@ mod tests {
                 );
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -595,7 +597,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -642,7 +644,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1204,7 +1206,7 @@ mod tests {
         assert_eq!(
             rule_node.init(),
             Err(vec![
-                "There are no condition node under detection.".to_string()
+                "There is no condition node under detection.".to_string()
             ])
         );
     }
@@ -1226,7 +1228,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["condition parse error has occured. An unusable character was found.".to_string()],
+            vec![
+                "A condition parse error has occured. An unusable character was found.".to_string(),
+            ],
         );
     }
 
@@ -1247,7 +1251,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["condition parse error has occured. expected ')'. but not found.".to_string()],
+            vec![
+                "A condition parse error has occured. ')' was expected but not found.".to_string(),
+            ],
         );
     }
 
@@ -1268,7 +1274,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["condition parse error has occured. expected '('. but not found.".to_string()],
+            vec![
+                "A condition parse error has occured. '(' was expected but not found.".to_string(),
+            ],
         );
     }
 
@@ -1289,7 +1297,9 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["condition parse error has occured. expected ')'. but not found.".to_string()],
+            vec![
+                "A condition parse error has occured. ')' was expected but not found.".to_string(),
+            ],
         );
     }
 
@@ -1308,7 +1318,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        check_rule_parse_error(rule_str,vec!["condition parse error has occured. unknown error. maybe it\'s because there are multiple name of selection node.".to_string()]);
+        check_rule_parse_error(rule_str,vec!["A condition parse error has occured. Unknown error. Maybe it is because there are multiple names of selection nodes.".to_string()]);
     }
 
     #[test]
@@ -1329,7 +1339,7 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "condition parse error has occured. illegal Logical Operator(and, or) was found."
+                "A condition parse error has occured. An illegal logical operator(and, or) was found."
                     .to_string(),
             ],
         );
@@ -1353,7 +1363,7 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "condition parse error has occured. illegal Logical Operator(and, or) was found."
+                "A condition parse error has occured. An illegal logical operator(and, or) was found."
                     .to_string(),
             ],
         );
@@ -1374,7 +1384,7 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        check_rule_parse_error(rule_str,vec!["condition parse error has occured. The use of logical operator(and, or) was wrong.".to_string()]);
+        check_rule_parse_error(rule_str,vec!["A condition parse error has occured. The use of a logical operator(and, or) was wrong.".to_string()]);
     }
 
     #[test]
@@ -1394,7 +1404,7 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["condition parse error has occured. illegal not was found.".to_string()],
+            vec!["A condition parse error has occured. An illegal not was found.".to_string()],
         );
     }
 
@@ -1415,7 +1425,7 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["condition parse error has occured. not is continuous.".to_string()],
+            vec!["A condition parse error has occured. Not is continuous.".to_string()],
         );
     }
 }

@@ -36,7 +36,7 @@ fn main() {
         if !filepath.ends_with(".evtx") {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                "--filepath is only accepted evtx file.".to_owned(),
+                "--filepath only accepts .evtx files.".to_owned(),
             )
             .ok();
             return;
@@ -47,7 +47,7 @@ fn main() {
         if evtx_files.len() == 0 {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                "No exist evtx file.".to_owned(),
+                "No .evtx files were found.".to_owned(),
             )
             .ok();
             return;
@@ -118,7 +118,7 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .value_of("level")
         .unwrap_or("INFO")
         .to_uppercase();
-    println!("Analyzing Event Files: {:?}", evtx_files.len());
+    println!("Analyzing event files: {:?}", evtx_files.len());
     let rule_files = detection::Detection::parse_rule_files(
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
@@ -126,7 +126,7 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
         if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-            println!("check target evtx FilePath: {:?}", &evtx_file);
+            println!("Checking target evtx FilePath: {:?}", &evtx_file);
         }
         detection = analysis_file(evtx_file, detection);
     }
