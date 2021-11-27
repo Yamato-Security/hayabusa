@@ -145,8 +145,15 @@ impl Detection {
 
     pub fn print_unique_results(&self) {
         let rules = &self.rules;
-        let levellabel = Vec::from(["Critical", "High", "Medium", "Low", "Info", "Undeifned"]);
-        // levclcounts is [(Undeifned), (Info), (Low),(Medium),(High),(Critical)]
+        let levellabel = Vec::from([
+            "Critical",
+            "High",
+            "Medium",
+            "Low",
+            "Informational",
+            "Undeifned",
+        ]);
+        // levclcounts is [(Undeifned), (Informational), (Low),(Medium),(High),(Critical)]
         let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
         for rule in rules.into_iter() {
             if rule.check_exist_countdata() {

@@ -121,11 +121,11 @@ impl ParseYaml {
                 // 指定されたレベルより低いルールは無視する
                 let doc_level = &yaml_doc["level"]
                     .as_str()
-                    .unwrap_or("LOW")
+                    .unwrap_or("informational")
                     .to_string()
                     .to_uppercase();
-                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&2);
-                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&2);
+                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
+                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
                 if doc_level_num < args_level_num {
                     return Option::None;
                 }
