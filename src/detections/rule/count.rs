@@ -175,7 +175,7 @@ impl TimeFrameInfo {
         } else {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                format!("timeframe is invalid.input value:{}", value),
+                format!("Timeframe is invalid. Input value:{}", value),
             )
             .ok();
         }
@@ -207,7 +207,7 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
         Err(err) => {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                format!("timeframe num is invalid. timeframe.{}", err),
+                format!("Timeframe number is invalid. timeframe.{}", err),
             )
             .ok();
             return Option::None;
@@ -755,7 +755,7 @@ mod tests {
         let mut rule_node = create_rule("testpath".to_string(), test);
         let error_checker = rule_node.init();
         if error_checker.is_err() {
-            assert!(false, "failed to init rulenode");
+            assert!(false, "Failed to init rulenode");
         }
         for record_str in records_str {
             match serde_json::from_str(record_str) {
@@ -769,7 +769,7 @@ mod tests {
                     assert_eq!(result, &true);
                 }
                 Err(_rec) => {
-                    assert!(false, "failed to parse json record.");
+                    assert!(false, "Failed to parse json record.");
                 }
             }
         }

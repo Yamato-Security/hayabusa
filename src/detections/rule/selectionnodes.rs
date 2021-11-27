@@ -392,7 +392,7 @@ impl SelectionNode for LeafSelectionNode {
 
         if self.select_value.is_badvalue() {
             return Result::Err(vec![format!(
-                "Cannot parse yaml file. key:{}",
+                "Cannot parse yml file. key:{}",
                 utils::concat_selection_key(&match_key_list)
             )]);
         }
@@ -446,7 +446,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -482,7 +482,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -517,7 +517,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -552,7 +552,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -587,7 +587,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }

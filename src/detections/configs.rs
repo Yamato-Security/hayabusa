@@ -47,23 +47,23 @@ fn build_app<'a>() -> ArgMatches<'a> {
         return ArgMatches::default();
     }
 
-    let usages = "-f --filepath=[FILEPATH] 'Event file path'
-    --csv-timeline=[CSV_TIMELINE] 'Csv output timeline'
+    let usages = "-f --filepath=[FILEPATH] 'File path to one .evtx file'
+    --csv-timeline=[CSV_TIMELINE] 'Save the timeline in CSV format'
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
-    --verbose 'Output check information to target event file path and rule file.'
-    -q 'Quiet Output Logo'
-    -r --rules=[RULEDIRECTORY] 'using target of rule file directory'
-    -L --level=[LEVEL] 'Specified execute rule level(default: LOW)'
-    -u --utc 'Output time in UTC format(default: local time)'
-    -d --directory=[DIRECTORY] 'Event log files directory'
-    -s --statistics 'Prints statistics for event logs'
-    -t --threadnum=[NUM] 'Thread number'
+    --verbose 'Output verbose information to target event file path and rule file'
+    -q 'Quiet mode. Do not display the launch banner'
+    -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
+    -L --level=[LEVEL] 'Minimum level for rules (default: low)'
+    -u --utc 'Output time in UTC format (default: local time)'
+    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
+    -s --statistics 'Prints statistics of event IDs'
+    -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
-        .about("hayabusa. Aiming to be the world's greatest Windows event log analysis tool!")
+        .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
         .version("1.0.0")
-        .author("Author name Yamato-Security(https://github.com/Yamato-Security/hayabusa)")
+        .author("Yamato-Security(https://github.com/Yamato-Security/hayabusa)")
         .setting(AppSettings::VersionlessSubcommands)
         .usage(usages)
         .args_from_usage(usages)

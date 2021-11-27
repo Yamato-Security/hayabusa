@@ -144,7 +144,7 @@ impl DetectionNode {
             let mut keys = self.name_to_selection.keys().clone();
             if keys.len() >= 2 {
                 return Result::Err(vec![
-                    "There are no condition node under detection.".to_string()
+                    "There is no condition node under detection.".to_string()
                 ]);
             }
 
@@ -191,7 +191,7 @@ impl DetectionNode {
     fn parse_name_to_selection(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
         let detection_hash = detection_yaml.as_hash();
         if detection_hash.is_none() {
-            return Result::Err(vec!["not found detection node".to_string()]);
+            return Result::Err(vec!["Detection node was not found.".to_string()]);
         }
 
         // selectionをパースする。
@@ -229,7 +229,7 @@ impl DetectionNode {
         // selectionノードが無いのはエラー
         if self.name_to_selection.len() == 0 {
             return Result::Err(vec![
-                "There are no selection node under detection.".to_string()
+                "There is no selection node under detection.".to_string()
             ]);
         }
 
@@ -360,7 +360,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -393,7 +393,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -426,7 +426,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -512,7 +512,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -574,7 +574,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -643,7 +643,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -690,7 +690,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -738,7 +738,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -805,7 +805,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -872,7 +872,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -921,7 +921,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -962,7 +962,7 @@ mod tests {
 
         assert_eq!(
             rule_node.init(),
-            Err(vec!["not found detection node".to_string()])
+            Err(vec!["Detection node was not found.".to_string()])
         );
     }
 
@@ -997,7 +997,7 @@ mod tests {
                 );
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
