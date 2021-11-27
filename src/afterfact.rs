@@ -106,7 +106,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
 
     wtr.flush()?;
     println!("");
-    println!("Total Events Detected:{:?}", detect_count);
+    println!("Total events detected: {:?}", detect_count);
     Ok(())
 }
 
@@ -202,7 +202,7 @@ fn test_emit_csv() {
     assert!(emit_csv(&mut file, false).is_ok());
 
     match read_to_string("./test_emit_csv.csv") {
-        Err(_) => panic!("Failed to open file"),
+        Err(_) => panic!("Failed to open file."),
         Ok(s) => {
             assert_eq!(s, expect);
         }

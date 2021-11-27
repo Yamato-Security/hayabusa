@@ -50,7 +50,7 @@ impl LeafMatcher for MinlengthMatcher {
         let min_length = select_value.as_i64();
         if min_length.is_none() {
             let errmsg = format!(
-                "min_length value should be Integer. [key:{}]",
+                "min_length value should be an integer. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
@@ -99,7 +99,7 @@ impl LeafMatcher for RegexesFileMatcher {
         };
         if value.is_none() {
             let errmsg = format!(
-                "regexes value should be String. [key:{}]",
+                "regexes value should be a string. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
@@ -158,7 +158,7 @@ impl LeafMatcher for AllowlistFileMatcher {
         };
         if value.is_none() {
             let errmsg = format!(
-                "allowlist value should be String. [key:{}]",
+                "allowlist value should be a string. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
@@ -253,7 +253,7 @@ impl LeafMatcher for DefaultMatcher {
         };
         if yaml_value.is_none() {
             let errmsg = format!(
-                "unknown error occured. [key:{}]",
+                "An unknown error occured. [key:{}]",
                 utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
@@ -275,7 +275,7 @@ impl LeafMatcher for DefaultMatcher {
             };
             if pipe_element.is_none() {
                 let errmsg = format!(
-                    "unknown pipe element was specified. key:{}",
+                    "An unknown pipe element was specified. key:{}",
                     utils::concat_selection_key(key_list)
                 );
                 return Result::Err(vec![errmsg]);
@@ -286,7 +286,7 @@ impl LeafMatcher for DefaultMatcher {
         if self.pipes.len() >= 2 {
             // 現状では複数のパイプは対応していない
             let errmsg = format!(
-                "multiple pipe element can't be used. key:{}",
+                "Multiple pipe elements cannot be used. key:{}",
                 utils::concat_selection_key(key_list)
             );
             return Result::Err(vec![errmsg]);
@@ -309,7 +309,7 @@ impl LeafMatcher for DefaultMatcher {
         let re_result = Regex::new(&pattern);
         if re_result.is_err() {
             let errmsg = format!(
-                "cannot parse regex. [regex:{}, key:{}]",
+                "Cannot parse regex. [regex:{}, key:{}]",
                 pattern,
                 utils::concat_selection_key(key_list)
             );
@@ -779,7 +779,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -846,7 +846,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -880,7 +880,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -913,7 +913,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -946,7 +946,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -980,7 +980,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1014,7 +1014,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1048,7 +1048,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1082,7 +1082,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1116,7 +1116,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1149,7 +1149,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1186,7 +1186,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1223,7 +1223,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1259,7 +1259,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1304,7 +1304,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1349,7 +1349,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1394,7 +1394,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1439,7 +1439,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1484,7 +1484,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1529,7 +1529,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1562,7 +1562,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1595,7 +1595,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1628,7 +1628,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1721,7 +1721,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1756,7 +1756,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1791,7 +1791,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }
@@ -1826,7 +1826,7 @@ mod tests {
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
-                assert!(false, "failed to parse json record.");
+                assert!(false, "Failed to parse json record.");
             }
         }
     }

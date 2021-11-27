@@ -73,7 +73,7 @@ impl Detection {
             // ruleファイルのパースに失敗した場合はエラー出力
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
-                    format!("Failed to parse Rule file. (FilePath : {})", rule.rulepath);
+                    format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
                 AlertMessage::warn(&mut std::io::stdout().lock(), errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
@@ -172,10 +172,10 @@ impl Detection {
         let mut total_unique = 0;
         levelcounts.reverse();
         for (i, value) in levelcounts.iter().enumerate() {
-            println!("{} alerts {}", levellabel[i], value);
+            println!("{} alerts: {}", levellabel[i], value);
             total_unique += value;
         }
-        println!("Unique Events Detected: {}", total_unique);
+        println!("Unique events detected: {}", total_unique);
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
@@ -253,12 +253,12 @@ impl Detection {
     ) {
         let mut total = parseerror_count + ignore_count;
         rc.into_iter().for_each(|(key, value)| {
-            println!("{} Rules: {}", key, value);
+            println!("{} rules: {}", key, value);
             total += value;
         });
-        println!("Ignored Rule Count: {}", ignore_count);
-        println!("Rule Parse Errors Count: {}", parseerror_count);
-        println!("Total Detection Rules: {}", total);
+        println!("Ignored rules: {}", ignore_count);
+        println!("Rule parsing errors: {}", parseerror_count);
+        println!("Total detection rules: {}", total);
         println!("");
     }
 }
