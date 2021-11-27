@@ -231,6 +231,7 @@ impl AliasInRecordChecker {
                     ),
                 )
                 .ok();
+                println!("");
                 self.printed_contents.push(key);
             }
         }
