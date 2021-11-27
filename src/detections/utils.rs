@@ -85,6 +85,10 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
     return Result::Ok(ret);
 }
 
+pub fn is_target_event_id(s: &String) -> bool {
+    return configs::CONFIG.read().unwrap().target_eventids.is_target(s);
+}
+
 pub fn get_event_id_key() -> String {
     return "Event.System.EventID".to_string();
 }
