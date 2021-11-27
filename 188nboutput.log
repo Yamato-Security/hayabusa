@@ -1,0 +1,93 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Time,Filepath,Rulepath,Level,Computername,Eventid,Alert,Details
+2020-09-17 19:57:37.013 +09:00,..\test_files\remote_pwd_reset_rpc_mimikatz_postzerologon_target_DC,rules\alert-rules\hayabusa\Security\1102_T1070.001_SecurityLogCleared.yml,high,01566s-win16-ir.threebeesco.com,1102,Security log was cleared,User: a-jbrown
+2020-09-17 19:57:44.254 +09:00,..\test_files\remote_pwd_reset_rpc_mimikatz_postzerologon_target_DC,rules\timeline-rules\Logons\4776-NTLM-Logon-to-Local-Account.yml,informational,01566s-win16-ir.threebeesco.com,4776,NTLM Logon to Local Account,User: Administrator  :  Workstation   :  Status: 0x0
+2020-09-17 19:57:44.270 +09:00,..\test_files\remote_pwd_reset_rpc_mimikatz_postzerologon_target_DC,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,01566s-win16-ir.threebeesco.com,4624,Logon Type 3 - Network,User: Administrator  :  Workstation: 02694W-WIN10  :  IP Address: 172.16.66.37  :  Port: %IpPort%  :  LogonID: 0x853237
+2021-04-29 16:55:53.423 +09:00,..\test_files\asreproasting,rules\alert-rules\hayabusa\Security\1102_T1070.001_SecurityLogCleared.yml,high,DC-Server-1.labcorp.local,1102,Security log was cleared,User: Administrator
+2021-04-29 16:56:26.433 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4769-Kerberos-Service-Ticket-Request.yml,informational,DC-Server-1.labcorp.local,4769,Kerberos Service Ticket Requested,User: Bob@LABCORP.LOCAL  :  Service: DC-SERVER-1$  :  IP Address: ::ffff:192.168.1.2  :  Status: 0x0
+2021-04-29 16:56:26.435 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4672-Admin-Logon.yml,informational,DC-Server-1.labcorp.local,4672,Admin Logon,User: Bob  :  LogonID: 0xc66373
+2021-04-29 16:56:26.436 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: Bob  :  Workstation:   :  IP Address: 192.168.1.2  :  Port: %IpPort%  :  LogonID: 0xc66373
+2021-04-29 16:56:26.681 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4769-Kerberos-Service-Ticket-Request.yml,informational,DC-Server-1.labcorp.local,4769,Kerberos Service Ticket Requested,User: Bob@LABCORP.LOCAL  :  Service: DC-SERVER-1$  :  IP Address: ::ffff:192.168.1.2  :  Status: 0x0
+2021-04-29 16:56:26.683 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4672-Admin-Logon.yml,informational,DC-Server-1.labcorp.local,4672,Admin Logon,User: Bob  :  LogonID: 0xc66389
+2021-04-29 16:56:26.683 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: Bob  :  Workstation:   :  IP Address: 192.168.1.2  :  Port: %IpPort%  :  LogonID: 0xc66389
+2021-04-29 16:56:26.869 +09:00,..\test_files\asreproasting,rules\alert-rules\hayabusa\Security\4768_T1558.004_AS-REP-Roasting.yml,high,DC-Server-1.labcorp.local,4768,Possible AS-REP Roasting,Possible AS-REP Roasting
+2021-04-29 16:56:26.869 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4768-Kerberos-TGT-Request.yml,informational,DC-Server-1.labcorp.local,4768,Kerberos TGT was requested,User: Alice  :  Service: krbtgt  :  IP Address: ::ffff:192.168.1.2  :  Status: 0x0  :  PreAuthType: 0
+2021-04-29 16:56:26.980 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4634-Logoff.yml,informational,DC-Server-1.labcorp.local,4634,Logoff,Username: Bob  :  LogonID: 0xc66389
+2021-04-29 16:58:02.652 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: DC-SERVER-1$  :  Workstation:   :  IP Address: fe80::e50e:b89e:4718:3aa  :  Port: %IpPort%  :  LogonID: 0xc712f1
+2021-04-29 16:58:02.666 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: DC-SERVER-1$  :  Workstation:   :  IP Address: 192.168.1.100  :  Port: %IpPort%  :  LogonID: 0xc7142b
+2021-04-29 16:58:02.761 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: DC-SERVER-1$  :  Workstation:   :  IP Address: fe80::e50e:b89e:4718:3aa  :  Port: %IpPort%  :  LogonID: 0xc714d9
+2021-04-29 16:58:28.422 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4769-Kerberos-Service-Ticket-Request.yml,informational,DC-Server-1.labcorp.local,4769,Kerberos Service Ticket Requested,User: DC-SERVER-1$@LABCORP.LOCAL  :  Service: DC-SERVER-1$  :  IP Address: ::1  :  Status: 0x0
+2021-04-29 16:58:28.425 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: DC-SERVER-1$  :  Workstation:   :  IP Address: fe80::e50e:b89e:4718:3aa  :  Port: %IpPort%  :  LogonID: 0xc7313f
+2021-04-29 16:59:42.537 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: DC-SERVER-1$  :  Workstation:   :  IP Address: fe80::e50e:b89e:4718:3aa  :  Port: %IpPort%  :  LogonID: 0xc7adb8
+2021-04-29 16:59:42.545 +09:00,..\test_files\asreproasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: DC-SERVER-1$  :  Workstation:   :  IP Address: fe80::e50e:b89e:4718:3aa  :  Port: %IpPort%  :  LogonID: 0xc7ae25
+2021-04-29 18:23:54.244 +09:00,..\test_files\kerberoasting,rules\alert-rules\hayabusa\Security\1102_T1070.001_SecurityLogCleared.yml,high,DC-Server-1.labcorp.local,1102,Security log was cleared,User: Administrator
+2021-04-29 18:23:58.690 +09:00,..\test_files\kerberoasting,rules\timeline-rules\Logons\4776-NTLM-Logon-to-Local-Account.yml,informational,DC-Server-1.labcorp.local,4776,NTLM Logon to Local Account,User: Alice  :  Workstation   :  Status: 0x0
+2021-04-29 18:23:58.691 +09:00,..\test_files\kerberoasting,rules\timeline-rules\Logons\4624-Logon-Type-3-Network.yml,informational,DC-Server-1.labcorp.local,4624,Logon Type 3 - Network,User: Alice  :  Workstation:   :  IP Address: 192.168.1.200  :  Port: %IpPort%  :  LogonID: 0x27d676
+2021-04-29 18:23:58.718 +09:00,..\test_files\kerberoasting,rules\alert-rules\hayabusa\Security\4768_T1558.003_Kerberoasting.yml,high,DC-Server-1.labcorp.local,4768,Kerberoasting,Possible Kerberoasting Risk Activity.
+2021-04-29 18:23:58.718 +09:00,..\test_files\kerberoasting,rules\timeline-rules\Logons\4768-Kerberos-TGT-Request.yml,informational,DC-Server-1.labcorp.local,4768,Kerberos TGT was requested,User: Alice  :  Service: krbtgt  :  IP Address: ::ffff:192.168.1.200  :  Status: 0x0  :  PreAuthType: 2
+2021-04-29 18:23:58.726 +09:00,..\test_files\kerberoasting,rules\timeline-rules\Logons\4769-Kerberos-Service-Ticket-Request.yml,informational,DC-Server-1.labcorp.local,4769,Kerberos Service Ticket Requested,User: Alice@LABCORP.LOCAL  :  Service: sql101  :  IP Address: ::ffff:192.168.1.200  :  Status: 0x0
+2021-04-29 18:23:58.735 +09:00,..\test_files\kerberoasting,rules\timeline-rules\Logons\4634-Logoff.yml,informational,DC-Server-1.labcorp.local,4634,Logoff,Username: Alice  :  LogonID: 0x27d676
+
+Events Detected:27
+Elapsed Time: 00:00:03.533
+

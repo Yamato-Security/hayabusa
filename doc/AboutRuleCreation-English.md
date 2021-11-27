@@ -27,7 +27,7 @@ updated_date: 2020/11/8
 * author [optional]: The name of the person or persons who created the logic for the rule.
 * detection  [required]: The detection logic goes here.
 * falsepositives [optional]: The possibilities for false positives. For example: `system administrator`, `normal user usage`, `normal system usage`, `legacy application`, `security team`. If it is unknown, write `unknown`.
-* level [optional]: Risk level. Please write one of the following: `info`,`low`,`medium`,`high`,`critical`
+* level [optional]: Risk level. Please write one of the following: `informational`,`low`,`medium`,`high`,`critical`
 * output [required]: The details of the alert. (Please output any and only useful fields in the Windows event log for easy analysis.)
 * creation_date [optional]: The creation date.
 * updated_date [optional]: The date of the last revision.

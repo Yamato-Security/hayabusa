@@ -1,0 +1,76 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Time,Computername,Eventid,Level,Alert,Details,Rulepath,Filepath
+2021-10-20 23:29:09.758 +09:00,FS03.offsec.lan,4624,-,Logon,Type: 3 TargetUserName: admmig WorkstationName: - IpAddress: 10.23.123.11 IpPort: 49192 LogonID: 0x26bdfac,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.773 +09:00,FS03.offsec.lan,4624,-,Logon,Type: 3 TargetUserName: admmig WorkstationName: - IpAddress: 10.23.123.11 IpPort: 38940 LogonID: 0x26bdfde,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.836 +09:00,FS03.offsec.lan,4624,-,Logon,Type: 3 TargetUserName: admmig WorkstationName: - IpAddress: 10.23.123.11 IpPort: 54742 LogonID: 0x26be000,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.898 +09:00,FS03.offsec.lan,4624,-,Logon,Type: 3 TargetUserName: admmig WorkstationName: - IpAddress: 10.23.123.11 IpPort: 54742 LogonID: 0x26be01f,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.961 +09:00,FS03.offsec.lan,4624,-,Logon,Type: 3 TargetUserName: admmig WorkstationName: - IpAddress: 10.23.123.11 IpPort: 54742 LogonID: 0x26be03c,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:10.214 +09:00,FS03.offsec.lan,5145,medium,Suspicious Access to Sensitive File Extensions,,rules\Sigma\win_susp_raccess_sensitive_fext.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:10.542 +09:00,FS03.offsec.lan,4656,critical,LSASS Access from Non System Account,,rules\Sigma\win_lsass_access_non_system_account.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:10.542 +09:00,FS03.offsec.lan,4656,high,Generic Password Dumper Activity on LSASS,,rules\Sigma\win_susp_lsass_dump_generic.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:11.230 +09:00,FS03.offsec.lan,5145,medium,Suspicious Access to Sensitive File Extensions,,rules\Sigma\win_susp_raccess_sensitive_fext.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:12.553 +09:00,FS03.offsec.lan,5145,medium,Suspicious Access to Sensitive File Extensions,,rules\Sigma\win_susp_raccess_sensitive_fext.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+
+Events Detected:10
+Elapsed Time: 00:00:09.016
+

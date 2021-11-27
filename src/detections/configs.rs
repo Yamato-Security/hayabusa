@@ -54,7 +54,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --verbose 'Output check information to target event file path and rule file.'
     -q 'Quiet Output Logo'
     -r --rules=[RULEDIRECTORY] 'using target of rule file directory'
-    -L --level=[LEVEL] 'Specified execute rule level(default: LOW)'
+    -L --level=[LEVEL] 'Specified execute rule level(default: INFORMATIONAL)'
     -u --utc 'Output time in UTC format(default: local time)'
     -d --directory=[DIRECTORY] 'Event log files directory'
     -s --statistics 'Prints statistics for event logs'

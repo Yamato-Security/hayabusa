@@ -1,0 +1,16 @@
+Number(4624)
+Number(4624)
+Number(4624)
+Number(4624)
+Number(4624)
+
+Time,Computername,Eventid,Level,Alert,Details,Rulepath,Filepath
+2021-10-20 23:29:09.758 +09:00,FS03.offsec.lan,4624,-,Logon,Type: ,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.773 +09:00,FS03.offsec.lan,4624,-,Logon,Type: ,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.836 +09:00,FS03.offsec.lan,4624,-,Logon,Type: ,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.898 +09:00,FS03.offsec.lan,4624,-,Logon,Type: ,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+2021-10-20 23:29:09.961 +09:00,FS03.offsec.lan,4624,-,Logon,Type: ,rules\4624.yml,.\sample-evtx\EVTX-to-MITRE-Attack\TA0006-Credential Access\T1003-Credential dumping\ID4688-LSASS dump with LSASSY (process)
+
+Events Detected:5
+Elapsed Time: 00:00:00.068
+

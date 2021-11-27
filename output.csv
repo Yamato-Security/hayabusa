@@ -1,0 +1,6 @@
+Time,Filepath,Rulepath,Level,Computername,Eventid,Alert,Details
+2020-09-17T19:57:37.013214+09:00,..\test_files\remote_pwd_reset_rpc_mimikatz_postzerologon_target_DC.evtx,rules\Security\1102_T1070.001_SecurityLogCleared.yml,high,01566s-win16-ir.threebeesco.com,1102,Security log was cleared,User: a-jbrown
+2021-04-29T16:55:53.423761+09:00,..\test_files\asreproasting.evtx,rules\Security\1102_T1070.001_SecurityLogCleared.yml,high,DC-Server-1.labcorp.local,1102,Security log was cleared,User: Administrator
+2021-04-29T16:56:26.869344+09:00,..\test_files\asreproasting.evtx,rules\Security\4768_T1558.004_AS-REP-Roasting.yml,high,DC-Server-1.labcorp.local,4768,AS-REP Roasting,Possible AS-REP Roasting
+2021-04-29T18:23:54.244226+09:00,..\test_files\kerberoasting.evtx,rules\Security\1102_T1070.001_SecurityLogCleared.yml,high,DC-Server-1.labcorp.local,1102,Security log was cleared,User: Administrator
+2021-04-29T18:23:58.718239+09:00,..\test_files\kerberoasting.evtx,rules\Security\4768_T1558.003_Kerberoasting.yml,high,DC-Server-1.labcorp.local,4768,Kerberoasting,Possible Kerberoasting Risk Activity.
