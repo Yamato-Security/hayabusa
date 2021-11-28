@@ -145,8 +145,15 @@ impl Detection {
 
     pub fn print_unique_results(&self) {
         let rules = &self.rules;
-        let levellabel = Vec::from(["Critical", "High", "Medium", "Low", "Info", "Undefined"]);
-        // levels are [(Undeifned), (Info), (Low),(Medium),(High),(Critical)]
+        let levellabel = Vec::from([
+            "Critical",
+            "High",
+            "Medium",
+            "Low",
+            "Informational",
+            "Undeifned",
+        ]);
+        // levclcounts is [(Undeifned), (Informational), (Low),(Medium),(High),(Critical)]
         let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
         for rule in rules.into_iter() {
             if rule.check_exist_countdata() {
@@ -258,7 +265,7 @@ impl Detection {
 
 #[test]
 fn test_parse_rule_files() {
-    let level = "INFO";
+    let level = "informational";
     let opt_rule_path = Some("./test_files/rules/level_yaml");
     let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path);
     assert_eq!(5, cole.len());

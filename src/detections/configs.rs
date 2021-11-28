@@ -7,7 +7,7 @@ lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
-        levelmap.insert("INFO".to_owned(), 1);
+        levelmap.insert("INFORMATIONAL".to_owned(), 1);
         levelmap.insert("LOW".to_owned(), 2);
         levelmap.insert("MEDIUM".to_owned(), 3);
         levelmap.insert("HIGH".to_owned(), 4);
@@ -54,7 +54,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --verbose 'Output verbose information to target event file path and rule file'
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
-    -L --level=[LEVEL] 'Minimum level for rules (default: low)'
+    -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
     -u --utc 'Output time in UTC format (default: local time)'
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -s --statistics 'Prints statistics of event IDs'
