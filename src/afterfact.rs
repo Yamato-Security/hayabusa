@@ -72,19 +72,26 @@ pub fn after_fact() {
 }
 
 fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<()> {
-    let mut wtr = csv::WriterBuilder::new().from_writer(writer);
+    let mut wtr;
+    if displayflag {
+        wtr = csv::WriterBuilder::new()
+            .delimiter(b'|')
+            .from_writer(writer);
+    } else {
+        wtr = csv::WriterBuilder::new().from_writer(writer);
+    }
     let messages = print::MESSAGES.lock().unwrap();
     let mut detect_count = 0;
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
                 wtr.serialize(DisplayFormat {
-                    time: &format_time(time),
-                    level: &detect_info.level,
-                    computername: &detect_info.computername,
-                    eventid: &detect_info.eventid,
-                    alert: &detect_info.alert,
-                    details: &detect_info.detail,
+                    time: &format!("{} ", &format_time(time)),
+                    level: &format!(" {} ", &detect_info.level),
+                    computername: &format!(" {} ", &detect_info.computername),
+                    eventid: &format!(" {} ", &detect_info.eventid),
+                    alert: &format!(" {} ", &detect_info.alert),
+                    details: &format!(" {} ", &detect_info.detail),
                 })?;
             } else {
                 // csv出力時フォーマット
