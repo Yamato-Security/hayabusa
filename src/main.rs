@@ -10,6 +10,7 @@ use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
+use serde_json::Value;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -172,6 +173,21 @@ fn analysis_file(
             }
 
             let data = record_result.unwrap().data;
+
+            // target_eventids.txtでフィルタする。
+            let eventid = utils::get_event_value(&utils::get_event_id_key(), &data);
+            if eventid.is_some() {
+                let is_target = match eventid.unwrap() {
+                    Value::String(s) => utils::is_target_event_id(s),
+                    Value::Number(n) => utils::is_target_event_id(&n.to_string()),
+                    _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
+                };
+                if !is_target {
+                    continue;
+                }
+            }
+
+            // EvtxRecordInfo構造体に変更
             let data_string = data.to_string();
             let record_info = EvtxRecordInfo::new((&filepath_disp).to_string(), data, data_string);
             records_per_detect.push(record_info);

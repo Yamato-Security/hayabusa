@@ -1,7 +1,7 @@
 use crate::detections::utils;
 use clap::{App, AppSettings, ArgMatches};
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
@@ -21,6 +21,7 @@ pub struct ConfigReader {
     pub args: ArgMatches<'static>,
     pub event_key_alias_config: EventKeyAliasConfig,
     pub event_timeline_config: EventInfoConfig,
+    pub target_eventids: TargetEventIds,
 }
 
 impl ConfigReader {
@@ -29,6 +30,7 @@ impl ConfigReader {
             args: build_app(),
             event_key_alias_config: load_eventkey_alias("config/eventkey_alias.txt"),
             event_timeline_config: load_eventcode_info("config/timeline_event_info.txt"),
+            target_eventids: load_target_ids("config/target_eventids.txt"),
         }
     }
 }
@@ -78,6 +80,40 @@ fn is_test_mode() -> bool {
     }
 
     return false;
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetEventIds {
+    ids: HashSet<String>,
+}
+
+impl TargetEventIds {
+    pub fn new() -> TargetEventIds {
+        return TargetEventIds {
+            ids: HashSet::new(),
+        };
+    }
+
+    pub fn is_target(&self, id: &String) -> bool {
+        // 中身が空の場合は全EventIdを対象とする。
+        if self.ids.is_empty() {
+            return true;
+        }
+        return self.ids.contains(id);
+    }
+}
+
+fn load_target_ids(path: &str) -> TargetEventIds {
+    let mut ret = TargetEventIds::new();
+    let lines = utils::read_txt(path).unwrap(); // ファイルが存在しなければエラーとする
+    for line in lines {
+        if line.is_empty() {
+            continue;
+        }
+        ret.ids.insert(line);
+    }
+
+    return ret;
 }
 
 #[derive(Debug, Clone)]
