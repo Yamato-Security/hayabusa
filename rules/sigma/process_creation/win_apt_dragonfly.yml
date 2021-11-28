@@ -27,3 +27,4 @@ tags:
 - attack.discovery
 - attack.t1110
 - attack.t1087
+ruletype: SIGMA

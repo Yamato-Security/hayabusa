@@ -35,3 +35,4 @@ tags:
 - attack.impact
 - attack.s0575
 - attack.t1486
+ruletype: SIGMA

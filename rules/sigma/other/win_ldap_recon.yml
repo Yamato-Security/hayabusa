@@ -79,3 +79,4 @@ tags:
 - attack.t1069.002
 - attack.t1087.002
 - attack.t1482
+ruletype: SIGMA

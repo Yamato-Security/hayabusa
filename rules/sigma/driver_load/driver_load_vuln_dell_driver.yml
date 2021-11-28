@@ -32,3 +32,4 @@ tags:
 - attack.privilege_escalation
 - cve.2021.21551
 - attack.t1543
+ruletype: SIGMA

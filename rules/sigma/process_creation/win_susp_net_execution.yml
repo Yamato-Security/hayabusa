@@ -55,3 +55,4 @@ tags:
 - attack.t1021.002
 - attack.t1077
 - attack.s0039
+ruletype: SIGMA

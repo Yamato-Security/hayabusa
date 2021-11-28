@@ -28,3 +28,4 @@ status: experimental
 tags:
 - attack.lateral_movement
 - attack.t1021.002
+ruletype: SIGMA

@@ -40,3 +40,4 @@ tags:
 - attack.t1027.005
 - attack.t1027
 - attack.t1086
+ruletype: SIGMA

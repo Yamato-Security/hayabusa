@@ -76,3 +76,4 @@ tags:
 - attack.t1003
 - attack.s0002
 - car.2019-04-004
+ruletype: SIGMA

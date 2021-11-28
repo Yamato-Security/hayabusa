@@ -32,3 +32,4 @@ tags:
 - attack.t1566.001
 - attack.execution
 - attack.initial_access
+ruletype: SIGMA

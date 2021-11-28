@@ -54,3 +54,4 @@ tags:
 - attack.t1078
 - attack.t1190
 - attack.t1133
+ruletype: SIGMA

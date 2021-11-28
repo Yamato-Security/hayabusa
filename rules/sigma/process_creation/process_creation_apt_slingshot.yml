@@ -33,3 +33,4 @@ tags:
 - attack.persistence
 - attack.t1053.005
 - attack.s0111
+ruletype: SIGMA

@@ -29,3 +29,4 @@ status: experimental
 tags:
 - attack.initial_access
 - attack.t1190
+ruletype: SIGMA

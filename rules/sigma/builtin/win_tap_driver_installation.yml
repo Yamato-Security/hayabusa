@@ -22,3 +22,4 @@ status: experimental
 tags:
 - attack.exfiltration
 - attack.t1048
+ruletype: SIGMA

@@ -41,3 +41,4 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1187
+ruletype: SIGMA

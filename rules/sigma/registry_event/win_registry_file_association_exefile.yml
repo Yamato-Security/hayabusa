@@ -31,3 +31,4 @@ references:
 status: experimental
 tags:
 - attack.defense_evasion
+ruletype: SIGMA

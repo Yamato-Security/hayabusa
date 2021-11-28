@@ -38,3 +38,4 @@ status: stable
 tags:
 - attack.impact
 - attack.t1496
+ruletype: SIGMA

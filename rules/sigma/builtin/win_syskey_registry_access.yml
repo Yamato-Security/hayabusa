@@ -32,3 +32,4 @@ status: experimental
 tags:
 - attack.discovery
 - attack.t1012
+ruletype: SIGMA

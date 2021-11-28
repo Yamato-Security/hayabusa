@@ -58,3 +58,4 @@ tags:
 - attack.g0049
 - attack.g0075
 - attack.g0096
+ruletype: SIGMA

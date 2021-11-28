@@ -49,3 +49,4 @@ tags:
 - attack.t1003
 - attack.t1552.001
 - attack.t1003.003
+ruletype: SIGMA

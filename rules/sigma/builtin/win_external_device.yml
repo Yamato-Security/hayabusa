@@ -26,3 +26,4 @@ tags:
 - attack.t1200
 - attack.lateral_movement
 - attack.initial_access
+ruletype: SIGMA

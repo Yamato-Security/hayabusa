@@ -39,3 +39,4 @@ status: experimental
 tags:
 - attack.t1137.006
 - attack.persistence
+ruletype: SIGMA

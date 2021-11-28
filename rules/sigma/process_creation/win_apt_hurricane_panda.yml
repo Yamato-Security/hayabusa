@@ -30,3 +30,4 @@ tags:
 - attack.privilege_escalation
 - attack.g0009
 - attack.t1068
+ruletype: SIGMA

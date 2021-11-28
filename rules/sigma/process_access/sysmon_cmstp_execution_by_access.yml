@@ -35,3 +35,4 @@ tags:
 - attack.g0069
 - attack.g0080
 - car.2019-04-001
+ruletype: SIGMA

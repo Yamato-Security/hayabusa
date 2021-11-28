@@ -49,3 +49,4 @@ tags:
 - attack.t1191
 - attack.g0069
 - car.2019-04-001
+ruletype: SIGMA

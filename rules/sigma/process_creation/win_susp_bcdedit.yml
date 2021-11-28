@@ -32,3 +32,4 @@ tags:
 - attack.persistence
 - attack.t1542.003
 - attack.t1067
+ruletype: SIGMA

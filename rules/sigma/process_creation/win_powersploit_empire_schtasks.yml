@@ -54,3 +54,4 @@ tags:
 - car.2013-08-001
 - attack.t1053.005
 - attack.t1059.001
+ruletype: SIGMA

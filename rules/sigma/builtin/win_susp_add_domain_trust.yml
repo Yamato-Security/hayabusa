@@ -18,3 +18,4 @@ status: stable
 tags:
 - attack.persistence
 - attack.t1098
+ruletype: SIGMA

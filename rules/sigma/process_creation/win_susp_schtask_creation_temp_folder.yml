@@ -34,3 +34,4 @@ tags:
 - attack.execution
 - attack.persistence
 - attack.t1053.005
+ruletype: SIGMA
