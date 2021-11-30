@@ -11,6 +11,7 @@ use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::detections::utils::get_serde_number_to_string;
+use crate::fillter::RuleFill;
 use crate::yaml::ParseYaml;
 
 use std::sync::Arc;
@@ -51,10 +52,15 @@ impl Detection {
     }
 
     // ルールファイルをパースします。
-    pub fn parse_rule_files(level: String, rulespath: Option<&str>) -> Vec<RuleNode> {
+    pub fn parse_rule_files(
+        level: String,
+        rulespath: Option<&str>,
+        fill_ids: RuleFill,
+    ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
-        let result_readdir = rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level);
+        let result_readdir =
+            rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level, fill_ids);
         if result_readdir.is_err() {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),

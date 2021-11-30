@@ -58,6 +58,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -u --utc 'Output time in UTC format (default: local time)'
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -s --statistics 'Prints statistics of event IDs'
+    -n --show-noisyalerts 'do not exclude noisy rules'
     -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
