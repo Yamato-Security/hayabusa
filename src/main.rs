@@ -10,6 +10,7 @@ use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
+use pbr::ProgressBar;
 use serde_json::Value;
 use std::{
     fs::{self, File},
@@ -124,12 +125,14 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
     );
+    let mut pb = ProgressBar::new(evtx_files.len() as u64);
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
         if configs::CONFIG.read().unwrap().args.is_present("verbose") {
             println!("Checking target evtx FilePath: {:?}", &evtx_file);
         }
         detection = analysis_file(evtx_file, detection);
+        pb.inc();
     }
     after_fact();
     detection.print_unique_results();
