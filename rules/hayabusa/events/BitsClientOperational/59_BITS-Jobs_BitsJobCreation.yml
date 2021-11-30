@@ -9,7 +9,7 @@ output_jp: 'Job名: %JobTitle%  :  URL: %Url%'
 description: Adversaries may abuse BITS jobs to persistently execute or clean up after malicious payloads.
 description_jp: Adversaries may abuse BITS jobs to persistently execute or clean up after malicious payloads.
 
-id: d3fb8f7b-88b0-4ff4-bf9b-ca286ce19031
+id: 18e6fa4a-353d-42b6-975c-bb05dbf4a004
 level: informational
 status: stable
 detection:

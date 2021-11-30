@@ -9,7 +9,7 @@ output_jp: 'ユーザ: %SubjectUserName%  :  ログオンID: %SubjectLogonId%'
 description: Prints logon information. 
 description_jp: Prints logon information.
 
-id: 7309e070-56b9-408b-a2f4-f1840f8f1ebf
+id: fdd0b325-8b89-469c-8b0c-e5ddfe39b62e
 level: informational
 status: stable
 detection:

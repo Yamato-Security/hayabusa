@@ -9,7 +9,7 @@ output_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPア�
 description: Prints logon information
 description_jp: Prints logon information
 
-id: c7b22878-e5d8-4c30-b245-e51fd354359e
+id: 7beb4832-f357-47a4-afd8-803d69a5c85c
 level: informational
 status: stable
 detection:
