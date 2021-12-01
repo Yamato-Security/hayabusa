@@ -199,7 +199,9 @@ impl Detection {
             record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"]).unwrap(),
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+                .unwrap_or("-".to_owned())
+                .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
