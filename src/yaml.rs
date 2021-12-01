@@ -225,7 +225,7 @@ mod tests {
         let fill_ids = RuleFill {
             no_use_rule: HashMap::from([("".to_string(), true)]),
         };
-        yaml.read_dir(path.to_path_buf(), &"INFO", fill_ids)
+        yaml.read_dir(path.to_path_buf(), &"informational", fill_ids)
             .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
