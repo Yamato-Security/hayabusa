@@ -188,6 +188,11 @@ impl Message {
             return Option::Some(datetime.unwrap());
         }
     }
+
+    /// message内のマップをクリアする。テストする際の冪等性の担保のため作成。
+    pub fn clear(&mut self) {
+        self.map.clear();
+    }
 }
 
 impl AlertMessage {
