@@ -198,13 +198,8 @@ mod tests {
         let json_str = r##"
         {
             "Event": {
-                "EventData": {
-                    "EventID": 11111
-                },
                 "System": {
-                    "TimeCreated_attributes": {
-                        "SystemTime": "2000-01-21T09:06:01Z"
-                    }
+                    "EventID": 11111
                 }
             }
         }
@@ -212,8 +207,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
-            utils::get_serde_number_to_string(&event_record["Event"]["EventData"]["EventID"])
-                .unwrap(),
+            utils::get_serde_number_to_string(&event_record["Event"]["System"]["EventID"]).unwrap(),
             "11111".to_owned()
         );
     }
@@ -226,11 +220,6 @@ mod tests {
             "Event": {
                 "EventData": {
                     "ComputerName": "HayabusaComputer1"
-                },
-                "System": {
-                    "TimeCreated_attributes": {
-                        "SystemTime": "2000-01-21T09:06:01Z"
-                    }
                 }
             }
         }
@@ -252,11 +241,6 @@ mod tests {
             "Event": {
                 "EventData": {
                     "ComputerName": "HayabusaComputer1"
-                },
-                "System": {
-                    "TimeCreated_attributes": {
-                        "SystemTime": "2000-01-21T09:06:01Z"
-                    }
                 }
             }
         }
