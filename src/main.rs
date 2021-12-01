@@ -6,11 +6,13 @@ use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection;
 use hayabusa::detections::detection::EvtxRecordInfo;
 use hayabusa::detections::print::AlertMessage;
+use hayabusa::fillter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -120,9 +122,29 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .unwrap_or("informational")
         .to_uppercase();
     println!("Analyzing event files: {:?}", evtx_files.len());
+
+    //除外ルール前処理
+    let mut ids = String::from_utf8(fs::read("config/exclude-rules.txt").unwrap()).unwrap();
+    if !configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("show-noisyalerts")
+    {
+        ids += &String::from_utf8(fs::read("config/noisy-rules.txt").unwrap()).unwrap();
+    }
+
+    let mut fill_ids = fillter::RuleFill {
+        no_use_rule: HashMap::from([("".to_string(), true)]),
+    };
+
+    for v in ids.split_whitespace().next() {
+        fill_ids.no_use_rule.insert(v.to_string(), true);
+    }
     let rule_files = detection::Detection::parse_rule_files(
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
+        fill_ids,
     );
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
