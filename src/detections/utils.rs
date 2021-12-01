@@ -94,7 +94,7 @@ pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     if value.is_string() {
         return Option::Some(value.as_str().unwrap_or("").to_string());
     } else if value.is_object() {
-        // Obect type  is not specified record value.
+        // Object type is not specified record value.
         return Option::None;
     } else {
         return Option::Some(value.to_string());
@@ -162,6 +162,7 @@ pub fn create_tokio_runtime() -> Runtime {
 mod tests {
     use crate::detections::utils;
     use regex::Regex;
+    use serde_json::Value;
 
     #[test]
     fn test_check_regex() {
@@ -189,5 +190,79 @@ mod tests {
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";
         assert!(false == utils::check_allowlist(commandline, &allowlist));
+    }
+
+    #[test]
+    /// Serde::Valueの数値型の値を文字列として返却することを確かめるテスト
+    fn test_get_serde_number_to_string() {
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "EventID": 11111
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2000-01-21T09:06:01Z"
+                    }
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        assert_eq!(
+            utils::get_serde_number_to_string(&event_record["Event"]["EventData"]["EventID"])
+                .unwrap(),
+            "11111".to_owned()
+        );
+    }
+
+    #[test]
+    /// Serde::Valueの文字列型の値を文字列として返却することを確かめるテスト
+    fn test_get_serde_number_serde_string_to_string() {
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "ComputerName": "HayabusaComputer1"
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2000-01-21T09:06:01Z"
+                    }
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        assert_eq!(
+            utils::get_serde_number_to_string(&event_record["Event"]["EventData"]["ComputerName"])
+                .unwrap(),
+            "HayabusaComputer1".to_owned()
+        );
+    }
+
+    #[test]
+    /// Serde::Valueのオブジェクト型の内容を誤って渡した際にNoneを返却することを確かめるテスト
+    fn test_get_serde_number_serde_object_ret_none() {
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "ComputerName": "HayabusaComputer1"
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "2000-01-21T09:06:01Z"
+                    }
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"]).is_none());
     }
 }
