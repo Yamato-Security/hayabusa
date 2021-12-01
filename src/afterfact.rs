@@ -91,7 +91,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                     computername: &format!(" {} ", &detect_info.computername),
                     eventid: &format!(" {} ", &detect_info.eventid),
                     alert: &format!(" {} ", &detect_info.alert),
-                    details: &format!(" {} ", &detect_info.detail),
+                    details: &format!(" {}", &detect_info.detail),
                 })?;
             } else {
                 // csv出力時フォーマット
