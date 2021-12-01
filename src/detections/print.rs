@@ -331,4 +331,87 @@ mod tests {
         let mut stdout = stdout.lock();
         AlertMessage::alert(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
     }
+
+    #[test]
+    /// outputで指定されているキー(eventkey_alias.txt内で設定済み)から対象のレコード内の情報でメッセージをパースしているか確認する関数
+    fn test_parse_message() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest1"
+                },
+                "System": {
+                    "Computer": "testcomputer1",
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "commandline:parsetest1 computername:testcomputer1";
+        assert_eq!(
+            message.parse_message(
+                &event_record,
+                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+            ),
+            expected,
+        );
+    }
+    #[test]
+    /// outputで指定されているキーが、eventkey_alias.txt内で設定されていない場合の出力テスト
+    fn test_parse_message_not_exist_key_in_output() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest2"
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "NoExistKey:%TESTNoExistKey%";
+        assert_eq!(
+            message.parse_message(&event_record, "NoExistKey:%TESTNoExistKey%".to_owned()),
+            expected,
+        );
+    }
+    #[test]
+    /// outputで指定されているキー(eventkey_alias.txt内で設定済み)が対象のレコード内に該当する情報がない場合の出力テスト
+    fn test_parse_message_not_exist_value_in_record() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest3"
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "commandline:parsetest3 computername:%ComputerName%";
+        assert_eq!(
+            message.parse_message(
+                &event_record,
+                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+            ),
+            expected,
+        );
+    }
 }
