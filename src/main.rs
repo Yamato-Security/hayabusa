@@ -134,7 +134,7 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
     }
 
     let mut fill_ids = fillter::RuleFill {
-        no_use_rule: HashMap::new(),
+        no_use_rule: HashMap::from([("".to_string(), true)]),
     };
 
     for v in ids.split_whitespace().next() {
