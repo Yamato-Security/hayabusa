@@ -9,7 +9,7 @@ output_jp: 'ユーザ: %TargetUserName%  :  サービス: %ServiceName%  :  IP�
 description: Prints logon information. 
 description_jp: Prints logon information.
 
-id: da6257f3-cf49-464a-96fc-c84a7ce20636
+id: d9f336ea-bb16-4a35-8a9c-183216b8d59c
 level: informational
 status: stable
 detection:
