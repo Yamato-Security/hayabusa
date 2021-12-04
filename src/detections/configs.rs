@@ -56,7 +56,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --verbose 'Output verbose information to target event file path and rule file'
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
-    -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
+    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
     -u --utc 'Output time in UTC format (default: local time)'
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -s --statistics 'Prints statistics of event IDs'

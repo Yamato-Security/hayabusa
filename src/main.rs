@@ -117,7 +117,7 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .read()
         .unwrap()
         .args
-        .value_of("level")
+        .value_of("min-level")
         .unwrap_or("informational")
         .to_uppercase();
     println!("Analyzing event files: {:?}", evtx_files.len());
