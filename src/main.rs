@@ -131,7 +131,7 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .args
         .is_present("show-noisyalerts")
     {
-        ids += "\n";    // 改行を入れないとexclude-rulesの一番最後の行とnoisy-rules.txtの一番最後の行が一行にまとめられてしまう。
+        ids += "\n"; // 改行を入れないとexclude-rulesの一番最後の行とnoisy-rules.txtの一番最後の行が一行にまとめられてしまう。
         ids += &String::from_utf8(fs::read("config/noisy-rules.txt").unwrap()).unwrap();
     }
 
@@ -140,7 +140,12 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
     };
 
     for v in ids.split_whitespace() {
-        fill_ids.no_use_rule.insert(v.to_string());
+        let v = v.to_string();
+        if v.is_empty() {
+            // 空行は無視する。
+            continue;
+        }
+        fill_ids.no_use_rule.insert(v);
     }
     let rule_files = detection::Detection::parse_rule_files(
         level,

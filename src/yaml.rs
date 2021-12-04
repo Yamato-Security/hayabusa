@@ -138,14 +138,14 @@ impl ParseYaml {
                 }
 
                 //除外されたルールは無視する
-                match fill_ids
-                    .no_use_rule
-                    .get(&yaml_doc["id"].as_str().unwrap_or("").to_string())
-                {
-                     None => (),
-                     Some(_) => {
-                        self.ignorerule_count += 1;
-                        return Option::None;
+                let rule_id = &yaml_doc["id"].as_str();
+                if rule_id.is_some() {
+                    match fill_ids.no_use_rule.get(&rule_id.unwrap_or("").to_string()) {
+                        None => (),
+                        Some(_) => {
+                            self.ignorerule_count += 1;
+                            return Option::None;
+                        }
                     }
                 }
 
@@ -236,7 +236,8 @@ mod tests {
         let fill_ids = RuleFill {
             no_use_rule: HashSet::new(),
         };
-        yaml.read_dir(path.to_path_buf(), &"LOW", &fill_ids).unwrap();
+        yaml.read_dir(path.to_path_buf(), &"LOW", &fill_ids)
+            .unwrap();
         assert_eq!(yaml.files.len(), 4);
     }
     #[test]
