@@ -33,3 +33,4 @@ tags:
 - attack.t1218
 - attack.persistence
 - attack.t1547
+ruletype: SIGMA

@@ -32,3 +32,4 @@ tags:
 - attack.t1218.001
 - attack.execution
 - attack.t1223
+ruletype: SIGMA

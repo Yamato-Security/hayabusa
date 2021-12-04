@@ -21,3 +21,4 @@ status: stable
 tags:
 - attack.execution
 - attack.t1047
+ruletype: SIGMA

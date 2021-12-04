@@ -28,3 +28,4 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1056.001
+ruletype: SIGMA

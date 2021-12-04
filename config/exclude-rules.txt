@@ -1,0 +1,5 @@
+c92f1896-d1d2-43c3-92d5-7a5b35c217bb # rules/sigma/other/win_exchange_cve_2021_42321.yml (rule parse error)
+83809e84-4475-4b69-bc3e-4aad8568612f # rules/sigma/builtin/win_exchange_transportagent.yml (rule parse error)
+7b449a5e-1db5-4dd0-a2dc-4e3a67282538 # replaced by hayabusa rule 
+c265cf08-3f99-46c1-8d59-328247057d57 # replaced by hayabusa rule
+66b6be3d-55d0-4f47-9855-d69df21740ea # replaced by hayabusa rule

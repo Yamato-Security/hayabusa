@@ -49,7 +49,7 @@ pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     let f = File::open(filename);
     if f.is_err() {
-        let errmsg = format!("cannot open file. [file:{}]", filename);
+        let errmsg = format!("Cannot open file. [file:{}]", filename);
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
@@ -62,7 +62,7 @@ pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
 }
 
 pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
-    let mut f = File::open(filename).expect("file not found!!!");
+    let mut f = File::open(filename).expect("File not found!!!");
     let mut contents: String = String::new();
     let mut ret = vec![];
     let read_res = f.read_to_string(&mut contents);
@@ -85,16 +85,23 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
     return Result::Ok(ret);
 }
 
+pub fn is_target_event_id(s: &String) -> bool {
+    return configs::CONFIG.read().unwrap().target_eventids.is_target(s);
+}
+
 pub fn get_event_id_key() -> String {
     return "Event.System.EventID".to_string();
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
-pub fn get_serde_number_to_string(value: &serde_json::Value) -> String {
+pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     if value.is_string() {
-        return value.as_str().unwrap_or("").to_string();
+        return Option::Some(value.as_str().unwrap_or("").to_string());
+    } else if value.is_object() {
+        // Object type is not specified record value.
+        return Option::None;
     } else {
-        return value.to_string();
+        return Option::Some(value.to_string());
     }
 }
 
@@ -159,6 +166,7 @@ pub fn create_tokio_runtime() -> Runtime {
 mod tests {
     use crate::detections::utils;
     use regex::Regex;
+    use serde_json::Value;
 
     #[test]
     fn test_check_regex() {
@@ -186,5 +194,63 @@ mod tests {
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";
         assert!(false == utils::check_allowlist(commandline, &allowlist));
+    }
+
+    #[test]
+    /// Serde::Valueの数値型の値を文字列として返却することを確かめるテスト
+    fn test_get_serde_number_to_string() {
+        let json_str = r##"
+        {
+            "Event": {
+                "System": {
+                    "EventID": 11111
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        assert_eq!(
+            utils::get_serde_number_to_string(&event_record["Event"]["System"]["EventID"]).unwrap(),
+            "11111".to_owned()
+        );
+    }
+
+    #[test]
+    /// Serde::Valueの文字列型の値を文字列として返却することを確かめるテスト
+    fn test_get_serde_number_serde_string_to_string() {
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "ComputerName": "HayabusaComputer1"
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        assert_eq!(
+            utils::get_serde_number_to_string(&event_record["Event"]["EventData"]["ComputerName"])
+                .unwrap(),
+            "HayabusaComputer1".to_owned()
+        );
+    }
+
+    #[test]
+    /// Serde::Valueのオブジェクト型の内容を誤って渡した際にNoneを返却することを確かめるテスト
+    fn test_get_serde_number_serde_object_ret_none() {
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "ComputerName": "HayabusaComputer1"
+                }
+            }
+        }
+        "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+
+        assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"]).is_none());
     }
 }

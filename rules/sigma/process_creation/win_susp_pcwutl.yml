@@ -30,3 +30,4 @@ tags:
 - attack.t1218.011
 - attack.execution
 - attack.t1218
+ruletype: SIGMA

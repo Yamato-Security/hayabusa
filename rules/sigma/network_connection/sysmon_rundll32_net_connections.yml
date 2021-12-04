@@ -49,3 +49,4 @@ tags:
 - attack.t1218.011
 - attack.t1085
 - attack.execution
+ruletype: SIGMA

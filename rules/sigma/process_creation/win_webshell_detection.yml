@@ -83,3 +83,4 @@ tags:
 - attack.t1087
 - attack.privilege_escalation
 - attack.t1100
+ruletype: SIGMA

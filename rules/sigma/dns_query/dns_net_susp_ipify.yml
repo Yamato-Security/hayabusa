@@ -49,3 +49,4 @@ status: experimental
 tags:
 - attack.reconnaissance
 - attack.t1590
+ruletype: SIGMA

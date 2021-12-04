@@ -73,7 +73,7 @@ impl Detection {
             // ruleファイルのパースに失敗した場合はエラー出力
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
-                    format!("Failed to parse Rule file. (FilePath : {})", rule.rulepath);
+                    format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
                 AlertMessage::warn(&mut std::io::stdout().lock(), errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
@@ -145,8 +145,15 @@ impl Detection {
 
     pub fn print_unique_results(&self) {
         let rules = &self.rules;
-        let levellabel = Vec::from(["Critical", "High", "Medium", "Low", "Info", "Undeifned"]);
-        // levclcounts is [(Undeifned), (Info), (Low),(Medium),(High),(Critical)]
+        let levellabel = Vec::from([
+            "Critical",
+            "High",
+            "Medium",
+            "Low",
+            "Informational",
+            "Undefined",
+        ]);
+        // levclcounts is [(Undefined), (Informational), (Low),(Medium),(High),(Critical)]
         let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
         for rule in rules.into_iter() {
             if rule.check_exist_countdata() {
@@ -165,10 +172,10 @@ impl Detection {
         let mut total_unique = 0;
         levelcounts.reverse();
         for (i, value) in levelcounts.iter().enumerate() {
-            println!("{} alerts {}", levellabel[i], value);
+            println!("{} alerts: {}", levellabel[i], value);
             total_unique += value;
         }
-        println!("Unique Events Detected: {}", total_unique);
+        println!("Unique events detected: {}", total_unique);
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
@@ -199,7 +206,9 @@ impl Detection {
             record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"]),
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+                .unwrap_or("-".to_owned())
+                .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );
@@ -246,19 +255,19 @@ impl Detection {
     ) {
         let mut total = parseerror_count + ignore_count;
         rc.into_iter().for_each(|(key, value)| {
-            println!("{} Rules: {}", key, value);
+            println!("{} rules: {}", key, value);
             total += value;
         });
-        println!("Ignored Rule Count: {}", ignore_count);
-        println!("Rule Parse Errors Count: {}", parseerror_count);
-        println!("Total Detection Rules: {}", total);
+        println!("Ignored rules: {}", ignore_count);
+        println!("Rule parsing errors: {}", parseerror_count);
+        println!("Total detection rules: {}", total);
         println!("");
     }
 }
 
 #[test]
 fn test_parse_rule_files() {
-    let level = "INFO";
+    let level = "informational";
     let opt_rule_path = Some("./test_files/rules/level_yaml");
     let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path);
     assert_eq!(5, cole.len());

@@ -50,3 +50,4 @@ status: experimental
 tags:
 - attack.t1098
 - attack.persistence
+ruletype: SIGMA

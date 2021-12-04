@@ -41,3 +41,4 @@ tags:
 - attack.exfiltration
 - attack.t1002
 - attack.t1560.001
+ruletype: SIGMA

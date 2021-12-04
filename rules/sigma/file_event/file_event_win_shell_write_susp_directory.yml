@@ -47,3 +47,4 @@ logsource:
 references:
 - No references
 status: experimental
+ruletype: SIGMA

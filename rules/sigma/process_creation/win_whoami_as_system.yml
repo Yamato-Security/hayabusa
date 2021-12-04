@@ -29,3 +29,4 @@ tags:
 - attack.privilege_escalation
 - attack.discovery
 - attack.t1033
+ruletype: SIGMA

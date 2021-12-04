@@ -27,3 +27,4 @@ tags:
 - attack.privilege_escalation
 - attack.t1546.003
 - attack.t1047
+ruletype: SIGMA

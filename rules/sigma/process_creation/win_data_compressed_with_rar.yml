@@ -38,3 +38,4 @@ tags:
 - attack.t1002
 - attack.collection
 - attack.t1560.001
+ruletype: SIGMA

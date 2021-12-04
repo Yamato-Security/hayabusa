@@ -29,3 +29,4 @@ status: experimental
 tags:
 - attack.t1068
 - attack.privilege_escalation
+ruletype: SIGMA

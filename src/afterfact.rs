@@ -21,6 +21,17 @@ pub struct CsvFormat<'a> {
     filepath: &'a str,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct DisplayFormat<'a> {
+    time: &'a str,
+    computername: &'a str,
+    eventid: &'a str,
+    level: &'a str,
+    alert: &'a str,
+    details: &'a str,
+}
+
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
@@ -30,7 +41,7 @@ pub fn after_fact() {
         .ok();
         process::exit(1);
     };
-
+    let mut displayflag = false;
     let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
         .read()
         .unwrap()
@@ -50,31 +61,51 @@ pub fn after_fact() {
             }
         }
     } else {
+        displayflag = true;
         // 標準出力に出力する場合
         Box::new(io::stdout())
     };
 
-    if let Err(err) = emit_csv(&mut target) {
-        fn_emit_csv_err(err);
+    if let Err(err) = emit_csv(&mut target, displayflag) {
+        fn_emit_csv_err(Box::new(err));
     }
 }
 
-fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
-    let mut wtr = csv::WriterBuilder::new().from_writer(writer);
+fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<()> {
+    let mut wtr;
+    if displayflag {
+        wtr = csv::WriterBuilder::new()
+            .delimiter(b'|')
+            .from_writer(writer);
+    } else {
+        wtr = csv::WriterBuilder::new().from_writer(writer);
+    }
     let messages = print::MESSAGES.lock().unwrap();
     let mut detect_count = 0;
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
-            wtr.serialize(CsvFormat {
-                time: &format_time(time),
-                filepath: &detect_info.filepath,
-                rulepath: &detect_info.rulepath,
-                level: &detect_info.level,
-                computername: &detect_info.computername,
-                eventid: &detect_info.eventid,
-                alert: &detect_info.alert,
-                details: &detect_info.detail,
-            })?;
+            if displayflag {
+                wtr.serialize(DisplayFormat {
+                    time: &format!("{} ", &format_time(time)),
+                    level: &format!(" {} ", &detect_info.level),
+                    computername: &format!(" {} ", &detect_info.computername),
+                    eventid: &format!(" {} ", &detect_info.eventid),
+                    alert: &format!(" {} ", &detect_info.alert),
+                    details: &format!(" {}", &detect_info.detail),
+                })?;
+            } else {
+                // csv出力時フォーマット
+                wtr.serialize(CsvFormat {
+                    time: &format_time(time),
+                    filepath: &detect_info.filepath,
+                    rulepath: &detect_info.rulepath,
+                    level: &detect_info.level,
+                    computername: &detect_info.computername,
+                    eventid: &detect_info.eventid,
+                    alert: &detect_info.alert,
+                    details: &detect_info.detail,
+                })?;
+            }
         }
         detect_count += detect_infos.len();
     }
@@ -82,7 +113,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W) -> Result<(), Box<dyn Error>> {
 
     wtr.flush()?;
     println!("");
-    println!("Total Events Detected:{:?}", detect_count);
+    println!("Total events detected: {:?}", detect_count);
     Ok(())
 }
 
@@ -107,81 +138,165 @@ where
     }
 }
 
-#[test]
-fn test_emit_csv() {
+#[cfg(test)]
+mod tests {
+    use crate::afterfact::emit_csv;
+    use crate::detections::print;
+    use chrono::{Local, TimeZone, Utc};
     use serde_json::Value;
+    use std::fs::File;
     use std::fs::{read_to_string, remove_file};
-    let testfilepath: &str = "test.evtx";
-    let testrulepath: &str = "test-rule.yml";
-    let test_title = "test_title";
-    let test_level = "high";
-    let test_computername = "testcomputer";
-    let test_eventid = "1111";
-    let output = "pokepoke";
-    {
-        let mut messages = print::MESSAGES.lock().unwrap();
+    use std::io;
 
-        let val = r##"
-        {
-            "Event": {
-                "EventData": {
-                    "CommandRLine": "hoge"
-                },
-                "System": {
-                    "TimeCreated_attributes": {
-                        "SystemTime": "1996-02-27T01:05:01Z"
-                    }
-                }
-            }
-        }
-    "##;
-        let event: Value = serde_json::from_str(val).unwrap();
-        messages.insert(
-            testfilepath.to_string(),
-            testrulepath.to_string(),
-            &event,
-            test_level.to_string(),
-            test_computername.to_string(),
-            test_eventid.to_string(),
-            test_title.to_string(),
-            output.to_string(),
-        );
+    #[test]
+    fn test_emit_csv() {
+        //テストの並列処理によって読み込みの順序が担保できずstatic変数の内容が担保が取れない為、このテストはシーケンシャルで行う
+        test_emit_csv_output();
+        test_emit_csv_output();
     }
 
-    let expect_time = Utc
-        .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-        .unwrap();
-    let expect_tz = expect_time.with_timezone(&Local);
-    let expect = "Time,Computername,Eventid,Level,Alert,Details,Rulepath,Filepath\n".to_string()
-        + &expect_tz
-            .clone()
-            .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-            .to_string()
-        + ","
-        + test_computername
-        + ","
-        + test_eventid
-        + ","
-        + test_level
-        + ","
-        + test_title
-        + ","
-        + output
-        + ","
-        + testrulepath
-        + ","
-        + &testfilepath.to_string()
-        + "\n";
-
-    let mut file: Box<dyn io::Write> =
-        Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
-    assert!(emit_csv(&mut file).is_ok());
-
-    match read_to_string("./test_emit_csv.csv") {
-        Err(_) => panic!("Failed to open file"),
-        Ok(s) => {
-            assert_eq!(s, expect);
+    fn test_emit_csv_output() {
+        let testfilepath: &str = "test.evtx";
+        let testrulepath: &str = "test-rule.yml";
+        let test_title = "test_title";
+        let test_level = "high";
+        let test_computername = "testcomputer";
+        let test_eventid = "1111";
+        let output = "pokepoke";
+        {
+            let mut messages = print::MESSAGES.lock().unwrap();
+            messages.clear();
+            let val = r##"
+                {
+                    "Event": {
+                        "EventData": {
+                            "CommandRLine": "hoge"
+                        },
+                        "System": {
+                            "TimeCreated_attributes": {
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
+                    }
+                }
+            "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            messages.insert(
+                testfilepath.to_string(),
+                testrulepath.to_string(),
+                &event,
+                test_level.to_string(),
+                test_computername.to_string(),
+                test_eventid.to_string(),
+                test_title.to_string(),
+                output.to_string(),
+            );
         }
-    };
-    assert!(remove_file("./test_emit_csv.csv").is_ok());
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Local);
+        let expect = "Time,Computername,Eventid,Level,Alert,Details,Rulepath,Filepath\n"
+            .to_string()
+            + &expect_tz
+                .clone()
+                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
+            + ","
+            + test_computername
+            + ","
+            + test_eventid
+            + ","
+            + test_level
+            + ","
+            + test_title
+            + ","
+            + output
+            + ","
+            + testrulepath
+            + ","
+            + &testfilepath.to_string()
+            + "\n";
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
+        assert!(emit_csv(&mut file, false).is_ok());
+        match read_to_string("./test_emit_csv.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect);
+            }
+        };
+        assert!(remove_file("./test_emit_csv.csv").is_ok());
+        check_emit_csv_display();
+    }
+
+    fn check_emit_csv_display() {
+        let testfilepath: &str = "test2.evtx";
+        let testrulepath: &str = "test-rule2.yml";
+        let test_title = "test_title2";
+        let test_level = "medium";
+        let test_computername = "testcomputer2";
+        let test_eventid = "2222";
+        let output = "displaytest";
+        {
+            let mut messages = print::MESSAGES.lock().unwrap();
+            messages.clear();
+            let val = r##"
+                {
+                    "Event": {
+                        "EventData": {
+                            "CommandRLine": "hoge"
+                        },
+                        "System": {
+                            "TimeCreated_attributes": {
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
+                    }
+                }
+            "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            messages.insert(
+                testfilepath.to_string(),
+                testrulepath.to_string(),
+                &event,
+                test_level.to_string(),
+                test_computername.to_string(),
+                test_eventid.to_string(),
+                test_title.to_string(),
+                output.to_string(),
+            );
+            messages.debug();
+        }
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Local);
+        let expect = "Time|Computername|Eventid|Level|Alert|Details\n".to_string()
+            + &expect_tz
+                .clone()
+                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
+            + " | "
+            + test_computername
+            + " | "
+            + test_eventid
+            + " | "
+            + test_level
+            + " | "
+            + test_title
+            + " | "
+            + output
+            + "\n";
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv_display.txt".to_string()).unwrap());
+        assert!(emit_csv(&mut file, true).is_ok());
+        match read_to_string("./test_emit_csv_display.txt") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect);
+            }
+        };
+        assert!(remove_file("./test_emit_csv_display.txt").is_ok());
+    }
 }

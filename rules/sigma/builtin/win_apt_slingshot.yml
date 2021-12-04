@@ -29,3 +29,4 @@ tags:
 - attack.persistence
 - attack.t1053
 - attack.s0111
+ruletype: SIGMA

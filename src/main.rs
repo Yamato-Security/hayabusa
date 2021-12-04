@@ -10,6 +10,8 @@ use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
+use pbr::ProgressBar;
+use serde_json::Value;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -36,7 +38,7 @@ fn main() {
         if !filepath.ends_with(".evtx") {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                "--filepath is only accepted evtx file.".to_owned(),
+                "--filepath only accepts .evtx files.".to_owned(),
             )
             .ok();
             return;
@@ -47,7 +49,7 @@ fn main() {
         if evtx_files.len() == 0 {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                "No exist evtx file.".to_owned(),
+                "No .evtx files were found.".to_owned(),
             )
             .ok();
             return;
@@ -116,19 +118,21 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .unwrap()
         .args
         .value_of("level")
-        .unwrap_or("INFO")
+        .unwrap_or("informational")
         .to_uppercase();
-    println!("Analyzing Event Files: {:?}", evtx_files.len());
+    println!("Analyzing event files: {:?}", evtx_files.len());
     let rule_files = detection::Detection::parse_rule_files(
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
     );
+    let mut pb = ProgressBar::new(evtx_files.len() as u64);
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
         if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-            println!("check target evtx FilePath: {:?}", &evtx_file);
+            println!("Checking target evtx FilePath: {:?}", &evtx_file);
         }
         detection = analysis_file(evtx_file, detection);
+        pb.inc();
     }
     after_fact();
     detection.print_unique_results();
@@ -172,6 +176,21 @@ fn analysis_file(
             }
 
             let data = record_result.unwrap().data;
+
+            // target_eventids.txtでフィルタする。
+            let eventid = utils::get_event_value(&utils::get_event_id_key(), &data);
+            if eventid.is_some() {
+                let is_target = match eventid.unwrap() {
+                    Value::String(s) => utils::is_target_event_id(s),
+                    Value::Number(n) => utils::is_target_event_id(&n.to_string()),
+                    _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
+                };
+                if !is_target {
+                    continue;
+                }
+            }
+
+            // EvtxRecordInfo構造体に変更
             let data_string = data.to_string();
             let record_info = EvtxRecordInfo::new((&filepath_disp).to_string(), data, data_string);
             records_per_detect.push(record_info);

@@ -33,3 +33,4 @@ tags:
 - attack.discovery
 - attack.t1083
 - attack.t1135
+ruletype: SIGMA

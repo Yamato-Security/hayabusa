@@ -76,3 +76,4 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1055
+ruletype: SIGMA

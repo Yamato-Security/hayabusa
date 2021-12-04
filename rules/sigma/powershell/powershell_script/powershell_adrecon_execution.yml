@@ -27,3 +27,4 @@ tags:
 - attack.discovery
 - attack.execution
 - attack.t1059.001
+ruletype: SIGMA

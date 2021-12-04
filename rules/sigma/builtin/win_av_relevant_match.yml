@@ -41,3 +41,4 @@ status: experimental
 tags:
 - attack.resource_development
 - attack.t1588
+ruletype: SIGMA

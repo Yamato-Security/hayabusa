@@ -29,3 +29,4 @@ tags:
 - attack.defense_evasion
 - attack.t1096
 - attack.t1564.004
+ruletype: SIGMA

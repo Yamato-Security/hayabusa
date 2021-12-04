@@ -30,3 +30,4 @@ tags:
 - attack.t1037.001
 - attack.persistence
 - attack.lateral_movement
+ruletype: SIGMA
