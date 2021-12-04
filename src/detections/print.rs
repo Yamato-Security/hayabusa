@@ -30,6 +30,7 @@ pub struct AlertMessage {}
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
+    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
 }
 
 impl Message {
@@ -101,8 +102,7 @@ impl Message {
     fn parse_message(&mut self, event_record: &Value, output: String) -> String {
         let mut return_message: String = output;
         let mut hash_map: HashMap<String, String> = HashMap::new();
-        let re = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
-        for caps in re.captures_iter(&return_message) {
+        for caps in ALIASREGEX.captures_iter(&return_message) {
             let full_target_str = &caps[0];
             let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
             let target_str = full_target_str
@@ -118,16 +118,20 @@ impl Message {
                 .get_event_key(target_str.to_string())
             {
                 let split: Vec<&str> = array_str.split(".").collect();
+                let mut is_exist_event_key = false;
                 let mut tmp_event_record: &Value = event_record.into();
                 for s in split {
                     if let Some(record) = tmp_event_record.get(s) {
+                        is_exist_event_key = true;
                         tmp_event_record = record;
                     }
                 }
-                hash_map.insert(
-                    full_target_str.to_string(),
-                    get_serde_number_to_string(tmp_event_record),
-                );
+                if is_exist_event_key {
+                    let hash_value = get_serde_number_to_string(tmp_event_record);
+                    if hash_value.is_some() {
+                        hash_map.insert(full_target_str.to_string(), hash_value.unwrap());
+                    }
+                }
             }
         }
 
@@ -331,5 +335,88 @@ mod tests {
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
         AlertMessage::alert(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
+    }
+
+    #[test]
+    /// outputで指定されているキー(eventkey_alias.txt内で設定済み)から対象のレコード内の情報でメッセージをパースしているか確認する関数
+    fn test_parse_message() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest1"
+                },
+                "System": {
+                    "Computer": "testcomputer1",
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "commandline:parsetest1 computername:testcomputer1";
+        assert_eq!(
+            message.parse_message(
+                &event_record,
+                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+            ),
+            expected,
+        );
+    }
+    #[test]
+    /// outputで指定されているキーが、eventkey_alias.txt内で設定されていない場合の出力テスト
+    fn test_parse_message_not_exist_key_in_output() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest2"
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "NoExistKey:%TESTNoExistKey%";
+        assert_eq!(
+            message.parse_message(&event_record, "NoExistKey:%TESTNoExistKey%".to_owned()),
+            expected,
+        );
+    }
+    #[test]
+    /// outputで指定されているキー(eventkey_alias.txt内で設定済み)が対象のレコード内に該当する情報がない場合の出力テスト
+    fn test_parse_message_not_exist_value_in_record() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest3"
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "commandline:parsetest3 computername:%ComputerName%";
+        assert_eq!(
+            message.parse_message(
+                &event_record,
+                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+            ),
+            expected,
+        );
     }
 }
