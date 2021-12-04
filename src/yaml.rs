@@ -142,8 +142,8 @@ impl ParseYaml {
                     .no_use_rule
                     .get(&yaml_doc["id"].as_str().unwrap_or("").to_string())
                 {
-                    Some(_) => (),
-                    None => {
+                     None => (),
+                     Some(_) => {
                         self.ignorerule_count += 1;
                         return Option::None;
                     }
