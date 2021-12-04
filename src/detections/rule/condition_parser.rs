@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use regex::Regex;
 
 use self::selectionnodes::{
@@ -5,6 +6,16 @@ use self::selectionnodes::{
 };
 use super::selectionnodes;
 use std::{collections::HashMap, sync::Arc};
+
+lazy_static! {
+    pub static ref CONDITION_REGEXMAP: Vec<Regex> = vec![
+        Regex::new(r"^\(").unwrap(),
+        Regex::new(r"^\)").unwrap(),
+        Regex::new(r"^ ").unwrap(),
+        Regex::new(r"^\w+").unwrap(),
+    ];
+    pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
+}
 
 #[derive(Debug, Clone)]
 /// 字句解析で出てくるトークン
@@ -92,25 +103,12 @@ impl ConditionToken {
 }
 
 #[derive(Debug)]
-pub struct ConditionCompiler {
-    regex_patterns: Vec<Regex>,
-}
+pub struct ConditionCompiler {}
 
 // conditionの式を読み取るクラス。
 impl ConditionCompiler {
     pub fn new() -> Self {
-        // ここで字句解析するときに使う正規表現の一覧を定義する。
-        let mut regex_patterns = vec![];
-        regex_patterns.push(Regex::new(r"^\(").unwrap());
-        regex_patterns.push(Regex::new(r"^\)").unwrap());
-        regex_patterns.push(Regex::new(r"^ ").unwrap());
-        // ^\w+については、sigmaのソースのsigma/tools/sigma/parser/condition.pyのSigmaConditionTokenizerを参考にしている。
-        // 上記ソースの(SigmaConditionToken.TOKEN_ID,     re.compile("[\\w*]+")),を参考。
-        regex_patterns.push(Regex::new(r"^\w+").unwrap());
-
-        return ConditionCompiler {
-            regex_patterns: regex_patterns,
-        };
+        ConditionCompiler {}
     }
 
     pub fn compile_condition(
@@ -119,8 +117,7 @@ impl ConditionCompiler {
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
     ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
         // パイプはここでは処理しない
-        let re_pipe = Regex::new(r"\|.*").unwrap();
-        let captured = re_pipe.captures(&condition_str);
+        let captured = self::RE_PIPE.captures(&condition_str);
         let condition_str = if captured.is_some() {
             let captured = captured.unwrap().get(0).unwrap().as_str().to_string();
             condition_str.replacen(&captured, "", 1)
@@ -192,7 +189,7 @@ impl ConditionCompiler {
 
         let mut tokens = Vec::new();
         while cur_condition_str.len() != 0 {
-            let captured = self.regex_patterns.iter().find_map(|regex| {
+            let captured = self::CONDITION_REGEXMAP.iter().find_map(|regex| {
                 return regex.captures(cur_condition_str.as_str());
             });
             if captured.is_none() {
