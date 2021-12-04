@@ -151,9 +151,9 @@ impl Detection {
             "Medium",
             "Low",
             "Informational",
-            "Undeifned",
+            "Undefined",
         ]);
-        // levclcounts is [(Undeifned), (Informational), (Low),(Medium),(High),(Critical)]
+        // levclcounts is [(Undefined), (Informational), (Low),(Medium),(High),(Critical)]
         let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
         for rule in rules.into_iter() {
             if rule.check_exist_countdata() {
