@@ -66,8 +66,7 @@ impl AggegationConditionCompiler {
         condition_str: String,
     ) -> Result<Option<AggregationParseInfo>, String> {
         // パイプの部分だけを取り出す
-        let re_pipe = Regex::new(r"\|.*").unwrap();
-        let captured = re_pipe.captures(&condition_str);
+        let captured = self::RE_PIPE.captures(&condition_str);
         if captured.is_none() {
             // パイプが無いので終了
             return Result::Ok(Option::None);
