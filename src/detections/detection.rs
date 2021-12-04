@@ -157,9 +157,9 @@ impl Detection {
             "Medium",
             "Low",
             "Informational",
-            "Undeifned",
+            "Undefined",
         ]);
-        // levclcounts is [(Undeifned), (Informational), (Low),(Medium),(High),(Critical)]
+        // levclcounts is [(Undefined), (Informational), (Low),(Medium),(High),(Critical)]
         let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
         for rule in rules.into_iter() {
             if rule.check_exist_countdata() {
@@ -212,7 +212,9 @@ impl Detection {
             record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"]),
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+                .unwrap_or("-".to_owned())
+                .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["output"].as_str().unwrap_or("").to_string(),
         );

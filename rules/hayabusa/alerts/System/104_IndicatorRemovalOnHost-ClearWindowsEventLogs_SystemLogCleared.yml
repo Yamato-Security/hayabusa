@@ -9,7 +9,7 @@ output_jp: "ユーザ名: %LogFileClearedSubjectUserName%"
 description: Somebody has cleared the System event log.
 description_jp: 誰かがシステムログをクリアした。
 
-id: c2f690ac-53f8-4745-8cfe-7127dda28c74
+id: f481a1f3-969e-4187-b3a5-b47c272bfebd
 level: high
 status: stable
 detection:

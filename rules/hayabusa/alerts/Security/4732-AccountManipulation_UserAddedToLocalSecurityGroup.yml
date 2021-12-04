@@ -9,7 +9,7 @@ output_jp: 'ユーザ: %MemberName%  :  SID: %MemberSid%  :  グループ名: %T
 description: A user was added to a security-enabled local group.
 description_jp: ユーザがローカルセキュリティグループに追加された。
 
-id: 611e2e76-a28f-4255-812c-eb8836b2f5bb
+id: 2f04e44e-1c79-4343-b4ab-ba670ee10aa0
 level: low
 status: stable
 detection:
