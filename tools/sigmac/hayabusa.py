@@ -204,7 +204,7 @@ class HayabusaBackend(SingleTextQueryBackend):
     def generateANDNode(self, node):
         generated = list()
         for val in node:
-            if type(val) == str:
+            if type(val) == str or type(val) == int:
                 # 普通はtupleでkeyとvalueのペアであるが、これはkeyが指定されていないケース
                 # keyが指定されていない場合は、EventLog全体をgrep検索することになっている。(詳細はSigmaルールの仕様書を参照のこと)
                 # 具体的には"all of"とか使うとこの分岐に来る
@@ -235,7 +235,7 @@ class HayabusaBackend(SingleTextQueryBackend):
         generated = list()
         for val in node:
             # 普通はtupleでkeyとvalueのペアであるが、これはkeyが指定されていないケース
-            if type(val) == str:
+            if type(val) == str or type(val) == int:
                 if name is None:
                     name = self.create_new_selection()
                     self.name_2_selection[name] = list()
