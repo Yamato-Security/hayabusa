@@ -12,7 +12,7 @@ use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -135,16 +135,16 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
     }
 
     let mut fill_ids = fillter::RuleFill {
-        no_use_rule: HashMap::from([("".to_string(), true)]),
+        no_use_rule: HashSet::new(),
     };
 
     for v in ids.split_whitespace().next() {
-        fill_ids.no_use_rule.insert(v.to_string(), true);
+        fill_ids.no_use_rule.insert(v.to_string());
     }
     let rule_files = detection::Detection::parse_rule_files(
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
-        fill_ids,
+        &fill_ids,
     );
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {

@@ -55,7 +55,7 @@ impl Detection {
     pub fn parse_rule_files(
         level: String,
         rulespath: Option<&str>,
-        fill_ids: RuleFill,
+        fill_ids: &RuleFill,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
@@ -274,8 +274,8 @@ fn test_parse_rule_files() {
     let level = "informational";
     let opt_rule_path = Some("./test_files/rules/level_yaml");
     let fill_ids = RuleFill {
-        no_use_rule: HashMap::from([("".to_string(), true)]),
+        no_use_rule: std::collections::HashSet::new(),
     };
-    let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path, fill_ids);
+    let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path, &fill_ids);
     assert_eq!(5, cole.len());
 }
