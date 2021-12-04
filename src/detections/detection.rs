@@ -175,7 +175,7 @@ impl Detection {
             println!("{} alerts: {}", levellabel[i], value);
             total_unique += value;
         }
-        println!("Unique events detected: {}", total_unique);
+        println!("Unique alerts detected: {}", total_unique);
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
