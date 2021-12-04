@@ -64,7 +64,7 @@ pub fn after_fact() {
     } else {
         displayflag = true;
         // 標準出力に出力する場合
-        Box::new(io::stdout())
+        Box::new(BufWriter::new(io::stdout()))
     };
 
     if let Err(err) = emit_csv(&mut target, displayflag) {
