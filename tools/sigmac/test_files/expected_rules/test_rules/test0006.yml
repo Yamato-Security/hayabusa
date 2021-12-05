@@ -1,0 +1,20 @@
+
+title: test
+ruletype: SIGMA
+author: test
+date: 2021/12/4
+description: "contains modifier\n"
+detection:
+  SELECTION_1:
+    UserName: '*hogehoge*'
+  SELECTION_2:
+    TargetUserName: '*testest2*'
+  condition: (SELECTION_1 or SELECTION_2)
+falsepositives:
+- Unknown
+id: ff151c33-45fa-475d-af4f-c2f93571f4fe
+level: medium
+logsource:
+  product: windows
+  service: security
+status: experimental

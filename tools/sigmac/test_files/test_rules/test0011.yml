@@ -1,0 +1,28 @@
+title: test
+id: ff151c33-45fa-475d-af4f-c2f93571f4fe
+description: |
+    1 of
+status: experimental
+date: 2021/12/4
+author: test
+logsource:
+    product: windows
+    service: security
+detection:
+    selection1:
+        EventID: 
+            - 3
+            - 7
+        UserName: abc
+    selection2:
+        process: nnn
+        parentprocess: sss
+    selection3:
+        uuu: zzzz
+        xxxx: yyyyy
+    another:
+        ppp: iiii
+    condition: 1 of selection* and another
+falsepositives:
+    - Unknown
+level: medium

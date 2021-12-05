@@ -1,0 +1,26 @@
+
+title: test
+ruletype: SIGMA
+author: test
+date: 2021/12/4
+description: "re modifier test\n"
+detection:
+  SELECTION_1:
+    UserName|re: aaa
+  SELECTION_2:
+    UserName2|re: .*bbbb$
+  SELECTION_3:
+    UserName3|re: cccc/dd/dd
+  SELECTION_4:
+    UserName4|re: cccc"dddd
+  SELECTION_5:
+    UserName5|re: cccc"dddd
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Unknown
+id: ff151c33-45fa-475d-af4f-c2f93571f4fe
+level: medium
+logsource:
+  product: windows
+  service: security
+status: experimental

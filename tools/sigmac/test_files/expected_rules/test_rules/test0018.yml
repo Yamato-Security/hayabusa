@@ -1,0 +1,27 @@
+
+title: test
+ruletype: SIGMA
+author: test
+date: 2021/12/4
+description: "() \n"
+detection:
+  SELECTION_1:
+    EventID: 3
+  SELECTION_2:
+    aaa: bbb
+  SELECTION_3:
+    ccc: ddd
+  SELECTION_4:
+    eee: fff
+  SELECTION_5:
+    ggg: hhh
+  condition: ((SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4))) or
+    SELECTION_5)
+falsepositives:
+- Unknown
+id: ff151c33-45fa-475d-af4f-c2f93571f4fe
+level: medium
+logsource:
+  product: windows
+  service: security
+status: experimental

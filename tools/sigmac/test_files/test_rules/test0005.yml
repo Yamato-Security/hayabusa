@@ -1,0 +1,24 @@
+title: test
+id: ff151c33-45fa-475d-af4f-c2f93571f4fe
+description: |
+    all modifier
+status: experimental
+date: 2021/12/4
+author: test
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        - 2
+        - dee
+        - testtesttest
+    SELECTION_2:
+        EventID|all:
+            - 22
+            - 33
+            - hoge
+    condition: selection and SELECTION_2
+falsepositives:
+    - Unknown
+level: medium
