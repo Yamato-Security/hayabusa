@@ -270,9 +270,16 @@ class HayabusaBackend(SingleTextQueryBackend):
             bs.write("title: " + parsed_yaml["title"]+"\n")
             bs.write("ruletype: SIGMA\n")
             del parsed_yaml["title"]
+            
+            # detectionの部分をクリアする前にtimeflameだけ確保しておく。
+            timeflame = None
+            if "timeflame" in parsed_yaml["detection"]:
+                timeflame = parsed_yaml["detection"]["timeflame"]
 
             # detectionの部分だけ変更して出力する。
             parsed_yaml["detection"] = {}
+            if timeflame is not None and len(timeflame) != 0:
+                parsed_yaml["detection"]["timeflame"] = timeflame
             parsed_yaml["detection"]["condition"] = result
             for key, values in self.name_2_selection.items():
                 # fieldnameの有無を確認している
@@ -290,6 +297,7 @@ class HayabusaBackend(SingleTextQueryBackend):
                     else:
                         ## is_keyword_list() == Falseの場合
                         parsed_yaml["detection"][key][fieldname] = value
+                        
             yaml.dump(parsed_yaml, bs, indent=4, default_flow_style=False)
             ret = bs.getvalue()
             ret += "---\n"

@@ -1,0 +1,22 @@
+title: test
+id: ff151c33-45fa-475d-af4f-c2f93571f4fe
+description: |
+    re modifier test
+status: experimental
+date: 2021/12/4
+author: test
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        UserName|re: aaa
+        UserName2|re: .*bbbb$
+        UserName3|re: cccc\/dd/\//dd # see hayabusa.py generateMapItemTypedNode()
+        UserName4|re: cccc\"dd"\""dd # see hayabusa.py generateMapItemTypedNode()
+        UserName5|re: cccc{{3}0dddd # see hayabusa.py generateMapItemTypedNode()
+        UserName6|re: cccc{{3}0d{32}dd # see hayabusa.py generateMapItemTypedNode()
+    condition: selection
+falsepositives:
+    - Unknown
+level: medium
