@@ -1,4 +1,22 @@
+use lazy_static::lazy_static;
 use regex::Regex;
+
+lazy_static! {
+    // ここで字句解析するときに使う正規表現の一覧を定義する。
+    // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
+    pub static ref AGGREGATION_REGEXMAP: Vec<Regex> = vec![
+        Regex::new(r"^count\( *\w* *\)").unwrap(), // countの式
+        Regex::new(r"^ ").unwrap(),
+        Regex::new(r"^by").unwrap(),
+        Regex::new(r"^==").unwrap(),
+        Regex::new(r"^<=").unwrap(),
+        Regex::new(r"^>=").unwrap(),
+        Regex::new(r"^<").unwrap(),
+        Regex::new(r"^>").unwrap(),
+        Regex::new(r"^\w+").unwrap(),
+    ];
+    pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
+}
 
 #[derive(Debug)]
 pub struct AggregationParseInfo {
@@ -24,28 +42,11 @@ pub enum AggregationConditionToken {
 /// SIGMAルールでいうAggregationConditionを解析する。
 /// AggregationConditionはconditionに指定された式のパイプ以降の部分を指してます。
 #[derive(Debug)]
-pub struct AggegationConditionCompiler {
-    regex_patterns: Vec<Regex>,
-}
+pub struct AggegationConditionCompiler {}
 
 impl AggegationConditionCompiler {
     pub fn new() -> Self {
-        // ここで字句解析するときに使う正規表現の一覧を定義する。
-        // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
-        let mut regex_patterns = vec![];
-        regex_patterns.push(Regex::new(r"^count\( *\w* *\)").unwrap()); // countの式
-        regex_patterns.push(Regex::new(r"^ ").unwrap());
-        regex_patterns.push(Regex::new(r"^by").unwrap());
-        regex_patterns.push(Regex::new(r"^==").unwrap());
-        regex_patterns.push(Regex::new(r"^<=").unwrap());
-        regex_patterns.push(Regex::new(r"^>=").unwrap());
-        regex_patterns.push(Regex::new(r"^<").unwrap());
-        regex_patterns.push(Regex::new(r"^>").unwrap());
-        regex_patterns.push(Regex::new(r"^\w+").unwrap());
-
-        return AggegationConditionCompiler {
-            regex_patterns: regex_patterns,
-        };
+        AggegationConditionCompiler {}
     }
 
     pub fn compile(&self, condition_str: String) -> Result<Option<AggregationParseInfo>, String> {
@@ -65,8 +66,7 @@ impl AggegationConditionCompiler {
         condition_str: String,
     ) -> Result<Option<AggregationParseInfo>, String> {
         // パイプの部分だけを取り出す
-        let re_pipe = Regex::new(r"\|.*").unwrap();
-        let captured = re_pipe.captures(&condition_str);
+        let captured = self::RE_PIPE.captures(&condition_str);
         if captured.is_none() {
             // パイプが無いので終了
             return Result::Ok(Option::None);
@@ -94,7 +94,7 @@ impl AggegationConditionCompiler {
 
         let mut tokens = Vec::new();
         while cur_condition_str.len() != 0 {
-            let captured = self.regex_patterns.iter().find_map(|regex| {
+            let captured = self::AGGREGATION_REGEXMAP.iter().find_map(|regex| {
                 return regex.captures(cur_condition_str.as_str());
             });
             if captured.is_none() {
