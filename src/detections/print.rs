@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::sync::Mutex;
+use crate::detections::utils;
 
 #[derive(Debug)]
 pub struct Message {
@@ -174,23 +175,7 @@ impl Message {
 
     pub fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
         let system_time = &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"];
-        let system_time_str = system_time.as_str().unwrap_or("");
-        if system_time_str.is_empty() {
-            return Option::None;
-        }
-
-        let rfc3339_time = DateTime::parse_from_rfc3339(system_time_str);
-        if rfc3339_time.is_err() {
-            return Option::None;
-        }
-        let datetime = Utc
-            .from_local_datetime(&rfc3339_time.unwrap().naive_utc())
-            .single();
-        if datetime.is_none() {
-            return Option::None;
-        } else {
-            return Option::Some(datetime.unwrap());
-        }
+        return utils::str_time_to_datetime(system_time.as_str().unwrap_or(""));
     }
 
     /// message内のマップをクリアする。テストする際の冪等性の担保のため作成。
