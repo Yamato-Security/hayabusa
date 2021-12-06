@@ -121,43 +121,42 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .unwrap_or("informational")
         .to_uppercase();
 
-    // TODO: config.rs に移す
-    // ./target/debug/hayabusa -f ./test_files/evtx/test1.evtx --start-time 2014-11-28T12:00:09Z
-    let start_time = if let Some(s_time) = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .value_of("start-time")
-    {
-        match s_time.parse::<DateTime<Utc>>() {
-            Ok(dt)=> Some(dt),
-            Err(err) => {
-                AlertMessage::alert(&mut std::io::stderr().lock(), format!("start-time field: {}", err)).ok();
-                None
-            }
-        }
-    } else {
-        None
-    };
+    // // TODO: config.rs に移す
+    // // ./target/debug/hayabusa -f ./test_files/evtx/test1.evtx --start-time 2014-11-28T12:00:09Z
+    // let start_time =
+    //     if let Some(s_time) = configs::CONFIG.read().unwrap().args.value_of("start-time") {
+    //         match s_time.parse::<DateTime<Utc>>() {
+    //             Ok(dt) => Some(dt),
+    //             Err(err) => {
+    //                 AlertMessage::alert(
+    //                     &mut std::io::stderr().lock(),
+    //                     format!("start-time field: {}", err),
+    //                 )
+    //                 .ok();
+    //                 None
+    //             }
+    //         }
+    //     } else {
+    //         None
+    //     };
 
-    let end_time= if let Some(e_time) = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .value_of("end-time")
-    {
-        match e_time.parse::<DateTime<Utc>>() {
-            Ok(dt)=> Some(dt),
-            Err(err) => {
-                AlertMessage::alert(&mut std::io::stderr().lock(), format!("start-time field: {}", err)).ok();
-                None
-            }
-        }
-    } else {
-        None
-    };
+    // let end_time = if let Some(e_time) = configs::CONFIG.read().unwrap().args.value_of("end-time") {
+    //     match e_time.parse::<DateTime<Utc>>() {
+    //         Ok(dt) => Some(dt),
+    //         Err(err) => {
+    //             AlertMessage::alert(
+    //                 &mut std::io::stderr().lock(),
+    //                 format!("start-time field: {}", err),
+    //             )
+    //             .ok();
+    //             None
+    //         }
+    //     }
+    // } else {
+    //     None
+    // };
 
-    println!("TIME: {:?}", start_time);
+    // println!("TIME: {:?}", start_time);
     println!("Analyzing Event Files: {:?}", evtx_files.len());
     let rule_files = detection::Detection::parse_rule_files(
         level,
@@ -192,6 +191,8 @@ fn analysis_file(
     let mut records = parser.records_json_value();
     let tokio_rt = utils::create_tokio_runtime();
 
+    let target_event_time = configs::TargetEventTime::new();
+
     loop {
         let mut records_per_detect = vec![];
         while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -224,6 +225,14 @@ fn analysis_file(
                     _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
                 };
                 if !is_target {
+                    continue;
+                }
+            }
+
+            let eventtime = utils::get_event_value(&utils::get_event_time(), &data);
+            if eventtime.is_some() {
+                let time = utils::str_time_to_datetime(eventtime.unwrap().as_str().unwrap_or(""));
+                if !target_event_time.is_target(&time) {
                     continue;
                 }
             }

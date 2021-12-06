@@ -7,6 +7,7 @@ use crate::detections::configs;
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
 
+use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use serde_json::Value;
 use std::fs::File;
@@ -14,7 +15,6 @@ use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
-use chrono::{DateTime, TimeZone, Utc};
 
 pub fn concat_selection_key(key_list: &Vec<String>) -> String {
     return key_list

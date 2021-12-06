@@ -1,4 +1,6 @@
+use crate::detections::print::AlertMessage;
 use crate::detections::utils;
+use chrono::{DateTime, Utc};
 use clap::{App, AppSettings, ArgMatches};
 use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
@@ -116,6 +118,68 @@ fn load_target_ids(path: &str) -> TargetEventIds {
     }
 
     return ret;
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetEventTime {
+    start_time: Option<DateTime<Utc>>,
+    end_time: Option<DateTime<Utc>>,
+}
+
+impl TargetEventTime {
+    pub fn new() -> TargetEventTime {
+        let start_time = if let Some(s_time) = CONFIG.read().unwrap().args.value_of("start-time") {
+            match s_time.parse::<DateTime<Utc>>() {
+                Ok(dt) => Some(dt),
+                Err(err) => {
+                    AlertMessage::alert(
+                        &mut std::io::stderr().lock(),
+                        format!("start-time field: {}", err),
+                    )
+                    .ok();
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("end-time") {
+            match e_time.parse::<DateTime<Utc>>() {
+                Ok(dt) => Some(dt),
+                Err(err) => {
+                    AlertMessage::alert(
+                        &mut std::io::stderr().lock(),
+                        format!("start-time field: {}", err),
+                    )
+                    .ok();
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        return TargetEventTime {
+            start_time: start_time,
+            end_time: end_time,
+        };
+    }
+
+    pub fn is_target(&self, eventtime: &Option<DateTime<Utc>>) -> bool {
+        if eventtime.is_none() {
+            return true;
+        }
+        if let Some(starttime) = self.start_time {
+            if eventtime.unwrap() < starttime {
+                return false;
+            }
+        }
+        if let Some(endtime) = self.end_time {
+            if eventtime.unwrap() > endtime {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 #[derive(Debug, Clone)]

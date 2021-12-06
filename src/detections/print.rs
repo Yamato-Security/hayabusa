@@ -1,5 +1,6 @@
 extern crate lazy_static;
 use crate::detections::configs;
+use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
 use chrono::{DateTime, TimeZone, Utc};
 use lazy_static::lazy_static;
@@ -9,7 +10,6 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::sync::Mutex;
-use crate::detections::utils;
 
 #[derive(Debug)]
 pub struct Message {
