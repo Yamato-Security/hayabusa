@@ -73,3 +73,4 @@ status: experimental
 tags:
 - attack.initial_access
 - attack.t1189
+ruletype: SIGMA

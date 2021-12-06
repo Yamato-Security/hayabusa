@@ -58,3 +58,4 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1203
+ruletype: SIGMA

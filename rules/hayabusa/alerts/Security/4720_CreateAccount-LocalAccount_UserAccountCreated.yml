@@ -1,10 +1,7 @@
-#Author info
-author: Eric Conrad, Zach Mathis
-contributor: Akira Nishikawa, James Takai
+author: Eric Conrad, Yamato Security
 creation_date: 2020/11/08
-uodated_date:  2021/11/22
+uodated_date:  2021/11/26
 
-#Alert messages
 title: Local user account created
 title_jp: ローカルユーザアカウントが作成された
 output: 'User: %TargetUserName%  :  SID:%TargetSid%'
@@ -12,9 +9,8 @@ output_jp: 'ユーザ名: %TargetUserName%  :  SID:%TargetSid%'
 description: A local user account was created.
 description_jp: ローカルユーザアカウントが作成された.
 
-#Detection rule
 id: 13edce80-2b02-4469-8de4-a3e37271dcdb
-level: low
+level: medium
 status: stable
 detection:
     selection:
@@ -30,3 +26,5 @@ tags:
     - attack.11136.001
 references:
     - https://attack.mitre.org/techniques/T1136/001/
+sample-evtx: ./sample-evtx/DeepBlueCLI/new-user-security.evtx
+ruletype: hayabusa

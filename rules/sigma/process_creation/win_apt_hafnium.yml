@@ -91,3 +91,4 @@ tags:
 - attack.persistence
 - attack.t1546
 - attack.t1053
+ruletype: SIGMA

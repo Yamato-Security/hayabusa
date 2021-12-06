@@ -31,3 +31,4 @@ tags:
 - attack.initial_access
 - attack.persistence
 - attack.privilege_escalation
+ruletype: SIGMA

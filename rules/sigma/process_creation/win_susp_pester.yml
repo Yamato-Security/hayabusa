@@ -42,3 +42,4 @@ tags:
 - attack.t1059.001
 - attack.defense_evasion
 - attack.t1216
+ruletype: SIGMA

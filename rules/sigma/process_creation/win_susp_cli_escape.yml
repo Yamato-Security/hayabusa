@@ -30,3 +30,4 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1140
+ruletype: SIGMA

@@ -30,3 +30,4 @@ tags:
 - attack.credential_access
 - attack.t1552.002
 - attack.s0075
+ruletype: SIGMA

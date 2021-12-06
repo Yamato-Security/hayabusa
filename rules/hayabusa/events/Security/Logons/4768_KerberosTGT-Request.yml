@@ -1,14 +1,24 @@
-title: Kerberos TGT was requested
-description: Prints logon information
 author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Kerberos TGT was requested
+title_jp: Kerberos TGTが要求された
+output: 'User: %TargetUserName%  :  Service: %ServiceName%  :  IP Address: %IpAddress%  :  Status: %Status%  :  PreAuthType: %PreAuthType%'
+output_jp: 'ユーザ: %TargetUserName%  :  サービス: %ServiceName%  :  IPアドレス: %IpAddress%  :  ステータス: %Status%  :  事前認証タイプ: %PreAuthType%'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: d9f336ea-bb16-4a35-8a9c-183216b8d59c
 level: informational
+status: stable
 detection:
     selection:
         Channel: Security
         EventID: 4768
-
 falsepositives:
     - normal system usage
-output: 'User: %TargetUserName%  :  Service: %ServiceName%  :  IP Address: %IpAddress%  :  Status: %Status%  :  PreAuthType: %PreAuthType%'
-creation_date: 2021/11/17
-updated_date: 2021/11/17
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

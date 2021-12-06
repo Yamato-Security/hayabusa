@@ -1,14 +1,24 @@
-title: NTLM Logon to Local Account
-description: Prints logon information
 author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: NTLM Logon to Local Account
+title_jp: ローカルアカウントへのNTLMログオン
+output: 'User: %TargetUserName%  :  Workstation %Workstation%  :  Status: %Status%'
+output_jp: 'ユーザ: %TargetUserName%  :  端末: %Workstation%  :  ステータス: %Status%'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: 4fbe94b0-577a-4f77-9b13-250e27d440fa
 level: informational
+status: stable
 detection:
     selection:
         Channel: Security
         EventID: 4776
-
 falsepositives:
     - normal system usage
-output: 'User: %TargetUserName%  :  Workstation %WorkstationName%  :  Status: %Status%'
-creation_date: 2021/11/17
-updated_date: 2021/11/17
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

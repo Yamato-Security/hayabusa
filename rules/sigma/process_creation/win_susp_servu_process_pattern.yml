@@ -41,3 +41,4 @@ tags:
 - attack.credential_access
 - attack.t1555
 - cve.2021.35211
+ruletype: SIGMA

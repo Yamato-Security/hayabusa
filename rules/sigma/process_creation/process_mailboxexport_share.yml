@@ -34,3 +34,4 @@ tags:
 - attack.t1505.003
 - attack.resource_development
 - attack.t1584.006
+ruletype: SIGMA

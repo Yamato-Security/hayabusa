@@ -35,3 +35,4 @@ status: experimental
 tags:
 - attack.registry_run_keys_/_startup_folder
 - attack.t1547.001
+ruletype: SIGMA

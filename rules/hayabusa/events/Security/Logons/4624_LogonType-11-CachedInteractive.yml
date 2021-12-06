@@ -1,15 +1,25 @@
-title: Logon Type 11 - CachedInteractive
-description: Prints logon information
 author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logon Type 11 - CachedInteractive
+title_jp: ログオンタイプ 11 - キャッシュされたインタラクティブ
+output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%  :  (Warning: Credentials are stored in memory)'
+output_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  ポート番号: %IpPort%  :  ログオンID: %TargetLogonId%  :  (注意: 資格情報がメモリに格納される)'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: fbbe9d3f-ed1f-49a9-9446-726e349f5fba
 level: informational
+status: stable
 detection:
     selection:
         Channel: Security
         EventID: 4624
         LogonType: 11
-
 falsepositives:
     - normal system usage
-output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%  :  (Warning: Credentials are stored in memory.)'
-creation_date: 2021/11/17
-updated_date: 2021/11/17
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

@@ -29,3 +29,4 @@ tags:
 - attack.t1059.001
 - attack.lateral_movement
 - attack.t1021.003
+ruletype: SIGMA

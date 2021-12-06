@@ -1,0 +1,25 @@
+author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logon Failure - Username does not exist
+title_jp: ログオンに失敗 - ユーザ名は存在しない
+output: 'User: %TargetUserName%  :  Type: %LogonType%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  SubStatus: %SubStatus%  :  AuthPackage: %AuthenticationPackageName%'
+output_jp: 'ユーザ: %TargetUserName%  :  タイプ: %LogonType%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  サブステータス: %SubStatus%  :  認証パッケージ: %AuthenticationPackageName%'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: 8afa97ce-a217-4f7c-aced-3e320a57756d
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4625
+        SubStatus: "0xc0000064"
+falsepositives:
+    - normal system usage
+tags:
+references:
+sample-evtx: ./sample-evtx/EVTX-to-MITRE-Attack/TA0006-Credential Access/T1110.xxx-Bruteforce/ID4625-OpenSSH brutforce with non existing user.evtx
+ruletype: hayabusa

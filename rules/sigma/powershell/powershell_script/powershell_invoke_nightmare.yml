@@ -22,3 +22,4 @@ status: test
 tags:
 - attack.privilege_escalation
 - attack.t1548
+ruletype: SIGMA

@@ -33,3 +33,4 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1005
+ruletype: SIGMA

@@ -1,13 +1,13 @@
 use crate::detections::utils;
 use clap::{App, AppSettings, ArgMatches};
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
-    pub static ref LEVELMAP: HashMap<String, u8> = {
+    pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
-        levelmap.insert("INFO".to_owned(), 1);
+        levelmap.insert("INFORMATIONAL".to_owned(), 1);
         levelmap.insert("LOW".to_owned(), 2);
         levelmap.insert("MEDIUM".to_owned(), 3);
         levelmap.insert("HIGH".to_owned(), 4);
@@ -21,6 +21,7 @@ pub struct ConfigReader {
     pub args: ArgMatches<'static>,
     pub event_key_alias_config: EventKeyAliasConfig,
     pub event_timeline_config: EventInfoConfig,
+    pub target_eventids: TargetEventIds,
 }
 
 impl ConfigReader {
@@ -29,6 +30,7 @@ impl ConfigReader {
             args: build_app(),
             event_key_alias_config: load_eventkey_alias("config/eventkey_alias.txt"),
             event_timeline_config: load_eventcode_info("config/timeline_event_info.txt"),
+            target_eventids: load_target_ids("config/target_eventids.txt"),
         }
     }
 }
@@ -47,25 +49,25 @@ fn build_app<'a>() -> ArgMatches<'a> {
         return ArgMatches::default();
     }
 
-    let usages = "-f --filepath=[FILEPATH] 'Event file path'
-    --csv-timeline=[CSV_TIMELINE] 'Csv output timeline'
+    let usages = "-f --filepath=[FILEPATH] 'File path to one .evtx file'
+    --csv-timeline=[CSV_TIMELINE] 'Save the timeline in CSV format'
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
-    --verbose 'Output check information to target event file path and rule file.'
+    --verbose 'Output verbose information to target event file path and rule file'
     --start-time=[STARTTIME]
     --end-time=[ENDTIME]
-    -q 'Quiet Output Logo'
-    -r --rules=[RULEDIRECTORY] 'using target of rule file directory'
-    -L --level=[LEVEL] 'Specified execute rule level(default: LOW)'
-    -u --utc 'Output time in UTC format(default: local time)'
-    -d --directory=[DIRECTORY] 'Event log files directory'
-    -s --statistics 'Prints statistics for event logs'
-    -t --threadnum=[NUM] 'Thread number'
+    -q 'Quiet mode. Do not display the launch banner'
+    -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
+    -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
+    -u --utc 'Output time in UTC format (default: local time)'
+    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
+    -s --statistics 'Prints statistics of event IDs'
+    -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
-        .about("hayabusa. Aiming to be the world's greatest Windows event log analysis tool!")
+        .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
         .version("1.0.0")
-        .author("Author name Yamato-Security(https://github.com/Yamato-Security/hayabusa)")
+        .author("Yamato-Security(https://github.com/Yamato-Security/hayabusa)")
         .setting(AppSettings::VersionlessSubcommands)
         .usage(usages)
         .args_from_usage(usages)
@@ -80,6 +82,40 @@ fn is_test_mode() -> bool {
     }
 
     return false;
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetEventIds {
+    ids: HashSet<String>,
+}
+
+impl TargetEventIds {
+    pub fn new() -> TargetEventIds {
+        return TargetEventIds {
+            ids: HashSet::new(),
+        };
+    }
+
+    pub fn is_target(&self, id: &String) -> bool {
+        // 中身が空の場合は全EventIdを対象とする。
+        if self.ids.is_empty() {
+            return true;
+        }
+        return self.ids.contains(id);
+    }
+}
+
+fn load_target_ids(path: &str) -> TargetEventIds {
+    let mut ret = TargetEventIds::new();
+    let lines = utils::read_txt(path).unwrap(); // ファイルが存在しなければエラーとする
+    for line in lines {
+        if line.is_empty() {
+            continue;
+        }
+        ret.ids.insert(line);
+    }
+
+    return ret;
 }
 
 #[derive(Debug, Clone)]

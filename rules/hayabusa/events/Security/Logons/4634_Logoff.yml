@@ -1,19 +1,27 @@
-title: Logoff
-description: Prints logon information
 author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logoff
+title_jp: ログオフ
+output: 'User: %TargetUserName%  :  LogonID: %TargetLogonId%'
+output_jp: 'ユーザ: %TargetUserName%  :  ログオンID: %TargetLogonId%'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: 7309e070-56b9-408b-a2f4-f1840f8f1ebf
 level: informational
+status: stable
 detection:
     selection:
         Channel: Security
         EventID: 4634
-    
     filter:
         TargetUserName|endswith: "$"
-    
     condition: selection and not filter
-    
 falsepositives:
     - normal system usage
-output: 'Username: %TargetUserName%  :  LogonID: %TargetLogonId%'
-creation_date: 2021/11/17
-updated_date: 2021/11/17
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

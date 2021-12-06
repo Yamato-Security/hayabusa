@@ -38,3 +38,4 @@ tags:
 - attack.t1059.001
 - attack.command_and_control
 - attack.t1105
+ruletype: SIGMA

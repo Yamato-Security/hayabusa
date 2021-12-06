@@ -38,3 +38,4 @@ status: test
 tags:
 - attack.resource_development
 - attack.t1587.001
+ruletype: SIGMA

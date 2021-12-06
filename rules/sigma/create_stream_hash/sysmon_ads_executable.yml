@@ -32,3 +32,4 @@ tags:
 - attack.t1027
 - attack.s0139
 - attack.t1564.004
+ruletype: SIGMA

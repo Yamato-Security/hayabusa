@@ -35,3 +35,4 @@ tags:
 - attack.exfiltration
 - attack.persistence
 - attack.t1197
+ruletype: SIGMA

@@ -38,3 +38,4 @@ status: experimental
 tags:
 - attack.discovery
 - attack.t1518
+ruletype: SIGMA

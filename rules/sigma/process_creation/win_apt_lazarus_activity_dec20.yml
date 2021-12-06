@@ -43,3 +43,4 @@ tags:
 - attack.g0032
 - attack.execution
 - attack.t1059
+ruletype: SIGMA

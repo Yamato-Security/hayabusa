@@ -34,3 +34,4 @@ tags:
 - attack.t1070
 - attack.t1070.001
 - car.2016-04-002
+ruletype: SIGMA

@@ -45,3 +45,4 @@ tags:
 - attack.collection
 - attack.t1125
 - attack.t1123
+ruletype: SIGMA

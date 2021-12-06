@@ -1,0 +1,26 @@
+
+title: test
+ruletype: SIGMA
+author: test
+date: 2021/12/4
+description: "map test and escape str test and empty string test and null test\n"
+detection:
+  SELECTION_1:
+    EventID: 4100
+  SELECTION_2:
+    ObjectType: Key
+  SELECTION_3:
+    ObjectKey: "aaaValu__-*|3'|e "
+  SELECTION_4:
+    Ojb: ''
+  SELECTION_5:
+    aaa|re: ^$
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Unknown
+id: ff151c33-45fa-475d-af4f-c2f93571f4fe
+level: medium
+logsource:
+  product: windows
+  service: security
+status: experimental

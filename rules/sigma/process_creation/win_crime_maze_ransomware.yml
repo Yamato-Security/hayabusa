@@ -49,3 +49,4 @@ tags:
 - attack.t1047
 - attack.impact
 - attack.t1490
+ruletype: SIGMA

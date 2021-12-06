@@ -1,14 +1,24 @@
-title: Logoff - User Initiated
-description: Prints logon information
 author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logoff - User Initiated
+title_jp: ログオフ - ユーザが行った
+output: 'User: %TargetUserName%  :  LogonID: %TargetLogonId%'
+output_jp: 'ユーザ: %TargetUserName%  :  ログオンID: %TargetLogonId%'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: 6bad16f1-02c4-4075-b414-3cd16944bc65
 level: informational
+status: stable
 detection:
     selection:
         Channel: Security
         EventID: 4647
-    
 falsepositives:
     - normal system usage
-output: 'Username: %TargetUserName%  :  LogonID: %TargetLogonId%'
-creation_date: 2021/11/17
-updated_date: 2021/11/17
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

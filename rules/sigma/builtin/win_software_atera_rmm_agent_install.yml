@@ -25,3 +25,4 @@ references:
 status: experimental
 tags:
 - attack.t1219
+ruletype: SIGMA

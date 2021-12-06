@@ -52,3 +52,4 @@ status: experimental
 tags:
 - attack.command_and_control
 - attack.t1572
+ruletype: SIGMA
