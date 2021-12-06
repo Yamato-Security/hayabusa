@@ -56,8 +56,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
     --verbose 'Output verbose information to target event file path and rule file'
-    --starttimeline=[STARTTIMELINE] 'Start time of the event to load from event file'
-    --endtimeline=[ENDTIMELINE]'End time of the event to load from event file'
+    --starttimeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
+    --endtimeline=[ENDTIMELINE]'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
     -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
@@ -130,8 +130,10 @@ impl TargetEventTime {
     pub fn new() -> TargetEventTime {
         let start_time = if let Some(s_time) = CONFIG.read().unwrap().args.value_of("starttimeline")
         {
-            match s_time.parse::<DateTime<Utc>>() {
-                Ok(dt) => Some(dt),
+            match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+                .or_else(|_| DateTime::parse_from_str(s_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
+            {
+                Ok(dt) => Some(dt.with_timezone(&Utc)),
                 Err(err) => {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
@@ -145,9 +147,11 @@ impl TargetEventTime {
             None
         };
         let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("endtimeline") {
-            match e_time.parse::<DateTime<Utc>>() {
-                Ok(dt) => Some(dt),
-                Err(err) => {
+            match DateTime::parse_from_str(e_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+            .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
+        {
+            Ok(dt) => Some(dt.with_timezone(&Utc)),
+            Err(err) => {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
                         format!("endtimeline field: {}", err),
