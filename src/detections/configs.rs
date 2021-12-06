@@ -56,8 +56,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
     --verbose 'Output verbose information to target event file path and rule file'
-    --start-time=[STARTTIME]
-    --end-time=[ENDTIME]
+    --starttimeline=[STARTTIMELINE] 'Start time of the event to load from event file'
+    --endtimeline=[ENDTIMELINE]'End time of the event to load from event file'
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
     -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
@@ -128,13 +128,14 @@ pub struct TargetEventTime {
 
 impl TargetEventTime {
     pub fn new() -> TargetEventTime {
-        let start_time = if let Some(s_time) = CONFIG.read().unwrap().args.value_of("start-time") {
+        let start_time = if let Some(s_time) = CONFIG.read().unwrap().args.value_of("starttimeline")
+        {
             match s_time.parse::<DateTime<Utc>>() {
                 Ok(dt) => Some(dt),
                 Err(err) => {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
-                        format!("start-time field: {}", err),
+                        format!("starttimeline field: {}", err),
                     )
                     .ok();
                     None
@@ -143,13 +144,13 @@ impl TargetEventTime {
         } else {
             None
         };
-        let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("end-time") {
+        let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("endtimeline") {
             match e_time.parse::<DateTime<Utc>>() {
                 Ok(dt) => Some(dt),
                 Err(err) => {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
-                        format!("start-time field: {}", err),
+                        format!("endtimeline field: {}", err),
                     )
                     .ok();
                     None
