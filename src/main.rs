@@ -121,42 +121,6 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .unwrap_or("informational")
         .to_uppercase();
 
-    // // TODO: config.rs に移す
-    // // ./target/debug/hayabusa -f ./test_files/evtx/test1.evtx --start-time 2014-11-28T12:00:09Z
-    // let start_time =
-    //     if let Some(s_time) = configs::CONFIG.read().unwrap().args.value_of("start-time") {
-    //         match s_time.parse::<DateTime<Utc>>() {
-    //             Ok(dt) => Some(dt),
-    //             Err(err) => {
-    //                 AlertMessage::alert(
-    //                     &mut std::io::stderr().lock(),
-    //                     format!("start-time field: {}", err),
-    //                 )
-    //                 .ok();
-    //                 None
-    //             }
-    //         }
-    //     } else {
-    //         None
-    //     };
-
-    // let end_time = if let Some(e_time) = configs::CONFIG.read().unwrap().args.value_of("end-time") {
-    //     match e_time.parse::<DateTime<Utc>>() {
-    //         Ok(dt) => Some(dt),
-    //         Err(err) => {
-    //             AlertMessage::alert(
-    //                 &mut std::io::stderr().lock(),
-    //                 format!("start-time field: {}", err),
-    //             )
-    //             .ok();
-    //             None
-    //         }
-    //     }
-    // } else {
-    //     None
-    // };
-
-    // println!("TIME: {:?}", start_time);
     println!("Analyzing Event Files: {:?}", evtx_files.len());
     let rule_files = detection::Detection::parse_rule_files(
         level,
