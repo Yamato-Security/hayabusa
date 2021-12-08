@@ -160,6 +160,7 @@ impl ParseYaml {
 #[cfg(test)]
 mod tests {
 
+    use crate::fillter;
     use crate::yaml;
     use crate::yaml::RuleFill;
     use std::collections::HashSet;
@@ -211,10 +212,8 @@ mod tests {
     fn test_default_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        let fill_ids = RuleFill {
-            no_use_rule: HashSet::new(),
-        };
-        yaml.read_dir(path.to_path_buf(), &"", &fill_ids).unwrap();
+        yaml.read_dir(path.to_path_buf(), &"", &fillter::exclude_ids())
+            .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
 
@@ -222,21 +221,19 @@ mod tests {
     fn test_info_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        let fill_ids = RuleFill {
-            no_use_rule: HashSet::new(),
-        };
-        yaml.read_dir(path.to_path_buf(), &"informational", &fill_ids)
-            .unwrap();
+        yaml.read_dir(
+            path.to_path_buf(),
+            &"informational",
+            &fillter::exclude_ids(),
+        )
+        .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
     #[test]
     fn test_low_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        let fill_ids = RuleFill {
-            no_use_rule: HashSet::new(),
-        };
-        yaml.read_dir(path.to_path_buf(), &"LOW", &fill_ids)
+        yaml.read_dir(path.to_path_buf(), &"LOW", &fillter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 4);
     }
@@ -244,10 +241,7 @@ mod tests {
     fn test_medium_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        let fill_ids = RuleFill {
-            no_use_rule: HashSet::new(),
-        };
-        yaml.read_dir(path.to_path_buf(), &"MEDIUM", &fill_ids)
+        yaml.read_dir(path.to_path_buf(), &"MEDIUM", &fillter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 3);
     }
@@ -255,10 +249,7 @@ mod tests {
     fn test_high_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        let fill_ids = RuleFill {
-            no_use_rule: HashSet::new(),
-        };
-        yaml.read_dir(path.to_path_buf(), &"HIGH", &fill_ids)
+        yaml.read_dir(path.to_path_buf(), &"HIGH", &fillter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 2);
     }
@@ -266,11 +257,16 @@ mod tests {
     fn test_critical_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        let fill_ids = RuleFill {
-            no_use_rule: HashSet::new(),
-        };
-        yaml.read_dir(path.to_path_buf(), &"CRITICAL", &fill_ids)
+        yaml.read_dir(path.to_path_buf(), &"CRITICAL", &fillter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 1);
+    }
+    #[test]
+    fn test_exclude_rules_file() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/exclude_rules");
+        yaml.read_dir(path.to_path_buf(), &"", &fillter::exclude_ids())
+            .unwrap();
+        assert_eq!(yaml.ignorerule_count, 1);
     }
 }

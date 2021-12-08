@@ -11,7 +11,7 @@ use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::RuleNode;
 use crate::detections::utils::get_serde_number_to_string;
-use crate::fillter::RuleFill;
+use crate::fillter;
 use crate::yaml::ParseYaml;
 
 use std::sync::Arc;
@@ -55,7 +55,7 @@ impl Detection {
     pub fn parse_rule_files(
         level: String,
         rulespath: Option<&str>,
-        fill_ids: &RuleFill,
+        fill_ids: &fillter::RuleFill,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
@@ -275,9 +275,7 @@ impl Detection {
 fn test_parse_rule_files() {
     let level = "informational";
     let opt_rule_path = Some("./test_files/rules/level_yaml");
-    let fill_ids = RuleFill {
-        no_use_rule: std::collections::HashSet::new(),
-    };
-    let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path, &fill_ids);
+    let cole =
+        Detection::parse_rule_files(level.to_owned(), opt_rule_path, &fillter::exclude_ids());
     assert_eq!(5, cole.len());
 }
