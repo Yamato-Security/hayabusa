@@ -264,7 +264,7 @@ mod tests {
     #[test]
     fn test_exclude_rules_file() {
         let mut yaml = yaml::ParseYaml::new();
-        let path = Path::new("test_files/rules/");
+        let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path.to_path_buf(), &"", &fillter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.ignorerule_count, 10);
