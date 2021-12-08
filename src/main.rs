@@ -7,6 +7,7 @@ use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection;
 use hayabusa::detections::detection::EvtxRecordInfo;
 use hayabusa::detections::print::AlertMessage;
+use hayabusa::fillter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
@@ -128,9 +129,11 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .unwrap_or("informational")
         .to_uppercase();
     println!("Analyzing event files: {:?}", evtx_files.len());
+
     let rule_files = detection::Detection::parse_rule_files(
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
+        &fillter::exclude_ids(),
     );
     let mut pb = ProgressBar::new(evtx_files.len() as u64);
     let mut detection = detection::Detection::new(rule_files);
