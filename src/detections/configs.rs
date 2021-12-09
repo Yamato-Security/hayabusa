@@ -57,6 +57,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
     -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
+    -p --no-deprecated 'Exclude rules with YAML's status deprecated'
     -u --utc 'Output time in UTC format (default: local time)'
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -s --statistics 'Prints statistics of event IDs'
