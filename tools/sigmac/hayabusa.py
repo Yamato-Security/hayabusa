@@ -268,7 +268,7 @@ class HayabusaBackend(SingleTextQueryBackend):
             # parsed.sigmaParser.parsedyamlがOrderedDictならこんなことしなくていい、後で別のやり方があるか調べる
             # 順番固定してもいいかも
             bs.write("title: " + parsed_yaml["title"]+"\n")
-            bs.write("ruletype: SIGMA\n")
+            bs.write("ruletype: Sigma\n")
             del parsed_yaml["title"]
             
             # detectionの部分をクリアする前にtimeflameだけ確保しておく。
