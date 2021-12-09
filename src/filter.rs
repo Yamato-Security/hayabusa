@@ -20,7 +20,7 @@ pub fn exclude_ids() -> RuleExclude {
         .args
         .is_present("show-noisyalerts")
     {
-        ids += "\n"; // 改行を入れないとexclude-rulesの一番最後の行とnoisy-rules.txtの一番最後の行が一行にまとめられてしまう。
+        ids += "\n"; // 改行を入れないとexclude-rulesの一番最後の行とnoisy-rules.txtの一番最初の行が一行にまとめられてしまう。
         match fs::read("config/noisy-rules.txt") {
             Ok(file) => ids += &String::from_utf8(file).unwrap(),
             Err(_) => panic!("config/noisy-rules.txt does not exist"),
