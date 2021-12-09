@@ -3,12 +3,17 @@ use std::collections::HashSet;
 use std::fs;
 
 #[derive(Clone, Debug)]
-pub struct RuleFill {
+pub struct RuleExclude {
     pub no_use_rule: HashSet<String>,
 }
 
-pub fn exclude_ids() -> RuleFill {
-    let mut ids = String::from_utf8(fs::read("config/exclude-rules.txt").unwrap()).unwrap();
+pub fn exclude_ids() -> RuleExclude {
+    let mut ids;
+    match fs::read("config/exclude-rules.txt") {
+        Ok(file) => ids = String::from_utf8(file).unwrap(),
+        Err(_) => panic!("config/exclude-rules.txt does not exist"),
+    };
+
     if !configs::CONFIG
         .read()
         .unwrap()
@@ -16,10 +21,13 @@ pub fn exclude_ids() -> RuleFill {
         .is_present("show-noisyalerts")
     {
         ids += "\n"; // 改行を入れないとexclude-rulesの一番最後の行とnoisy-rules.txtの一番最後の行が一行にまとめられてしまう。
-        ids += &String::from_utf8(fs::read("config/noisy-rules.txt").unwrap()).unwrap();
+        match fs::read("config/noisy-rules.txt") {
+            Ok(file) => ids += &String::from_utf8(file).unwrap(),
+            Err(_) => panic!("config/noisy-rules.txt does not exist"),
+        };
     }
 
-    let mut fill_ids = RuleFill {
+    let mut exclude_ids = RuleExclude {
         no_use_rule: HashSet::new(),
     };
 
@@ -29,8 +37,8 @@ pub fn exclude_ids() -> RuleFill {
             // 空行は無視する。
             continue;
         }
-        fill_ids.no_use_rule.insert(v);
+        exclude_ids.no_use_rule.insert(v);
     }
 
-    return fill_ids;
+    return exclude_ids;
 }
