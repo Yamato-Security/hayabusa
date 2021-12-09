@@ -156,7 +156,7 @@ impl ParseYaml {
                     .is_present("no-deprecated")
                 {
                     let rule_status = &yaml_doc["status"].as_str();
-                    if rule_status.is_some() && rule_status.unwrap_or("") == "deprecated" {
+                    if rule_status.is_some() && rule_status.unwrap() == "deprecated" {
                         self.ignorerule_count += 1;
                         return Option::None;
                     }
