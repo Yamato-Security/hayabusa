@@ -252,24 +252,24 @@ impl Detection {
         }
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
         let agg_condition = rule.get_agg_condition().unwrap();
-        ret.push_str(format!(" [result] count:{}", agg_result.data));
+        ret.push_str(&format!(" [result] count:{}", agg_result.data));
         if agg_condition._field_name.is_some() {
-            ret.push_str(format!(
+            ret.push_str(&format!(
                 " {}:{}",
-                agg_condition._field_name.unwrap(),
+                agg_condition._field_name.as_ref().unwrap(),
                 agg_result.field_values.join("/")
             ));
         }
         if agg_condition._by_field_name.is_some() {
-            ret.push_str(format!(
+            ret.push_str(&format!(
                 " {}:{}",
-                agg_condition._by_field_name.unwrap(),
+                agg_condition._by_field_name.as_ref().unwrap(),
                 agg_result.key
             ));
         }
 
         if exist_timeframe {
-            ret.push_str(format!(
+            ret.push_str(&format!(
                 " timeframe:{}",
                 rule.yaml["detection"]["timeframe"].as_str().unwrap()
             ));
