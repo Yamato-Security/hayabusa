@@ -22,7 +22,7 @@ use std::{
 };
 
 // 一度にtimelineやdetectionを実行する行数
-const MAX_DETECT_RECORDS: usize = 40000;
+const MAX_DETECT_RECORDS: usize = 5000;
 
 fn main() {
     let analysis_start_time: DateTime<Local> = Local::now();
