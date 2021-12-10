@@ -15,7 +15,7 @@ use self::aggregation_parser::AggregationParseInfo;
 
 mod condition_parser;
 mod count;
-use self::count::TimeFrameInfo;
+use self::count::{AggRecordTimeInfo, TimeFrameInfo};
 
 use super::detection::EvtxRecordInfo;
 
@@ -28,7 +28,7 @@ pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
-    countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
+    countdata: HashMap<String, HashMap<String, Vec<AggRecordTimeInfo>>>,
 }
 
 impl Debug for RuleNode {

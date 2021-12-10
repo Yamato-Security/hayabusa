@@ -166,6 +166,13 @@ pub fn get_str_agg_eq(rule: &RuleNode) -> String {
     return ret;
 }
 
+#[derive(Clone, Debug)]
+/// countの括弧内の情報とレコードの情報を所持する構造体
+pub struct AggRecordTimeInfo {
+    pub field_record_value: String,
+    pub record_time: DateTime<Utc>,
+}
+
 #[derive(Debug)]
 /// timeframeに設定された情報。SIGMAルール上timeframeで複数の単位(日、時、分、秒)が複合で記載されているルールがなかったためタイプと数値のみを格納する構造体
 pub struct TimeFrameInfo {
@@ -280,78 +287,104 @@ pub fn select_aggcon(cnt: i32, aggcondition: &AggregationParseInfo) -> bool {
 pub fn judge_timeframe(
     rule: &RuleNode,
     filepath: &String,
-    time_datas: &Vec<DateTime<Utc>>,
+    time_datas: &Vec<AggRecordTimeInfo>,
     key: &String,
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
     let mut time_data = time_datas.clone();
-    time_data.sort();
-    let aggcondition = rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .unwrap();
+    time_data.sort_by(|a, b| b.record_time.cmp(&a.record_time));
+    let aggcondition = get_agg_condition(rule).unwrap();
     let mut start_point = 0;
     // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
     let mut check_point = start_point + aggcondition._cmp_num - 1;
     // timeframeで指定された基準の値を秒数として保持
     let judge_sec_frame = get_sec_timeframe(&rule.detection.as_ref().unwrap().timeframe);
+    let exist_field = aggcondition._field_name.is_some();
+    let mut loaded_field_value: Vec<String> = Vec::new();
     loop {
         // 基準となるレコードもしくはcountを最低限満たす対象のレコードのindexが配列の領域を超えていた場合
         if start_point as usize >= time_data.len() || check_point as usize >= time_data.len() {
             // 最終のレコードを対象として時刻を確認する
-            let check_point_date = time_data[time_data.len() - 1];
-            let diff = check_point_date.timestamp() - time_data[start_point as usize].timestamp();
+            let check_point_date = time_data[time_data.len() - 1].clone();
+            let diff = check_point_date.record_time.timestamp()
+                - time_data[start_point as usize].record_time.timestamp();
             // 対象のレコード数を基準となるindexから計算
             let mut count_set_cnt = time_data.len() - (start_point as usize);
+            // countのfieldがある場合種類での判別をする必要があるため
+            if exist_field && !loaded_field_value.contains(&check_point_date.field_record_value) {
+                loaded_field_value.push(check_point_date.field_record_value);
+            }
             if judge_sec_frame.is_some() && diff > judge_sec_frame.unwrap() {
                 //すでにcountを満たしている状態で1つずつdiffを確認している場合は適正な個数指定となり、もともとcountの条件が残りデータ個数より多い場合は-1したことによってcountの判定でもfalseになるため
                 count_set_cnt -= count_set_cnt - 1;
             }
 
             // timeframe内に入っている場合があるため判定を行う
-            let judge = select_aggcon(count_set_cnt as i32, &aggcondition);
+            let judge;
+            let result_set_cnt;
+            if exist_field {
+                result_set_cnt = loaded_field_value.len() as i32;
+                judge = select_aggcon(result_set_cnt, &aggcondition);
+            } else {
+                result_set_cnt = count_set_cnt as i32;
+                judge = select_aggcon(result_set_cnt, &aggcondition);
+            }
             if judge {
                 ret.push(AggResult::new(
                     filepath.to_string(),
-                    count_set_cnt as i32,
+                    result_set_cnt,
                     key.to_string(),
-                    time_data[start_point as usize],
+                    time_data[start_point as usize].record_time,
                     get_str_agg_eq(rule),
                 ));
             }
+            // この段階ですべてのレコードのチェックが完了するため
+            loaded_field_value.clear();
             break;
         }
         // 基準となるレコードと時刻比較を行う対象のレコード時刻情報を取得する
-        let check_point_date = time_data[check_point as usize];
-        let diff = check_point_date.timestamp() - time_data[start_point as usize].timestamp();
+        let check_point_date = time_data[check_point as usize].clone();
+        let diff = check_point_date.record_time.timestamp()
+            - time_data[start_point as usize].record_time.timestamp();
         // timeframeで指定した情報と比較して時刻差がtimeframeの枠を超えていた場合(timeframeの属性を記載していない場合はこの処理を行わない)
         if judge_sec_frame.is_some() && diff > judge_sec_frame.unwrap() {
             let count_set_cnt = check_point - start_point;
-            let judge = select_aggcon(count_set_cnt, &aggcondition);
+            // timeframe内に入っている場合があるため判定を行う
+            let judge;
+            let result_set_cnt;
+            if exist_field {
+                result_set_cnt = loaded_field_value.len() as i32;
+                judge = select_aggcon(result_set_cnt, &aggcondition);
+            } else {
+                result_set_cnt = count_set_cnt as i32;
+                judge = select_aggcon(result_set_cnt, &aggcondition);
+            }
             // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
             if !judge {
                 start_point += 1;
                 check_point = start_point + aggcondition._cmp_num - 1;
-
+                loaded_field_value.clear();
                 continue;
             }
             //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
             ret.push(AggResult::new(
                 filepath.to_string(),
-                count_set_cnt,
+                result_set_cnt,
                 key.to_string(),
-                time_data[start_point as usize],
+                time_data[start_point as usize].record_time,
                 get_str_agg_eq(rule),
             ));
             // timeframe投入内の対象レコード数がcountの条件を満たした場合は、すでに判定済みのtimeframe内では同様に検知を行うことになり、過検知となってしまうため、今回timeframe内と判定された最後のレコードの次のレコードを次の基準として参照するようにindexを設定する
             start_point = check_point;
             check_point = start_point + aggcondition._cmp_num - 1;
+            loaded_field_value.clear();
         } else {
-            // timeframeで指定した情報と比較して。時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
+            // timeframeで指定した情報と比較して、時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
             check_point += 1;
+            // countのfieldの値がある場合、fieldの値の種類を確認してストックされていなければ投入する
+            if exist_field && !loaded_field_value.contains(&check_point_date.field_record_value) {
+                loaded_field_value.push(check_point_date.field_record_value);
+            }
         }
     }
     return ret;
