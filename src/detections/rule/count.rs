@@ -285,7 +285,9 @@ pub fn judge_timeframe(
     let mut loaded_field_value: Vec<String> = Vec::new();
     loop {
         // 基準となるレコードもしくはcountを最低限満たす対象のレコードのindexが配列の領域を超えていた場合
-        if start_point as usize >= time_data.len() || check_point as usize >= time_data.len() {
+        if start_point as usize >= time_data.len() - 1
+            || check_point as usize >= time_data.len() - 1
+        {
             // 最終のレコードを対象として時刻を確認する
             let check_point_date = time_data[time_data.len() - 1].clone();
             let diff = check_point_date.record_time.timestamp()
@@ -316,6 +318,7 @@ pub fn judge_timeframe(
                     filepath.to_string(),
                     result_set_cnt,
                     key.to_string(),
+                    loaded_field_value.clone(),
                     time_data[start_point as usize].record_time,
                     get_str_agg_eq(rule),
                 ));
@@ -353,6 +356,7 @@ pub fn judge_timeframe(
                 filepath.to_string(),
                 result_set_cnt,
                 key.to_string(),
+                loaded_field_value.clone(),
                 time_data[start_point as usize].record_time,
                 get_str_agg_eq(rule),
             ));
@@ -440,6 +444,7 @@ mod tests {
             "testpath".to_string(),
             2,
             "_".to_string(),
+            vec![],
             default_time,
             ">= 1".to_string(),
         )];
@@ -495,6 +500,7 @@ mod tests {
             "testpath".to_string(),
             1,
             "_".to_string(),
+            vec![],
             default_time,
             ">= 1".to_string(),
         ));
@@ -502,6 +508,7 @@ mod tests {
             "testpath".to_string(),
             1,
             "_".to_string(),
+            vec![],
             record_time,
             ">= 1".to_string(),
         ));
@@ -535,6 +542,7 @@ mod tests {
             "testpath".to_string(),
             1,
             "_".to_string(),
+            vec!["System".to_owned()],
             default_time,
             ">= 1".to_string(),
         );
@@ -587,6 +595,7 @@ mod tests {
             "testpath".to_string(),
             1,
             "System".to_owned(),
+            vec!["7040".to_owned()],
             default_time,
             ">= 1".to_string(),
         ));
@@ -594,6 +603,7 @@ mod tests {
             "testpath".to_string(),
             1,
             "Test".to_owned(),
+            vec!["9999".to_owned()],
             record_time,
             ">= 1".to_string(),
         ));
@@ -646,6 +656,7 @@ mod tests {
             "testpath".to_string(),
             1,
             "Windows Event Log".to_owned(),
+            vec!["7040".to_owned()],
             default_time,
             ">= 1".to_string(),
         ));
@@ -653,6 +664,7 @@ mod tests {
             "testpath".to_string(),
             1,
             "Test".to_owned(),
+            vec!["9999".to_owned()],
             record_time,
             ">= 1".to_string(),
         ));
@@ -766,8 +778,61 @@ mod tests {
             "testpath".to_string(),
             2,
             "System".to_owned(),
+            vec!["7040".to_owned()],
             default_time,
             ">= 2".to_string(),
+        ));
+        check_count(
+            rule_str,
+            vec![SIMPLE_RECORD_STR, record_str],
+            expected_count,
+            expected_agg_result,
+        );
+    }
+
+    #[test]
+    /// countで括弧内の記載、byの記載両方がありtimeframe内に存在する場合にruleでcountの検知ができることを確認する(countの括弧内の項目が異なる場合)
+    fn test_count_exist_field_and_by_with_timeframe_other_field_value() {
+        let record_str: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 9999,
+              "Channel": "System",
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T00:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count(EventID) by Channel >= 1
+            timeframe: 1h
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("System".to_owned(), 2);
+        let mut expected_agg_result: Vec<AggResult> = Vec::new();
+        expected_agg_result.push(AggResult::new(
+            "testpath".to_string(),
+            2,
+            "System".to_owned(),
+            vec!["7040".to_owned(), "9999".to_owned()],
+            default_time,
+            ">= 1".to_string(),
         ));
         check_count(
             rule_str,
@@ -810,6 +875,7 @@ mod tests {
         let mut expect_filepath = vec![];
         let mut expect_data = vec![];
         let mut expect_key = vec![];
+        let mut expect_field_values = vec![];
         let mut expect_start_timedate = vec![];
         let mut expect_condition_op_num = vec![];
         for expect_agg in expect_agg_results {
@@ -828,6 +894,7 @@ mod tests {
             expect_filepath.push(expect_agg.filepath);
             expect_data.push(expect_agg.data);
             expect_key.push(expect_agg.key);
+            expect_field_values.push(expect_agg.field_values);
             expect_start_timedate.push(expect_agg.start_timedate);
             expect_condition_op_num.push(expect_agg.condition_op_num);
         }
@@ -839,6 +906,7 @@ mod tests {
             assert_eq!(agg_result.filepath, expect_filepath[index]);
             assert_eq!(agg_result.data, expect_data[index]);
             assert_eq!(agg_result.key, expect_key[index]);
+            assert_eq!(agg_result.field_values, expect_field_values[index]);
             assert_eq!(agg_result.condition_op_num, expect_condition_op_num[index]);
         }
     }

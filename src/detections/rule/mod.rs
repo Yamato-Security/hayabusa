@@ -306,8 +306,10 @@ pub struct AggResult {
     pub filepath: String,
     /// countなどの値
     pub data: i32,
-    /// (countの括弧内の記載)_(count byで指定された条件)で設定されたキー
+    /// count byで指定された条件のレコード内での値
     pub key: String,
+    /// countの括弧内指定された項目の検知されたレコード内での値の配列。括弧内で指定がなかった場合は長さ0の配列となる
+    pub field_values: Vec<String>,
     ///検知したブロックの最初のレコードの時間
     pub start_timedate: DateTime<Utc>,
     ///条件式の情報
@@ -319,6 +321,7 @@ impl AggResult {
         filepath: String,
         data: i32,
         key: String,
+        field_values: Vec<String>,
         start_timedate: DateTime<Utc>,
         condition_op_num: String,
     ) -> AggResult {
@@ -326,6 +329,7 @@ impl AggResult {
             filepath: filepath,
             data: data,
             key: key,
+            field_values: field_values,
             start_timedate: start_timedate,
             condition_op_num: condition_op_num,
         };
