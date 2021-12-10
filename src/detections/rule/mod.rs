@@ -105,6 +105,23 @@ impl RuleNode {
     pub fn check_exist_countdata(&self) -> bool {
         self.countdata.len() > 0
     }
+    /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
+    fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
+        match self
+            .detection
+            .as_ref()
+            .unwrap()
+            .aggregation_condition
+            .as_ref()
+        {
+            None => {
+                return None;
+            }
+            Some(agg_parse_info) => {
+                return Some(agg_parse_info);
+            }
+        }
+    }
 }
 
 /// Ruleファイルのdetectionを表すノード

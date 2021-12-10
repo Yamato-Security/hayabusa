@@ -16,7 +16,7 @@ use crate::detections::utils;
 pub fn count(rule: &mut RuleNode, filepath: &String, record: &Value) {
     let key = create_count_key(&rule, record);
     let field_name: String;
-    match get_agg_condition(&rule) {
+    match rule.get_agg_condition() {
         None => {
             field_name = "".to_owned();
         }
@@ -80,27 +80,9 @@ fn get_alias_value_in_record(alias: &String, record: &Value) -> Option<String> {
     };
 }
 
-/// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
-fn get_agg_condition(rule: &RuleNode) -> Option<&AggregationParseInfo> {
-    match rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-    {
-        None => {
-            return None;
-        }
-        Some(agg_parse_info) => {
-            return Some(agg_parse_info);
-        }
-    }
-}
-
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
-    let aggref = get_agg_condition(rule);
+    let aggref = rule.get_agg_condition();
     let mut key = "_".to_string();
     if aggref.is_none() {
         return key;
@@ -293,7 +275,7 @@ pub fn judge_timeframe(
     let mut ret: Vec<AggResult> = Vec::new();
     let mut time_data = time_datas.clone();
     time_data.sort_by(|a, b| a.record_time.cmp(&b.record_time));
-    let aggcondition = get_agg_condition(rule).unwrap();
+    let aggcondition = rule.get_agg_condition().unwrap();
     let mut start_point = 0;
     // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
     let mut check_point = start_point + aggcondition._cmp_num - 1;
