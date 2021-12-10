@@ -292,7 +292,7 @@ pub fn judge_timeframe(
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
     let mut time_data = time_datas.clone();
-    time_data.sort_by(|a, b| b.record_time.cmp(&a.record_time));
+    time_data.sort_by(|a, b| a.record_time.cmp(&b.record_time));
     let aggcondition = get_agg_condition(rule).unwrap();
     let mut start_point = 0;
     // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
@@ -548,11 +548,11 @@ mod tests {
         "#;
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let mut expected_count = HashMap::new();
-        expected_count.insert("System_".to_owned(), 1);
+        expected_count.insert("_".to_owned(), 1);
         let expected_agg_result = AggResult::new(
             "testpath".to_string(),
             1,
-            "System_".to_string(),
+            "_".to_string(),
             default_time,
             ">= 1".to_string(),
         );
@@ -598,20 +598,20 @@ mod tests {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let record_time = Utc.ymd(1996, 2, 27).and_hms(1, 5, 1);
         let mut expected_count = HashMap::new();
-        expected_count.insert("7040_System".to_owned(), 1);
-        expected_count.insert("9999_Test".to_owned(), 1);
+        expected_count.insert("System".to_owned(), 1);
+        expected_count.insert("Test".to_owned(), 1);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
             "testpath".to_string(),
             1,
-            "7040_System".to_owned(),
+            "System".to_owned(),
             default_time,
             ">= 1".to_string(),
         ));
         expected_agg_result.push(AggResult::new(
             "testpath".to_string(),
             1,
-            "9999_Test".to_owned(),
+            "Test".to_owned(),
             record_time,
             ">= 1".to_string(),
         ));
@@ -657,20 +657,20 @@ mod tests {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let record_time = Utc.ymd(1977, 1, 1).and_hms(0, 5, 0);
         let mut expected_count = HashMap::new();
-        expected_count.insert("7040_Windows Event Log".to_owned(), 1);
-        expected_count.insert("9999_Test".to_owned(), 1);
+        expected_count.insert("Windows Event Log".to_owned(), 1);
+        expected_count.insert("Test".to_owned(), 1);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
             "testpath".to_string(),
             1,
-            "7040_Windows Event Log".to_owned(),
+            "Windows Event Log".to_owned(),
             default_time,
             ">= 1".to_string(),
         ));
         expected_agg_result.push(AggResult::new(
             "testpath".to_string(),
             1,
-            "9999_Test".to_owned(),
+            "Test".to_owned(),
             record_time,
             ">= 1".to_string(),
         ));
@@ -736,7 +736,7 @@ mod tests {
                 .countdata
                 .get("testpath")
                 .unwrap()
-                .get(&"7040_".to_owned())
+                .get(&"_".to_owned())
                 .unwrap()
                 .len() as i32,
             2
@@ -778,12 +778,12 @@ mod tests {
 
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let mut expected_count = HashMap::new();
-        expected_count.insert("7040_System".to_owned(), 2);
+        expected_count.insert("System".to_owned(), 2);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
             "testpath".to_string(),
             2,
-            "7040_System".to_owned(),
+            "System".to_owned(),
             default_time,
             ">= 2".to_string(),
         ));
