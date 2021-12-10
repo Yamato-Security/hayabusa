@@ -138,7 +138,7 @@ impl Detection {
 
     pub fn add_aggcondtion_msg(&self) {
         for rule in &self.rules {
-            if !rule.has_agg_condition() {
+            if !rule.has_agg_condition() || rule.yaml["output"].as_str().is_none() {
                 continue;
             }
 
@@ -247,11 +247,10 @@ impl Detection {
             ret.push_str("by ");
             ret.push_str(key[1]);
         }
-        ret.push_str(&format!(
-            "{} in {}.",
-            agg_result.condition_op_num,
-            rule.yaml["timeframe"].as_str().unwrap_or(""),
-        ));
+        ret.push_str(&agg_result.condition_op_num);
+        if rule.yaml["timeframe"].as_str().is_some() {
+            ret.push_str(rule.yaml["timeframe"].as_str().unwrap());
+        }
         return ret;
     }
     pub fn print_rule_load_info(
