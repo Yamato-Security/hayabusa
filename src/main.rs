@@ -7,7 +7,7 @@ use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection;
 use hayabusa::detections::detection::EvtxRecordInfo;
 use hayabusa::detections::print::AlertMessage;
-use hayabusa::fillter;
+use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
@@ -22,7 +22,7 @@ use std::{
 };
 
 // 一度にtimelineやdetectionを実行する行数
-const MAX_DETECT_RECORDS: usize = 40000;
+const MAX_DETECT_RECORDS: usize = 5000;
 
 fn main() {
     let analysis_start_time: DateTime<Local> = Local::now();
@@ -133,7 +133,7 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
     let rule_files = detection::Detection::parse_rule_files(
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
-        &fillter::exclude_ids(),
+        &filter::exclude_ids(),
     );
     let mut pb = ProgressBar::new(evtx_files.len() as u64);
     let mut detection = detection::Detection::new(rule_files);
