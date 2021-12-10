@@ -15,11 +15,26 @@ use crate::detections::utils;
 /// 検知された際にカウント情報を投入する関数
 pub fn count(rule: &mut RuleNode, filepath: &String, record: &Value) {
     let key = create_count_key(&rule, record);
+    let field_name: String;
+    match get_agg_condition(&rule) {
+        None => {
+            field_name = "".to_owned();
+        }
+        Some(aggcondition) => {
+            field_name = aggcondition
+                ._field_name
+                .as_ref()
+                .unwrap_or(&"".to_owned())
+                .to_owned();
+        }
+    }
+    let field_value = get_alias_value_in_record(&field_name, record).unwrap_or("".to_owned());
     let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
     countup(
         rule,
         filepath,
         &key,
+        &field_value,
         Message::get_event_time(record).unwrap_or(default_time),
     );
 }
@@ -29,6 +44,7 @@ pub fn countup(
     rule: &mut RuleNode,
     filepath: &String,
     key: &str,
+    field_value: &str,
     record_time_value: DateTime<Utc>,
 ) {
     rule.countdata
@@ -37,61 +53,63 @@ pub fn countup(
     let value_map = rule.countdata.get_mut(filepath).unwrap();
     value_map.entry(key.to_string()).or_insert(Vec::new());
     let mut prev_value = value_map[key].clone();
-    prev_value.push(record_time_value);
-    value_map.insert(key.to_string(), prev_value);
+    prev_value.push(AggRecordTimeInfo {
+        field_record_value: field_value.to_string(),
+        record_time: record_time_value,
+    });
+    value_map.insert(key.to_string(), prev_value.to_vec());
+}
+
+/// 与えられたエイリアスから対象レコード内の値を取得してダブルクオーテーションを外す関数
+fn get_alias_value_in_record(alias: &String, record: &Value) -> Option<String> {
+    if alias == "" {
+        return None;
+    }
+    match utils::get_event_value(alias, record) {
+        Some(value) => {
+            return Some(value.to_string().replace("\"", ""));
+        }
+        None => {
+            AlertMessage::alert(
+                &mut std::io::stderr().lock(),
+                format!("alias not found.value:{}", alias),
+            )
+            .ok();
+            return None;
+        }
+    };
+}
+
+/// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
+fn get_agg_condition(rule: &RuleNode) -> Option<&AggregationParseInfo> {
+    match rule
+        .detection
+        .as_ref()
+        .unwrap()
+        .aggregation_condition
+        .as_ref()
+    {
+        None => {
+            return None;
+        }
+        Some(agg_parse_info) => {
+            return Some(agg_parse_info);
+        }
+    }
 }
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
-    if rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .is_none()
-    {
-        return "_".to_string();
+    let aggref = get_agg_condition(rule);
+    let mut key = "_".to_string();
+    if aggref.is_none() {
+        return key;
     }
-    let aggcondition = rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .unwrap();
+    let aggcondition = aggref.unwrap();
     // recordでaliasが登録されている前提とする
-    let mut key = "".to_string();
-    if aggcondition._field_name.is_some() {
-        let field_value = aggcondition._field_name.as_ref().unwrap();
-        match utils::get_event_value(field_value, record) {
-            Some(value) => {
-                key.push_str(&value.to_string().replace("\"", ""));
-            }
-            None => {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
-                    format!("field_value alias not found.value:{}", field_value),
-                )
-                .ok();
-            }
-        };
-    }
-    key.push_str("_");
     if aggcondition._by_field_name.is_some() {
         let by_field_value = aggcondition._by_field_name.as_ref().unwrap();
-        match utils::get_event_value(by_field_value, record) {
-            Some(value) => {
-                key.push_str(&value.to_string().replace("\"", ""));
-            }
-            None => {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
-                    format!("by_field_value alias not found.value:{}", by_field_value),
-                )
-                .ok();
-            }
-        }
+        key = get_alias_value_in_record(by_field_value, record).unwrap_or("_".to_owned());
     }
     return key;
 }
