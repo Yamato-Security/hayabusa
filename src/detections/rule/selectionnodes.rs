@@ -249,6 +249,7 @@ impl SelectionNode for RefSelectionNode {
 
 /// detection - selection配下の末端ノード
 pub struct LeafSelectionNode {
+    key: String,
     key_list: Vec<String>,
     select_value: Yaml,
     pub matcher: Option<Box<dyn matchers::LeafMatcher>>,
@@ -260,13 +261,18 @@ unsafe impl Sync for LeafSelectionNode {}
 impl LeafSelectionNode {
     pub fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
         return LeafSelectionNode {
+            key: String::default(),
             key_list: key_list,
             select_value: value_yaml,
             matcher: Option::None,
         };
     }
 
-    pub fn get_key(&self) -> String {
+    pub fn get_key(&self) -> &String {
+        return &self.key;
+    }
+
+    fn _create_key(&self) -> String {
         if self.key_list.is_empty() {
             return String::default();
         }
@@ -397,6 +403,7 @@ impl SelectionNode for LeafSelectionNode {
             )]);
         }
 
+        self.key = self._create_key();
         return self
             .matcher
             .as_mut()
