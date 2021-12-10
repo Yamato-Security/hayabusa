@@ -106,7 +106,7 @@ impl RuleNode {
         self.countdata.len() > 0
     }
     /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
-    fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
+    pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
         match self
             .detection
             .as_ref()

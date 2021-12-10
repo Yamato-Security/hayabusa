@@ -237,20 +237,44 @@ impl Detection {
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> String {
-        let mut ret: String = "count(".to_owned();
-        let key: Vec<&str> = agg_result.key.split("_").collect();
-        if key.len() >= 1 {
-            ret.push_str(key[0]);
+        // 条件式部分の出力
+        let mut ret: String = "[condition] ".to_owned();
+        let agg_condition_raw_str: Vec<&str> = rule.yaml["condition"]
+            .as_str()
+            .unwrap()
+            .split("|")
+            .collect();
+        let exist_timeframe = rule.yaml["detection"]["timeframe"].as_str().is_some();
+        // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
+        ret.push_str(agg_condition_raw_str[1]);
+        if exist_timeframe {
+            ret.push_str(" in timeframe");
         }
-        ret.push_str(&") ");
-        if key.len() >= 2 {
-            ret.push_str("by ");
-            ret.push_str(key[1]);
+        // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
+        let agg_condition = rule.get_agg_condition().unwrap();
+        ret.push_str(format!(" [result] count:{}", agg_result.data));
+        if agg_condition._field_name.is_some() {
+            ret.push_str(format!(
+                " {}:{}",
+                agg_condition._field_name.unwrap(),
+                agg_result.field_values.join("/")
+            ));
         }
-        ret.push_str(&agg_result.condition_op_num);
-        if rule.yaml["timeframe"].as_str().is_some() {
-            ret.push_str(rule.yaml["timeframe"].as_str().unwrap());
+        if agg_condition._by_field_name.is_some() {
+            ret.push_str(format!(
+                " {}:{}",
+                agg_condition._by_field_name.unwrap(),
+                agg_result.key
+            ));
         }
+
+        if exist_timeframe {
+            ret.push_str(format!(
+                " timeframe:{}",
+                rule.yaml["detection"]["timeframe"].as_str().unwrap()
+            ));
+        }
+
         return ret;
     }
     pub fn print_rule_load_info(
