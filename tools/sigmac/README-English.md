@@ -47,8 +47,7 @@ cp splitter.py $sigma_path
 
 ### Convert Rule
 
-Conversion rules can be created by executing `convert.sh`.
-The rules will be created to hayabusa_rules folder.
+`convert.sh` will convert sigma rules to hayabusa rules and save them in a new `hayabusa_rules` folder.
 
 ```sh
 export sigma_path=/path/to/sigma_repository
@@ -71,4 +70,4 @@ sigma/rules/windows/process_creation/process_creation_apt_turla_commands_medium.
 
 ## Sigma rule parsing errors
 
-Some rules will have been able to be converted but will cause parsing errors. We will continue to fix these bugs but for the meantime the majority of Sigma rules do work so please ignore the errors for now.
+Some rules will have been able to be converted but will cause parsing errors or will not be usable due to various bugs. We will continue to fix these bugs but for the meantime the majority of Sigma rules do work so please ignore the errors for now.

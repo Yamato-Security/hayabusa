@@ -48,7 +48,7 @@ cp splitter.py $sigma_path
 * 注意：`/path/to/sigma_repository`そのままではなくて、自分のSigmaレポジトリのパスを指定してください。
 
 ### ルールの変換
-convert.shを実行することでルールの変換が実行されます。変換されたルールはhayabusa_rulesフォルダに作成されます。
+`convert.sh`を実行することでルールの変換が実行されます。変換されたルールは`hayabusa_rules`フォルダに作成されます。
 
 ```sh
 export sigma_path=/path/to/sigma_repository

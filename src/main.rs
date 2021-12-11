@@ -1,17 +1,20 @@
 extern crate serde;
 extern crate serde_derive;
 
-use chrono::{DateTime, Utc};
+use chrono::Datelike;
+use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection;
 use hayabusa::detections::detection::EvtxRecordInfo;
 use hayabusa::detections::print::AlertMessage;
+use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -19,12 +22,18 @@ use std::{
 };
 
 // 一度にtimelineやdetectionを実行する行数
-const MAX_DETECT_RECORDS: usize = 40000;
+const MAX_DETECT_RECORDS: usize = 5000;
 
 fn main() {
+    let analysis_start_time: DateTime<Local> = Local::now();
     if !configs::CONFIG.read().unwrap().args.is_present("q") {
         output_logo();
         println!("");
+        output_eggs(&format!(
+            "{:02}/{:02}",
+            &analysis_start_time.month().to_owned(),
+            &analysis_start_time.day().to_owned()
+        ));
     }
     if configs::CONFIG.read().unwrap().args.args.len() == 0 {
         println!(
@@ -33,7 +42,6 @@ fn main() {
         );
         return;
     }
-    let analysis_start_time: DateTime<Utc> = Utc::now();
     if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
         if !filepath.ends_with(".evtx") {
             AlertMessage::alert(
@@ -64,7 +72,7 @@ fn main() {
         print_contributors();
         return;
     }
-    let analysis_end_time: DateTime<Utc> = Utc::now();
+    let analysis_end_time: DateTime<Local> = Local::now();
     let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
     println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
     println!("");
@@ -120,11 +128,12 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         .value_of("level")
         .unwrap_or("informational")
         .to_uppercase();
+    println!("Analyzing event files: {:?}", evtx_files.len());
 
-    println!("Analyzing Event Files: {:?}", evtx_files.len());
     let rule_files = detection::Detection::parse_rule_files(
         level,
         configs::CONFIG.read().unwrap().args.value_of("rules"),
+        &filter::exclude_ids(),
     );
     let mut pb = ProgressBar::new(evtx_files.len() as u64);
     let mut detection = detection::Detection::new(rule_files);
@@ -248,10 +257,28 @@ fn _output_with_omikuji(omikuji: Omikuji) {
     println!("{}", content);
 }
 
+/// output logo
 fn output_logo() {
     let fp = &format!("art/logo.txt");
-    let content = fs::read_to_string(fp).unwrap();
+    let content = fs::read_to_string(fp).unwrap_or("".to_owned());
     println!("{}", content);
+}
+
+/// output easter egg arts
+fn output_eggs(exec_datestr: &str) {
+    let mut eggs: HashMap<&str, &str> = HashMap::new();
+    eggs.insert("01/01", "art/happynewyear.txt");
+    eggs.insert("02/22", "art/ninja.txt");
+    eggs.insert("08/08", "art/takoyaki.txt");
+    eggs.insert("12/25", "art/christmas.txt");
+
+    match eggs.get(exec_datestr) {
+        None => {}
+        Some(path) => {
+            let content = fs::read_to_string(path).unwrap_or("".to_owned());
+            println!("{}", content);
+        }
+    }
 }
 
 #[cfg(test)]
