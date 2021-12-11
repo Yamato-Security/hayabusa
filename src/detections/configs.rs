@@ -1,7 +1,8 @@
 use crate::detections::utils;
 use clap::{App, AppSettings, ArgMatches};
+use hashbrown::HashMap;
+use hashbrown::HashSet;
 use lazy_static::lazy_static;
-use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
@@ -159,6 +160,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
             .key_to_eventkey
             .insert(alias.to_owned(), event_key.to_owned());
     });
+    config.key_to_eventkey.shrink_to_fit();
     return config;
 }
 
