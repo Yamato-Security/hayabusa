@@ -23,15 +23,13 @@ const DIRPATH_RULES: &str = "rules";
 pub struct EvtxRecordInfo {
     pub evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
-    pub data_string: String,
 }
 
 impl EvtxRecordInfo {
-    pub fn new(evtx_filepath: String, record: Value, data_string: String) -> EvtxRecordInfo {
+    pub fn new(evtx_filepath: String, record: Value) -> EvtxRecordInfo {
         return EvtxRecordInfo {
             evtx_filepath: evtx_filepath,
             record: record,
-            data_string,
         };
     }
 }

@@ -263,7 +263,7 @@ impl LeafMatcher for DefaultMatcher {
         // Pipeが指定されていればパースする
         let emp = String::default();
         let mut keys: VecDeque<&str> = key_list.get(0).unwrap_or(&emp).split("|").collect(); // key_listが空はあり得ない
-        keys.pop_front();
+        keys.pop_front();// 一つ目はただのキーで、2つめ以降がpipe
         while !keys.is_empty() {
             let key = keys.pop_front().unwrap();
             let pipe_element = match key {
@@ -335,7 +335,7 @@ impl LeafMatcher for DefaultMatcher {
 
         // JSON形式のEventLogデータをstringに変換
         let event_value_str: Option<String> = if self.key_list.is_empty() {
-            Option::Some(recinfo.data_string.to_string())
+            Option::Some(recinfo.record.to_string())
         } else {
             let value = match event_value.unwrap_or(&Value::Null) {
                 Value::Bool(b) => Option::Some(b.to_string()),
@@ -350,12 +350,7 @@ impl LeafMatcher for DefaultMatcher {
         }
 
         // 変換したデータに対してパイプ処理を実行する。
-        let event_value_str = (&self.pipes)
-            .iter()
-            .fold(event_value_str.unwrap(), |acc, pipe| {
-                return pipe.pipe_eventlog_data(acc);
-            });
-
+        let event_value_str = event_value_str.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
             return self.re.as_ref().unwrap().is_match(&event_value_str);
@@ -376,15 +371,6 @@ enum PipeElement {
 }
 
 impl PipeElement {
-    /// WindowsEventLogのJSONデータに対してパイプ処理します。
-    fn pipe_eventlog_data(&self, pattern: String) -> String {
-        return match self {
-            // wildcardはcase insensetiveなので、全て小文字にして比較する。
-            PipeElement::Wildcard => pattern.to_lowercase(),
-            _ => pattern,
-        };
-    }
-
     /// patternをパイプ処理します
     fn pipe_pattern(&self, pattern: String) -> String {
         // enumでポリモーフィズムを実装すると、一つのメソッドに全部の型の実装をする感じになる。Java使い的にはキモイ感じがする。
@@ -429,8 +415,6 @@ impl PipeElement {
     /// PipeElement::Wildcardのパイプ処理です。
     /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
     fn pipe_pattern_wildcard(pattern: String) -> String {
-        // wildcardはcase sensetiveなので、全て小文字にして比較する。
-        let pattern = pattern.to_lowercase();
         let wildcards = vec!["*".to_string(), "?".to_string()];
 
         // patternをwildcardでsplitした結果をpattern_splitsに入れる
@@ -484,7 +468,7 @@ impl PipeElement {
         }
 
         // SIGMAルールのwildcard表記から正規表現の表記に変換します。
-        return pattern_splits.iter().enumerate().fold(
+        let ret = pattern_splits.iter().enumerate().fold(
             String::default(),
             |acc: String, (idx, pattern)| {
                 let regex_value = if idx % 2 == 0 {
@@ -503,6 +487,10 @@ impl PipeElement {
                 return format!("{}{}", acc, regex_value);
             },
         );
+
+        // sigmaのwildcardはcase insensitive
+        // なので、正規表現の先頭にcase insensitiveであることを表す記号を付与
+        return "(?i)".to_string() + &ret;
     }
 }
 
@@ -573,7 +561,7 @@ mod tests {
             let re = matcher.re.as_ref();
             assert_eq!(
                 re.unwrap().as_str(),
-                r"Microsoft\-Windows\-PowerShell/Operational".to_lowercase()
+                r"(?i)Microsoft\-Windows\-PowerShell/Operational"
             );
         }
 
@@ -595,7 +583,7 @@ mod tests {
 
             assert_eq!(matcher.re.is_some(), true);
             let re = matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "4103");
+            assert_eq!(re.unwrap().as_str(), "(?i)4103");
         }
 
         // ContextInfo
@@ -620,7 +608,7 @@ mod tests {
             let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<DefaultMatcher>().unwrap();
             assert_eq!(hostapp_en_matcher.re.is_some(), true);
             let re = hostapp_en_matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "Host Application".to_lowercase());
+            assert_eq!(re.unwrap().as_str(), "(?i)Host Application");
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
             let hostapp_jp_node = ancestors[1].as_ref() as &dyn SelectionNode;
@@ -634,7 +622,7 @@ mod tests {
             let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<DefaultMatcher>().unwrap();
             assert_eq!(hostapp_jp_matcher.re.is_some(), true);
             let re = hostapp_jp_matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "ホスト アプリケーション");
+            assert_eq!(re.unwrap().as_str(), "(?i)ホスト アプリケーション");
         }
 
         // ImagePath
@@ -741,7 +729,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -774,7 +761,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -807,7 +793,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -841,7 +826,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -875,7 +859,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -908,7 +891,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -941,7 +923,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -975,7 +956,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1009,7 +989,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1043,7 +1022,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1077,7 +1055,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1111,7 +1088,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1144,7 +1120,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1181,7 +1156,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1218,7 +1192,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1254,7 +1227,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1299,7 +1271,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1344,7 +1315,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1389,7 +1359,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1434,7 +1403,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1479,7 +1447,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1524,7 +1491,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1557,7 +1523,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1590,7 +1555,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1623,7 +1587,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1636,7 +1599,7 @@ mod tests {
     #[test]
     fn test_pipe_pattern_wildcard_asterisk() {
         let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
-        assert_eq!(".*ho.*ge.*", value);
+        assert_eq!("(?i).*ho.*ge.*", value);
     }
 
     #[test]
@@ -1644,7 +1607,7 @@ mod tests {
         let value = PipeElement::pipe_pattern_wildcard(r"\*ho\*\*ge\*".to_string());
         // wildcardの「\*」は文字列としての「*」を表す。
         // 正規表現で「*」はエスケープする必要があるので、\*が正解
-        assert_eq!(r"\*ho\*\*ge\*", value);
+        assert_eq!(r"(?i)\*ho\*\*ge\*", value);
     }
 
     #[test]
@@ -1652,43 +1615,43 @@ mod tests {
         // wildcardの「\\*」は文字列としての「\」と正規表現の「.*」を表す。
         // 文字列としての「\」はエスケープされるので、「\\.*」が正解
         let value = PipeElement::pipe_pattern_wildcard(r"\\*ho\\*ge\\*".to_string());
-        assert_eq!(r"\\.*ho\\.*ge\\.*", value);
+        assert_eq!(r"(?i)\\.*ho\\.*ge\\.*", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_question() {
         let value = PipeElement::pipe_pattern_wildcard(r"?ho?ge?".to_string());
-        assert_eq!(r".ho.ge.", value);
+        assert_eq!(r"(?i).ho.ge.", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_question2() {
         let value = PipeElement::pipe_pattern_wildcard(r"\?ho\?ge\?".to_string());
-        assert_eq!(r"\?ho\?ge\?", value);
+        assert_eq!(r"(?i)\?ho\?ge\?", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_question3() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\?ho\\?ge\\?".to_string());
-        assert_eq!(r"\\.ho\\.ge\\.", value);
+        assert_eq!(r"(?i)\\.ho\\.ge\\.", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_backshash() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\ho\\ge\\".to_string());
-        assert_eq!(r"\\\\ho\\\\ge\\\\", value);
+        assert_eq!(r"(?i)\\\\ho\\\\ge\\\\", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_mixed() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\*\****\*\\*".to_string());
-        assert_eq!(r"\\.*\*.*.*.*\*\\.*", value);
+        assert_eq!(r"(?i)\\.*\*.*.*.*\*\\.*", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_many_backshashs() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
-        assert_eq!(r"\\\\.*ho\\\\.*ge\\\\\\", value);
+        assert_eq!(r"(?i)\\\\.*ho\\\\.*ge\\\\\\", value);
     }
 
     #[test]
@@ -1716,7 +1679,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: rec,
-                    data_string: recstr,
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1751,7 +1713,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: rec,
-                    data_string: recstr,
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -1786,7 +1747,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -1821,7 +1781,6 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
