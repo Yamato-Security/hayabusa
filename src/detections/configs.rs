@@ -127,7 +127,7 @@ pub struct TargetEventTime {
 }
 
 impl TargetEventTime {
-    pub fn new() -> TargetEventTime {
+    pub fn new() -> Self {
         let start_time = if let Some(s_time) = CONFIG.read().unwrap().args.value_of("starttimeline")
         {
             match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
@@ -163,10 +163,14 @@ impl TargetEventTime {
         } else {
             None
         };
-        return TargetEventTime {
+        return Self::set(start_time, end_time)
+    }
+
+    pub fn set(start_time: Option<chrono::DateTime<chrono::Utc>>, end_time: Option<chrono::DateTime<chrono::Utc>>) -> Self {
+        return Self {
             start_time: start_time,
-            end_time: end_time,
-        };
+            end_time:   end_time
+        }
     }
 
     pub fn is_target(&self, eventtime: &Option<DateTime<Utc>>) -> bool {
@@ -306,6 +310,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 mod tests {
 
     use crate::detections::configs;
+    use chrono::{DateTime, Utc};
 
     #[test]
     #[ignore]
@@ -323,5 +328,30 @@ mod tests {
             )
         );
         assert_eq!(message, display);
+    }
+
+    #[test]
+    fn target_event_time_filter() {
+        let start_time  = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let end_time    = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let time_filter = configs::TargetEventTime::set(start_time, end_time);
+
+        let out_of_range1 = Some("1999-01-01T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let within_range  = Some("2019-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
+        let out_of_range2 = Some("2021-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
+
+        assert_eq!(time_filter.is_target(&out_of_range1), false);
+        assert_eq!(time_filter.is_target(&within_range), true);
+        assert_eq!(time_filter.is_target(&out_of_range2), false);
+    }
+
+    #[test]
+    fn target_event_time_filter_containes_on_time() {
+        let start_time  = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let end_time    = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let time_filter = configs::TargetEventTime::set(start_time, end_time);
+
+        assert_eq!(time_filter.is_target(&start_time), true);
+        assert_eq!(time_filter.is_target(&end_time), true);
     }
 }
