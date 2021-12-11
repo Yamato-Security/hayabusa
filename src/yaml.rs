@@ -149,11 +149,11 @@ impl ParseYaml {
                     }
                 }
 
-                if configs::CONFIG
+                if !configs::CONFIG
                     .read()
                     .unwrap()
                     .args
-                    .is_present("no-deprecated")
+                    .is_present("show-deprecated")
                 {
                     let rule_status = &yaml_doc["status"].as_str();
                     if rule_status.is_some() && rule_status.unwrap() == "deprecated" {
@@ -290,6 +290,6 @@ mod tests {
             no_use_rule: HashSet::new(),
         };
         yaml.read_dir(path.to_path_buf(), &"", &fill_ids).unwrap();
-        assert_eq!(yaml.ignorerule_count, 0);
+        assert_eq!(yaml.ignorerule_count, 1);
     }
 }

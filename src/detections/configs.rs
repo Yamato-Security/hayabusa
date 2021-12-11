@@ -57,12 +57,12 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
     -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
-    -p --no-deprecated 'Exclude rules with YAML's status deprecated'
     -u --utc 'Output time in UTC format (default: local time)'
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -s --statistics 'Prints statistics of event IDs'
     -n --show-noisyalerts 'do not exclude noisy rules'
     -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
+    --show-deprecated 'Exclude rules with YAML's status deprecated'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
