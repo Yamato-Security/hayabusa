@@ -670,6 +670,7 @@ mod tests {
                     let recinfo = EvtxRecordInfo {
                         evtx_filepath: "testpath".to_owned(),
                         record: rec,
+                        data_string: record.to_string(),
                     };
                     let _result = rule_node.select(&"testpath".to_string(), &recinfo);
                 }
@@ -762,6 +763,7 @@ mod tests {
                     let recinfo = EvtxRecordInfo {
                         evtx_filepath: "testpath".to_owned(),
                         record: record,
+                        data_string: record_str.to_string(),
                     };
                     let result = &rule_node.select(&"testpath".to_owned(), &recinfo);
                     assert_eq!(result, &true);

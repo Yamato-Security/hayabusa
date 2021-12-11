@@ -448,6 +448,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -483,6 +484,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -517,6 +519,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -551,6 +554,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -585,6 +589,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
