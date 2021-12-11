@@ -36,7 +36,6 @@ impl EvtxRecordInfo {
     }
 }
 
-// TODO テストケースかかなきゃ...
 #[derive(Debug)]
 pub struct Detection {
     rules: Vec<RuleNode>,
