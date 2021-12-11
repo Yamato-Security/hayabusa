@@ -1675,7 +1675,6 @@ mod tests {
         match serde_json::from_str(record_json_str) {
             Ok(rec) => {
                 let rec: Value = rec;
-                let recstr = rec.to_string();
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: rec,
@@ -1709,7 +1708,6 @@ mod tests {
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
                 let rec: Value = record;
-                let recstr = rec.to_string();
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: rec,
