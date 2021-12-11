@@ -5,7 +5,6 @@ use crate::detections::rule::Message;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
-use std::collections::HashMap;
 use std::num::ParseIntError;
 
 use crate::detections::rule::aggregation_parser::AggregationConditionToken;
@@ -13,7 +12,7 @@ use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
-pub fn count(rule: &mut RuleNode, filepath: &String, record: &Value) {
+pub fn count(rule: &mut RuleNode, record: &Value) {
     let key = create_count_key(&rule, record);
     let field_name: String;
     match rule.get_agg_condition() {
@@ -32,7 +31,6 @@ pub fn count(rule: &mut RuleNode, filepath: &String, record: &Value) {
     let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
     countup(
         rule,
-        filepath,
         &key,
         &field_value,
         Message::get_event_time(record).unwrap_or(default_time),
@@ -42,22 +40,16 @@ pub fn count(rule: &mut RuleNode, filepath: &String, record: &Value) {
 ///count byの条件に合致する検知済みレコードの数を増やすための関数
 pub fn countup(
     rule: &mut RuleNode,
-    filepath: &String,
     key: &str,
     field_value: &str,
     record_time_value: DateTime<Utc>,
 ) {
-    rule.countdata
-        .entry(filepath.to_string())
-        .or_insert(HashMap::new());
-    let value_map = rule.countdata.get_mut(filepath).unwrap();
-    value_map.entry(key.to_string()).or_insert(Vec::new());
-    let mut prev_value = value_map[key].clone();
-    prev_value.push(AggRecordTimeInfo {
+    rule.countdata.entry(key.to_owned()).or_insert(Vec::new());
+    let value_map = rule.countdata.get_mut(key).unwrap();
+    value_map.push(AggRecordTimeInfo {
         field_record_value: field_value.to_string(),
         record_time: record_time_value,
     });
-    value_map.insert(key.to_string(), prev_value.to_vec());
 }
 
 /// 与えられたエイリアスから対象レコード内の値を取得してダブルクオーテーションを外す関数
@@ -97,17 +89,12 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
 }
 
 ///現状のレコードの状態から条件式に一致しているかを判定する関数
-pub fn aggregation_condition_select(rule: &RuleNode, filepath: &String) -> Vec<AggResult> {
+pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
     // recordでaliasが登録されている前提とする
-    let value_map = rule.countdata.get(filepath).unwrap();
+    let value_map = &rule.countdata;
     let mut ret = Vec::new();
     for (key, value) in value_map {
-        ret.append(&mut judge_timeframe(
-            &rule,
-            &filepath.to_string(),
-            value,
-            &key.to_string(),
-        ));
+        ret.append(&mut judge_timeframe(&rule, &value, &key.to_string()));
     }
     return ret;
 }
@@ -268,7 +255,6 @@ pub fn select_aggcon(cnt: i32, aggcondition: &AggregationParseInfo) -> bool {
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
 pub fn judge_timeframe(
     rule: &RuleNode,
-    filepath: &String,
     time_datas: &Vec<AggRecordTimeInfo>,
     key: &String,
 ) -> Vec<AggResult> {
@@ -315,7 +301,6 @@ pub fn judge_timeframe(
             }
             if judge {
                 ret.push(AggResult::new(
-                    filepath.to_string(),
                     result_set_cnt,
                     key.to_string(),
                     loaded_field_value.clone(),
@@ -353,7 +338,6 @@ pub fn judge_timeframe(
             }
             //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
             ret.push(AggResult::new(
-                filepath.to_string(),
                 result_set_cnt,
                 key.to_string(),
                 loaded_field_value.clone(),
@@ -441,7 +425,6 @@ mod tests {
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 2);
         let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
-            "testpath".to_string(),
             2,
             "_".to_string(),
             vec![],
@@ -497,7 +480,6 @@ mod tests {
         expected_count.insert("_".to_owned(), 2);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             1,
             "_".to_string(),
             vec![],
@@ -505,7 +487,6 @@ mod tests {
             ">= 1".to_string(),
         ));
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             1,
             "_".to_string(),
             vec![],
@@ -539,7 +520,6 @@ mod tests {
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 1);
         let expected_agg_result = AggResult::new(
-            "testpath".to_string(),
             1,
             "_".to_string(),
             vec!["System".to_owned()],
@@ -592,7 +572,6 @@ mod tests {
         expected_count.insert("Test".to_owned(), 1);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             1,
             "System".to_owned(),
             vec!["7040".to_owned()],
@@ -600,7 +579,6 @@ mod tests {
             ">= 1".to_string(),
         ));
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             1,
             "Test".to_owned(),
             vec!["9999".to_owned()],
@@ -653,7 +631,6 @@ mod tests {
         expected_count.insert("Test".to_owned(), 1);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             1,
             "Windows Event Log".to_owned(),
             vec!["7040".to_owned()],
@@ -661,7 +638,6 @@ mod tests {
             ">= 1".to_string(),
         ));
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             1,
             "Test".to_owned(),
             vec!["9999".to_owned()],
@@ -717,7 +693,7 @@ mod tests {
                         record: rec,
                         data_string: String::default(),
                     };
-                    let _result = rule_node.select(&"testpath".to_string(), &recinfo);
+                    let _result = rule_node.select(&recinfo);
                 }
                 Err(_rec) => {
                     assert!(false, "failed to parse json record.");
@@ -726,13 +702,7 @@ mod tests {
         }
         //countupの関数が機能しているかを確認
         assert_eq!(
-            *&rule_node
-                .countdata
-                .get("testpath")
-                .unwrap()
-                .get(&"_".to_owned())
-                .unwrap()
-                .len() as i32,
+            *&rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
             2
         );
         let judge_result = rule_node.judge_satisfy_aggcondition();
@@ -775,7 +745,6 @@ mod tests {
         expected_count.insert("System".to_owned(), 2);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             2,
             "System".to_owned(),
             vec!["7040".to_owned()],
@@ -827,7 +796,6 @@ mod tests {
         expected_count.insert("System".to_owned(), 2);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
-            "testpath".to_string(),
             2,
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
@@ -863,7 +831,7 @@ mod tests {
                         record: record,
                         data_string: String::default(),
                     };
-                    let result = &rule_node.select(&"testpath".to_owned(), &recinfo);
+                    let result = &rule_node.select(&recinfo);
                     assert_eq!(result, &true);
                 }
                 Err(_rec) => {
@@ -872,7 +840,6 @@ mod tests {
             }
         }
         let agg_results = &rule_node.judge_satisfy_aggcondition();
-        let mut expect_filepath = vec![];
         let mut expect_data = vec![];
         let mut expect_key = vec![];
         let mut expect_field_values = vec![];
@@ -882,16 +849,9 @@ mod tests {
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
             //countupの関数が機能しているかを確認
             assert_eq!(
-                *&rule_node
-                    .countdata
-                    .get("testpath")
-                    .unwrap()
-                    .get(&expect_agg.key)
-                    .unwrap()
-                    .len() as i32,
+                *&rule_node.countdata.get(&expect_agg.key).unwrap().len() as i32,
                 *expect_count
             );
-            expect_filepath.push(expect_agg.filepath);
             expect_data.push(expect_agg.data);
             expect_key.push(expect_agg.key);
             expect_field_values.push(expect_agg.field_values);
@@ -903,7 +863,6 @@ mod tests {
             let index = expect_start_timedate
                 .binary_search(&agg_result.start_timedate)
                 .unwrap();
-            assert_eq!(agg_result.filepath, expect_filepath[index]);
             assert_eq!(agg_result.data, expect_data[index]);
             assert_eq!(agg_result.key, expect_key[index]);
             assert_eq!(agg_result.field_values, expect_field_values[index]);

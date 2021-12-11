@@ -28,7 +28,7 @@ pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
     detection: Option<DetectionNode>,
-    countdata: HashMap<String, HashMap<String, Vec<AggRecordTimeInfo>>>,
+    countdata: HashMap<String, Vec<AggRecordTimeInfo>>,
 }
 
 impl Debug for RuleNode {
@@ -72,13 +72,13 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&mut self, filepath: &String, event_record: &EvtxRecordInfo) -> bool {
+    pub fn select(&mut self, event_record: &EvtxRecordInfo) -> bool {
         if self.detection.is_none() {
             return false;
         }
         let result = self.detection.as_ref().unwrap().select(event_record);
         if result {
-            count::count(self, filepath, &event_record.record);
+            count::count(self, &event_record.record);
         }
         return result;
     }
@@ -97,9 +97,7 @@ impl RuleNode {
         if !self.has_agg_condition() {
             return ret;
         }
-        for filepath in self.countdata.keys() {
-            ret.append(&mut count::aggregation_condition_select(&self, &filepath));
-        }
+        ret.append(&mut count::aggregation_condition_select(&self));
         return ret;
     }
     pub fn check_exist_countdata(&self) -> bool {
@@ -302,8 +300,6 @@ impl DetectionNode {
 #[derive(Debug)]
 /// countなどのaggregationの結果を出力する構造体
 pub struct AggResult {
-    /// evtx file path
-    pub filepath: String,
     /// countなどの値
     pub data: i32,
     /// count byで指定された条件のレコード内での値
@@ -318,7 +314,6 @@ pub struct AggResult {
 
 impl AggResult {
     pub fn new(
-        filepath: String,
         data: i32,
         key: String,
         field_values: Vec<String>,
@@ -326,7 +321,6 @@ impl AggResult {
         condition_op_num: String,
     ) -> AggResult {
         return AggResult {
-            filepath: filepath,
             data: data,
             key: key,
             field_values: field_values,
@@ -378,7 +372,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -411,7 +405,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -444,7 +438,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -530,7 +524,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -592,7 +586,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -661,7 +655,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -708,7 +702,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -756,7 +750,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -823,7 +817,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -890,7 +884,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -939,7 +933,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -1000,20 +994,14 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                let result = rule_node.select(&"testpath".to_string(), &recinfo);
+                let result = rule_node.select(&recinfo);
                 assert_eq!(
                     rule_node.detection.unwrap().aggregation_condition.is_some(),
                     true
                 );
                 assert_eq!(result, true);
                 assert_eq!(
-                    *&rule_node
-                        .countdata
-                        .get("testpath")
-                        .unwrap()
-                        .get(key)
-                        .unwrap()
-                        .len() as i32,
+                    *&rule_node.countdata.get(key).unwrap().len() as i32,
                     expect_count
                 );
             }

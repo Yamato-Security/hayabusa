@@ -189,7 +189,7 @@ impl Detection {
         let records = &*records;
         let agg_condition = rule.has_agg_condition();
         for record_info in records {
-            let result = rule.select(&record_info.evtx_filepath, &record_info);
+            let result = rule.select(&record_info);
             if !result {
                 continue;
             }
@@ -224,14 +224,14 @@ impl Detection {
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
         let output = Detection::create_count_output(rule, &agg_result);
         MESSAGES.lock().unwrap().insert_message(
-            agg_result.filepath,
-            rule.rulepath.to_string(),
+            "-".to_owned(),
+            rule.rulepath.to_owned(),
             agg_result.start_timedate,
-            rule.yaml["level"].as_str().unwrap_or("").to_string(),
-            "-".to_string(),
-            "-".to_string(),
-            rule.yaml["title"].as_str().unwrap_or("").to_string(),
-            output.to_string(),
+            rule.yaml["level"].as_str().unwrap_or("").to_owned(),
+            "-".to_owned(),
+            "-".to_owned(),
+            rule.yaml["title"].as_str().unwrap_or("").to_owned(),
+            output.to_owned(),
         )
     }
 
@@ -254,7 +254,6 @@ impl Detection {
             .unwrap_or("")
             .to_string()
             != "";
-        println!("{}", exist_timeframe);
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
         ret.push_str(agg_condition_raw_str[1].trim());
         if exist_timeframe {
@@ -324,14 +323,8 @@ mod tests {
     #[test]
     fn test_output_aggregation_output_with_output() {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
-        let agg_result: AggResult = AggResult::new(
-            "testpath".to_string(),
-            2,
-            "_".to_string(),
-            vec![],
-            default_time,
-            ">= 1".to_string(),
-        );
+        let agg_result: AggResult =
+            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
         let rule_str = r#"
         enabled: true
         detection:
@@ -357,14 +350,8 @@ mod tests {
     #[test]
     fn test_output_aggregation_output_no_filed_by() {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
-        let agg_result: AggResult = AggResult::new(
-            "testpath".to_string(),
-            2,
-            "_".to_string(),
-            vec![],
-            default_time,
-            ">= 1".to_string(),
-        );
+        let agg_result: AggResult =
+            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
         let rule_str = r#"
         enabled: true
         detection:
@@ -390,14 +377,8 @@ mod tests {
     #[test]
     fn test_output_aggregation_output_with_timeframe() {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
-        let agg_result: AggResult = AggResult::new(
-            "testpath".to_string(),
-            2,
-            "_".to_string(),
-            vec![],
-            default_time,
-            ">= 1".to_string(),
-        );
+        let agg_result: AggResult =
+            AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
         let rule_str = r#"
         enabled: true
         detection:
@@ -426,7 +407,6 @@ mod tests {
     fn test_output_aggregation_output_with_field() {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let agg_result: AggResult = AggResult::new(
-            "testpath".to_owned(),
             2,
             "_".to_string(),
             vec!["7040".to_owned(), "9999".to_owned()],
@@ -457,7 +437,6 @@ mod tests {
     fn test_output_aggregation_output_with_field_by() {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let agg_result: AggResult = AggResult::new(
-            "testpath".to_owned(),
             2,
             "lsass.exe".to_string(),
             vec!["0000".to_owned(), "1111".to_owned()],
@@ -487,7 +466,6 @@ mod tests {
     fn test_output_aggregation_output_with_by() {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let agg_result: AggResult = AggResult::new(
-            "testpath".to_owned(),
             2,
             "lsass.exe".to_string(),
             vec![],

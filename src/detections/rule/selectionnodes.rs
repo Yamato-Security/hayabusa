@@ -443,7 +443,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -479,7 +479,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -514,7 +514,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -549,7 +549,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -584,7 +584,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");

@@ -542,10 +542,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(
-                    rule_node.select(&"testpath".to_owned(), &recinfo),
-                    expect_select
-                );
+                assert_eq!(rule_node.select(&recinfo), expect_select);
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -591,7 +588,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -638,7 +635,7 @@ mod tests {
                     record: record,
                     data_string: String::default(),
                 };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
