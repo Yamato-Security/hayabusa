@@ -302,10 +302,216 @@ impl Detection {
     }
 }
 
-#[test]
-fn test_parse_rule_files() {
-    let level = "informational";
-    let opt_rule_path = Some("./test_files/rules/level_yaml");
-    let cole = Detection::parse_rule_files(level.to_owned(), opt_rule_path, &filter::exclude_ids());
-    assert_eq!(5, cole.len());
+#[cfg(test)]
+mod tests {
+
+    use crate::detections::detection::Detection;
+    use crate::detections::rule::create_rule;
+    use crate::detections::rule::AggResult;
+    use crate::filter;
+    use chrono::{TimeZone, Utc};
+    use yaml_rust::YamlLoader;
+
+    #[test]
+    fn test_parse_rule_files() {
+        let level = "informational";
+        let opt_rule_path = Some("./test_files/rules/level_yaml");
+        let cole =
+            Detection::parse_rule_files(level.to_owned(), opt_rule_path, &filter::exclude_ids());
+        assert_eq!(5, cole.len());
+    }
+
+    #[test]
+    fn test_output_aggregation_output_with_output() {
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let agg_result: AggResult = AggResult::new(
+            "testpath".to_string(),
+            2,
+            "_".to_string(),
+            vec![],
+            default_time,
+            ">= 1".to_string(),
+        );
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 and selection3 | count() >= 1
+        output: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        let expected_output = "testdata";
+        assert_eq!(
+            Detection::create_count_output(&mut rule_node, &agg_result),
+            expected_output
+        );
+    }
+
+    #[test]
+    fn test_output_aggregation_output_no_filed_by() {
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let agg_result: AggResult = AggResult::new(
+            "testpath".to_string(),
+            2,
+            "_".to_string(),
+            vec![],
+            default_time,
+            ">= 1".to_string(),
+        );
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 and selection3 |   count() >= 1
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        rule_node.init().ok();
+        let expected_output = "[condition] count() >= 1 [result] count:2";
+        assert_eq!(
+            Detection::create_count_output(&rule_node, &agg_result),
+            expected_output
+        );
+    }
+
+    #[test]
+    fn test_output_aggregation_output_with_timeframe() {
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let agg_result: AggResult = AggResult::new(
+            "testpath".to_string(),
+            2,
+            "_".to_string(),
+            vec![],
+            default_time,
+            ">= 1".to_string(),
+        );
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 and selection3 |   count() >= 1
+            timeframe: 15m
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        rule_node.init().ok();
+        let expected_output =
+            "[condition] count() >= 1 in timeframe [result] count:2 timeframe:15m";
+        assert_eq!(
+            Detection::create_count_output(&rule_node, &agg_result),
+            expected_output
+        );
+    }
+
+    #[test]
+    fn test_output_aggregation_output_with_field() {
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let agg_result: AggResult = AggResult::new(
+            "testpath".to_owned(),
+            2,
+            "_".to_string(),
+            vec!["7040".to_owned(), "9999".to_owned()],
+            default_time,
+            ">= 1".to_string(),
+        );
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 | count(EventID) >= 1
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        rule_node.init().ok();
+        let expected_output = "[condition] count(EventID) >= 1 [result] count:2 EventID:7040/9999";
+        assert_eq!(
+            Detection::create_count_output(&rule_node, &agg_result),
+            expected_output
+        );
+    }
+
+    #[test]
+    fn test_output_aggregation_output_with_field_by() {
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let agg_result: AggResult = AggResult::new(
+            "testpath".to_owned(),
+            2,
+            "lsass.exe".to_string(),
+            vec!["0000".to_owned(), "1111".to_owned()],
+            default_time,
+            ">= 1".to_string(),
+        );
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 | count(EventID) by process >= 1
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        rule_node.init().ok();
+        let expected_output = "[condition] count(EventID) by process >= 1 [result] count:2 EventID:0000/1111 process:lsass.exe";
+        assert_eq!(
+            Detection::create_count_output(&rule_node, &agg_result),
+            expected_output
+        );
+    }
+    #[test]
+    fn test_output_aggregation_output_with_by() {
+        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let agg_result: AggResult = AggResult::new(
+            "testpath".to_owned(),
+            2,
+            "lsass.exe".to_string(),
+            vec![],
+            default_time,
+            ">= 1".to_string(),
+        );
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                param1: 'Windows Event Log'
+            condition: selection1 and selection2 | count() by process >= 1
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test = rule_yaml.next().unwrap();
+        let mut rule_node = create_rule("testpath".to_string(), test);
+        rule_node.init().ok();
+        let expected_output =
+            "[condition] count() by process >= 1 [result] count:2 process:lsass.exe";
+        assert_eq!(
+            Detection::create_count_output(&rule_node, &agg_result),
+            expected_output
+        );
+    }
 }
