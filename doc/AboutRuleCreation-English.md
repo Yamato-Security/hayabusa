@@ -1,45 +1,99 @@
 # Rule files
-Hayabusa uses detection rules for Windows Event logs in a YAML format file.
-It can express complex detection rules by combining not only simple string matching but also regular expressions, AND, OR, and other conditions.
-In this section, we will explain how to write the detection rules.
+Hayabusa detection rules are written in [YAML](https://en.wikipedia.org/wiki/YAML) format.
+It can express complex detection rules by combining not only simple string matching but also regular expressions, `AND`, `OR`, and other conditions.
+In this section, we will explain how to write hayabusa detection rules.
 
 # Rule file format
-The rule file format is described below.
+Example:
 
 ``````
-title: PowerShell Execution Pipeline
-description: This rule detect powershell execution pipeline.
-author: Zach Mathis
+#Author section
+author: Eric Conrad, Zach Mathis
+creation_date: 2020/11/08
+updated_date: 2021/11/26
+
+#Alert section
+title: User added to local Administrators group
+title_jp: ユーザがローカル管理者グループに追加された
+output: 'User: %MemberName%  :  SID: %MemberSid%  :  Group: %TargetUserName%'
+output_jp: 'ユーザ: %MemberName%  :  SID: %MemberSid%  :  グループ名: %TargetUserName%'
+description: A user was added to the local Administrators group.
+description_jp: ユーザがローカル管理者グループに追加された。
+
+#Rule section
+id: 611e2e76-a28f-4255-812c-eb8836b2f5bb
+level: high
+status: stable
 detection:
     selection:
-        Event.System.EventID: 7040
-        Event.System.Channel: System
+        Channel: Security
+        EventID: 4732
+        TargetUserName: Administrators
+    condition: selection
 falsepositives:
-    - unknown
-level: medium
-output: 'command=%CommandLine%'
-creation_date: 2020/11/8
-updated_date: 2020/11/8
+    - system administrator
+tags:
+    - attack.persistence
+    - attack.t1098
+references:
+    - https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventid=4732
+sample-evtx: ./sample-evtx/EVTX-to-MITRE-Attack/TA0003-Persistence/T1098.xxx-Account manipulation/ID4732-User added to local admin groups.evtx
+logsource: default
+ruletype: Hayabusa
 ``````
+> #Author section
+* **author [required]**: Name of the author(s).
+* **contributor** [optional]: Name of any contributor(s) (anyone who made any minor corrections).
+* **creation_date [required]**: Date the rule was made.
+* **updated_date** [optional]: Date the rule was updated.
 
-* title [required]: Rule file title. This will also be the name of the alert that gets displayed so the briefer the better.
-* description [optional]: A description of the rule. This does not get displayed so you can make this long.
-* author [optional]: The name of the person or persons who created the logic for the rule.
-* detection  [required]: The detection logic goes here.
-* falsepositives [optional]: The possibilities for false positives. For example: `system administrator`, `normal user usage`, `normal system usage`, `legacy application`, `security team`. If it is unknown, write `unknown`.
-* level [optional]: Risk level. Please write one of the following: `informational`,`low`,`medium`,`high`,`critical`
-* output [required]: The details of the alert. (Please output any and only useful fields in the Windows event log for easy analysis.)
-* creation_date [optional]: The creation date.
-* updated_date [optional]: The date of the last revision.
+> #Alert section
+* **title [required]**: Rule file title. This will also be the name of the alert that gets displayed so the briefer the better. (Should not be longer than 85 characters.)
+* **title_jp** [optional]: The title in Japanese.
+* output [optional]: The details of the alert that gets displayed. Please output any fields in the Windows event log that are useful for analysis. Fields are seperated by `"  :  "` (two spaces on both sides). Field placeholders are enclosed with a `%` (Example: `%MemberName%`) and need to be defined in `config\eventkey_alias.txt`. (Explained below.)
+* **output_jp** [optional]: The output message in Japanese.
+* **description** [optional]: A description of the rule. This does not get displayed so you can make this long.
+* **description_jp** [optional]: The description in Japanese.
 
-# About detection notation
+> #Rule section
+* **id [required]**: A randomly generated version 4 UUID used to uniquely identify the rule. You can generate one [here](https://www.uuidgenerator.net/version4).
+* **level [required]**: Severity level based on [sigma's definition](https://github.com/SigmaHQ/sigma/wiki/Specification). Please write one of the following: `informational`,`low`,`medium`,`high`,`critical`
+* **status[required]**: `stable` for tested rules and `testing` for rules that need to be tested.
+* **detection  [required]**: The detection logic goes here. (Explained below.)
+* **falsepositives [required]**: The possibilities for false positives. For example: `system administrator`, `normal user usage`, `normal system usage`, `legacy application`, `security team`, `none`. If it is unknown, please write `unknown`.
+* **tags** [optional]: If the technique is a [LOLBINS/LOLBAS](https://lolbas-project.github.io/) technique, please add the `lolbas` tag. If the alert can be mapped to a technique in the [MITRE ATT&CK](https://attack.mitre.org/) framework, please add the tactic ID (Example: `attack.t1098`) and any applicable tactics below:
+    * attack.impact -> Impact
+    * attack.initial_access -> Initial Access
+    * attack.execution -> Execution
+    * attack.lateral_movement -> Lateral Movement
+    * attack.persistence -> Persistence
+    * attack.privilege_escalation -> Privilege Escalation
+    * attack.reconnaissance -> Reconnaissance
+    * attack.collection -> Collection
+    * attack.command_and_control -> Command and Control
+    * attack.credential_access -> Credential Access
+    * attack.defense_evasion -> Defense Evasion
+    * attack.discovery -> Discovery
+    * attack.exfiltration -> Exfiltration
+    * attack.resource_development -> Resource Development 
+* **references** [optional]: Any links to references.
+* **sample-evtx [required]**: File path or URL to an event log file that this rule will detect.
+* **logsource [required]**: The source of where the log comes from. Please specify one of the following:
+  * `default`: For logs that are turned on in Windows by default.
+  * `non-default`: For logs that need to be turned on through group policy, etc...
+  * `sysmon`: Logs that require sysmon to be installed.
+* **non-default-setting** [optional]: Explanation of how to turn on the log setting for `non-default` log sources.
+* **ruletype [required]**: `Hayabusa` for hayabusa rules. Rules automatically converted from sigma will be `Sigma`.
+
+# Detection field
 ## Detection fundamentals
 First, the fundamentals of how to create a detection rule will be explained.
 
 ### How to write AND and OR logic
-To write AND logic, we use the YAML hash.
-The detection rule below defines that *both conditions* have to be true in order for the rule to match.
+To write AND logic, we use nested dictionaries.
+The detection rule below defines that **both conditions** have to be true in order for the rule to match.
 * EventID has to exactly be `7040`.
+* **AND**
 * Channel has to exactly be `System`.
 
 ``````
@@ -47,11 +101,13 @@ detection:
     selection:
         Event.System.EventID: 7040
         Event.System.Channel: System
+    condition: selection
 ``````
 
-To write OR logic, we use arrays.
-In the detection rule below, *either one* of the conditions will result in the rule being triggered.
-* EventID has to exactly be `7040`.
+To write OR logic, we use lists (Dictionaries that start with `- `).
+In the detection rule below, **either one** of the conditions will result in the rule being triggered.
+* EventID has to exactly be `7040`. 
+* **OR**
 * Channel has to exactly be `System`.
 
 ``````
@@ -59,11 +115,13 @@ detection:
     selection:
         - Event.System.EventID: 7040
         - Event.System.Channel: System
+    condition: selection 
 ``````
 
-We can also combine AND and OR logic as shown below.
+We can also combine `AND` and `OR` logic as shown below.
 In this case, the rule matches when the following two conditions are both true.
-* EventID is either exactly `7040` or `7041`.
+* EventID is either exactly `7040` **OR** `7041`.
+* **AND**
 * Channel is exactly `System`.
 
 ``````
@@ -73,10 +131,11 @@ detection:
           - 7040
           - 7041
         Event.System.Channel: System
+    condition: selection
 ``````
 
-### Eventkey
-The following is an excerpt of a Windows event log, formatted in the original XML. The `Event.System.Channel` in the rule file example refers to the XML `<Event><System><Channel>System<Channel><System></Event>`. For Windows event logs in XML format, as in this example, if you want to specify the values contained in the nested XML tags as the condition of the rule, you can specify them by connecting them with a dot (`. `). In the rule file, these strings connected together with dots are called `eventkeys`.
+### Eventkeys
+The following is an excerpt of a Windows event log, formatted in the original XML. The `Event.System.Channel` field in the rule file example above refers to the original XML tag: `<Event><System><Channel>System<Channel><System></Event>`. Nested XML tags are replaced by tag names seperated by dots (`.`). In hayabusa rules, these field strings connected together with dots are refered to as  `eventkeys`.
 
 ``````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -91,18 +150,22 @@ The following is an excerpt of a Windows event log, formatted in the original XM
 </Event>
 ``````
 
-### Eventkey Aliases
+#### Eventkey Aliases
 Long eventkeys with many `.` seperations are common, so hayabusa will use aliases to make them easier to work with. Aliases are defined in the `config\eventkey_alias.txt` file. This file is a CSV file made up of `alias` and `event_key` mappings. You can rewrite the rule above as shown below with aliases making the rule easier to read.
 
 ``````
 detection:
     selection:
-        EventID: 7040
         Channel: System
+        EventID: 7040
+    condition: selection
 ``````
 
+#### Caution: Undefined Eventkey Aliases
+Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are not getting the correct data in the `output`(Alert details) message, and instead are getting results like `%EventID%`, then you need to update `config\eventkey_alias.txt` with a new alias.
+
 ### How to use XML attributes in conditions
-When Windows event logs are output in XML format, the XML attributes may have values set in them. In the example below, `Name` in `Provider Name` is an XML attribute.
+XML elements may have attributes set by adding a space to the element. For example, `Name` in `Provider Name` below is an XML attribute of the `Provider` element. 
 
 ````````````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -115,7 +178,7 @@ When Windows event logs are output in XML format, the XML attributes may have va
     </System>
 </Event>
 ````````````
-To specify XML attributes in an eventkey, use the format `{eventkey}_attributes.{attribute_name}`. For example, to specify the `Name` attribute of the `Provider` tag in the rule file, it would look like this:
+To specify XML attributes in an eventkey, use the format `{eventkey}_attributes.{attribute_name}`. For example, to specify the `Name` attribute of the `Provider` element in a rule file, it would look like this:
 
 ``````
 detection:
@@ -123,10 +186,11 @@ detection:
         Channel: Security
         EventID: 4672
         Event.System.Provider_attributes.Name: 'Microsoft-Windows-Security-Auditing'
+    condition: selection
 ``````
 
 ### EventData
-Windows event logs are divided into two parts: the `System` part where the fundamental data (Event ID, Timestamp, Record ID, Log name (aka Channel)) is written, and the `EventData` part where arbitrary data is written depending on the Event ID. The problem is that the names of the tags nested in EventData are all `Data` so the eventkeys described so far cannot distinguish between `SubjectUserSid` and `SubjectUserName`.
+Windows event logs are divided into two parts: the `System` part where the fundamental data (Event ID, Timestamp, Record ID, Log name (Channel)) is written, and the `EventData` part where arbitrary data is written depending on the Event ID. The problem is that the names of the tags nested in EventData are all called `Data` so the eventkeys described so far cannot distinguish between `SubjectUserSid` and `SubjectUserName`.
 
 ````````````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -146,19 +210,20 @@ Windows event logs are divided into two parts: the `System` part where the funda
 </Event>
 ````````````
 
-To deal with this problem, you can specify the value specified for `Name` in the eventkey instead of `Data`. For example, if you want to use `SubjectUserName` and `SubjectDomainName` in the EventData as a condition of the rule, you can describe it as follows:
+To deal with this problem, you can specify the value assigned in `Data Name`. For example, if you want to use `SubjectUserName` and `SubjectDomainName` in the EventData as a condition of a rule, you can describe it as follows:
 
 ``````
 detection:
     selection:
-        EventID: 7040
         Channel: System
+        EventID: 7040
         Event.EventData.SubjectUserName: hayabusa
         Event.EventData.SubjectDomainName: DESKTOP-HAYBUSA
+    condition: selection
 ``````
 
-### Special patterns in EventData
-Some of the tags nested in EventData do not have a Name attribute.
+### Abnormal patterns in EventData
+Some of the tags nested in `EventData` do not have a `Name` attribute.
 
 ``````
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -175,7 +240,7 @@ Some of the tags nested in EventData do not have a Name attribute.
 </Event>
 ``````
 
-To detect an event log like the one above, you can specify an eventkey named `EventData`. In this case, the condition will matach as long as any one of the nested tags without a Name attribute matches.
+To detect an event log like the one above, you can specify an eventkey named `EventData`. In this case, the condition will match as long as any one of the nested tags without a `Name` attribute matches.
 
 ``````
 detection:
@@ -183,145 +248,234 @@ detection:
         Channel: Security
         EventID: 5379
         EventData: None
+    condition: selection
 ``````
 
 ## Pipes
-A pipe can be used with eventkeys as shown below. All of the conditions we have described so far use exact matches, but by using pipes, you can describe more flexible detection rules. In the following example, if the value of `CommandLine` matches the regular expression `yamato.*hayabusa`, it will match the condition.
+A pipe can be used with eventkeys as shown below for matching strings. All of the conditions we have described so far use exact matches, but by using pipes, you can describe more flexible detection rules. In the following example, if the value of `EventData` matches the regular expression `[\s\S]*EngineVersion=2\.0[\s\S]*`, it will match the condition.
 
 ``````
 detection:
     selection:
-        EventID: 7040
-        Channel: System
-        CommandLine|re: yamato.*hayabusa
+        Channel: Microsoft-Windows-PowerShell/Operational
+        EventID: 400
+        EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
+    condition: selection
 ``````
 
 This is a list of what you can specify after the pipe. At the moment, hayabusa does not support chaining multiple pipes together.
 * startswith: Checks the string from the beginning
 * endswith: Checks the end of the string
 * contains: Checks if a word is contained in the data
-* re: Use regular expressions. (We are using the regex crate so please out the documentation at https://docs.rs/regex/1.5.4/regex/ on how to write regular expressions.)
+* re: Use regular expressions. (We are using the regex crate so please out the documentation at https://docs.rs/regex/1.5.4/regex/ to know how to write correct regular expressions.) 
+  > Caution: Some sigma rules that use regular expressions may fail to detect due to differences in how rust uses regular expressions.
 
 ## Wildcards
-Wildcards can be specified for the value corresponding to eventkey. In the example below, if the CommandLine starts with the string "hayabusa", it will be processed as if it matches the condition. 
-The specification is fundamentally the same as SIGMA rule wildcards.
+Wildcards can be used in eventkeys. In the example below, if `ProcessCommandLine` starts with the string "malware", the rule will match. 
+The specification is fundamentally the same as sigma rule wildcards.
 
 ``````
 detection:
     selection:
-        EventID: 7040
-        Channel: System
-        CommandLine: hayabusa*
+        Channel: Security
+        EventID: 4688
+        ProcessCommandLine: malware*
+    condition: selection
 ``````
 
-The following wildcards can be used.
+The following two wildcards can be used.
 * `*`: Matches any string of zero or more characters. (Internally it is converted to the regular expression `. *`.)
-* `? `: Matches any single character. (Internally converted to the regular expression `. `.)
+* `?`: Matches any single character. (Internally converted to the regular expression `. `.)
 
-When wildcards are used, they will be interpreted according to the following rules.
-* Wildcards (`*` and `?`) can be escaped by using a backslash (`/`).
+About escaping wildcards:
+* Wildcards (`*` and `?`) can be escaped by using a backslash: `\*`, `\?`.
 * If you want to use a backslash right before a wildcard then write `\\*` or `\\?`.
-* No escaping is required if you are using backslashes by themselves.
+* Escaping is not required if you are using backslashes by themselves.
 
-## Nesting keywords in the eventkey
-The eventkey can be nested with specific keywords. 
-In the example below, if the value of CommandLine matches the wildcard `aa*bb` and the length of the string is 10 or more, the condition will match.
+## Nesting keywords inside eventkeys
+Eventkeys can be nested with specific keywords. 
+In the example below, the rule will match if the following are true:
+* `ServiceName` is called `malicious-service` or contains a regular expression in `./config/regex/regexes_suspicous_service.txt`.
+* `ImagePath` has a minimum of 1000 characters.
+* `ImagePath` does not have any matches in the `allowlist`.
 
 ``````
 detection:
     selection:
-        EventID: 7040
         Channel: System
-        CommandLine:
-            value: aa*bb
-            min_length: 10
+        EventID: 7045
+        ServiceName:
+            - value: malicious-service
+            - regexes: ./config/regex/regexes_suspicous_services.txt
+        ImagePath:
+            min_length: 1000
+            allowlist: ./config/regex/allowlist_legitimate_serviceimage.txt
+    condition: selection
 ``````
 
-Currently, the following keywords can be specified.
-* value: matches by string (wildcards and pipes can also be specified).
-* min_length: matches when the number of characters is greater than or equal to the specified number.
-* regexes: matches if one of the regular expressions in the file that you specify in this field matches.
-* allowlist: rule will be skipped if there is any match found in the list of regular expressions in the file that you specify in this field.
+Currently, the following keywords can be specified:
+* `value`: matches by string (wildcards and pipes can also be specified).
+* `min_length`: matches when the number of characters is greater than or equal to the specified number.
+* `regexes`: matches if one of the regular expressions in the file that you specify in this field matches.
+* `allowlist`: rule will be skipped if there is any match found in the list of regular expressions in the file that you specify in this field.
 
-### regexes and allowlist
-Hayabusa provides built-in rules using regular expressions (defined in `config/regex/regexes_suspicous_service.txt`) and allowlisting (defined in `config/regex/allowlist_legimate_serviceimage.txt`).
-regexes and allowlist can be edited to change the behavior of all referenced rules at once.
+### regexes and allowlist keywords
+Hayabusa has two built-in regular expression files:
+* `./config/regex/regexes_suspicous_services.txt`: to detect suspicious service names
+* `./config/regex/allowlist_legitimate_serviceimage.txt`: to allow legitimate services
+  
+Files defined in `regexes` and `allowlist` can be edited to change the behavior of all rules that reference them without having to change any rule file itself.
 
-You can also specify to use different regexes and allowlist textfiles.
-Please refer to the default regexes_suspicous_service.txt and allowlist_legimate_serviceimage.txt when creating your own.
+You can also use different regexes and allowlist textfiles that you create.
+Please refer to the default `./config/regexes_suspicous_services.txt` and `./config/allowlist_legitimate_serviceimage.txt` when creating your own.
 
 ## condition
 With the notation we explained above, you can express AND and OR logic but it will be confusing if you are trying to define complex logic.
-When you want to make more complex rules, you should use `condition` as shown below.
+When you want to make more complex rules, you should use the `condition` keyword as shown below.
 
 ``````
 detection:
-    selection_1:
-        EventID: 7040
-    selection_2:
-        EventID: 7041
-    selection_3:
-        Channel: System
-    selection_4:
-        CommandLine|contains: lsass.exe
-    selection_5:
-        CommandLine|contains: services.exe
-    selection_6:
-        ParentProcessName|contains: wininit.exe
-
-    condition: ( selection_1 or selection_2 ) and selection_3 and ( selection_4 or selection_5 ) and ( not selection_6 ) 
+  SELECTION_1:
+    EventID: 3
+  SELECTION_2:
+    Initiated: 'true'
+  SELECTION_3:
+    DestinationPort:
+    - '4444'
+    - '666'
+  SELECTION_4:
+    Image: '*\Program Files*'
+  SELECTION_5:
+    DestinationIp:
+    - 10.*
+    - 192.168.*
+    - 172.16.*
+    - 127.*
+  SELECTION_6:
+    DestinationIsIpv6: 'false'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and not ((SELECTION_4 or (SELECTION_5 and SELECTION_6))))
 ``````
 
-The following keywords can be used for `condition`.
-* {expression1} and {expression2}: Require both {expression1} AND {expression2}
-* {expression1} or {expression2}: Require either {expression1} OR {expression2}
-* not {expression}: Reverse the logic of {expression}
-* ( {expression} ) : Set precedance of {expression}. It follows the same precedance logic as in mathematics.
+The following expressions can be used for `condition`.
+* `{expression1} and {expression2}`: Require both {expression1} AND {expression2}
+* `{expression1} or {expression2}`: Require either {expression1} OR {expression2}
+* `not {expression}`: Reverse the logic of {expression}
+* `( {expression} )`: Set precedance of {expression}. It follows the same precedance logic as in mathematics.
 
-In the above example, names such as selection_1 and selection_2 are used for grouping conditional expressions, but there is no need to add the prefix "selection", and the user can define any name. However, the only characters that can be used are those that match the regular expression `\w`.
+In the above example, selection names such as `SELECTION_1`, `SELECTION_2`, etc... are used but they can be named anything as long as they only contain the following characters: `a-z A-Z 0-9 _`
+> However, please use the standard convention of `selection_1`, `selection_2`, `filter_1`, `filter_2`, etc... to make things easy to read whenever possible.
 
 ## aggregation condition
-The condition field described above implements not only the AND and OR conditions, but also a function to aggregate the detected event logs. 
-This function is called the aggregation condition, and is specified by connecting it with a pipe after the condition. 
-In the example below, a conditional expression is used to determine if there are three or more `DestinationIp` values for each `SubjectUserName`.
+### Basics
+The `condition` keyword described above implements not only `AND` and `OR` logic, but is also able to count or "aggregate" events.
+This function is called the "aggregation condition" and is specified by connecting a condition with a pipe. 
+In the example below, a conditional expression is used to determine if there are ten or more `AccountName` values for any given `ComputerName` within a timeframe of 24 hours.
 
 ``````
 detection:
-    selection:
-        EventID: 7040
-        Channel: System
-    condition: selection | count(DestinationIp) by SubjectUserName >= 3
+  selection:
+    Channel: Security
+    EventID: 4648
+  condition: selection | count(AccountName) by ComputerName >= 10
+  timeframe: 24h
 ``````
 
-The aggregation condition can be defined in the following format. Note that {number} must be a number.
-* `count() {operator} {number}`: For log events that match the first condition before the pipe, the condition will match if the number of matched logs satisfies the condition expression specified by {operator} and {number}.
+The aggregation condition can be defined in the following format:
+* `count() {operator} {number}`: For log events that match the first condition before the pipe, the condition will match if the number of matched logs satisfies the condition expression specified by `{operator}` and `{number}`.  
 
-![](count1.png)
-
-* `count() by {eventkey_2} {operator} {number}`: Log events that match the first condition before pipe are grouped by {eventkey_2}, and if the number of matched events for each grouping satisfies the condition expression specified by {operator} and {number}, the condition will match.
-
-![](count2.png)
-
-* `count({eventkey}) {operator} {number}`: Counts how many different values of {eventkey} exist in the log event that match the condition before the condition pipe. If the number satisfies the conditional expression specified in {operator} and {number}, the condition is considered to have been met.
-
-![](count3.png)
-
-* `count({eventkey_1}) by {eventkey_2} {operator} {number}`: The logs that match the condition before the condition pipe are grouped by {eventkey_2}, and the number of values of {eventkey_1} in each group is counted. If the values counted for each grouping satisfy the conditional expression specified by {operator} and {number}, the condition is considered to have been met.
-
-![](count4.png)
-
-In addition, the following can be specified for the above operator:
+`{operator}` can be one of the following:
 * `==`: If the value is equal to the specified value, it is treated as matching the condition.
 * `>=`: If the value is greater than or equal to the specified value, the condition is considered to have been met.
 * `>`: If the value is greater than the specified value, the condition is considered to have been met.
 * `<=`: If the value is less than or equal to the specified value, the condition is considered to have been met.
-* `<`: If the value is less than the specified value, it will be treated as if the condition is met.
+* `<`: If the value is less than the specified value, it will be treated as if the condition is met.  
 
-# Alert details
-You can specify the message (alert details) that will be outputted when the detection condition is met. 
-In addition to outputting a fixed string, it is also possible to display the value in the event log by enclosing the eventkey in a `%`. 
-In the example below, the eventkey value ScriptBlockText is used in the message when a detection is made.
+`{number}` must be a number.
 
-``````
-output: 'command=%ScriptBlockText%'
-``````
+`timeframe` can be defined in the following:
+* `15s`: 15 seconds
+* `30m`: 30 minutes
+* `12h`: 12 hours
+* `7d`: 7 days
+* `3M`: 3 months
+> `timeframe` is not required by highly encouraged to define when possible for performance and memory efficiency.
+
+
+### Four patterns for aggregation conditions:
+1. No count argument or `by` keyword. Example: `selection | count() > 10`
+   > If `selection` is matches more than 10 times within the timeframe, the condition will match.
+2. No count argument but there is a `by` keyword. Example: `selection | count() by Date > 10`
+   > `selection` will have to be true more than 10 times for the **same** `Date`.
+3. There is a count argument but no `by` keyword. Example: `selection | count(Users) > 10`
+   > If `selection` matches and `Users` is **different** more than 10 times within the timeframe, the condition will match.
+4. There is both a count argument and `by` keyword. Example: `selection | count(Users) by Date > 10`
+   > For the **same** `Date`, there will need to be more than 10 **different** `Users` in order for the condition to match.
+
+### Pattern 1 example:
+This is the most basic pattern: `count() {operator} {number}`. The rule below will match if `selection` happens 3 or more times.
+
+![](count1_EN.png)
+
+### Pattern 2 example:
+`count() by {eventkey} {operator} {number}`: Log events that match the `condition` before the pipe are grouped by the **same** `{eventkey}`. If the number of matched events for each grouping satisfies the condition specified by `{operator}` and `{number}`, then the condition will match.
+
+![](count2_EN.png)
+
+### Pattern 3 example:
+`count({eventkey}) {operator} {number}`: Counts how many **different** values of `{eventkey}` exist in the log event that match the condition before the condition pipe. If the number satisfies the conditional expression specified in `{operator}` and `{number}`, the condition is considered to have been met.
+
+![](count3_EN.png)
+
+### Pattern 4 example:
+`count({eventkey_1}) by {eventkey_2} {operator} {number}`: The logs that match the condition before the condition pipe are grouped by the **same** `{eventkey_2}`, and the number of **different** values of `{eventkey_1}` in each group is counted. If the values counted for each grouping satisfy the conditional expression specified by `{operator}` and `{number}`, the condition will match.
+
+![](count4_EN.png)
+
+# Rule creation advice
+1. **When possible, always specify the `Channel` name.** In the future, we may filter on channel names so your rule may be ignored if the proper `Channel` is not set.
+2. **When possible, always specify the `EventID`.** In the future, we may filter on channel names so your rule may be ignored if the proper `EventID` is not set.
+3. **Do not use multiple `selection` fields when it is not needed.** For example:
+
+Bad example:
+```
+detection:
+  SELECTION_1:
+    EventID: 4625
+  SELECTION_2:
+    LogonType: 3
+  condition: SELECTION_1 and SELECTION_2
+```
+
+Good example:
+```
+detection:
+  selection:
+    EventID: 4625
+    LogonType: 3
+  condition: selection
+```
+
+4. **Name any of your filtering selections `filter`, `filter_1`, `filter_2`, etc... and do not use excessive grouping.**
+
+Bad example:
+```
+detection:
+  SELECTION_1:
+    EventID: 4625
+  SELECTION_2:
+    LogonType: 3
+  SELECTION_3:
+    IpAddress: '-'
+  condition: ((SELECTION_1 and SELECTION_2) and not (SELECTION_3))
+```
+
+Good example:
+```
+detection:
+  selection:
+    EventID: 4625
+    LogonType: 3
+  filter:
+    IpAddress: '-'
+  condition: selection and not filter
+```
