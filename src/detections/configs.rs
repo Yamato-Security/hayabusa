@@ -14,12 +14,13 @@ lazy_static! {
         levelmap.insert("CRITICAL".to_owned(), 5);
         return levelmap;
     };
+    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig =
+        load_eventkey_alias("config/eventkey_alias.txt");
 }
 
 #[derive(Clone)]
 pub struct ConfigReader {
     pub args: ArgMatches<'static>,
-    pub event_key_alias_config: EventKeyAliasConfig,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
@@ -28,7 +29,6 @@ impl ConfigReader {
     pub fn new() -> Self {
         ConfigReader {
             args: build_app(),
-            event_key_alias_config: load_eventkey_alias("config/eventkey_alias.txt"),
             event_timeline_config: load_eventcode_info("config/timeline_event_info.txt"),
             target_eventids: load_target_ids("config/target_eventids.txt"),
         }
@@ -129,8 +129,8 @@ impl EventKeyAliasConfig {
         };
     }
 
-    pub fn get_event_key(&self, alias: String) -> Option<&String> {
-        return self.key_to_eventkey.get(&alias);
+    pub fn get_event_key(&self, alias: &String) -> Option<&String> {
+        return self.key_to_eventkey.get(alias);
     }
 
     pub fn get_event_key_values(&self) -> Vec<(&String, &String)> {
@@ -195,14 +195,6 @@ impl EventInfoConfig {
     pub fn get_event_id(&self, eventid: &String) -> Option<&EventInfo> {
         return self.eventinfo.get(eventid);
     }
-
-    pub fn get_event_info(&self) -> Vec<(&String, &EventInfo)> {
-        return self.eventinfo.iter().map(|e| e).collect();
-    }
-
-    //    pub fn get_event_key_values(&self) -> Vec<(&String, &String)> {
-    //        return self.timeline_eventcode_info.iter().map(|e| e).collect();
-    //    }
 }
 
 fn load_eventcode_info(path: &str) -> EventInfoConfig {
@@ -232,26 +224,26 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     return config;
 }
 
-#[cfg(test)]
-mod tests {
+// #[cfg(test)]
+// mod tests {
 
-    use crate::detections::configs;
+//     use crate::detections::configs;
 
-    #[test]
-    #[ignore]
-    fn singleton_read_and_write() {
-        let message =
-            "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
-        configs::CONFIG.write().unwrap().event_key_alias_config =
-            configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+//     #[test]
+//     #[ignore]
+//     fn singleton_read_and_write() {
+//         let message =
+//             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
+//         configs::EVENT_KEY_ALIAS_CONFIG =
+//             configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
 
-        let display = format!(
-            "{}",
-            format_args!(
-                "{:?}",
-                configs::CONFIG.write().unwrap().event_key_alias_config
-            )
-        );
-        assert_eq!(message, display);
-    }
-}
+//         let display = format!(
+//             "{}",
+//             format_args!(
+//                 "{:?}",
+//                 configs::CONFIG.write().unwrap().event_key_alias_config
+//             )
+//         );
+//         assert_eq!(message, display);
+//     }
+// }

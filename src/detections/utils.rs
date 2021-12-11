@@ -107,8 +107,7 @@ pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
 
 // alias.txtについて、指定されたevent_keyに対応するaliasを取得します。
 pub fn get_alias(event_key: &String) -> Option<String> {
-    let conf = configs::CONFIG.read().unwrap();
-    let keyvalues = &conf.event_key_alias_config.get_event_key_values();
+    let keyvalues = &configs::EVENTKEY_ALIAS.get_event_key_values();
     let value = keyvalues
         .iter()
         .find(|(_, cur_event_key)| &event_key == cur_event_key);
@@ -124,11 +123,7 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
     if key.len() == 0 {
         return Option::None;
     }
-    let singleton = configs::CONFIG.read().unwrap();
-    let event_key = match singleton
-        .event_key_alias_config
-        .get_event_key(key.to_string())
-    {
+    let event_key = match configs::EVENTKEY_ALIAS.get_event_key(key) {
         Some(alias_event_key) => alias_event_key,
         None => key,
     };
