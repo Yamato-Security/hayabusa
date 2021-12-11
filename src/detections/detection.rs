@@ -138,7 +138,7 @@ impl Detection {
 
     pub fn add_aggcondtion_msg(&self) {
         for rule in &self.rules {
-            if !rule.has_agg_condition() || rule.yaml["output"].as_str().is_none() {
+            if !rule.has_agg_condition() {
                 continue;
             }
 
@@ -237,21 +237,29 @@ impl Detection {
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> String {
+        if rule.yaml["output"].as_str().unwrap_or("") != "" {
+            return rule.yaml["output"].as_str().unwrap_or("").to_string();
+        }
         // 条件式部分の出力
         let mut ret: String = "[condition] ".to_owned();
-        let agg_condition_raw_str: Vec<&str> = rule.yaml["condition"]
+        let agg_condition_raw_str: Vec<&str> = rule.yaml["detection"]["condition"]
             .as_str()
             .unwrap()
             .split("|")
             .collect();
-        let exist_timeframe = rule.yaml["detection"]["timeframe"].as_str().is_some();
+        // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
+        let agg_condition = rule.get_agg_condition().unwrap();
+        let exist_timeframe = rule.yaml["detection"]["timeframe"]
+            .as_str()
+            .unwrap_or("")
+            .to_string()
+            != "";
+        println!("{}", exist_timeframe);
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
-        ret.push_str(agg_condition_raw_str[1]);
+        ret.push_str(agg_condition_raw_str[1].trim());
         if exist_timeframe {
             ret.push_str(" in timeframe");
         }
-        // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
-        let agg_condition = rule.get_agg_condition().unwrap();
         ret.push_str(&format!(" [result] count:{}", agg_result.data));
         if agg_condition._field_name.is_some() {
             ret.push_str(&format!(
