@@ -6,6 +6,7 @@ use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
 use std::num::ParseIntError;
+use std::path::Path;
 
 use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 
@@ -22,7 +23,8 @@ pub fn count(rule: &mut RuleNode, record: &Value) {
             .unwrap_or(&String::default())
             .to_owned(),
     };
-    let field_value = get_alias_value_in_record(&field_name, record).unwrap_or(String::default());
+    let field_value =
+        get_alias_value_in_record(rule, &field_name, record, false).unwrap_or(String::default());
     let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
     countup(
         rule,
@@ -39,7 +41,7 @@ pub fn countup(
     field_value: String,
     record_time_value: DateTime<Utc>,
 ) {
-    let value_map = rule.countdata.entry(key.to_owned()).or_insert(Vec::new());
+    let value_map = rule.countdata.entry(key).or_insert(Vec::new());
     value_map.push(AggRecordTimeInfo {
         field_record_value: field_value,
         record_time: record_time_value,
@@ -48,7 +50,13 @@ pub fn countup(
 
 /// 与えられたエイリアスから対象レコード内の値を取得してダブルクオーテーションを外す関数。
 ///  ダブルクオーテーションを外す理由は結果表示の際に余計なダブルクオーテーションが入るのを防ぐため
-fn get_alias_value_in_record(alias: &String, record: &Value) -> Option<String> {
+/// is_by_aliasはこの関数を呼び出す際はcountのbyの値もしくはfieldの値のどちらかであるためboolとした
+fn get_alias_value_in_record(
+    rule: &RuleNode,
+    alias: &String,
+    record: &Value,
+    is_by_alias: bool,
+) -> Option<String> {
     if alias == "" {
         return None;
     }
@@ -59,7 +67,10 @@ fn get_alias_value_in_record(alias: &String, record: &Value) -> Option<String> {
         None => {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
-                format!("alias not found.value:{}", alias),
+                match is_by_alias {
+                    true => format!("count by clause alias value not found in count process. rule file:{} EventID:{}", Path::new(&rule.rulepath).file_name().unwrap().to_str().unwrap(),utils::get_event_value(&utils::get_event_id_key(), record).unwrap()),
+                    false =>format!("count field clause alias value not found in count process. rule file:{} EventID:{}", Path::new(&rule.rulepath).file_name().unwrap().to_str().unwrap(), utils::get_event_value(&utils::get_event_id_key(), record).unwrap())
+                }
             )
             .ok();
             return None;
@@ -76,7 +87,7 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
         Some(aggcondition) => {
             if aggcondition._by_field_name.is_some() {
                 let by_field_key = aggcondition._by_field_name.as_ref().unwrap();
-                return get_alias_value_in_record(by_field_key, record)
+                return get_alias_value_in_record(rule, by_field_key, record, true)
                     .unwrap_or(String::default());
             } else {
                 return String::default();
