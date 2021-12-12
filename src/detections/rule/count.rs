@@ -848,8 +848,6 @@ mod tests {
         let mut expect_start_timedate = vec![];
         let mut expect_condition_op_num = vec![];
         for expect_agg in expect_agg_results {
-            println!("{:?}", expect_agg);
-            println!("{:?}", expect_agg.key);
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
             //countupの関数が機能しているかを確認
             assert_eq!(
