@@ -26,8 +26,8 @@ pub fn count(rule: &mut RuleNode, record: &Value) {
     let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
     countup(
         rule,
-        &key,
-        &field_value,
+        key,
+        field_value,
         Message::get_event_time(record).unwrap_or(default_time),
     );
 }
@@ -35,14 +35,14 @@ pub fn count(rule: &mut RuleNode, record: &Value) {
 ///count byの条件に合致する検知済みレコードの数を増やすための関数
 pub fn countup(
     rule: &mut RuleNode,
-    key: &str,
-    field_value: &str,
+    key: String,
+    field_value: String,
     record_time_value: DateTime<Utc>,
 ) {
     rule.countdata.entry(key.to_owned()).or_insert(Vec::new());
-    let value_map = rule.countdata.get_mut(key).unwrap();
+    let value_map = rule.countdata.get_mut(&key).unwrap();
     value_map.push(AggRecordTimeInfo {
-        field_record_value: field_value.to_string(),
+        field_record_value: field_value,
         record_time: record_time_value,
     });
 }
