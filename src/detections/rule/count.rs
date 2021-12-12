@@ -260,7 +260,7 @@ pub fn judge_timeframe(
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
     let mut time_data = time_datas.clone();
-    time_data.sort_by(|a, b| a.record_time.cmp(&b.record_time));
+    time_data.sort_unstable_by(|a, b| a.record_time.cmp(&b.record_time));
     let aggcondition = rule.get_agg_condition().unwrap();
     let mut start_point = 0;
     // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
