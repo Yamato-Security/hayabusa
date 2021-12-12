@@ -79,7 +79,8 @@ fn get_alias_value_in_record(
 }
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
-/// gtoupbyの指定がない場合は空文字を返却
+/// 以下の場合は空文字を返却
+/// agg_conditionがない、gtoupbyの指定がない、groubpbyで指定したエイリアスがれこーどないに存在しない
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
     let aggref = rule.get_agg_condition();
     match aggref {
