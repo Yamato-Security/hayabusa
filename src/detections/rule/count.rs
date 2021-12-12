@@ -286,11 +286,11 @@ pub fn judge_timeframe(
 
             // timeframe内に入っている場合があるため判定を行う
             let judge;
-            let result_set_cnt:i32 = if exist_field {
+            let result_set_cnt: i32 = if exist_field {
                 loaded_field_value.len() as i32
             } else {
                 count_set_cnt as i32
-            }
+            };
             judge = select_aggcon(result_set_cnt, &aggcondition);
             if judge {
                 ret.push(AggResult::new(
@@ -314,11 +314,11 @@ pub fn judge_timeframe(
             let count_set_cnt = check_point - start_point;
             // timeframe内に入っている場合があるため判定を行う
             let judge;
-            let result_set_cnt:i32 = if exist_field {
+            let result_set_cnt: i32 = if exist_field {
                 loaded_field_value.len() as i32
             } else {
                 count_set_cnt as i32
-            }
+            };
             judge = select_aggcon(result_set_cnt, &aggcondition);
             // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
             if !judge {

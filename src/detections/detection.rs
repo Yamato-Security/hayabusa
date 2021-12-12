@@ -259,6 +259,7 @@ impl Detection {
         if exist_timeframe {
             ret.push_str(" in timeframe");
         }
+
         ret.push_str(&format!(" [result] count:{}", agg_result.data));
         if agg_condition._field_name.is_some() {
             ret.push_str(&format!(
@@ -267,6 +268,7 @@ impl Detection {
                 agg_result.field_values.join("/")
             ));
         }
+
         if agg_condition._by_field_name.is_some() {
             ret.push_str(&format!(
                 " {}:{}",
