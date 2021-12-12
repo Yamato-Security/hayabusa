@@ -82,8 +82,8 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
     let aggcondition = aggref.unwrap();
     // recordでaliasが登録されている前提とする
     if aggcondition._by_field_name.is_some() {
-        let by_field_value = aggcondition._by_field_name.as_ref().unwrap();
-        key = get_alias_value_in_record(by_field_value, record).unwrap_or("_".to_owned());
+        let by_field_key = aggcondition._by_field_name.as_ref().unwrap();
+        key = get_alias_value_in_record(by_field_key, record).unwrap_or("_".to_owned());
     }
     return key;
 }
