@@ -80,18 +80,18 @@ fn get_alias_value_in_record(
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
 /// 以下の場合は空文字を返却
-/// agg_conditionがない、gtoupbyの指定がない、groubpbyで指定したエイリアスがれこーどないに存在しない
+/// agg_conditionがない、gtoupbyの指定がない、groubpbyで指定したエイリアスがレコードに存在しない場合は_のみとする。空文字ではキーを指定してデータを取得することができなかった
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
     let aggref = rule.get_agg_condition();
     match aggref {
-        None => return String::default(),
+        None => return "_".to_string(),
         Some(aggcondition) => {
             if aggcondition._by_field_name.is_some() {
                 let by_field_key = aggcondition._by_field_name.as_ref().unwrap();
                 return get_alias_value_in_record(rule, by_field_key, record, true)
-                    .unwrap_or(String::default());
+                    .unwrap_or("_".to_string());
             } else {
-                return String::default();
+                return "_".to_string();
             }
         }
     }
@@ -848,6 +848,8 @@ mod tests {
         let mut expect_start_timedate = vec![];
         let mut expect_condition_op_num = vec![];
         for expect_agg in expect_agg_results {
+            println!("{:?}", expect_agg);
+            println!("{:?}", expect_agg.key);
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
             //countupの関数が機能しているかを確認
             assert_eq!(
