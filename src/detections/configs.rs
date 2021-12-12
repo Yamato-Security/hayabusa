@@ -121,17 +121,23 @@ fn load_target_ids(path: &str) -> TargetEventIds {
 #[derive(Debug, Clone)]
 pub struct EventKeyAliasConfig {
     key_to_eventkey: HashMap<String, String>,
+    key_to_split_eventkey: HashMap<String, Vec<usize>>,
 }
 
 impl EventKeyAliasConfig {
     pub fn new() -> EventKeyAliasConfig {
         return EventKeyAliasConfig {
             key_to_eventkey: HashMap::new(),
+            key_to_split_eventkey: HashMap::new(),
         };
     }
 
     pub fn get_event_key(&self, alias: &String) -> Option<&String> {
         return self.key_to_eventkey.get(alias);
+    }
+
+    pub fn get_event_key_split( &self, alias: &String ) -> Option<&Vec<usize>> {
+        return self.key_to_split_eventkey.get(alias);
     }
 }
 
@@ -155,6 +161,8 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         config
             .key_to_eventkey
             .insert(alias.to_owned(), event_key.to_owned());
+        let splits = event_key.split(".").map(|s| s.len() ).collect();
+        config.key_to_split_eventkey.insert(alias.to_owned(), splits);
     });
     config.key_to_eventkey.shrink_to_fit();
     return config;

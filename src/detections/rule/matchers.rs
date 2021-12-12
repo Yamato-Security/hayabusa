@@ -342,9 +342,6 @@ impl LeafMatcher for DefaultMatcher {
             Value::Bool(b) => b_str = b.to_string(),
             Value::Number(n) => {
                 n_str = n.to_string();
-                if !self.key_list.is_empty() {
-                    println!("{}", self.key_list[0]);
-                }
             }
             _ => (),
         };

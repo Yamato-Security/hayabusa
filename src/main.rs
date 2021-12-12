@@ -252,18 +252,6 @@ fn _create_rec_info(mut data: Value, path: &dyn Display) -> EvtxRecordInfo {
         }
         _ => (),
     }
-    match &data["Event"]["EventData"]["DestPort"] {
-        Value::Number(n) => data["Event"]["EventData"]["DestPort"] = Value::String(n.to_string()),
-        _ => (),
-    }
-    match &data["Event"]["EventData"]["IpPort"] {
-        Value::Number(n) => data["Event"]["EventData"]["IpPort"] = Value::String(n.to_string()),
-        _ => (),
-    }
-    match &data["Event"]["EventData"]["SourcePort"] {
-        Value::Number(n) => data["Event"]["EventData"]["SourcePort"] = Value::String(n.to_string()),
-        _ => (),
-    }
 
     // EvtxRecordInfoを作る
     let data_str = data.to_string();

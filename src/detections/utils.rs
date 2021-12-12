@@ -109,20 +109,37 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
     if key.len() == 0 {
         return Option::None;
     }
-    let event_key = match configs::EVENTKEY_ALIAS.get_event_key(key) {
-        Some(alias_event_key) => alias_event_key,
-        None => key,
-    };
 
-    let mut ret: &Value = event_value;
-    for key in event_key.split(".") {
-        if ret.is_object() == false {
-            return Option::None;
+    let event_key = configs::EVENTKEY_ALIAS.get_event_key(key);
+    if let Some(event_key) = event_key {
+        let mut ret: &Value = event_value;
+        // get_event_keyが取得できてget_event_key_splitが取得できないことはない
+        let splits = configs::EVENTKEY_ALIAS.get_event_key_split(key);
+        let mut start_idx = 0;
+        for key in splits.unwrap() {
+            if ret.is_object() == false {
+                return Option::None;
+            }
+
+            let val = &event_key[start_idx..(*key+start_idx)];
+            ret = &ret[val];
+            start_idx = *key+start_idx;
+            start_idx+=1;
         }
-        ret = &ret[key];
-    }
 
-    return Option::Some(ret);
+        return Option::Some(ret);    
+    } else {
+        let mut ret: &Value = event_value;
+        let event_key = key;
+        for key in event_key.split(".") {
+            if ret.is_object() == false {
+                return Option::None;
+            }
+            ret = &ret[key];
+        }
+
+        return Option::Some(ret);        
+    }
 }
 
 pub fn get_thread_num() -> usize {
