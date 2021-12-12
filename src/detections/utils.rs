@@ -121,13 +121,13 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
                 return Option::None;
             }
 
-            let val = &event_key[start_idx..(*key+start_idx)];
+            let val = &event_key[start_idx..(*key + start_idx)];
             ret = &ret[val];
-            start_idx = *key+start_idx;
-            start_idx+=1;
+            start_idx = *key + start_idx;
+            start_idx += 1;
         }
 
-        return Option::Some(ret);    
+        return Option::Some(ret);
     } else {
         let mut ret: &Value = event_value;
         let event_key = key;
@@ -138,7 +138,7 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
             ret = &ret[key];
         }
 
-        return Option::Some(ret);        
+        return Option::Some(ret);
     }
 }
 
