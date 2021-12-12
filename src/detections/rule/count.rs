@@ -14,20 +14,15 @@ use crate::detections::utils;
 /// 検知された際にカウント情報を投入する関数
 pub fn count(rule: &mut RuleNode, record: &Value) {
     let key = create_count_key(&rule, record);
-    let field_name: String;
-    match rule.get_agg_condition() {
-        None => {
-            field_name = "".to_owned();
-        }
-        Some(aggcondition) => {
-            field_name = aggcondition
-                ._field_name
-                .as_ref()
-                .unwrap_or(&"".to_owned())
-                .to_owned();
-        }
-    }
-    let field_value = get_alias_value_in_record(&field_name, record).unwrap_or("".to_owned());
+    let field_name: String = match rule.get_agg_condition() {
+        None => String::default(),
+        Some(aggcondition) => aggcondition
+            ._field_name
+            .as_ref()
+            .unwrap_or(&String::default())
+            .to_owned(),
+    };
+    let field_value = get_alias_value_in_record(&field_name, record).unwrap_or(String::default());
     let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
     countup(
         rule,
@@ -52,7 +47,8 @@ pub fn countup(
     });
 }
 
-/// 与えられたエイリアスから対象レコード内の値を取得してダブルクオーテーションを外す関数
+/// 与えられたエイリアスから対象レコード内の値を取得してダブルクオーテーションを外す関数。
+///  ダブルクオーテーションを外す理由は結果表示の際に余計なダブルクオーテーションが入るのを防ぐため
 fn get_alias_value_in_record(alias: &String, record: &Value) -> Option<String> {
     if alias == "" {
         return None;
@@ -291,14 +287,12 @@ pub fn judge_timeframe(
 
             // timeframe内に入っている場合があるため判定を行う
             let judge;
-            let result_set_cnt;
-            if exist_field {
-                result_set_cnt = loaded_field_value.len() as i32;
-                judge = select_aggcon(result_set_cnt, &aggcondition);
+            let result_set_cnt:i32 = if exist_field {
+                loaded_field_value.len() as i32
             } else {
-                result_set_cnt = count_set_cnt as i32;
-                judge = select_aggcon(result_set_cnt, &aggcondition);
+                count_set_cnt as i32
             }
+            judge = select_aggcon(result_set_cnt, &aggcondition);
             if judge {
                 ret.push(AggResult::new(
                     result_set_cnt,
@@ -321,14 +315,12 @@ pub fn judge_timeframe(
             let count_set_cnt = check_point - start_point;
             // timeframe内に入っている場合があるため判定を行う
             let judge;
-            let result_set_cnt;
-            if exist_field {
-                result_set_cnt = loaded_field_value.len() as i32;
-                judge = select_aggcon(result_set_cnt, &aggcondition);
+            let result_set_cnt:i32 = if exist_field {
+                loaded_field_value.len() as i32
             } else {
-                result_set_cnt = count_set_cnt as i32;
-                judge = select_aggcon(result_set_cnt, &aggcondition);
+                count_set_cnt as i32
             }
+            judge = select_aggcon(result_set_cnt, &aggcondition);
             // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
             if !judge {
                 start_point += 1;
