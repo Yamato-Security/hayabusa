@@ -38,6 +38,7 @@ impl Debug for RuleNode {
 }
 
 unsafe impl Sync for RuleNode {}
+unsafe impl Send for RuleNode {}
 
 impl RuleNode {
     pub fn new(rulepath: String, yaml: Yaml) -> RuleNode {
@@ -109,8 +110,8 @@ impl RuleNode {
 
 /// Ruleファイルのdetectionを表すノード
 struct DetectionNode {
-    pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
-    pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
+    pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode>>>,
+    pub condition: Option<Box<dyn SelectionNode>>,
     pub aggregation_condition: Option<AggregationParseInfo>,
     pub timeframe: Option<TimeFrameInfo>,
 }
@@ -240,7 +241,7 @@ impl DetectionNode {
     fn parse_selection(
         &self,
         selection_yaml: &Yaml,
-    ) -> Option<Box<dyn SelectionNode + Send + Sync>> {
+    ) -> Option<Box<dyn SelectionNode>> {
         return Option::Some(self.parse_selection_recursively(vec![], selection_yaml));
     }
 
@@ -249,7 +250,7 @@ impl DetectionNode {
         &self,
         key_list: Vec<String>,
         yaml: &Yaml,
-    ) -> Box<dyn SelectionNode + Send + Sync> {
+    ) -> Box<dyn SelectionNode> {
         if yaml.as_hash().is_some() {
             // 連想配列はAND条件と解釈する
             let yaml_hash = yaml.as_hash().unwrap();
