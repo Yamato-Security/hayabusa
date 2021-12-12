@@ -77,7 +77,7 @@ impl RuleNode {
             return false;
         }
         let result = self.detection.as_ref().unwrap().select(event_record);
-        if result {
+        if result && self.has_agg_condition() {
             count::count(self, &event_record.record);
         }
         return result;
