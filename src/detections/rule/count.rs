@@ -70,17 +70,18 @@ fn get_alias_value_in_record(alias: &String, record: &Value) -> Option<String> {
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
     let aggref = rule.get_agg_condition();
-    let mut key = "_".to_string();
-    if aggref.is_none() {
-        return key;
+    match aggref {
+        None => return String::default(),
+        Some(aggcondition) => {
+            if aggcondition._by_field_name.is_some() {
+                let by_field_key = aggcondition._by_field_name.as_ref().unwrap();
+                return get_alias_value_in_record(by_field_key, record)
+                    .unwrap_or(String::default());
+            } else {
+                return String::default();
+            }
+        }
     }
-    let aggcondition = aggref.unwrap();
-    // recordでaliasが登録されている前提とする
-    if aggcondition._by_field_name.is_some() {
-        let by_field_key = aggcondition._by_field_name.as_ref().unwrap();
-        key = get_alias_value_in_record(by_field_key, record).unwrap_or("_".to_owned());
-    }
-    return key;
 }
 
 ///現状のレコードの状態から条件式に一致しているかを判定する関数
