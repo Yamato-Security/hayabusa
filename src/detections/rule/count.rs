@@ -80,20 +80,15 @@ fn get_alias_value_in_record(
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
 /// 以下の場合は空文字を返却
-/// agg_conditionがない、gtoupbyの指定がない、groubpbyで指定したエイリアスがレコードに存在しない場合は_のみとする。空文字ではキーを指定してデータを取得することができなかった
+/// groupbyの指定がない、groubpbyで指定したエイリアスがレコードに存在しない場合は_のみとする。空文字ではキーを指定してデータを取得することができなかった
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
-    let aggref = rule.get_agg_condition();
-    match aggref {
-        None => return "_".to_string(),
-        Some(aggcondition) => {
-            if aggcondition._by_field_name.is_some() {
-                let by_field_key = aggcondition._by_field_name.as_ref().unwrap();
-                return get_alias_value_in_record(rule, by_field_key, record, true)
-                    .unwrap_or("_".to_string());
-            } else {
-                return "_".to_string();
-            }
-        }
+    let agg_condition = rule.get_agg_condition().unwrap();
+    if agg_condition._by_field_name.is_some() {
+        let by_field_key = agg_condition._by_field_name.as_ref().unwrap();
+        return get_alias_value_in_record(rule, by_field_key, record, true)
+            .unwrap_or("_".to_string());
+    } else {
+        return "_".to_string();
     }
 }
 
