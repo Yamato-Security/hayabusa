@@ -675,17 +675,16 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         let init_result = rule_node.init();
-        assert_eq!(init_result.is_ok(), true);
+        assert!(init_result.is_ok());
         let target = vec![SIMPLE_RECORD_STR, record_str];
         for record in target {
             match serde_json::from_str(record) {
                 Ok(rec) => {
-                    let recinfo = EvtxRecordInfo {
+                    assert!(rule_node.select(&EvtxRecordInfo {
                         evtx_filepath: "testpath".to_owned(),
                         record: rec,
                         data_string: String::default(),
-                    };
-                    let _result = rule_node.select(&recinfo);
+                    }));
                 }
                 Err(_rec) => {
                     assert!(false, "failed to parse json record.");
@@ -818,13 +817,11 @@ mod tests {
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
-                    let recinfo = EvtxRecordInfo {
+                    assert!(&rule_node.select(&EvtxRecordInfo {
                         evtx_filepath: "testpath".to_owned(),
                         record: record,
                         data_string: String::default(),
-                    };
-                    let result = &rule_node.select(&recinfo);
-                    assert_eq!(result, &true);
+                    }));
                 }
                 Err(_rec) => {
                     assert!(false, "Failed to parse json record.");
