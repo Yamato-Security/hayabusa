@@ -178,7 +178,7 @@ mod tests {
         };
         let _ = &yaml.read_dir(
             "test_files/rules/yaml/".to_string(),
-            &"".to_owned(),
+            &String::default(),
             &exclude_ids,
         );
         assert_ne!(yaml.files.len(), 0);

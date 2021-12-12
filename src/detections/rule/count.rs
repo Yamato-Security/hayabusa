@@ -105,7 +105,7 @@ pub fn get_str_agg_eq(rule: &RuleNode) -> String {
         .aggregation_condition
         .as_ref()
         .unwrap();
-    let mut ret: String = "".to_owned();
+    let mut ret: String = String::default();
     match agg_condition._cmp_op {
         AggregationConditionToken::EQ => {
             ret.push_str("== ");

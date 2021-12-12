@@ -250,7 +250,7 @@ fn _output_with_omikuji(omikuji: Omikuji) {
 /// output logo
 fn output_logo() {
     let fp = &format!("art/logo.txt");
-    let content = fs::read_to_string(fp).unwrap_or("".to_owned());
+    let content = fs::read_to_string(fp).unwrap_or(String::default());
     println!("{}", content);
 }
 
@@ -265,7 +265,7 @@ fn output_eggs(exec_datestr: &str) {
     match eggs.get(exec_datestr) {
         None => {}
         Some(path) => {
-            let content = fs::read_to_string(path).unwrap_or("".to_owned());
+            let content = fs::read_to_string(path).unwrap_or(String::default());
             println!("{}", content);
         }
     }
