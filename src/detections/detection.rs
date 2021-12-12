@@ -136,7 +136,7 @@ impl Detection {
         return self;
     }
 
-    pub fn add_aggcondtion_msg(&self) {
+    pub fn add_aggcondition_msg(&self) {
         for rule in &self.rules {
             if !rule.has_agg_condition() {
                 continue;

@@ -217,7 +217,7 @@ fn analysis_file(
     }
 
     tokio_rt.shutdown_background();
-    detection.add_aggcondtion_msg();
+    detection.add_aggcondition_msg();
     tl.tm_stats_dsp_msg();
 
     return detection;
