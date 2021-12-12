@@ -133,10 +133,6 @@ impl EventKeyAliasConfig {
     pub fn get_event_key(&self, alias: &String) -> Option<&String> {
         return self.key_to_eventkey.get(alias);
     }
-
-    pub fn get_event_key_values(&self) -> Vec<(&String, &String)> {
-        return self.key_to_eventkey.iter().map(|e| e).collect();
-    }
 }
 
 fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
