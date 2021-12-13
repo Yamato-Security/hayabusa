@@ -27,7 +27,7 @@ pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
 pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
-    detection: Option<DetectionNode>,
+    detection: DetectionNode,
     countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
 }
 
@@ -45,7 +45,7 @@ impl RuleNode {
         return RuleNode {
             rulepath: rulepath,
             yaml: yaml,
-            detection: Option::None,
+            detection: DetectionNode::new(),
             countdata: HashMap::new(),
         };
     }
@@ -53,18 +53,11 @@ impl RuleNode {
     pub fn init(&mut self) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
 
-        // SIGMAルールを受け入れるため、outputがなくてもOKにする。
-        // if self.yaml["output"].as_str().unwrap_or("").is_empty() {
-        //     errmsgs.push("Cannot find required key. key:output".to_string());
-        // }
-
         // detection node initialization
-        let mut detection = DetectionNode::new();
-        let detection_result = detection.init(&self.yaml["detection"]);
+        let detection_result = self.detection.init(&self.yaml["detection"]);
         if detection_result.is_err() {
             errmsgs.extend(detection_result.unwrap_err());
         }
-        self.detection = Option::Some(detection);
 
         if errmsgs.is_empty() {
             return Result::Ok(());
@@ -74,10 +67,7 @@ impl RuleNode {
     }
 
     pub fn select(&mut self, filepath: &String, event_record: &EvtxRecordInfo) -> bool {
-        if self.detection.is_none() {
-            return false;
-        }
-        let result = self.detection.as_ref().unwrap().select(event_record);
+        let result = self.detection.select(event_record);
         if result {
             count::count(self, filepath, &event_record.record);
         }
@@ -85,12 +75,7 @@ impl RuleNode {
     }
     /// aggregation conditionが存在するかを返す関数
     pub fn has_agg_condition(&self) -> bool {
-        return self
-            .detection
-            .as_ref()
-            .unwrap()
-            .aggregation_condition
-            .is_some();
+        return self.detection.aggregation_condition.is_some();
     }
     /// Aggregation Conditionの結果を配列で返却する関数
     pub fn judge_satisfy_aggcondition(&self) -> Vec<AggResult> {
@@ -978,10 +963,7 @@ mod tests {
                     data_string: record_str.to_string(),
                 };
                 let result = rule_node.select(&"testpath".to_string(), &recinfo);
-                assert_eq!(
-                    rule_node.detection.unwrap().aggregation_condition.is_some(),
-                    true
-                );
+                assert_eq!(rule_node.detection.aggregation_condition.is_some(), true);
                 assert_eq!(result, true);
                 assert_eq!(
                     *&rule_node

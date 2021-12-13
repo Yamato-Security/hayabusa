@@ -548,7 +548,7 @@ mod tests {
         updated_date: 2020/11/8
         "#;
         let rule_node = parse_rule_from_str(rule_str);
-        let selection_node = &rule_node.detection.unwrap().name_to_selection["selection"];
+        let selection_node = &rule_node.detection.name_to_selection["selection"];
 
         // Root
         let detection_childs = selection_node.get_childs();

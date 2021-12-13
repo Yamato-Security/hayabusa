@@ -43,23 +43,10 @@ pub fn countup(
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数
 pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
-    if rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .is_none()
-    {
+    if rule.detection.aggregation_condition.as_ref().is_none() {
         return "_".to_string();
     }
-    let aggcondition = rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .unwrap();
+    let aggcondition = rule.detection.aggregation_condition.as_ref().unwrap();
     // recordでaliasが登録されている前提とする
     let mut key = "".to_string();
     if aggcondition._field_name.is_some() {
@@ -115,13 +102,7 @@ pub fn aggregation_condition_select(rule: &RuleNode, filepath: &String) -> Vec<A
 /// aggregation condition内での条件式を文字として返す関数
 pub fn get_str_agg_eq(rule: &RuleNode) -> String {
     //この関数はaggregation ruleのパースが正常終了した後に呼ばれる想定のためOptionの判定は行わない
-    let agg_condition = rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .unwrap();
+    let agg_condition = rule.detection.aggregation_condition.as_ref().unwrap();
     let mut ret: String = "".to_owned();
     match agg_condition._cmp_op {
         AggregationConditionToken::EQ => {
@@ -268,18 +249,12 @@ pub fn judge_timeframe(
     let mut ret: Vec<AggResult> = Vec::new();
     let mut time_data = time_datas.clone();
     time_data.sort();
-    let aggcondition = rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .unwrap();
+    let aggcondition = rule.detection.aggregation_condition.as_ref().unwrap();
     let mut start_point = 0;
     // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
     let mut check_point = start_point + aggcondition._cmp_num - 1;
     // timeframeで指定された基準の値を秒数として保持
-    let judge_sec_frame = get_sec_timeframe(&rule.detection.as_ref().unwrap().timeframe);
+    let judge_sec_frame = get_sec_timeframe(&rule.detection.timeframe);
     loop {
         // 基準となるレコードもしくはcountを最低限満たす対象のレコードのindexが配列の領域を超えていた場合
         if start_point as usize >= time_data.len() || check_point as usize >= time_data.len() {
