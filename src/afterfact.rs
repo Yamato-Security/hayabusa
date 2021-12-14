@@ -83,8 +83,6 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
     }
 
     let messages = print::MESSAGES.lock().unwrap();
-    let mut detect_count = 0;
-    let mut unique_detect_count = 0;
     // levelの区分が"Critical","High","Medium","Low","Informational","Undefined"の6つであるため
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
@@ -120,22 +118,15 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
             if !detected_rule_files.contains(&detect_info.rulepath) {
                 detected_rule_files.push(detect_info.rulepath.clone());
                 unique_detect_counts_by_level[level_suffix] += 1;
-                unique_detect_count += 1;
             }
             total_detect_counts_by_level[level_suffix] += 1;
         }
-        detect_count += detect_infos.len();
     }
     println!("");
 
     wtr.flush()?;
     println!("");
-    _print_unique_results(
-        total_detect_counts_by_level,
-        unique_detect_counts_by_level,
-        detect_count as u128,
-        unique_detect_count as u128,
-    );
+    _print_unique_results(total_detect_counts_by_level, unique_detect_counts_by_level);
     Ok(())
 }
 
@@ -143,8 +134,6 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
 fn _print_unique_results(
     mut total_detect_counts_by_level: Vec<u128>,
     mut unique_detect_counts_by_level: Vec<u128>,
-    total_counts: u128,
-    unique_counts: u128,
 ) {
     let levels = Vec::from([
         "Critical",
@@ -161,7 +150,8 @@ fn _print_unique_results(
 
     println!(
         "Unique | Total events detected: {} | {}",
-        unique_counts, total_counts
+        unique_detect_counts_by_level.iter().sum::<u128>(),
+        total_detect_counts_by_level.iter().sum::<u128>()
     );
     for (i, level_name) in levels.iter().enumerate() {
         println!(
