@@ -802,6 +802,107 @@ mod tests {
             expected_agg_result,
         );
     }
+
+    // timeframeの検査
+    // timeframe=2hで、パイプ以降はcount(EventID) >= 3とする。
+    //
+    // このとき先頭の3行だと検知しないが、2行目から4行目は検知するはず
+    // このように先頭行ではなく、途中から数えて検知するパターンをチェックする。
+    // 10:00 EventID=1
+    // 11:00 EventID=1
+    // 12:00 EventID=2
+    // 13:00 EventID=3
+    #[test]
+    fn test_count_timeframe() {
+        let record_str1: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T00:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str2: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T01:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str3: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 2,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T02:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str4: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 3,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T03:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count(EventID) >= 3
+            timeframe: 2h
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let default_time = Utc.ymd(1977, 1, 9).and_hms(1, 30, 0);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("_".to_owned(), 4);
+        let mut expected_agg_result: Vec<AggResult> = Vec::new();
+        expected_agg_result.push(AggResult::new(
+            3,
+            "_".to_owned(),
+            vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+            default_time,
+            ">= 3".to_string(),
+        ));
+        check_count(
+            rule_str,
+            vec![record_str1, record_str2, record_str3, record_str4],
+            expected_count,
+            expected_agg_result,
+        );
+    }
+
     /// countで対象の数値確認を行うためのテスト用関数
     fn check_count(
         rule_str: &str,
@@ -831,6 +932,8 @@ mod tests {
             }
         }
         let agg_results = &rule_node.judge_satisfy_aggcondition();
+        assert_eq!(agg_results.len(),expect_agg_results.len());
+
         let mut expect_data = vec![];
         let mut expect_key = vec![];
         let mut expect_field_values = vec![];
