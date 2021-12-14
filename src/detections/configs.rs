@@ -63,6 +63,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -s --statistics 'Prints statistics of event IDs'
     -n --show-noisyalerts 'do not exclude noisy rules'
     -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
+    --show-deprecated 'do not exclude rules with YAML's status deprecated'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
