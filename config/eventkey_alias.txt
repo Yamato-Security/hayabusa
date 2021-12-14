@@ -144,31 +144,29 @@ Workstation,Event.EventData.Workstation
 WorkstationName,Event.EventData.WorkstationName
 param1,Event.EventData.param1
 param2,Event.EventData.param2
-CallerProcessName
-CertThumbprint
-ClassName
-DestAddress
-ErrorCode
-EventLog
-FilePath
-Filename
-NewTemplateContent
-NewUacValue
-New_Value
-OldUacValue
-ProcessId
-ProviderName
-Provider_Name
-SearchFilter
-ServerName
-ServiceStartType
-ServiceType
-Source_Name
-StartAddress
-State
-TargetServerName
-TemplateContent
-Value
-WMIcommand
-provider_Name
-sha1
+CallerProcessName,Event.EventData.CallerProcessName
+CertThumbprint,Event.EventData.CertThumbprint
+ClassName,Event.EventData.ClassName
+DestAddress,Event.EventData.DestAddress
+ErrorCode,Event.EventData.ErrorCode
+FilePath,Event.EventData.FilePath
+Filename,Event.EventData.Filename
+NewTemplateContent, Event.EventData.NewTemplateContent
+NewUacValue,Event.EventData.NewUacValue
+New_Value,Event.EventData.New Value
+OldUacValue,Event.EventData.OldUacValue
+ProcessId,Event.EventData.ProcessId
+ProviderName,Event.System.Provider_Name
+Provider_Name,Event.System.Provider_Name
+SearchFilter,Event.System.SearchFilter
+ServerName,Event.System.ServerName
+ServiceStartType,Event.EventData.ServiceStartType
+ServiceType,Event.EventData.ServiceType
+Source_Name,Event.EventData.Source Name
+StartAddress,Event.EventData.StartAddress
+State,Event.EventData.State
+TargetServerName,Event.EventData.TargetServerName
+TemplateContent,Event.EventData.TemplateContent
+Value, Event.EventData.Value
+provider_Name,Event.EventData.Provider_Name
+sha1,Event.EventData.Hashes_sha1
