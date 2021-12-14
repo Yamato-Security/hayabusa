@@ -166,7 +166,7 @@ fn _print_unique_results(
     for (i, level_name) in levels.iter().enumerate() {
         println!(
             "Unique | Total {} alerts: {} | {}",
-            level_name, total_detect_counts_by_level[i], unique_detect_counts_by_level[i]
+            level_name, unique_detect_counts_by_level[i], total_detect_counts_by_level[i]
         );
     }
 }
