@@ -80,8 +80,15 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
     } else {
         wtr = csv::WriterBuilder::new().from_writer(writer);
     }
+
     let messages = print::MESSAGES.lock().unwrap();
     let mut detect_count = 0;
+    let mut unique_detect_count = 0;
+    // levelの区分が"Critical","High","Medium","Low","Informational","Undefined"の6つであるため
+    let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
+    let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
+    let mut detected_rule_files: Vec<String> = Vec::new();
+
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
@@ -106,6 +113,15 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                     details: &detect_info.detail,
                 })?;
             }
+            let level_suffix = *configs::LEVELMAP
+                .get(&detect_info.level.to_uppercase())
+                .unwrap_or(&0) as usize;
+            if !detected_rule_files.contains(&detect_info.rulepath) {
+                detected_rule_files.push(detect_info.rulepath.clone());
+                unique_detect_counts_by_level[level_suffix] += 1;
+                unique_detect_count += 1;
+            }
+            total_detect_counts_by_level[level_suffix] += 1;
         }
         detect_count += detect_infos.len();
     }
@@ -113,10 +129,46 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
 
     wtr.flush()?;
     println!("");
-    println!("Total events detected: {:?}", detect_count);
+    _print_unique_results(
+        total_detect_counts_by_level,
+        unique_detect_counts_by_level,
+        detect_count as u128,
+        unique_detect_count as u128,
+    );
     Ok(())
 }
 
+/// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
+fn _print_unique_results(
+    mut total_detect_counts_by_level: Vec<u128>,
+    mut unique_detect_counts_by_level: Vec<u128>,
+    total_counts: u128,
+    unique_counts: u128,
+) {
+    let levels = Vec::from([
+        "Critical",
+        "High",
+        "Medium",
+        "Low",
+        "Informational",
+        "Undefined",
+    ]);
+
+    // configsの登録順番と表示をさせたいlevelの順番が逆であるため
+    total_detect_counts_by_level.reverse();
+    unique_detect_counts_by_level.reverse();
+
+    println!(
+        "Unique | Total events detected: {} | {}",
+        unique_counts, total_counts
+    );
+    for (i, level_name) in levels.iter().enumerate() {
+        println!(
+            "Unique | Total {} alerts: {} | {}",
+            level_name, total_detect_counts_by_level[i], unique_detect_counts_by_level[i]
+        );
+    }
+}
 fn format_time(time: &DateTime<Utc>) -> String {
     if configs::CONFIG.read().unwrap().args.is_present("utc") {
         format_rfc(time)

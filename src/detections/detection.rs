@@ -149,41 +149,6 @@ impl Detection {
         }
     }
 
-    pub fn print_unique_results(&self) {
-        let rules = &self.rules;
-        let levellabel = Vec::from([
-            "Critical",
-            "High",
-            "Medium",
-            "Low",
-            "Informational",
-            "Undefined",
-        ]);
-        // levclcounts is [(Undefined), (Informational), (Low),(Medium),(High),(Critical)]
-        let mut levelcounts = Vec::from([0, 0, 0, 0, 0, 0]);
-        for rule in rules.into_iter() {
-            if rule.check_exist_countdata() {
-                let suffix = configs::LEVELMAP
-                    .get(
-                        &rule.yaml["level"]
-                            .as_str()
-                            .unwrap_or("")
-                            .to_owned()
-                            .to_uppercase(),
-                    )
-                    .unwrap_or(&0);
-                levelcounts[*suffix as usize] += 1;
-            }
-        }
-        let mut total_unique = 0;
-        levelcounts.reverse();
-        for (i, value) in levelcounts.iter().enumerate() {
-            println!("{} alerts: {}", levellabel[i], value);
-            total_unique += value;
-        }
-        println!("Unique events detected: {}", total_unique);
-    }
-
     // 複数のイベントレコードに対して、ルールを1個実行します。
     fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
         let records = &*records;

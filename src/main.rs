@@ -145,7 +145,6 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         pb.inc();
     }
     after_fact();
-    detection.print_unique_results();
 }
 
 // Windowsイベントログファイルを1ファイル分解析する。
