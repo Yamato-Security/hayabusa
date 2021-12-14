@@ -15,6 +15,7 @@ use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -184,25 +185,14 @@ fn analysis_file(
                 continue;
             }
 
-            let data = record_result.unwrap().data;
-
             // target_eventids.txtでフィルタする。
-            let eventid = utils::get_event_value(&utils::get_event_id_key(), &data);
-            if eventid.is_some() {
-                let is_target = match eventid.unwrap() {
-                    Value::String(s) => utils::is_target_event_id(s),
-                    Value::Number(n) => utils::is_target_event_id(&n.to_string()),
-                    _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
-                };
-                if !is_target {
-                    continue;
-                }
+            let data = record_result.unwrap().data;
+            if _is_target_event_id(&data) == false {
+                continue;
             }
 
             // EvtxRecordInfo構造体に変更
-            let data_string = data.to_string();
-            let record_info = EvtxRecordInfo::new((&filepath_disp).to_string(), data, data_string);
-            records_per_detect.push(record_info);
+            records_per_detect.push(_create_rec_info(data, &filepath_disp));
         }
         if records_per_detect.len() == 0 {
             break;
@@ -220,6 +210,51 @@ fn analysis_file(
     tl.tm_stats_dsp_msg();
 
     return detection;
+}
+
+// target_eventids.txtの設定を元にフィルタする。
+fn _is_target_event_id(data: &Value) -> bool {
+    let eventid = utils::get_event_value(&utils::get_event_id_key(), data);
+    if eventid.is_none() {
+        return true;
+    }
+
+    return match eventid.unwrap() {
+        Value::String(s) => utils::is_target_event_id(s),
+        Value::Number(n) => utils::is_target_event_id(&n.to_string()),
+        _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
+    };
+}
+
+// EvtxRecordInfoを作成します。
+fn _create_rec_info(mut data: Value, path: &dyn Display) -> EvtxRecordInfo {
+    // 高速化のための処理
+    // RuleNodeでワイルドカードや正規表現のマッチング処理をする際には、
+    // Value(JSON)がstring型以外の場合はstringに変換して比較している。
+    // RuleNodeでマッチングする毎にstring変換していると、
+    // 1回の処理はそこまででもないが相当回数呼び出されれるとボトルネックになりうる。
+
+    // なので、よく使われるstring型ではない値を事前に変換しておくことで、
+    // string変換する回数を減らせる。
+    // 本当はやりたくないが...
+    match &data["Event"]["System"]["EventID"] {
+        Value::Number(n) => data["Event"]["System"]["EventID"] = Value::String(n.to_string()),
+        _ => (),
+    };
+    match &data["Event"]["EventData"]["LogonType"] {
+        Value::Number(n) => data["Event"]["EventData"]["LogonType"] = Value::String(n.to_string()),
+        _ => (),
+    }
+    match &data["Event"]["EventData"]["DestinationPort"] {
+        Value::Number(n) => {
+            data["Event"]["EventData"]["DestinationPort"] = Value::String(n.to_string())
+        }
+        _ => (),
+    }
+
+    // EvtxRecordInfoを作る
+    let data_str = data.to_string();
+    return EvtxRecordInfo::new(path.to_string(), data, data_str);
 }
 
 fn evtx_to_jsons(evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {

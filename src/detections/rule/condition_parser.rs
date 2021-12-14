@@ -114,8 +114,8 @@ impl ConditionCompiler {
     pub fn compile_condition(
         &self,
         condition_str: String,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
-    ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
+        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
+    ) -> Result<Box<dyn SelectionNode>, String> {
         // パイプはここでは処理しない
         let captured = self::RE_PIPE.captures(&condition_str);
         let condition_str = if captured.is_some() {
@@ -137,8 +137,8 @@ impl ConditionCompiler {
     fn compile_condition_body(
         &self,
         condition_str: String,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
-    ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
+        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
+    ) -> Result<Box<dyn SelectionNode>, String> {
         let tokens = self.tokenize(&condition_str)?;
 
         let parsed = self.parse(tokens)?;
@@ -410,8 +410,8 @@ impl ConditionCompiler {
     fn to_selectnode(
         &self,
         token: ConditionToken,
-        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
-    ) -> Result<Box<dyn SelectionNode + Send + Sync>, String> {
+        name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
+    ) -> Result<Box<dyn SelectionNode>, String> {
         // RefSelectionNodeに変換
         if let ConditionToken::SelectionReference(selection_name) = token {
             let selection_node = name_2_node.get(&selection_name);
@@ -540,7 +540,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&recinfo), expect_select);
             }
@@ -586,7 +586,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&recinfo), true);
             }
@@ -633,7 +633,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&recinfo), false);
             }

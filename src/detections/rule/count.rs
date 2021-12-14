@@ -106,14 +106,8 @@ pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
 /// aggregation condition内での条件式を文字として返す関数
 pub fn get_str_agg_eq(rule: &RuleNode) -> String {
     //この関数はaggregation ruleのパースが正常終了した後に呼ばれる想定のためOptionの判定は行わない
-    let agg_condition = rule
-        .detection
-        .as_ref()
-        .unwrap()
-        .aggregation_condition
-        .as_ref()
-        .unwrap();
-    let mut ret: String = String::default();
+    let agg_condition = rule.detection.aggregation_condition.as_ref().unwrap();
+    let mut ret: String = "".to_owned();
     match agg_condition._cmp_op {
         AggregationConditionToken::EQ => {
             ret.push_str("== ");
@@ -264,13 +258,13 @@ pub fn judge_timeframe(
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
     let mut time_data = time_datas.clone();
-    time_data.sort_unstable_by(|a, b| a.record_time.cmp(&b.record_time));
-    let aggcondition = rule.get_agg_condition().unwrap();
+    time_data.sort_by(|a, b| a.record_time.cmp(&b.record_time));
+    let aggcondition = rule.detection.aggregation_condition.as_ref().unwrap();
     let mut start_point = 0;
     // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
     let mut check_point = start_point + aggcondition._cmp_num - 1;
     // timeframeで指定された基準の値を秒数として保持
-    let judge_sec_frame = get_sec_timeframe(&rule.detection.as_ref().unwrap().timeframe);
+    let judge_sec_frame = get_sec_timeframe(&rule.detection.timeframe);
     let exist_field = aggcondition._field_name.is_some();
     let mut loaded_field_value: Vec<String> = Vec::new();
     loop {
