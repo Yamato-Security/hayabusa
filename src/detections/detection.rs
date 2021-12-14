@@ -5,7 +5,6 @@ use serde_json::Value;
 use std::collections::HashMap;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;

@@ -41,6 +41,7 @@ pub fn after_fact() {
         .ok();
         process::exit(1);
     };
+
     let mut displayflag = false;
     let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
         .read()
