@@ -79,7 +79,6 @@ ObjectServer,Event.EventData.ObjectServer
 ObjectType,Event.EventData.ObjectType
 ObjectValueName,Event.EventData.ObjectValueName
 Origin,Event.EventData.Origin
-OriginalFileName,Event.EventData.OriginalFileName
 OriginalFilename,Event.EventData.OriginalFileName
 ParentCommandLine,Event.EventData.ParentCommandLine
 ParentImage,Event.EventData.ParentImage
@@ -143,10 +142,8 @@ User,Event.EventData.User
 UserName,Event.EventData.UserName
 Workstation,Event.EventData.Workstation
 WorkstationName,Event.EventData.WorkstationName
-keywords,Event.System.Keywords
 param1,Event.EventData.param1
 param2,Event.EventData.param2
-service,Event.EventData.Service
 CallerProcessName
 CertThumbprint
 ClassName
