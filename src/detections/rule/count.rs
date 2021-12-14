@@ -267,10 +267,13 @@ pub fn judge_timeframe(
     let judge_sec_frame = get_sec_timeframe(&rule.detection.timeframe);
     let exist_field = aggcondition._field_name.is_some();
     let mut loaded_field_value: Vec<String> = Vec::new();
+
+    if exist_field {
+        loaded_field_value.push(time_data[0].clone().field_record_value);
+    }
     loop {
         // 基準となるレコードもしくはcountを最低限満たす対象のレコードのindexが配列の領域を超えていた場合
-        if start_point as usize >= time_data.len() - 1
-            || check_point as usize >= time_data.len() - 1
+        if start_point as usize > time_data.len() - 1 || check_point as usize > time_data.len() - 1
         {
             // 最終のレコードを対象として時刻を確認する
             let check_point_date = time_data[time_data.len() - 1].clone();
@@ -279,12 +282,27 @@ pub fn judge_timeframe(
             // 対象のレコード数を基準となるindexから計算
             let mut count_set_cnt = time_data.len() - (start_point as usize);
             // countのfieldがある場合種類での判別をする必要があるため
-            if exist_field && !loaded_field_value.contains(&check_point_date.field_record_value) {
-                loaded_field_value.push(check_point_date.field_record_value);
+            if exist_field {
+                // startpointからtime_data.len()-2までの要素を追加するため
+                for insert_point in (start_point as usize)..(time_data.len() - 1) {
+                    let insert_data = time_data[insert_point].clone().field_record_value;
+                    if !loaded_field_value.contains(&insert_data) {
+                        loaded_field_value.push(insert_data);
+                    }
+                }
             }
             if judge_sec_frame.is_some() && diff > judge_sec_frame.unwrap() {
-                //すでにcountを満たしている状態で1つずつdiffを確認している場合は適正な個数指定となり、もともとcountの条件が残りデータ個数より多い場合は-1したことによってcountの判定でもfalseになるため
-                count_set_cnt -= count_set_cnt - 1;
+                if diff > judge_sec_frame.unwrap() {
+                    //すでにcountを満たしている状態で1つずつdiffを確認している場合は適正な個数指定となり、もともとcountの条件が残りデータ個数より多い場合は-1したことによってcountの判定でもfalseになるため
+                    count_set_cnt = count_set_cnt - 1;
+                } else {
+                    if exist_field
+                        && !loaded_field_value.contains(&check_point_date.field_record_value)
+                    {
+                        // 対象データの末尾のデータが取得済みfieldの配列に存在していない場合
+                        loaded_field_value.push(check_point_date.field_record_value);
+                    }
+                }
             }
 
             // timeframe内に入っている場合があるため判定を行う
@@ -318,18 +336,32 @@ pub fn judge_timeframe(
             // timeframe内に入っている場合があるため判定を行う
             let judge;
             let result_set_cnt: i32 = if exist_field {
+                //既にcountの条件を満たしている場合にはstartpointまでの個所のfieldの値をloaed_field_valueに追加する必要があるため
+                for insert_point in (start_point as usize)..(check_point as usize - 1) {
+                    let insert_data = time_data[insert_point].clone().field_record_value;
+                    if !loaded_field_value.contains(&insert_data) {
+                        // 間の値を追加していくのでlen()-2としている
+                        loaded_field_value.insert(loaded_field_value.len() - 2, insert_data);
+                    }
+                }
                 loaded_field_value.len() as i32
             } else {
                 count_set_cnt as i32
             };
+
             judge = select_aggcon(result_set_cnt, &aggcondition);
             // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
             if !judge {
                 start_point += 1;
                 check_point = start_point + aggcondition._cmp_num - 1;
                 loaded_field_value.clear();
+                if exist_field {
+                    loaded_field_value
+                        .push(time_data[start_point as usize].clone().field_record_value);
+                }
                 continue;
             }
+
             //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
             ret.push(AggResult::new(
                 result_set_cnt,
@@ -343,12 +375,12 @@ pub fn judge_timeframe(
             check_point = start_point + aggcondition._cmp_num - 1;
             loaded_field_value.clear();
         } else {
-            // timeframeで指定した情報と比較して、時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
-            check_point += 1;
             // countのfieldの値がある場合、fieldの値の種類を確認してストックされていなければ投入する
             if exist_field && !loaded_field_value.contains(&check_point_date.field_record_value) {
                 loaded_field_value.push(check_point_date.field_record_value);
             }
+            // timeframeで指定した情報と比較して、時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
+            check_point += 1;
         }
     }
     return ret;
@@ -959,7 +991,12 @@ mod tests {
                 .unwrap();
             assert_eq!(agg_result.data, expect_data[index]);
             assert_eq!(agg_result.key, expect_key[index]);
-            assert_eq!(agg_result.field_values, expect_field_values[index]);
+            assert!(agg_result.field_values.len() == expect_field_values[index].len());
+            for expect_field_value in &expect_field_values[index] {
+                // テストによってはtimeframeの値とかくfieldの値で配列の順番が想定したものと変化してしまう可能性があるため配列の長さを確認したうえで期待した各要素が存在するかを確認する。
+                // field`要素の順番については以降の処理で関連しない
+                assert!(agg_result.field_values.contains(&expect_field_value));
+            }
             assert_eq!(agg_result.condition_op_num, expect_condition_op_num[index]);
         }
     }
