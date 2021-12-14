@@ -740,7 +740,7 @@ mod tests {
         {
           "Event": {
             "System": {
-              "EventID": 7040,
+              "EventID": 9999,
               "Channel": "System",
               "TimeCreated_attributes": {
                 "SystemTime": "1977-01-01T00:05:00Z"
@@ -772,7 +772,7 @@ mod tests {
         expected_agg_result.push(AggResult::new(
             2,
             "System".to_owned(),
-            vec!["7040".to_owned()],
+            vec!["7040".to_owned(), "9999".to_owned()],
             default_time,
             ">= 2".to_string(),
         ));
@@ -794,7 +794,7 @@ mod tests {
               "EventID": 9999,
               "Channel": "System",
               "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T00:30:00Z"
+                "SystemTime": "1977-01-01T00:30:00Z"
               }
             },
             "EventData": {
