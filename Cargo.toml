@@ -1,8 +1,8 @@
 [package]
 name = "hayabusa"
 version = "1.0.0"
-authors = ["akiranishikawa <nishikawa@kagosec.net>"]
-edition = "2018"
+authors = ["Yamato Security @yamatosecurity"]
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
