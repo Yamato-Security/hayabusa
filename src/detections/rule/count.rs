@@ -932,7 +932,7 @@ mod tests {
             }
         }
         let agg_results = &rule_node.judge_satisfy_aggcondition();
-        assert_eq!(agg_results.len(),expect_agg_results.len());
+        assert_eq!(agg_results.len(), expect_agg_results.len());
 
         let mut expect_data = vec![];
         let mut expect_key = vec![];
