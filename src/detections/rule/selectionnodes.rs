@@ -19,20 +19,17 @@ pub trait SelectionNode: mopa::Any {
     fn init(&mut self) -> Result<(), Vec<String>>;
 
     // 子ノードを取得する(グラフ理論のchildと同じ意味)
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>>;
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>>;
 
     // 子孫ノードを取得する(グラフ理論のdescendantと同じ意味)
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>>;
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>>;
 }
 mopafy!(SelectionNode);
 
 /// detection - selection配下でAND条件を表すノード
 pub struct AndSelectionNode {
-    pub child_nodes: Vec<Box<dyn SelectionNode + Send + Sync>>,
+    pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
-
-unsafe impl Send for AndSelectionNode {}
-unsafe impl Sync for AndSelectionNode {}
 
 impl AndSelectionNode {
     pub fn new() -> AndSelectionNode {
@@ -76,7 +73,7 @@ impl SelectionNode for AndSelectionNode {
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
             ret.push(child_node);
@@ -85,7 +82,7 @@ impl SelectionNode for AndSelectionNode {
         return ret;
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
         let mut ret = self.get_childs();
 
         self.child_nodes
@@ -104,11 +101,8 @@ impl SelectionNode for AndSelectionNode {
 
 /// detection - selection配下でOr条件を表すノード
 pub struct OrSelectionNode {
-    pub child_nodes: Vec<Box<dyn SelectionNode + Send + Sync>>,
+    pub child_nodes: Vec<Box<dyn SelectionNode>>,
 }
-
-unsafe impl Send for OrSelectionNode {}
-unsafe impl Sync for OrSelectionNode {}
 
 impl OrSelectionNode {
     pub fn new() -> OrSelectionNode {
@@ -152,7 +146,7 @@ impl SelectionNode for OrSelectionNode {
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
             ret.push(child_node);
@@ -161,7 +155,7 @@ impl SelectionNode for OrSelectionNode {
         return ret;
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
         let mut ret = self.get_childs();
 
         self.child_nodes
@@ -180,14 +174,11 @@ impl SelectionNode for OrSelectionNode {
 
 /// conditionでNotを表すノード
 pub struct NotSelectionNode {
-    node: Box<dyn SelectionNode + Send + Sync>,
+    node: Box<dyn SelectionNode>,
 }
 
-unsafe impl Send for NotSelectionNode {}
-unsafe impl Sync for NotSelectionNode {}
-
 impl NotSelectionNode {
-    pub fn new(node: Box<dyn SelectionNode + Send + Sync>) -> NotSelectionNode {
+    pub fn new(node: Box<dyn SelectionNode>) -> NotSelectionNode {
         return NotSelectionNode { node: node };
     }
 }
@@ -201,11 +192,11 @@ impl SelectionNode for NotSelectionNode {
         return Result::Ok(());
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
         return vec![];
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
         return self.get_childs();
     }
 }
@@ -215,14 +206,11 @@ pub struct RefSelectionNode {
     // selection_nodeはDetectionNodeのname_2_nodeが所有権を持っていて、RefSelectionNodeのselection_nodeに所有権を持たせることができない。
     // そこでArcを使って、DetectionNodeのname_2_nodeとRefSelectionNodeのselection_nodeで所有権を共有する。
     // RcじゃなくてArcなのはマルチスレッド対応のため
-    selection_node: Arc<Box<dyn SelectionNode + Send + Sync>>,
+    selection_node: Arc<Box<dyn SelectionNode>>,
 }
 
-unsafe impl Send for RefSelectionNode {}
-unsafe impl Sync for RefSelectionNode {}
-
 impl RefSelectionNode {
-    pub fn new(selection_node: Arc<Box<dyn SelectionNode + Send + Sync>>) -> RefSelectionNode {
+    pub fn new(selection_node: Arc<Box<dyn SelectionNode>>) -> RefSelectionNode {
         return RefSelectionNode {
             selection_node: selection_node,
         };
@@ -238,35 +226,38 @@ impl SelectionNode for RefSelectionNode {
         return Result::Ok(());
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
         return vec![&self.selection_node];
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
         return self.get_childs();
     }
 }
 
 /// detection - selection配下の末端ノード
 pub struct LeafSelectionNode {
+    key: String,
     key_list: Vec<String>,
     select_value: Yaml,
     pub matcher: Option<Box<dyn matchers::LeafMatcher>>,
 }
 
-unsafe impl Send for LeafSelectionNode {}
-unsafe impl Sync for LeafSelectionNode {}
-
 impl LeafSelectionNode {
     pub fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
         return LeafSelectionNode {
+            key: String::default(),
             key_list: key_list,
             select_value: value_yaml,
             matcher: Option::None,
         };
     }
 
-    pub fn get_key(&self) -> String {
+    pub fn get_key(&self) -> &String {
+        return &self.key;
+    }
+
+    fn _create_key(&self) -> String {
         if self.key_list.is_empty() {
             return String::default();
         }
@@ -397,6 +388,7 @@ impl SelectionNode for LeafSelectionNode {
             )]);
         }
 
+        self.key = self._create_key();
         return self
             .matcher
             .as_mut()
@@ -404,11 +396,11 @@ impl SelectionNode for LeafSelectionNode {
             .init(&match_key_list, &self.select_value);
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
         return vec![];
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode + Send + Sync>> {
+    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
         return vec![];
     }
 }
@@ -441,7 +433,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -477,7 +469,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -512,7 +504,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -547,7 +539,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -582,7 +574,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }

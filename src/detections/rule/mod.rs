@@ -27,7 +27,7 @@ pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
 pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
-    detection: Option<DetectionNode>,
+    detection: DetectionNode,
     countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
 }
 
@@ -38,13 +38,14 @@ impl Debug for RuleNode {
 }
 
 unsafe impl Sync for RuleNode {}
+unsafe impl Send for RuleNode {}
 
 impl RuleNode {
     pub fn new(rulepath: String, yaml: Yaml) -> RuleNode {
         return RuleNode {
             rulepath: rulepath,
             yaml: yaml,
-            detection: Option::None,
+            detection: DetectionNode::new(),
             countdata: HashMap::new(),
         };
     }
@@ -52,18 +53,11 @@ impl RuleNode {
     pub fn init(&mut self) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
 
-        // SIGMAルールを受け入れるため、outputがなくてもOKにする。
-        // if self.yaml["output"].as_str().unwrap_or("").is_empty() {
-        //     errmsgs.push("Cannot find required key. key:output".to_string());
-        // }
-
         // detection node initialization
-        let mut detection = DetectionNode::new();
-        let detection_result = detection.init(&self.yaml["detection"]);
+        let detection_result = self.detection.init(&self.yaml["detection"]);
         if detection_result.is_err() {
             errmsgs.extend(detection_result.unwrap_err());
         }
-        self.detection = Option::Some(detection);
 
         if errmsgs.is_empty() {
             return Result::Ok(());
@@ -73,10 +67,7 @@ impl RuleNode {
     }
 
     pub fn select(&mut self, filepath: &String, event_record: &EvtxRecordInfo) -> bool {
-        if self.detection.is_none() {
-            return false;
-        }
-        let result = self.detection.as_ref().unwrap().select(event_record);
+        let result = self.detection.select(event_record);
         if result {
             count::count(self, filepath, &event_record.record);
         }
@@ -84,12 +75,7 @@ impl RuleNode {
     }
     /// aggregation conditionが存在するかを返す関数
     pub fn has_agg_condition(&self) -> bool {
-        return self
-            .detection
-            .as_ref()
-            .unwrap()
-            .aggregation_condition
-            .is_some();
+        return self.detection.aggregation_condition.is_some();
     }
     /// Aggregation Conditionの結果を配列で返却する関数
     pub fn judge_satisfy_aggcondition(&self) -> Vec<AggResult> {
@@ -109,8 +95,8 @@ impl RuleNode {
 
 /// Ruleファイルのdetectionを表すノード
 struct DetectionNode {
-    pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode + Send + Sync>>>,
-    pub condition: Option<Box<dyn SelectionNode + Send + Sync>>,
+    pub name_to_selection: HashMap<String, Arc<Box<dyn SelectionNode>>>,
+    pub condition: Option<Box<dyn SelectionNode>>,
     pub aggregation_condition: Option<AggregationParseInfo>,
     pub timeframe: Option<TimeFrameInfo>,
 }
@@ -237,10 +223,7 @@ impl DetectionNode {
     }
 
     /// selectionをパースします。
-    fn parse_selection(
-        &self,
-        selection_yaml: &Yaml,
-    ) -> Option<Box<dyn SelectionNode + Send + Sync>> {
+    fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
         return Option::Some(self.parse_selection_recursively(vec![], selection_yaml));
     }
 
@@ -249,7 +232,7 @@ impl DetectionNode {
         &self,
         key_list: Vec<String>,
         yaml: &Yaml,
-    ) -> Box<dyn SelectionNode + Send + Sync> {
+    ) -> Box<dyn SelectionNode> {
         if yaml.as_hash().is_some() {
             // 連想配列はAND条件と解釈する
             let yaml_hash = yaml.as_hash().unwrap();
@@ -355,7 +338,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -388,7 +371,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -421,7 +404,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -507,7 +490,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -569,7 +552,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -638,7 +621,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -685,7 +668,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -733,7 +716,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -800,7 +783,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -867,7 +850,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -916,7 +899,7 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_json_str.to_string(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -977,13 +960,10 @@ mod tests {
                 let recinfo = EvtxRecordInfo {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
-                    data_string: String::default(),
+                    data_string: record_str.to_string(),
                 };
                 let result = rule_node.select(&"testpath".to_string(), &recinfo);
-                assert_eq!(
-                    rule_node.detection.unwrap().aggregation_condition.is_some(),
-                    true
-                );
+                assert_eq!(rule_node.detection.aggregation_condition.is_some(), true);
                 assert_eq!(result, true);
                 assert_eq!(
                     *&rule_node

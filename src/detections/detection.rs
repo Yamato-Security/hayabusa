@@ -31,12 +31,11 @@ impl EvtxRecordInfo {
         return EvtxRecordInfo {
             evtx_filepath: evtx_filepath,
             record: record,
-            data_string,
+            data_string: data_string,
         };
     }
 }
 
-// TODO テストケースかかなきゃ...
 #[derive(Debug)]
 pub struct Detection {
     rules: Vec<RuleNode>,
