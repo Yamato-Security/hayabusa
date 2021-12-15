@@ -287,7 +287,7 @@ pub fn judge_timeframe(
                 for insert_point in (start_point as usize)..(time_data.len() - 1) {
                     let insert_data = time_data[insert_point].clone().field_record_value;
                     if !loaded_field_value.contains(&insert_data) {
-                        loaded_field_value.push(insert_data);
+                        loaded_field_value.insert(loaded_field_value.len(), insert_data);
                     }
                 }
             }
