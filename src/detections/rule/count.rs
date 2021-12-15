@@ -1132,7 +1132,18 @@ mod tests {
         ));
         check_count(
             rule_str,
-            vec![record_str1, record_str2, record_str3, record_str4, record_str5, record_str6, record_str7, record_str8, record_str9, record_str10],
+            vec![
+                record_str1,
+                record_str2,
+                record_str3,
+                record_str4,
+                record_str5,
+                record_str6,
+                record_str7,
+                record_str8,
+                record_str9,
+                record_str10,
+            ],
             expected_count,
             expected_agg_result,
         );
