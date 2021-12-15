@@ -1110,7 +1110,6 @@ mod tests {
         output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        let default_time = Utc.ymd(1977, 1, 9).and_hms(1, 30, 0);
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 10);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
@@ -1118,20 +1117,31 @@ mod tests {
             3,
             "_".to_owned(),
             vec!["2".to_owned(), "3".to_owned(), "4".to_owned()],
-            default_time,
+            Utc.ymd(1977, 1, 9).and_hms(3, 30, 0),
             ">= 3".to_string(),
         ));
-        let default_time = Utc.ymd(1977, 1, 9).and_hms(19, 00, 0);
+
         expected_agg_result.push(AggResult::new(
             3,
             "_".to_owned(),
             vec!["1".to_owned(), "3".to_owned(), "4".to_owned()],
-            default_time,
+            Utc.ymd(1977, 1, 9).and_hms(20, 00, 0),
             ">= 3".to_string(),
         ));
         check_count(
             rule_str,
-            vec![record_str1, record_str2, record_str3, record_str4, record_str5, record_str6, record_str7, record_str8, record_str9, record_str10],
+            vec![
+                record_str1,
+                record_str2,
+                record_str3,
+                record_str4,
+                record_str5,
+                record_str6,
+                record_str7,
+                record_str8,
+                record_str9,
+                record_str10,
+            ],
             expected_count,
             expected_agg_result,
         );
