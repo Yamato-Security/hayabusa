@@ -340,8 +340,7 @@ pub fn judge_timeframe(
                 for insert_point in (start_point as usize)..(check_point as usize - 1) {
                     let insert_data = time_data[insert_point].clone().field_record_value;
                     if !loaded_field_value.contains(&insert_data) {
-                        // 間の値を追加していくのでlen()-2としている
-                        loaded_field_value.insert(loaded_field_value.len() - 2, insert_data);
+                        loaded_field_value.push(insert_data);
                     }
                 }
                 loaded_field_value.len() as i32
