@@ -935,6 +935,209 @@ mod tests {
         );
     }
 
+    // timeframeの検査
+    // timeframe=2hで、パイプ以降はcount(EventID) >= 3とする。
+    //
+    // このパターンをチェック
+    // 10:00 EventID=1
+    // 11:00 EventID=1
+    // 12:00 EventID=2
+    // 13:00 EventID=2
+    // 14:00 EventID=3
+    // 15:00 EventID=4
+    // 19:00 EventID=1
+    // 20:00 EventID=1
+    // 21:00 EventID=3
+    // 22:00 EventID=4
+    #[test]
+    fn test_count_timeframe2() {
+        let record_str1: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T00:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str2: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T01:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str3: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 2,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T02:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str4: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 2,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T03:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str5: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 3,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T04:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str6: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T05:30:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str7: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T19:00:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str8: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T20:00:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str9: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 3,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T21:00:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let record_str10: &str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4,
+              "TimeCreated_attributes": {
+                "SystemTime": "1977-01-09T22:00:00Z"
+              }
+            },
+            "EventData": {
+              "param1": "Windows Event Log"
+            }
+          }
+        }"#;
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                param1: 'Windows Event Log'
+            condition: selection1 | count(EventID) >= 3
+            timeframe: 2h
+        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let default_time = Utc.ymd(1977, 1, 9).and_hms(1, 30, 0);
+        let mut expected_count = HashMap::new();
+        expected_count.insert("_".to_owned(), 10);
+        let mut expected_agg_result: Vec<AggResult> = Vec::new();
+        expected_agg_result.push(AggResult::new(
+            3,
+            "_".to_owned(),
+            vec!["2".to_owned(), "3".to_owned(), "4".to_owned()],
+            default_time,
+            ">= 3".to_string(),
+        ));
+        let default_time = Utc.ymd(1977, 1, 9).and_hms(19, 00, 0);
+        expected_agg_result.push(AggResult::new(
+            3,
+            "_".to_owned(),
+            vec!["1".to_owned(), "3".to_owned(), "4".to_owned()],
+            default_time,
+            ">= 3".to_string(),
+        ));
+        check_count(
+            rule_str,
+            vec![record_str1, record_str2, record_str3, record_str4, record_str5, record_str6, record_str7, record_str8, record_str9, record_str10],
+            expected_count,
+            expected_agg_result,
+        );
+    }
+
     /// countで対象の数値確認を行うためのテスト用関数
     fn check_count(
         rule_str: &str,
