@@ -839,10 +839,10 @@ mod tests {
     //
     // このとき先頭の3行だと検知しないが、2行目から4行目は検知するはず
     // このように先頭行ではなく、途中から数えて検知するパターンをチェックする。
-    // 10:00 EventID=1
-    // 11:00 EventID=1
-    // 12:00 EventID=2
-    // 13:00 EventID=3
+    // 0:30 EventID=1
+    // 1:30 EventID=1
+    // 2:30 EventID=2
+    // 3:30 EventID=3
     #[test]
     fn test_count_timeframe() {
         let record_str1: &str = r#"
@@ -938,12 +938,12 @@ mod tests {
     // timeframe=2hで、パイプ以降はcount(EventID) >= 3とする。
     //
     // このパターンをチェック
-    // 10:00 EventID=1
-    // 11:00 EventID=1
-    // 12:00 EventID=2
-    // 13:00 EventID=2
-    // 14:00 EventID=3
-    // 15:00 EventID=4
+    // 0:30 EventID=1
+    // 1:30 EventID=1
+    // 2:30 EventID=2
+    // 3:30 EventID=2
+    // 4:30 EventID=3
+    // 5:30 EventID=4
     // 19:00 EventID=1
     // 20:00 EventID=1
     // 21:00 EventID=3
@@ -1205,7 +1205,7 @@ mod tests {
             assert_eq!(agg_result.key, expect_key[index]);
             assert!(agg_result.field_values.len() == expect_field_values[index].len());
             for expect_field_value in &expect_field_values[index] {
-                // テストによってはtimeframeの値とかくfieldの値で配列の順番が想定したものと変化してしまう可能性があるため配列の長さを確認したうえで期待した各要素が存在するかを確認する。
+                // テストによってはtimeframeの値と各fieldの値で配列の順番が想定したものと変化してしまう可能性があるため配列の長さを確認したうえで期待した各要素が存在するかを確認する。
                 // field`要素の順番については以降の処理で関連しない
                 assert!(agg_result.field_values.contains(&expect_field_value));
             }
