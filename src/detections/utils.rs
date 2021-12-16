@@ -175,11 +175,11 @@ pub fn create_tokio_runtime() -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: &dyn Display, keys: &Vec<String>) -> EvtxRecordInfo {
+pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRecordInfo {
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
     let mut rec = EvtxRecordInfo {
-        evtx_filepath: path.to_string(),
+        evtx_filepath: path,
         record: data,
         data_string: data_str,
         key_2_value: hashbrown::HashMap::new(),

@@ -4,9 +4,7 @@ extern crate serde_derive;
 use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
-use hashbrown;
-use hayabusa::detections::detection;
-use hayabusa::detections::detection::EvtxRecordInfo;
+use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::AlertMessage;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
@@ -16,8 +14,11 @@ use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
+use tokio::task::JoinHandle;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
+use std::sync::Arc;
+use tokio::spawn;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -36,12 +37,14 @@ fn main() {
 
 pub struct App {
     rt: Runtime,
+    rule_keys: Vec<String>,
 }
 
 impl App {
     pub fn new() -> App {
         return App {
             rt: utils::create_tokio_runtime(),
+            rule_keys: Vec::new(),
         };
     }
 
@@ -157,13 +160,13 @@ impl App {
             &filter::exclude_ids(),
         );
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
-        let freq_keys = self.get_all_keys(&rule_files);
+        let rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         for evtx_file in evtx_files {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
-            detection = self.analysis_file(evtx_file, detection, &freq_keys);
+            detection = self.analysis_file(evtx_file, detection, &rule_keys);
             pb.inc();
         }
         after_fact();
@@ -175,7 +178,7 @@ impl App {
         &self,
         evtx_filepath: PathBuf,
         mut detection: detection::Detection,
-        freq_keys: &Vec<String>,
+        rule_keys: &Vec<String>,
     ) -> detection::Detection {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(evtx_filepath.clone());
@@ -221,15 +224,12 @@ impl App {
                 break;
             }
 
-            let records_per_detect = records_per_detect
-                .into_iter()
-                .map(|rec| utils::create_rec_info(rec, &path, freq_keys))
-                .collect();
+            let records_per_detect = self.rt.block_on(App::create_rec_infos(records_per_detect, &path, rule_keys.clone()));
 
-            // timeline機能の実行
+            // // timeline機能の実行
             tl.start(&records_per_detect);
 
-            // ruleファイルの検知
+            // // ruleファイルの検知
             detection = detection.start(&self.rt, records_per_detect);
         }
 
@@ -237,6 +237,26 @@ impl App {
         tl.tm_stats_dsp_msg();
 
         return detection;
+    }
+
+    async fn create_rec_infos( records_per_detect: Vec<Value>, path: &dyn Display, rule_keys: Vec<String>) -> Vec<EvtxRecordInfo> {
+        let path = Arc::new(path.to_string());
+        let rule_keys = Arc::new(rule_keys);
+        let threads:Vec<JoinHandle<EvtxRecordInfo>> = records_per_detect.into_iter().map(|rec| {
+            let arc_rule_keys = Arc::clone(&rule_keys);
+            let arc_path = Arc::clone(&path);
+            return spawn(async move {
+                let rec_info = utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys);
+                return rec_info;
+            });
+        }).collect();
+
+        let mut ret = vec![];
+        for thread in threads.into_iter() {
+            ret.push(thread.await.unwrap());
+        }
+
+        return ret;
     }
 
     fn get_all_keys(&self, rules: &Vec<RuleNode>) -> Vec<String> {
@@ -270,7 +290,7 @@ impl App {
                 // parserのデフォルト設定を変更
                 let mut parse_config = ParserSettings::default();
                 parse_config = parse_config.separate_json_attributes(true); // XMLのattributeをJSONに変換する時のルールを設定
-                parse_config = parse_config.num_threads(utils::get_thread_num()); // 設定しないと遅かったので、設定しておく。
+                parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
                 let evtx_parser = evtx_parser.with_configuration(parse_config);
                 return Option::Some(evtx_parser);

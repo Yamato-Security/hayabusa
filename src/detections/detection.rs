@@ -190,7 +190,7 @@ impl Detection {
             }
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
-                Detection::insert_message(&rule, &record_info);
+                //Detection::insert_message(&rule, &record_info);
             }
         }
 
