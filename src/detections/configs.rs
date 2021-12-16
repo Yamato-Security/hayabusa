@@ -2,8 +2,9 @@ use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
 use clap::{App, AppSettings, ArgMatches};
+use hashbrown::HashMap;
+use hashbrown::HashSet;
 use lazy_static::lazy_static;
-use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
@@ -16,12 +17,13 @@ lazy_static! {
         levelmap.insert("CRITICAL".to_owned(), 5);
         return levelmap;
     };
+    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig =
+        load_eventkey_alias("config/eventkey_alias.txt");
 }
 
 #[derive(Clone)]
 pub struct ConfigReader {
     pub args: ArgMatches<'static>,
-    pub event_key_alias_config: EventKeyAliasConfig,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
@@ -30,7 +32,6 @@ impl ConfigReader {
     pub fn new() -> Self {
         ConfigReader {
             args: build_app(),
-            event_key_alias_config: load_eventkey_alias("config/eventkey_alias.txt"),
             event_timeline_config: load_eventcode_info("config/timeline_event_info.txt"),
             target_eventids: load_target_ids("config/target_eventids.txt"),
         }
@@ -60,12 +61,13 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --endtimeline=[ENDTIMELINE]'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
-    -L --level=[LEVEL] 'Minimum level for rules (default: INFORMATIONAL)'
+    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
     -u --utc 'Output time in UTC format (default: local time)'
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -s --statistics 'Prints statistics of event IDs'
     -n --show-noisyalerts 'do not exclude noisy rules'
     -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
+    --show-deprecated 'do not exclude rules with YAML's status deprecated'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
@@ -198,21 +200,23 @@ impl TargetEventTime {
 #[derive(Debug, Clone)]
 pub struct EventKeyAliasConfig {
     key_to_eventkey: HashMap<String, String>,
+    key_to_split_eventkey: HashMap<String, Vec<usize>>,
 }
 
 impl EventKeyAliasConfig {
     pub fn new() -> EventKeyAliasConfig {
         return EventKeyAliasConfig {
             key_to_eventkey: HashMap::new(),
+            key_to_split_eventkey: HashMap::new(),
         };
     }
 
-    pub fn get_event_key(&self, alias: String) -> Option<&String> {
-        return self.key_to_eventkey.get(&alias);
+    pub fn get_event_key(&self, alias: &String) -> Option<&String> {
+        return self.key_to_eventkey.get(alias);
     }
 
-    pub fn get_event_key_values(&self) -> Vec<(&String, &String)> {
-        return self.key_to_eventkey.iter().map(|e| e).collect();
+    pub fn get_event_key_split(&self, alias: &String) -> Option<&Vec<usize>> {
+        return self.key_to_split_eventkey.get(alias);
     }
 }
 
@@ -236,7 +240,12 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         config
             .key_to_eventkey
             .insert(alias.to_owned(), event_key.to_owned());
+        let splits = event_key.split(".").map(|s| s.len()).collect();
+        config
+            .key_to_split_eventkey
+            .insert(alias.to_owned(), splits);
     });
+    config.key_to_eventkey.shrink_to_fit();
     return config;
 }
 
@@ -273,14 +282,6 @@ impl EventInfoConfig {
     pub fn get_event_id(&self, eventid: &String) -> Option<&EventInfo> {
         return self.eventinfo.get(eventid);
     }
-
-    pub fn get_event_info(&self) -> Vec<(&String, &EventInfo)> {
-        return self.eventinfo.iter().map(|e| e).collect();
-    }
-
-    //    pub fn get_event_key_values(&self) -> Vec<(&String, &String)> {
-    //        return self.timeline_eventcode_info.iter().map(|e| e).collect();
-    //    }
 }
 
 fn load_eventcode_info(path: &str) -> EventInfoConfig {
@@ -312,27 +313,26 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 
 #[cfg(test)]
 mod tests {
-
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
 
-    #[test]
-    #[ignore]
-    fn singleton_read_and_write() {
-        let message =
-            "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
-        configs::CONFIG.write().unwrap().event_key_alias_config =
-            configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
-
-        let display = format!(
-            "{}",
-            format_args!(
-                "{:?}",
-                configs::CONFIG.write().unwrap().event_key_alias_config
-            )
-        );
-        assert_eq!(message, display);
-    }
+//     #[test]
+//     #[ignore]
+//     fn singleton_read_and_write() {
+//         let message =
+//             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
+//         configs::EVENT_KEY_ALIAS_CONFIG =
+//             configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+//         let display = format!(
+//             "{}",
+//             format_args!(
+//                 "{:?}",
+//                 configs::CONFIG.write().unwrap().event_key_alias_config
+//             )
+//         );
+//         assert_eq!(message, display);
+//     }
+// }
 
     #[test]
     fn target_event_time_filter() {

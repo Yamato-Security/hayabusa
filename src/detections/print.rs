@@ -112,12 +112,7 @@ impl Message {
                 .take(target_length)
                 .collect::<String>();
 
-            if let Some(array_str) = configs::CONFIG
-                .read()
-                .unwrap()
-                .event_key_alias_config
-                .get_event_key(target_str.to_string())
-            {
+            if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
                 let split: Vec<&str> = array_str.split(".").collect();
                 let mut is_exist_event_key = false;
                 let mut tmp_event_record: &Value = event_record.into();
@@ -166,7 +161,7 @@ impl Message {
             detect_count += detect_infos.len();
         }
         println!("");
-        println!("Total Events Detected:{:?}", detect_count);
+        println!("Total events:{:?}", detect_count);
     }
 
     pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<DetectInfo>> {

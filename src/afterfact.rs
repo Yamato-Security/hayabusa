@@ -113,7 +113,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
 
     wtr.flush()?;
     println!("");
-    println!("Total events detected: {:?}", detect_count);
+    println!("Total events: {:?}", detect_count);
     Ok(())
 }
 
