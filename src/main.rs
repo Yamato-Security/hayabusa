@@ -165,6 +165,8 @@ fn analysis_file(
     let mut records = parser.records_json_value();
     let tokio_rt = utils::create_tokio_runtime();
 
+    let target_event_time = configs::TargetEventTime::new();
+
     loop {
         let mut records_per_detect = vec![];
         while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -190,6 +192,14 @@ fn analysis_file(
             let data = record_result.unwrap().data;
             if _is_target_event_id(&data) == false {
                 continue;
+            }
+
+            let eventtime = utils::get_event_value(&utils::get_event_time(), &data);
+            if eventtime.is_some() {
+                let time = utils::str_time_to_datetime(eventtime.unwrap().as_str().unwrap_or(""));
+                if !target_event_time.is_target(&time) {
+                    continue;
+                }
             }
 
             // EvtxRecordInfo構造体に変更

@@ -7,6 +7,7 @@ use crate::detections::configs;
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
 
+use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use serde_json::Value;
 use std::fs::File;
@@ -91,6 +92,29 @@ pub fn is_target_event_id(s: &String) -> bool {
 
 pub fn get_event_id_key() -> String {
     return "Event.System.EventID".to_string();
+}
+
+pub fn get_event_time() -> String {
+    return "Event.System.TimeCreated_attributes.SystemTime".to_string();
+}
+
+pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
+    if system_time_str.is_empty() {
+        return Option::None;
+    }
+
+    let rfc3339_time = DateTime::parse_from_rfc3339(system_time_str);
+    if rfc3339_time.is_err() {
+        return Option::None;
+    }
+    let datetime = Utc
+        .from_local_datetime(&rfc3339_time.unwrap().naive_utc())
+        .single();
+    if datetime.is_none() {
+        return Option::None;
+    } else {
+        return Option::Some(datetime.unwrap());
+    }
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
