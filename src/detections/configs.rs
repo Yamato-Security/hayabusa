@@ -316,23 +316,23 @@ mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
 
-//     #[test]
-//     #[ignore]
-//     fn singleton_read_and_write() {
-//         let message =
-//             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
-//         configs::EVENT_KEY_ALIAS_CONFIG =
-//             configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
-//         let display = format!(
-//             "{}",
-//             format_args!(
-//                 "{:?}",
-//                 configs::CONFIG.write().unwrap().event_key_alias_config
-//             )
-//         );
-//         assert_eq!(message, display);
-//     }
-// }
+    //     #[test]
+    //     #[ignore]
+    //     fn singleton_read_and_write() {
+    //         let message =
+    //             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
+    //         configs::EVENT_KEY_ALIAS_CONFIG =
+    //             configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+    //         let display = format!(
+    //             "{}",
+    //             format_args!(
+    //                 "{:?}",
+    //                 configs::CONFIG.write().unwrap().event_key_alias_config
+    //             )
+    //         );
+    //         assert_eq!(message, display);
+    //     }
+    // }
 
     #[test]
     fn target_event_time_filter() {
