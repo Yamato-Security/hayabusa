@@ -9,11 +9,14 @@ use tokio::runtime::Runtime;
 
 use regex::Regex;
 use serde_json::Value;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
+
+use super::detection::EvtxRecordInfo;
 
 pub fn concat_selection_key(key_list: &Vec<String>) -> String {
     return key_list
@@ -44,6 +47,17 @@ pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
     }
 
     return false;
+}
+
+pub fn value_to_string(value: &Value) -> Option<String> {
+    return match value {
+        Value::Null => Option::None,
+        Value::Bool(b) => Option::Some(b.to_string()),
+        Value::Number(n) => Option::Some(n.to_string()),
+        Value::String(s) => Option::Some(s.to_string()),
+        Value::Array(_) => Option::None,
+        Value::Object(_) => Option::None,
+    };
 }
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
@@ -158,6 +172,41 @@ pub fn create_tokio_runtime() -> Runtime {
         .thread_name("yea-thread")
         .build()
         .unwrap();
+}
+
+// EvtxRecordInfoを作成します。
+pub fn create_rec_info(data: Value, path: &dyn Display, keys: &Vec<String>) -> EvtxRecordInfo {
+    // EvtxRecordInfoを作る
+    let data_str = data.to_string();
+    let mut rec = EvtxRecordInfo {
+        evtx_filepath: path.to_string(),
+        record: data,
+        data_string: data_str,
+        key_2_value: hashbrown::HashMap::new(),
+    };
+
+    // 高速化のための処理
+
+    // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
+    // この処理を高速化するため、rec.key_2_valueというhashmapに"Event.System.EventID"というキーで値を設定しておく。
+    // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
+    // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
+    // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。
+    for key in keys {
+        let val = get_event_value(key, &rec.record);
+        if val.is_none() {
+            continue;
+        }
+
+        let val = value_to_string(val.unwrap());
+        if val.is_none() {
+            continue;
+        }
+
+        rec.key_2_value.insert(key.to_string(), val.unwrap());
+    }
+
+    return rec;
 }
 
 #[cfg(test)]

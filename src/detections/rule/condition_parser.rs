@@ -503,11 +503,14 @@ impl ConditionCompiler {
 
 #[cfg(test)]
 mod tests {
+    use hashbrown::HashMap;
+
     use yaml_rust::YamlLoader;
 
     use crate::detections::detection::EvtxRecordInfo;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
+    use crate::detections::{self, utils};
 
     const SIMPLE_RECORD_STR: &str = r#"
     {
@@ -537,11 +540,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, &"testpath".to_owned(), &keys);
                 assert_eq!(
                     rule_node.select(&"testpath".to_owned(), &recinfo),
                     expect_select
@@ -590,6 +590,7 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
                     data_string: record_json_str.to_string(),
+                    key_2_value: HashMap::new(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -637,6 +638,7 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
                     data_string: record_json_str.to_string(),
+                    key_2_value: HashMap::new(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }

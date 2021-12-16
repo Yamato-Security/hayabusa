@@ -1,6 +1,5 @@
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use mopa::mopafy;
-use serde_json::Value;
 use std::{sync::Arc, vec};
 use yaml_rust::Yaml;
 
@@ -268,13 +267,13 @@ impl LeafSelectionNode {
     }
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
-    fn get_event_value<'a>(&self, event_value: &'a Value) -> Option<&'a Value> {
+    fn get_event_value<'a>(&self, record: &'a EvtxRecordInfo) -> Option<&'a String> {
         // keyが指定されたいない場合は
         if self.key_list.is_empty() {
-            return Option::Some(event_value);
+            return Option::Some(&record.data_string);
         }
 
-        return utils::get_event_value(&self.get_key(), event_value);
+        return record.get_value(self.get_key());
     }
 
     /// matchers::LeafMatcherの一覧を取得する。
@@ -334,7 +333,7 @@ impl SelectionNode for LeafSelectionNode {
                     .matcher
                     .as_ref()
                     .unwrap()
-                    .is_match(Option::Some(eventdata_data), event_record);
+                    .is_match(event_record.get_value(self.get_key()), event_record);
             }
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
@@ -343,11 +342,18 @@ impl SelectionNode for LeafSelectionNode {
                     .unwrap()
                     .iter()
                     .any(|ary_element| {
-                        return self
-                            .matcher
-                            .as_ref()
-                            .unwrap()
-                            .is_match(Option::Some(ary_element), event_record);
+                        let value = utils::get_event_value(self.get_key(), ary_element);
+                        if value.is_none() {
+                            self.matcher
+                                .as_ref()
+                                .unwrap()
+                                .is_match(Option::None, event_record);
+                        }
+
+                        return self.matcher.as_ref().unwrap().is_match(
+                            utils::value_to_string(value.unwrap()).as_ref(),
+                            event_record,
+                        );
                     });
             } else {
                 return self
@@ -358,7 +364,7 @@ impl SelectionNode for LeafSelectionNode {
             }
         }
 
-        let event_value = self.get_event_value(&event_record.record);
+        let event_value = self.get_event_value(&event_record);
         return self
             .matcher
             .as_ref()
@@ -407,6 +413,8 @@ impl SelectionNode for LeafSelectionNode {
 
 #[cfg(test)]
 mod tests {
+    use hashbrown::HashMap;
+
     use crate::detections::{detection::EvtxRecordInfo, rule::tests::parse_rule_from_str};
 
     #[test]
@@ -434,6 +442,7 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
                     data_string: record_json_str.to_string(),
+                    key_2_value: HashMap::new(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -470,6 +479,7 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
                     data_string: record_json_str.to_string(),
+                    key_2_value: HashMap::new(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
@@ -505,6 +515,7 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
                     data_string: record_json_str.to_string(),
+                    key_2_value: HashMap::new(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -540,6 +551,7 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
                     data_string: record_json_str.to_string(),
+                    key_2_value: HashMap::new(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
@@ -575,6 +587,7 @@ mod tests {
                     evtx_filepath: "testpath".to_owned(),
                     record: record,
                     data_string: record_json_str.to_string(),
+                    key_2_value: HashMap::new(),
                 };
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }

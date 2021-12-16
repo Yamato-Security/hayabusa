@@ -319,7 +319,7 @@ mod tests {
     use crate::detections::detection::EvtxRecordInfo;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
 
     use chrono::{TimeZone, Utc};
     use yaml_rust::YamlLoader;
@@ -646,6 +646,7 @@ mod tests {
                         evtx_filepath: "testpath".to_owned(),
                         record: rec,
                         data_string: record.to_string(),
+                        key_2_value: HashMap::new(),
                     };
                     let _result = rule_node.select(&"testpath".to_string(), &recinfo);
                 }
@@ -739,6 +740,7 @@ mod tests {
                         evtx_filepath: "testpath".to_owned(),
                         record: record,
                         data_string: record_str.to_string(),
+                        key_2_value: HashMap::new(),
                     };
                     let result = &rule_node.select(&"testpath".to_owned(), &recinfo);
                     assert_eq!(result, &true);
