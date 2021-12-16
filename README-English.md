@@ -38,7 +38,7 @@ Results summary:
 # Features
 * Cross-platform support: Windows, Linux, macOS
 * Developed in Rust to be memory safe and faster than a hayabusa falcon!
-* Multi-thread support
+* Multi-thread support delivering up to a 5x speed improvement!
 * Creates a single easy-to-analyze CSV timeline for forensic investigations and incident response
 * Threat hunting based on IoC signatures written in easy to read/create/edit YAML based hayabusa rules
 * Sigma rule support to convert sigma rules to hayabusa rules
@@ -76,12 +76,13 @@ USAGE:
     --verbose 'Output verbose information to target event file path and rule file'
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
-    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)' (Possiblities are: informational, low, medium, high, critical)
+    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
     -u --utc 'Output time in UTC format (default: local time)'
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -s --statistics 'Prints statistics of event IDs'
     -n --show-noisyalerts 'do not exclude noisy rules'
-    -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)' (Usually there is no performance benefit in increasing the number of threads but you may want to lower to a smaller number to reduce CPU load.)
+    -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
+    --show-deprecated 'do not exclude rules with YAML's status deprecated'
     --contributors 'Prints the list of contributors'
 ````
 
@@ -106,9 +107,9 @@ hayabusa.exe -d .\sample-evtx --csv-timeline results.csv
 hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r ./rules/hayabusa
 ````
 
-* Only run sigma rules and show noisy alerts (disabled by default):
+* Only run sigma rules and enable deprecated and noisy rules (both disabled by default):
 ````
-hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r ./rules/sigma --show-noisyalerts
+hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r ./rules/sigma --show-noisyalerts --show-deprecated
 ````
 
 * Only run rules to analyze logons and output in the UTC timezone:
@@ -198,8 +199,10 @@ The following were taken based on approximately 500 logs (130MB) from our sample
 | | Elapsed Time | Memory Usage | Total Sigma Events Detected | Unique Sigma Events Detected |
 | :---: | :---: | :---: | :---: | :---: |
 | Chainsaw | 10 seconds | 75 MB | 552 | 170 |
-| Hayabusa | xx | xx | 9783 | 265 |
+| Hayabusa | 12 seconds | 340 MB | 10630 | 267 |
 | Zircolite | 55 seconds | 400 MB | 1954 | 237 |
+
+With hayabusa rules enabled, it will detect over 300 unique alerts and events.
 
 # License
 

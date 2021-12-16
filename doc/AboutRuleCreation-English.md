@@ -52,7 +52,7 @@ ruletype: Hayabusa
 * **title_jp** [optional]: The title in Japanese.
 * output [optional]: The details of the alert that gets displayed. Please output any fields in the Windows event log that are useful for analysis. Fields are seperated by `"  :  "` (two spaces on both sides). Field placeholders are enclosed with a `%` (Example: `%MemberName%`) and need to be defined in `config\eventkey_alias.txt`. (Explained below.)
 * **output_jp** [optional]: The output message in Japanese.
-* **description** [optional]: A description of the rule. This does not get displayed so you can make this long.
+* **description** [optional]: A description of the rule. This does not get displayed so you can make this long and detailed.
 * **description_jp** [optional]: The description in Japanese.
 
 > #Rule section
@@ -162,7 +162,7 @@ detection:
 ``````
 
 #### Caution: Undefined Eventkey Aliases
-Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are not getting the correct data in the `output`(Alert details) message, and instead are getting results like `%EventID%`, then you need to update `config\eventkey_alias.txt` with a new alias.
+Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are not getting the correct data in the `output`(Alert details) message, and instead are getting results like `%EventID%` or if the selection in your detection logic is not working properly, then you need to update `config\eventkey_alias.txt` with a new alias.
 
 ### How to use XML attributes in conditions
 XML elements may have attributes set by adding a space to the element. For example, `Name` in `Provider Name` below is an XML attribute of the `Provider` element. 
@@ -365,7 +365,31 @@ The following expressions can be used for `condition`.
 In the above example, selection names such as `SELECTION_1`, `SELECTION_2`, etc... are used but they can be named anything as long as they only contain the following characters: `a-z A-Z 0-9 _`
 > However, please use the standard convention of `selection_1`, `selection_2`, `filter_1`, `filter_2`, etc... to make things easy to read whenever possible.
 
-## aggregation condition
+## not logic
+Many rules will result in false positives so it is very common to have a selection for signatures to search for but also a filter selection to not alert on false positives.
+For example:
+
+``````
+detection:
+    selection:
+        Channel: Security
+        EventID: 4673
+    filter: 
+        - ProcessName: C:\Windows\System32\net.exe
+        - ProcessName: C:\Windows\System32\lsass.exe
+        - ProcessName: C:\Windows\System32\audiodg.exe
+        - ProcessName: C:\Windows\System32\svchost.exe
+        - ProcessName: C:\Windows\System32\mmc.exe
+        - ProcessName: C:\Windows\System32\net.exe
+        - ProcessName: C:\Windows\explorer.exe
+        - ProcessName: C:\Windows\System32\SettingSyncHost.exe
+        - ProcessName: C:\Windows\System32\sdiagnhost.exe
+        - ProcessName|startswith: C:\Program Files
+        - SubjectUserName: LOCAL SERVICE
+    condition: selection and not filter
+``````
+
+## Aggregation conditions (Count rules)
 ### Basics
 The `condition` keyword described above implements not only `AND` and `OR` logic, but is also able to count or "aggregate" events.
 This function is called the "aggregation condition" and is specified by connecting a condition with a pipe. 
@@ -380,7 +404,7 @@ detection:
   timeframe: 24h
 ``````
 
-The aggregation condition can be defined in the following format:
+Aggregation conditions can be defined in the following format:
 * `count() {operator} {number}`: For log events that match the first condition before the pipe, the condition will match if the number of matched logs satisfies the condition expression specified by `{operator}` and `{number}`.  
 
 `{operator}` can be one of the following:
@@ -398,7 +422,7 @@ The aggregation condition can be defined in the following format:
 * `12h`: 12 hours
 * `7d`: 7 days
 * `3M`: 3 months
-> `timeframe` is not required by highly encouraged to define when possible for performance and memory efficiency.
+> `timeframe` is not required but highly encouraged to define when possible for performance and memory efficiency.
 
 
 ### Four patterns for aggregation conditions:
