@@ -20,7 +20,7 @@ detection:
             regexes: ./config/regex/detectlist_suspicous_services.txt
         ImagePath:
             min_length: 1000
-            allowlist: .allowlist_legitimate_services.txt
+            allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
     condition: selection
 falsepositives:
     - normal system usage
