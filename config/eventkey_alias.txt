@@ -10,9 +10,13 @@ AuditPolicyChanges,Event.EventData.AuditPolicyChanges
 AuditSourceName,Event.EventData.AuditSourceName
 AuthenticationPackageName,Event.EventData.AuthenticationPackageName
 CallTrace,Event.EventData.CallTrace
+CallerProcessName,Event.EventData.CallerProcessName
 Caller_Process_Name,Event.EventData.Caller_Process_Name
 CallingProcessName,Event.EventData.CallingProcessName
+CategoryName,Event.EventData.Category Name
+CertThumbprint,Event.EventData.CertThumbprint
 Channel,Event.System.Channel
+ClassName,Event.EventData.ClassName
 Client_Address,Event.EventData.Client_Address
 CommandLine,Event.EventData.CommandLine
 Company,Event.EventData.Company
@@ -21,6 +25,7 @@ ComputerName,Event.System.Computer
 ContextInfo,Event.EventData.ContextInfo
 CurrentDirectory,Event.EventData.CurrentDirectory
 Description,Event.EventData.Description
+DestAddress,Event.EventData.DestAddress
 DestPort,Event.EventData.DestPort
 Destination,Event.EventData.Destination
 DestinationAddress,Event.EventData.DestinationAddress
@@ -30,16 +35,20 @@ DestinationIsIpv6,Event.EventData.DestinationIsIpv6
 DestinationPort,Event.EventData.DestinationPort
 Details,Event.EventData.Details
 DetectionSource,Event.EventData.DetectionSource
+DetectionUser,Event.EventData.Detection User
 Device,Event.EventData.Device
 DeviceClassName,Event.EventData.DeviceClassName
 DeviceDescription,Event.EventData.DeviceDescription
 DeviceName,Event.EventData.DeviceName
 DomainName,Event.EventData.SubjectDomainName
 EngineVersion,Event.EventData.EngineVersion
+ErrorCode,Event.EventData.ErrorCode
 EventID,Event.System.EventID
 EventType,Event.EventData.EventType
 FailureCode,Event.EventData.FailureCode
+FilePath,Event.EventData.FilePath
 FileVersion,Event.EventData.FileVersion
+Filename,Event.EventData.Filename
 GrantedAccess,Event.EventData.GrantedAccess
 GroupName,Event.EventData.GroupName
 GroupSid,Event.EventData.GroupSid
@@ -72,12 +81,16 @@ MemberName,Event.EventData.MemberName
 MemberSid,Event.EventData.MemberSid
 Message,Event.EventData
 NewName,Event.EventData.NewName
+NewTemplateContent, Event.EventData.NewTemplateContent
+NewUacValue,Event.EventData.NewUacValue
 NewValue,Event.EventData.NewValue
+New_Value,Event.EventData.New Value
 ObjectClass,Event.EventData.ObjectClass
 ObjectName,Event.EventData.ObjectName
 ObjectServer,Event.EventData.ObjectServer
 ObjectType,Event.EventData.ObjectType
 ObjectValueName,Event.EventData.ObjectValueName
+OldUacValue,Event.EventData.OldUacValue
 Origin,Event.EventData.Origin
 OriginalFilename,Event.EventData.OriginalFileName
 ParentCommandLine,Event.EventData.ParentCommandLine
@@ -92,20 +105,30 @@ PipeName,Event.EventData.PipeName
 PreAuthType,Event.EventData.PreAuthType
 PrivilegeList,Event.EventData.PrivilegeList
 ProcessCommandLine,Event.EventData.ProcessCommandLine
+ProcessId,Event.EventData.ProcessId
 ProcessName,Event.EventData.ProcessName
 Product,Event.EventData.Product
 Properties,Event.EventData.Properties
+ProviderName,Event.System.Provider_Name
+Provider_Name,Event.System.Provider_Name
 QNAME,Event.EventData.QNAME
 QueryName,Event.EventData.QueryName
 QueryResults,Event.EventData.QueryResults
 QueryStatus,Event.EventData.QueryStatus
 RelativeTargetName,Event.EventData.RelativeTargetName
+RuleName,Event.EventData.RuleName
 SAMAccountName,Event.EventData.SamAccountName
 ScriptBlockText,Event.EventData.ScriptBlockText
+SearchFilter,Event.System.SearchFilter
+ServerName,Event.System.ServerName
 Service,Event.EventData.Service
 ServiceFileName,Event.EventData.ServiceFileName
 ServiceName,Event.EventData.ServiceName
 ServicePrincipalNames,Event.EventData.ServicePrincipalNames
+ServiceStartType,Event.EventData.ServiceStartType
+ServiceType,Event.EventData.ServiceType
+SeverityName,Event.EventData.Severity Name
+ShareLocalPath,Event.EventData.ShareLocalPath
 ShareName,Event.EventData.ShareName
 SidHistory,Event.EventData.SidHistory
 Signature,Event.EventData.Signature
@@ -115,10 +138,13 @@ SourceAddress,Event.EventData.SourceAddress
 SourceImage,Event.EventData.SourceImage
 SourceNetworkAddress,Event.EventData.SourceNetworkAddress
 SourcePort,Event.EventData.SourcePort
+Source_Name,Event.EventData.Source Name
 Source_Network_Address,Event.EventData.Source_Network_Address
 Source_WorkStation,Event.EventData.Source_WorkStation
+StartAddress,Event.EventData.StartAddress
 StartFunction,Event.EventData.StartFunction
 StartModule,Event.EventData.StartModule
+State,Event.EventData.State
 Status,Event.EventData.Status
 SubStatus,Event.EventData.SubStatus
 SubjectDomainName,Event.EventData.SubjectDomainName
@@ -132,41 +158,22 @@ TargetLogonId,Event.EventData.TargetLogonId
 TargetName,Event.EventData.TargetServerName
 TargetObject,Event.EventData.TargetObject
 TargetProcessAddress,Event.EventData.TargetProcessAddress
+TargetServerName,Event.EventData.TargetServerName
 TargetSid,Event.EventData.TargetSid
 TargetUserName,Event.EventData.TargetUserName
 TaskName,Event.EventData.TaskName
+TemplateContent,Event.EventData.TemplateContent
+ThreatName,Event.EventData.Threat Name
 TicketEncryptionType,Event.EventData.TicketEncryptionType
 TicketOptions,Event.EventData.TicketOptions
 Url,Event.EventData.url
 User,Event.EventData.User
 UserName,Event.EventData.UserName
+Value, Event.EventData.Value
+WindowsDefenderProcessName,Event.EventData.Process Name
 Workstation,Event.EventData.Workstation
 WorkstationName,Event.EventData.WorkstationName
 param1,Event.EventData.param1
 param2,Event.EventData.param2
-CallerProcessName,Event.EventData.CallerProcessName
-CertThumbprint,Event.EventData.CertThumbprint
-ClassName,Event.EventData.ClassName
-DestAddress,Event.EventData.DestAddress
-ErrorCode,Event.EventData.ErrorCode
-FilePath,Event.EventData.FilePath
-Filename,Event.EventData.Filename
-NewTemplateContent, Event.EventData.NewTemplateContent
-NewUacValue,Event.EventData.NewUacValue
-New_Value,Event.EventData.New Value
-OldUacValue,Event.EventData.OldUacValue
-ProcessId,Event.EventData.ProcessId
-ProviderName,Event.System.Provider_Name
-Provider_Name,Event.System.Provider_Name
-SearchFilter,Event.System.SearchFilter
-ServerName,Event.System.ServerName
-ServiceStartType,Event.EventData.ServiceStartType
-ServiceType,Event.EventData.ServiceType
-Source_Name,Event.EventData.Source Name
-StartAddress,Event.EventData.StartAddress
-State,Event.EventData.State
-TargetServerName,Event.EventData.TargetServerName
-TemplateContent,Event.EventData.TemplateContent
-Value, Event.EventData.Value
 provider_Name,Event.EventData.Provider_Name
 sha1,Event.EventData.Hashes_sha1
