@@ -424,7 +424,7 @@ pub fn judge_timeframe(
                 get_str_agg_eq(rule),
             ));
         } else {
-            if select_aggcon(*loaded_field_value.get("").unwrap() as i32, &aggcondition) {
+            if select_aggcon(*loaded_field_value.get("").unwrap_or(&0) as i32, &aggcondition) {
                 //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
                 ret.push(AggResult::new(
                     *loaded_field_value.get("").unwrap() as i32,
