@@ -325,12 +325,13 @@ pub fn judge_timeframe(
             // timeframe内に入っている場合があるため判定を行う
             let result_set_cnt: i32 = if exist_field {
                 //既にcountの条件を満たしている場合にはcheck_point-1までの個所のfieldの値をloaed_field_valueに追加する必要があるため
-                for insert_point in (start_point as usize + 1)..(check_point as usize) {
-                    let insert_data = time_data[insert_point].clone().field_record_value;
-                    *loaded_field_value
-                        .entry(insert_data.to_string())
-                        .or_insert(0) += 1;
-                }
+                time_data[(start_point as usize + 1)..(check_point as usize)].for_each(
+                    |timedata| {
+                        *loaded_field_value
+                            .entry(timedata.field_record_value.to_string())
+                            .or_insert(0) += 1
+                    },
+                );
                 loaded_field_value.len() as i32
             } else {
                 count_set_cnt as i32
