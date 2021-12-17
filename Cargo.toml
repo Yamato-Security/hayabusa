@@ -1,8 +1,8 @@
 [package]
 name = "hayabusa"
 version = "1.0.0"
-authors = ["akiranishikawa <nishikawa@kagosec.net>"]
-edition = "2018"
+authors = ["Yamato Security @yamatosecurity"]
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,9 +28,13 @@ slack-hook = "0.8"
 dotenv = "0.15.0"
 hhmmss = "*"
 pbr = "*"
+hashbrown = "0.11.2"
 
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"
 
 [target.i686-pc-windows-gnu]
 linker = "i686-w64-mingw32-gcc"
+
+[profile.release]
+lto = true

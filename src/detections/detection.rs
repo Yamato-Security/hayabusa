@@ -31,12 +31,11 @@ impl EvtxRecordInfo {
         return EvtxRecordInfo {
             evtx_filepath: evtx_filepath,
             record: record,
-            data_string,
+            data_string: data_string,
         };
     }
 }
 
-// TODO テストケースかかなきゃ...
 #[derive(Debug)]
 pub struct Detection {
     rules: Vec<RuleNode>,
@@ -181,7 +180,7 @@ impl Detection {
             println!("{} alerts: {}", levellabel[i], value);
             total_unique += value;
         }
-        println!("Unique events detected: {}", total_unique);
+        println!("Unique alerts detected: {}", total_unique);
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。

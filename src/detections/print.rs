@@ -1,5 +1,6 @@
 extern crate lazy_static;
 use crate::detections::configs;
+use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
 use chrono::{DateTime, TimeZone, Utc};
 use lazy_static::lazy_static;
@@ -111,12 +112,7 @@ impl Message {
                 .take(target_length)
                 .collect::<String>();
 
-            if let Some(array_str) = configs::CONFIG
-                .read()
-                .unwrap()
-                .event_key_alias_config
-                .get_event_key(target_str.to_string())
-            {
+            if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
                 let split: Vec<&str> = array_str.split(".").collect();
                 let mut is_exist_event_key = false;
                 let mut tmp_event_record: &Value = event_record.into();
@@ -165,7 +161,7 @@ impl Message {
             detect_count += detect_infos.len();
         }
         println!("");
-        println!("Total Events Detected:{:?}", detect_count);
+        println!("Total events:{:?}", detect_count);
     }
 
     pub fn iter(&self) -> &BTreeMap<DateTime<Utc>, Vec<DetectInfo>> {
@@ -174,23 +170,7 @@ impl Message {
 
     pub fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
         let system_time = &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"];
-        let system_time_str = system_time.as_str().unwrap_or("");
-        if system_time_str.is_empty() {
-            return Option::None;
-        }
-
-        let rfc3339_time = DateTime::parse_from_rfc3339(system_time_str);
-        if rfc3339_time.is_err() {
-            return Option::None;
-        }
-        let datetime = Utc
-            .from_local_datetime(&rfc3339_time.unwrap().naive_utc())
-            .single();
-        if datetime.is_none() {
-            return Option::None;
-        } else {
-            return Option::Some(datetime.unwrap());
-        }
+        return utils::str_time_to_datetime(system_time.as_str().unwrap_or(""));
     }
 
     /// message内のマップをクリアする。テストする際の冪等性の担保のため作成。
