@@ -308,7 +308,7 @@ pub fn judge_timeframe(
     let mut check_point = get_next_checkpoint(start_point);
 
     *loaded_field_value
-        .entry(time_data[0].clone().field_record_value)
+        .entry(time_data[0].field_record_value.to_string())
         .or_insert(0) += 1;
 
     while time_data[start_point as usize].record_time != stop_time
@@ -339,7 +339,11 @@ pub fn judge_timeframe(
             if !select_aggcon(result_set_cnt, &aggcondition) {
                 if exist_field && time_data[start_point as usize].record_time != stop_time {
                     let counter = loaded_field_value
-                        .entry(time_data[start_point as usize].clone().field_record_value)
+                        .entry(
+                            time_data[start_point as usize]
+                                .field_record_value
+                                .to_string(),
+                        )
                         .or_insert(1);
                     *counter -= 1;
                     if *counter == 0 as u128 {
@@ -369,13 +373,13 @@ pub fn judge_timeframe(
             check_point = get_next_checkpoint(start_point);
             loaded_field_value = HashMap::new();
             *loaded_field_value
-                .entry(time_data[0].clone().field_record_value)
+                .entry(time_data[0].field_record_value.to_string())
                 .or_insert(0) += 1;
         } else {
             // 条件の基準が1の時に最初の要素を2回読み込む事を防止するため
             if check_point_date.record_time != stop_time && check_point != 0 {
                 *loaded_field_value
-                    .entry(check_point_date.clone().field_record_value)
+                    .entry(check_point_date.field_record_value.to_string())
                     .or_insert(0) += 1;
             }
             // timeframeで指定した情報と比較して、時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
