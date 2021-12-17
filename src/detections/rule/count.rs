@@ -278,7 +278,7 @@ pub fn judge_timeframe(
   let stop_time = Utc.ymd(9999, 12, 31).and_hms(23, 59, 59);
   let aggcondition = rule.detection.aggregation_condition.as_ref().unwrap();
   let exist_field = aggcondition._field_name.is_some();
-  println!("exist_field:{}", exist_field);
+
   let mut start_point = 0;
   // timeframeで指定された基準の値を秒数として保持
   let judge_sec_frame = get_sec_timeframe(&rule.detection.timeframe);
@@ -290,7 +290,7 @@ pub fn judge_timeframe(
       field_record_value: "".to_string(),
     })
     .collect();
-  println!("{:?}|{:?}", aggcondition._cmp_num, stop_time_datas.len());
+
   time_data.append(&mut stop_time_datas);
   time_data.sort_by(|a, b| a.record_time.cmp(&b.record_time));
 
@@ -302,7 +302,7 @@ pub fn judge_timeframe(
       cal_point + aggcondition._cmp_num - 1
     }
   };
-  println!("td:{:?}", time_data);
+
   // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
   let mut check_point = get_next_checkpoint(start_point);
 
