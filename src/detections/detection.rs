@@ -200,9 +200,6 @@ impl Detection {
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> String {
-        if rule.yaml["output"].as_str().unwrap_or("") != "" {
-            return rule.yaml["output"].as_str().unwrap_or("").to_string();
-        }
         // 条件式部分の出力
         let mut ret: String = "[condition] ".to_owned();
         let agg_condition_raw_str: Vec<&str> = rule.yaml["detection"]["condition"]
