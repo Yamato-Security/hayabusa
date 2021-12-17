@@ -30,7 +30,7 @@ use tokio::task::JoinHandle;
 const MAX_DETECT_RECORDS: usize = 5000;
 
 fn main() {
-    let app = App::new();
+    let mut app = App::new();
     app.exec();
     app.rt.shutdown_background();
 }
@@ -48,7 +48,7 @@ impl App {
         };
     }
 
-    fn exec(&self) {
+    fn exec(&mut self) {
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("q") {
             self.output_logo();
@@ -144,7 +144,7 @@ impl App {
         }
     }
 
-    fn analysis_files(&self, evtx_files: Vec<PathBuf>) {
+    fn analysis_files(&mut self, evtx_files: Vec<PathBuf>) {
         let level = configs::CONFIG
             .read()
             .unwrap()
@@ -160,7 +160,7 @@ impl App {
             &filter::exclude_ids(),
         );
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
-        self.get_all_keys(&rule_files);
+        self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         for evtx_file in evtx_files {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
