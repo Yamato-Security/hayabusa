@@ -267,6 +267,19 @@ pub fn select_aggcon(cnt: i32, aggcondition: &AggregationParseInfo) -> bool {
     }
 }
 
+/// condtionの分岐によって同じ型を返すif-letのジェネリクス
+fn _if_condition_fn_caller<T: FnMut() -> S, S, U: FnMut() -> S>(
+    condition: bool,
+    mut process_true: T,
+    mut process_false: U,
+) -> S {
+    if condition {
+        process_true()
+    } else {
+        process_false()
+    }
+}
+
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
 pub fn judge_timeframe(
     rule: &RuleNode,
@@ -323,19 +336,20 @@ pub fn judge_timeframe(
             // 検査対象データが1個しかない状態でaggregation conditionの条件が1であるときにデータ個数が0になってしまう問題への対応
             let count_set_cnt = check_point - start_point;
             // timeframe内に入っている場合があるため判定を行う
-            let result_set_cnt: i32 = if exist_field {
-                //既にcountの条件を満たしている場合にはcheck_point-1までの個所のfieldの値をloaed_field_valueに追加する必要があるため
-                time_data[(start_point as usize + 1)..(check_point as usize)]
-                    .iter()
-                    .for_each(|timedata| {
-                        *loaded_field_value
-                            .entry(timedata.field_record_value.to_string())
-                            .or_insert(0) += 1
-                    });
-                loaded_field_value.len() as i32
-            } else {
-                count_set_cnt as i32
-            };
+            let result_set_cnt: i32 = _if_condition_fn_caller(
+                exist_field,
+                || {
+                    time_data[(start_point as usize + 1)..(check_point as usize)]
+                        .iter()
+                        .for_each(|timedata| {
+                            *loaded_field_value
+                                .entry(timedata.field_record_value.to_string())
+                                .or_insert(0) += 1;
+                        });
+                    loaded_field_value.len() as i32
+                },
+                || count_set_cnt as i32,
+            );
             // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
             if !select_aggcon(result_set_cnt, &aggcondition) {
                 if exist_field && time_data[start_point as usize].record_time != stop_time {
@@ -378,34 +392,37 @@ pub fn judge_timeframe(
                 .or_insert(0) += 1;
         } else {
             // 条件の基準が1の時に最初の要素を2回読み込む事を防止するため
-            if check_point_date.record_time != stop_time && check_point != 0 {
-                *loaded_field_value
-                    .entry(check_point_date.field_record_value.to_string())
-                    .or_insert(0) += 1;
-            }
+            _if_condition_fn_caller(
+                check_point_date.record_time != stop_time && check_point != 0,
+                || {
+                    *loaded_field_value
+                        .entry(check_point_date.field_record_value.to_string())
+                        .or_insert(0) += 1;
+                    ()
+                },
+                || {},
+            );
             // timeframeで指定した情報と比較して、時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
             check_point += 1;
         }
     }
 
-    // timeframeがないルールの場合の判定(フィールドの読み込みはloop内で実施済み)
+    // timeframeがないルールの場合の判定(フィールドの読み込みはwhile内で実施済み)
     if judge_sec_frame.is_none() {
-        if exist_field {
-            if select_aggcon(loaded_field_value.keys().len() as i32, &aggcondition) {
-                let field_values: Vec<String> = loaded_field_value
-                    .keys()
-                    .filter(|key| **key != "")
-                    .map(|key| key.to_string())
-                    .collect();
-                //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
-                ret.push(AggResult::new(
-                    loaded_field_value.values().map(|value| *value as i32).sum(),
-                    key.to_string(),
-                    field_values,
-                    time_data[start_point as usize].record_time,
-                    get_str_agg_eq(rule),
-                ));
-            }
+        if exist_field && select_aggcon(loaded_field_value.keys().len() as i32, &aggcondition) {
+            let field_values: Vec<String> = loaded_field_value
+                .keys()
+                .filter(|key| **key != "")
+                .map(|key| key.to_string())
+                .collect();
+            //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
+            ret.push(AggResult::new(
+                loaded_field_value.values().map(|value| *value as i32).sum(),
+                key.to_string(),
+                field_values,
+                time_data[start_point as usize].record_time,
+                get_str_agg_eq(rule),
+            ));
         } else {
             if select_aggcon(*loaded_field_value.get("").unwrap() as i32, &aggcondition) {
                 //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
