@@ -352,20 +352,24 @@ pub fn judge_timeframe(
             );
             // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
             if !select_aggcon(result_set_cnt, &aggcondition) {
-                if exist_field && time_data[start_point as usize].record_time != stop_time {
-                    let counter = loaded_field_value
-                        .entry(
-                            time_data[start_point as usize]
-                                .field_record_value
-                                .to_string(),
-                        )
-                        .or_insert(1);
-                    *counter -= 1;
-                    if *counter == 0 as u128 {
-                        loaded_field_value
-                            .remove(&time_data[start_point as usize].field_record_value);
-                    }
-                }
+                _if_condition_fn_caller(
+                    exist_field && time_data[start_point as usize].record_time != stop_time,
+                    || {
+                        let counter = loaded_field_value
+                            .entry(
+                                time_data[start_point as usize]
+                                    .field_record_value
+                                    .to_string(),
+                            )
+                            .or_insert(1);
+                        *counter -= 1;
+                        if *counter == 0 as u128 {
+                            loaded_field_value
+                                .remove(&time_data[start_point as usize].field_record_value);
+                        }
+                    },
+                    || {},
+                );
                 start_point += 1;
                 check_point = get_next_checkpoint(start_point);
                 continue;
@@ -408,6 +412,7 @@ pub fn judge_timeframe(
     }
 
     // timeframeがないルールの場合の判定(フィールドの読み込みはwhile内で実施済み)
+
     if judge_sec_frame.is_none() {
         if exist_field && select_aggcon(loaded_field_value.keys().len() as i32, &aggcondition) {
             let field_values: Vec<String> = loaded_field_value
@@ -424,7 +429,10 @@ pub fn judge_timeframe(
                 get_str_agg_eq(rule),
             ));
         } else {
-            if select_aggcon(*loaded_field_value.get("").unwrap_or(&0) as i32, &aggcondition) {
+            if select_aggcon(
+                *loaded_field_value.get("").unwrap_or(&0) as i32,
+                &aggcondition,
+            ) {
                 //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
                 ret.push(AggResult::new(
                     *loaded_field_value.get("").unwrap() as i32,
