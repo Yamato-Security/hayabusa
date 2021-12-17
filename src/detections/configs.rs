@@ -1,4 +1,6 @@
+use crate::detections::print::AlertMessage;
 use crate::detections::utils;
+use chrono::{DateTime, Utc};
 use clap::{App, AppSettings, ArgMatches};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
@@ -55,6 +57,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
     --verbose 'Output verbose information to target event file path and rule file'
+    --starttimeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
+    --endtimeline=[ENDTIMELINE]'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
     -q 'Quiet mode. Do not display the launch banner'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
     -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
@@ -117,6 +121,80 @@ fn load_target_ids(path: &str) -> TargetEventIds {
     }
 
     return ret;
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetEventTime {
+    start_time: Option<DateTime<Utc>>,
+    end_time: Option<DateTime<Utc>>,
+}
+
+impl TargetEventTime {
+    pub fn new() -> Self {
+        let start_time = if let Some(s_time) = CONFIG.read().unwrap().args.value_of("starttimeline")
+        {
+            match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+                .or_else(|_| DateTime::parse_from_str(s_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
+            {
+                Ok(dt) => Some(dt.with_timezone(&Utc)),
+                Err(err) => {
+                    AlertMessage::alert(
+                        &mut std::io::stderr().lock(),
+                        format!("starttimeline field: {}", err),
+                    )
+                    .ok();
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("endtimeline") {
+            match DateTime::parse_from_str(e_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+            .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
+        {
+            Ok(dt) => Some(dt.with_timezone(&Utc)),
+            Err(err) => {
+                    AlertMessage::alert(
+                        &mut std::io::stderr().lock(),
+                        format!("endtimeline field: {}", err),
+                    )
+                    .ok();
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        return Self::set(start_time, end_time);
+    }
+
+    pub fn set(
+        start_time: Option<chrono::DateTime<chrono::Utc>>,
+        end_time: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Self {
+        return Self {
+            start_time: start_time,
+            end_time: end_time,
+        };
+    }
+
+    pub fn is_target(&self, eventtime: &Option<DateTime<Utc>>) -> bool {
+        if eventtime.is_none() {
+            return true;
+        }
+        if let Some(starttime) = self.start_time {
+            if eventtime.unwrap() < starttime {
+                return false;
+            }
+        }
+        if let Some(endtime) = self.end_time {
+            if eventtime.unwrap() > endtime {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -233,26 +311,51 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     return config;
 }
 
-// #[cfg(test)]
-// mod tests {
+#[cfg(test)]
+mod tests {
+    use crate::detections::configs;
+    use chrono::{DateTime, Utc};
 
-//     use crate::detections::configs;
+    //     #[test]
+    //     #[ignore]
+    //     fn singleton_read_and_write() {
+    //         let message =
+    //             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
+    //         configs::EVENT_KEY_ALIAS_CONFIG =
+    //             configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+    //         let display = format!(
+    //             "{}",
+    //             format_args!(
+    //                 "{:?}",
+    //                 configs::CONFIG.write().unwrap().event_key_alias_config
+    //             )
+    //         );
+    //         assert_eq!(message, display);
+    //     }
+    // }
 
-//     #[test]
-//     #[ignore]
-//     fn singleton_read_and_write() {
-//         let message =
-//             "EventKeyAliasConfig { key_to_eventkey: {\"EventID\": \"Event.System.EventID\"} }";
-//         configs::EVENT_KEY_ALIAS_CONFIG =
-//             configs::load_eventkey_alias("test_files/config/eventkey_alias.txt");
+    #[test]
+    fn target_event_time_filter() {
+        let start_time = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let time_filter = configs::TargetEventTime::set(start_time, end_time);
 
-//         let display = format!(
-//             "{}",
-//             format_args!(
-//                 "{:?}",
-//                 configs::CONFIG.write().unwrap().event_key_alias_config
-//             )
-//         );
-//         assert_eq!(message, display);
-//     }
-// }
+        let out_of_range1 = Some("1999-01-01T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let within_range = Some("2019-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
+        let out_of_range2 = Some("2021-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
+
+        assert_eq!(time_filter.is_target(&out_of_range1), false);
+        assert_eq!(time_filter.is_target(&within_range), true);
+        assert_eq!(time_filter.is_target(&out_of_range2), false);
+    }
+
+    #[test]
+    fn target_event_time_filter_containes_on_time() {
+        let start_time = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
+        let time_filter = configs::TargetEventTime::set(start_time, end_time);
+
+        assert_eq!(time_filter.is_target(&start_time), true);
+        assert_eq!(time_filter.is_target(&end_time), true);
+    }
+}
