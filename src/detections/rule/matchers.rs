@@ -483,7 +483,7 @@ mod tests {
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
     use crate::detections::rule::tests::parse_rule_from_str;
-    use crate::detections::{utils, self};
+    use crate::detections::{self, utils};
 
     #[test]
     fn test_rule_parse() {

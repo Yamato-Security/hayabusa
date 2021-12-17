@@ -338,17 +338,17 @@ impl SelectionNode for LeafSelectionNode {
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
                 return eventdata_data
-                .as_array()
-                .unwrap()
-                .iter()
-                .any(|ary_element| {
-                    let aryelement_val = utils::value_to_string(ary_element);
-                    return self
-                        .matcher
-                        .as_ref()
-                        .unwrap()
-                        .is_match(aryelement_val.as_ref(), event_record);
-                });
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|ary_element| {
+                        let aryelement_val = utils::value_to_string(ary_element);
+                        return self
+                            .matcher
+                            .as_ref()
+                            .unwrap()
+                            .is_match(aryelement_val.as_ref(), event_record);
+                    });
             } else {
                 return self
                     .matcher
@@ -407,7 +407,7 @@ impl SelectionNode for LeafSelectionNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::{self, utils, rule::tests::parse_rule_from_str};
+    use crate::detections::{self, rule::tests::parse_rule_from_str, utils};
 
     #[test]
     fn test_detect_mutiple_regex_and() {

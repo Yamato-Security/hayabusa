@@ -325,9 +325,9 @@ impl AggResult {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::{ rule::create_rule, self, utils};
-    use yaml_rust::YamlLoader;
     use super::RuleNode;
+    use crate::detections::{self, rule::create_rule, utils};
+    use yaml_rust::YamlLoader;
 
     pub fn parse_rule_from_str(rule_str: &str) -> RuleNode {
         let rule_yaml = YamlLoader::load_from_str(rule_str);
@@ -891,7 +891,7 @@ mod tests {
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);              
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
