@@ -125,6 +125,19 @@ detection:
         Event.System.Provider_attributes.Name: 'Microsoft-Windows-Security-Auditing'
 ``````
 
+### grep検索
+hayabusaではeventkeyを指定せず、WindowsEventログに含まれる文字列にマッチするかどうかを判定する機能も用意されています。この機能をhayabusaではgrep検索と呼んでいます。
+
+grep検索をするには下記のようにdetectionを指定します。この場合、administrator又はpublicという文字列がWindowsEventログに含まれる場合に、条件に一致したものとして条件に一致したものとして処理されます。また、grep検索にはワイルドカードを指定することも可能です。
+``````
+detection:
+    selection:
+        - administrator
+        - public
+``````
+
+hayabusaでは内部的にWindowsEventログをJSON形式に変換して上で処理を行っています。そのため、XMLのタグをgrep検索でマッチさせることはできません。
+
 ### EventData
 WindowsEventログをXML形式で出力すると、EventDataというタグが使用されている場合があります。(EventDataタグは様々なEventIDのログで頻繁に利用されます。)このEventDataにネストされたタグの名前は全て`Data`となっており、ここまで説明してきたeventkeyではSubjectUserSidやSubjectUserNameを区別することができません。
 ````````````
