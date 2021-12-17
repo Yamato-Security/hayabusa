@@ -126,15 +126,21 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
 
     wtr.flush()?;
     println!("");
-    _print_unique_results(total_detect_counts_by_level, unique_detect_counts_by_level);
+    _print_unique_results(
+        total_detect_counts_by_level,
+        "Total".to_string(),
+        "detections".to_string(),
+    );
+    _print_unique_results(
+        unique_detect_counts_by_level,
+        "Unique".to_string(),
+        "rules".to_string(),
+    );
     Ok(())
 }
 
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
-fn _print_unique_results(
-    mut total_detect_counts_by_level: Vec<u128>,
-    mut unique_detect_counts_by_level: Vec<u128>,
-) {
+fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail_word: String) {
     let levels = Vec::from([
         "Critical",
         "High",
@@ -145,18 +151,19 @@ fn _print_unique_results(
     ]);
 
     // configsの登録順番と表示をさせたいlevelの順番が逆であるため
-    total_detect_counts_by_level.reverse();
-    unique_detect_counts_by_level.reverse();
+    counts_by_level.reverse();
 
+    // 全体の集計(levelの記載がないためformatの第二引数は空の文字列)
     println!(
-        "Unique | Total events detected: {} | {}",
-        unique_detect_counts_by_level.iter().sum::<u128>(),
-        total_detect_counts_by_level.iter().sum::<u128>()
+        "{} {}:{}",
+        head_word,
+        tail_word,
+        counts_by_level.iter().sum::<u128>()
     );
     for (i, level_name) in levels.iter().enumerate() {
         println!(
-            "Unique | Total {} alerts: {} | {}",
-            level_name, unique_detect_counts_by_level[i], total_detect_counts_by_level[i]
+            "{} {} {}:{}",
+            head_word, level_name, tail_word, counts_by_level[i]
         );
     }
 }
