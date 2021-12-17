@@ -325,7 +325,6 @@ pub fn judge_timeframe(
       let result_set_cnt: i32 = if exist_field {
         //既にcountの条件を満たしている場合にはcheck_point-1までの個所のfieldの値をloaed_field_valueに追加する必要があるため
         for insert_point in (start_point as usize + 1)..(check_point as usize) {
-          println!("rollback");
           let insert_data = time_data[insert_point].clone().field_record_value;
           *loaded_field_value
             .entry(insert_data.to_string())
@@ -1219,18 +1218,12 @@ mod tests {
       expect_condition_op_num.push(expect_agg.condition_op_num);
     }
     for agg_result in agg_results {
-      println!("{:?} | {:?}", expect_start_timedate, agg_result);
       //ここですでにstart_timedateの格納を確認済み
       let index = expect_start_timedate
         .binary_search(&agg_result.start_timedate)
         .unwrap();
       assert_eq!(agg_result.data, expect_data[index]);
       assert_eq!(agg_result.key, expect_key[index]);
-      println!(
-        "{:?} | {:?}",
-        expect_field_values[index].len(),
-        agg_result.field_values.len()
-      );
       assert!(agg_result.field_values.len() == expect_field_values[index].len());
       for expect_field_value in &expect_field_values[index] {
         // テストによってはtimeframeの値と各fieldの値で配列の順番が想定したものと変化してしまう可能性があるため配列の長さを確認したうえで期待した各要素が存在するかを確認する。
