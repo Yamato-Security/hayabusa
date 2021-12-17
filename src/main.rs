@@ -14,17 +14,17 @@ use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
-use tokio::task::JoinHandle;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::sync::Arc;
-use tokio::spawn;
 use std::{
     fs::{self, File},
     path::PathBuf,
     vec,
 };
 use tokio::runtime::Runtime;
+use tokio::spawn;
+use tokio::task::JoinHandle;
 
 // 一度にtimelineやdetectionを実行する行数
 const MAX_DETECT_RECORDS: usize = 5000;
@@ -160,13 +160,13 @@ impl App {
             &filter::exclude_ids(),
         );
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
-        let rule_keys = self.get_all_keys(&rule_files);
+        self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         for evtx_file in evtx_files {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
-            detection = self.analysis_file(evtx_file, detection, &rule_keys);
+            detection = self.analysis_file(evtx_file, detection);
             pb.inc();
         }
         after_fact();
@@ -178,7 +178,6 @@ impl App {
         &self,
         evtx_filepath: PathBuf,
         mut detection: detection::Detection,
-        rule_keys: &Vec<String>,
     ) -> detection::Detection {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(evtx_filepath.clone());
@@ -224,7 +223,11 @@ impl App {
                 break;
             }
 
-            let records_per_detect = self.rt.block_on(App::create_rec_infos(records_per_detect, &path, rule_keys.clone()));
+            let records_per_detect = self.rt.block_on(App::create_rec_infos(
+                records_per_detect,
+                &path,
+                self.rule_keys.clone(),
+            ));
 
             // // timeline機能の実行
             tl.start(&records_per_detect);
@@ -239,17 +242,25 @@ impl App {
         return detection;
     }
 
-    async fn create_rec_infos( records_per_detect: Vec<Value>, path: &dyn Display, rule_keys: Vec<String>) -> Vec<EvtxRecordInfo> {
+    async fn create_rec_infos(
+        records_per_detect: Vec<Value>,
+        path: &dyn Display,
+        rule_keys: Vec<String>,
+    ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
-        let threads:Vec<JoinHandle<EvtxRecordInfo>> = records_per_detect.into_iter().map(|rec| {
-            let arc_rule_keys = Arc::clone(&rule_keys);
-            let arc_path = Arc::clone(&path);
-            return spawn(async move {
-                let rec_info = utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys);
-                return rec_info;
-            });
-        }).collect();
+        let threads: Vec<JoinHandle<EvtxRecordInfo>> = records_per_detect
+            .into_iter()
+            .map(|rec| {
+                let arc_rule_keys = Arc::clone(&rule_keys);
+                let arc_path = Arc::clone(&path);
+                return spawn(async move {
+                    let rec_info =
+                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys);
+                    return rec_info;
+                });
+            })
+            .collect();
 
         let mut ret = vec![];
         for thread in threads.into_iter() {

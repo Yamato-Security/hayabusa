@@ -322,11 +322,15 @@ impl LeafMatcher for DefaultMatcher {
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
         // yamlにnullが設定されていた場合
         // keylistが空(==JSONのgrep検索)の場合、無視する。
-        if !self.key_list.is_empty() && self.re.is_none() {
-            return event_value.is_none();
+        if self.key_list.is_empty() && self.re.is_none() {
+            return false;
         }
 
-        let event_value_str = event_value.unwrap_or(&STR_DEFAULT);
+        if event_value.is_none() {
+            return false;
+        }
+
+        let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
             return self.re.as_ref().unwrap().is_match(&event_value_str);

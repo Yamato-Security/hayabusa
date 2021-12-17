@@ -9,7 +9,6 @@ use tokio::runtime::Runtime;
 
 use regex::Regex;
 use serde_json::Value;
-use std::fmt::Display;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
