@@ -1,10 +1,14 @@
 use regex::Regex;
-use serde_json::Value;
 use std::collections::VecDeque;
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use mopa::mopafy;
+
+use lazy_static::lazy_static;
+lazy_static! {
+    pub static ref STR_DEFAULT: String = String::default();
+}
 
 // 末端ノードがEventLogの値を比較するロジックを表す。
 // 正規条件のマッチや文字数制限など、比較ロジック毎にこのtraitを実装したクラスが存在する。
@@ -18,7 +22,7 @@ pub trait LeafMatcher: mopa::Any {
     /// 引数に指定されたJSON形式のデータがマッチするかどうか判定する。
     /// main.rsでWindows Event LogをJSON形式に変換していて、そのJSON形式のWindowsのイベントログデータがここには来る
     /// 例えば正規表現でマッチするロジックなら、ここに正規表現でマッチさせる処理を書く。
-    fn is_match(&self, event_value: Option<&Value>, recinfo: &EvtxRecordInfo) -> bool;
+    fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool;
 
     /// 初期化ロジックをここに記載します。
     /// ルールファイルの書き方が間違っている等の原因により、正しくルールファイルからパースできない場合、戻り値のResult型でエラーを返してください。
@@ -60,11 +64,10 @@ impl LeafMatcher for MinlengthMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>, _recinfo: &EvtxRecordInfo) -> bool {
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => s.len() as i64 >= self.min_len,
-            Value::Number(n) => n.to_string().len() as i64 >= self.min_len,
-            _ => false,
+    fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
+        return match event_value {
+            Some(s) => s.len() as i64 >= self.min_len,
+            None => false,
         };
     }
 }
@@ -118,12 +121,10 @@ impl LeafMatcher for RegexesFileMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>, _recinfo: &EvtxRecordInfo) -> bool {
-        //TODO Wildcardの場合、CaseInsensitiveなので、ToLowerする。
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_regex(s, &self.regexes),
-            Value::Number(n) => !utils::check_regex(&n.to_string(), &self.regexes),
-            _ => false,
+    fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
+        return match event_value {
+            Some(s) => utils::check_regex(s, &self.regexes),
+            None => false,
         };
     }
 }
@@ -177,12 +178,10 @@ impl LeafMatcher for AllowlistFileMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>, _recinfo: &EvtxRecordInfo) -> bool {
-        return match event_value.unwrap_or(&Value::Null) {
-            Value::String(s) => !utils::check_allowlist(s, &self.regexes),
-            Value::Number(n) => !utils::check_allowlist(&n.to_string(), &self.regexes),
-            Value::Bool(b) => !utils::check_allowlist(&b.to_string(), &self.regexes),
-            _ => true,
+    fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
+        return match event_value {
+            Some(s) => !utils::check_allowlist(s, &self.regexes),
+            None => true,
         };
     }
 }
@@ -320,50 +319,18 @@ impl LeafMatcher for DefaultMatcher {
         return Result::Ok(());
     }
 
-    fn is_match(&self, event_value: Option<&Value>, recinfo: &EvtxRecordInfo) -> bool {
-        // unwrap_orの引数に""ではなく" "を指定しているのは、
-        // event_valueが文字列じゃない場合にis_event_value_nullの値がfalseになるように、len() == 0とならない値を指定している。
-        let is_event_value_null = event_value.is_none()
-            || event_value.unwrap().is_null()
-            || event_value.unwrap().as_str().unwrap_or(" ").len() == 0;
-
+    fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
         // yamlにnullが設定されていた場合
         // keylistが空(==JSONのgrep検索)の場合、無視する。
-        if !self.key_list.is_empty() && self.re.is_none() {
-            return is_event_value_null;
-        }
-
-        // JSON形式のEventLogデータをstringに変換するための前処理
-        // 以前のコードはstringに変換に変換する必ずto_string()がするような処理になっていた。
-        // そうすると、凄く遅くなるので、そうならないように回避
-        let mut b_str = String::default();
-        let mut n_str = String::default();
-        match event_value.unwrap_or(&Value::Null) {
-            Value::Bool(b) => b_str = b.to_string(),
-            Value::Number(n) => {
-                n_str = n.to_string();
-            }
-            _ => (),
-        };
-
-        // JSON形式のEventLogデータをstringに変換
-        let event_value_str: Option<&String> = if self.key_list.is_empty() {
-            Option::Some(&recinfo.data_string)
-        } else {
-            let value = match event_value.unwrap_or(&Value::Null) {
-                Value::Bool(_) => Option::Some(&b_str),
-                Value::String(s) => Option::Some(s),
-                Value::Number(_) => Option::Some(&n_str),
-                _ => Option::None,
-            };
-            value
-        };
-        if event_value_str.is_none() {
+        if self.key_list.is_empty() && self.re.is_none() {
             return false;
         }
 
-        // 変換したデータに対してパイプ処理を実行する。
-        let event_value_str = event_value_str.unwrap();
+        if event_value.is_none() {
+            return false;
+        }
+
+        let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
             return self.re.as_ref().unwrap().is_match(&event_value_str);
@@ -515,9 +482,8 @@ mod tests {
     use super::super::selectionnodes::{
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
-    use crate::detections::detection::EvtxRecordInfo;
     use crate::detections::rule::tests::parse_rule_from_str;
-    use serde_json::Value;
+    use crate::detections::{self, utils};
 
     #[test]
     fn test_rule_parse() {
@@ -538,8 +504,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
-                    regexes: ./config/regex/regexes_suspicous_service.txt
-                    allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
+                    regexes: ./config/regex/detectlist_suspicous_services.txt
+                    allowlist: ./config/regex/allowlist_legitimate_services.txt
         falsepositives:
             - unknown
         level: medium
@@ -739,11 +705,8 @@ mod tests {
 
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -772,11 +735,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -805,11 +765,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -839,11 +796,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -873,11 +827,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -906,11 +857,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -939,11 +887,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -973,11 +918,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -1007,11 +949,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1041,11 +980,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1075,11 +1011,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1109,11 +1042,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -1142,11 +1072,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1165,7 +1092,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
+                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1179,11 +1106,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -1202,7 +1126,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
+                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1216,11 +1140,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -1239,7 +1160,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
+                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
         output: 'command=%CommandLine%'
         "#;
 
@@ -1252,11 +1173,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -1297,11 +1215,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
@@ -1342,11 +1257,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
@@ -1387,11 +1299,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
@@ -1432,11 +1341,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
@@ -1477,11 +1383,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_rec) => {
@@ -1522,11 +1425,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_rec) => {
@@ -1555,11 +1455,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1588,11 +1485,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -1621,11 +1515,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1711,13 +1602,9 @@ mod tests {
 
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
-            Ok(rec) => {
-                let rec: Value = rec;
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: rec,
-                    data_string: record_json_str.to_string(),
-                };
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1746,12 +1633,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let rec: Value = record;
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: rec,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
@@ -1782,11 +1665,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
@@ -1817,11 +1697,8 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
