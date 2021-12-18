@@ -137,7 +137,6 @@ fn analysis_files(evtx_files: Vec<PathBuf>) {
         &filter::exclude_ids(),
     );
     let mut pb = ProgressBar::new(evtx_files.len() as u64);
-    pb.show_speed = false;
     let mut detection = detection::Detection::new(rule_files);
     for evtx_file in evtx_files {
         if configs::CONFIG.read().unwrap().args.is_present("verbose") {
