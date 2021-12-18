@@ -189,6 +189,20 @@ detection:
     condition: selection
 ``````
 
+### grep search
+Hayabusa can perform grep searches in Windows event log files by not specifying any eventkeys.
+
+To do a grep search, specify the detection as shown below. In this case, if the strings `mimikatz` or `metasploit` are included in the Windows Event log, it will match. It is also possible to specify wildcards.
+
+``````
+detection:
+    selection:
+        - mimikatz
+        - metasploit
+``````
+
+> Note: Hayabusa internally converts Windows event log data to JSON format before processing the data so it is not possible to match on XML tags.
+
 ### EventData
 Windows event logs are divided into two parts: the `System` part where the fundamental data (Event ID, Timestamp, Record ID, Log name (Channel)) is written, and the `EventData` part where arbitrary data is written depending on the Event ID. The problem is that the names of the tags nested in EventData are all called `Data` so the eventkeys described so far cannot distinguish between `SubjectUserSid` and `SubjectUserName`.
 
@@ -295,7 +309,7 @@ About escaping wildcards:
 ## Nesting keywords inside eventkeys
 Eventkeys can be nested with specific keywords. 
 In the example below, the rule will match if the following are true:
-* `ServiceName` is called `malicious-service` or contains a regular expression in `./config/regex/regexes_suspicous_service.txt`.
+* `ServiceName` is called `malicious-service` or contains a regular expression in `./config/regex/detectlist_suspicous_services.txt`.
 * `ImagePath` has a minimum of 1000 characters.
 * `ImagePath` does not have any matches in the `allowlist`.
 
@@ -306,10 +320,10 @@ detection:
         EventID: 7045
         ServiceName:
             - value: malicious-service
-            - regexes: ./config/regex/regexes_suspicous_services.txt
+            - regexes: ./config/regex/detectlist_suspicous_services.txt
         ImagePath:
             min_length: 1000
-            allowlist: ./config/regex/allowlist_legitimate_serviceimage.txt
+            allowlist: ./config/regex/allowlist_legitimate_services.txt
     condition: selection
 ``````
 
@@ -321,13 +335,13 @@ Currently, the following keywords can be specified:
 
 ### regexes and allowlist keywords
 Hayabusa has two built-in regular expression files:
-* `./config/regex/regexes_suspicous_services.txt`: to detect suspicious service names
-* `./config/regex/allowlist_legitimate_serviceimage.txt`: to allow legitimate services
+* `./config/regex/detectlist_suspicous_services.txt`: to detect suspicious service names
+* `./config/regex/allowlist_legitimate_services.txt`: to allow legitimate services
   
 Files defined in `regexes` and `allowlist` can be edited to change the behavior of all rules that reference them without having to change any rule file itself.
 
-You can also use different regexes and allowlist textfiles that you create.
-Please refer to the default `./config/regexes_suspicous_services.txt` and `./config/allowlist_legitimate_serviceimage.txt` when creating your own.
+You can also use different detectlist and allowlist textfiles that you create.
+Please refer to the built-in `./config/regex/detectlist_suspicous_services.txt` and `./config/regex/allowlist_legitimate_services.txt` when creating your own.
 
 ## condition
 With the notation we explained above, you can express AND and OR logic but it will be confusing if you are trying to define complex logic.
