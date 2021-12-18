@@ -435,7 +435,7 @@ pub fn judge_timeframe(
             ) {
                 //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
                 ret.push(AggResult::new(
-                    *loaded_field_value.get("").unwrap() as i32,
+                    *loaded_field_value.get("").unwrap_or(&0) as i32,
                     key.to_string(),
                     vec![],
                     time_data[start_point as usize].record_time,
