@@ -153,6 +153,7 @@ SubjectUserName,Event.EventData.SubjectUserName
 SubjectUserSid,Event.EventData.SubjectUserSid
 TargetDomainName,Event.EventData.TargetDomainName
 TargetFilename,Event.EventData.TargetFilename
+TargetInfo,Event.EventData.TargetInfo
 TargetImage,Event.EventData.TargetImage
 TargetLogonId,Event.EventData.TargetLogonId
 TargetName,Event.EventData.TargetServerName
