@@ -52,22 +52,22 @@ fn build_app<'a>() -> ArgMatches<'a> {
         return ArgMatches::default();
     }
 
-    let usages = "-f --filepath=[FILEPATH] 'File path to one .evtx file'
-    --csv-timeline=[CSV_TIMELINE] 'Save the timeline in CSV format'
+    let usages = "-d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
+    -f --filepath=[FILEPATH] 'File path to one .evtx file'
+    -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
+    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format'
+    -v --verbose 'Output verbose information'
+    --enable-deprecated-rules 'Enable sigma rules marked as deprecated'
+    -n --enable-noisy-rules 'Enable rules marked as noisy'
+    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
+    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
+    --end-timeline=[ENDTIMELINE]'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
     --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
     --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
-    --verbose 'Output verbose information to target event file path and rule file'
-    --starttimeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
-    --endtimeline=[ENDTIMELINE]'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
-    -q 'Quiet mode. Do not display the launch banner'
-    -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
-    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
     -u --utc 'Output time in UTC format (default: local time)'
-    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
+    -t --thread-number=[NUM] 'Thread number (default: optimal number for performance)'
     -s --statistics 'Prints statistics of event IDs'
-    -n --show-noisyalerts 'do not exclude noisy rules'
-    -t --threadnum=[NUM] 'Thread number (default: optimal number for performance)'
-    --show-deprecated 'do not exclude rules with YAML's status deprecated'
+    -q --quiet 'Quiet mode. Do not display the launch banner'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
