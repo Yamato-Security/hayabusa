@@ -5,7 +5,7 @@ DustInDark(@hitenkoku): Core developer, project management, sigma count implemen
 Garigariganzy (@garigariganzy31): Developer, event ID statistics implementation, etc... 
 ItiB (@itiB_S144) :  Core developer, sigmac hayabusa backend, rule creation, etc...
 James Takai / hachiyone(@hach1yon): Current lead developer, tokio multi-threading, sigma aggregation logic, sigmac backend, rule creation, etc…
-Kazuminn (@k2warugaki): Developer
+Kazuminn (@k47_um1n): Developer
 Tsubokku (@ytsuboi0322): Translations
 Yusuke Matsui (@apt773): AD hacking working group leader, rule testing, documentation, research, support, etc...
 Zach Mathis (@yamatosecurity, Yamato Security Founder): Project leader, tool and concept design, rule creation and tuning, etc…
@@ -15,7 +15,7 @@ Hayabusa would not have been possible without first creating RustyBlue, so we wo
 
 Zach Mathis (@yamatosecurity, Yamato Security Founder): Project Leader
 Nishikawa Akira (@nishikawaakira): Lead Developer
-kazuminn (@k2warugaki): Core Developer
+Kazuminn (@k47_um1n): Core Developer
 itiB (@itiB_S144): Core Developer
 James Takai / hachiyone (@hach1yon): Developer
 DustInDark (@hitenkoku): Core Developer
