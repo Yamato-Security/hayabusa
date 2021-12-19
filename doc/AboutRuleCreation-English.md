@@ -6,7 +6,7 @@ In this section, we will explain how to write hayabusa detection rules.
 # Rule file format
 Example:
 
-``````
+```yaml
 #Author section
 author: Eric Conrad, Zach Mathis
 creation_date: 2020/11/08
@@ -40,7 +40,8 @@ references:
 sample-evtx: ./sample-evtx/EVTX-to-MITRE-Attack/TA0003-Persistence/T1098.xxx-Account manipulation/ID4732-User added to local admin groups.evtx
 logsource: default
 ruletype: Hayabusa
-``````
+```
+
 > ## Author section
 * **author [required]**: Name of the author(s).
 * **contributor** [optional]: Name of any contributor(s) (anyone who made any minor corrections).
@@ -96,13 +97,13 @@ The detection rule below defines that **both conditions** have to be true in ord
 * **AND**
 * Channel has to exactly be `System`.
 
-``````
+```yaml
 detection:
     selection:
         Event.System.EventID: 7040
         Event.System.Channel: System
     condition: selection
-``````
+```
 
 To write OR logic, we use lists (Dictionaries that start with `- `).
 In the detection rule below, **either one** of the conditions will result in the rule being triggered.
@@ -110,13 +111,13 @@ In the detection rule below, **either one** of the conditions will result in the
 * **OR**
 * Channel has to exactly be `System`.
 
-``````
+```yaml
 detection:
     selection:
         - Event.System.EventID: 7040
         - Event.System.Channel: System
     condition: selection 
-``````
+```
 
 We can also combine `AND` and `OR` logic as shown below.
 In this case, the rule matches when the following two conditions are both true.
@@ -124,7 +125,7 @@ In this case, the rule matches when the following two conditions are both true.
 * **AND**
 * Channel is exactly `System`.
 
-``````
+```yaml
 detection:
     selection:
         Event.System.EventID: 
@@ -132,12 +133,12 @@ detection:
           - 7041
         Event.System.Channel: System
     condition: selection
-``````
+```
 
 ### Eventkeys
 The following is an excerpt of a Windows event log, formatted in the original XML. The `Event.System.Channel` field in the rule file example above refers to the original XML tag: `<Event><System><Channel>System<Channel><System></Event>`. Nested XML tags are replaced by tag names seperated by dots (`.`). In hayabusa rules, these field strings connected together with dots are refered to as  `eventkeys`.
 
-``````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <EventID>7040</EventID>
@@ -148,18 +149,18 @@ The following is an excerpt of a Windows event log, formatted in the original XM
         <Data Name='param2'>auto start</Data>
     </EventData>
 </Event>
-``````
+```
 
 #### Eventkey Aliases
 Long eventkeys with many `.` seperations are common, so hayabusa will use aliases to make them easier to work with. Aliases are defined in the `config\eventkey_alias.txt` file. This file is a CSV file made up of `alias` and `event_key` mappings. You can rewrite the rule above as shown below with aliases making the rule easier to read.
 
-``````
+```yaml
 detection:
     selection:
         Channel: System
         EventID: 7040
     condition: selection
-``````
+```
 
 #### Caution: Undefined Eventkey Aliases
 Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are not getting the correct data in the `output`(Alert details) message, and instead are getting results like `%EventID%` or if the selection in your detection logic is not working properly, then you need to update `config\eventkey_alias.txt` with a new alias.
@@ -167,7 +168,7 @@ Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are 
 ### How to use XML attributes in conditions
 XML elements may have attributes set by adding a space to the element. For example, `Name` in `Provider Name` below is an XML attribute of the `Provider` element. 
 
-````````````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/>
@@ -177,36 +178,36 @@ XML elements may have attributes set by adding a space to the element. For examp
         <Security />
     </System>
 </Event>
-````````````
+```
 To specify XML attributes in an eventkey, use the format `{eventkey}_attributes.{attribute_name}`. For example, to specify the `Name` attribute of the `Provider` element in a rule file, it would look like this:
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
         EventID: 4672
         Event.System.Provider_attributes.Name: 'Microsoft-Windows-Security-Auditing'
     condition: selection
-``````
+```
 
 ### grep search
 Hayabusa can perform grep searches in Windows event log files by not specifying any eventkeys.
 
 To do a grep search, specify the detection as shown below. In this case, if the strings `mimikatz` or `metasploit` are included in the Windows Event log, it will match. It is also possible to specify wildcards.
 
-``````
+```yaml
 detection:
     selection:
         - mimikatz
         - metasploit
-``````
+```
 
 > Note: Hayabusa internally converts Windows event log data to JSON format before processing the data so it is not possible to match on XML tags.
 
 ### EventData
 Windows event logs are divided into two parts: the `System` part where the fundamental data (Event ID, Timestamp, Record ID, Log name (Channel)) is written, and the `EventData` part where arbitrary data is written depending on the Event ID. The problem is that the names of the tags nested in EventData are all called `Data` so the eventkeys described so far cannot distinguish between `SubjectUserSid` and `SubjectUserName`.
 
-````````````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <EventID>5379</EventID>
@@ -222,11 +223,11 @@ Windows event logs are divided into two parts: the `System` part where the funda
         <Data Name='SubjectLogonId'>0x11111111</Data>
     </EventData>
 </Event>
-````````````
+```
 
 To deal with this problem, you can specify the value assigned in `Data Name`. For example, if you want to use `SubjectUserName` and `SubjectDomainName` in the EventData as a condition of a rule, you can describe it as follows:
 
-``````
+```yaml
 detection:
     selection:
         Channel: System
@@ -234,12 +235,12 @@ detection:
         Event.EventData.SubjectUserName: hayabusa
         Event.EventData.SubjectDomainName: DESKTOP-HAYBUSA
     condition: selection
-``````
+```
 
 ### Abnormal patterns in EventData
 Some of the tags nested in `EventData` do not have a `Name` attribute.
 
-``````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <EventID>5379</EventID>
@@ -252,30 +253,30 @@ Some of the tags nested in `EventData` do not have a `Name` attribute.
         <Data>NewEngineState=Available PreviousEngineState=None SequenceNumber=9 HostName=ConsoleHost HostVersion=2.0 HostId=5cbb33bf-acf7-47cc-9242-141cd0ba9f0c EngineVersion=2.0 RunspaceId=c6e94dca-0daf-418c-860a-f751a9f2cbe1 PipelineId= CommandName= CommandType= ScriptName= CommandPath= CommandLine=</Data>
     </EventData>
 </Event>
-``````
+```
 
 To detect an event log like the one above, you can specify an eventkey named `EventData`. In this case, the condition will match as long as any one of the nested tags without a `Name` attribute matches.
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
         EventID: 5379
         EventData: None
     condition: selection
-``````
+```
 
 ## Pipes
 A pipe can be used with eventkeys as shown below for matching strings. All of the conditions we have described so far use exact matches, but by using pipes, you can describe more flexible detection rules. In the following example, if the value of `EventData` matches the regular expression `[\s\S]*EngineVersion=2\.0[\s\S]*`, it will match the condition.
 
-``````
+```yaml
 detection:
     selection:
         Channel: Microsoft-Windows-PowerShell/Operational
         EventID: 400
         EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
     condition: selection
-``````
+```
 
 This is a list of what you can specify after the pipe. At the moment, hayabusa does not support chaining multiple pipes together.
 * startswith: Checks the string from the beginning
@@ -288,14 +289,14 @@ This is a list of what you can specify after the pipe. At the moment, hayabusa d
 Wildcards can be used in eventkeys. In the example below, if `ProcessCommandLine` starts with the string "malware", the rule will match. 
 The specification is fundamentally the same as sigma rule wildcards.
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
         EventID: 4688
         ProcessCommandLine: malware*
     condition: selection
-``````
+```
 
 The following two wildcards can be used.
 * `*`: Matches any string of zero or more characters. (Internally it is converted to the regular expression `.*`)
@@ -313,7 +314,7 @@ In the example below, the rule will match if the following are true:
 * `ImagePath` has a minimum of 1000 characters.
 * `ImagePath` does not have any matches in the `allowlist`.
 
-``````
+```yaml
 detection:
     selection:
         Channel: System
@@ -325,7 +326,7 @@ detection:
             min_length: 1000
             allowlist: ./config/regex/allowlist_legitimate_services.txt
     condition: selection
-``````
+```
 
 Currently, the following keywords can be specified:
 * `value`: matches by string (wildcards and pipes can also be specified).
@@ -347,7 +348,7 @@ Please refer to the built-in `./config/regex/detectlist_suspicous_services.txt` 
 With the notation we explained above, you can express `AND` and `OR` logic but it will be confusing if you are trying to define complex logic.
 When you want to make more complex rules, you should use the `condition` keyword as shown below.
 
-``````
+```yaml
 detection:
   SELECTION_1:
     EventID: 3
@@ -368,7 +369,7 @@ detection:
   SELECTION_6:
     DestinationIsIpv6: 'false'
   condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and not ((SELECTION_4 or (SELECTION_5 and SELECTION_6))))
-``````
+```
 
 The following expressions can be used for `condition`.
 * `{expression1} and {expression2}`: Require both {expression1} AND {expression2}
@@ -383,7 +384,7 @@ In the above example, selection names such as `SELECTION_1`, `SELECTION_2`, etc.
 Many rules will result in false positives so it is very common to have a selection for signatures to search for but also a filter selection to not alert on false positives.
 For example:
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
@@ -401,7 +402,7 @@ detection:
         - ProcessName|startswith: C:\Program Files
         - SubjectUserName: LOCAL SERVICE
     condition: selection and not filter
-``````
+```
 
 ## Aggregation conditions (Count rules)
 ### Basics
@@ -409,14 +410,14 @@ The `condition` keyword described above implements not only `AND` and `OR` logic
 This function is called the "aggregation condition" and is specified by connecting a condition with a pipe. 
 In the example below, a conditional expression is used to determine if there are ten or more `AccountName` values for any given `ComputerName` within a timeframe of 24 hours.
 
-``````
+```yaml
 detection:
   selection:
     Channel: Security
     EventID: 4648
   condition: selection | count(AccountName) by ComputerName >= 10
   timeframe: 24h
-``````
+```
 
 Aggregation conditions can be defined in the following format:
 * `count() {operator} {number}`: For log events that match the first condition before the pipe, the condition will match if the number of matched logs satisfies the condition expression specified by `{operator}` and `{number}`.  
@@ -472,10 +473,10 @@ This is the most basic pattern: `count() {operator} {number}`. The rule below wi
 # Rule creation advice
 1. **When possible, always specify `Channel` and `EventID` name.** In the future, we may filter on channel names and event IDs so your rule may be ignored if this is not set.
    
-2. **Do not use multiple `selection` or `filter` fields when it is not needed.** For example:
+2. **Do not use multiple `selection` or `filter` fields and excessive grouping when it is not needed.** For example:
 
-Bad example:
-```
+### Bad example:
+```yaml
 detection:
     SELECTION_1:
         Channnel: Security
@@ -490,8 +491,8 @@ detection:
     condition: SELECTION_1 and SELECTION_2 and SELECTION_3 and not (FILTER_1 or FILTER_2)
 ```
 
-Good example:
-```
+### Good example:
+```yaml
 detection:
     selection:
         Channel: Security
@@ -503,10 +504,10 @@ detection:
     condition: selection and not filter
 ```
 
-1. **When you need multiple sections, please name the first section with channel and event ID information in the `section_basic_info` section and other selections with meaningful names after `section_` and `filter_`, or use the notation `section_1`, `filter_1`, etc... Also, please write comments to explain anything difficult to understand.**
+3. **When you need multiple sections, please name the first section with channel and event ID information in the `section_basic_info` section and other selections with meaningful names after `section_` and `filter_`, or use the notation `section_1`, `filter_1`, etc... Also, please write comments to explain anything difficult to understand.**
 
-Bad example:
-```
+### Bad example:
+```yaml
 detection:
     Takoyaki:
         Channel: Security
@@ -529,8 +530,32 @@ detection:
     condition: Takoyaki and Daisuki and not (Naruto and not Godzilla) and not Ninja and not Sushi
 ```
 
-Good example:
+### OK example:
+```yaml
+detection:
+    selection_1:
+        Channel: Security
+        EventID: 4648
+    selection_2:
+        TargetUserName|endswith: "$"  
+        IpAddress: "-"
+    filter_1:     #Filter system noise
+        SubjectUserName|endswith: "$"
+        TargetUserName|endswith: "$"
+        TargetInfo|endswith: "$"
+    filter_2:
+        SubjectUserName|endswith: "$" 
+    filter_3:
+        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" #Filter out default Desktop Windows Manager and User Mode Driver Framework accounts
+        IpAddress: "-"                                  #Don't filter if the IP address is remote to catch attackers who created backdoor accounts that look like DWM-12, etc..
+    selection_4:
+        - ProcessName|endswith: "powershell.exe"
+        - ProcessName|endswith: "WMIC.exe"
+    condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
+
+### Good example:
+```yaml
 detection:
     selection_basic_info:
         Channel: Security
@@ -552,30 +577,6 @@ detection:
         - ProcessName|endswith: "WMIC.exe"
     condition: selection_basic and selection_SuspiciousProcess and not (selection_TargetUserIsComputerAccount 
                and not filter_SubjectUserIsComputerAccount) and not filter_SystemAccounts and not filter_UsersAndTargetServerAreComputerAccounts
-```
-
-OK example:
-```
-detection:
-    selection_1:
-        Channel: Security
-        EventID: 4648
-    selection_2:
-        TargetUserName|endswith: "$"  
-        IpAddress: "-"
-    filter_1:     #Filter system noise
-        SubjectUserName|endswith: "$"
-        TargetUserName|endswith: "$"
-        TargetInfo|endswith: "$"
-    filter_2:
-        SubjectUserName|endswith: "$" 
-    filter_3:
-        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" #Filter out default Desktop Windows Manager and User Mode Driver Framework accounts
-        IpAddress: "-"                                  #Don't filter if the IP address is remote to catch attackers who created backdoor accounts that look like DWM-12, etc..
-    selection_4:
-        - ProcessName|endswith: "powershell.exe"
-        - ProcessName|endswith: "WMIC.exe"
-    condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
 
 # Converting sigma rules to hayabusa format

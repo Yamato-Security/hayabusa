@@ -6,7 +6,7 @@ Hayabusaの検知ルールは、[YAML](https://en.wikipedia.org/wiki/YAML) 形�
 # ルールファイル形式
 記述例:
 
-``````
+```yaml
 #Author section
 author: Eric Conrad, Zach Mathis
 creation_date: 2020/11/08
@@ -40,7 +40,8 @@ references:
 sample-evtx: ./sample-evtx/EVTX-to-MITRE-Attack/TA0003-Persistence/T1098.xxx-Account manipulation/ID4732-User added to local admin groups.evtx
 logsource: default
 ruletype: Hayabusa
-``````
+```
+
 > ## 著者名欄
 * **author [必須]**: 著者名（複数可）。
 * **contributor** [オプション]: 寄稿者の名前（細かい修正をした人）。
@@ -97,13 +98,13 @@ ANDロジックを書くには、ネストされた辞書を使用します。
 * イベントIDは `7040` であること。
 * チャンネルは `System` であること。
 
-``````
+```yaml
 detection:
     selection:
         Event.System.EventID: 7040
         Event.System.Channel: System
     condition: selection
-``````
+```
 
 OR論理を記述するには、リスト（`- `で始まる辞書）を使用します。
 以下の検出ルールでは、**片方**の条件がトリガーされることになります。
@@ -113,13 +114,13 @@ OR論理を記述するには、リスト（`- `で始まる辞書）を使用�
 **または**
 * チャンネルは `System` であること。
 
-``````
+```yaml
 detection:
     selection:
         - Event.System.EventID: 7040
         - Event.System.Channel: System
     condition: selection 
-``````
+```
 
 また、以下のように「AND」と「OR」の論理を組み合わせることも可能です。
 この場合、以下の2つの条件が両方成立したときにルールがマッチします。
@@ -127,7 +128,7 @@ detection:
 * イベントID が `7040` **または** `7041` のどちらかであること。
 * チャンネルが `System` であること。
 
-``````
+```yaml
 detection:
     selection:
         Event.System.EventID: 
@@ -135,7 +136,7 @@ detection:
           - 7041
         Event.System.Channel: System
     condition: selection
-``````
+```
 
 ### イベントキー
 以下は、Windowsイベントログの抜粋で、オリジナルのXMLでフォーマットしたものです。上記のルールファイルの例の  `Event.System.Channel` フィールドは、オリジナルのXMLタグを参照しています。 
@@ -144,7 +145,7 @@ detection:
 
 ネストされたXMLタグはドット(`.`)で区切られたタグ名で置き換えられます。Hayabusaのルールでは、ドットでつながれたこれらのフィールド文字列は `eventkeys` と呼ばれます。
 
-``````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <EventID>7040</EventID>
@@ -155,18 +156,18 @@ detection:
         <Data Name='param2'>auto start</Data>
     </EventData>
 </Event>
-``````
+```
 
 #### イベントキーエイリアス
 `.`の区切りが多くて長いイベントキーが一般的であるため、Hayabusaはエイリアスを使って簡単に扱えるようにします。エイリアスは `config\eventkey_alias.txt`ファイルで定義されています。このファイルは `alias` と `event_key` のマッピングで構成される CSV  ファイルです。以下に示すように、エイリアスを使用して上記のルールを書き直し、ルールを読みやすくすることができます。
 
-``````
+```yaml
 detection:
     selection:
         Channel: System
         EventID: 7040
     condition: selection
-``````
+```
 
 #### 注意: 未定義のイベントキーエイリアスについて
 すべてのイベントキーエイリアスが `config\eventkey_alias.txt`で定義されているわけではありません。`output`（アラートの詳細）メッセージで正しいデータを取得しておらず、代わりに`%EventID%`のような結果を取得している場合、または検出ロジックの選択が正しく機能していない場合は、新しいエイリアスを使用して `config\eventkey_alias.txt`を更新する必要があります。
@@ -174,7 +175,7 @@ detection:
 ### 条件におけるXML属性の使用方法
 XML要素には、スペースを入れることで属性を設定することができます。例えば、以下の `Provider Name` の `Name` は `Provider` 要素のXML属性です。
 
-````````````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <Provider Name='Microsoft-Windows-Security-Auditing' Guid='{54849625-5478-4994-a5ba-3e3b0328c30d}'/>
@@ -184,35 +185,36 @@ XML要素には、スペースを入れることで属性を設定すること�
         <Security />
     </System>
 </Event>
-````````````
+```
 イベントキーのXML属性を指定するには、`{eventkey}_attributes.{attribute_name}`という形式を使います。例えば、ルールファイルの `Provider` 要素の `Name` 属性を指定する場合は、以下のようになります。
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
         EventID: 4672
         Event.System.Provider_attributes.Name: 'Microsoft-Windows-Security-Auditing'
     condition: selection
-``````
+```
 
 ### grep検索
 Hayabusaではeventkeyを指定せず、WindowsEventログに含まれる文字列にマッチするかどうかを判定する機能も用意されています。この機能をHayabusaではgrep検索と呼んでいます。
 
 grep検索をするには下記のようにdetectionを指定します。この場合、`mimikatz`または`metasploit`という文字列がWindowsEventログに含まれる場合に、条件に一致したものとして条件に一致したものとして処理されます。また、grep検索にはワイルドカードを指定することも可能です。
-``````
+
+```yaml
 detection:
     selection:
         - `mimikatz`
         - `metasploit`
-``````
+```
 
 > ※ Hayabusaでは内部的にWindowsEventログをJSON形式に変換して上で処理を行っています。そのため、XMLのタグをgrep検索でマッチさせることはできません。
 
 ### イベントデータ
 Windowsのイベントログは、基本データ（イベントID、タイムスタンプ、レコードID、ログ名（チャンネル））が書き込まれる`System`部分と、イベントIDに応じて任意のデータが書き込まれる`EventData`部分の2つに分けられます。問題は、`EventData` にネストされたタグの名前がすべて `Data` であるため、これまで説明したイベントキーでは `SubjectUserSid` と `SubjectUserName` を区別できないことです。
 
-````````````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <EventID>5379</EventID>
@@ -228,10 +230,11 @@ Windowsのイベントログは、基本データ（イベントID、タイム�
         <Data Name='SubjectLogonId'>0x11111111</Data>
     </EventData>
 </Event>
-````````````
+```
 
 この問題に対処するために、`Data Name`で割り当てられた値を指定することができます。例えば、EventData に含まれる `SubjectUserName` と `SubjectDomainName` をルールの条件として利用したい場合、以下のように記述することが可能です。
-``````
+
+```yaml
 detection:
     selection:
         Channel: System
@@ -239,12 +242,12 @@ detection:
         Event.EventData.SubjectUserName: Hayabusa
         Event.EventData.SubjectDomainName: DESKTOP-HAYBUSA
     condition: selection
-``````
+```
 
 ### EventDataの異常なパターン
 `EventData` にネストされたいくつかのタグは `Name` 属性を持ちません。
 
-``````
+```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
     <System>
         <EventID>5379</EventID>
@@ -257,30 +260,30 @@ detection:
         <Data>NewEngineState=Available PreviousEngineState=None SequenceNumber=9 HostName=ConsoleHost HostVersion=2.0 HostId=5cbb33bf-acf7-47cc-9242-141cd0ba9f0c EngineVersion=2.0 RunspaceId=c6e94dca-0daf-418c-860a-f751a9f2cbe1 PipelineId= CommandName= CommandType= ScriptName= CommandPath= CommandLine=</Data>
     </EventData>
 </Event>
-``````
+```
 
 上記のようなイベントログを検出するには、`EventData`という名前のイベントキーを指定します。この場合、`Name`属性を持たないネストされたタグのいずれかがマッチする限り、条件はマッチします。
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
         EventID: 5379
         EventData: None
     condition: selection
-``````
+```
 
 ## パイプ
 パイプは、以下のようにイベントキーと組み合わせて、文字列のマッチングに使用することができます。これまで説明した条件はすべて完全一致ですが、パイプを使うことで、より柔軟な検出ルールを記述することができます。以下の例では、`EventData`の値が正規表現 `[\s\S]*EngineVersion=2.0[\s\S]*` にマッチする場合、条件にマッチすることになります。
 
-``````
+```yaml
 detection:
     selection:
         Channel: Microsoft-Windows-PowerShell/Operational
         EventID: 400
         EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
     condition: selection
-``````
+```
 
 パイプの後に指定できるものの一覧です。現時点では、Hayabusa は複数のパイプを連結することはサポートしていません。
 * startswith: 文字列を先頭からチェックします。
@@ -293,14 +296,14 @@ detection:
 イベントキーにワイルドカードを使用することができます。以下の例では、`ProcessCommandLine` が "malware" という文字列で始まる場合、このルールはマッチします。
 この仕様は、Sigmaルールのワイルドカードと基本的に同じです。
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
         EventID: 4688
         ProcessCommandLine: malware*
     condition: selection
-``````
+```
 
 以下の2つのワイルドカードを使用することができます。
 * `*`: 0文字以上の任意の文字列にマッチします。(内部的には正規表現 `.*` に変換されます)。
@@ -318,7 +321,7 @@ detection:
 * `ImagePath` は1000文字以上であること。
 * `ImagePath` は `allowlist` にマッチするものが一つもありません。
 
-``````
+```yaml
 detection:
     selection:
         Channel: System
@@ -330,7 +333,7 @@ detection:
             min_length: 1000
             allowlist: ./config/regex/allowlist_legitimate_services.txt
     condition: selection
-``````
+```
 
 現在、指定できるキーワードは以下の通りです。
 * `value`: 文字列によるマッチング (ワイルドカードやパイプも指定可能)。
@@ -352,7 +355,7 @@ Hayabusaに`.\rules\hayabusa\default\alerts\System\7045_CreateOrModiftySystemPro
 上記で説明した表記法では、`AND`や`OR`の論理を表現することができますが、複雑な論理を定義しようとすると混乱してしまうでしょう。
 より複雑なルールを作りたい場合は、以下のように `condition` キーワードを使用します。
 
-``````
+```yaml
 detection:
   SELECTION_1:
     EventID: 3
@@ -373,7 +376,7 @@ detection:
   SELECTION_6:
     DestinationIsIpv6: 'false'
   condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and not ((SELECTION_4 or (SELECTION_5 and SELECTION_6))))
-``````
+```
 
  `condition`には、以下の式を用いることができます。
 * `{expression1} and {expression2}`: {expression1} と {expression2} の両方を必要とする。
@@ -389,7 +392,7 @@ detection:
 
 例えば
 
-``````
+```yaml
 detection:
     selection:
         Channel: Security
@@ -407,7 +410,7 @@ detection:
         - ProcessName|startswith: C:\Program Files
         - SubjectUserName: LOCAL SERVICE
     condition: selection and not filter
-``````
+```
 
 ## aggregation condition (集計条件) (別名: カウントルール)
 ### 基本事項
@@ -415,14 +418,14 @@ detection:
 この機能は「集計条件」と呼ばれ、条件をパイプでつないで指定をします。
 以下の例では、24時間以内に任意の`ComputerName`に対して10個以上の `AccountName` 値があるかどうかを判断するために条件式が使用されています。
 
-``````
+```yaml
 detection:
   selection:
     Channel: Security
     EventID: 4648
   condition: selection | count(AccountName) by ComputerName >= 10
   timeframe: 24h
-``````
+```
 
 集計条件は以下の形式で定義することができます。
 * `count() {operator} {number}`: パイプの前の最初の条件にマッチするログイベントに対して、マッチしたログの数が `{operator}` と `{number}` で指定した条件式を満たす場合に条件がマッチします。 
@@ -480,8 +483,9 @@ detection:
 1. **可能な場合は、常に `Channel`と`EventID`を指定してください。** 将来的には、チャネル名とイベンドIDでフィルタリングする可能性があるため、適切な` Channel`と`EventID`が設定されていない場合はルールが無視される可能性があります。
    
 2. **不要な場合は複数の `selection`と`filter`セクションを使用しないでください。**
- 悪い例： 
-```
+
+### 悪い例： 
+```yaml
 detection:
 detection:
     SELECTION_1:
@@ -497,8 +501,8 @@ detection:
     condition: SELECTION_1 and SELECTION_2 and SELECTION_3 and not (FILTER_1 or FILTER_2)
 ```
 
-良い例：
-```
+### 良い例：
+```yaml
 detection:
     selection:
         Channel: Security
@@ -512,8 +516,8 @@ detection:
 
 3. **複数のセクションが必要な場合は、チャンネル名とイベントIDの情報を記入する最初のセクションを `section_basic_info` セクションに、その他のセクションを `section_` と `filter_` の後に意味のある名前を付けるか、または `section_1`, `filter_1` などの記法を用いてください。また、分かりにくいところはコメントを書いて説明してください。**
 
-悪い例： 
-```
+### 悪い例： 
+```yaml
 detection:
     Takoyaki:
         Channel: Security
@@ -536,8 +540,32 @@ detection:
     condition: Takoyaki and Daisuki and not (Naruto and not Godzilla) and not Ninja and not Sushi
 ```
 
-良い例：
+### OKな例：
+```yaml
+detection:
+    selection_1:
+        Channel: Security
+        EventID: 4648
+    selection_2:
+        TargetUserName|endswith: "$"  
+        IpAddress: "-"
+    filter_1:     #Filter system noise
+        SubjectUserName|endswith: "$"
+        TargetUserName|endswith: "$"
+        TargetInfo|endswith: "$"
+    filter_2:
+        SubjectUserName|endswith: "$" 
+    filter_3:
+        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" #Filter out default Desktop Windows Manager and User Mode Driver Framework accounts
+        IpAddress: "-"                                  #Don't filter if the IP address is remote to catch attackers who created backdoor accounts that look like DWM-12, etc..
+    selection_4:
+        - ProcessName|endswith: "powershell.exe"
+        - ProcessName|endswith: "WMIC.exe"
+    condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
+
+### 良い例：
+```yaml
 detection:
     selection_basic_info:
         Channel: Security
@@ -559,30 +587,6 @@ detection:
         - ProcessName|endswith: "WMIC.exe"
     condition: selection_basic and selection_SuspiciousProcess and not (selection_TargetUserIsComputerAccount 
                and not filter_SubjectUserIsComputerAccount) and not filter_SystemAccounts and not filter_UsersAndTargetServerAreComputerAccounts
-```
-
-OKな例：
-```
-detection:
-    selection_1:
-        Channel: Security
-        EventID: 4648
-    selection_2:
-        TargetUserName|endswith: "$"  
-        IpAddress: "-"
-    filter_1:     #Filter system noise
-        SubjectUserName|endswith: "$"
-        TargetUserName|endswith: "$"
-        TargetInfo|endswith: "$"
-    filter_2:
-        SubjectUserName|endswith: "$" 
-    filter_3:
-        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" #Filter out default Desktop Windows Manager and User Mode Driver Framework accounts
-        IpAddress: "-"                                  #Don't filter if the IP address is remote to catch attackers who created backdoor accounts that look like DWM-12, etc..
-    selection_4:
-        - ProcessName|endswith: "powershell.exe"
-        - ProcessName|endswith: "WMIC.exe"
-    condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
 
 # SigmaルールからHayabusaルール形式への自動変換

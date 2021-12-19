@@ -7,7 +7,7 @@
 </div>
 
 # Hayabusa について
-Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**であります。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とてもしつけやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/Sigmac)も提供しています。Hayabusaの検出ルールもSigmaと同様に、できるだけ簡単にカスタマイズや拡張ができるようにYAMLで書かれています。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つの CSV タイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
+Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**であります。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とてもしつけやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/Sigmac)も提供しています。Hayabusaの検出ルールもSigmaと同様に、できるだけ簡単にカスタマイズや拡張ができるようにYMLで書かれています。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つの CSV タイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
 
 ## 主な目的
 
@@ -22,7 +22,7 @@ Windowsのイベントログは、
 [Evtx Explorer](https://ericzimmerman.github.io/#!index.md)や[Event Log Explorer](https://eventlogxp.com/)のような、より深く掘り下げた分析を行うツールの代替となることは意図していませんが、分析者が20%の時間で80%の作業を行えるようにすることを目的としています。
 
 # 開発について
-[DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI)というWindowsイベントログ解析ツールに触発されて、2020年に[RustyBlue](https://github.com/Yamato-Security/RustyBlue)プロジェクト用にRustに移植することから始めました。その後、YAMLで書かれたSigmaのような柔軟な検出シグネチャを作り、Sigmaルールを我々のHayabusaルール形式へ変換するサポートをSigmaへのバックエンドとして追加しています。
+[DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI)というWindowsイベントログ解析ツールに触発されて、2020年に[RustyBlue](https://github.com/Yamato-Security/RustyBlue)プロジェクト用にRustに移植することから始めました。その後、YMLで書かれたSigmaのような柔軟な検出シグネチャを作り、Sigmaルールを我々のHayabusaルール形式へ変換するサポートをSigmaへのバックエンドとして追加しています。
 
 # スクリーンショット
 ## 起動画面:
@@ -45,7 +45,7 @@ Windowsのイベントログは、
 * Rustで開発され、メモリセーフでハヤブサよりも高速です！
 * マルチスレッド対応により、最大5倍のスピードアップを実現!
 * フォレンジック調査やインシデントレスポンスのために、分析しやすいCSVタイムラインを作成します。
-* 読みやすい/作成/編集可能なYAMLベースのHayabusaルールで記述されたIoCシグネチャに基づく脅威ハンティング 
+* 読みやすい/作成/編集可能なYMLベースのHayabusaルールで作成されたIoCシグネチャに基づく脅威ハンティング 
 * SigmaルールをHayabusaルールに変換するためのSigmaルールのサポートがされています。
 * 現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルールにも対応しています。
 * イベントログの統計（どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。）
@@ -61,18 +61,38 @@ Windowsのイベントログは、
 * JSONへの出力→Elastic Stack/Splunkへのインポート
 
 # ダウンロード
-Windows、Linux、macOS用のコンパイル済みバイナリは、[Releases](https://github.com/Yamato-Security/Hayabusa/releases)からダウンロードできます。
+以下の`git clone`コマンドでレポジトリをダウンロードできます:
 
-# ソースコードからのコンパイル
+```bash
+git clone --recurse-submodules https://github.com/Yamato-Security/hayabusa.git
+```
+
+> 注意: ルールファイルは[別リポジトリ](https://github.com/Yamato-Security/hayabusa-rules/)にてsubmoduleとして管理しているため、`--recurse-submodules`オプションを付ける必要があります。
+
+clone時に `--recursive-submodules` オプションをつけ忘れると`hayabusa\rules`下にルールファイルが取り込まれません。
+以下のコマンドでsubmoduleを取り込むことができます:
+
+```bash
+git submodule update -i
+```
+
+または、手動で[https://github.com/Yamato-Security/hayabusa](https://github.com/Yamato-Security/hayabusa)からHayabusaをダウンロードし、解凍し、ルールファイルを[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)からダウンロードし、新しい`rules`ディレクトリに保存することもできます。
+
+その後、Windows、Linux、macOS用のコンパイル済みバイナリを[Releases](https://github.com/Yamato-Security/Hayabusa/releases)からダウンロードして、`hayabusa`のディレクトリに置く必要があります。
+
+# ソースコードからのコンパイル（任意）
 rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
-````
+```bash
 cargo build --release
-````
+```
+
+## サンプルevtxファイルでHayabusaをテストする
+Hayabusaをテストしたり、新しいルールを作成したりするためのサンプルevtxファイルをいくつか提供しています: [https://github.com/Yamato-Security/Hayabusa-sample-evtx](https://github.com/Yamato-Security/Hayabusa-sample-evtx)
 
 # 使用方法
 ## コマンドラインオプション
-````
+```bash
 USAGE:
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -f --filepath=[FILEPATH] 'File path to one .evtx file'
@@ -91,69 +111,80 @@ USAGE:
     -s --statistics 'Prints statistics of event IDs'
     -q --quiet 'Quiet mode. Do not display the launch banner'
     --contributors 'Prints the list of contributors'
-````
+```
 
 ## 使用例
 * 1 つのWindowsイベントログファイルに対してHayabusaを実行します:
-````
+```bash
 hayabusa.exe -f eventlog.evtx
-````
+```
 
 * 複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行します:
-````
-hayabusa.exe -d .\sample-evtx
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx
+```
 
 * 1 つのCSVファイルにエクスポートして、EXCELやTimeline Explorerでさらに分析することができます:
-````
-hayabusa.exe -d .\sample-evtx -o results.csv
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
+```
 
 * Hayabusaルールのみを実行します（デフォルトでは `-r .\rules` にあるすべてのルールが利用されます）:
-````
-hayabusa.exe -d .\sample-evtx -r .\rules\hayabusa -o results.csv
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行します:
-````
-hayabusa.exe -d .\sample-evtx -r .\rules\hayabusa\default -o results.csv
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+```
 
 * Sysmonログに対してのみHayabusaルールを実行します:
-````
-hayabusa.exe -d .\sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+```
 
 * Sigmaルールのみを実行します:
-````
-hayabusa.exe -d .\sample-evtx -r .\rules\sigma -o results.csv
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\config\noisy-rules.txt`にルールIDが書かれているルール)を有効にします:
-````
-hayabusa.exe -d .\sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
-````
-hayabusa.exe -d .\sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -u -o results.csv
-````
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -u -o results.csv
+```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検出します:
-````
+```bash
 hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
-````
+```
 
 * イベントIDの統計情報を取得します:
-````
+```bash
 hayabusa.exe -f Security.evtx -s
-````
+```
 
-## サンプルevtxファイルでHayabusaをテストする
-Hayabusaをテストしたり、新しいルールを作成したりするためのサンプルevtxファイルをいくつか提供しています: [https://github.com/Yamato-Security/Hayabusa-sample-evtx](https://github.com/Yamato-Security/Hayabusa-sample-evtx)
+# Hayabusaの出力
+Hayabusaの出力を画面に表示しているとき（デフォルト）は、以下の情報を表示します:
+
+* `Timestamp`: デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっています。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ています。デフォルトのタイムゾーンはローカルのタイムゾーンになりますが、`--utc` オプションで UTC に変更することができます。
+* `Computer name`: イベントログの`<Event><System><Computer>`フィールドから来ています。
+* `Event ID`: イベントログの`<Event><System><EventRecordID>`フィールドから来ています。
+* `Level`: YML検出ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
+* `Alert`: YML検出ルールの`title`フィールドから来ています。
+* `Details`: YML検出ルールの`output`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログの`<Event><System><EventData>`部分から有用なデータを抽出することができます。
+
+CSVファイルとして保存する場合、以下の2つのフィールドが追加されます:
+* `Rule path`: アラートまたはイベントを生成した検出ルールへのパス。
+* `File path`: アラートまたはイベントを起こしたevtxファイルへのパス。
 
 # Hayabusa ルール
-Hayabusa検出ルールはSigmaのようなYAML形式で記述されております: [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules).
+Hayabusa検出ルールはSigmaのようなYML形式で記述されております: [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules).
 
 ルールの作成方法については、[AboutRuleCreation-Japanase.md](./doc/AboutRuleCreation-Japanase.md) をお読みください。
 
@@ -197,9 +228,9 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 # その他のWindowsイベントログ解析ツールおよび関連プロジェクト
 「すべてを統治する1つのツール」というものはなく、それぞれにメリットがあるため、これらの他の優れたツールやプロジェクトをチェックして、どれが気に入ったかを確認することをお勧めします。
 
-- [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Pythonで記述された攻撃検出ツール。
-- [Chainsaw](https://github.com/countercept/chainsaw) - Rustで記述された同様のSigmaベースの攻撃検出ツール。
-- [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI) - [Eric Conrad](https://twitter.com/eric_conrad) によってPowershellで記述された攻撃検出ツール。
+- [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Pythonで開発された攻撃検出ツール。
+- [Chainsaw](https://github.com/countercept/chainsaw) - Rustで開発された同様のSigmaベースの攻撃検出ツール。
+- [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI) - [Eric Conrad](https://twitter.com/eric_conrad) によってPowershellで開発された攻撃検出ツール。
 - [EvtxToElk](https://www.dragos.com/blog/industry-news/evtxtoelk-a-python-module-to-load-windows-event-logs-into-elasticsearch/) - Elastic StackにEvtxデータを送信するPythonツール。
 - [EVTX ATTACK Samples](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) - [SBousseaden](https://twitter.com/SBousseaden) によるEVTX攻撃サンプルイベントログファイル。
 - [EVTX-to-MITRE-Attack](https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack) - ATT&CKにマッピングされたEVTX攻撃サンプルログのもう一つの素晴らしいレポジトリ。
