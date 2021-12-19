@@ -139,12 +139,12 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
 fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail_word: String) {
     let levels = Vec::from([
-        "Critical",
-        "High",
-        "Medium",
-        "Low",
-        "Informational",
-        "Undefined",
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "informational",
+        "undefined",
     ]);
 
     // configsの登録順番と表示をさせたいlevelの順番が逆であるため
@@ -152,14 +152,14 @@ fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail
 
     // 全体の集計(levelの記載がないためformatの第二引数は空の文字列)
     println!(
-        "{} {}:{}",
+        "{} {}: {}",
         head_word,
         tail_word,
         counts_by_level.iter().sum::<u128>()
     );
     for (i, level_name) in levels.iter().enumerate() {
         println!(
-            "{} {} {}:{}",
+            "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
         );
     }
