@@ -42,6 +42,7 @@ pub fn after_fact() {
         .ok();
         process::exit(1);
     };
+
     let mut displayflag = false;
     let mut target: Box<dyn io::Write> =
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
@@ -77,8 +78,13 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
     } else {
         wtr = csv::WriterBuilder::new().from_writer(writer);
     }
+
     let messages = print::MESSAGES.lock().unwrap();
-    let mut detect_count = 0;
+    // levelの区分が"Critical","High","Medium","Low","Informational","Undefined"の6つであるため
+    let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
+    let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
+    let mut detected_rule_files: Vec<String> = Vec::new();
+
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
@@ -103,17 +109,61 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                     details: &detect_info.detail,
                 })?;
             }
+            let level_suffix = *configs::LEVELMAP
+                .get(&detect_info.level.to_uppercase())
+                .unwrap_or(&0) as usize;
+            if !detected_rule_files.contains(&detect_info.rulepath) {
+                detected_rule_files.push(detect_info.rulepath.clone());
+                unique_detect_counts_by_level[level_suffix] += 1;
+            }
+            total_detect_counts_by_level[level_suffix] += 1;
         }
-        detect_count += detect_infos.len();
     }
     println!("");
 
     wtr.flush()?;
     println!("");
-    println!("Total events: {:?}", detect_count);
+    _print_unique_results(
+        total_detect_counts_by_level,
+        "Total".to_string(),
+        "detections".to_string(),
+    );
+    _print_unique_results(
+        unique_detect_counts_by_level,
+        "Unique".to_string(),
+        "rules".to_string(),
+    );
     Ok(())
 }
 
+/// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
+fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail_word: String) {
+    let levels = Vec::from([
+        "Critical",
+        "High",
+        "Medium",
+        "Low",
+        "Informational",
+        "Undefined",
+    ]);
+
+    // configsの登録順番と表示をさせたいlevelの順番が逆であるため
+    counts_by_level.reverse();
+
+    // 全体の集計(levelの記載がないためformatの第二引数は空の文字列)
+    println!(
+        "{} {}:{}",
+        head_word,
+        tail_word,
+        counts_by_level.iter().sum::<u128>()
+    );
+    for (i, level_name) in levels.iter().enumerate() {
+        println!(
+            "{} {} {}:{}",
+            head_word, level_name, tail_word, counts_by_level[i]
+        );
+    }
+}
 fn format_time(time: &DateTime<Utc>) -> String {
     if configs::CONFIG.read().unwrap().args.is_present("utc") {
         format_rfc(time)

@@ -171,7 +171,6 @@ impl App {
             pb.inc();
         }
         after_fact();
-        detection.print_unique_results();
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
@@ -237,7 +236,7 @@ impl App {
             detection = detection.start(&self.rt, records_per_detect);
         }
 
-        detection.add_aggcondtion_msg();
+        detection.add_aggcondition_msg();
         tl.tm_stats_dsp_msg();
 
         return detection;
