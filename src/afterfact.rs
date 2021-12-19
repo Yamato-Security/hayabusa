@@ -133,8 +133,6 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
         "Unique".to_string(),
         "rules".to_string(),
     );
-    println!("");
-    AlertMessage::output_error_log_exist();
     Ok(())
 }
 

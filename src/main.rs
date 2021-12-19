@@ -183,6 +183,8 @@ impl App {
             pb.inc();
         }
         after_fact();
+        println!("");
+        AlertMessage::output_error_log_exist();
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
