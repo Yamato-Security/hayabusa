@@ -41,10 +41,9 @@ lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
     pub static ref ERROR_LOG_PATH: String = format!(
-        "./hayabusa-logs/errorlog-{}.log",
+        "./logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
     );
-    pub static ref ALERT_COUNT_IN_ERROR_LOG: Mutex<Counter> = Mutex::new(Counter::new());
 }
 
 #[derive(Copy, Clone)]
