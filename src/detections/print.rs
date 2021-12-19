@@ -43,6 +43,11 @@ lazy_static! {
         "./logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
     );
+    pub static ref QUIERT_ERRORS_FLAG: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("quiet-errors");
 }
 
 #[derive(Copy, Clone)]
@@ -235,12 +240,20 @@ impl AlertMessage {
 
     /// ERRORメッセージを表示する関数。error_log_flagでfalseの場合は外部へのエラーログの書き込みは行わずに指定されたwを用いた出力のみ行う。trueの場合はwを用いた出力を行わずにエラーログへの出力を行う
     pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        writeln!(w, "[ERROR] {}", contents)
+        if QUIERT_ERRORS_FLAG {
+            writeln!(w, "[ERROR] {}", contents)
+        } else {
+            ok()
+        }
     }
 
     // WARNメッセージを表示する関数
     pub fn warn<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        writeln!(w, "[WARN] {}", contents)
+        if QUIERT_ERRORS_FLAG {
+            writeln!(w, "[WARN] {}", contents)
+        } else {
+            ok()
+        }
     }
 
     /// エラーログへのERRORメッセージの出力数を確認して、0であったらファイルを削除する。1以上あればエラーを書き出した旨を標準出力に表示する
