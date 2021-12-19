@@ -53,7 +53,7 @@ impl App {
 
     fn exec(&mut self) {
         let analysis_start_time: DateTime<Local> = Local::now();
-        if !configs::CONFIG.read().unwrap().args.is_present("q") {
+        if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
             println!("");
             self.output_eggs(&format!(
@@ -183,8 +183,6 @@ impl App {
             pb.inc();
         }
         after_fact();
-        detection.print_unique_results();
-        AlertMessage::output_error_log_exist();
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
@@ -259,7 +257,7 @@ impl App {
             detection = detection.start(&self.rt, records_per_detect);
         }
 
-        detection.add_aggcondtion_msg();
+        detection.add_aggcondition_msg();
         tl.tm_stats_dsp_msg();
 
         return detection;

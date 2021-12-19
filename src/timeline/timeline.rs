@@ -11,7 +11,7 @@ pub struct Timeline {
 impl Timeline {
     pub fn new() -> Timeline {
         let totalcnt = 0;
-        let filepath = "".to_owned();
+        let filepath = String::default();
         let starttm = "".to_string();
         let endtm = "".to_string();
         let statslst = HashMap::new();

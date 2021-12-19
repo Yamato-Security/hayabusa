@@ -15,7 +15,7 @@ use self::aggregation_parser::AggregationParseInfo;
 
 mod condition_parser;
 mod count;
-use self::count::TimeFrameInfo;
+use self::count::{AggRecordTimeInfo, TimeFrameInfo};
 
 use super::detection::EvtxRecordInfo;
 
@@ -28,7 +28,7 @@ pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
     detection: DetectionNode,
-    countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
+    countdata: HashMap<String, Vec<AggRecordTimeInfo>>,
 }
 
 impl Debug for RuleNode {
@@ -66,10 +66,10 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&mut self, filepath: &String, event_record: &EvtxRecordInfo) -> bool {
+    pub fn select(&mut self, event_record: &EvtxRecordInfo) -> bool {
         let result = self.detection.select(event_record);
-        if result {
-            count::count(self, filepath, &event_record.record);
+        if result && self.has_agg_condition() {
+            count::count(self, &event_record.record);
         }
         return result;
     }
@@ -83,13 +83,22 @@ impl RuleNode {
         if !self.has_agg_condition() {
             return ret;
         }
-        for filepath in self.countdata.keys() {
-            ret.append(&mut count::aggregation_condition_select(&self, &filepath));
-        }
+        ret.append(&mut count::aggregation_condition_select(&self));
         return ret;
     }
     pub fn check_exist_countdata(&self) -> bool {
         self.countdata.len() > 0
+    }
+    /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
+    pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
+        match self.detection.aggregation_condition.as_ref() {
+            None => {
+                return None;
+            }
+            Some(agg_parse_info) => {
+                return Some(agg_parse_info);
+            }
+        }
     }
 }
 
@@ -293,12 +302,12 @@ impl DetectionNode {
 #[derive(Debug)]
 /// countなどのaggregationの結果を出力する構造体
 pub struct AggResult {
-    /// evtx file path
-    pub filepath: String,
     /// countなどの値
     pub data: i32,
-    /// (countの括弧内の記載)_(count byで指定された条件)で設定されたキー
+    /// count byで指定された条件のレコード内での値
     pub key: String,
+    /// countの括弧内指定された項目の検知されたレコード内での値の配列。括弧内で指定がなかった場合は長さ0の配列となる
+    pub field_values: Vec<String>,
     ///検知したブロックの最初のレコードの時間
     pub start_timedate: DateTime<Utc>,
     ///条件式の情報
@@ -307,16 +316,16 @@ pub struct AggResult {
 
 impl AggResult {
     pub fn new(
-        filepath: String,
         data: i32,
         key: String,
+        field_values: Vec<String>,
         start_timedate: DateTime<Utc>,
         condition_op_num: String,
     ) -> AggResult {
         return AggResult {
-            filepath: filepath,
             data: data,
             key: key,
+            field_values: field_values,
             start_timedate: start_timedate,
             condition_op_num: condition_op_num,
         };
@@ -361,7 +370,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -391,7 +400,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -421,7 +430,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -504,7 +513,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -563,7 +572,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -629,7 +638,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -673,7 +682,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -718,7 +727,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -782,7 +791,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -846,7 +855,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -892,7 +901,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -950,17 +959,11 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                let result = rule_node.select(&"testpath".to_string(), &recinfo);
+                let result = rule_node.select(&recinfo);
                 assert_eq!(rule_node.detection.aggregation_condition.is_some(), true);
                 assert_eq!(result, true);
                 assert_eq!(
-                    *&rule_node
-                        .countdata
-                        .get("testpath")
-                        .unwrap()
-                        .get(key)
-                        .unwrap()
-                        .len() as i32,
+                    *&rule_node.countdata.get(key).unwrap().len() as i32,
                     expect_count
                 );
             }
