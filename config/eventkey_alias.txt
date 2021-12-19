@@ -177,4 +177,5 @@ WorkstationName,Event.EventData.WorkstationName
 param1,Event.EventData.param1
 param2,Event.EventData.param2
 provider_Name,Event.EventData.Provider_Name
+service,Event.EventData.Service
 sha1,Event.EventData.Hashes_sha1

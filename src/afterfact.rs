@@ -6,6 +6,7 @@ use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use std::io;
+use std::io::BufWriter;
 use std::process;
 
 #[derive(Debug, Serialize)]
@@ -50,7 +51,7 @@ pub fn after_fact() {
     {
         // ファイル出力する場合
         match File::create(csv_path) {
-            Ok(file) => Box::new(file),
+            Ok(file) => Box::new(BufWriter::new(file)),
             Err(err) => {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
@@ -63,7 +64,7 @@ pub fn after_fact() {
     } else {
         displayflag = true;
         // 標準出力に出力する場合
-        Box::new(io::stdout())
+        Box::new(BufWriter::new(io::stdout()))
     };
 
     if let Err(err) = emit_csv(&mut target, displayflag) {

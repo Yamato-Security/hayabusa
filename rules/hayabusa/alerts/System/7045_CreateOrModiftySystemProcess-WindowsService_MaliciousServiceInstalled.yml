@@ -6,8 +6,8 @@ title: Malicious service installed
 title_jp: 悪意のあるサービスがインストールされた
 output: 'Service: %ServiceName%  :  Image path: %ImagePath'
 output_jp: 'サービス名: %ServiceName%  :  Imageパス: %ImagePath'
-description: Malicious service was installed based on suspicious entries in ./config/regex/regexes_suspicous_service.txt
-description_jp: Malicious service was installed based on suspicious entries in ./config/regex/regexes_suspicous_service.txt
+description: Malicious service was installed based on suspicious entries in ./config/regex/detectlist_suspicous_services.txt
+description_jp: Malicious service was installed based on suspicious entries in ./config/regex/detectlist_suspicous_services.txt
 
 id: dbbfd9f3-9508-478b-887e-03ddb9236909
 level: high
@@ -17,10 +17,10 @@ detection:
         Channel: System
         EventID: 7045
         ServiceName:
-            regexes: ./config/regex/regexes_suspicous_service.txt
+            regexes: ./config/regex/detectlist_suspicous_services.txt
         ImagePath:
             min_length: 1000
-            allowlist: ./config/regex/allowlist_legimate_serviceimage.txt
+            allowlist: ./config/regex/allowlist_legitimate_services.txt
     condition: selection
 falsepositives:
     - normal system usage

@@ -1,18 +1,18 @@
 extern crate csv;
 
-use crate::detections::rule::AggResult;
-use serde_json::Value;
-use std::collections::HashMap;
-use tokio::{runtime::Runtime, spawn, task::JoinHandle};
-
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
+use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use crate::detections::utils::get_serde_number_to_string;
 use crate::filter;
 use crate::yaml::ParseYaml;
+use hashbrown;
+use serde_json::Value;
+use std::collections::HashMap;
+use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use std::sync::Arc;
 
@@ -24,15 +24,12 @@ pub struct EvtxRecordInfo {
     pub evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
+    pub key_2_value: hashbrown::HashMap<String, String>,
 }
 
 impl EvtxRecordInfo {
-    pub fn new(evtx_filepath: String, record: Value, data_string: String) -> EvtxRecordInfo {
-        return EvtxRecordInfo {
-            evtx_filepath: evtx_filepath,
-            record: record,
-            data_string: data_string,
-        };
+    pub fn get_value(&self, key: &String) -> Option<&String> {
+        return self.key_2_value.get(key);
     }
 }
 
@@ -185,9 +182,8 @@ impl Detection {
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
     fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
-        let records = &*records;
         let agg_condition = rule.has_agg_condition();
-        for record_info in records {
+        for record_info in records.as_ref() {
             let result = rule.select(&record_info.evtx_filepath, &record_info);
             if !result {
                 continue;
