@@ -168,6 +168,7 @@ impl App {
             &filter::exclude_ids(),
         );
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
+        pb.show_speed = false;
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         for evtx_file in evtx_files {
