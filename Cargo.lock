@@ -773,6 +773,7 @@ dependencies = [
  "hashbrown",
  "hhmmss",
  "lazy_static",
+ "linecount",
  "linked-hash-map",
  "mopa",
  "num_cpus",
@@ -1014,6 +1015,12 @@ name = "libc"
 version = "0.2.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2a5ac8f984bfcf3a823267e5fde638acc3325f6496633a5da6bb6eb2171e103"
+
+[[package]]
+name = "linecount"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5d5a4a243b9cf052d37af99679cc93b08a791f444a4a1b21bb4efcaf01847d8"
 
 [[package]]
 name = "linked-hash-map"

@@ -4,6 +4,7 @@ use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use lazy_static::lazy_static;
+use linecount::count_lines;
 use regex::Regex;
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -250,19 +251,19 @@ impl AlertMessage {
     /// エラーログへのERRORメッセージの出力数を確認して、0であったらファイルを削除する。1以上あればエラーを書き出した旨を標準出力に表示する
     pub fn output_error_log_exist() {
         let error_log_path_str = ERROR_LOG_PATH.to_string();
-        if ALERT_COUNT_IN_ERROR_LOG.lock().unwrap().count == 0 {
+        // 1行しかなかった場合は最初に書いたコマンド情報のみと判断して削除する
+        if count_lines(File::open(&error_log_path_str).unwrap()).unwrap() == 1 {
             if remove_file(&error_log_path_str).is_err() {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     format!("failed to remove file. filepath:{}", &error_log_path_str),
-                    false,
                 )
                 .ok();
             }
             return;
         }
         println!(
-            "Generated error was output to {}. Please see the file for details",
+            "Generated error was output to {}. Please see the file for details.",
             &error_log_path_str
         );
     }
