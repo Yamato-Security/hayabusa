@@ -1,4 +1,5 @@
 use crate::detections::print::AlertMessage;
+use crate::detections::print::ERROR_LOG_PATH;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::AggregationParseInfo;
 use crate::detections::rule::Message;
@@ -6,6 +7,8 @@ use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufWriter;
 use std::num::ParseIntError;
 
 use crate::detections::rule::aggregation_parser::AggregationConditionToken;
@@ -57,7 +60,7 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
             }
             None => {
                 AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                    &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
                     format!("field_value alias not found.value:{}", field_value),
                     true,
                 )
@@ -74,7 +77,7 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
             }
             None => {
                 AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                    &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
                     format!("by_field_value alias not found.value:{}", by_field_value),
                     true,
                 )
@@ -157,7 +160,7 @@ impl TimeFrameInfo {
             tnum.retain(|c| c != 'd');
         } else {
             AlertMessage::alert(
-                &mut std::io::stderr().lock(),
+                &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
                 format!("Timeframe is invalid. Input value:{}", value),
                 true,
             )
@@ -190,7 +193,7 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
         }
         Err(err) => {
             AlertMessage::alert(
-                &mut std::io::stderr().lock(),
+                &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
                 format!("Timeframe number is invalid. timeframe.{}", err),
                 true,
             )

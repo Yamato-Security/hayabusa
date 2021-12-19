@@ -1,6 +1,7 @@
 use crate::detections::configs;
 use crate::detections::print;
 use crate::detections::print::AlertMessage;
+use crate::detections::print::ERROR_LOG_PATH;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
@@ -36,7 +37,7 @@ pub struct DisplayFormat<'a> {
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
-            &mut std::io::stderr().lock(),
+            &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
             format!("Failed to write CSV. {}", err),
             true,
         )
@@ -55,7 +56,7 @@ pub fn after_fact() {
             Ok(file) => Box::new(BufWriter::new(file)),
             Err(err) => {
                 AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
+                    &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
                     format!("Failed to open file. {}", err),
                     true,
                 )

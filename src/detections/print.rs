@@ -12,10 +12,10 @@ use std::env;
 use std::fs::create_dir;
 use std::fs::remove_file;
 use std::fs::File;
-
 use std::io::BufWriter;
-use std::io::{self, Write};
 use std::path::Path;
+
+use std::io::{self, Write};
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -43,23 +43,7 @@ lazy_static! {
         "./hayabusa-logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
     );
-    pub static ref ERROR_LOG_WRITER: Mutex<BufWriter<File>> =
-        Mutex::new(get_error_file_writer(ERROR_LOG_PATH.to_string()));
     pub static ref ALERT_COUNT_IN_ERROR_LOG: Mutex<Counter> = Mutex::new(Counter::new());
-}
-
-//対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
-fn get_error_file_writer(path_str: String) -> BufWriter<File> {
-    let path = Path::new(&path_str);
-    if !path.parent().unwrap().exists() {
-        create_dir(path.parent().unwrap()).ok();
-    }
-    // 1行目は必ず実行したコマンド情報を入れておく。
-    let mut ret = BufWriter::new(File::create(path).unwrap());
-    ret.write(format!("user input: {:?}\n", format_args!("{:?}", env::args())).as_bytes())
-        .ok();
-    ret.flush().ok();
-    return ret;
 }
 
 #[derive(Copy, Clone)]
@@ -224,14 +208,38 @@ impl Message {
 }
 
 impl AlertMessage {
+    //対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
+    pub fn create_error_log(path_str: String) {
+        let path = Path::new(&path_str);
+        if !path.parent().unwrap().exists() {
+            create_dir(path.parent().unwrap()).ok();
+        }
+        // 1行目は必ず実行したコマンド情報を入れておく。
+        let mut ret = BufWriter::new(File::create(path).unwrap());
+
+        ret.write(
+            format!(
+                "user input: {:?}\n",
+                format_args!(
+                    "{}",
+                    env::args()
+                        .map(|arg| arg)
+                        .collect::<Vec<String>>()
+                        .join(" ")
+                )
+            )
+            .as_bytes(),
+        )
+        .unwrap();
+        ret.flush().ok();
+    }
+
     /// ERRORメッセージを表示する関数。error_log_flagでfalseの場合は外部へのエラーログの書き込みは行わずに指定されたwを用いた出力のみ行う。trueの場合はwを用いた出力を行わずにエラーログへの出力を行う
     pub fn alert<W: Write>(w: &mut W, contents: String, error_log_flag: bool) -> io::Result<()> {
         if error_log_flag {
             ALERT_COUNT_IN_ERROR_LOG.lock().unwrap().countup();
-            writeln!(ERROR_LOG_WRITER.lock().unwrap(), "[ERROR] {}", contents)
-        } else {
-            writeln!(w, "[ERROR] {}", contents)
         }
+        writeln!(w, "[ERROR] {}", contents)
     }
 
     // WARNメッセージを表示する関数
@@ -243,20 +251,20 @@ impl AlertMessage {
     pub fn output_error_log_exist() {
         let error_log_path_str = ERROR_LOG_PATH.to_string();
         if ALERT_COUNT_IN_ERROR_LOG.lock().unwrap().count == 0 {
-            if remove_file(error_log_path_str).is_err() {
+            if remove_file(&error_log_path_str).is_err() {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
-                    format!("failed to remove file. filepath:{}", error_log_path_str),
+                    format!("failed to remove file. filepath:{}", &error_log_path_str),
                     false,
                 )
                 .ok();
             }
             return;
         }
-        println!(format!(
+        println!(
             "Generated error was output to {}. Please see the file for details",
-            error_log_path_str
-        ));
+            &error_log_path_str
+        );
     }
 }
 

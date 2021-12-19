@@ -6,6 +6,7 @@ use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::AlertMessage;
+use hayabusa::detections::print::ERROR_LOG_PATH;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
@@ -16,6 +17,7 @@ use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
+use std::io::BufWriter;
 use std::sync::Arc;
 use std::{
     fs::{self, File},
@@ -66,6 +68,7 @@ impl App {
             );
             return;
         }
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {
                 AlertMessage::alert(
@@ -107,9 +110,12 @@ impl App {
     fn collect_evtxfiles(&self, dirpath: &str) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
-            let stderr = std::io::stderr();
-            let mut stderr = stderr.lock();
-            AlertMessage::alert(&mut stderr, format!("{}", entries.unwrap_err()), true).ok();
+            AlertMessage::alert(
+                &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                format!("{}", entries.unwrap_err()),
+                true,
+            )
+            .ok();
             return vec![];
         }
 
@@ -141,7 +147,7 @@ impl App {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => println!("{}", contents),
             Err(err) => {
-                AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err), true).ok();
+                AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err), false).ok();
             }
         }
     }
@@ -209,7 +215,12 @@ impl App {
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
-                    AlertMessage::alert(&mut std::io::stderr().lock(), errmsg, true).ok();
+                    AlertMessage::alert(
+                        &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                        errmsg,
+                        true,
+                    )
+                    .ok();
                     continue;
                 }
 
