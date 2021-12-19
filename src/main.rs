@@ -86,7 +86,6 @@ impl App {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     "No .evtx files were found.".to_owned(),
-                    false,
                 )
                 .ok();
                 return;

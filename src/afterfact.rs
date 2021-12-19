@@ -1,7 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_PATH;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::error::Error;
