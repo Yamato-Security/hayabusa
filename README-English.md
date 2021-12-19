@@ -65,6 +65,16 @@ If you have rust installed, you can compile from source with the following comma
 cargo build --release
 ````
 
+## When the rule file does not exist
+
+If you forgot to use `--recursive` option when you clone this repository,
+rule files were not take in to `haybusa/rules` directory.
+Use the following command to take it in.
+
+```bash
+git submodule update -i
+```
+
 # Usage
 ## Command line options
 ````

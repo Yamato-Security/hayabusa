@@ -75,11 +75,25 @@ HayabusaではWindowsEventログを検知するルールをYAML形式で定義�
 rulesフォルダには組み込みルールファイルも設置されていますので、参考にしてください。
 
 # ソースコードからのコンパイル
-下記のコマンドでビルドできます。
 
-````
-cargo build --release
-````
+1. ソースコードの取得  
+  Hayabusaではルールファイルを[別リポジトリ](https://github.com/Yamato-Security/hayabusa-rules/tree/631db51204d801fa75bfef48c31c389929fbb9be)にてsubmoduleとして管理しています。以下のコマンドでcloneしてください。
+  ```bash
+  git clone git@github.com:Yamato-Security/hayabusa.git --recursive
+  ```
+2. 以下のコマンドでビルドします
+  ```bash
+  cargo build --release
+  ```
+
+## ルールファイルが存在しないとき
+
+clone時に `--recursive` オプションをつけ忘れると`hayabusa/rules`下にルールファイルが取り込まれません。
+以下のコマンドでsubmoduleを取り込みましょう。
+
+```bash
+git submodule update -i
+```
 
 # 関連するWindowsイベントログのスレットハンティングプロジェクト
 まだ完璧なWindowsイベントログ解析ツールは存在していなくて、それぞれ長所短所があるので、以下のツールとプロジェクトもチェックして、好きなツールを使ってくださいね！
