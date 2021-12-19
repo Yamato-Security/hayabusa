@@ -9,12 +9,14 @@
 # About Hayabusa
 Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means "[peregrine falcon](https://en.wikipedia.org/wiki/Peregrine_falcon" in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a tool to convert [sigma](https://github.com/SigmaHQ/sigma) rules into hayabusa rule format. The hayabusa detection rules, like sigma, are also written in YAML in order to be as easily customizable and extensible as possible. It can be run either on running systems for live analysis or by gathering logs from multiple systems for offline analysis. (At the moment, it does not support real-time alerting or periodic scans.) The output will be consolidated into a single CSV timeline for easy analysis in Excel or [timeline explorer](https://ericzimmerman.github.io/#!index.md).
 
-## Fast forensics timeline generation
+## Main goals
+
+### Threat hunting
+Hayabusa currently has over 1000 sigma rules and around 50 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
+
+### Fast forensics timeline generation
 Windows event log analysis has traditionally been a very long and tedious process because Windows event logs are 1) in a data format that is hard to analyze and 2) the majority of data is noise and not useful for investigations. Hayabusa's main goal is to extract out only useful data and present it in an easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
 Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](https://ericzimmerman.github.io/#!index.md) or [Event Log Explorer](https://eventlogxp.com/) for more deep-dive analysis but is intended for letting analysts get 80% of their work done in 20% of the time. 
-
-## Threat hunting
-Hayabusa currently has over 1000 sigma rules and around 50 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
 
 # About the development
  First inspired by the [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI) Windows event log analyzer, we started in 2020 porting it over to Rust for the [RustyBlue](https://github.com/Yamato-Security/RustyBlue) project, then created sigma-like flexible detection signatures written in YAML, and then added a backend to sigma to support converting sigma rules into our hayabusa rule format. 
@@ -104,17 +106,17 @@ hayabusa.exe -d .\sample-evtx --csv-timeline results.csv
 
 * Only run hayabusa rules:
 ````
-hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r ./rules/hayabusa
+hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r .\rules/hayabusa
 ````
 
 * Only run sigma rules and enable deprecated and noisy rules (both disabled by default):
 ````
-hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r ./rules/sigma --show-noisyalerts --show-deprecated
+hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r .\rules\sigma --show-noisyalerts --show-deprecated
 ````
 
 * Only run rules to analyze logons and output in the UTC timezone:
 ````
-hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r ./rules/hayabusa/default/events/Security/Logons -u
+hayabusa.exe -d .\sample-evtx --csv-timeline results.csv -r .\rules\hayabusa\default\events\Security\Logons -u
 ````
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
@@ -193,19 +195,20 @@ There is no "one tool to rule them all" and we have found that each has its own 
 Please understand that it is not possible to do a perfect comparison as results will differ based on the target sample data, command-line options, rule tuning, etc...
 In our tests, we have found hayabusa to support the largest number of sigma rules out of all the tools while still maintaining very fast speeds and does not require a great amount of memory. 
 
-The following benchmarks were taken on a 2018 Intel Macbook Pro based on approximately 500 evtx files (130MB) from our [sample-evtx repository](https://github.com/Yamato-Security/hayabusa-sample-evtx) at 2021/12/09.
+The following benchmarks were taken on a Lenovo P51 based on approximately 500 evtx files (130MB) from our [sample-evtx repository](https://github.com/Yamato-Security/hayabusa-sample-evtx) at 2021/12/09.
 
 | | Elapsed Time | Memory Usage | Unique Sigma Rules With Detections |
 | :---: | :---: | :---: | :---: |
-| Chainsaw | 10 seconds | 75 MB | 170 |
-| Hayabusa | 12 seconds | 340 MB | 267 |
+| Chainsaw | 7.5 seconds | 75 MB | 170 |
+| Hayabusa | 8 seconds | 340 MB | 267 |
 | Zircolite | 55 seconds | 400 MB | 237 |
 
-With hayabusa rules enabled, it will detect over 300 unique alerts and events.
+With hayabusa rules enabled, it will detect over 300 unique alerts and events. 
+Hayabusa will usually require a minimum of about 300MB of memory but will normally not go over the file size of large evtx files compared to Zircolite's memory usage which usually requires 2~3 times the size of the logs.   
 
 # License
 
-Hayabusa is released under GPLv3 and all rules are released under the Detection Rule License (DRL) 1.1
+Hayabusa is released under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) and all rules are released under the [Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md).
 
 # Contribution
 

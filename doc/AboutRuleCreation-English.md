@@ -41,13 +41,13 @@ sample-evtx: ./sample-evtx/EVTX-to-MITRE-Attack/TA0003-Persistence/T1098.xxx-Acc
 logsource: default
 ruletype: Hayabusa
 ``````
-> #Author section
+> ## Author section
 * **author [required]**: Name of the author(s).
 * **contributor** [optional]: Name of any contributor(s) (anyone who made any minor corrections).
 * **creation_date [required]**: Date the rule was made.
 * **updated_date** [optional]: Date the rule was updated.
 
-> #Alert section
+> ## Alert section
 * **title [required]**: Rule file title. This will also be the name of the alert that gets displayed so the briefer the better. (Should not be longer than 85 characters.)
 * **title_jp** [optional]: The title in Japanese.
 * output [optional]: The details of the alert that gets displayed. Please output any fields in the Windows event log that are useful for analysis. Fields are seperated by `"  :  "` (two spaces on both sides). Field placeholders are enclosed with a `%` (Example: `%MemberName%`) and need to be defined in `config\eventkey_alias.txt`. (Explained below.)
@@ -55,35 +55,35 @@ ruletype: Hayabusa
 * **description** [optional]: A description of the rule. This does not get displayed so you can make this long and detailed.
 * **description_jp** [optional]: The description in Japanese.
 
-> #Rule section
+> ## Rule section
 * **id [required]**: A randomly generated version 4 UUID used to uniquely identify the rule. You can generate one [here](https://www.uuidgenerator.net/version4).
 * **level [required]**: Severity level based on [sigma's definition](https://github.com/SigmaHQ/sigma/wiki/Specification). Please write one of the following: `informational`,`low`,`medium`,`high`,`critical`
 * **status[required]**: `stable` for tested rules and `testing` for rules that need to be tested.
 * **detection  [required]**: The detection logic goes here. (Explained below.)
 * **falsepositives [required]**: The possibilities for false positives. For example: `system administrator`, `normal user usage`, `normal system usage`, `legacy application`, `security team`, `none`. If it is unknown, please write `unknown`.
 * **tags** [optional]: If the technique is a [LOLBINS/LOLBAS](https://lolbas-project.github.io/) technique, please add the `lolbas` tag. If the alert can be mapped to a technique in the [MITRE ATT&CK](https://attack.mitre.org/) framework, please add the tactic ID (Example: `attack.t1098`) and any applicable tactics below:
-    * attack.impact -> Impact
-    * attack.initial_access -> Initial Access
-    * attack.execution -> Execution
-    * attack.lateral_movement -> Lateral Movement
-    * attack.persistence -> Persistence
-    * attack.privilege_escalation -> Privilege Escalation
-    * attack.reconnaissance -> Reconnaissance
-    * attack.collection -> Collection
-    * attack.command_and_control -> Command and Control
-    * attack.credential_access -> Credential Access
-    * attack.defense_evasion -> Defense Evasion
-    * attack.discovery -> Discovery
-    * attack.exfiltration -> Exfiltration
-    * attack.resource_development -> Resource Development 
+    * `attack.impact` -> Impact
+    * `attack.initial_access` -> Initial Access
+    * `attack.execution` -> Execution
+    * `attack.lateral_movement` -> Lateral Movement
+    * `attack.persistence` -> Persistence
+    * `attack.privilege_escalation` -> Privilege Escalation
+    * `attack.reconnaissance` -> Reconnaissance
+    * `attack.collection` -> Collection
+    * `attack.command_and_control` -> Command and Control
+    * `attack.credential_access` -> Credential Access
+    * `attack.defense_evasion` -> Defense Evasion
+    * `attack.discovery` -> Discovery
+    * `attack.exfiltration` -> Exfiltration
+    * `attack.resource_development` -> Resource Development  
 * **references** [optional]: Any links to references.
 * **sample-evtx [required]**: File path or URL to an event log file that this rule will detect.
 * **logsource [required]**: The source of where the log comes from. Please specify one of the following:
   * `default`: For logs that are turned on in Windows by default.
-  * `non-default`: For logs that need to be turned on through group policy, etc...
+  * `non-default`: For logs that need to be turned on through group policy, security baselines, etc...
   * `sysmon`: Logs that require sysmon to be installed.
 * **non-default-setting** [optional]: Explanation of how to turn on the log setting for `non-default` log sources.
-* **ruletype [required]**: `Hayabusa` for hayabusa rules. Rules automatically converted from sigma will be `Sigma`.
+* **ruletype [required]**: `Hayabusa` for hayabusa rules. Rules automatically converted from sigma Windows rules will be `Sigma`.
 
 # Detection field
 ## Detection fundamentals
@@ -298,8 +298,8 @@ detection:
 ``````
 
 The following two wildcards can be used.
-* `*`: Matches any string of zero or more characters. (Internally it is converted to the regular expression `. *`.)
-* `?`: Matches any single character. (Internally converted to the regular expression `. `.)
+* `*`: Matches any string of zero or more characters. (Internally it is converted to the regular expression `.*`)
+* `?`: Matches any single character. (Internally converted to the regular expression `.`)
 
 About escaping wildcards:
 * Wildcards (`*` and `?`) can be escaped by using a backslash: `\*`, `\?`.
@@ -334,7 +334,7 @@ Currently, the following keywords can be specified:
 * `allowlist`: rule will be skipped if there is any match found in the list of regular expressions in the file that you specify in this field.
 
 ### regexes and allowlist keywords
-Hayabusa has two built-in regular expression files:
+Hayabusa has two built-in regular expression files used for the `.\rules\hayabusa\default\alerts\System\7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` file:
 * `./config/regex/detectlist_suspicous_services.txt`: to detect suspicious service names
 * `./config/regex/allowlist_legitimate_services.txt`: to allow legitimate services
   
@@ -344,7 +344,7 @@ You can also use different detectlist and allowlist textfiles that you create.
 Please refer to the built-in `./config/regex/detectlist_suspicous_services.txt` and `./config/regex/allowlist_legitimate_services.txt` when creating your own.
 
 ## condition
-With the notation we explained above, you can express AND and OR logic but it will be confusing if you are trying to define complex logic.
+With the notation we explained above, you can express `AND` and `OR` logic but it will be confusing if you are trying to define complex logic.
 When you want to make more complex rules, you should use the `condition` keyword as shown below.
 
 ``````
@@ -470,50 +470,110 @@ This is the most basic pattern: `count() {operator} {number}`. The rule below wi
 ![](count4_EN.png)
 
 # Rule creation advice
-1. **When possible, always specify the `Channel` name.** In the future, we may filter on channel names so your rule may be ignored if the proper `Channel` is not set.
-2. **When possible, always specify the `EventID`.** In the future, we may filter on channel names so your rule may be ignored if the proper `EventID` is not set.
-3. **Do not use multiple `selection` fields when it is not needed.** For example:
+1. **When possible, always specify `Channel` and `EventID` name.** In the future, we may filter on channel names and event IDs so your rule may be ignored if this is not set.
+   
+2. **Do not use multiple `selection` or `filter` fields when it is not needed.** For example:
 
 Bad example:
 ```
 detection:
-  SELECTION_1:
-    EventID: 4625
-  SELECTION_2:
-    LogonType: 3
-  condition: SELECTION_1 and SELECTION_2
+    SELECTION_1:
+        Channnel: Security
+    SELECTION_2:
+        EventID: 4625
+    SELECTION_3:
+        LogonType: 3
+    FILTER_1:
+        SubStatus: "0xc0000064"   #Non-existent user
+    FILTER_2:
+        SubStatus: "0xc000006a"   #Wrong password
+    condition: SELECTION_1 and SELECTION_2 and SELECTION_3 and not (FILTER_1 or FILTER_2)
 ```
 
 Good example:
 ```
 detection:
-  selection:
-    EventID: 4625
-    LogonType: 3
-  condition: selection
+    selection:
+        Channel: Security
+        EventID: 4625
+        LogonType: 3
+    filter:
+        - SubStatus: "0xc0000064"   #Non-existent user
+        - SubStatus: "0xc000006a"   #Wrong password
+    condition: selection and not filter
 ```
 
-4. **Name any of your filtering selections `filter`, `filter_1`, `filter_2`, etc... and do not use excessive grouping.**
+1. **When you need multiple sections, please name the first section with channel and event ID information in the `section_basic_info` section and other selections with meaningful names after `section_` and `filter_`, or use the notation `section_1`, `filter_1`, etc... Also, please write comments to explain anything difficult to understand.**
 
 Bad example:
 ```
 detection:
-  SELECTION_1:
-    EventID: 4625
-  SELECTION_2:
-    LogonType: 3
-  SELECTION_3:
-    IpAddress: '-'
-  condition: ((SELECTION_1 and SELECTION_2) and not (SELECTION_3))
+    Takoyaki:
+        Channel: Security
+        EventID: 4648
+    Naruto:
+        TargetUserName|endswith: "$"  
+        IpAddress: "-"
+    Sushi: 
+        SubjectUserName|endswith: "$"
+        TargetUserName|endswith: "$"
+        TargetInfo|endswith: "$"
+    Godzilla:
+        SubjectUserName|endswith: "$" 
+    Ninja:
+        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" 
+        IpAddress: "-"                                  
+    Daisuki:
+        - ProcessName|endswith: "powershell.exe"
+        - ProcessName|endswith: "WMIC.exe"
+    condition: Takoyaki and Daisuki and not (Naruto and not Godzilla) and not Ninja and not Sushi
 ```
 
 Good example:
 ```
 detection:
-  selection:
-    EventID: 4625
-    LogonType: 3
-  filter:
-    IpAddress: '-'
-  condition: selection and not filter
+    selection_basic_info:
+        Channel: Security
+        EventID: 4648
+    selection_TargetUserIsComputerAccount:
+        TargetUserName|endswith: "$"  
+        IpAddress: "-"
+    filter_UsersAndTargetServerAreComputerAccounts:     #Filter system noise
+        SubjectUserName|endswith: "$"
+        TargetUserName|endswith: "$"
+        TargetInfo|endswith: "$"
+    filter_SubjectUserIsComputerAccount:
+        SubjectUserName|endswith: "$" 
+    filter_SystemAccounts:
+        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" #Filter out default Desktop Windows Manager and User Mode Driver Framework accounts
+        IpAddress: "-"                                  #Don't filter if the IP address is remote to catch attackers who created backdoor accounts that look like DWM-12, etc..
+    selection_SuspiciousProcess:
+        - ProcessName|endswith: "powershell.exe"
+        - ProcessName|endswith: "WMIC.exe"
+    condition: selection_basic and selection_SuspiciousProcess and not (selection_TargetUserIsComputerAccount 
+               and not filter_SubjectUserIsComputerAccount) and not filter_SystemAccounts and not filter_UsersAndTargetServerAreComputerAccounts
+```
+
+OK example:
+```
+detection:
+    selection_1:
+        Channel: Security
+        EventID: 4648
+    selection_2:
+        TargetUserName|endswith: "$"  
+        IpAddress: "-"
+    filter_1:     #Filter system noise
+        SubjectUserName|endswith: "$"
+        TargetUserName|endswith: "$"
+        TargetInfo|endswith: "$"
+    filter_2:
+        SubjectUserName|endswith: "$" 
+    filter_3:
+        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" #Filter out default Desktop Windows Manager and User Mode Driver Framework accounts
+        IpAddress: "-"                                  #Don't filter if the IP address is remote to catch attackers who created backdoor accounts that look like DWM-12, etc..
+    selection_4:
+        - ProcessName|endswith: "powershell.exe"
+        - ProcessName|endswith: "WMIC.exe"
+    condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
