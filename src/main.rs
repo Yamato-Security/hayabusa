@@ -19,6 +19,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::fs::OpenOptions;
 use std::io::BufWriter;
+use std::path::Path;
 use std::sync::Arc;
 use std::{
     fs::{self, File},
@@ -68,6 +69,16 @@ impl App {
                 configs::CONFIG.read().unwrap().args.usage().to_string()
             );
             return;
+        }
+        if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+            if Path::new(csv_path).exists() {
+                AlertMessage::alert(
+                    &mut std::io::stderr().lock(),
+                    " file name in --output already exist other file. Please input unique file path.".to_owned(),
+                )
+                .ok();
+                return;
+            }
         }
         AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
