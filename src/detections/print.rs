@@ -43,7 +43,7 @@ lazy_static! {
         "./logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
     );
-    pub static ref QUIERT_ERRORS_FLAG: bool = configs::CONFIG
+    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG
         .read()
         .unwrap()
         .args
@@ -240,19 +240,19 @@ impl AlertMessage {
 
     /// ERRORメッセージを表示する関数。error_log_flagでfalseの場合は外部へのエラーログの書き込みは行わずに指定されたwを用いた出力のみ行う。trueの場合はwを用いた出力を行わずにエラーログへの出力を行う
     pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        if QUIERT_ERRORS_FLAG {
+        if *QUIET_ERRORS_FLAG {
             writeln!(w, "[ERROR] {}", contents)
         } else {
-            ok()
+            Ok(())
         }
     }
 
     // WARNメッセージを表示する関数
     pub fn warn<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        if QUIERT_ERRORS_FLAG {
+        if *QUIET_ERRORS_FLAG {
             writeln!(w, "[WARN] {}", contents)
         } else {
-            ok()
+            Ok(())
         }
     }
 
