@@ -577,3 +577,8 @@ detection:
         - ProcessName|endswith: "WMIC.exe"
     condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
+
+# Converting sigma rules to hayabusa format
+We have created a backend for sigmac to convert rules from sigma to hayabusa format [here](https://github.com/Yamato-Security/hayabusa/blob/main/tools/sigmac/).
+
+The documentation for how to use it is [here](https://github.com/Yamato-Security/hayabusa/blob/main/tools/sigmac/README-English.md).

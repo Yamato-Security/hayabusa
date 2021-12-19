@@ -348,7 +348,7 @@ Hayabusaに`.\rules\hayabusa\default\alerts\System\7045_CreateOrModiftySystemPro
 また、自分で作成した異なる regexes と allowlist テキストファイルを使用することもできます。
 デフォルトの `./config/detectlist_suspicous_services.txt` と `./config/allowlist_legitimate_services.txt` を参考にして、独自のファイルを作成してください。
 
-## 条件
+## condition (条件)
 上記で説明した表記法では、`AND`や`OR`の論理を表現することができますが、複雑な論理を定義しようとすると混乱してしまうでしょう。
 より複雑なルールを作りたい場合は、以下のように `condition` キーワードを使用します。
 
@@ -584,3 +584,8 @@ detection:
         - ProcessName|endswith: "WMIC.exe"
     condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
+
+# SigmaルールからHayabusaルール形式への自動変換
+SigmaルールからHayabusaルール形式への自動変換を行うsigmacのバックエンドを[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/tools/sigmac)で作成しました。
+
+使い方のReadmeは[こちら](https://github.com/Yamato-Security/hayabusa/blob/main/tools/sigmac/README-Japanese.md)です。
