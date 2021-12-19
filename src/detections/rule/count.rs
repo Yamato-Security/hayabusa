@@ -449,10 +449,11 @@ pub fn judge_timeframe(
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::detection::EvtxRecordInfo;
+    use crate::detections;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
-    use std::collections::HashMap;
+    use crate::detections::utils;
+    use hashbrown::HashMap;
 
     use chrono::{TimeZone, Utc};
     use yaml_rust::YamlLoader;
@@ -767,11 +768,9 @@ mod tests {
         for record in target {
             match serde_json::from_str(record) {
                 Ok(rec) => {
-                    assert!(rule_node.select(&EvtxRecordInfo {
-                        evtx_filepath: "testpath".to_owned(),
-                        record: rec,
-                        data_string: String::default(),
-                    }));
+                    let keys = detections::rule::get_detection_keys(&rule_node);
+                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
+                    let _result = rule_node.select(&"testpath".to_string(), &recinfo);
                 }
                 Err(_rec) => {
                     assert!(false, "failed to parse json record.");
@@ -1217,11 +1216,10 @@ mod tests {
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
-                    assert!(&rule_node.select(&EvtxRecordInfo {
-                        evtx_filepath: "testpath".to_owned(),
-                        record: record,
-                        data_string: String::default(),
-                    }));
+                    let keys = detections::rule::get_detection_keys(&rule_node);
+                    let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                    let result = &rule_node.select(&"testpath".to_owned(), &recinfo);
+                    assert_eq!(result, &true);
                 }
                 Err(_rec) => {
                     assert!(false, "Failed to parse json record.");

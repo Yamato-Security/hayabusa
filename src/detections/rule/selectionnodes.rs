@@ -1,6 +1,5 @@
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use mopa::mopafy;
-use serde_json::Value;
 use std::{sync::Arc, vec};
 use yaml_rust::Yaml;
 
@@ -268,13 +267,13 @@ impl LeafSelectionNode {
     }
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
-    fn get_event_value<'a>(&self, event_value: &'a Value) -> Option<&'a Value> {
+    fn get_event_value<'a>(&self, record: &'a EvtxRecordInfo) -> Option<&'a String> {
         // keyが指定されたいない場合は
         if self.key_list.is_empty() {
-            return Option::Some(event_value);
+            return Option::Some(&record.data_string);
         }
 
-        return utils::get_event_value(&self.get_key(), event_value);
+        return record.get_value(self.get_key());
     }
 
     /// matchers::LeafMatcherの一覧を取得する。
@@ -334,7 +333,7 @@ impl SelectionNode for LeafSelectionNode {
                     .matcher
                     .as_ref()
                     .unwrap()
-                    .is_match(Option::Some(eventdata_data), event_record);
+                    .is_match(event_record.get_value(self.get_key()), event_record);
             }
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
@@ -343,11 +342,12 @@ impl SelectionNode for LeafSelectionNode {
                     .unwrap()
                     .iter()
                     .any(|ary_element| {
+                        let aryelement_val = utils::value_to_string(ary_element);
                         return self
                             .matcher
                             .as_ref()
                             .unwrap()
-                            .is_match(Option::Some(ary_element), event_record);
+                            .is_match(aryelement_val.as_ref(), event_record);
                     });
             } else {
                 return self
@@ -358,7 +358,7 @@ impl SelectionNode for LeafSelectionNode {
             }
         }
 
-        let event_value = self.get_event_value(&event_record.record);
+        let event_value = self.get_event_value(&event_record);
         return self
             .matcher
             .as_ref()
@@ -407,7 +407,7 @@ impl SelectionNode for LeafSelectionNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::{detection::EvtxRecordInfo, rule::tests::parse_rule_from_str};
+    use crate::detections::{self, rule::tests::parse_rule_from_str, utils};
 
     #[test]
     fn test_detect_mutiple_regex_and() {
@@ -430,12 +430,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -466,12 +463,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&recinfo), false);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -501,12 +495,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -536,12 +527,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -571,12 +559,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&recinfo), false);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");

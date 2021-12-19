@@ -12,6 +12,7 @@ AuthenticationPackageName,Event.EventData.AuthenticationPackageName
 CallTrace,Event.EventData.CallTrace
 Caller_Process_Name,Event.EventData.Caller_Process_Name
 CallingProcessName,Event.EventData.CallingProcessName
+CategoryName,Event.EventData.Category Name
 Channel,Event.System.Channel
 Client_Address,Event.EventData.Client_Address
 CommandLine,Event.EventData.CommandLine
@@ -30,6 +31,7 @@ DestinationIsIpv6,Event.EventData.DestinationIsIpv6
 DestinationPort,Event.EventData.DestinationPort
 Details,Event.EventData.Details
 DetectionSource,Event.EventData.DetectionSource
+DetectionUser,Event.EventData.Detection User
 Device,Event.EventData.Device
 DeviceClassName,Event.EventData.DeviceClassName
 DeviceDescription,Event.EventData.DeviceDescription
@@ -107,6 +109,7 @@ Service,Event.EventData.Service
 ServiceFileName,Event.EventData.ServiceFileName
 ServiceName,Event.EventData.ServiceName
 ServicePrincipalNames,Event.EventData.ServicePrincipalNames
+SeverityName,Event.EventData.Severity Name
 ShareName,Event.EventData.ShareName
 SidHistory,Event.EventData.SidHistory
 Signature,Event.EventData.Signature
@@ -136,6 +139,7 @@ TargetProcessAddress,Event.EventData.TargetProcessAddress
 TargetSid,Event.EventData.TargetSid
 TargetUserName,Event.EventData.TargetUserName
 TaskName,Event.EventData.TaskName
+ThreatName,Event.EventData.Threat Name
 TicketEncryptionType,Event.EventData.TicketEncryptionType
 TicketOptions,Event.EventData.TicketOptions
 Url,Event.EventData.url

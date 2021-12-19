@@ -152,6 +152,19 @@ impl ParseYaml {
                     }
                 }
 
+                if !configs::CONFIG
+                    .read()
+                    .unwrap()
+                    .args
+                    .is_present("enable-deprecated-rules")
+                {
+                    let rule_status = &yaml_doc["status"].as_str();
+                    if rule_status.is_some() && rule_status.unwrap() == "deprecated" {
+                        self.ignorerule_count += 1;
+                        return Option::None;
+                    }
+                }
+
                 return Option::Some((filepath, yaml_doc));
             })
             .collect();
@@ -278,5 +291,16 @@ mod tests {
         yaml.read_dir(path.to_path_buf(), &"", &exclude_ids)
             .unwrap();
         assert_eq!(yaml.ignorerule_count, 0);
+    }
+    #[test]
+    fn test_exclude_deprecated_rules_file() {
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/deprecated");
+        let exclude_ids = RuleExclude {
+            no_use_rule: HashSet::new(),
+        };
+        yaml.read_dir(path.to_path_buf(), &"", &exclude_ids)
+            .unwrap();
+        assert_eq!(yaml.ignorerule_count, 1);
     }
 }

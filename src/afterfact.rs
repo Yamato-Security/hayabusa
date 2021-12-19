@@ -6,6 +6,7 @@ use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use std::io;
+use std::io::BufWriter;
 use std::process;
 
 #[derive(Debug, Serialize)]
@@ -43,29 +44,25 @@ pub fn after_fact() {
     };
 
     let mut displayflag = false;
-    let mut target: Box<dyn io::Write> = if let Some(csv_path) = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .value_of("csv-timeline")
-    {
-        // ファイル出力する場合
-        match File::create(csv_path) {
-            Ok(file) => Box::new(file),
-            Err(err) => {
-                AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
-                    format!("Failed to open file. {}", err),
-                )
-                .ok();
-                process::exit(1);
+    let mut target: Box<dyn io::Write> =
+        if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+            // ファイル出力する場合
+            match File::create(csv_path) {
+                Ok(file) => Box::new(BufWriter::new(file)),
+                Err(err) => {
+                    AlertMessage::alert(
+                        &mut std::io::stderr().lock(),
+                        format!("Failed to open file. {}", err),
+                    )
+                    .ok();
+                    process::exit(1);
+                }
             }
-        }
-    } else {
-        displayflag = true;
-        // 標準出力に出力する場合
-        Box::new(io::stdout())
-    };
+        } else {
+            displayflag = true;
+            // 標準出力に出力する場合
+            Box::new(BufWriter::new(io::stdout()))
+        };
 
     if let Err(err) = emit_csv(&mut target, displayflag) {
         fn_emit_csv_err(Box::new(err));

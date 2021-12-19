@@ -7,6 +7,7 @@ use crate::detections::configs;
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
 
+use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use serde_json::Value;
 use std::fs::File;
@@ -14,6 +15,8 @@ use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
+
+use super::detection::EvtxRecordInfo;
 
 pub fn concat_selection_key(key_list: &Vec<String>) -> String {
     return key_list
@@ -44,6 +47,17 @@ pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
     }
 
     return false;
+}
+
+pub fn value_to_string(value: &Value) -> Option<String> {
+    return match value {
+        Value::Null => Option::None,
+        Value::Bool(b) => Option::Some(b.to_string()),
+        Value::Number(n) => Option::Some(n.to_string()),
+        Value::String(s) => Option::Some(s.to_string()),
+        Value::Array(_) => Option::None,
+        Value::Object(_) => Option::None,
+    };
 }
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
@@ -91,6 +105,29 @@ pub fn is_target_event_id(s: &String) -> bool {
 
 pub fn get_event_id_key() -> String {
     return "Event.System.EventID".to_string();
+}
+
+pub fn get_event_time() -> String {
+    return "Event.System.TimeCreated_attributes.SystemTime".to_string();
+}
+
+pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
+    if system_time_str.is_empty() {
+        return Option::None;
+    }
+
+    let rfc3339_time = DateTime::parse_from_rfc3339(system_time_str);
+    if rfc3339_time.is_err() {
+        return Option::None;
+    }
+    let datetime = Utc
+        .from_local_datetime(&rfc3339_time.unwrap().naive_utc())
+        .single();
+    if datetime.is_none() {
+        return Option::None;
+    } else {
+        return Option::Some(datetime.unwrap());
+    }
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
@@ -147,7 +184,7 @@ pub fn get_thread_num() -> usize {
     let conf = configs::CONFIG.read().unwrap();
     let threadnum = &conf
         .args
-        .value_of("threadnum")
+        .value_of("thread-number")
         .unwrap_or(def_thread_num_str.as_str());
     return threadnum.parse::<usize>().unwrap().clone();
 }
@@ -160,6 +197,41 @@ pub fn create_tokio_runtime() -> Runtime {
         .unwrap();
 }
 
+// EvtxRecordInfoを作成します。
+pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRecordInfo {
+    // EvtxRecordInfoを作る
+    let data_str = data.to_string();
+    let mut rec = EvtxRecordInfo {
+        evtx_filepath: path,
+        record: data,
+        data_string: data_str,
+        key_2_value: hashbrown::HashMap::new(),
+    };
+
+    // 高速化のための処理
+
+    // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
+    // この処理を高速化するため、rec.key_2_valueというhashmapに"Event.System.EventID"というキーで値を設定しておく。
+    // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
+    // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
+    // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。
+    for key in keys {
+        let val = get_event_value(key, &rec.record);
+        if val.is_none() {
+            continue;
+        }
+
+        let val = value_to_string(val.unwrap());
+        if val.is_none() {
+            continue;
+        }
+
+        rec.key_2_value.insert(key.to_string(), val.unwrap());
+    }
+
+    return rec;
+}
+
 #[cfg(test)]
 mod tests {
     use crate::detections::utils;
@@ -168,7 +240,7 @@ mod tests {
 
     #[test]
     fn test_check_regex() {
-        let regexes = utils::read_txt("./config/regex/regexes_suspicous_service.txt")
+        let regexes = utils::read_txt("./config/regex/detectlist_suspicous_services.txt")
             .unwrap()
             .into_iter()
             .map(|regex_str| Regex::new(&regex_str).unwrap())
@@ -183,7 +255,7 @@ mod tests {
     #[test]
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let allowlist = utils::read_txt("./config/regex/allowlist_legimate_serviceimage.txt")
+        let allowlist = utils::read_txt("./config/regex/allowlist_legitimate_services.txt")
             .unwrap()
             .into_iter()
             .map(|allow_str| Regex::new(&allow_str).unwrap())
