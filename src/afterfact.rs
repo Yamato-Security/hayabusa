@@ -189,6 +189,8 @@ where
 mod tests {
     use crate::afterfact::emit_csv;
     use crate::detections::print;
+    use crate::detections::print::AlertMessage;
+    use crate::detections::print::ERROR_LOG_PATH;
     use chrono::{Local, TimeZone, Utc};
     use serde_json::Value;
     use std::fs::File;
@@ -203,6 +205,7 @@ mod tests {
     }
 
     fn test_emit_csv_output() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
         let testfilepath: &str = "test.evtx";
         let testrulepath: &str = "test-rule.yml";
         let test_title = "test_title";
