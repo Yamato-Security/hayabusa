@@ -149,7 +149,7 @@ impl TargetEventTime {
             } else {
                 None
             };
-        let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("endtimeline") {
+        let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("end-timeline") {
             match DateTime::parse_from_str(e_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
             .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
         {
