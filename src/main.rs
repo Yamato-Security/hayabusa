@@ -71,6 +71,7 @@ impl App {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     "--filepath only accepts .evtx files.".to_owned(),
+                    false,
                 )
                 .ok();
                 return;
@@ -82,6 +83,7 @@ impl App {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     "No .evtx files were found.".to_owned(),
+                    false,
                 )
                 .ok();
                 return;
@@ -107,7 +109,7 @@ impl App {
         if entries.is_err() {
             let stderr = std::io::stderr();
             let mut stderr = stderr.lock();
-            AlertMessage::alert(&mut stderr, format!("{}", entries.unwrap_err())).ok();
+            AlertMessage::alert(&mut stderr, format!("{}", entries.unwrap_err()), true).ok();
             return vec![];
         }
 
@@ -139,7 +141,7 @@ impl App {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => println!("{}", contents),
             Err(err) => {
-                AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err)).ok();
+                AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err), true).ok();
             }
         }
     }
@@ -207,7 +209,7 @@ impl App {
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
-                    AlertMessage::alert(&mut std::io::stderr().lock(), errmsg).ok();
+                    AlertMessage::alert(&mut std::io::stderr().lock(), errmsg, true).ok();
                     continue;
                 }
 

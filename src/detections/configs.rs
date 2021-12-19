@@ -141,6 +141,7 @@ impl TargetEventTime {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
                         format!("starttimeline field: {}", err),
+                        false
                     )
                     .ok();
                     None
@@ -158,6 +159,7 @@ impl TargetEventTime {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
                         format!("endtimeline field: {}", err),
+                        false
                     )
                     .ok();
                     None

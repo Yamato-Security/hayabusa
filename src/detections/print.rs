@@ -380,7 +380,7 @@ mod tests {
         let input = "TEST!";
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
+        AlertMessage::alert(&mut stdout, input.to_string(), false).expect("[ERROR] TEST!");
     }
 
     #[test]
@@ -388,7 +388,7 @@ mod tests {
         let input = "TESTWarn!";
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
+        AlertMessage::alert(&mut stdout, input.to_string(), false).expect("[WARN] TESTWarn!");
     }
 
     #[test]

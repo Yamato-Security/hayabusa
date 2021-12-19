@@ -59,6 +59,7 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     format!("field_value alias not found.value:{}", field_value),
+                    true,
                 )
                 .ok();
             }
@@ -75,6 +76,7 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     format!("by_field_value alias not found.value:{}", by_field_value),
+                    true,
                 )
                 .ok();
             }
@@ -157,6 +159,7 @@ impl TimeFrameInfo {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
                 format!("Timeframe is invalid. Input value:{}", value),
+                true,
             )
             .ok();
         }
@@ -189,6 +192,7 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
                 format!("Timeframe number is invalid. timeframe.{}", err),
+                true,
             )
             .ok();
             return Option::None;

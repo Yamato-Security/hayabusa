@@ -38,6 +38,7 @@ pub fn after_fact() {
         AlertMessage::alert(
             &mut std::io::stderr().lock(),
             format!("Failed to write CSV. {}", err),
+            true,
         )
         .ok();
         process::exit(1);
@@ -56,6 +57,7 @@ pub fn after_fact() {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     format!("Failed to open file. {}", err),
+                    true,
                 )
                 .ok();
                 process::exit(1);

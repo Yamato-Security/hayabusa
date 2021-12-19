@@ -61,6 +61,7 @@ impl Detection {
             AlertMessage::alert(
                 &mut std::io::stderr().lock(),
                 format!("{}", result_readdir.unwrap_err()),
+                true,
             )
             .ok();
             return vec![];
