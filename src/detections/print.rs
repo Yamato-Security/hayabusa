@@ -43,8 +43,8 @@ lazy_static! {
         "./hayabusa-logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
     );
-    pub static ref ERROR_LOG_WRITER: BufWriter<File> =
-        get_error_file_writer(ERROR_LOG_PATH.to_string());
+    pub static ref ERROR_LOG_WRITER: Mutex<BufWriter<File>> =
+        Mutex::new(get_error_file_writer(ERROR_LOG_PATH.to_string()));
     pub static ref ALERT_COUNT_IN_ERROR_LOG: Mutex<Counter> = Mutex::new(Counter::new());
 }
 
@@ -52,19 +52,17 @@ lazy_static! {
 fn get_error_file_writer(path_str: String) -> BufWriter<File> {
     let path = Path::new(&path_str);
     if !path.parent().unwrap().exists() {
-        create_dir(path.parent().unwrap());
+        create_dir(path.parent().unwrap()).ok();
     }
     // 1行目は必ず実行したコマンド情報を入れておく。
-    let ret = BufWriter::new(File::create(path).unwrap());
-    ret.write(format!(
-        "user input: {:?}\n",
-        format_args!("{:?}", env::args())
-    ))
-    .ok();
-    ret.flush();
+    let mut ret = BufWriter::new(File::create(path).unwrap());
+    ret.write(format!("user input: {:?}\n", format_args!("{:?}", env::args())).as_bytes())
+        .ok();
+    ret.flush().ok();
     return ret;
 }
 
+#[derive(Copy, Clone)]
 /// エラーログに出力したエラー回数を保持した構造体
 pub struct Counter {
     pub count: u128,
@@ -75,7 +73,7 @@ impl Counter {
         Counter { count: 0 }
     }
     /// エラーログに出力したエラー回数を1増やす
-    pub fn countup(self) {
+    pub fn countup(mut self) {
         self.count += 1;
     }
 }
@@ -230,9 +228,7 @@ impl AlertMessage {
     pub fn alert<W: Write>(w: &mut W, contents: String, error_log_flag: bool) -> io::Result<()> {
         if error_log_flag {
             ALERT_COUNT_IN_ERROR_LOG.lock().unwrap().countup();
-            let result = writeln!(ERROR_LOG_WRITER, "[ERROR] {}", contents);
-            ERROR_LOG_WRITER.flush();
-            result
+            writeln!(ERROR_LOG_WRITER.lock().unwrap(), "[ERROR] {}", contents)
         } else {
             writeln!(w, "[ERROR] {}", contents)
         }
@@ -245,20 +241,22 @@ impl AlertMessage {
 
     /// エラーログへのERRORメッセージの出力数を確認して、0であったらファイルを削除する。1以上あればエラーを書き出した旨を標準出力に表示する
     pub fn output_error_log_exist() {
+        let error_log_path_str = ERROR_LOG_PATH.to_string();
         if ALERT_COUNT_IN_ERROR_LOG.lock().unwrap().count == 0 {
-            if remove_file(ERROR_LOG_PATH.to_string()).is_err() {
+            if remove_file(error_log_path_str).is_err() {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
-                    format!(
-                        "failed to remove file. filepath:{}",
-                        ERROR_LOG_PATH.to_string()
-                    ),
+                    format!("failed to remove file. filepath:{}", error_log_path_str),
                     false,
-                );
+                )
+                .ok();
             }
             return;
         }
-        println!("E")
+        println!(format!(
+            "Generated error was output to {}. Please see the file for details",
+            error_log_path_str
+        ));
     }
 }
 
