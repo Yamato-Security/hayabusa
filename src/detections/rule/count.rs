@@ -7,7 +7,7 @@ use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::BufWriter;
 use std::num::ParseIntError;
 
@@ -60,9 +60,13 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
             }
             None => {
                 AlertMessage::alert(
-                    &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                    &mut BufWriter::new(
+                        OpenOptions::new()
+                            .append(true)
+                            .open(ERROR_LOG_PATH.to_string())
+                            .unwrap(),
+                    ),
                     format!("field_value alias not found.value:{}", field_value),
-                    true,
                 )
                 .ok();
             }
@@ -77,9 +81,13 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
             }
             None => {
                 AlertMessage::alert(
-                    &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                    &mut BufWriter::new(
+                        OpenOptions::new()
+                            .append(true)
+                            .open(ERROR_LOG_PATH.to_string())
+                            .unwrap(),
+                    ),
                     format!("by_field_value alias not found.value:{}", by_field_value),
-                    true,
                 )
                 .ok();
             }
@@ -160,9 +168,13 @@ impl TimeFrameInfo {
             tnum.retain(|c| c != 'd');
         } else {
             AlertMessage::alert(
-                &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                &mut BufWriter::new(
+                    OpenOptions::new()
+                        .append(true)
+                        .open(ERROR_LOG_PATH.to_string())
+                        .unwrap(),
+                ),
                 format!("Timeframe is invalid. Input value:{}", value),
-                true,
             )
             .ok();
         }
@@ -193,9 +205,13 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
         }
         Err(err) => {
             AlertMessage::alert(
-                &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
-                format!("Timeframe number is invalid. timeframe.{}", err),
-                true,
+                &mut BufWriter::new(
+                    OpenOptions::new()
+                        .append(true)
+                        .open(ERROR_LOG_PATH.to_string())
+                        .unwrap(),
+                ),
+                format!("Timeframe number is invalid. timeframe: {}", err),
             )
             .ok();
             return Option::None;

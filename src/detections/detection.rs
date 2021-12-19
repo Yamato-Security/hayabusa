@@ -13,7 +13,7 @@ use crate::yaml::ParseYaml;
 use hashbrown;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::BufWriter;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
@@ -62,9 +62,13 @@ impl Detection {
             rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level, exclude_ids);
         if result_readdir.is_err() {
             AlertMessage::alert(
-                &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                &mut BufWriter::new(
+                    OpenOptions::new()
+                        .append(true)
+                        .open(ERROR_LOG_PATH.to_string())
+                        .unwrap(),
+                ),
                 format!("{}", result_readdir.unwrap_err()),
-                true,
             )
             .ok();
             return vec![];

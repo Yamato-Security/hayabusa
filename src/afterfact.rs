@@ -37,9 +37,8 @@ pub struct DisplayFormat<'a> {
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
-            &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+            &mut std::io::stderr().lock(),
             format!("Failed to write CSV. {}", err),
-            true,
         )
         .ok();
         process::exit(1);
@@ -56,9 +55,8 @@ pub fn after_fact() {
             Ok(file) => Box::new(BufWriter::new(file)),
             Err(err) => {
                 AlertMessage::alert(
-                    &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                    &mut std::io::stderr().lock(),
                     format!("Failed to open file. {}", err),
-                    true,
                 )
                 .ok();
                 process::exit(1);

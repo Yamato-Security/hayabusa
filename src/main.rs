@@ -17,6 +17,7 @@ use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
+use std::fs::OpenOptions;
 use std::io::BufWriter;
 use std::sync::Arc;
 use std::{
@@ -74,7 +75,6 @@ impl App {
                 AlertMessage::alert(
                     &mut std::io::stderr().lock(),
                     "--filepath only accepts .evtx files.".to_owned(),
-                    false,
                 )
                 .ok();
                 return;
@@ -105,15 +105,20 @@ impl App {
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
         println!("");
+        AlertMessage::output_error_log_exist();
     }
 
     fn collect_evtxfiles(&self, dirpath: &str) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             AlertMessage::alert(
-                &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                &mut BufWriter::new(
+                    OpenOptions::new()
+                        .append(true)
+                        .open(ERROR_LOG_PATH.to_string())
+                        .unwrap(),
+                ),
                 format!("{}", entries.unwrap_err()),
-                true,
             )
             .ok();
             return vec![];
@@ -147,7 +152,7 @@ impl App {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => println!("{}", contents),
             Err(err) => {
-                AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err), false).ok();
+                AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err)).ok();
             }
         }
     }
@@ -217,9 +222,13 @@ impl App {
                         record_result.unwrap_err()
                     );
                     AlertMessage::alert(
-                        &mut BufWriter::new(File::open(ERROR_LOG_PATH.to_string()).unwrap()),
+                        &mut BufWriter::new(
+                            OpenOptions::new()
+                                .append(true)
+                                .open(ERROR_LOG_PATH.to_string())
+                                .unwrap(),
+                        ),
                         errmsg,
-                        true,
                     )
                     .ok();
                     continue;

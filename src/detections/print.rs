@@ -14,9 +14,8 @@ use std::fs::create_dir;
 use std::fs::remove_file;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::Path;
-
 use std::io::{self, Write};
+use std::path::Path;
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -235,10 +234,7 @@ impl AlertMessage {
     }
 
     /// ERRORメッセージを表示する関数。error_log_flagでfalseの場合は外部へのエラーログの書き込みは行わずに指定されたwを用いた出力のみ行う。trueの場合はwを用いた出力を行わずにエラーログへの出力を行う
-    pub fn alert<W: Write>(w: &mut W, contents: String, error_log_flag: bool) -> io::Result<()> {
-        if error_log_flag {
-            ALERT_COUNT_IN_ERROR_LOG.lock().unwrap().countup();
-        }
+    pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
         writeln!(w, "[ERROR] {}", contents)
     }
 
@@ -386,7 +382,7 @@ mod tests {
         let input = "TEST!";
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string(), false).expect("[ERROR] TEST!");
+        AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
     }
 
     #[test]
@@ -394,7 +390,7 @@ mod tests {
         let input = "TESTWarn!";
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string(), false).expect("[WARN] TESTWarn!");
+        AlertMessage::alert(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
     }
 
     #[test]
