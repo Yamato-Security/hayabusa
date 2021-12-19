@@ -1,11 +1,5 @@
 extern crate csv;
 
-use crate::detections::rule::AggResult;
-use serde_json::Value;
-use std::collections::HashMap;
-use tokio::{runtime::Runtime, spawn, task::JoinHandle};
-
-use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
@@ -154,7 +148,7 @@ impl Detection {
     fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
         let agg_condition = rule.has_agg_condition();
         for record_info in records.as_ref() {
-            let result = rule.select(&record_info.evtx_filepath, &record_info);
+            let result = rule.select(&record_info);
             if !result {
                 continue;
             }

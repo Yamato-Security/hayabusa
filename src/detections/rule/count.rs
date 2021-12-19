@@ -770,7 +770,7 @@ mod tests {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
-                    let _result = rule_node.select(&"testpath".to_string(), &recinfo);
+                    let _result = rule_node.select(&recinfo);
                 }
                 Err(_rec) => {
                     assert!(false, "failed to parse json record.");
@@ -1218,7 +1218,7 @@ mod tests {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                    let result = &rule_node.select(&"testpath".to_owned(), &recinfo);
+                    let result = &rule_node.select(&recinfo);
                     assert_eq!(result, &true);
                 }
                 Err(_rec) => {
