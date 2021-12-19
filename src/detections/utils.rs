@@ -184,7 +184,7 @@ pub fn get_thread_num() -> usize {
     let conf = configs::CONFIG.read().unwrap();
     let threadnum = &conf
         .args
-        .value_of("threadnum")
+        .value_of("thread-number")
         .unwrap_or(def_thread_num_str.as_str());
     return threadnum.parse::<usize>().unwrap().clone();
 }

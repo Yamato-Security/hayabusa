@@ -50,7 +50,7 @@ impl App {
 
     fn exec(&mut self) {
         let analysis_start_time: DateTime<Local> = Local::now();
-        if !configs::CONFIG.read().unwrap().args.is_present("q") {
+        if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
             println!("");
             self.output_eggs(&format!(

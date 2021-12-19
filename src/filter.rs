@@ -18,7 +18,7 @@ pub fn exclude_ids() -> RuleExclude {
         .read()
         .unwrap()
         .args
-        .is_present("show-noisyalerts")
+        .is_present("enable-noisy-rules")
     {
         ids += "\n"; // 改行を入れないとexclude-rulesの一番最後の行とnoisy-rules.txtの一番最初の行が一行にまとめられてしまう。
         match fs::read("config/noisy-rules.txt") {

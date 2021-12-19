@@ -156,7 +156,7 @@ impl ParseYaml {
                     .read()
                     .unwrap()
                     .args
-                    .is_present("show-deprecated")
+                    .is_present("enable-deprecated-rules")
                 {
                     let rule_status = &yaml_doc["status"].as_str();
                     if rule_status.is_some() && rule_status.unwrap() == "deprecated" {
