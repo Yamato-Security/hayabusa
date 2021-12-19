@@ -9,13 +9,13 @@ use yaml_rust::Yaml;
 
 mod matchers;
 mod selectionnodes;
-use self::selectionnodes::SelectionNode;
+use self::selectionnodes::{LeafSelectionNode, SelectionNode};
 mod aggregation_parser;
 use self::aggregation_parser::AggregationParseInfo;
 
 mod condition_parser;
 mod count;
-use self::count::TimeFrameInfo;
+use self::count::{AggRecordTimeInfo, TimeFrameInfo};
 
 use super::detection::EvtxRecordInfo;
 
@@ -28,7 +28,7 @@ pub struct RuleNode {
     pub rulepath: String,
     pub yaml: Yaml,
     detection: DetectionNode,
-    countdata: HashMap<String, HashMap<String, Vec<DateTime<Utc>>>>,
+    countdata: HashMap<String, Vec<AggRecordTimeInfo>>,
 }
 
 impl Debug for RuleNode {
@@ -66,10 +66,10 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&mut self, filepath: &String, event_record: &EvtxRecordInfo) -> bool {
+    pub fn select(&mut self, event_record: &EvtxRecordInfo) -> bool {
         let result = self.detection.select(event_record);
-        if result {
-            count::count(self, filepath, &event_record.record);
+        if result && self.has_agg_condition() {
+            count::count(self, &event_record.record);
         }
         return result;
     }
@@ -83,14 +83,48 @@ impl RuleNode {
         if !self.has_agg_condition() {
             return ret;
         }
-        for filepath in self.countdata.keys() {
-            ret.append(&mut count::aggregation_condition_select(&self, &filepath));
-        }
+        ret.append(&mut count::aggregation_condition_select(&self));
         return ret;
     }
     pub fn check_exist_countdata(&self) -> bool {
         self.countdata.len() > 0
     }
+    /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
+    pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
+        match self.detection.aggregation_condition.as_ref() {
+            None => {
+                return None;
+            }
+            Some(agg_parse_info) => {
+                return Some(agg_parse_info);
+            }
+        }
+    }
+}
+
+// RuleNodeのdetectionに定義されているキーの一覧を取得する。
+pub fn get_detection_keys(node: &RuleNode) -> Vec<String> {
+    let mut ret = vec![];
+    let detection = &node.detection;
+    for key in detection.name_to_selection.keys() {
+        let selection = &detection.name_to_selection[key];
+        let desc = selection.get_descendants();
+        let keys = desc.iter().filter_map(|node| {
+            if !node.is::<LeafSelectionNode>() {
+                return Option::None;
+            }
+
+            let node = node.downcast_ref::<LeafSelectionNode>().unwrap();
+            let key = node.get_key();
+            if key.is_empty() {
+                return Option::None;
+            }
+            return Option::Some(key.to_string());
+        });
+        ret.extend(keys);
+    }
+
+    return ret;
 }
 
 /// Ruleファイルのdetectionを表すノード
@@ -268,12 +302,12 @@ impl DetectionNode {
 #[derive(Debug)]
 /// countなどのaggregationの結果を出力する構造体
 pub struct AggResult {
-    /// evtx file path
-    pub filepath: String,
     /// countなどの値
     pub data: i32,
-    /// (countの括弧内の記載)_(count byで指定された条件)で設定されたキー
+    /// count byで指定された条件のレコード内での値
     pub key: String,
+    /// countの括弧内指定された項目の検知されたレコード内での値の配列。括弧内で指定がなかった場合は長さ0の配列となる
+    pub field_values: Vec<String>,
     ///検知したブロックの最初のレコードの時間
     pub start_timedate: DateTime<Utc>,
     ///条件式の情報
@@ -282,16 +316,16 @@ pub struct AggResult {
 
 impl AggResult {
     pub fn new(
-        filepath: String,
         data: i32,
         key: String,
+        field_values: Vec<String>,
         start_timedate: DateTime<Utc>,
         condition_op_num: String,
     ) -> AggResult {
         return AggResult {
-            filepath: filepath,
             data: data,
             key: key,
+            field_values: field_values,
             start_timedate: start_timedate,
             condition_op_num: condition_op_num,
         };
@@ -300,10 +334,9 @@ impl AggResult {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::{detection::EvtxRecordInfo, rule::create_rule};
-    use yaml_rust::YamlLoader;
-
     use super::RuleNode;
+    use crate::detections::{self, rule::create_rule, utils};
+    use yaml_rust::YamlLoader;
 
     pub fn parse_rule_from_str(rule_str: &str) -> RuleNode {
         let rule_yaml = YamlLoader::load_from_str(rule_str);
@@ -335,12 +368,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -368,12 +398,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -401,12 +428,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -487,12 +511,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -549,12 +570,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -618,12 +636,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -665,12 +680,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -713,12 +725,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -780,12 +789,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -847,12 +853,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), false);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), false);
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -896,12 +899,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_json_str.to_string(),
-                };
-                assert_eq!(rule_node.select(&"testpath".to_owned(), &recinfo), true);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert_eq!(rule_node.select(&recinfo), true);
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -957,22 +957,13 @@ mod tests {
         let _init = rule_node.init();
         match serde_json::from_str(record_str) {
             Ok(record) => {
-                let recinfo = EvtxRecordInfo {
-                    evtx_filepath: "testpath".to_owned(),
-                    record: record,
-                    data_string: record_str.to_string(),
-                };
-                let result = rule_node.select(&"testpath".to_string(), &recinfo);
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                let result = rule_node.select(&recinfo);
                 assert_eq!(rule_node.detection.aggregation_condition.is_some(), true);
                 assert_eq!(result, true);
                 assert_eq!(
-                    *&rule_node
-                        .countdata
-                        .get("testpath")
-                        .unwrap()
-                        .get(key)
-                        .unwrap()
-                        .len() as i32,
+                    *&rule_node.countdata.get(key).unwrap().len() as i32,
                     expect_count
                 );
             }
