@@ -171,6 +171,7 @@ impl App {
         }
         after_fact();
         detection.print_unique_results();
+        AlertMessage::output_error_log_exist();
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
