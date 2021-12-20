@@ -1,0 +1,24 @@
+author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Kerberos Service Ticket Requested
+title_jp: Kerberosサービスチケットが要求された
+output: 'User: %TargetUserName%  :  Service: %ServiceName%  :  IP Address: %IpAddress%  :  Status: %Status%'
+output_jp: 'ユーザ: %TargetUserName%  :  サービス: %ServiceName%  :  IPアドレス: %IpAddress%  :  ステータス: %Status%'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: da6257f3-cf49-464a-96fc-c84a7ce20636
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4769
+falsepositives:
+    - normal system usage
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

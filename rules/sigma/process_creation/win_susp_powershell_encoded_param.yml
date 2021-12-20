@@ -1,0 +1,28 @@
+
+title: PowerShell Encoded Character Syntax
+author: Florian Roth
+date: 2020/07/09
+description: Detects suspicious encoded character syntax often used for defense evasion
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*(WCHAR)0x*'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: e312efd0-35a1-407f-8439-b8d434b438a6
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://twitter.com/0gtweet/status/1281103918693482496
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+- attack.defense_evasion
+- attack.t1027
+ruletype: SIGMA

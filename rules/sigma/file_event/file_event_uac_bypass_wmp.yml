@@ -1,0 +1,33 @@
+
+title: UAC Bypass Using Windows Media Player - File
+author: Christian Burkard
+date: 2021/08/23
+description: Detects the pattern of UAC Bypass using Windows Media Player osksupport.dll
+  (UACMe 32)
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: C:\Users\\*
+  SELECTION_3:
+    TargetFilename: '*\AppData\Local\Temp\OskSupport.dll'
+  SELECTION_4:
+    Image: C:\Windows\system32\DllHost.exe
+  SELECTION_5:
+    TargetFilename: C:\Program Files\Windows Media Player\osk.exe
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and SELECTION_5)))
+falsepositives:
+- Unknown
+id: 68578b43-65df-4f81-9a9b-92f32711a951
+level: high
+logsource:
+  category: file_event
+  product: windows
+references:
+- https://github.com/hfiref0x/UACME
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1548.002
+ruletype: SIGMA

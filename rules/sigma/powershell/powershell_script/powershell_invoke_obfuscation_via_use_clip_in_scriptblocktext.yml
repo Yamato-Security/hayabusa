@@ -1,0 +1,27 @@
+
+title: Invoke-Obfuscation Via Use Clip
+author: Nikita Nazarov, oscd.community
+date: 2020/10/09
+description: Detects Obfuscated Powershell via use Clip.exe in Scripts
+detection:
+  SELECTION_1:
+    ScriptBlockText|re: (?i).*?echo.*clip.*&&.*(Clipboard|i`?n`?v`?o`?k`?e`?).*
+  condition: SELECTION_1
+falsepositives:
+- Unknown
+id: db92dd33-a3ad-49cf-8c2c-608c3e30ace0
+level: high
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/10/16
+references:
+- https://github.com/Neo23x0/sigma/issues/1009
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001
+ruletype: SIGMA

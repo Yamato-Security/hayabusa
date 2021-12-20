@@ -1,0 +1,41 @@
+
+title: Suspicious Desktopimgdownldr Target File
+author: Florian Roth
+date: 2020/07/03
+description: Detects a suspicious Microsoft desktopimgdownldr file creation that stores
+  a file to a suspicious location or contains a file with a suspicious extension
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    Image: '*svchost.exe'
+  SELECTION_3:
+    TargetFilename: '*\Personalization\LockScreenImage\\*'
+  SELECTION_4:
+    TargetFilename: '*C:\Windows\\*'
+  SELECTION_5:
+    TargetFilename:
+    - '*.jpg*'
+    - '*.jpeg*'
+    - '*.png*'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+    and  not (SELECTION_5))
+falsepositives:
+- False positives depend on scripts and administrative tools used in the monitored
+  environment
+fields:
+- CommandLine
+- ParentCommandLine
+id: fc4f4817-0c53-4683-a4ee-b17a64bc1039
+level: high
+logsource:
+  category: file_event
+  product: windows
+references:
+- https://labs.sentinelone.com/living-off-windows-land-a-new-native-file-downldr/
+- https://twitter.com/SBousseaden/status/1278977301745741825
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1105
+ruletype: SIGMA

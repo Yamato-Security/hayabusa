@@ -1,0 +1,68 @@
+
+title: File Created with System Process Name
+author: Sander Wiebing
+date: 2020/05/26
+description: Detects the creation of an executable with a system process name in a
+  suspicious folder
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename:
+    - '*\svchost.exe'
+    - '*\rundll32.exe'
+    - '*\services.exe'
+    - '*\powershell.exe'
+    - '*\regsvr32.exe'
+    - '*\spoolsv.exe'
+    - '*\lsass.exe'
+    - '*\smss.exe'
+    - '*\csrss.exe'
+    - '*\conhost.exe'
+    - '*\wininit.exe'
+    - '*\lsm.exe'
+    - '*\winlogon.exe'
+    - '*\explorer.exe'
+    - '*\taskhost.exe'
+    - '*\Taskmgr.exe'
+    - '*\taskmgr.exe'
+    - '*\sihost.exe'
+    - '*\RuntimeBroker.exe'
+    - '*\runtimebroker.exe'
+    - '*\smartscreen.exe'
+    - '*\dllhost.exe'
+    - '*\audiodg.exe'
+    - '*\wlanext.exe'
+  SELECTION_3:
+    TargetFilename:
+    - C:\Windows\System32\\*
+    - C:\Windows\system32\\*
+    - C:\Windows\SysWow64\\*
+    - C:\Windows\SysWOW64\\*
+    - C:\Windows\winsxs\\*
+    - C:\Windows\WinSxS\\*
+    - \SystemRoot\System32\\*
+  SELECTION_4:
+    Image: '*\Windows\System32\dism.exe'
+  SELECTION_5:
+    TargetFilename: C:\$WINDOWS.~BT\\*
+  SELECTION_6:
+    Image: C:\$WINDOWS.~BT\Sources\SetupHost.exe
+  condition: (SELECTION_1 and (SELECTION_2 and  not (SELECTION_3 and SELECTION_4))
+    and  not (SELECTION_5 and SELECTION_6))
+falsepositives:
+- System processes copied outside the default folder
+fields:
+- Image
+id: d5866ddf-ce8f-4aea-b28e-d96485a20d3d
+level: high
+logsource:
+  category: file_event
+  product: windows
+modified: 2021/10/28
+status: test
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.005
+ruletype: SIGMA

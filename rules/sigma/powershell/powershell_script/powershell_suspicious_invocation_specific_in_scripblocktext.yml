@@ -1,0 +1,95 @@
+
+title: Suspicious PowerShell Invocations - Specific
+author: Florian Roth (rule), Jonhnathan Ribeiro
+date: 2017/03/05
+description: Detects suspicious PowerShell invocation command parameters
+detection:
+  SELECTION_1:
+    ScriptBlockText: '*-nop*'
+  SELECTION_10:
+    ScriptBlockText: '* -c *'
+  SELECTION_11:
+    ScriptBlockText: '*iex*'
+  SELECTION_12:
+    ScriptBlockText: '*New-Object*'
+  SELECTION_13:
+    ScriptBlockText: '* -w *'
+  SELECTION_14:
+    ScriptBlockText: '*hidden*'
+  SELECTION_15:
+    ScriptBlockText: '*-ep*'
+  SELECTION_16:
+    ScriptBlockText: '*bypass*'
+  SELECTION_17:
+    ScriptBlockText: '*-Enc*'
+  SELECTION_18:
+    ScriptBlockText: '*powershell*'
+  SELECTION_19:
+    ScriptBlockText: '*reg*'
+  SELECTION_2:
+    ScriptBlockText: '* -w *'
+  SELECTION_20:
+    ScriptBlockText: '*add*'
+  SELECTION_21:
+    ScriptBlockText: '*HKCU\software\microsoft\windows\currentversion\run*'
+  SELECTION_22:
+    ScriptBlockText: '*bypass*'
+  SELECTION_23:
+    ScriptBlockText: '*-noprofile*'
+  SELECTION_24:
+    ScriptBlockText: '*-windowstyle*'
+  SELECTION_25:
+    ScriptBlockText: '*hidden*'
+  SELECTION_26:
+    ScriptBlockText: '*new-object*'
+  SELECTION_27:
+    ScriptBlockText: '*system.net.webclient*'
+  SELECTION_28:
+    ScriptBlockText: '*.download*'
+  SELECTION_29:
+    ScriptBlockText: '*iex*'
+  SELECTION_3:
+    ScriptBlockText: '*hidden*'
+  SELECTION_30:
+    ScriptBlockText: '*New-Object*'
+  SELECTION_31:
+    ScriptBlockText: '*Net.WebClient*'
+  SELECTION_32:
+    ScriptBlockText: '*.Download*'
+  SELECTION_4:
+    ScriptBlockText: '* -c *'
+  SELECTION_5:
+    ScriptBlockText: '*[Convert]::FromBase64String*'
+  SELECTION_6:
+    ScriptBlockText: '* -w *'
+  SELECTION_7:
+    ScriptBlockText: '*hidden*'
+  SELECTION_8:
+    ScriptBlockText: '*-noni*'
+  SELECTION_9:
+    ScriptBlockText: '*-nop*'
+  condition: ((SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9 and SELECTION_10
+    and SELECTION_11 and SELECTION_12) or (SELECTION_13 and SELECTION_14 and SELECTION_15
+    and SELECTION_16 and SELECTION_17) or (SELECTION_18 and SELECTION_19 and SELECTION_20
+    and SELECTION_21) or (SELECTION_22 and SELECTION_23 and SELECTION_24 and SELECTION_25
+    and SELECTION_26 and SELECTION_27 and SELECTION_28) or (SELECTION_29 and SELECTION_30
+    and SELECTION_31 and SELECTION_32))
+falsepositives:
+- Penetration tests
+id: ae7fbf8e-f3cb-49fd-8db4-5f3bed522c71
+level: high
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/10/18
+related:
+- id: fce5f582-cc00-41e1-941a-c6fabf0fdb8c
+  type: derived
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+ruletype: SIGMA

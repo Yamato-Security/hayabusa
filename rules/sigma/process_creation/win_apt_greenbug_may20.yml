@@ -1,0 +1,63 @@
+
+title: Greenbug Campaign Indicators
+author: Florian Roth
+date: 2020/05/20
+description: Detects tools and process executions as observed in a Greenbug campaign
+  in May 2020
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*bitsadmin*'
+  SELECTION_3:
+    CommandLine: '*/transfer*'
+  SELECTION_4:
+    CommandLine: '*CSIDL_APPDATA*'
+  SELECTION_5:
+    CommandLine:
+    - '*CSIDL_SYSTEM_DRIVE*'
+  SELECTION_6:
+    CommandLine:
+    - '*\msf.ps1*'
+    - '*8989 -e cmd.exe*'
+    - '*system.Data.SqlClient.SqlDataAdapter($cmd); [void]$da.fill*'
+    - '*-nop -w hidden -c $k=new-object*'
+    - '*[Net.CredentialCache]::DefaultCredentials;IEX *'
+    - '* -nop -w hidden -c $m=new-object net.webclient;$m*'
+    - '*-noninteractive -executionpolicy bypass whoami*'
+    - '*-noninteractive -executionpolicy bypass netstat -a*'
+    - '*L3NlcnZlcj1*'
+  SELECTION_7:
+    Image:
+    - '*\adobe\Adobe.exe'
+    - '*\oracle\local.exe'
+    - '*\revshell.exe'
+    - '*infopagesbackup\ncat.exe'
+    - '*CSIDL_SYSTEM\cmd.exe'
+    - '*\programdata\oracle\java.exe'
+    - '*CSIDL_COMMON_APPDATA\comms\comms.exe'
+    - '*\Programdata\VMware\Vmware.exe'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4) or SELECTION_5
+    or SELECTION_6 or SELECTION_7))
+falsepositives:
+- Unknown
+id: 3711eee4-a808-4849-8a14-faf733da3612
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/09/21
+references:
+- https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence/greenbug-espionage-telco-south-asia
+status: experimental
+tags:
+- attack.g0049
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+- attack.command_and_control
+- attack.t1105
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.005
+ruletype: SIGMA

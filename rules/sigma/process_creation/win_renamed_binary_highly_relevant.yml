@@ -1,0 +1,59 @@
+
+title: Highly Relevant Renamed Binary
+author: Matthew Green - @mgreen27, Florian Roth
+date: 2019/06/15
+description: Detects the execution of a renamed binary often used by attackers or
+  malware leveraging new Sysmon OriginalFileName datapoint.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    OriginalFileName:
+    - powershell.exe
+    - powershell_ise.exe
+    - psexec.exe
+    - psexec.c
+    - cscript.exe
+    - wscript.exe
+    - mshta.exe
+    - regsvr32.exe
+    - wmic.exe
+    - certutil.exe
+    - rundll32.exe
+    - cmstp.exe
+    - msiexec.exe
+  SELECTION_3:
+    Image:
+    - '*\powershell.exe'
+    - '*\powershell_ise.exe'
+    - '*\psexec.exe'
+    - '*\psexec64.exe'
+    - '*\cscript.exe'
+    - '*\wscript.exe'
+    - '*\mshta.exe'
+    - '*\regsvr32.exe'
+    - '*\wmic.exe'
+    - '*\certutil.exe'
+    - '*\rundll32.exe'
+    - '*\cmstp.exe'
+    - '*\msiexec.exe'
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
+falsepositives:
+- Custom applications use renamed binaries adding slight change to binary name. Typically
+  this is easy to spot and add to whitelist
+id: 0ba1da6d-b6ce-4366-828c-18826c9de23e
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/09/06
+references:
+- https://attack.mitre.org/techniques/T1036/
+- https://mgreen27.github.io/posts/2019/05/12/BinaryRename.html
+- https://mgreen27.github.io/posts/2019/05/29/BinaryRename2.html
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+- attack.t1036.003
+ruletype: SIGMA

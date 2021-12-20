@@ -1,0 +1,66 @@
+
+title: System File Execution Location Anomaly
+author: Florian Roth, Patrick Bareiss, Anton Kutepov, oscd.community
+date: 2017/11/27
+description: Detects a Windows program executable started in a suspicious folder
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\svchost.exe'
+    - '*\rundll32.exe'
+    - '*\services.exe'
+    - '*\powershell.exe'
+    - '*\regsvr32.exe'
+    - '*\spoolsv.exe'
+    - '*\lsass.exe'
+    - '*\smss.exe'
+    - '*\csrss.exe'
+    - '*\conhost.exe'
+    - '*\wininit.exe'
+    - '*\lsm.exe'
+    - '*\winlogon.exe'
+    - '*\explorer.exe'
+    - '*\taskhost.exe'
+    - '*\Taskmgr.exe'
+    - '*\sihost.exe'
+    - '*\RuntimeBroker.exe'
+    - '*\smartscreen.exe'
+    - '*\dllhost.exe'
+    - '*\audiodg.exe'
+    - '*\wlanext.exe'
+  SELECTION_3:
+    Image:
+    - C:\Windows\System32\\*
+    - C:\Windows\system32\\*
+    - C:\Windows\SysWow64\\*
+    - C:\Windows\SysWOW64\\*
+    - C:\Windows\winsxs\\*
+    - C:\Windows\WinSxS\\*
+    - C:\avast! sandbox*
+  SELECTION_4:
+    Image: '*\SystemRoot\System32\\*'
+  SELECTION_5:
+    Image: C:\Windows\explorer.exe
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3 or SELECTION_4 or
+    SELECTION_5))
+falsepositives:
+- Exotic software
+fields:
+- ComputerName
+- User
+- Image
+id: e4a6b256-3e47-40fc-89d2-7a477edd6915
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/03/02
+references:
+- https://twitter.com/GelosSnake/status/934900723426439170
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+ruletype: SIGMA

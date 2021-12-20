@@ -1,0 +1,29 @@
+author: Yusuke Matsui, Yamato Security
+creation_date: 2020/11/08
+updated_date: 2021/11/22
+
+title: Kerberoasting
+title_jp: Kerberoast攻撃
+output: 'Possible Kerberoasting Risk Activity.'
+output_jp: 'Kerberoast攻撃のリスクがある'
+description: Adversaries may abuse a valid Kerberos ticket-granting ticket (TGT) or sniff network traffic to obtain a ticket-granting service (TGS) ticket that may be vulnerable to Brute Force.
+description_jp: Adversaries may abuse a valid Kerberos ticket-granting ticket (TGT) or sniff network traffic to obtain a ticket-granting service (TGS) ticket that may be vulnerable to Brute Force.
+
+id: f19849e7-b5ba-404b-a731-9b624d7f6d19
+level: medium
+status: test
+detection:
+    selection:
+        Channel: Security
+        EventID: 4768
+        TicketEncryptionType: '0x17' #RC4-HMAC
+        PreAuthType: 2 #Standard password authentication
+    condition: selection
+falsepositives:
+    - legacy application
+tags:
+    - attack.credential_access
+    - attack.t1558.003
+references:
+    - https://attack.mitre.org/techniques/T1558/003/
+ruletype: hayabusa

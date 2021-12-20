@@ -1,0 +1,34 @@
+
+title: Cmdkey Cached Credentials Recon
+author: jmallette
+date: 2019/01/16
+description: Detects usage of cmdkey to look for cached credentials
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\cmdkey.exe'
+  SELECTION_3:
+    CommandLine: '* /list*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate administrative tasks
+fields:
+- CommandLine
+- ParentCommandLine
+- User
+id: 07f8bdc2-c9b3-472a-9817-5a670b872f53
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/07/07
+references:
+- https://www.peew.pw/blog/2017/11/26/exploring-cmdkey-an-edge-case-for-privilege-escalation
+- https://technet.microsoft.com/en-us/library/cc754243(v=ws.11).aspx
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003.005
+- attack.t1003
+ruletype: SIGMA

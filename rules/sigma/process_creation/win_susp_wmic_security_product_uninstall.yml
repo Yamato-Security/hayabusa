@@ -1,0 +1,52 @@
+
+title: Wmic Uninstall Security Product
+author: Florian Roth
+date: 2021/01/30
+description: Detects deinstallation of security products using WMIC utility
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*wmic*'
+  SELECTION_3:
+    CommandLine: '*product where name=*'
+  SELECTION_4:
+    CommandLine: '*call uninstall*'
+  SELECTION_5:
+    CommandLine: '*/nointeractive*'
+  SELECTION_6:
+    CommandLine:
+    - '*Antivirus*'
+    - '*AVG *'
+    - '*Crowdstrike Sensor*'
+    - '*DLP Endpoint*'
+    - '*Endpoint Detection*'
+    - '*Endpoint Protection*'
+    - '*Endpoint Security*'
+    - '*Endpoint Sensor*'
+    - '*ESET File Security*'
+    - '*Malwarebytes*'
+    - '*McAfee Agent*'
+    - '*Microsoft Security Client*'
+    - '*Threat Protection*'
+    - '*VirusScan*'
+    - '*Webroot SecureAnywhere*'
+    - '*Windows Defender*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)
+falsepositives:
+- Legitimate administration
+id: 847d5ff3-8a31-4737-a970-aeae8fe21765
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/10/18
+references:
+- https://twitter.com/cglyer/status/1355171195654709249
+- https://thedfirreport.com/2021/10/18/icedid-to-xinglocker-ransomware-in-24-hours/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.001
+ruletype: SIGMA

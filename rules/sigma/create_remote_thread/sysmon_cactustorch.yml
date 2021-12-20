@@ -1,0 +1,42 @@
+
+title: CACTUSTORCH Remote Thread Creation
+author: '@SBousseaden (detection), Thomas Patzke (rule)'
+date: 2019/02/01
+description: Detects remote thread creation from CACTUSTORCH as described in references.
+detection:
+  SELECTION_1:
+    EventID: 8
+  SELECTION_2:
+    SourceImage:
+    - '*\System32\cscript.exe'
+    - '*\System32\wscript.exe'
+    - '*\System32\mshta.exe'
+    - '*\winword.exe'
+    - '*\excel.exe'
+  SELECTION_3:
+    TargetImage: '*\SysWOW64\\*'
+  SELECTION_4:
+    StartModule|re: ^$
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- unknown
+id: 2e4e488a-6164-4811-9ea1-f960c7359c40
+level: high
+logsource:
+  category: create_remote_thread
+  product: windows
+modified: 2021/11/12
+references:
+- https://twitter.com/SBousseaden/status/1090588499517079552
+- https://github.com/mdsecactivebreach/CACTUSTORCH
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1093
+- attack.t1055.012
+- attack.execution
+- attack.t1064
+- attack.t1059.005
+- attack.t1059.007
+- attack.t1218.005
+ruletype: SIGMA

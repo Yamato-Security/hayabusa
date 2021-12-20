@@ -1,0 +1,30 @@
+
+title: T1021 DCOM InternetExplorer.Application Iertutil DLL Hijack
+author: Roberto Rodriguez @Cyb3rWard0g, Open Threat Research (OTR)
+date: 2020/10/12
+description: Detects a threat actor creating a file named `iertutil.dll` in the `C:\Program
+  Files\Internet Explorer\` directory over the network for a DCOM InternetExplorer
+  DLL Hijack scenario.
+detection:
+  SELECTION_1:
+    EventID: 5145
+  SELECTION_2:
+    RelativeTargetName: '*\Internet Explorer\iertutil.dll'
+  SELECTION_3:
+    SubjectUserName: '*$'
+  condition: ((SELECTION_1 and SELECTION_2) and  not (SELECTION_3))
+falsepositives:
+- Unknown
+id: c39f0c81-7348-4965-ab27-2fde35a1b641
+level: critical
+logsource:
+  product: windows
+  service: security
+references:
+- https://threathunterplaybook.com/notebooks/windows/08_lateral_movement/WIN-201009183000.html
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1021.002
+- attack.t1021.003
+ruletype: SIGMA

@@ -1,0 +1,49 @@
+
+title: CobaltStrike Named Pipe
+author: Florian Roth, Wojciech Lesicki
+date: 2021/05/25
+description: Detects the creation of a named pipe as used by CobaltStrike
+detection:
+  SELECTION_1:
+    EventID: 17
+  SELECTION_2:
+    EventID: 18
+  SELECTION_3:
+    PipeName: '*\MSSE-*'
+  SELECTION_4:
+    PipeName: '*-server*'
+  SELECTION_5:
+    PipeName: \postex_*
+  SELECTION_6:
+    PipeName: \postex_ssh_*
+  SELECTION_7:
+    PipeName: \status_*
+  SELECTION_8:
+    PipeName: \msagent_*
+  condition: ((SELECTION_1 or SELECTION_2) and ((SELECTION_3 and SELECTION_4) or SELECTION_5
+    or SELECTION_6 or SELECTION_7 or SELECTION_8))
+falsepositives:
+- Unknown
+id: d5601f8c-b26f-4ab0-9035-69e11a8d4ad2
+level: critical
+logsource:
+  category: pipe_created
+  definition: Note that you have to configure logging for Named Pipe Events in Sysmon
+    config (Event ID 17 and Event ID 18). The basic configuration is in popular sysmon
+    configuration (https://github.com/SwiftOnSecurity/sysmon-config), but it is worth
+    verifying. You can also use other repo, e.g. https://github.com/Neo23x0/sysmon-config,
+    https://github.com/olafhartong/sysmon-modular. How to test detection? You can
+    always use Cobalt Strike, but also you can check powershell script from this site
+    https://svch0st.medium.com/guide-to-named-pipes-and-hunting-for-cobalt-strike-pipes-dc46b2c5f575
+  product: windows
+references:
+- https://twitter.com/d4rksystem/status/1357010969264873472
+- https://labs.f-secure.com/blog/detecting-cobalt-strike-default-modules-via-named-pipe-analysis/
+- https://github.com/Neo23x0/sigma/issues/253
+- https://blog.cobaltstrike.com/2021/02/09/learn-pipe-fitting-for-all-of-your-offense-projects/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1055
+ruletype: SIGMA

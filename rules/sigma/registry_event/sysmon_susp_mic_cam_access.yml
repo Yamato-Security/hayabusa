@@ -1,0 +1,48 @@
+
+title: Suspicious Camera and Microphone Access
+author: Den Iuzvyk
+date: 2020/06/07
+description: Detects Processes accessing the camera and microphone from suspicious
+  folder
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject: '*\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\\*'
+  SELECTION_5:
+    TargetObject: '*\NonPackaged*'
+  SELECTION_6:
+    TargetObject:
+    - '*microphone*'
+    - '*webcam*'
+  SELECTION_7:
+    TargetObject:
+    - '*:#Windows#Temp#*'
+    - '*:#$Recycle.bin#*'
+    - '*:#Temp#*'
+    - '*:#Users#Public#*'
+    - '*:#Users#Default#*'
+    - '*:#Users#Desktop#*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7)
+falsepositives:
+- Unlikely, there could be conferencing software running from a Temp folder accessing
+  the devices
+id: 62120148-6b7a-42be-8b91-271c04e281a3
+level: high
+logsource:
+  category: registry_event
+  product: windows
+modified: 2021/09/17
+references:
+- https://medium.com/@7a616368/can-you-track-processes-accessing-the-camera-and-microphone-7e6885b37072
+status: experimental
+tags:
+- attack.collection
+- attack.t1125
+- attack.t1123
+ruletype: SIGMA

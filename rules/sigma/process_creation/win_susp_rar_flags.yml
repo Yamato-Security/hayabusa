@@ -1,0 +1,38 @@
+
+title: Rar with Password or Compression Level
+author: '@ROxPinTeddy'
+date: 2020/05/12
+description: Detects the use of rar.exe, on the command line, to create an archive
+  with password protection or with a specific compression level. This is pretty indicative
+  of malicious actions.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '* -hp*'
+  SELECTION_3:
+    CommandLine:
+    - '* -m*'
+    - '* a *'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate use of Winrar command line version
+- Other command line tools, that use these flags
+id: faa48cae-6b25-4f00-a094-08947fef582f
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/07/27
+references:
+- https://labs.sentinelone.com/the-anatomy-of-an-apt-attack-and-cobaltstrike-beacons-encoded-configuration/
+- https://ss64.com/bash/rar.html
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1560.001/T1560.001.md
+status: experimental
+tags:
+- attack.collection
+- attack.t1560.001
+- attack.exfiltration
+- attack.t1002
+ruletype: SIGMA

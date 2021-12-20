@@ -1,0 +1,30 @@
+
+title: Protected Storage Service Access
+author: Roberto Rodriguez @Cyb3rWard0g
+date: 2019/08/10
+description: Detects access to a protected_storage service over the network. Potential
+  abuse of DPAPI to extract domain backup keys from Domain Controllers
+detection:
+  SELECTION_1:
+    EventID: 5145
+  SELECTION_2:
+    ShareName: '*IPC*'
+  SELECTION_3:
+    RelativeTargetName: protected_storage
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 45545954-4016-43c6-855e-eae8f1c369dc
+level: critical
+logsource:
+  product: windows
+  service: security
+modified: 2020/08/23
+references:
+- https://threathunterplaybook.com/notebooks/windows/06_credential_access/WIN-190620024610.html
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1021
+- attack.t1021.002
+ruletype: SIGMA

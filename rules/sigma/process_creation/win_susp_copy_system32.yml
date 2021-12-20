@@ -1,0 +1,37 @@
+
+title: Suspicious Copy From or To System32
+author: Florian Roth, Markus Neis
+date: 2020/07/03
+description: Detects a suspicious copy command that copies a system program from System32
+  to another directory on disk - sometimes used to use LOLBINs like certutil or desktopimgdownldr
+  to a different location with a different name
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '* /c copy*'
+    - '*xcopy*'
+  SELECTION_3:
+    CommandLine: '*\System32\\*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- False positives depend on scripts and administrative tools used in the monitored
+  environment
+- Admin scripts like https://www.itexperience.net/sccm-batch-files-and-32-bits-processes-on-64-bits-os/
+fields:
+- CommandLine
+- ParentCommandLine
+id: fff9d2b7-e11c-4a69-93d3-40ef66189767
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/09/05
+references:
+- https://www.hybrid-analysis.com/sample/8da5b75b6380a41eee3a399c43dfe0d99eeefaa1fd21027a07b1ecaa4cd96fdd?environmentId=120
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036.003
+ruletype: SIGMA

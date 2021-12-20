@@ -1,0 +1,32 @@
+
+title: User Couldn't Call a Privileged Service 'LsaRegisterLogonProcess'
+author: Roberto Rodriguez (source), Ilyas Ochkov (rule), oscd.community
+date: 2019/10/24
+description: The 'LsaRegisterLogonProcess' function verifies that the application
+  making the function call is a logon process by checking that it has the SeTcbPrivilege
+  privilege set. Possible Rubeus tries to get a handle to LSA.
+detection:
+  SELECTION_1:
+    EventID: 4673
+  SELECTION_2:
+    Service: LsaRegisterLogonProcess()
+  SELECTION_3:
+    Keywords: '0x8010000000000000'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 6daac7fc-77d1-449a-a71a-e6b4d59a0e54
+level: high
+logsource:
+  product: windows
+  service: security
+modified: 2021/08/14
+references:
+- https://posts.specterops.io/hunting-in-active-directory-unconstrained-delegation-forests-trusts-71f2b33688e1
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.privilege_escalation
+- attack.t1208
+- attack.t1558.003
+ruletype: SIGMA

@@ -1,0 +1,27 @@
+
+title: Suspicious PFX File Creation
+author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
+date: 2020/05/02
+description: A general detection for processes creating PFX files. This could be an
+  indicator of an adversary exporting a local certificate to a PFX file.
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: '*.pfx'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- System administrators managing certififcates.
+id: dca1b3e8-e043-4ec8-85d7-867f334b5724
+level: medium
+logsource:
+  category: file_event
+  product: windows
+references:
+- https://github.com/OTRF/detection-hackathon-apt29/issues/14
+- https://threathunterplaybook.com/evals/apt29/detections/6.B.1_6392C9F1-D975-4F75-8A70-433DEDD7F622.html
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1552.004
+ruletype: SIGMA

@@ -1,0 +1,81 @@
+
+title: Local Accounts Discovery
+author: Timur Zinniatullin, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/21
+description: Local accounts, System Owner/User discovery using operating systems utilities
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '*/c*'
+  SELECTION_11:
+    CommandLine: '*dir *'
+  SELECTION_12:
+    CommandLine: '*\Users\\*'
+  SELECTION_13:
+    CommandLine:
+    - '* rmdir *'
+  SELECTION_14:
+    Image:
+    - '*\net.exe'
+    - '*\net1.exe'
+  SELECTION_15:
+    CommandLine: '*user*'
+  SELECTION_16:
+    CommandLine:
+    - '*/domain*'
+    - '*/add*'
+    - '*/delete*'
+    - '*/active*'
+    - '*/expires*'
+    - '*/passwordreq*'
+    - '*/scriptpath*'
+    - '*/times*'
+    - '*/workstations*'
+  SELECTION_2:
+    Image: '*\whoami.exe'
+  SELECTION_3:
+    Image: '*\wmic.exe'
+  SELECTION_4:
+    CommandLine: '*useraccount*'
+  SELECTION_5:
+    CommandLine: '*get*'
+  SELECTION_6:
+    Image:
+    - '*\quser.exe'
+    - '*\qwinsta.exe'
+  SELECTION_7:
+    Image: '*\cmdkey.exe'
+  SELECTION_8:
+    CommandLine: '*/list*'
+  SELECTION_9:
+    Image: '*\cmd.exe'
+  condition: (SELECTION_1 and (((SELECTION_2 or (SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or SELECTION_6 or (SELECTION_7 and SELECTION_8) or (SELECTION_9 and SELECTION_10
+    and SELECTION_11 and SELECTION_12)) and  not (SELECTION_13)) or ((SELECTION_14
+    and SELECTION_15) and  not (SELECTION_16))))
+falsepositives:
+- Legitimate administrator or user enumerates local users for legitimate reason
+fields:
+- Image
+- CommandLine
+- User
+- LogonGuid
+- Hashes
+- ParentProcessGuid
+- ParentCommandLine
+id: 502b42de-4306-40b4-9596-6f590c81f073
+level: low
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/09/01
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1033/T1033.md
+status: experimental
+tags:
+- attack.discovery
+- attack.t1033
+- attack.t1087.001
+- attack.t1087
+ruletype: SIGMA

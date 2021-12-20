@@ -1,0 +1,72 @@
+
+title: Netsh Program Allowed with Suspcious Location
+author: Sander Wiebing, Jonhnathan Ribeiro, Daniil Yugoslavskiy, oscd.community
+date: 2020/05/25
+description: Detects Netsh commands that allows a suspcious application location on
+  Windows Firewall
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '*program=*'
+  SELECTION_11:
+    CommandLine:
+    - '*%TEMP%*'
+    - '*:\RECYCLER\\*'
+    - '*C:\$Recycle.bin\\*'
+    - '*:\SystemVolumeInformation\\*'
+    - '*C:\Windows\Temp\\*'
+    - '*C:\Temp\\*'
+    - '*C:\Users\Public\\*'
+    - '*C:\Users\Default\\*'
+    - '*C:\Users\Desktop\\*'
+    - '*\Downloads\\*'
+    - '*\Temporary Internet Files\Content.Outlook\\*'
+    - '*\Local Settings\Temporary Internet Files\\*'
+  SELECTION_12:
+    CommandLine:
+    - C:\Windows\Tasks\\*
+    - C:\Windows\debug\\*
+    - C:\Windows\fonts\\*
+    - C:\Windows\help\\*
+    - C:\Windows\drivers\\*
+    - C:\Windows\addins\\*
+    - C:\Windows\cursors\\*
+    - C:\Windows\system32\tasks\\*
+    - '%Public%\\*'
+  SELECTION_2:
+    EventID: 1
+  SELECTION_3:
+    Image: '*\netsh.exe'
+  SELECTION_4:
+    CommandLine: '*firewall*'
+  SELECTION_5:
+    CommandLine: '*add*'
+  SELECTION_6:
+    CommandLine: '*allowedprogram*'
+  SELECTION_7:
+    CommandLine: '*advfirewall*'
+  SELECTION_8:
+    CommandLine: '*rule*'
+  SELECTION_9:
+    CommandLine: '*action=allow*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and (SELECTION_6 or (SELECTION_7 and SELECTION_8 and SELECTION_9 and SELECTION_10)))
+    and (SELECTION_11 or SELECTION_12))
+falsepositives:
+- Legitimate administration
+id: a35f5a72-f347-4e36-8895-9869b0d5fc6d
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/11/28
+references:
+- https://www.virusradar.com/en/Win32_Kasidet.AD/description
+- https://www.hybrid-analysis.com/sample/07e789f4f2f3259e7559fdccb36e96814c2dbff872a21e1fa03de9ee377d581f?environmentId=100
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1089
+- attack.t1562.004
+ruletype: SIGMA

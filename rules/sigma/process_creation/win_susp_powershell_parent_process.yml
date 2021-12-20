@@ -1,0 +1,67 @@
+
+title: Suspicious PowerShell Parent Process
+author: Teymur Kheirkhabarov, Harish Segar (rule)
+date: 2020/03/20
+description: Detects a suspicious parents of powershell.exe
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage:
+    - '*\mshta.exe'
+    - '*\rundll32.exe'
+    - '*\regsvr32.exe'
+    - '*\services.exe'
+    - '*\winword.exe'
+    - '*\wmiprvse.exe'
+    - '*\powerpnt.exe'
+    - '*\excel.exe'
+    - '*\msaccess.exe'
+    - '*\mspub.exe'
+    - '*\visio.exe'
+    - '*\outlook.exe'
+    - '*\amigo.exe'
+    - '*\chrome.exe'
+    - '*\firefox.exe'
+    - '*\iexplore.exe'
+    - '*\microsoftedgecp.exe'
+    - '*\microsoftedge.exe'
+    - '*\browser.exe'
+    - '*\vivaldi.exe'
+    - '*\safari.exe'
+    - '*\sqlagent.exe'
+    - '*\sqlserver.exe'
+    - '*\sqlservr.exe'
+    - '*\w3wp.exe'
+    - '*\httpd.exe'
+    - '*\nginx.exe'
+    - '*\php-cgi.exe'
+    - '*\jbosssvc.exe'
+    - '*MicrosoftEdgeSH.exe'
+  SELECTION_3:
+    ParentImage: '*tomcat*'
+  SELECTION_4:
+    CommandLine:
+    - '*powershell*'
+    - '*pwsh*'
+  SELECTION_5:
+    Description: Windows PowerShell
+  SELECTION_6:
+    Product: PowerShell Core 6
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 or SELECTION_5
+    or SELECTION_6))
+falsepositives:
+- Other scripts
+id: 754ed792-634f-40ae-b3bc-e0448d33f695
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=26
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086
+ruletype: SIGMA

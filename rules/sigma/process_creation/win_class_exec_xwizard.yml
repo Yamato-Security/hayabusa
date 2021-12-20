@@ -1,0 +1,28 @@
+
+title: Custom Class Execution via Xwizard
+author: Ensar Şamil, @sblmsrsn, @oscd_initiative
+date: 2020/10/07
+description: Detects the execution of Xwizard tool with specific arguments which utilized
+  to run custom class properties.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\xwizard.exe'
+  SELECTION_3:
+    CommandLine|re: \{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\}
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 53d4bb30-3f36-4e8a-b078-69d36c4a79ff
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://lolbas-project.github.io/lolbas/Binaries/Xwizard/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218
+ruletype: SIGMA

@@ -1,0 +1,31 @@
+
+title: PowerShell ICMP Exfiltration
+author: Bartlomiej Czyz @bczyz1, oscd.community
+date: 2020/10/10
+description: Detects Exfiltration Over Alternative Protocol - ICMP. Adversaries may
+  steal data by exfiltrating it over an un-encrypted network protocol other than that
+  of the existing command and control channel.
+detection:
+  SELECTION_1:
+    ScriptBlockText: '*New-Object*'
+  SELECTION_2:
+    ScriptBlockText: '*System.Net.NetworkInformation.Ping*'
+  SELECTION_3:
+    ScriptBlockText: '*.Send(*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate usage of System.Net.NetworkInformation.Ping class
+id: 4c4af3cd-2115-479c-8193-6b8bfce9001c
+level: medium
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/10/16
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1048.003/T1048.003.md#atomic-test-2---exfiltration-over-alternative-protocol---icmp
+status: experimental
+tags:
+- attack.exfiltration
+- attack.t1048.003
+ruletype: SIGMA

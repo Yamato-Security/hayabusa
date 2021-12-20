@@ -1,0 +1,34 @@
+
+title: Execution via Diskshadow.exe
+author: Ivan Dyachkov, oscd.community
+date: 2020/10/07
+description: Detects using Diskshadow.exe to execute arbitrary code in text file
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\diskshadow.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*/s*'
+    - '*-s*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- False postitve can be if administrators use diskshadow tool in their infrastructure
+  as a main backup tool with scripts.
+fields:
+- CommandLine
+id: 0c2f8629-7129-4a8a-9897-7e0768f13ff2
+level: high
+logsource:
+  category: process_creation
+  definition: 'Requirements: Sysmon ProcessCreation logging must be activated and
+    Windows audit must Include command line in process creation events'
+  product: windows
+references:
+- https://bohops.com/2018/03/26/diskshadow-the-return-of-vss-evasion-persistence-and-active-directory-database-extraction/
+status: experimental
+tags:
+- attack.execution
+- attack.t1218
+ruletype: SIGMA

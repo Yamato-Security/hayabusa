@@ -1,0 +1,30 @@
+
+title: Shadow Copies Access via Symlink
+author: Teymur Kheirkhabarov, oscd.community
+date: 2019/10/22
+description: Shadow Copies storage symbolic link creation using operating systems
+  utilities
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*mklink*'
+  SELECTION_3:
+    CommandLine: '*HarddiskVolumeShadowCopy*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate administrator working with shadow copies, access for backup purposes
+id: 40b19fa6-d835-400c-b301-41f3a2baacaf
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1003.002
+- attack.t1003.003
+ruletype: SIGMA

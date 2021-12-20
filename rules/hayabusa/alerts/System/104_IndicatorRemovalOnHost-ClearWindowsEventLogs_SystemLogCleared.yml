@@ -1,0 +1,27 @@
+author: Eric Conrad, Yamato Security
+date: 2020/11/08
+modified:  2021/11/25
+
+title: System log file was cleared
+title_jp: システムログがクリアされた
+output: "User: %LogFileClearedSubjectUserName%"
+output_jp: "ユーザ名: %LogFileClearedSubjectUserName%"
+description: Somebody has cleared the System event log.
+description_jp: 誰かがシステムログをクリアした。
+
+id: f481a1f3-969e-4187-b3a5-b47c272bfebd
+level: high
+status: stable
+detection:
+    selection:
+        Channel: System
+        EventID: 104
+    condition: selection
+falsepositives:
+    - system administrator
+tags:
+    - attack.defense_evasion
+    - attack.t1070.001
+references:
+    - https://attack.mitre.org/techniques/T1070/001/
+ruletype: hayabusa

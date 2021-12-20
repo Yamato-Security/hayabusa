@@ -1,0 +1,56 @@
+
+title: Suspicious ScreenSave Change by Reg.exe
+author: frack113
+date: 2021/08/19
+description: |
+  Adversaries may establish persistence by executing malicious content triggered by user inactivity.
+  Screensavers are programs that execute after a configurable time of user inactivity and consist of Portable Executable (PE) files with a .scr file extension
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '*/v ScreenSaverIsSecure*'
+  SELECTION_11:
+    CommandLine: '*/d 0*'
+  SELECTION_12:
+    CommandLine: '*/v SCRNSAVE.EXE*'
+  SELECTION_13:
+    CommandLine: '*/d *'
+  SELECTION_14:
+    CommandLine: '*.scr*'
+  SELECTION_2:
+    Image: '*reg.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*HKEY_CURRENT_USER\Control Panel\Desktop*'
+    - '*HKCU\Control Panel\Desktop*'
+  SELECTION_4:
+    CommandLine: '*/t REG_SZ*'
+  SELECTION_5:
+    CommandLine: '*/f*'
+  SELECTION_6:
+    CommandLine: '*/v ScreenSaveActive*'
+  SELECTION_7:
+    CommandLine: '*/d 1*'
+  SELECTION_8:
+    CommandLine: '*/v ScreenSaveTimeout*'
+  SELECTION_9:
+    CommandLine: '*/d *'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and ((SELECTION_6 and SELECTION_7) or (SELECTION_8 and SELECTION_9) or (SELECTION_10
+    and SELECTION_11) or (SELECTION_12 and SELECTION_13 and SELECTION_14)))
+falsepositives:
+- GPO
+id: 0fc35fc3-efe6-4898-8a37-0b233339524f
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1546.002/T1546.002.md
+- https://www.welivesecurity.com/wp-content/uploads/2017/08/eset-gazer.pdf
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.t1546.002
+ruletype: SIGMA

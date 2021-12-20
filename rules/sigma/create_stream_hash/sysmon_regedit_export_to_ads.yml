@@ -1,0 +1,29 @@
+
+title: Exports Registry Key To an Alternate Data Stream
+author: Oddvar Moe, Sander Wiebing, oscd.community
+date: 2020/10/07
+description: Exports the target Registry key and hides it in the specified alternate
+  data stream.
+detection:
+  SELECTION_1:
+    EventID: 15
+  SELECTION_2:
+    Image: '*\regedit.exe'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+fields:
+- TargetFilename
+id: 0d7a9363-af70-4e7b-a3b7-1a176b7fbe84
+level: high
+logsource:
+  category: create_stream_hash
+  product: windows
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Regedit.yml
+- https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1564.004
+ruletype: SIGMA

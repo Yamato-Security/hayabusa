@@ -1,0 +1,34 @@
+
+title: DHCP Server Error Failed Loading the CallOut DLL
+author: Dimitrios Slamaris, @atc_project (fix)
+date: 2017/05/15
+description: This rule detects a DHCP server error in which a specified Callout DLL
+  (in registry) could not be loaded
+detection:
+  SELECTION_1:
+    EventID: 1031
+  SELECTION_2:
+    EventID: 1032
+  SELECTION_3:
+    EventID: 1034
+  SELECTION_4:
+    Provider_Name: Microsoft-Windows-DHCP-Server
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
+falsepositives:
+- Unknown
+id: 75edd3fd-7146-48e5-9848-3013d7f0282c
+level: critical
+logsource:
+  product: windows
+  service: system
+modified: 2021/10/13
+references:
+- https://blog.3or.de/mimilib-dhcp-server-callout-dll-injection.html
+- https://technet.microsoft.com/en-us/library/cc726884(v=ws.10).aspx
+- https://msdn.microsoft.com/de-de/library/windows/desktop/aa363389(v=vs.85).aspx
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1073
+- attack.t1574.002
+ruletype: SIGMA

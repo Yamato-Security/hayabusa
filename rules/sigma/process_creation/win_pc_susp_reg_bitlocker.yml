@@ -1,0 +1,44 @@
+
+title: Suspicious Reg Add BitLocker
+author: frack113
+date: 2021/11/15
+description: Suspicious add key for BitLocker
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*REG*'
+  SELECTION_3:
+    CommandLine: '*ADD*'
+  SELECTION_4:
+    CommandLine: '*HKLM\SOFTWARE\Policies\Microsoft\FVE*'
+  SELECTION_5:
+    CommandLine: '*/v*'
+  SELECTION_6:
+    CommandLine: '*/f*'
+  SELECTION_7:
+    CommandLine:
+    - '*EnableBDEWithNoTPM*'
+    - '*UseAdvancedStartup*'
+    - '*UseTPM*'
+    - '*UseTPMKey*'
+    - '*UseTPMKeyPIN*'
+    - '*RecoveryKeyMessageSource*'
+    - '*UseTPMPIN*'
+    - '*RecoveryKeyMessage*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7)
+falsepositives:
+- unknown
+id: 0e0255bf-2548-47b8-9582-c0955c9283f5
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://thedfirreport.com/2021/11/15/exchange-exploit-leads-to-domain-wide-ransomware/
+status: experimental
+tags:
+- attack.impact
+- attack.t1486
+ruletype: SIGMA

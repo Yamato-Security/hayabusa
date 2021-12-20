@@ -1,0 +1,33 @@
+
+title: Suspicious Calculator Usage
+author: Florian Roth
+date: 2019/02/09
+description: Detects suspicious use of calc.exe with command line parameters or in
+  a suspicious directory, which is likely caused by some PoC or detection evasion
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*\calc.exe *'
+  SELECTION_3:
+    EventID: 1
+  SELECTION_4:
+    Image: '*\calc.exe'
+  SELECTION_5:
+    Image: '*\Windows\Sys*'
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and  not
+    (SELECTION_5))))
+falsepositives:
+- Unknown
+id: 737e618a-a410-49b5-bec3-9e55ff7fbc15
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://twitter.com/ItsReallyNick/status/1094080242686312448
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+ruletype: SIGMA

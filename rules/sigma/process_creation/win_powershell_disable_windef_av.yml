@@ -1,0 +1,50 @@
+
+title: Powershell Used To Disable Windows Defender AV Security Monitoring
+author: ok @securonix invrep-de, oscd.community, frack113
+date: 2020/10/12
+description: Detects attackers attempting to disable Windows Defender using Powershell
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '*start=disabled*'
+  SELECTION_2:
+    Image: '*\powershell.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*-DisableBehaviorMonitoring $true*'
+    - '*-DisableRuntimeMonitoring $true*'
+  SELECTION_4:
+    CommandLine: '*sc*'
+  SELECTION_5:
+    CommandLine: '*stop*'
+  SELECTION_6:
+    CommandLine: '*WinDefend*'
+  SELECTION_7:
+    CommandLine: '*sc*'
+  SELECTION_8:
+    CommandLine: '*config*'
+  SELECTION_9:
+    CommandLine: '*WinDefend*'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and SELECTION_5
+    and SELECTION_6) or (SELECTION_7 and SELECTION_8 and SELECTION_9 and SELECTION_10)))
+falsepositives:
+- Minimal, for some older versions of dev tools, such as pycharm, developers were
+  known to sometimes disable Windows Defender to improve performance, but this generally
+  is not considered a good security practice.
+id: a7ee1722-c3c5-aeff-3212-c777e4733217
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/06/07
+references:
+- https://research.nccgroup.com/2020/06/23/wastedlocker-a-new-ransomware-variant-developed-by-the-evil-corp-group/
+- https://rvsec0n.wordpress.com/2020/01/24/malwares-that-bypass-windows-defender/
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1562.001/T1562.001.md
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1089
+- attack.t1562.001
+ruletype: SIGMA

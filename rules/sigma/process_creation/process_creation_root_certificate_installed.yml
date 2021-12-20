@@ -1,0 +1,40 @@
+
+title: Root Certificate Installed
+author: oscd.community, @redcanary, Zach Stanford @svch0st
+date: 2020/10/10
+description: Adversaries may install a root certificate on a compromised system to
+  avoid warnings when connecting to adversary controlled web servers.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*root*'
+  SELECTION_3:
+    Image: '*\certutil.exe'
+  SELECTION_4:
+    CommandLine: '*-addstore*'
+  SELECTION_5:
+    Image: '*\CertMgr.exe'
+  SELECTION_6:
+    CommandLine: '*/add*'
+  condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4) or (SELECTION_5
+    and SELECTION_6)))
+falsepositives:
+- Help Desk or IT may need to manually add a corporate Root CA on occasion. Need to
+  test if GPO push doesn't trigger FP
+id: 46591fae-7a4c-46ea-aec3-dff5e6d785dc
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/09/21
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1553.004/T1553.004.md
+related:
+- id: 42821614-9264-4761-acfc-5772c3286f76
+  type: derived
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1553.004
+ruletype: SIGMA

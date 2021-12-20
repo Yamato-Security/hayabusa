@@ -1,0 +1,36 @@
+
+title: Narrator's Feedback-Hub Persistence
+author: Dmitriy Lifanov, oscd.community
+date: 2019/10/25
+description: Detects abusing Windows 10 Narrator's Feedback-Hub
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    EventType: DeleteValue
+  SELECTION_5:
+    TargetObject: '*\AppXypsaf9f1qserqevf0sws76dx4k9a5206\Shell\open\command\DelegateExecute'
+  SELECTION_6:
+    TargetObject: '*\AppXypsaf9f1qserqevf0sws76dx4k9a5206\Shell\open\command\(Default)'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and ((SELECTION_4 and SELECTION_5)
+    or SELECTION_6))
+falsepositives:
+- unknown
+id: f663a6d9-9d1b-49b8-b2b1-0637914d199a
+level: high
+logsource:
+  category: registry_event
+  product: windows
+modified: 2020/09/06
+references:
+- https://giuliocomi.blogspot.com/2019/10/abusing-windows-10-narrators-feedback.html
+status: experimental
+tags:
+- attack.persistence
+- attack.t1060
+- attack.t1547.001
+ruletype: SIGMA

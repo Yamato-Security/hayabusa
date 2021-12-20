@@ -1,0 +1,30 @@
+
+title: CreateRemoteThread API and LoadLibrary
+author: Roberto Rodriguez @Cyb3rWard0g
+date: 2019/08/11
+description: Detects potential use of CreateRemoteThread api and LoadLibrary function
+  to inject DLL into a process
+detection:
+  SELECTION_1:
+    EventID: 8
+  SELECTION_2:
+    StartModule: '*\kernel32.dll'
+  SELECTION_3:
+    StartFunction: LoadLibraryA
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 052ec6f6-1adc-41e6-907a-f1c813478bee
+level: critical
+logsource:
+  category: create_remote_thread
+  product: windows
+modified: 2020/08/28
+references:
+- https://threathunterplaybook.com/notebooks/windows/05_defense_evasion/WIN-180719170510.html
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1055
+- attack.t1055.001
+ruletype: SIGMA

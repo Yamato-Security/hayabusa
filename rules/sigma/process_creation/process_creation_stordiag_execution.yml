@@ -1,0 +1,36 @@
+
+title: Execution via stordiag.exe
+author: Austin Songer (@austinsonger)
+date: 2021/10/21
+description: Detects the use of stordiag.exe to execute schtasks.exe systeminfo.exe
+  and fltmc.exe
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*\stordiag.exe'
+  SELECTION_3:
+    Image:
+    - '*\schtasks.exe'
+    - '*\systeminfo.exe'
+    - '*\fltmc.exe'
+  SELECTION_4:
+    ParentImage:
+    - c:\windows\system32\\*
+    - c:\windows\syswow64\\*
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+falsepositives:
+- Legitimate usage of stordiag.exe.
+id: 961e0abb-1b1e-4c84-a453-aafe56ad0d34
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://strontic.github.io/xcyclopedia/library/stordiag.exe-1F08FC87C373673944F6A7E8B18CD845.html
+- https://twitter.com/eral4m/status/1451112385041911809
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218
+ruletype: SIGMA

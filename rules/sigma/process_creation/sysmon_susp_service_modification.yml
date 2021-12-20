@@ -1,0 +1,38 @@
+
+title: Stop Or Remove Antivirus Service
+author: frack113
+date: 2021/07/07
+description: Adversaries may disable security tools to avoid possible detection of
+  their tools and activities by stopping antivirus service
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*Stop-Service *'
+    - '*Remove-Service *'
+  SELECTION_3:
+    CommandLine:
+    - '* McAfeeDLPAgentService*'
+    - '* Trend Micro Deep Security Manager*'
+    - '* TMBMServer*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- User
+- CommandLine
+- ParentCommandLine
+id: 6783aa9e-0dc3-49d4-a94a-8b39c5fd700b
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1562.001/T1562.001.md
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1562.001
+ruletype: SIGMA

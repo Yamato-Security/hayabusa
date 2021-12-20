@@ -1,0 +1,29 @@
+
+title: Execution via CL_Mutexverifiers.ps1
+author: oscd.community, Natalia Shornikova
+date: 2020/10/14
+description: Detects Execution via runAfterCancelProcess in CL_Mutexverifiers.ps1
+  module
+detection:
+  SELECTION_1:
+    ScriptBlockText: '*CL_Mutexverifiers.ps1*'
+  SELECTION_2:
+    ScriptBlockText: '*runAfterCancelProcess*'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: 39776c99-1c7b-4ba0-b5aa-641525eee1a4
+level: high
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/10/16
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSScripts/CL_mutexverifiers.yml
+- https://twitter.com/pabraeken/status/995111125447577600
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1216
+ruletype: SIGMA

@@ -1,0 +1,25 @@
+author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logon Type 13 - CachedUnlock
+title_jp: ログオンタイプ 13 - キャッシュされたアンロック
+output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%  :  (Warning: Credentials are stored in memory)'
+output_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  ポート番号: %IpPort%  :  ログオンID: %TargetLogonId%  :  (注意: 資格情報がメモリに格納される)'
+description: Prints logon information. 
+description_jp: Prints logon information.
+
+id: e50e3952-06d9-44a8-ab07-7a41c9801d78
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 13
+falsepositives:
+    - normal system usage
+tags:
+references:
+sample-evtx: 
+ruletype: hayabusa

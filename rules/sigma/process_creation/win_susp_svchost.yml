@@ -1,0 +1,37 @@
+
+title: Suspicious Svchost Process
+author: Florian Roth
+date: 2017/08/15
+description: Detects a suspicious svchost process start
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\svchost.exe'
+  SELECTION_3:
+    ParentImage:
+    - '*\services.exe'
+    - '*\MsMpEng.exe'
+    - '*\Mrt.exe'
+    - '*\rpcnet.exe'
+    - '*\svchost.exe'
+  SELECTION_4:
+    ParentImage|re: ^$
+  condition: (SELECTION_1 and (SELECTION_2 and  not (SELECTION_3)) and  not (SELECTION_4))
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: 01d2e2a1-5f09-44f7-9fc1-24faa7479b6d
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/08/28
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036.005
+- attack.t1036
+ruletype: SIGMA

@@ -1,0 +1,59 @@
+
+title: Impacket Lateralization Detection
+author: Ecco, oscd.community, Jonhnathan Ribeiro
+date: 2019/09/03
+description: Detects wmiexec/dcomexec/atexec/smbexec from Impacket framework
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '*Windows\Temp\\*'
+  SELECTION_2:
+    CommandLine: '*cmd.exe*'
+  SELECTION_3:
+    CommandLine: '*&1*'
+  SELECTION_4:
+    ParentImage:
+    - '*\wmiprvse.exe'
+    - '*\mmc.exe'
+    - '*\explorer.exe'
+    - '*\services.exe'
+  SELECTION_5:
+    CommandLine: '*/Q*'
+  SELECTION_6:
+    CommandLine: '*/c*'
+  SELECTION_7:
+    CommandLine: '*\\\\127.0.0.1\\*'
+  SELECTION_8:
+    ParentCommandLine:
+    - '*svchost.exe -k netsvcs*'
+    - '*taskeng.exe*'
+  SELECTION_9:
+    CommandLine: '*/C*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and ((SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7) or (SELECTION_8 and SELECTION_9 and SELECTION_10)))
+falsepositives:
+- pentesters
+fields:
+- CommandLine
+- ParentCommandLine
+id: 10c14723-61c7-4c75-92ca-9af245723ad2
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/09/01
+references:
+- https://github.com/SecureAuthCorp/impacket/blob/master/examples/wmiexec.py
+- https://github.com/SecureAuthCorp/impacket/blob/master/examples/atexec.py
+- https://github.com/SecureAuthCorp/impacket/blob/master/examples/smbexec.py
+- https://github.com/SecureAuthCorp/impacket/blob/master/examples/dcomexec.py
+status: experimental
+tags:
+- attack.execution
+- attack.t1047
+- attack.lateral_movement
+- attack.t1175
+- attack.t1021.003
+- attack.t1021
+ruletype: SIGMA

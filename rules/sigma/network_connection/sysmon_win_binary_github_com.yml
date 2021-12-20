@@ -1,0 +1,38 @@
+
+title: Microsoft Binary Github Communication
+author: Michael Haag (idea), Florian Roth (rule)
+date: 2017/08/24
+description: Detects an executable in the Windows folder accessing github.com
+detection:
+  SELECTION_1:
+    EventID: 3
+  SELECTION_2:
+    Initiated: 'true'
+  SELECTION_3:
+    DestinationHostname:
+    - '*.github.com'
+    - '*.githubusercontent.com'
+  SELECTION_4:
+    Image: C:\Windows\\*
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Unknown
+- '@subTee in your network'
+id: 635dbb88-67b3-4b41-9ea5-a3af2dd88153
+level: high
+logsource:
+  category: network_connection
+  product: windows
+modified: 2020/08/24
+references:
+- https://twitter.com/M_haggis/status/900741347035889665
+- https://twitter.com/M_haggis/status/1032799638213066752
+- https://github.com/EmpireProject/Empire/blob/e37fb2eef8ff8f5a0a689f1589f424906fe13055/data/module_source/exfil/Invoke-ExfilDataToGitHub.ps1
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1105
+- attack.exfiltration
+- attack.t1567.001
+- attack.t1048
+ruletype: SIGMA

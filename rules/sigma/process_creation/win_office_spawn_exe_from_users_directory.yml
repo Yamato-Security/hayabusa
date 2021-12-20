@@ -1,0 +1,46 @@
+
+title: MS Office Product Spawning Exe in User Dir
+author: Jason Lynch
+date: 2019/04/02
+description: Detects an executable in the users directory started from Microsoft Word,
+  Excel, Powerpoint, Publisher or Visio
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage:
+    - '*\WINWORD.EXE'
+    - '*\EXCEL.EXE'
+    - '*\POWERPNT.exe'
+    - '*\MSPUB.exe'
+    - '*\VISIO.exe'
+  SELECTION_3:
+    Image: C:\users\\*
+  SELECTION_4:
+    Image: '*.exe'
+  SELECTION_5:
+    Image: '*\Teams.exe'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3 and SELECTION_4) and  not
+    (SELECTION_5))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: aa3a6f94-890e-4e22-b634-ffdfd54792cc
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/04/01
+references:
+- sha256=23160972c6ae07f740800fa28e421a81d7c0ca5d5cab95bc082b4a986fbac57c
+- https://blog.morphisec.com/fin7-not-finished-morphisec-spots-new-campaign
+status: experimental
+tags:
+- attack.execution
+- attack.t1204
+- attack.t1204.002
+- attack.g0046
+- car.2013-05-002
+ruletype: SIGMA
