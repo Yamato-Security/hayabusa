@@ -3,11 +3,14 @@ extern crate yaml_rust;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
+use crate::detections::print::ERROR_LOG_PATH;
 use crate::filter::RuleExclude;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io;
+use std::io::BufWriter;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use yaml_rust::Yaml;
