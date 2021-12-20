@@ -70,7 +70,12 @@ fn get_alias_value_in_record(
         }
         None => {
             AlertMessage::alert(
-                &mut std::io::stderr().lock(),
+                &mut BufWriter::new(
+                    OpenOptions::new()
+                        .append(true)
+                        .open(ERROR_LOG_PATH.to_string())
+                        .unwrap(),
+                ),
                 match is_by_alias {
                     true => format!(
             "count by clause alias value not found in count process. rule file:{} EventID:{}",
