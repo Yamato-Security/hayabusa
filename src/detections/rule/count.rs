@@ -1,4 +1,5 @@
 use crate::detections::print::AlertMessage;
+use crate::detections::print::ERROR_LOG_PATH;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::AggregationParseInfo;
 use crate::detections::rule::Message;
@@ -6,6 +7,8 @@ use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
 use serde_json::Value;
+use std::fs::OpenOptions;
+use std::io::BufWriter;
 use std::num::ParseIntError;
 use std::path::Path;
 
@@ -183,7 +186,12 @@ impl TimeFrameInfo {
             tnum.retain(|c| c != 'd');
         } else {
             AlertMessage::alert(
-                &mut std::io::stderr().lock(),
+                &mut BufWriter::new(
+                    OpenOptions::new()
+                        .append(true)
+                        .open(ERROR_LOG_PATH.to_string())
+                        .unwrap(),
+                ),
                 format!("Timeframe is invalid. Input value:{}", value),
             )
             .ok();
@@ -215,8 +223,13 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
         }
         Err(err) => {
             AlertMessage::alert(
-                &mut std::io::stderr().lock(),
-                format!("Timeframe number is invalid. timeframe.{}", err),
+                &mut BufWriter::new(
+                    OpenOptions::new()
+                        .append(true)
+                        .open(ERROR_LOG_PATH.to_string())
+                        .unwrap(),
+                ),
+                format!("Timeframe number is invalid. timeframe: {}", err),
             )
             .ok();
             return Option::None;

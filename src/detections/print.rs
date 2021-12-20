@@ -2,13 +2,20 @@ extern crate lazy_static;
 use crate::detections::configs;
 use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Local, TimeZone, Utc};
 use lazy_static::lazy_static;
+use linecount::count_lines;
 use regex::Regex;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::env;
+use std::fs::create_dir;
+use std::fs::remove_file;
+use std::fs::File;
+use std::io::BufWriter;
 use std::io::{self, Write};
+use std::path::Path;
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -32,6 +39,15 @@ pub struct AlertMessage {}
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
+    pub static ref ERROR_LOG_PATH: String = format!(
+        "./logs/errorlog-{}.log",
+        Local::now().format("%Y%m%d_%H%M%S")
+    );
+    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("quiet-errors");
 }
 
 impl Message {
@@ -180,11 +196,68 @@ impl Message {
 }
 
 impl AlertMessage {
-    pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        writeln!(w, "[ERROR] {}", contents)
+    //対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
+    pub fn create_error_log(path_str: String) {
+        let path = Path::new(&path_str);
+        if !path.parent().unwrap().exists() {
+            create_dir(path.parent().unwrap()).ok();
+        }
+        // 1行目は必ず実行したコマンド情報を入れておく。
+        let mut ret = BufWriter::new(File::create(path).unwrap());
+
+        ret.write(
+            format!(
+                "user input: {:?}\n",
+                format_args!(
+                    "{}",
+                    env::args()
+                        .map(|arg| arg)
+                        .collect::<Vec<String>>()
+                        .join(" ")
+                )
+            )
+            .as_bytes(),
+        )
+        .unwrap();
+        ret.flush().ok();
     }
+
+    /// ERRORメッセージを表示する関数。error_log_flagでfalseの場合は外部へのエラーログの書き込みは行わずに指定されたwを用いた出力のみ行う。trueの場合はwを用いた出力を行わずにエラーログへの出力を行う
+    pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
+        if *QUIET_ERRORS_FLAG {
+            writeln!(w, "[ERROR] {}", contents)
+        } else {
+            Ok(())
+        }
+    }
+
+    // WARNメッセージを表示する関数
     pub fn warn<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        writeln!(w, "[WARN] {}", contents)
+        if *QUIET_ERRORS_FLAG {
+            writeln!(w, "[WARN] {}", contents)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// エラーログへのERRORメッセージの出力数を確認して、0であったらファイルを削除する。1以上あればエラーを書き出した旨を標準出力に表示する
+    pub fn output_error_log_exist() {
+        let error_log_path_str = ERROR_LOG_PATH.to_string();
+        // 1行しかなかった場合は最初に書いたコマンド情報のみと判断して削除する
+        if count_lines(File::open(&error_log_path_str).unwrap()).unwrap() == 1 {
+            if remove_file(&error_log_path_str).is_err() {
+                AlertMessage::alert(
+                    &mut std::io::stderr().lock(),
+                    format!("failed to remove file. filepath:{}", &error_log_path_str),
+                )
+                .ok();
+            }
+            return;
+        }
+        println!(
+            "Generated error was output to {}. Please see the file for details.",
+            &error_log_path_str
+        );
     }
 }
 
