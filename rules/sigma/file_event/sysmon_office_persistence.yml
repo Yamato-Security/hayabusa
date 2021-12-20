@@ -1,5 +1,6 @@
 
 title: Microsoft Office Add-In Loading
+ruletype: Sigma
 author: NVISO
 date: 2020/05/11
 description: Detects add-ins that load when Microsoft Word or Excel starts (.wll/.xll
@@ -30,12 +31,11 @@ level: high
 logsource:
   category: file_event
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - Internal Research
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1137
 - attack.t1137.006
-ruletype: SIGMA

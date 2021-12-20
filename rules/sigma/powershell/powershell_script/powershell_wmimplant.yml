@@ -1,5 +1,6 @@
 
 title: WMImplant Hack Tool
+ruletype: Sigma
 author: NVISO
 date: 2020/03/26
 description: Detects parameters used by WMImplant
@@ -42,4 +43,3 @@ tags:
 - attack.t1047
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious Service Binary Directory
+ruletype: Sigma
 author: Florian Roth
 date: 2021/03/09
 description: Detects a service binary running in a suspicious directory
@@ -37,4 +38,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1202
-ruletype: SIGMA

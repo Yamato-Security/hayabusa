@@ -1,5 +1,6 @@
 
 title: Suspicious In-Memory Module Execution
+ruletype: Sigma
 author: Perez Diego (@darkquassar), oscd.community, Jonhnathan Ribeiro
 date: 2019/10/27
 description: Detects the access to processes by other suspicious processes which have
@@ -16,8 +17,6 @@ detection:
   SELECTION_1:
     EventID: 10
   SELECTION_10:
-    CallTrace: '*UNKNOWN*'
-  SELECTION_11:
     GrantedAccess:
     - '0x1F0FFF'
     - '0x1F1FFF'
@@ -27,7 +26,7 @@ detection:
     - '0x1F2FFF'
     - '0x1F3FFF'
     - '0x1FFFFF'
-  SELECTION_12:
+  SELECTION_11:
     SourceImage:
     - '*\Windows\System32\sdiagnhost.exe'
     - '*\procexp64.exe'
@@ -35,25 +34,49 @@ detection:
     - '*\Microsoft VS Code\Code.exe'
     - '*\aurora-agent-64.exe'
     - '*\aurora-agent.exe'
+    - '*\git\usr\bin\sh.exe'
+    - '*\IDE\devenv.exe'
+    - '*\GitHubDesktop\Update.exe'
+    - '*\RuntimeBroker.exe'
+    - '*\backgroundTaskHost.exe'
+  SELECTION_12:
+    SourceImage:
+    - C:\Program Files (x86)\\*
+    - C:\Program Files\\*
+    - C:\Windows\Microsoft.NET\Framework\\*\NGenTask.exe*
+    - C:\Program Files (x86)\Microsoft Visual Studio\\*
+    - C:\Program Files\Microsoft Visual Studio\\*
+    - C:\Windows\Microsoft.NET\Framework*
+    - C:\WINDOWS\System32\DriverStore\\*
+    - C:\Windows\System32\WindowsPowerShell\\*
+  SELECTION_13:
+    SourceImage:
+    - C:\Users\\*\AppData\Local\Programs\Microsoft VS Code\Code.exe
+    - C:\WINDOWS\system32\taskhostw.exe
+    - C:\WINDOWS\system32\ctfmon.exe
+    - C:\WINDOWS\system32\NhNotifSys.exe
+  SELECTION_14:
+    TargetImage:
+    - C:\Windows\System32\RuntimeBroker.exe
   SELECTION_2:
-    EventID: 10
-  SELECTION_3:
     CallTrace: '*C:\WINDOWS\SYSTEM32\ntdll.dll+*'
-  SELECTION_4:
+  SELECTION_3:
     CallTrace: '*|C:\WINDOWS\System32\KERNELBASE.dll+*'
-  SELECTION_5:
+  SELECTION_4:
     CallTrace: '*|UNKNOWN(*'
-  SELECTION_6:
+  SELECTION_5:
     CallTrace: '*)*'
-  SELECTION_7:
+  SELECTION_6:
     CallTrace: '*UNKNOWN(*'
-  SELECTION_8:
+  SELECTION_7:
     CallTrace: '*)|UNKNOWN(*'
-  SELECTION_9:
+  SELECTION_8:
     CallTrace: '*)'
-  condition: (SELECTION_1 and (SELECTION_2 and (((SELECTION_3 and SELECTION_4 and
-    SELECTION_5 and SELECTION_6) or (SELECTION_7 and SELECTION_8 and SELECTION_9))
-    or (SELECTION_10 and SELECTION_11))) and  not (SELECTION_12))
+  SELECTION_9:
+    CallTrace: '*UNKNOWN*'
+  condition: (SELECTION_1 and (((SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7 and SELECTION_8)) or (SELECTION_9 and SELECTION_10))
+    and  not (SELECTION_11 or SELECTION_12 or SELECTION_13 or SELECTION_14))
 falsepositives:
 - SysInternals Process Explorer
 fields:
@@ -67,7 +90,7 @@ level: medium
 logsource:
   category: process_access
   product: windows
-modified: 2021/11/20
+modified: 2021/12/07
 references:
 - https://azure.microsoft.com/en-ca/blog/detecting-in-memory-attacks-with-sysmon-and-azure-security-center/
 status: experimental
@@ -77,4 +100,3 @@ tags:
 - attack.t1055.001
 - attack.t1055.002
 - attack.t1055
-ruletype: SIGMA

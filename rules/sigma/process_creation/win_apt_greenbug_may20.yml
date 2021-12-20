@@ -1,5 +1,6 @@
 
 title: Greenbug Campaign Indicators
+ruletype: Sigma
 author: Florian Roth
 date: 2020/05/20
 description: Detects tools and process executions as observed in a Greenbug campaign
@@ -60,4 +61,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.005
-ruletype: SIGMA

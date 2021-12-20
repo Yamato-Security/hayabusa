@@ -1,5 +1,6 @@
 
 title: SyncAppvPublishingServer Execution to Bypass Powershell Restriction
+ruletype: Sigma
 author: Ensar Şamil, @sblmsrsn, OSCD Community
 date: 2020/10/05
 description: Detects SyncAppvPublishingServer process execution which usually utilized
@@ -27,4 +28,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

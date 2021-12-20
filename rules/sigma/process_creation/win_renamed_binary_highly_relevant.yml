@@ -1,5 +1,6 @@
 
 title: Highly Relevant Renamed Binary
+ruletype: Sigma
 author: Matthew Green - @mgreen27, Florian Roth
 date: 2019/06/15
 description: Detects the execution of a renamed binary often used by attackers or
@@ -46,14 +47,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://attack.mitre.org/techniques/T1036/
 - https://mgreen27.github.io/posts/2019/05/12/BinaryRename.html
 - https://mgreen27.github.io/posts/2019/05/29/BinaryRename2.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.003
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: SMB Relay Attack Tools
+ruletype: Sigma
 author: Florian Roth
 date: 2021/07/24
 description: Detects different hacktools used for relay attacks on Windows for privilege
@@ -49,4 +50,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1557.001
-ruletype: SIGMA

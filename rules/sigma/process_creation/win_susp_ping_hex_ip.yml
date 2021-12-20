@@ -1,5 +1,6 @@
 
 title: Ping Hex IP
+ruletype: Sigma
 author: Florian Roth
 date: 2018/03/23
 description: Detects a ping command that uses a hex encoded IP address
@@ -29,4 +30,3 @@ tags:
 - attack.defense_evasion
 - attack.t1140
 - attack.t1027
-ruletype: SIGMA

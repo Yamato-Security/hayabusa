@@ -1,5 +1,6 @@
 
 title: Bypass UAC via WSReset.exe
+ruletype: Sigma
 author: E.M. Anhaus (originally from Atomic Blue Detections, Tony Lambert), oscd.community
 date: 2019/10/24
 description: Identifies use of WSReset.exe to bypass User Account Control. Adversaries
@@ -19,12 +20,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/11
+modified: 2021/11/27
 references:
 - https://eqllib.readthedocs.io/en/latest/analytics/532b5ed4-7930-11e9-8f5c-d46d6d62a49e.html
-status: experimental
+status: test
 tags:
 - attack.privilege_escalation
 - attack.t1548.002
 - attack.t1088
-ruletype: SIGMA

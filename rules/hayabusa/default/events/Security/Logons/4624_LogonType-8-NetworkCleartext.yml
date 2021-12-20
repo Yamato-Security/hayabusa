@@ -1,0 +1,27 @@
+author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logon Type 8 - NetworkCleartext
+title_jp: ログオンタイプ 8 - ネットワーク平文
+output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%'
+output_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  ポート番号: %IpPort%  :  ログオンID: %TargetLogonId%'
+description: Prints logon information. Despite the naming NetworkCleartext, the password is not unhashed. It is usually for IIS Basic Authentication.
+description_jp: Prints logon information
+
+id: 7ff51227-6a10-49e6-a58b-b9f4ac32b138
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 8
+    condition: selection
+falsepositives:
+    - normal system usage
+tags:
+references:
+sample-evtx: 
+logsource: default
+ruletype: Hayabusa

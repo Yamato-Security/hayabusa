@@ -1,5 +1,6 @@
 
 title: Run Once Task Configuration in Registry
+ruletype: Sigma
 author: Avneet Singh @v3t0_, oscd.community
 date: 2020/11/15
 description: Rule to detect the configuration of Run Once registry key. Configured
@@ -23,11 +24,11 @@ level: medium
 logsource:
   category: registry_event
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/pabraeken/status/990717080805789697
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Runonce.yml
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

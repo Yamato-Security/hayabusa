@@ -1,5 +1,6 @@
 
 title: Suspicious Code Page Switch
+ruletype: Sigma
 author: Florian Roth, Jonhnathan Ribeiro, oscd.community
 date: 2019/10/14
 description: Detects a code page switch in command line or batch scripts to a rare
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.t1036
 - attack.defense_evasion
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Renamed SysInternals Debug View
+ruletype: Sigma
 author: Florian Roth
 date: 2020/05/28
 description: Detects suspicious renamed SysInternals DebugView execution
@@ -22,10 +23,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.epicturla.com/blog/sysinturla
-status: experimental
+status: test
 tags:
 - attack.resource_development
 - attack.t1588.002
-ruletype: SIGMA

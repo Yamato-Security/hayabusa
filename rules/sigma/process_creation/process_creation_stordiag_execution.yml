@@ -1,5 +1,6 @@
 
 title: Execution via stordiag.exe
+ruletype: Sigma
 author: Austin Songer (@austinsonger)
 date: 2021/10/21
 description: Detects the use of stordiag.exe to execute schtasks.exe systeminfo.exe
@@ -33,4 +34,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

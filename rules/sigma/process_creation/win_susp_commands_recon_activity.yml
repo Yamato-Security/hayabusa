@@ -1,5 +1,6 @@
 
 title: Reconnaissance Activity with Net Command
+ruletype: Sigma
 author: Florian Roth, Markus Neis
 date: 2018/08/22
 description: Detects a set of commands often used in recon stages by different attack
@@ -30,6 +31,7 @@ detection:
     - '*\net1 user net localgroup administrators'
   condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3)) | count() by CommandLine
     > 4
+  timeframe: 15s
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
   environment
@@ -49,4 +51,3 @@ tags:
 - attack.t1087
 - attack.t1082
 - car.2016-03-001
-ruletype: SIGMA

@@ -1,0 +1,38 @@
+
+title: Operation Wocao Activity
+ruletype: Sigma
+author: Florian Roth, frack113
+date: 2019/12/20
+description: Detects activity mentioned in Operation Wocao report
+detection:
+  SELECTION_1:
+    EventID: 4799
+  SELECTION_2:
+    TargetUserName: Administr*
+  SELECTION_3:
+    CallerProcessName: '*\checkadmin.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Administrators that use checkadmin.exe tool to enumerate local administrators
+id: 74ad4314-482e-4c3e-b237-3f7ed3b9ca8d
+level: high
+logsource:
+  product: windows
+  service: security
+modified: 2021/09/19
+references:
+- https://www.fox-it.com/en/news/whitepapers/operation-wocao-shining-a-light-on-one-of-chinas-hidden-hacking-groups/
+- https://twitter.com/SBousseaden/status/1207671369963646976
+status: experimental
+tags:
+- attack.discovery
+- attack.t1012
+- attack.defense_evasion
+- attack.t1036.004
+- attack.t1036
+- attack.t1027
+- attack.execution
+- attack.t1053.005
+- attack.t1053
+- attack.t1059.001
+- attack.t1086

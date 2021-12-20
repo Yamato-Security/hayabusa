@@ -1,5 +1,6 @@
 
 title: Run Whoami as SYSTEM
+ruletype: Sigma
 author: Teymur Kheirkhabarov
 date: 2019/10/23
 description: Detects a whoami.exe executed by LOCAL SYSTEM. This may be a sign of
@@ -29,4 +30,3 @@ tags:
 - attack.privilege_escalation
 - attack.discovery
 - attack.t1033
-ruletype: SIGMA

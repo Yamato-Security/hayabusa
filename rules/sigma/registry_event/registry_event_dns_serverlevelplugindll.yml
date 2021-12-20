@@ -1,5 +1,6 @@
 
 title: DNS ServerLevelPluginDll Install
+ruletype: Sigma
 author: Florian Roth
 date: 2017/05/08
 description: Detects the installation of a plugin DLL via ServerLevelPluginDll parameter
@@ -38,4 +39,3 @@ tags:
 - attack.t1073
 - attack.t1574.002
 - attack.t1112
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Dumpert Process Dumper
+ruletype: Sigma
 author: Florian Roth
 date: 2020/02/04
 description: Detects the use of Dumpert process dumper, which dumps the lsass.exe
@@ -29,4 +30,3 @@ tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.001
-ruletype: SIGMA

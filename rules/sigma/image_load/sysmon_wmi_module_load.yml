@@ -1,5 +1,6 @@
 
 title: WMI Modules Loaded
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/08/10
 description: Detects non wmiprvse loading WMI modules
@@ -37,6 +38,9 @@ detection:
     - '*\systeminfo.exe'
     - '*\nvcontainer.exe'
     - '*C:\Windows\System32\wbem\WMIC.exe'
+    - '*\explorer.exe'
+    - '*\opera_autoupdate.exe'
+    - '*\MsMpEng.exe'
   SELECTION_4:
     Image:
     - C:\Program Files\\*
@@ -50,15 +54,14 @@ fields:
 - Image
 - ImageLoaded
 id: 671bb7e3-a020-4824-a00e-2ee5b55f385e
-level: medium
+level: informational
 logsource:
   category: image_load
   product: windows
-modified: 2021/11/20
+modified: 2021/11/25
 references:
 - https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190811201010.html
 status: experimental
 tags:
 - attack.execution
 - attack.t1047
-ruletype: SIGMA

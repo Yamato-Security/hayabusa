@@ -1,5 +1,6 @@
 
 title: Run PowerShell Script from Redirected Input Stream
+ruletype: Sigma
 author: Moriarty Meng (idea), Anton Kutepov (rule), oscd.community
 date: 2020/10/17
 description: Detects PowerShell script execution via input stream redirect
@@ -18,12 +19,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/LOLUtilz/OSBinaries/Powershell.yml
 - https://twitter.com/Moriarty_Meng/status/984380793383370752
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.execution
 - attack.t1059
-ruletype: SIGMA

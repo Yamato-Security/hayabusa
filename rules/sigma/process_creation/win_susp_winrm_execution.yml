@@ -1,5 +1,6 @@
 
 title: Remote Code Execute via Winrm.vbs
+ruletype: Sigma
 author: Julia Fomina, oscd.community
 date: 2020/10/07
 description: Detects an attempt to execute code or create service on remote host via
@@ -23,11 +24,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/bohops/status/994405551751815170
 - https://redcanary.com/blog/lateral-movement-winrm-wmi/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1216
-ruletype: SIGMA

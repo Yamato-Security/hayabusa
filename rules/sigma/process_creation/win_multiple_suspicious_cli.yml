@@ -1,5 +1,6 @@
 
 title: Quick Execution of a Series of Suspicious Commands
+ruletype: Sigma
 author: juju4
 date: 2019/01/16
 description: Detects multiple suspicious process in a limited timeframe
@@ -47,6 +48,7 @@ detection:
     - '*icacls.exe*'
     - '*diskpart.exe*'
   condition: (SELECTION_1 and SELECTION_2) | count() by MachineName > 5
+  timeframe: 5m
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
   environment
@@ -63,4 +65,3 @@ tags:
 - car.2013-04-002
 - attack.execution
 - attack.t1059
-ruletype: SIGMA

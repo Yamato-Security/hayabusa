@@ -1,5 +1,6 @@
 
 title: UAC Bypass Abusing Winsat Path Parsing - Process
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/08/30
 description: Detects the pattern of UAC Bypass using a path parsing issue in winsat.exe
@@ -30,4 +31,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1548.002
-ruletype: SIGMA

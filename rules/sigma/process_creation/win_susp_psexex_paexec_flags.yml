@@ -1,5 +1,6 @@
 
 title: PsExec/PAExec Flags
+ruletype: Sigma
 author: Florian Roth
 date: 2021/05/22
 description: Detects suspicious flags used by PsExec and PAExec but no usual program
@@ -7,28 +8,24 @@ description: Detects suspicious flags used by PsExec and PAExec but no usual pro
 detection:
   SELECTION_1:
     EventID: 1
-  SELECTION_10:
+  SELECTION_2:
+    CommandLine:
+    - '* -s cmd.exe'
+    - '* -s -i cmd.exe'
+  SELECTION_3:
+    CommandLine: '*accepteula*'
+  SELECTION_4:
+    CommandLine: '* -u *'
+  SELECTION_5:
+    CommandLine: '* -p *'
+  SELECTION_6:
+    CommandLine: '* \\\*'
+  SELECTION_7:
     CommandLine:
     - '*paexec*'
     - '*PsExec*'
-  SELECTION_2:
-    EventID: 1
-  SELECTION_3:
-    CommandLine: '*\\127.0.0.1*'
-  SELECTION_4:
-    CommandLine: '* -s *'
-  SELECTION_5:
-    CommandLine: '*cmd.exe*'
-  SELECTION_6:
-    CommandLine: '* /accepteula *'
-  SELECTION_7:
-    CommandLine: '*cmd /c *'
-  SELECTION_8:
-    CommandLine: '* -u *'
-  SELECTION_9:
-    CommandLine: '* -p *'
-  condition: (SELECTION_1 and (SELECTION_2 and ((SELECTION_3 and SELECTION_4 and SELECTION_5)
-    or (SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9))) and  not (SELECTION_10))
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)) and  not (SELECTION_7))
 falsepositives:
 - Weird admins that rename their tools
 - Software companies that bundle PsExec/PAExec with their software and rename it,
@@ -38,6 +35,7 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/23
 references:
 - https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
 - https://www.poweradmin.com/paexec/
@@ -46,4 +44,3 @@ status: experimental
 tags:
 - attack.develop_capabilities
 - attack.t1587.001
-ruletype: SIGMA

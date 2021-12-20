@@ -1,5 +1,6 @@
 
 title: Execute From Alternate Data Streams
+ruletype: Sigma
 author: frack113
 date: 2021/09/01
 description: Adversaries may use NTFS file attributes to hide their malicious data
@@ -49,4 +50,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1564.004
-ruletype: SIGMA

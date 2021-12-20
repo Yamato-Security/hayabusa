@@ -1,5 +1,6 @@
 
 title: Unidentified Attacker November 2018
+ruletype: Sigma
 author: '@41thexplorer, Microsoft Defender ATP'
 date: 2018/11/20
 description: A sigma rule detecting an unidetefied attacker who used phishing emails
@@ -26,4 +27,3 @@ tags:
 - attack.execution
 - attack.t1218.011
 - attack.t1085
-ruletype: SIGMA

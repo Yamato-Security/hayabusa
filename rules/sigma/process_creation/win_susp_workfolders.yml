@@ -1,5 +1,6 @@
 
 title: Execution via WorkFolders.exe
+ruletype: Sigma
 author: Maxime Thiebaut (@0xThiebaut)
 date: 2021/10/21
 description: Detects using WorkFolders.exe to execute an arbitrary control.exe
@@ -27,4 +28,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Execution via Diskshadow.exe
+ruletype: Sigma
 author: Ivan Dyachkov, oscd.community
 date: 2020/10/07
 description: Detects using Diskshadow.exe to execute arbitrary code in text file
@@ -25,10 +26,10 @@ logsource:
   definition: 'Requirements: Sysmon ProcessCreation logging must be activated and
     Windows audit must Include command line in process creation events'
   product: windows
+modified: 2021/11/27
 references:
 - https://bohops.com/2018/03/26/diskshadow-the-return-of-vss-evasion-persistence-and-active-directory-database-extraction/
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1218
-ruletype: SIGMA

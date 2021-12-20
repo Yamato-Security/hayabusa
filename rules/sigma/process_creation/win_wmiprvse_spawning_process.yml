@@ -1,5 +1,6 @@
 
 title: Wmiprvse Spawning Process
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/08/15
 description: Detects wmiprvse spawning processes
@@ -38,4 +39,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1047
-ruletype: SIGMA

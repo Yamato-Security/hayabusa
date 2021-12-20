@@ -1,5 +1,6 @@
 
 title: UAC Bypass Using ChangePK and SLUI
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/08/23
 description: Detects an UAC bypass that uses changepk.exe and slui.exe (UACMe 61)
@@ -31,4 +32,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1548.002
-ruletype: SIGMA

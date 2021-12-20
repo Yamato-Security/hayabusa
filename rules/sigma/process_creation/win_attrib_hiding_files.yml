@@ -1,5 +1,6 @@
 
 title: Hiding Files with Attrib.exe
+ruletype: Sigma
 author: Sami Ruohonen
 date: 2019/01/16
 description: Detects usage of attrib.exe to hide files from users.
@@ -11,17 +12,15 @@ detection:
   SELECTION_3:
     CommandLine: '* +h *'
   SELECTION_4:
-    EventID: 1
-  SELECTION_5:
     CommandLine: '*\desktop.ini *'
-  SELECTION_6:
+  SELECTION_5:
     ParentImage: '*\cmd.exe'
-  SELECTION_7:
+  SELECTION_6:
     CommandLine: +R +H +S +A \\*.cui
-  SELECTION_8:
+  SELECTION_7:
     ParentCommandLine: C:\WINDOWS\system32\\*.bat
   condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
-    and (SELECTION_5 or (SELECTION_6 and SELECTION_7 and SELECTION_8)))))
+    or (SELECTION_5 and SELECTION_6 and SELECTION_7))))
 falsepositives:
 - igfxCUIService.exe hiding *.cui files via .bat script (attrib.exe a child of cmd.exe
   and igfxCUIService.exe is the parent of the cmd.exe)
@@ -35,10 +34,9 @@ level: low
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/27
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1564.001
 - attack.t1158
-ruletype: SIGMA

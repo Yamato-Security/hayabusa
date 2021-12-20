@@ -1,5 +1,6 @@
 
 title: Root Certificate Installed
+ruletype: Sigma
 author: oscd.community, @redcanary, Zach Stanford @svch0st
 date: 2020/10/10
 description: Adversaries may install a root certificate on a compromised system to
@@ -37,4 +38,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1553.004
-ruletype: SIGMA

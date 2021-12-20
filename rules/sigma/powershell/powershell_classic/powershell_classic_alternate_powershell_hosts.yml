@@ -1,5 +1,6 @@
 
 title: Alternate PowerShell Hosts
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/08/11
 description: Detects alternate PowerShell hosts potentially bypassing detections looking
@@ -31,4 +32,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

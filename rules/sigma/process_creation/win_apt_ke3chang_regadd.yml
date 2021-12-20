@@ -1,5 +1,6 @@
 
 title: Ke3chang Registry Key Modifications
+ruletype: Sigma
 author: Markus Neis, Swisscom
 date: 2020/06/18
 description: Detects Registry modifications performed by Ke3chang malware in campaigns
@@ -20,13 +21,13 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.verfassungsschutz.de/embed/broschuere-2020-06-bfv-cyber-brief-2020-01.pdf
 - https://unit42.paloaltonetworks.com/operation-ke3chang-resurfaces-with-new-tidepool-malware/
-status: experimental
+status: test
 tags:
 - attack.g0004
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.001
-ruletype: SIGMA

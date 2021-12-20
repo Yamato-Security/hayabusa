@@ -1,5 +1,6 @@
 
 title: Non Interactive PowerShell
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g (rule), oscd.community (improvements)
 date: 2019/09/12
 description: Detects non-interactive PowerShell activity by looking at powershell.exe
@@ -29,4 +30,3 @@ tags:
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-ruletype: SIGMA

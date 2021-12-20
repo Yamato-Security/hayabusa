@@ -1,5 +1,6 @@
 
 title: WMI Persistence - Command Line Event Consumer
+ruletype: Sigma
 author: Thomas Patzke
 date: 2018/03/07
 description: Detects WMI command line event consumers
@@ -18,12 +19,11 @@ level: high
 logsource:
   category: image_load
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://www.eideon.com/2018-03-02-THL03-WMIBackdoors/
-status: experimental
+status: test
 tags:
 - attack.t1084
 - attack.t1546.003
 - attack.persistence
-ruletype: SIGMA

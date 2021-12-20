@@ -1,5 +1,6 @@
 
 title: Suspicious Driver Install by pnputil.exe
+ruletype: Sigma
 author: Hai Vaknin @LuxNoBulIshit, Avihay eldad  @aloneliassaf, Austin Songer @austinsonger
 date: 2021/09/30
 description: Detects when a possible suspicious driver is being installed via pnputil.exe
@@ -43,4 +44,3 @@ tags:
 - attack.persistence
 - attack.t1547
 - attack.t1547.006
-ruletype: SIGMA

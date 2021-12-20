@@ -1,5 +1,6 @@
 
 title: Windows Webshell Creation
+ruletype: Sigma
 author: Beyu Denis, oscd.community
 date: 2019/10/22
 description: Possible webshell file creation on a static web site
@@ -49,12 +50,11 @@ level: critical
 logsource:
   category: file_event
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - PT ESC rule and personal experience
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1100
 - attack.t1505.003
-ruletype: SIGMA

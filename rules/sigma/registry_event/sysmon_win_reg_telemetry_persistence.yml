@@ -1,5 +1,6 @@
 
 title: Registry Persistence Mechanism via Windows Telemetry
+ruletype: Sigma
 author: Lednyov Alexey, oscd.community
 date: 2020/10/16
 description: Detects persistence method using windows telemetry
@@ -31,10 +32,10 @@ logsource:
   definition: 'Requirements: Sysmon config that monitors \SOFTWARE\Microsoft\Windows
     NT\CurrentVersion\AppCompatFlags\TelemetryController subkey of the HKLU hives'
   product: windows
+modified: 2021/11/27
 references:
 - https://www.trustedsec.com/blog/abusing-windows-telemetry-for-persistence/
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1053.005
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious Outbound RDP Connections
+ruletype: Sigma
 author: Markus Neis - Swisscom
 date: 2019/05/15
 description: Detects Non-Standard Tools Connecting to TCP port 3389 indicating possible
@@ -42,13 +43,12 @@ level: high
 logsource:
   category: network_connection
   product: windows
-modified: 2020/08/24
+modified: 2021/11/27
 references:
 - https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-0708
-status: experimental
+status: test
 tags:
 - attack.lateral_movement
 - attack.t1021.001
 - attack.t1076
 - car.2013-07-002
-ruletype: SIGMA

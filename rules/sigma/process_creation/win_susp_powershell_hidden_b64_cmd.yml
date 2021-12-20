@@ -1,5 +1,6 @@
 
 title: Malicious Base64 Encoded PowerShell Keywords in Command Lines
+ruletype: Sigma
 author: John Lambert (rule)
 date: 2019/01/16
 description: Detects base64 encoded strings used in hidden malicious PowerShell command
@@ -69,11 +70,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - http://www.leeholmes.com/blog/2017/09/21/searching-for-content-in-base-64-strings/
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

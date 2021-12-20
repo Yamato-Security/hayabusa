@@ -1,5 +1,6 @@
 
 title: Suspicious Csc.exe Source File Folder
+ruletype: Sigma
 author: Florian Roth
 date: 2019/08/24
 description: Detects a suspicious execution of csc.exe, which uses a source in a suspicious
@@ -19,6 +20,7 @@ detection:
     ParentImage:
     - '*\sdiagnhost.exe'
     - '*\w3wp.exe'
+    - '*\choco.exe'
   SELECTION_6:
     ParentCommandLine:
     - '*\ProgramData\Microsoft\Windows Defender Advanced Threat Protection*'
@@ -43,4 +45,3 @@ tags:
 - attack.defense_evasion
 - attack.t1500
 - attack.t1027.004
-ruletype: SIGMA

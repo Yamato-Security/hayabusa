@@ -1,5 +1,6 @@
 
 title: Zip A Folder With PowerShell For Staging In Temp
+ruletype: Sigma
 author: frack113
 date: 2021/07/20
 description: Use living off the land tools to zip a file and stage it in the Windows
@@ -33,4 +34,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1074.001
-ruletype: SIGMA

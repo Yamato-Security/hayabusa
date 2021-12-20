@@ -1,5 +1,6 @@
 
 title: Emissary Panda Malware SLLauncher
+ruletype: Sigma
 author: Florian Roth
 date: 2018/09/03
 description: Detects the execution of DLL side-loading malware used by threat group
@@ -19,13 +20,12 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/27
+modified: 2021/11/27
 references:
 - https://app.any.run/tasks/579e7587-f09d-4aae-8b07-472833262965
 - https://twitter.com/cyb3rops/status/1168863899531132929
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1073
 - attack.t1574.002
-ruletype: SIGMA

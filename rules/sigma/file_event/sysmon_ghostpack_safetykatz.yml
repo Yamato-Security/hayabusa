@@ -1,5 +1,6 @@
 
 title: Detection of SafetyKatz
+ruletype: Sigma
 author: Markus Neis
 date: 2018/07/24
 description: Detects possible SafetyKatz Behaviour
@@ -16,12 +17,11 @@ level: high
 logsource:
   category: file_event
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://github.com/GhostPack/SafetyKatz
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.001
-ruletype: SIGMA

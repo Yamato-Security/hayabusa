@@ -1,5 +1,6 @@
 
 title: CobaltStrike BOF Injection Pattern
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/08/04
 description: Detects a typical pattern of a CobaltStrike BOF which inject into other
@@ -30,4 +31,3 @@ tags:
 - attack.t1106
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

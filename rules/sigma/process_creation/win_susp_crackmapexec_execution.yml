@@ -1,5 +1,6 @@
 
 title: CrackMapExec Command Execution
+ruletype: Sigma
 author: Thomas Patzke
 date: 2020/05/22
 description: Detect various execution methods of the CrackMapExec pentesting framework
@@ -38,4 +39,3 @@ tags:
 - attack.t1059.001
 - attack.s0106
 - attack.t1086
-ruletype: SIGMA

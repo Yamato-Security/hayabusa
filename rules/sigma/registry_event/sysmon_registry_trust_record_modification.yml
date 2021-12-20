@@ -1,5 +1,6 @@
 
 title: Windows Registry Trust Record Modification
+ruletype: Sigma
 author: Antonlovesdnb
 date: 2020/02/19
 description: Alerts on trust record modification within the registry, indicating usage
@@ -21,13 +22,12 @@ level: medium
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://outflank.nl/blog/2018/01/16/hunting-for-evil-detect-macros-being-executed/
 - http://az4n6.blogspot.com/2016/02/more-on-trust-records-macros-and.html
-status: experimental
+status: test
 tags:
 - attack.initial_access
 - attack.t1193
 - attack.t1566.001
-ruletype: SIGMA

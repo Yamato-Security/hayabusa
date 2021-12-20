@@ -1,5 +1,6 @@
 
 title: Suspicius Add Task From User AppData Temp
+ruletype: Sigma
 author: frack113
 date: 2021/11/03
 description: schtasks.exe create task from user AppData\Local\Temp
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1053.005
-ruletype: SIGMA

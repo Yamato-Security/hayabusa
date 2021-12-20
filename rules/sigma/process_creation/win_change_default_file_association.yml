@@ -1,5 +1,6 @@
 
 title: Change Default File Association
+ruletype: Sigma
 author: Timur Zinniatullin, oscd.community
 date: 2019/10/21
 description: When a file is opened, the default program used to open the file (also
@@ -33,12 +34,11 @@ level: low
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/04
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1546.001/T1546.001.md
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1546.001
 - attack.t1042
-ruletype: SIGMA

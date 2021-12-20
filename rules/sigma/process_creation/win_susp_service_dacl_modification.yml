@@ -1,5 +1,6 @@
 
 title: Suspicious Service DACL Modification
+ruletype: Sigma
 author: Jonhnathan Ribeiro, oscd.community
 date: 2020/10/16
 description: Detects suspicious DACL modifications that can  be used to hide services
@@ -29,11 +30,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.sans.org/blog/red-team-tactics-hiding-windows-services/
 - https://docs.microsoft.com/pt-br/windows/win32/secauthz/sid-strings
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1543.003
-ruletype: SIGMA

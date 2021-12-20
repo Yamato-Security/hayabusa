@@ -1,5 +1,6 @@
 
 title: Malicious Named Pipe
+ruletype: Sigma
 author: Florian Roth, blueteam0ps, elhoim
 date: 2017/11/06
 description: Detects the creation of a named pipe used by known APT malware
@@ -68,4 +69,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1055
-ruletype: SIGMA

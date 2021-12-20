@@ -1,5 +1,6 @@
 
 title: Unsigned Image Loaded Into LSASS Process
+ruletype: Sigma
 author: Teymur Kheirkhabarov, oscd.community
 date: 2019/10/22
 description: Loading unsigned image (DLL, EXE) into LSASS process
@@ -18,12 +19,11 @@ level: medium
 logsource:
   category: image_load
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.001
-ruletype: SIGMA

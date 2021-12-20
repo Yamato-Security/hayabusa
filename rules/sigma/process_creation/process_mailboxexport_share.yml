@@ -1,5 +1,6 @@
 
 title: Suspicious PowerShell Mailbox Export to Share
+ruletype: Sigma
 author: Florian Roth
 date: 2021/08/07
 description: Detects a PowerShell New-MailboxExportRequest that exports a mailbox
@@ -34,4 +35,3 @@ tags:
 - attack.t1505.003
 - attack.resource_development
 - attack.t1584.006
-ruletype: SIGMA

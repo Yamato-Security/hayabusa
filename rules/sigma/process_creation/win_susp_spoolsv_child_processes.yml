@@ -1,5 +1,6 @@
 
 title: Suspicious Spool Service Child Process
+ruletype: Sigma
 author: Justin C. (@endisphotic), @dreadphones (detection), Thomas Patzke (Sigma rule)
 date: 2021/07/11
 description: Detects suspicious print spool service (spoolsv.exe) child processes.
@@ -8,26 +9,15 @@ detection:
     EventID: 1
   SELECTION_10:
     CommandLine:
-    - '*.spl*'
-    - '*route add*'
-    - '*program files*'
-  SELECTION_11:
-    EventID: 1
-  SELECTION_12:
-    Image: '*\netsh.exe'
-  SELECTION_13:
-    CommandLine:
     - '*add portopening*'
     - '*rule name*'
-  SELECTION_14:
-    EventID: 1
-  SELECTION_15:
+  SELECTION_11:
     Image: '*\powershell.exe'
-  SELECTION_16:
+  SELECTION_12:
     CommandLine: '*.spl*'
-  SELECTION_17:
+  SELECTION_13:
     Image: '*\rundll32.exe'
-  SELECTION_18:
+  SELECTION_14:
     CommandLine: '*rundll32.exe'
   SELECTION_2:
     ParentImage: '*\\spoolsv.exe'
@@ -56,20 +46,22 @@ detection:
     - '*\write.exe'
     - '*\wuauclt.exe'
   SELECTION_5:
-    EventID: 1
-  SELECTION_6:
     Image: '*\net.exe'
-  SELECTION_7:
+  SELECTION_6:
     CommandLine: '*start*'
-  SELECTION_8:
-    EventID: 1
-  SELECTION_9:
+  SELECTION_7:
     Image: '*\cmd.exe'
-  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and (((((SELECTION_4 or
-    (SELECTION_5 and SELECTION_6 and  not (SELECTION_7))) or (SELECTION_8 and SELECTION_9
-    and  not (SELECTION_10))) or (SELECTION_11 and SELECTION_12 and  not (SELECTION_13)))
-    or (SELECTION_14 and SELECTION_15 and  not (SELECTION_16))) or (SELECTION_17 and
-    SELECTION_18)))
+  SELECTION_8:
+    CommandLine:
+    - '*.spl*'
+    - '*route add*'
+    - '*program files*'
+  SELECTION_9:
+    Image: '*\netsh.exe'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and (((((SELECTION_4 or
+    (SELECTION_5 and  not (SELECTION_6))) or (SELECTION_7 and  not (SELECTION_8)))
+    or (SELECTION_9 and  not (SELECTION_10))) or (SELECTION_11 and  not (SELECTION_12)))
+    or (SELECTION_13 and SELECTION_14)))
 falsepositives:
 - None known
 fields:
@@ -88,4 +80,3 @@ tags:
 - attack.t1203
 - attack.privilege_escalation
 - attack.t1068
-ruletype: SIGMA

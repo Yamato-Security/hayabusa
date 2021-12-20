@@ -1,5 +1,6 @@
 
 title: SquiblyTwo
+ruletype: Sigma
 author: Markus Neis / Florian Roth
 date: 2019/01/16
 description: Detects WMI SquiblyTwo Attack with possible renamed WMI by looking for
@@ -32,11 +33,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/27
+modified: 2021/11/27
 references:
 - https://subt0x11.blogspot.ch/2018/04/wmicexe-whitelisting-bypass-hacking.html
 - https://twitter.com/mattifestation/status/986280382042595328
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1047
@@ -45,4 +46,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.007
 - attack.t1059
-ruletype: SIGMA

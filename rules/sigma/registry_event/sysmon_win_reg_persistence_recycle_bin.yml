@@ -1,5 +1,6 @@
 
 title: Registry Persistence Mechanisms in Recycle Bin
+ruletype: Sigma
 author: frack113
 date: 2021/11/18
 description: Detects persistence registry keys for Recycle Bin
@@ -29,7 +30,7 @@ logsource:
   product: windows
 references:
 - https://github.com/vxunderground/VXUG-Papers/blob/main/The%20Persistence%20Series/Persistence%20via%20Recycle%20Bin/Persistence_via_Recycle_Bin.pdf
+status: experimental
 tags:
 - attack.persistence
 - attack.t1547
-ruletype: SIGMA

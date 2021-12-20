@@ -1,5 +1,6 @@
 
 title: Monitoring For Persistence Via BITS
+ruletype: Sigma
 author: Sreeman
 date: 2020/10/29
 description: BITS will allow you to schedule a command to execute after a successful
@@ -34,4 +35,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1197
-ruletype: SIGMA

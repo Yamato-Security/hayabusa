@@ -1,5 +1,6 @@
 
 title: Powershell Timestomp
+ruletype: Sigma
 author: frack113
 date: 2021/08/03
 description: Adversaries may modify file time attributes to hide new or changes to
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1070.006
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Execution DLL of Choice Using WAB.EXE
+ruletype: Sigma
 author: oscd.community, Natalia Shornikova
 date: 2020/10/13
 description: This rule detects that the path to the DLL written in the registry is
@@ -33,4 +34,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

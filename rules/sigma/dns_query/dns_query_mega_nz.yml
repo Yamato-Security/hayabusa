@@ -1,5 +1,6 @@
 
 title: DNS Query for MEGA.io Upload Domain
+ruletype: Sigma
 author: Aaron Greetham (@beardofbinary) - NCC Group
 date: 2021/05/26
 description: Detects DNS queries for subdomains used for upload to MEGA.io
@@ -22,4 +23,3 @@ status: experimental
 tags:
 - attack.exfiltration
 - attack.t1567.002
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: CobaltStrike Process Injection
+ruletype: Sigma
 author: Olaf Hartong, Florian Roth, Aleksey Potapov, oscd.community
 date: 2018/11/30
 description: Detects a possible remote threat creation with certain characteristics
@@ -29,4 +30,3 @@ tags:
 - attack.defense_evasion
 - attack.t1055
 - attack.t1055.001
-ruletype: SIGMA

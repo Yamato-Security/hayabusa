@@ -1,5 +1,6 @@
 
 title: Rclone Execution via Command Line or PowerShell
+ruletype: Sigma
 author: Bhabesh Raj, Sittikorn S, Aaron Greetham (@beardofbinary) - NCC Group
 date: 2021/05/10
 description: Detects execution of RClone utility for exfiltration as used by various
@@ -32,17 +33,15 @@ detection:
     - '*multi-thread-streams*'
     - '*no-check-certificate *'
   SELECTION_6:
-    EventID: 1
-  SELECTION_7:
     Description: Rsync for cloud storage
-  SELECTION_8:
+  SELECTION_7:
     Image: '*\rclone.exe'
-  SELECTION_9:
+  SELECTION_8:
     ParentImage:
     - '*\PowerShell.exe'
     - '*\cmd.exe'
   condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4) or (SELECTION_5
-    and SELECTION_6 and (SELECTION_7 or (SELECTION_8 and SELECTION_9)))))
+    and (SELECTION_6 or (SELECTION_7 and SELECTION_8)))))
 falsepositives:
 - Legitimate RClone use
 fields:
@@ -70,4 +69,3 @@ status: experimental
 tags:
 - attack.exfiltration
 - attack.t1567.002
-ruletype: SIGMA

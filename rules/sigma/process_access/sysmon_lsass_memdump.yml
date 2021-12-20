@@ -1,5 +1,6 @@
 
 title: LSASS Memory Dump
+ruletype: Sigma
 author: Samir Bousseaden
 date: 2019/04/03
 description: Detects process LSASS memory dump using procdump or taskmgr based on
@@ -32,4 +33,3 @@ tags:
 - attack.t1003.001
 - attack.t1003
 - attack.s0002
-ruletype: SIGMA

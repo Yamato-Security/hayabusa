@@ -1,5 +1,6 @@
 
 title: Suspcious CLR Logs Creation
+ruletype: Sigma
 author: omkar72, oscd.community, Wojciech Lesicki
 date: 2020/10/12
 description: Detects suspicious .NET assembly executions. Could detect using Cobalt
@@ -42,4 +43,3 @@ tags:
 - attack.defense_evasion
 - attack.t1059.001
 - attack.t1218
-ruletype: SIGMA

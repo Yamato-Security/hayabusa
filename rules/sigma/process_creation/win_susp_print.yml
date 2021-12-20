@@ -1,5 +1,6 @@
 
 title: Abusing Print Executable
+ruletype: Sigma
 author: Furkan CALISKAN, @caliskanfurkan_, @oscd_initiative
 date: 2020/10/05
 description: Attackers can use print.exe for remote file copy
@@ -30,11 +31,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Print.yml
 - https://twitter.com/Oddvarmoe/status/985518877076541440
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

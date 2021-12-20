@@ -1,5 +1,6 @@
 
 title: Powershell Local Email Collection
+ruletype: Sigma
 author: frack113
 date: 2021/07/21
 description: Adversaries may target user email on local systems to collect sensitive
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1114.001
-ruletype: SIGMA

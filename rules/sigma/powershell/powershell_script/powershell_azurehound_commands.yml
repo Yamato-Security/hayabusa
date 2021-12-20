@@ -1,5 +1,6 @@
 
 title: AzureHound PowerShell Commands
+ruletype: Sigma
 author: Austin Songer (@austinsonger)
 date: 2021/10/23
 description:
@@ -29,4 +30,3 @@ tags:
 - attack.t1069.001
 - attack.t1069.002
 - attack.t1069
-ruletype: SIGMA

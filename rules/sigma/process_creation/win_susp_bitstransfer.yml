@@ -1,5 +1,6 @@
 
 title: Suspicious Bitstransfer via PowerShell
+ruletype: Sigma
 author: Austin Songer @austinsonger
 date: 2021/08/19
 description: Detects transferring files from system on a server bitstransfer Powershell
@@ -35,4 +36,3 @@ tags:
 - attack.exfiltration
 - attack.persistence
 - attack.t1197
-ruletype: SIGMA

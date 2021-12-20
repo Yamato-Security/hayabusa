@@ -1,5 +1,6 @@
 
 title: Remote PowerShell Session
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/08/10
 description: Detects remote PowerShell sessions
@@ -31,4 +32,3 @@ tags:
 - attack.lateral_movement
 - attack.t1021.006
 - attack.t1028
-ruletype: SIGMA

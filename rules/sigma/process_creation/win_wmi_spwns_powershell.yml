@@ -1,5 +1,6 @@
 
 title: WMI Spawning Windows PowerShell
+ruletype: Sigma
 author: Markus Neis / @Karneades
 date: 2019/04/03
 description: Detects WMI spawning PowerShell
@@ -37,4 +38,3 @@ tags:
 - attack.t1059.001
 - attack.defense_evasion
 - attack.t1064
-ruletype: SIGMA

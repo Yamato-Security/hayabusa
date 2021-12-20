@@ -1,5 +1,6 @@
 
 title: Possible Applocker Bypass
+ruletype: Sigma
 author: juju4
 date: 2019/01/16
 description: Detects execution of executables that can be used to bypass Applocker
@@ -26,12 +27,12 @@ level: low
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://github.com/subTee/ApplicationWhitelistBypassTechniques/blob/master/TheList.txt
 - https://room362.com/post/2014/2014-01-16-application-whitelist-bypass-using-ieexec-dot-exe/
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1127.001/T1127.001.md
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1118
@@ -43,4 +44,3 @@ tags:
 - attack.t1170
 - attack.t1218.005
 - attack.t1218
-ruletype: SIGMA

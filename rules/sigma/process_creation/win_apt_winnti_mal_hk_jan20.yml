@@ -1,5 +1,6 @@
 
 title: Winnti Malware HK University Campaign
+ruletype: Sigma
 author: Florian Roth, Markus Neis
 date: 2020/02/01
 description: Detects specific process characteristics of Winnti malware noticed in
@@ -36,12 +37,12 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.welivesecurity.com/2020/01/31/winnti-group-targeting-universities-hong-kong/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1574.002
 - attack.t1073
 - attack.g0044
-ruletype: SIGMA

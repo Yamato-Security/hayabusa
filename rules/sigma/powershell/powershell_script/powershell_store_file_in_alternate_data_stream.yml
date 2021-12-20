@@ -1,5 +1,6 @@
 
 title: Powershell Store File In Alternate Data Stream
+ruletype: Sigma
 author: frack113
 date: 2021/09/02
 description: Storing files in Alternate Data Stream (ADS) similar to Astaroth malware.
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1564.004
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Registry Persistence Mechanisms
+ruletype: Sigma
 author: Karneades, Jonhnathan Ribeiro
 date: 2018/04/11
 description: Detects persistence registry keys
@@ -34,10 +35,10 @@ level: critical
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://oddvar.moe/2018/04/10/persistence-using-globalflags-in-image-file-execution-options-hidden-from-autoruns-exe/
-status: experimental
+status: test
 tags:
 - attack.privilege_escalation
 - attack.persistence
@@ -45,4 +46,3 @@ tags:
 - attack.t1183
 - attack.t1546.012
 - car.2013-01-002
-ruletype: SIGMA

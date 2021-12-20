@@ -1,5 +1,6 @@
 
 title: Suspicious PowerShell WindowStyle Option
+ruletype: Sigma
 author: frack113
 date: 2021/10/20
 description: Adversaries may use hidden windows to conceal malicious activity from
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1564.003
-ruletype: SIGMA

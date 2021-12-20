@@ -1,5 +1,6 @@
 
 title: Lazarus Activity
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/04/20
 description: Detects different process creation events as described in Malwarebytes's
@@ -40,4 +41,3 @@ tags:
 - attack.g0032
 - attack.execution
 - attack.t1106
-ruletype: SIGMA

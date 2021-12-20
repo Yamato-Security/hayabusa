@@ -1,5 +1,6 @@
 
 title: Modifies the Registry From a File
+ruletype: Sigma
 author: Eli Salem, Sander Wiebing, oscd.community
 date: 2020/10/08
 description: Detects the execution of regini.exe which can be used to modify registry
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.t1112
 - attack.defense_evasion
-ruletype: SIGMA

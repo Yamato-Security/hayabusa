@@ -1,5 +1,6 @@
 
 title: Winnti Pipemon Characteristics
+ruletype: Sigma
 author: Florian Roth, oscd.community
 date: 2020/07/30
 description: Detects specific process characteristics of Winnti Pipemon malware reported
@@ -25,12 +26,12 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.welivesecurity.com/2020/05/21/no-game-over-winnti-group/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1574.002
 - attack.t1073
 - attack.g0044
-ruletype: SIGMA

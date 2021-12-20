@@ -1,5 +1,6 @@
 
 title: PCRE.NET Package Image Load
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/10/29
 description: Detects processes loading modules related to PCRE.NET package
@@ -24,4 +25,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1059
-ruletype: SIGMA

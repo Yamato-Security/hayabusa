@@ -1,5 +1,6 @@
 
 title: Webshell Recon Detection Via CommandLine & Processes
+ruletype: Sigma
 author: Cian Heasley
 date: 2020/07/22
 description: Looking for processes spawned by web server components that indicate
@@ -39,12 +40,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://ragged-lab.blogspot.com/2020/07/webshells-automating-reconnaissance.html
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1505.003
 - attack.privilege_escalation
 - attack.t1100
-ruletype: SIGMA

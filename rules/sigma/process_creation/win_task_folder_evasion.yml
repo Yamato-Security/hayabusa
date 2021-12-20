@@ -1,5 +1,6 @@
 
 title: Tasks Folder Evasion
+ruletype: Sigma
 author: Sreeman
 date: 2020/01/13
 description: The Tasks folder in system32 and syswow64 are globally writable paths.
@@ -42,4 +43,3 @@ tags:
 - attack.t1574.002
 - attack.t1059
 - attack.t1064
-ruletype: SIGMA

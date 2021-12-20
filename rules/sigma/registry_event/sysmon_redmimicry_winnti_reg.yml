@@ -1,5 +1,6 @@
 
 title: RedMimicry Winnti Playbook Registry Manipulation
+ruletype: Sigma
 author: Alexander Rausch
 date: 2020/06/24
 description: Detects actions caused by the RedMimicry Winnti playbook
@@ -20,10 +21,10 @@ level: high
 logsource:
   category: registry_event
   product: windows
+modified: 2021/11/27
 references:
 - https://redmimicry.com
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: System File Execution Location Anomaly
+ruletype: Sigma
 author: Florian Roth, Patrick Bareiss, Anton Kutepov, oscd.community
 date: 2017/11/27
 description: Detects a Windows program executable started in a suspicious folder
@@ -63,4 +64,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1036
-ruletype: SIGMA

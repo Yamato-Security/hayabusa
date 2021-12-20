@@ -1,5 +1,6 @@
 
 title: CACTUSTORCH Remote Thread Creation
+ruletype: Sigma
 author: '@SBousseaden (detection), Thomas Patzke (rule)'
 date: 2019/02/01
 description: Detects remote thread creation from CACTUSTORCH as described in references.
@@ -39,4 +40,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.007
 - attack.t1218.005
-ruletype: SIGMA

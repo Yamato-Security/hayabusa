@@ -1,5 +1,6 @@
 
 title: Powershell Keylogging
+ruletype: Sigma
 author: frack113
 date: 2021/07/30
 description: Adversaries may log user keystrokes to intercept credentials as the user
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1056.001
-ruletype: SIGMA

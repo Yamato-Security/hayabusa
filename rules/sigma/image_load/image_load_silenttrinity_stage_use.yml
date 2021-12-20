@@ -1,5 +1,6 @@
 
 title: SILENTTRINITY Stager Execution
+ruletype: Sigma
 author: Aleksey Potapov, oscd.community
 date: 2019/10/22
 description: Detects SILENTTRINITY stager use
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.command_and_control
 - attack.t1071
-ruletype: SIGMA

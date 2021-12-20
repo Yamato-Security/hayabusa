@@ -1,5 +1,6 @@
 
 title: Remote PowerShell Session
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/09/12
 description: Detects remote PowerShell connections by monitoring network outbound
@@ -21,10 +22,10 @@ level: high
 logsource:
   category: network_connection
   product: windows
-modified: 2020/08/24
+modified: 2021/11/27
 references:
 - https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190511223310.html
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
@@ -32,4 +33,3 @@ tags:
 - attack.lateral_movement
 - attack.t1021.006
 - attack.t1028
-ruletype: SIGMA

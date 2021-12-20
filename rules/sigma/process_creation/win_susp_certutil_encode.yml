@@ -1,5 +1,6 @@
 
 title: Certutil Encode
+ruletype: Sigma
 author: Florian Roth, Jonhnathan Ribeiro, oscd.community
 date: 2019/02/24
 description: Detects suspicious a certutil command that used to encode files, which
@@ -29,4 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1027
-ruletype: SIGMA

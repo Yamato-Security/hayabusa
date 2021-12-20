@@ -1,5 +1,6 @@
 
 title: Psr.exe Capture Screenshots
+ruletype: Sigma
 author: Beyu Denis, oscd.community
 date: 2019/10/12
 description: The psr.exe captures desktop screenshots and saves them on the local
@@ -19,13 +20,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/28
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/LOLUtilz/OSBinaries/Psr.yml
 - https://www.sans.org/summit-archives/file/summit-archive-1493861893.pdf
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1113/T1113.md
-status: experimental
+status: test
 tags:
 - attack.collection
 - attack.t1113
-ruletype: SIGMA

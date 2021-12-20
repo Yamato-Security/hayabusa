@@ -1,5 +1,6 @@
 
 title: Detect Virtualbox Driver Installation OR Starting Of VMs
+ruletype: Sigma
 author: Janantha Marasinghe
 date: 2020/09/26
 description: Adversaries can carry out malicious operations using a virtual instance
@@ -41,4 +42,3 @@ tags:
 - attack.defense_evasion
 - attack.t1564.006
 - attack.t1564
-ruletype: SIGMA

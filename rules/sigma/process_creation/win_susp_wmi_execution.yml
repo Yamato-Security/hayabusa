@@ -1,5 +1,6 @@
 
 title: Suspicious WMI Execution
+ruletype: Sigma
 author: Michael Haag, Florian Roth, juju4, oscd.community
 date: 2019/01/16
 description: Detects WMI executing suspicious commands
@@ -47,4 +48,3 @@ tags:
 - attack.execution
 - attack.t1047
 - car.2016-03-002
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious VBoxDrvInst.exe Parameters
+ruletype: Sigma
 author: Konstantin Grishchenko, oscd.community
 date: 2020/10/06
 description: Detect VBoxDrvInst.exe run with parameters allowing processing INF file.
@@ -29,11 +30,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/LOLUtilz/OtherBinaries/VBoxDrvInst.yml
 - https://twitter.com/pabraeken/status/993497996179492864
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

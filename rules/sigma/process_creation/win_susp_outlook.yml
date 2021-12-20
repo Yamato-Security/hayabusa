@@ -1,5 +1,6 @@
 
 title: Suspicious Execution from Outlook
+ruletype: Sigma
 author: Markus Neis
 date: 2018/12/27
 description: Detects EnableUnsafeClientMailRules used for Script Execution from Outlook
@@ -34,4 +35,3 @@ tags:
 - attack.execution
 - attack.t1059
 - attack.t1202
-ruletype: SIGMA

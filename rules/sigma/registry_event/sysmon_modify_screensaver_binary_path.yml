@@ -1,5 +1,6 @@
 
 title: Path To Screensaver Binary Modified
+ruletype: Sigma
 author: Bartlomiej Czyz @bczyz1, oscd.community
 date: 2020/10/11
 description: Detects value modification of registry key containing path to binary
@@ -26,12 +27,12 @@ level: medium
 logsource:
   category: registry_event
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1546.002/T1546.002.md
 - https://www.welivesecurity.com/wp-content/uploads/2017/08/eset-gazer.pdf
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.privilege_escalation
 - attack.t1546.002
-ruletype: SIGMA

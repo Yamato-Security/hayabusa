@@ -1,5 +1,6 @@
 
 title: F-Secure C3 Load by Rundll32
+ruletype: Sigma
 author: Alfie Champion (ajpc500)
 date: 2021/06/02
 description: F-Secure C3 produces DLLs with a default exported StartNodeRelay function.
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218.011
-ruletype: SIGMA

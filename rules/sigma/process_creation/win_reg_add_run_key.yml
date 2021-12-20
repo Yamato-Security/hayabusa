@@ -1,5 +1,6 @@
 
 title: Reg Add RUN Key
+ruletype: Sigma
 author: Florian Roth
 date: 2021/06/28
 description: Detects suspicious command line reg.exe tool adding key to RUN key in
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1547.001
-ruletype: SIGMA

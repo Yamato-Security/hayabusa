@@ -1,5 +1,6 @@
 
 title: PsExec Tool Execution
+ruletype: Sigma
 author: Thomas Patzke
 date: 2017/06/12
 description: Detects PsExec service installation and execution events (service and
@@ -46,4 +47,3 @@ tags:
 - attack.t1035
 - attack.t1569.002
 - attack.s0029
-ruletype: SIGMA

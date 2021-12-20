@@ -1,0 +1,29 @@
+
+title: Communication To Mega.nz
+ruletype: Sigma
+author: Florian Roth
+date: 2021/12/06
+description: Detects an executable accessing mega.co.nz, which could be a sign of
+  forbidden file sharing use of data exfiltration by malicious actors
+detection:
+  SELECTION_1:
+    EventID: 3
+  SELECTION_2:
+    Initiated: 'true'
+  SELECTION_3:
+    DestinationHostname: '*api.mega.co.nz'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate use of mega.nz uploaders and tools
+id: fdeebdf0-9f3f-4d08-84a6-4c4d13e39fe4
+level: high
+logsource:
+  category: network_connection
+  product: windows
+references:
+- https://megatools.megous.com/
+- https://www.mandiant.com/resources/russian-targeting-gov-business
+status: experimental
+tags:
+- attack.exfiltration
+- attack.t1567.001

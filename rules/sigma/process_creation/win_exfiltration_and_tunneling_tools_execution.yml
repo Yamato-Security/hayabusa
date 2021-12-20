@@ -1,5 +1,6 @@
 
 title: Exfiltration and Tunneling Tools Execution
+ruletype: Sigma
 author: Daniil Yugoslavskiy, oscd.community
 date: 2019/10/24
 description: Execution of well known tools for data exfiltration and tunneling
@@ -20,8 +21,8 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/29
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.exfiltration
 - attack.command_and_control
@@ -29,4 +30,3 @@ tags:
 - attack.t1041
 - attack.t1572
 - attack.t1071.001
-ruletype: SIGMA

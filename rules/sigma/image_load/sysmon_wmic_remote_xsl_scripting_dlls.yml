@@ -1,5 +1,6 @@
 
 title: WMIC Loading Scripting Libraries
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/10/17
 description: Detects threat actors proxy executing code and bypassing application
@@ -22,12 +23,12 @@ level: high
 logsource:
   category: image_load
   product: windows
+modified: 2021/11/27
 references:
 - https://securitydatasets.com/notebooks/small/windows/05_defense_evasion/SDWIN-201017061100.html
 - https://twitter.com/dez_/status/986614411711442944
 - https://lolbas-project.github.io/lolbas/Binaries/Wmic/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1220
-ruletype: SIGMA

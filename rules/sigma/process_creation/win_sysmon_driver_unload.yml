@@ -1,5 +1,6 @@
 
 title: Sysmon Driver Unload
+ruletype: Sigma
 author: Kirill Kiryanov, oscd.community
 date: 2019/10/23
 description: Detect possible Sysmon driver unload
@@ -32,4 +33,3 @@ tags:
 - attack.t1070
 - attack.t1562
 - attack.t1562.002
-ruletype: SIGMA

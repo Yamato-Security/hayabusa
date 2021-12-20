@@ -1,5 +1,6 @@
 
 title: Whoami Execution Anomaly
+ruletype: Sigma
 author: Florian Roth
 date: 2021/08/12
 description: Detects the execution of whoami with suspicious parents or parameters
@@ -7,27 +8,25 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    EventID: 1
-  SELECTION_3:
     Image: '*\whoami.exe'
-  SELECTION_4:
+  SELECTION_3:
     ParentImage:
     - '*\cmd.exe'
     - '*\powershell.exe'
-  SELECTION_5:
+  SELECTION_4:
     ParentImage:
     - C:\Program Files\Microsoft Monitoring Agent\Agent\MonitoringHost.exe
     - ''
-  SELECTION_6:
+  SELECTION_5:
     ParentImage|re: ^$
-  SELECTION_7:
+  SELECTION_6:
     CommandLine:
     - '*whoami -all*'
     - '*whoami /all*'
     - '*whoami.exe -all*'
     - '*whoami.exe /all*'
-  condition: (SELECTION_1 and ((SELECTION_2 and ((SELECTION_3 and  not (SELECTION_4))
-    and  not (SELECTION_5)) and  not (SELECTION_6)) or SELECTION_7))
+  condition: (SELECTION_1 and ((((SELECTION_2 and  not (SELECTION_3)) and  not (SELECTION_4))
+    and  not (SELECTION_5)) or SELECTION_6))
 falsepositives:
 - Admin activity
 - Scripts and administrative tools used in the monitored environment
@@ -46,4 +45,3 @@ tags:
 - attack.discovery
 - attack.t1033
 - car.2016-03-001
-ruletype: SIGMA

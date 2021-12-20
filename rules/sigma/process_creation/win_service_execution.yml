@@ -1,5 +1,6 @@
 
 title: Service Execution
+ruletype: Sigma
 author: Timur Zinniatullin, Daniil Yugoslavskiy, oscd.community
 date: 2019/10/21
 description: Detects manual service execution (start) via system utilities.
@@ -20,12 +21,11 @@ level: low
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/04
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1569.002/T1569.002.md
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1035
 - attack.t1569.002
-ruletype: SIGMA

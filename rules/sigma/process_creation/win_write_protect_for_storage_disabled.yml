@@ -1,5 +1,6 @@
 
 title: Write Protect For Storage Disabled
+ruletype: Sigma
 author: Sreeman
 date: 2021/06/11
 description: Looks for changes to registry to disable any write-protect property for
@@ -24,4 +25,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562
-ruletype: SIGMA

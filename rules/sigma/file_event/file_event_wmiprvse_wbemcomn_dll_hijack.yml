@@ -1,5 +1,6 @@
 
 title: Wmiprvse Wbemcomn DLL Hijack
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/10/12
 description: Detects a threat actor creating a file named `wbemcomn.dll` in the `C:\Windows\System32\wbem\`
@@ -28,4 +29,3 @@ tags:
 - attack.t1047
 - attack.lateral_movement
 - attack.t1021.002
-ruletype: SIGMA

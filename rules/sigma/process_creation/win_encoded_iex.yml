@@ -1,5 +1,6 @@
 
 title: Encoded IEX
+ruletype: Sigma
 author: Florian Roth
 date: 2019/08/23
 description: Detects a base64 encoded IEX command string in a process command line
@@ -31,10 +32,9 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/29
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

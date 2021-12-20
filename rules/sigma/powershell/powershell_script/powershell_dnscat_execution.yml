@@ -1,5 +1,6 @@
 
 title: Dnscat Execution
+ruletype: Sigma
 author: Daniil Yugoslavskiy, oscd.community
 date: 2019/10/24
 description: Dnscat exfiltration tool execution
@@ -23,4 +24,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

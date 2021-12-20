@@ -1,5 +1,6 @@
 
 title: Suspicious Rundll32 Invoking Inline VBScript
+ruletype: Sigma
 author: Florian Roth
 date: 2021/03/05
 description: Detects suspicious process related to rundll32 based on command line
@@ -29,4 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1055
-ruletype: SIGMA

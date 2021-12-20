@@ -1,5 +1,6 @@
 
 title: PowerShell Scripts Run by a Services
+ruletype: Sigma
 author: oscd.community, Natalia Shornikova
 date: 2020/10/06
 description: Detects powershell script installed as a Service
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1569.002
-ruletype: SIGMA

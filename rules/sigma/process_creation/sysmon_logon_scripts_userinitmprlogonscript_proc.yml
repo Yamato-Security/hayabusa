@@ -1,5 +1,6 @@
 
 title: Logon Scripts (UserInitMprLogonScript)
+ruletype: Sigma
 author: Tom Ueltschi (@c_APT_ure)
 date: 2019/01/12
 description: Detects creation or execution of UserInitMprLogonScript persistence method
@@ -7,19 +8,17 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    EventID: 1
-  SELECTION_3:
     ParentImage: '*\userinit.exe'
-  SELECTION_4:
+  SELECTION_3:
     Image: '*\explorer.exe'
-  SELECTION_5:
+  SELECTION_4:
     CommandLine:
-    - '*netlogon.bat*'
+    - '*netlogon*.bat*'
     - '*UsrLogon.cmd*'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine: '*UserInitMprLogonScript*'
-  condition: (SELECTION_1 and ((SELECTION_2 and (SELECTION_3 and  not (SELECTION_4))
-    and  not (SELECTION_5)) or SELECTION_6))
+  condition: (SELECTION_1 and (((SELECTION_2 and  not (SELECTION_3)) and  not (SELECTION_4))
+    or SELECTION_5))
 falsepositives:
 - exclude legitimate logon scripts
 - penetration tests, red teaming
@@ -28,12 +27,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/26
+modified: 2021/11/29
 references:
 - https://attack.mitre.org/techniques/T1037/
-status: experimental
+status: test
 tags:
 - attack.t1037
 - attack.t1037.001
 - attack.persistence
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious Eventlog Clear or Configuration Using Wevtutil
+ruletype: Sigma
 author: Ecco, Daniil Yugoslavskiy, oscd.community
 date: 2019/09/26
 description: Detects clearing or configuration of eventlogs using wevtutil, powershell
@@ -19,17 +20,15 @@ detection:
   SELECTION_5:
     CommandLine: '* ClearEventLog *'
   SELECTION_6:
-    EventID: 1
-  SELECTION_7:
     Image: '*\wevtutil.exe'
-  SELECTION_8:
+  SELECTION_7:
     CommandLine:
     - '*clear-log*'
     - '* cl *'
     - '*set-log*'
     - '* sl *'
   condition: (SELECTION_1 and (((SELECTION_2 and SELECTION_3) or (SELECTION_4 and
-    SELECTION_5)) or (SELECTION_6 and SELECTION_7 and SELECTION_8)))
+    SELECTION_5)) or (SELECTION_6 and SELECTION_7)))
 falsepositives:
 - Admin activity
 - Scripts and administrative tools used in the monitored environment
@@ -38,14 +37,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/11
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1070.001/T1070.001.md
 - https://eqllib.readthedocs.io/en/latest/analytics/5b223758-07d6-4100-9e11-238cfdd0fe97.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1070.001
 - attack.t1070
 - car.2016-04-002
-ruletype: SIGMA

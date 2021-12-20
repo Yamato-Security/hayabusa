@@ -1,0 +1,38 @@
+
+title: Suspicious Certreq Command to Download
+ruletype: Sigma
+author: Christian Burkard
+date: 2021/11/24
+description: Detects a suspicious certreq execution taken from the LOLBAS examples,
+  which can be abused to download (small) files
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\certreq.exe'
+  SELECTION_3:
+    CommandLine: '* -Post *'
+  SELECTION_4:
+    CommandLine: '* -config *'
+  SELECTION_5:
+    CommandLine: '* http*'
+  SELECTION_6:
+    CommandLine: '* C:\windows\win.ini *'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)
+falsepositives:
+- Unlikely
+fields:
+- CommandLine
+- ParentCommandLine
+id: 4480827a-9799-4232-b2c4-ccc6c4e9e12b
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://lolbas-project.github.io/lolbas/Binaries/Certreq/
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1105

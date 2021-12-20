@@ -1,5 +1,6 @@
 
 title: SVCHOST Credential Dump
+ruletype: Sigma
 author: Florent Labouyrie
 date: 2021/04/30
 description: Detects when a process, such as mimikatz, accesses the memory of svchost
@@ -26,4 +27,3 @@ logsource:
 status: experimental
 tags:
 - attack.t1548
-ruletype: SIGMA

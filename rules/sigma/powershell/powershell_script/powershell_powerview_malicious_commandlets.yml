@@ -1,5 +1,6 @@
 
 title: Malicious PowerView PowerShell Commandlets
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/05/18
 description: Detects Commandlet names from PowerView of PowerSploit exploitation framework.
@@ -147,4 +148,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

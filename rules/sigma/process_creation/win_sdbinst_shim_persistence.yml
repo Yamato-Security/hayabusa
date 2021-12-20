@@ -1,5 +1,6 @@
 
 title: Possible Shim Database Persistence via sdbinst.exe
+ruletype: Sigma
 author: Markus Neis
 date: 2019/01/16
 description: Detects installation of a new shim using sdbinst.exe. A shim can be used
@@ -31,4 +32,3 @@ tags:
 - attack.privilege_escalation
 - attack.t1546.011
 - attack.t1138
-ruletype: SIGMA

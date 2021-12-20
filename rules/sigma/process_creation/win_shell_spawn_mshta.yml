@@ -1,5 +1,6 @@
 
 title: Mshta Spawning Windows Shell
+ruletype: Sigma
 author: Florian Roth
 date: 2021/06/28
 description: Detects a suspicious child process of a mshta.exe process
@@ -35,4 +36,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.001
 - attack.t1218
-ruletype: SIGMA

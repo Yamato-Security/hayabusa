@@ -1,5 +1,6 @@
 
 title: Suspicious Scheduled Task Creation Involving Temp Folder
+ruletype: Sigma
 author: Florian Roth
 date: 2021/03/11
 description: Detects the creation of scheduled tasks that involves a temporary folder
@@ -34,4 +35,3 @@ tags:
 - attack.execution
 - attack.persistence
 - attack.t1053.005
-ruletype: SIGMA

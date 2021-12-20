@@ -1,5 +1,6 @@
 
 title: Suspicious XOR Encoded PowerShell Command Line
+ruletype: Sigma
 author: Sami Ruohonen, Harish Segar (improvement)
 date: 2018/09/05
 description: Detects suspicious powershell process which includes bxor command, alternative
@@ -16,7 +17,11 @@ detection:
     - '*bxor*'
     - '*join*'
     - '*char*'
-  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and SELECTION_4)
+  SELECTION_5:
+    ParentImage:
+    - C:\Program Files\Amazon\SSM\ssm-document-worker.exe
+  condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) and SELECTION_4) and  not
+    (SELECTION_5))
 falsepositives:
 - unknown
 id: bb780e0c-16cf-4383-8383-1e5471db6cf9
@@ -24,12 +29,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/06
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1086
 - attack.t1059.001
 - attack.t1140
 - attack.t1027
-ruletype: SIGMA

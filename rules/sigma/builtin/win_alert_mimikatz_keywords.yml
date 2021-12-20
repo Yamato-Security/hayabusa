@@ -1,5 +1,6 @@
 
 title: Mimikatz Use
+ruletype: Sigma
 author: Florian Roth
 date: 2017/01/10
 description: This method detects mimikatz keywords in different Eventlogs (some of
@@ -20,7 +21,9 @@ detection:
   - ' s::l '
   - gentilkiwi.com
   - Kiwi Legit Printer
-  condition: (SELECTION_1)
+  SELECTION_2:
+    EventID: 15
+  condition: ((SELECTION_1) and  not (SELECTION_2))
 falsepositives:
 - Naughty administrators
 - Penetration test
@@ -30,7 +33,7 @@ id: 06d71506-7beb-4f22-8888-e2e5e2ca7fd8
 level: critical
 logsource:
   product: windows
-modified: 2021/08/26
+modified: 2021/12/01
 status: experimental
 tags:
 - attack.s0002
@@ -43,4 +46,3 @@ tags:
 - attack.t1003.004
 - attack.t1003.001
 - attack.t1003.006
-ruletype: SIGMA

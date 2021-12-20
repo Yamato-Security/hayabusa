@@ -1,5 +1,6 @@
 
 title: Suspicious Atbroker Execution
+ruletype: Sigma
 author: Mateusz Wydra, oscd.community
 date: 2020/10/12
 description: Atbroker executing non-deafualt Assistive Technology applications
@@ -55,4 +56,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

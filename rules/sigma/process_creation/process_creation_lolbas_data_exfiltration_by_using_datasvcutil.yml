@@ -1,5 +1,6 @@
 
 title: LOLBAS Data Exfiltration by DataSvcUtil.exe
+ruletype: Sigma
 author: Ialle Teixeira @teixeira0xfffff, Austin Songer @austinsonger
 date: 2021/09/30
 description: Detects when a user performs data exfiltration by using DataSvcUtil.exe
@@ -40,4 +41,3 @@ status: experimental
 tags:
 - attack.exfiltration
 - attack.t1567
-ruletype: SIGMA

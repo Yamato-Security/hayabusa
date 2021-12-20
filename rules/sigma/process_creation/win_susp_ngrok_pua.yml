@@ -1,5 +1,6 @@
 
 title: Ngrok Usage
+ruletype: Sigma
 author: Florian Roth
 date: 2021/05/14
 description: Detects the use of Ngrok, a utility used for port forwarding and tunneling,
@@ -52,4 +53,3 @@ status: experimental
 tags:
 - attack.command_and_control
 - attack.t1572
-ruletype: SIGMA

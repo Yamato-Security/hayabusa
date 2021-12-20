@@ -1,5 +1,6 @@
 
 title: Image Load of VSS_PS.dll by Uncommon Executable
+ruletype: Sigma
 author: Markus Neis, @markus_neis
 date: 2021/07/07
 description: Detects the image load of vss_ps.dll by uncommon executables using OriginalFileName
@@ -40,4 +41,3 @@ tags:
 - attack.defense_evasion
 - attack.impact
 - attack.t1490
-ruletype: SIGMA

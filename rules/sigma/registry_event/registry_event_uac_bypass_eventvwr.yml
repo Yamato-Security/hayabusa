@@ -1,5 +1,6 @@
 
 title: UAC Bypass via Event Viewer
+ruletype: Sigma
 author: Florian Roth
 date: 2017/03/19
 description: Detects UAC bypass method using Windows event viewer
@@ -33,4 +34,3 @@ tags:
 - attack.t1088
 - attack.t1548.002
 - car.2019-04-001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Stop Or Remove Antivirus Service
+ruletype: Sigma
 author: frack113
 date: 2021/07/07
 description: Adversaries may disable security tools to avoid possible detection of
@@ -29,10 +30,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/12/02
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1562.001/T1562.001.md
 status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

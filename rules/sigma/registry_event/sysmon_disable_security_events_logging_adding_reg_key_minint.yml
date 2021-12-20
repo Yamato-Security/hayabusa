@@ -1,5 +1,6 @@
 
 title: Disable Security Events Logging Adding Reg Key MiniNt
+ruletype: Sigma
 author: Ilyas Ochkov, oscd.community
 date: 2019/10/25
 description: Detects the addition of a key 'MiniNt' to the registry. Upon a reboot,
@@ -31,13 +32,12 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2019/11/13
+modified: 2021/11/27
 references:
 - https://twitter.com/0gtweet/status/1182516740955226112
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.001
 - attack.t1112
-ruletype: SIGMA

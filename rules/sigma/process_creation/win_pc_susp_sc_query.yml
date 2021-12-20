@@ -1,0 +1,25 @@
+
+title: Suspicious Sc Query
+ruletype: Sigma
+author: frack113
+date: 2021/12/06
+description: Adversaries may try to get information about registered services
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*sc query*'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- unknown
+id: 57712d7a-679c-4a41-a913-87e7175ae429
+level: low
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1007/T1007.md#atomic-test-1---system-service-discovery
+status: experimental
+tags:
+- attack.discovery
+- attack.t1007

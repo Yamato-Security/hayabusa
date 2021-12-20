@@ -1,5 +1,6 @@
 
 title: Execution in Webserver Root Folder
+ruletype: Sigma
 author: Florian Roth
 date: 2019/01/16
 description: Detects a suspicious program execution in a web service root folder (filter
@@ -32,9 +33,9 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.persistence
 - attack.t1505.003
 - attack.t1100
-ruletype: SIGMA

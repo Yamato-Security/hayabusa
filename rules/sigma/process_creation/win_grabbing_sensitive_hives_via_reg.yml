@@ -1,5 +1,6 @@
 
 title: Grabbing Sensitive Hives via Reg Utility
+ruletype: Sigma
 author: Teymur Kheirkhabarov, Endgame, JHasenbusch, Daniil Yugoslavskiy, oscd.community
 date: 2019/10/22
 description: Dump sam, system or security hives using REG.exe utility
@@ -40,12 +41,13 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
 - https://eqllib.readthedocs.io/en/latest/analytics/aed95fc6-5e3f-49dc-8b35-06508613f979.html
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003/T1003.md
 - https://www.wietzebeukema.nl/blog/windows-command-line-obfuscation
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003.002
@@ -53,4 +55,3 @@ tags:
 - attack.t1003.005
 - attack.t1003
 - car.2013-07-001
-ruletype: SIGMA

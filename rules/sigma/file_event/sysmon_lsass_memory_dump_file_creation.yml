@@ -1,5 +1,6 @@
 
 title: LSASS Memory Dump File Creation
+ruletype: Sigma
 author: Teymur Kheirkhabarov, oscd.community
 date: 2019/10/22
 description: LSASS memory dump creation using operating systems utilities. Procdump
@@ -32,4 +33,3 @@ tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.001
-ruletype: SIGMA

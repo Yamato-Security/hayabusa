@@ -1,5 +1,6 @@
 
 title: PurpleSharp Indicator
+ruletype: Sigma
 author: Florian Roth
 date: 2021/06/18
 description: Detect
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.t1587
 - attack.resource_development
-ruletype: SIGMA

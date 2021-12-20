@@ -1,5 +1,6 @@
 
 title: Suspicious Certutil Command
+ruletype: Sigma
 author: Florian Roth, juju4, keepwatch
 date: 2019/01/16
 description: Detects a suspicious Microsoft certutil execution with sub commands like
@@ -58,4 +59,3 @@ tags:
 - attack.g0049
 - attack.g0075
 - attack.g0096
-ruletype: SIGMA

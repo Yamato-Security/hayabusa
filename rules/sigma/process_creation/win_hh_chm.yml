@@ -1,5 +1,6 @@
 
 title: HH.exe Execution
+ruletype: Sigma
 author: E.M. Anhaus (originally from Atomic Blue Detections, Dan Beavin), oscd.community
 date: 2019/10/24
 description: Identifies usage of hh.exe executing recently modified .chm files.
@@ -22,14 +23,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/11
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1218.001/T1218.001.md
 - https://eqllib.readthedocs.io/en/latest/analytics/b25aa548-7937-11e9-8f5c-d46d6d62a49e.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218.001
 - attack.execution
 - attack.t1223
-ruletype: SIGMA

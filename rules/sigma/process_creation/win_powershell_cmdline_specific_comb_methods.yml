@@ -1,5 +1,6 @@
 
 title: Encoded PowerShell Command Line
+ruletype: Sigma
 author: Teymur Kheirkhabarov (idea), Vasiliy Burov (rule), oscd.community
 date: 2020/10/11
 description: Detects specific combinations of encoding methods in the PowerShell command
@@ -8,17 +9,13 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_10:
-    CommandLine: '*ForEach*'
-  SELECTION_11:
     CommandLine: '*Xor*'
-  SELECTION_12:
+  SELECTION_11:
     CommandLine:
     - '*cOnvErTTO-SECUreStRIng*'
   SELECTION_2:
     Image: '*\powershell.exe'
   SELECTION_3:
-    EventID: 1
-  SELECTION_4:
     CommandLine:
     - '*ToInt*'
     - '*ToDecimal*'
@@ -26,22 +23,24 @@ detection:
     - '*ToUint*'
     - '*ToSingle*'
     - '*ToSByte*'
-  SELECTION_5:
+  SELECTION_4:
     CommandLine:
     - '*ToChar*'
     - '*ToString*'
     - '*String*'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine: '*char*'
+  SELECTION_6:
+    CommandLine: '*join*'
   SELECTION_7:
-    CommandLine: '*join*'
-  SELECTION_8:
     CommandLine: '*split*'
-  SELECTION_9:
+  SELECTION_8:
     CommandLine: '*join*'
-  condition: (SELECTION_1 and SELECTION_2 and ((((SELECTION_3 and SELECTION_4 and
-    SELECTION_5) or (SELECTION_6 and SELECTION_7)) or (SELECTION_8 and SELECTION_9))
-    or (SELECTION_10 and SELECTION_11) or SELECTION_12))
+  SELECTION_9:
+    CommandLine: '*ForEach*'
+  condition: (SELECTION_1 and SELECTION_2 and ((((SELECTION_3 and SELECTION_4) or
+    (SELECTION_5 and SELECTION_6)) or (SELECTION_7 and SELECTION_8)) or (SELECTION_9
+    and SELECTION_10) or SELECTION_11))
 falsepositives:
 - Unlikely
 id: cdf05894-89e7-4ead-b2b0-0a5f97a90f2f
@@ -49,12 +48,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=65
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1027
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Moriya Rootkit
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/05/06
 description: Detects the use of Moriya rootkit as described in the securelist's Operation
@@ -28,4 +29,3 @@ tags:
 - attack.persistence
 - attack.privilege_escalation
 - attack.t1543.003
-ruletype: SIGMA

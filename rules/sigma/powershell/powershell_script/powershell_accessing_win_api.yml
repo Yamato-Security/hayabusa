@@ -1,5 +1,6 @@
 
 title: Accessing WinAPI in PowerShell
+ruletype: Sigma
 author: Nikita Nazarov, oscd.community
 date: 2020/10/06
 description: Detecting use WinAPI Functions in PowerShell
@@ -70,4 +71,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1106
-ruletype: SIGMA

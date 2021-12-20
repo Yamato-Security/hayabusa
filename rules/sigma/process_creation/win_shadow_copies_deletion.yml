@@ -1,5 +1,6 @@
 
 title: Shadow Copies Deletion Using Operating Systems Utilities
+ruletype: Sigma
 author: Florian Roth, Michael Haag, Teymur Kheirkhabarov, Daniil Yugoslavskiy, oscd.community,
   Andreas Hunkeler (@Karneades)
 date: 2019/10/22
@@ -64,4 +65,3 @@ tags:
 - attack.impact
 - attack.t1070
 - attack.t1490
-ruletype: SIGMA

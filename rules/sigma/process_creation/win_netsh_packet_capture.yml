@@ -1,5 +1,6 @@
 
 title: Capture a Network Trace with netsh.exe
+ruletype: Sigma
 author: Kutepov Anton, oscd.community
 date: 2019/10/24
 description: Detects capture a network trace via netsh.exe trace functionality
@@ -21,12 +22,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://blogs.msdn.microsoft.com/canberrapfe/2012/03/30/capture-a-network-trace-without-installing-anything-capture-a-network-trace-of-a-reboot/
-status: experimental
+status: test
 tags:
 - attack.discovery
 - attack.credential_access
 - attack.t1040
-ruletype: SIGMA

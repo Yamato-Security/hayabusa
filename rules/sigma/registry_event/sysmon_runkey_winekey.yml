@@ -1,5 +1,6 @@
 
 title: WINEKEY Registry Modification
+ruletype: Sigma
 author: omkar72
 date: 2020/10/30
 description: Detects potential malicious modification of run keys by winekey or team9
@@ -27,10 +28,10 @@ level: high
 logsource:
   category: registry_event
   product: windows
+modified: 2021/11/27
 references:
 - https://www.fireeye.com/blog/threat-research/2020/10/kegtap-and-singlemalt-with-a-ransomware-chaser.html
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1547
-ruletype: SIGMA

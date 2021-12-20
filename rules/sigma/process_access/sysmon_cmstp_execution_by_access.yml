@@ -1,5 +1,6 @@
 
 title: CMSTP Execution Process Access
+ruletype: Sigma
 author: Nik Seetharaman
 date: 2018/07/16
 description: Detects various indicators of Microsoft Connection Manager Profile Installer
@@ -35,4 +36,3 @@ tags:
 - attack.g0069
 - attack.g0080
 - car.2019-04-001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: DNS-over-HTTPS Enabled by Registry
+ruletype: Sigma
 author: Austin Songer
 date: 2021/07/22
 description: Detects when a user enables DNS-over-HTTPS. This can be used to hide
@@ -45,4 +46,3 @@ tags:
 - attack.defense_evasion
 - attack.t1140
 - attack.t1112
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Meterpreter or Cobalt Strike Getsystem Service Start
+ruletype: Sigma
 author: Teymur Kheirkhabarov, Ecco, Florian Roth
 date: 2019/10/26
 description: Detects the use of getsystem Meterpreter/Cobalt Strike command by detecting
@@ -67,4 +68,3 @@ tags:
 - attack.t1134
 - attack.t1134.001
 - attack.t1134.002
-ruletype: SIGMA

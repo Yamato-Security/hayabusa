@@ -1,5 +1,6 @@
 
 title: File or Folder Permissions Modifications
+ruletype: Sigma
 author: Jakob Weinzettl, oscd.community
 date: 2019/10/23
 description: Detects a file or folder's permissions being modified.
@@ -29,12 +30,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/08
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1222.001/T1222.001.md
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1222.001
 - attack.t1222
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspect Svchost Memory Asccess
+ruletype: Sigma
 author: Tim Burrell
 date: 2020/01/02
 description: Detects suspect access to svchost process memory such as that used by
@@ -30,4 +31,3 @@ tags:
 - attack.defense_evasion
 - attack.t1562.002
 - attack.t1089
-ruletype: SIGMA

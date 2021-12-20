@@ -1,5 +1,6 @@
 
 title: Creation of a Local Hidden User Account by Registry
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/05/03
 description: Sysmon registry detection of a local hidden user account.
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1136.001
-ruletype: SIGMA

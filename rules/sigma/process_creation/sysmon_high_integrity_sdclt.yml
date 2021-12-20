@@ -1,5 +1,6 @@
 
 title: High Integrity Sdclt Process
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/05/02
 description: A General detection for sdclt being spawned as an elevated process. This
@@ -19,12 +20,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/OTRF/detection-hackathon-apt29/issues/6
 - https://threathunterplaybook.com/evals/apt29/detections/3.B.2_C36B49B5-DF58-4A34-9FE9-56189B9DEFEA.html
-status: experimental
+status: test
 tags:
 - attack.privilege_escalation
 - attack.defense_evasion
 - attack.t1548.002
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Windows 10 Scheduled Task SandboxEscaper 0-day
+ruletype: Sigma
 author: Olaf Hartong
 date: 2019/05/22
 description: Detects Task Scheduler .job import arbitrary DACL write\par
@@ -25,13 +26,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/29
+modified: 2021/11/27
 references:
 - https://github.com/SandboxEscaper/polarbearrepo/tree/master/bearlpe
-status: experimental
+status: test
 tags:
 - attack.privilege_escalation
 - attack.t1053.005
 - attack.t1053
 - car.2013-08-001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Detection of PowerShell Execution via Sqlps.exe
+ruletype: Sigma
 author: Agro (@agro_sev) oscd.community
 date: 2020/10/10
 description: This rule detects execution of a PowerShell code through the sqlps.exe
@@ -27,14 +28,14 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://docs.microsoft.com/en-us/sql/tools/sqlps-utility?view=sql-server-ver15
 - https://lolbas-project.github.io/lolbas/OtherMSBinaries/Sqlps/
 - https://twitter.com/bryon_/status/975835709587075072
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
 - attack.defense_evasion
 - attack.t1127
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Query Registry
+ruletype: Sigma
 author: Timur Zinniatullin, oscd.community
 date: 2019/10/21
 description: Adversaries may interact with the Windows Registry to gather information
@@ -40,12 +41,11 @@ level: low
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/04
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1012/T1012.md
-status: experimental
+status: test
 tags:
 - attack.discovery
 - attack.t1012
 - attack.t1007
-ruletype: SIGMA

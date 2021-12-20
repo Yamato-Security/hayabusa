@@ -1,5 +1,6 @@
 
 title: CMSTP UAC Bypass via COM Object Access
+ruletype: Sigma
 author: Nik Seetharaman, Christian Burkard
 date: 2021/08/31
 description: Detects UAC Bypass Attempt Using Microsoft Connection Manager Profile
@@ -49,4 +50,3 @@ tags:
 - attack.t1191
 - attack.g0069
 - car.2019-04-001
-ruletype: SIGMA

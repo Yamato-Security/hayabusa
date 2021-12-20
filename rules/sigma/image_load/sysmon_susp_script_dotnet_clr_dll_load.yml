@@ -1,5 +1,6 @@
 
 title: CLR DLL Loaded Via Scripting Applications
+ruletype: Sigma
 author: omkar72, oscd.community
 date: 2020/10/14
 description: Detects CLR DLL being loaded by an scripting applications
@@ -24,13 +25,13 @@ level: high
 logsource:
   category: image_load
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/tyranid/DotNetToJScript
 - https://thewover.github.io/Introducing-Donut/
 - https://blog.menasec.net/2019/07/interesting-difr-traces-of-net-clr.html
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.privilege_escalation
 - attack.t1055
-ruletype: SIGMA

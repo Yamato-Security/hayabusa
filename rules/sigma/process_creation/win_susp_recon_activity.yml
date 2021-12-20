@@ -1,5 +1,6 @@
 
 title: Suspicious Reconnaissance Activity
+ruletype: Sigma
 analysis:
   recommendation: Check if the user that executed the commands is suspicious (e.g.
     service accounts, LOCAL_SYSTEM)
@@ -38,4 +39,3 @@ tags:
 - attack.t1087.001
 - attack.t1087.002
 - attack.t1087
-ruletype: SIGMA

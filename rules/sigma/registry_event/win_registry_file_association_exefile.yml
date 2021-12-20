@@ -1,5 +1,6 @@
 
 title: New File Association Using Exefile
+ruletype: Sigma
 author: Andreas Hunkeler (@Karneades)
 date: 2021/11/19
 description: Detects the abuse of the exefile handler in new file association. Used
@@ -31,4 +32,3 @@ references:
 status: experimental
 tags:
 - attack.defense_evasion
-ruletype: SIGMA

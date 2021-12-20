@@ -1,5 +1,6 @@
 
 title: Terminal Server Client Connection History Cleared
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/10/19
 description: Detects the deletion of registry keys containing the MSTSC connection
@@ -36,4 +37,3 @@ tags:
 - attack.defense_evasion
 - attack.t1070
 - attack.t1112
-ruletype: SIGMA

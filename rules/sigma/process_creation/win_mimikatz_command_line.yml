@@ -1,5 +1,6 @@
 
 title: Mimikatz Command Line
+ruletype: Sigma
 author: Teymur Kheirkhabarov, oscd.community
 date: 2019/10/22
 description: Detection well-known mimikatz command line arguments
@@ -32,10 +33,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003
@@ -44,4 +45,3 @@ tags:
 - attack.t1003.004
 - attack.t1003.005
 - attack.t1003.006
-ruletype: SIGMA

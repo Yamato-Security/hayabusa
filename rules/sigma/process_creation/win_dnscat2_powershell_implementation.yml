@@ -1,5 +1,6 @@
 
 title: DNSCat2 Powershell Implementation Detection Via Process Creation
+ruletype: Sigma
 author: Cian Heasley
 date: 2020/08/08
 description: The PowerShell implementation of DNSCat2 calls nslookup to craft queries.
@@ -27,15 +28,15 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/lukebaggett/dnscat2-powershell
 - https://blu3-team.blogspot.com/2019/08/powershell-dns-c2-notes.html
 - https://ragged-lab.blogspot.com/2020/06/it-is-always-dns-powershell-edition.html
-status: experimental
+status: test
 tags:
 - attack.command_and_control
 - attack.t1071
 - attack.t1071.004
 - attack.t1001.003
 - attack.t1041
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Invoke-Obfuscation VAR+ Launcher
+ruletype: Sigma
 author: Jonathan Cheong, oscd.community
 date: 2020/10/15
 description: Detects Obfuscated use of Environment Variables to execute PowerShell
@@ -27,4 +28,3 @@ tags:
 - attack.t1027
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

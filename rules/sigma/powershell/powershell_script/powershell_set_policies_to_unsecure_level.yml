@@ -1,5 +1,6 @@
 
 title: Change PowerShell Policies to a Unsecure Level
+ruletype: Sigma
 author: frack113
 date: 2021/10/20
 description: Detects use of Set-ExecutionPolicy to set a unsecure policies
@@ -11,7 +12,10 @@ detection:
     - '*Unrestricted*'
     - '*bypass*'
     - '*RemoteSigned*'
-  condition: (SELECTION_1 and SELECTION_2)
+  SELECTION_3:
+    ParentImage:
+    - C:\ProgramData\chocolatey\choco.exe
+  condition: ((SELECTION_1 and SELECTION_2) and  not (SELECTION_3))
 falsepositives:
 - Administrator script
 id: 61d0475c-173f-4844-86f7-f3eebae1c66b
@@ -19,6 +23,7 @@ level: high
 logsource:
   category: ps_script
   product: windows
+modified: 2021/11/26
 references:
 - https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-7.1
 - https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7.1
@@ -27,4 +32,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

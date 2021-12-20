@@ -1,5 +1,6 @@
 
 title: MSHTA Spawning Windows Shell
+ruletype: Sigma
 author: Michael Haag
 date: 2019/01/16
 description: Detects a Windows command line executable started from MSHTA
@@ -33,10 +34,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://www.trustedsec.com/july-2015/malicious-htas/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1170
@@ -44,4 +45,3 @@ tags:
 - car.2013-02-003
 - car.2013-03-001
 - car.2014-04-003
-ruletype: SIGMA

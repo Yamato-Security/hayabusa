@@ -1,5 +1,6 @@
 
 title: Wmic Uninstall Security Product
+ruletype: Sigma
 author: Florian Roth
 date: 2021/01/30
 description: Detects deinstallation of security products using WMIC utility
@@ -49,4 +50,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

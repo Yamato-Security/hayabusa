@@ -1,5 +1,6 @@
 
 title: New Application in AppCompat
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/05/02
 description: A General detection for a new application in AppCompat. This indicates
@@ -24,11 +25,11 @@ level: informational
 logsource:
   category: registry_event
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/OTRF/detection-hackathon-apt29/issues/1
 - https://threathunterplaybook.com/evals/apt29/detections/1.A.1_DFD6A782-9BDB-4550-AB6B-525E825B095E.html
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1204.002
-ruletype: SIGMA

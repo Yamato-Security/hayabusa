@@ -1,5 +1,6 @@
 
 title: Possible Privilege Escalation via Service Permissions Weakness
+ruletype: Sigma
 author: Teymur Kheirkhabarov
 date: 2019/10/26
 description: Detect modification of services configuration (ImagePath, FailureCommand
@@ -38,4 +39,3 @@ tags:
 - attack.privilege_escalation
 - attack.t1058
 - attack.t1574.011
-ruletype: SIGMA

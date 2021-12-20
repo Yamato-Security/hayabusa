@@ -1,5 +1,6 @@
 
 title: Suspicious Splwow64 Without Params
+ruletype: Sigma
 author: Florian Roth
 date: 2021/08/23
 description: Detects suspicious Splwow64.exe process without any command line parameters
@@ -10,7 +11,7 @@ detection:
     Image: '*\splwow64.exe'
   SELECTION_3:
     CommandLine: '*splwow64.exe'
-  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3))
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
 falsepositives:
 - Unknown
 id: 1f1a8509-2cbb-44f5-8751-8e1571518ce2
@@ -18,10 +19,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/29
 references:
 - https://twitter.com/sbousseaden/status/1429401053229891590?s=12
 status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1202
-ruletype: SIGMA

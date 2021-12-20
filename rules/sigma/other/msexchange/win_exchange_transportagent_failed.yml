@@ -1,0 +1,28 @@
+
+title: Failed MSExchange Transport Agent Installation
+ruletype: Sigma
+author: Tobias Michalski
+date: 2021/06/08
+description: Detects a failed installation of a Exchange Transport Agent
+detection:
+  SELECTION_1:
+    EventID: 6
+  SELECTION_2:
+  - Install-TransportAgent
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- legitimate installations of exchange TransportAgents. AssemblyPath is a good indicator
+  for this.
+fields:
+- AssemblyPath
+id: c7d16cae-aaf3-42e5-9c1c-fb8553faa6fa
+level: high
+logsource:
+  product: windows
+  service: msexchange-management
+references:
+- https://twitter.com/blueteamsec1/status/1401290874202382336?s=20
+status: experimental
+tags:
+- attack.persistence
+- attack.t1505.002

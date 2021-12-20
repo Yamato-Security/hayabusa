@@ -1,5 +1,6 @@
 
 title: Suspicious Use of CSharp Interactive Console
+ruletype: Sigma
 author: Michael R. (@nahamike01)
 date: 2020/03/08
 description: Detects the execution of CSharp interactive console by PowerShell
@@ -21,10 +22,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://redcanary.com/blog/detecting-attacks-leveraging-the-net-framework/
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1127
-ruletype: SIGMA

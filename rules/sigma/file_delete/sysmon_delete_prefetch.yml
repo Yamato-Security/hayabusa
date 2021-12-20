@@ -1,5 +1,6 @@
 
 title: Prefetch File Deletion
+ruletype: Sigma
 author: Cedric MAURUGEON
 date: 2021/09/29
 description: Detects the deletion of a prefetch file (AntiForensic)
@@ -29,4 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1070.004
-ruletype: SIGMA

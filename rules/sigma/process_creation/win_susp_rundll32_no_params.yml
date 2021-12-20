@@ -1,5 +1,6 @@
 
 title: Suspicious Rundll32 Without Any CommandLine Params
+ruletype: Sigma
 author: Florian Roth
 date: 2021/05/27
 description: Detects suspicious start of rundll32.exe without any parameters as found
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1202
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: OceanLotus Registry Activity
+ruletype: Sigma
 author: megan201296, Jonhnathan Ribeiro
 date: 2019/04/14
 description: Detects registry keys created in OceanLotus (also known as APT32) attacks
@@ -51,4 +52,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

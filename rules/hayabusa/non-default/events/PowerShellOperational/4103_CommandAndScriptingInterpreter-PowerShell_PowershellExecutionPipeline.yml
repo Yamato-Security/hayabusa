@@ -1,0 +1,31 @@
+author: Eric Conrad, Yamato Security
+date: 2020/11/08
+modified: 2021/11/22
+
+title: PowerShell Execution Pipeline
+title_jp: PowerShellパイプライン実行
+output: 'Command: %CommandLine%'
+output_jp: 'コマンド: %CommandLine%'
+description: Displays powershell execution
+description_jp: Powershellの実行を出力する。
+
+id: d3fb8f7b-88b0-4ff4-bf9b-ca286ce19031
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Microsoft-Windows-PowerShell/Operational
+        EventID: 4103
+        ContextInfo:
+            - Host Application
+            - ホスト アプリケーション
+    condition: selection
+falsepositives:
+    - normal system usage
+tags:
+    - attack.defense_evasion
+    - attack.t1059.001
+    - lolbas
+references:
+logsource: non-default
+ruletype: Hayabusa

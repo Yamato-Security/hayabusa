@@ -1,5 +1,6 @@
 
 title: Empire PowerShell Launch Parameters
+ruletype: Sigma
 author: Florian Roth
 date: 2019/04/20
 description: Detects suspicious powershell command line parameters used in Empire
@@ -22,15 +23,14 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/07/20
+modified: 2021/11/27
 references:
 - https://github.com/EmpireProject/Empire/blob/c2ba61ca8d2031dad0cfc1d5770ba723e8b710db/lib/common/helpers.py#L165
 - https://github.com/EmpireProject/Empire/blob/e37fb2eef8ff8f5a0a689f1589f424906fe13055/lib/modules/powershell/persistence/powerbreach/deaduser.py#L191
 - https://github.com/EmpireProject/Empire/blob/e37fb2eef8ff8f5a0a689f1589f424906fe13055/lib/modules/powershell/persistence/powerbreach/resolver.py#L178
 - https://github.com/EmpireProject/Empire/blob/e37fb2eef8ff8f5a0a689f1589f424906fe13055/data/module_source/privesc/Invoke-EventVwrBypass.ps1#L64
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

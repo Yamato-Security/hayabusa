@@ -1,5 +1,6 @@
 
 title: PowerShell Writing Startup Shortcuts
+ruletype: Sigma
 author: Christopher Peacock '@securepeacock', SCYTHE
 date: 2021/10/24
 description: Attempts to detect PowerShell writing startup shortcuts. This procedure
@@ -35,4 +36,3 @@ status: experimental
 tags:
 - attack.registry_run_keys_/_startup_folder
 - attack.t1547.001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious Compression Tool Parameters
+ruletype: Sigma
 author: Florian Roth, Samir Bousseaden
 date: 2019/10/15
 description: Detects suspicious command line arguments of common data compression
@@ -30,14 +31,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/05
+modified: 2021/11/27
 references:
 - https://twitter.com/SBousseaden/status/1184067445612535811
-status: experimental
+status: test
 tags:
 - attack.collection
 - attack.t1560.001
 - attack.exfiltration
 - attack.t1020
 - attack.t1002
-ruletype: SIGMA

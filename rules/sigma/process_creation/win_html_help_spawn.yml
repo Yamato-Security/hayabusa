@@ -1,5 +1,6 @@
 
 title: HTML Help Shell Spawn
+ruletype: Sigma
 author: Maxim Pavlunin
 date: 2020/04/01
 description: Detects a suspicious child process of a Microsoft HTML Help system when
@@ -29,10 +30,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/chm-badness-delivers-a-banking-trojan/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218.001
@@ -45,4 +46,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.007
 - attack.t1047
-ruletype: SIGMA

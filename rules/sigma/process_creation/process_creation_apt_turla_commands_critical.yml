@@ -1,5 +1,6 @@
 
 title: Turla Group Lateral Movement
+ruletype: Sigma
 author: Markus Neis
 date: 2017/11/07
 description: Detects automated lateral movement by Turla group
@@ -33,4 +34,3 @@ tags:
 - attack.discovery
 - attack.t1083
 - attack.t1135
-ruletype: SIGMA

@@ -1,0 +1,31 @@
+author: Eric Conrad, Yamato Security
+creation_date: 2020/11/08
+uodated_date:  2021/11/26
+
+title: Local user account created
+title_jp: ローカルユーザアカウントが作成された
+output: 'User: %TargetUserName%  :  SID:%TargetSid%'
+output_jp: 'ユーザ名: %TargetUserName%  :  SID:%TargetSid%'
+description: A local user account was created.
+description_jp: ローカルユーザアカウントが作成された.
+
+id: 13edce80-2b02-4469-8de4-a3e37271dcdb
+level: medium
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4720
+    filter:
+        TargetUserName|endswith: "$" #Filter out machine/computer accounts
+    condition: selection and not filter
+falsepositives:
+    - system administrator
+tags:
+    - attack.persistence
+    - attack.11136.001
+references:
+    - https://attack.mitre.org/techniques/T1136/001/
+sample-evtx: ./sample-evtx/DeepBlueCLI/new-user-security.evtx
+logsource: default
+ruletype: Hayabusa

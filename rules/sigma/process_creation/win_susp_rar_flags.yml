@@ -1,5 +1,6 @@
 
 title: Rar with Password or Compression Level
+ruletype: Sigma
 author: '@ROxPinTeddy'
 date: 2020/05/12
 description: Detects the use of rar.exe, on the command line, to create an archive
@@ -35,4 +36,3 @@ tags:
 - attack.t1560.001
 - attack.exfiltration
 - attack.t1002
-ruletype: SIGMA

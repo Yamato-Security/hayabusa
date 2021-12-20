@@ -1,5 +1,6 @@
 
 title: Sofacy Trojan Loader Activity
+ruletype: Sigma
 author: Florian Roth, Jonhnathan Ribeiro, oscd.community
 date: 2018/03/01
 description: Detects Trojan loader acitivty as used by APT28
@@ -13,7 +14,10 @@ detection:
   SELECTION_4:
     CommandLine: '*.dat",*'
   SELECTION_5:
-    CommandLine: '*.dll",#1'
+    CommandLine:
+    - '*.dll",#1'
+    - '*.dll #1'
+    - '*.dll" #1'
   condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and (SELECTION_4 or SELECTION_5))
 falsepositives:
 - Unknown
@@ -22,7 +26,7 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/11/28
+modified: 2021/12/08
 references:
 - https://researchcenter.paloaltonetworks.com/2018/02/unit42-sofacy-attacks-multiple-government-entities/
 - https://www.reverse.it/sample/e3399d4802f9e6d6d539e3ae57e7ea9a54610a7c4155a6541df8e94d67af086e?environmentId=100
@@ -37,4 +41,3 @@ tags:
 - attack.t1085
 - car.2013-10-002
 - attack.t1218.011
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: LSASS Memory Dumping
+ruletype: Sigma
 author: E.M. Anhaus (originally from Atomic Blue Detections, Tony Lambert), oscd.community
 date: 2019/10/24
 description: Detect creation of dump files containing the memory space of lsass.exe,
@@ -33,14 +34,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/11
+modified: 2021/11/27
 references:
 - https://eqllib.readthedocs.io/en/latest/analytics/1e1ef6be-12fc-11e9-8d76-4d6bb837cda4.html
 - https://eqllib.readthedocs.io/en/latest/analytics/210b4ea4-12fc-11e9-8d76-4d6bb837cda4.html
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003/T1003.md
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003.001
 - attack.t1003
-ruletype: SIGMA

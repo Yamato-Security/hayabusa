@@ -1,5 +1,6 @@
 
 title: Cmdkey Cached Credentials Recon
+ruletype: Sigma
 author: jmallette
 date: 2019/01/16
 description: Detects usage of cmdkey to look for cached credentials
@@ -31,4 +32,3 @@ tags:
 - attack.credential_access
 - attack.t1003.005
 - attack.t1003
-ruletype: SIGMA

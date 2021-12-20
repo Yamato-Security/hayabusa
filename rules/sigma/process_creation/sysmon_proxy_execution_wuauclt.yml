@@ -1,5 +1,6 @@
 
 title: Proxy Execution via Wuauclt
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research), Florian Roth
 date: 2020/10/12
 description: Detects the use of the Windows Update Client binary (wuauclt.exe) to
@@ -37,4 +38,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

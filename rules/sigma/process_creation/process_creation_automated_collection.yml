@@ -1,5 +1,6 @@
 
 title: Automated Collection Command Prompt
+ruletype: Sigma
 author: frack113
 date: 2021/07/28
 description: Once established within a system or network, an adversary may use automated
@@ -43,4 +44,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1119
-ruletype: SIGMA

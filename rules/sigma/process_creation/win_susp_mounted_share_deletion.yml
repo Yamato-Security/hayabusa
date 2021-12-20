@@ -1,5 +1,6 @@
 
 title: Mounted Share Deleted
+ruletype: Sigma
 author: oscd.community, @redcanary, Zach Stanford @svch0st
 date: 2020/10/08
 description: Detects when when a mounted share is removed. Adversaries may remove
@@ -24,10 +25,10 @@ level: low
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1070.005/T1070.005.md
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1070.005
-ruletype: SIGMA

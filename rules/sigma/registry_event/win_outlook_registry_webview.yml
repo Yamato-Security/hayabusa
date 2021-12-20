@@ -1,5 +1,6 @@
 
 title: Persistent Outlook Landing Pages
+ruletype: Sigma
 author: Tobias Michalski
 date: 2021/06/09
 description: Detects the manipulation of persistent URLs which can be malicious
@@ -39,4 +40,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1112
-ruletype: SIGMA

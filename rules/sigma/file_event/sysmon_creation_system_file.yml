@@ -1,5 +1,6 @@
 
 title: File Created with System Process Name
+ruletype: Sigma
 author: Sander Wiebing
 date: 2020/05/26
 description: Detects the creation of an executable with a system process name in a
@@ -65,4 +66,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.005
-ruletype: SIGMA

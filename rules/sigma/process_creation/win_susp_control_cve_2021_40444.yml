@@ -1,5 +1,6 @@
 
 title: CVE-2021-40444 Process Pattern
+ruletype: Sigma
 author: '@neonprimetime, Florian Roth'
 date: 2021/09/08
 description: Detects a suspicious process pattern found in CVE-2021-40444 exploitation
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1059
-ruletype: SIGMA

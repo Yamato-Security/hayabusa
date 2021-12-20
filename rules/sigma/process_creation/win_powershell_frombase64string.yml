@@ -1,5 +1,6 @@
 
 title: FromBase64String Command Line
+ruletype: Sigma
 author: Florian Roth
 date: 2020/01/29
 description: Detects suspicious FromBase64String expressions in command line arguments
@@ -16,13 +17,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://gist.github.com/Neo23x0/6af876ee72b51676c82a2db8d2cd3639
-status: experimental
+status: test
 tags:
 - attack.t1027
 - attack.defense_evasion
 - attack.t1140
 - attack.t1059.001
-ruletype: SIGMA

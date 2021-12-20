@@ -1,5 +1,6 @@
 
 title: Outlook C2 Registry Key
+ruletype: Sigma
 author: '@ScoubiMtl'
 date: 2021/04/05
 description: Detects the modification of Outlook Security Setting to allow unprompted
@@ -34,4 +35,3 @@ tags:
 - attack.t1137
 - attack.t1008
 - attack.t1546
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Copy from Admin Share
+ruletype: Sigma
 author: Florian Roth, oscd.community, Teymur Kheirkhabarov @HeirhabarovT, Zach Stanford
   @svch0st
 date: 2019/12/30
@@ -52,4 +53,3 @@ tags:
 - attack.t1105
 - attack.t1048
 - attack.t1021.002
-ruletype: SIGMA

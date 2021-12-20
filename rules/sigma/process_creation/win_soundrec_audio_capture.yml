@@ -1,5 +1,6 @@
 
 title: Audio Capture via SoundRecorder
+ruletype: Sigma
 author: E.M. Anhaus (originally from Atomic Blue Detections, Endgame), oscd.community
 date: 2019/10/24
 description: Detect attacker collecting audio via SoundRecorder application.
@@ -18,12 +19,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/11
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1123/T1123.md
 - https://eqllib.readthedocs.io/en/latest/analytics/f72a98cb-7b3d-4100-99c3-a138b6e9ff6e.html
-status: experimental
+status: test
 tags:
 - attack.collection
 - attack.t1123
-ruletype: SIGMA

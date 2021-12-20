@@ -1,5 +1,6 @@
 
 title: Dotnet.exe Exec Dll and Execute Unsigned Code LOLBIN
+ruletype: Sigma
 author: Beyu Denis, oscd.community
 date: 2020/10/18
 description: dotnet.exe will execute any DLL and execute unsigned code
@@ -27,12 +28,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OtherMSBinaries/Dotnet.yml
 - https://twitter.com/_felamos/status/1204705548668555264
 - https://bohops.com/2019/08/19/dotnet-core-a-vector-for-awl-bypass-defense-evasion/
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1218
-ruletype: SIGMA

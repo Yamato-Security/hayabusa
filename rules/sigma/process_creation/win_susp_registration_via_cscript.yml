@@ -1,5 +1,6 @@
 
 title: Suspicious Registration via cscript.exe
+ruletype: Sigma
 author: Austin Songer @austinsonger
 date: 2021/11/05
 description: Detects when the registration of a VSS/VDS Provider as a COM+ application.
@@ -33,4 +34,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

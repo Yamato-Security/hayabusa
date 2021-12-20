@@ -1,5 +1,6 @@
 
 title: Suspicious ScreenSave Change by Reg.exe
+ruletype: Sigma
 author: frack113
 date: 2021/08/19
 description: |
@@ -53,4 +54,3 @@ status: experimental
 tags:
 - attack.privilege_escalation
 - attack.t1546.002
-ruletype: SIGMA

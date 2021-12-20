@@ -1,0 +1,32 @@
+
+title: Suspicious Extrac32 Execution
+ruletype: Sigma
+author: frack113
+date: 2021/11/26
+description: Download or Copy file with Extrac32
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*extrac32.exe*'
+  SELECTION_3:
+    CommandLine: '*.cab*'
+  SELECTION_4:
+    CommandLine:
+    - '*/C*'
+    - '*/Y*'
+    - '* \\\*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- unknown
+id: aa8e035d-7be4-48d3-a944-102aec04400d
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://lolbas-project.github.io/lolbas/Binaries/Extrac32/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1564.004

@@ -1,5 +1,6 @@
 
 title: Windows Defender Real-Time Protection Disabled
+ruletype: Sigma
 author: AlertIQ
 date: 2021/10/18
 description: Detects disabling Windows Defender Real-Time Protection by modifying
@@ -45,4 +46,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

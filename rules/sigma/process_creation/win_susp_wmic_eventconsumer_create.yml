@@ -1,5 +1,6 @@
 
 title: Suspicious WMIC ActiveScriptEventConsumer Creation
+ruletype: Sigma
 author: Florian Roth
 date: 2021/06/25
 description: Detects WMIC executions in which a event consumer gets created in order
@@ -29,4 +30,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1546.003
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: MavInject Process Injection
+ruletype: Sigma
 author: Florian Roth
 date: 2018/12/12
 description: Detects process injection using the signed Windows tool Mavinject32.exe
@@ -16,14 +17,13 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://twitter.com/gN3mes1s/status/941315826107510784
 - https://reaqta.com/2017/12/mavinject-microsoft-injector/
 - https://twitter.com/Hexacorn/status/776122138063409152
-status: experimental
+status: test
 tags:
 - attack.t1055
 - attack.t1055.001
 - attack.t1218
-ruletype: SIGMA

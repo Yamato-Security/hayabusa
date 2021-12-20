@@ -1,5 +1,6 @@
 
 title: Pandemic Registry Key
+ruletype: Sigma
 author: Florian Roth
 date: 2017/06/01
 description: Detects Pandemic Windows Implant
@@ -35,4 +36,3 @@ status: experimental
 tags:
 - attack.lateral_movement
 - attack.t1105
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: ScreenConnect Remote Access
+ruletype: Sigma
 author: Florian Roth
 date: 2021/02/11
 description: Detects ScreenConnect program starts that establish a remote access to
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.initial_access
 - attack.t1133
-ruletype: SIGMA

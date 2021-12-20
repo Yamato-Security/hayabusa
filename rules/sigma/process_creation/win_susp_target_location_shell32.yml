@@ -1,0 +1,38 @@
+
+title: Shell32 DLL Execution in Suspicious Directory
+ruletype: Sigma
+author: Christian Burkard
+date: 2021/11/24
+description: Detects shell32.dll executing a DLL in a suspicious directory
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\rundll32.exe'
+  SELECTION_3:
+    CommandLine: '*shell32.dll*'
+  SELECTION_4:
+    CommandLine: '*Control_RunDLL*'
+  SELECTION_5:
+    CommandLine:
+    - '*%AppData%*'
+    - '*%LocalAppData%*'
+    - '*%Temp%*'
+    - '*\AppData\\*'
+    - '*\Temp\\*'
+    - '*\Users\Public\\*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Unknown
+id: 32b96012-7892-429e-b26c-ac2bf46066ff
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://www.group-ib.com/resources/threat-research/red-curl-2.html
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.execution
+- attack.t1218.011

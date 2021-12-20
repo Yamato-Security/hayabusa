@@ -1,5 +1,6 @@
 
 title: SilentProcessExit Monitor Registrytion
+ruletype: Sigma
 author: Florian Roth
 date: 2021/02/26
 description: Detects changes to the Registry in which a monitor program gets registered
@@ -30,4 +31,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1546.012
-ruletype: SIGMA

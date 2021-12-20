@@ -1,5 +1,6 @@
 
 title: Rubeus Hack Tool
+ruletype: Sigma
 author: Florian Roth
 date: 2018/12/19
 description: Detects command line parameters used by Rubeus hack tool
@@ -28,9 +29,10 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.harmj0y.net/blog/redteaming/from-kekeo-to-rubeus/
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003
@@ -39,4 +41,3 @@ tags:
 - attack.lateral_movement
 - attack.t1550.003
 - attack.t1097
-ruletype: SIGMA

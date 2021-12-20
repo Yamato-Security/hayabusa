@@ -1,5 +1,6 @@
 
 title: InfDefaultInstall.exe .inf Execution
+ruletype: Sigma
 author: frack113
 date: 2021/07/13
 description: Executes SCT script using scrobj.dll from a command in entered into a
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

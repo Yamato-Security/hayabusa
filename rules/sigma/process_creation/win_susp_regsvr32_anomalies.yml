@@ -1,5 +1,6 @@
 
 title: Regsvr32 Anomaly
+ruletype: Sigma
 author: Florian Roth, oscd.community
 date: 2019/01/16
 description: Detects various anomalies in relation to regsvr32.exe
@@ -72,4 +73,3 @@ tags:
 - attack.t1117
 - car.2019-04-002
 - car.2019-04-003
-ruletype: SIGMA

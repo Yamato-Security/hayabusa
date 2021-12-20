@@ -1,5 +1,6 @@
 
 title: T1086 PowerShell Execution
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2019/09/12
 description: Detects execution of PowerShell
@@ -18,10 +19,10 @@ level: informational
 logsource:
   category: pipe_created
   product: windows
+modified: 2021/11/27
 references:
 - https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190410151110.html
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

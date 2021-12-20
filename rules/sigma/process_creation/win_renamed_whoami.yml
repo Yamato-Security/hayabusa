@@ -1,5 +1,6 @@
 
 title: Renamed Whoami Execution
+ruletype: Sigma
 author: Florian Roth
 date: 2021/08/12
 description: Detects the execution of whoami that has been renamed to a different
@@ -27,4 +28,3 @@ tags:
 - attack.discovery
 - attack.t1033
 - car.2016-03-001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious MsiExec Directory
+ruletype: Sigma
 author: Florian Roth
 date: 2019/11/14
 description: Detects suspicious msiexec process starts in an uncommon directory
@@ -21,11 +22,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/200_okay_/status/1194765831911215104
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1036.005
 - attack.t1036
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious WMI Execution Using Rundll32
+ruletype: Sigma
 author: Florian Roth
 date: 2020/10/12
 description: Detects WMI executing rundll32
@@ -21,10 +22,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://thedfirreport.com/2020/10/08/ryuks-return/
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1047
-ruletype: SIGMA

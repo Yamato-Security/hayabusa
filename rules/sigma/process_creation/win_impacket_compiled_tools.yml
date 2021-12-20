@@ -1,5 +1,6 @@
 
 title: Impacket Tool Execution
+ruletype: Sigma
 author: Florian Roth
 date: 2021/07/24
 description: Detects the execution of different compiled Windows binaries of the impacket
@@ -60,4 +61,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1557.001
-ruletype: SIGMA

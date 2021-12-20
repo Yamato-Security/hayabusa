@@ -1,5 +1,6 @@
 
 title: PowerShell Download from URL
+ruletype: Sigma
 author: Florian Roth, oscd.community, Jonhnathan Ribeiro
 date: 2019/01/16
 description: Detects a Powershell process that contains download commands in its command
@@ -31,9 +32,9 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.t1086
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

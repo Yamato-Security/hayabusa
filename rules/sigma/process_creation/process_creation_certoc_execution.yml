@@ -1,5 +1,6 @@
 
 title: Suspicious Load DLL via CertOC.exe
+ruletype: Sigma
 author: Austin Songer @austinsonger
 date: 2021/10/23
 description: Detects when a user installs certificates by using CertOC.exe to loads
@@ -30,4 +31,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

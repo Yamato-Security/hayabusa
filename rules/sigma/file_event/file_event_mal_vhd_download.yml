@@ -1,5 +1,6 @@
 
 title: Suspicious VHD Image Download From Browser
+ruletype: Sigma
 author: frack113, Christopher Peacock '@securepeacock', SCYTHE '@scythe_io'
 date: 2021/10/25
 description: Malware can use mountable Virtual Hard Disk .vhd file to encapsulate
@@ -38,4 +39,3 @@ status: test
 tags:
 - attack.resource_development
 - attack.t1587.001
-ruletype: SIGMA

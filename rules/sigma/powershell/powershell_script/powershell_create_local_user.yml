@@ -1,5 +1,6 @@
 
 title: PowerShell Create Local User
+ruletype: Sigma
 author: '@ROxPinTeddy'
 date: 2020/04/11
 description: Detects creation of a local user via PowerShell
@@ -26,4 +27,3 @@ tags:
 - attack.persistence
 - attack.t1136.001
 - attack.t1136
-ruletype: SIGMA

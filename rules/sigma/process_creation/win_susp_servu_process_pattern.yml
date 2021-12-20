@@ -1,5 +1,6 @@
 
 title: Suspicious Serv-U Process Pattern
+ruletype: Sigma
 author: Florian Roth
 date: 2021/07/14
 description: Detects a suspicious process pattern which could be a sign of an exploited
@@ -41,4 +42,3 @@ tags:
 - attack.credential_access
 - attack.t1555
 - cve.2021.35211
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Security Support Provider (SSP) Added to LSA Configuration
+ruletype: Sigma
 author: iwillkeepwatch
 date: 2019/01/18
 description: Detects the addition of a SSP to the registry. Upon a reboot or API call,
@@ -28,13 +29,12 @@ level: critical
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://attack.mitre.org/techniques/T1101/
 - https://powersploit.readthedocs.io/en/latest/Persistence/Install-SSP/
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1101
 - attack.t1547.005
-ruletype: SIGMA

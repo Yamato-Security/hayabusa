@@ -1,5 +1,6 @@
 
 title: Created Files by Office Applications
+ruletype: Sigma
 author: Vadim Khrykov (ThreatIntel), Cyb3rEng (Rule)
 date: 2021/08/23
 description: This rule will monitor executable and script file creation by office
@@ -44,4 +45,3 @@ tags:
 - attack.t1218.010
 - attack.execution
 - attack.defense_evasion
-ruletype: SIGMA

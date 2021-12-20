@@ -1,5 +1,6 @@
 
 title: MsiExec Web Install
+ruletype: Sigma
 author: Florian Roth
 date: 2018/02/09
 description: Detects suspicious msiexec process starts with web addresses as parameter
@@ -28,4 +29,3 @@ tags:
 - attack.t1218.007
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

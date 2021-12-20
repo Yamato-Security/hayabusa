@@ -1,5 +1,6 @@
 
 title: Abusable Invoke-ATHRemoteFXvGPUDisablementCommand
+ruletype: Sigma
 author: frack113
 date: 2021/07/13
 description: RemoteFXvGPUDisablement.exe is an abusable, signed PowerShell host executable
@@ -39,4 +40,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

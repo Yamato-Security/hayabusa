@@ -1,5 +1,6 @@
 
 title: RDP Registry Modification
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/09/12
 description: Detects potential malicious modification of the property value of fDenyTSConnections
@@ -30,11 +31,10 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2019/11/10
+modified: 2021/11/27
 references:
 - https://threathunterplaybook.com/notebooks/windows/05_defense_evasion/WIN-190407183310.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

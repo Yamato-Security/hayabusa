@@ -1,5 +1,6 @@
 
 title: RDP Over Reverse SSH Tunnel
+ruletype: Sigma
 author: Samir Bousseaden
 date: 2019/02/16
 description: Detects svchost hosting RDP termsvcs communicating with the loopback
@@ -39,4 +40,3 @@ tags:
 - attack.t1021.001
 - attack.t1076
 - car.2013-07-002
-ruletype: SIGMA

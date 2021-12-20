@@ -1,5 +1,6 @@
 
 title: Executable Used by PlugX in Uncommon Location
+ruletype: Sigma
 author: Florian Roth
 date: 2017/06/12
 description: Detects the execution of an executable that is typically used by PlugX
@@ -105,4 +106,3 @@ tags:
 - attack.defense_evasion
 - attack.t1073
 - attack.t1574.002
-ruletype: SIGMA

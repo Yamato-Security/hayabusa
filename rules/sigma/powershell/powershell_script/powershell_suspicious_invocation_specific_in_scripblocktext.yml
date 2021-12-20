@@ -1,5 +1,6 @@
 
 title: Suspicious PowerShell Invocations - Specific
+ruletype: Sigma
 author: Florian Roth (rule), Jonhnathan Ribeiro
 date: 2017/03/05
 description: Detects suspicious PowerShell invocation command parameters
@@ -92,4 +93,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

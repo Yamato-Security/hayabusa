@@ -1,5 +1,6 @@
 
 title: NTFS Alternate Data Stream
+ruletype: Sigma
 author: Sami Ruohonen
 date: 2018/07/24
 description: Detects writing data into NTFS alternate data streams from powershell.
@@ -21,7 +22,7 @@ logsource:
   category: ps_script
   definition: Script block logging must be enabled
   product: windows
-modified: 2021/10/16
+modified: 2021/12/02
 references:
 - http://www.powertheshell.com/ntfsstreams/
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1564.004/T1564.004.md
@@ -33,4 +34,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

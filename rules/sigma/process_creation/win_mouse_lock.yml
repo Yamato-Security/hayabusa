@@ -1,5 +1,6 @@
 
 title: Mouse Lock Credential Gathering
+ruletype: Sigma
 author: Cian Heasley
 date: 2020/08/13
 description: In Kaspersky's 2020 Incident Response Analyst Report they listed legitimate
@@ -26,12 +27,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/klsecservices/Publications/blob/master/Incident-Response-Analyst-Report-2020.pdf
 - https://sourceforge.net/projects/mouselock/
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.collection
 - attack.t1056.002
-ruletype: SIGMA

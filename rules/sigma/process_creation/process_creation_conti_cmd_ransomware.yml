@@ -1,5 +1,6 @@
 
 title: Conti Ransomware Execution
+ruletype: Sigma
 author: frack113
 date: 2021/10/12
 description: Conti ransomware command line ioc
@@ -35,4 +36,3 @@ tags:
 - attack.impact
 - attack.s0575
 - attack.t1486
-ruletype: SIGMA

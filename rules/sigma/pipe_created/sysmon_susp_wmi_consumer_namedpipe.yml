@@ -1,5 +1,6 @@
 
 title: WMI Event Consumer Created Named Pipe
+ruletype: Sigma
 author: Florian Roth
 date: 2021/09/01
 description: Detects the WMI Event Consumer service scrcons.exe creating a named pipe
@@ -30,4 +31,3 @@ status: experimental
 tags:
 - attack.t1047
 - attack.execution
-ruletype: SIGMA

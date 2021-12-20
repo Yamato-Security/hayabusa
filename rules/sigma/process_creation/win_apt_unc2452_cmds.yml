@@ -1,5 +1,6 @@
 
 title: UNC2452 Process Creation Patterns
+ruletype: Sigma
 author: Florian Roth
 date: 2021/01/22
 description: Detects a specific process creation patterns as seen used by UNC2452
@@ -14,12 +15,10 @@ detection:
   SELECTION_12:
     CommandLine: '*.dll *'
   SELECTION_13:
-    EventID: 1
-  SELECTION_14:
     ParentImage: '*\rundll32.exe'
-  SELECTION_15:
+  SELECTION_14:
     Image: '*\dllhost.exe'
-  SELECTION_16:
+  SELECTION_15:
     CommandLine:
     - ' '
     - ''
@@ -42,8 +41,8 @@ detection:
     ParentCommandLine: '*C:\Windows*'
   condition: (SELECTION_1 and ((((SELECTION_2 or (SELECTION_3 and SELECTION_4 and
     SELECTION_5 and SELECTION_6 and SELECTION_7)) or (SELECTION_8 and SELECTION_9
-    and SELECTION_10)) or (SELECTION_11 and SELECTION_12)) or (SELECTION_13 and (SELECTION_14
-    and SELECTION_15) and  not (SELECTION_16))))
+    and SELECTION_10)) or (SELECTION_11 and SELECTION_12)) or ((SELECTION_13 and SELECTION_14)
+    and  not (SELECTION_15))))
 falsepositives:
 - Unknown
 id: 9be34ad0-b6a7-4fbd-91cf-fc7ec1047f5f
@@ -58,4 +57,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

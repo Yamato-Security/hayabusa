@@ -1,5 +1,6 @@
 
 title: Bypass UAC via CMSTP
+ruletype: Sigma
 author: E.M. Anhaus (originally from Atomic Blue Detections, Endgame), oscd.community
 date: 2019/10/24
 description: Detect child processes of automatically elevated instances of Microsoft
@@ -25,11 +26,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/29
+modified: 2021/11/27
 references:
 - https://eqllib.readthedocs.io/en/latest/analytics/e584f1a1-c303-4885-8a66-21360c90995b.html
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1191/T1191.md
-status: experimental
+status: test
 tags:
 - attack.privilege_escalation
 - attack.defense_evasion
@@ -37,4 +38,3 @@ tags:
 - attack.t1218.003
 - attack.t1191
 - attack.t1088
-ruletype: SIGMA

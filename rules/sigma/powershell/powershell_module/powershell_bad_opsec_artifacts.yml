@@ -1,5 +1,6 @@
 
 title: Bad Opsec Powershell Code Artifacts
+ruletype: Sigma
 author: ok @securonix invrep_de, oscd.community
 date: 2020/10/09
 description: Focuses on trivial artifacts observed in variants of prevalent offensive
@@ -38,4 +39,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

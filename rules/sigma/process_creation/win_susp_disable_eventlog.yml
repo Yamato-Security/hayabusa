@@ -1,5 +1,6 @@
 
 title: Disable or Delete Windows Eventlog
+ruletype: Sigma
 author: Florian Roth
 date: 2021/02/11
 description: Detects command that is used to disable or delete Windows eventlog via
@@ -26,7 +27,7 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2021/06/21
+modified: 2021/12/02
 references:
 - https://twitter.com/0gtweet/status/1359039665232306183?s=21
 - https://ss64.com/nt/logman.html
@@ -35,4 +36,3 @@ tags:
 - attack.defense_evasion
 - attack.t1562.001
 - attack.t1070.001
-ruletype: SIGMA

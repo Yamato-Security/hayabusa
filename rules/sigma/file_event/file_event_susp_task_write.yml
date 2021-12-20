@@ -1,5 +1,6 @@
 
 title: Suspicious Scheduled Task Writ to System32 Tasks
+ruletype: Sigma
 author: Florian Roth
 date: 2021/11/16
 description:
@@ -28,4 +29,3 @@ tags:
 - attack.persistence
 - attack.execution
 - attack.t1053
-ruletype: SIGMA

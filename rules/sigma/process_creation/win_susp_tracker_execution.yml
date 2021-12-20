@@ -1,5 +1,6 @@
 
 title: DLL Injection with Tracker.exe
+ruletype: Sigma
 author: Avneet Singh @v3t0_, oscd.community
 date: 2020/10/18
 description: This rule detects DLL injection and execution via LOLBAS - Tracker.exe
@@ -26,10 +27,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OtherMSBinaries/Tracker.yml
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1055.001
-ruletype: SIGMA

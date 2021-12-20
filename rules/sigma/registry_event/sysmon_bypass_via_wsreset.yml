@@ -1,5 +1,6 @@
 
 title: UAC Bypass Via Wsreset
+ruletype: Sigma
 author: oscd.community, Dmitry Uchakin
 date: 2020/10/07
 description: Unfixed method for UAC bypass from windows 10. WSReset.exe file associated
@@ -27,12 +28,12 @@ level: high
 logsource:
   category: registry_event
   product: windows
+modified: 2021/11/27
 references:
 - https://www.bleepingcomputer.com/news/security/trickbot-uses-a-new-windows-10-uac-bypass-to-launch-quietly
 - https://lolbas-project.github.io/lolbas/Binaries/Wsreset
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1548.002
-ruletype: SIGMA

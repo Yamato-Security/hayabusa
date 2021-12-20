@@ -1,5 +1,6 @@
 
 title: Defrag Deactivation
+ruletype: Sigma
 author: Florian Roth, Bartlomiej Czyz (@bczyz1)
 date: 2019/03/04
 description: Detects the deactivation and disabling of the Scheduled defragmentation
@@ -33,4 +34,3 @@ tags:
 - attack.persistence
 - attack.t1053.005
 - attack.s0111
-ruletype: SIGMA

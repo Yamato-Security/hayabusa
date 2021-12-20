@@ -1,5 +1,6 @@
 
 title: Java Running with Remote Debugging
+ruletype: Sigma
 author: Florian Roth
 date: 2019/01/16
 description: Detects a JAVA process running with remote debugging allowing more than
@@ -24,9 +25,8 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/29
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.t1203
 - attack.execution
-ruletype: SIGMA

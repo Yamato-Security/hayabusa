@@ -1,5 +1,6 @@
 
 title: Suspicious Remote Thread Created
+ruletype: Sigma
 author: Perez Diego (@darkquassar), oscd.community
 date: 2019/10/27
 description: Offensive tradecraft is switching away from using APIs like "CreateRemoteThread",
@@ -86,4 +87,3 @@ tags:
 - attack.privilege_escalation
 - attack.defense_evasion
 - attack.t1055
-ruletype: SIGMA

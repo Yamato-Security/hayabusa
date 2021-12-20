@@ -1,5 +1,6 @@
 
 title: Netsh Port Forwarding
+ruletype: Sigma
 author: Florian Roth, omkar72, oscd.community
 date: 2019/01/29
 description: Detects netsh commands that configure a port forwarding (PortProxy)
@@ -43,4 +44,3 @@ tags:
 - attack.defense_evasion
 - attack.command_and_control
 - attack.t1090
-ruletype: SIGMA

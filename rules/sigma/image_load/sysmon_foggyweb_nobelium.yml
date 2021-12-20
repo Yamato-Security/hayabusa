@@ -1,5 +1,6 @@
 
 title: FoggyWeb Backdoor DLL Loading
+ruletype: Sigma
 author: Florian Roth
 date: 2021/09/27
 description: Detects DLL image load activity as used by FoggyWeb backdoor loader
@@ -22,4 +23,3 @@ status: experimental
 tags:
 - attack.resource_development
 - attack.t1587
-ruletype: SIGMA

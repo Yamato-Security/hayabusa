@@ -1,5 +1,6 @@
 
 title: Windows Shell File Write to Suspicious Folder
+ruletype: Sigma
 author: Florian Roth
 date: 2021/11/20
 description: Detects a Windows executable that writes files to suspicious folders
@@ -15,6 +16,7 @@ detection:
     - '*\sh.exe'
     - '*\bash.exe'
     - '*\msbuild.exe'
+    - '*\certutil.exe'
   SELECTION_3:
     TargetFilename:
     - '*C:\Users\Public*'
@@ -24,9 +26,9 @@ detection:
     - '*\schtasks.exe'
     - '*\wmic.exe'
     - '*\mshta.exe'
-    - '*\rundll32.exe'
     - '*\forfiles.exe'
     - '*\scriptrunner.exe'
+    - '*\certutil.exe'
   SELECTION_5:
     TargetFilename:
     - '*C:\Users\Public*'
@@ -44,7 +46,7 @@ level: high
 logsource:
   category: file_event
   product: windows
+modified: 2021/11/24
 references:
 - No references
 status: experimental
-ruletype: SIGMA

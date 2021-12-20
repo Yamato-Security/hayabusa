@@ -1,5 +1,6 @@
 
 title: Ncat Execution
+ruletype: Sigma
 author: frack113
 date: 2021/07/21
 description: Adversaries may use a non-application layer protocol for communication
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.command_and_control
 - attack.t1095
-ruletype: SIGMA

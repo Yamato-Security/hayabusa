@@ -1,5 +1,6 @@
 
 title: Empire PowerShell UAC Bypass
+ruletype: Sigma
 author: Ecco
 date: 2019/08/30
 description: Detects some Empire PowerShell UAC bypass methods
@@ -21,14 +22,14 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/EmpireProject/Empire/blob/e37fb2eef8ff8f5a0a689f1589f424906fe13055/data/module_source/privesc/Invoke-EventVwrBypass.ps1#L64
 - https://github.com/EmpireProject/Empire/blob/e37fb2eef8ff8f5a0a689f1589f424906fe13055/data/module_source/privesc/Invoke-FodHelperBypass.ps1#L64
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1548.002
 - attack.t1088
 - car.2019-04-001
-ruletype: SIGMA

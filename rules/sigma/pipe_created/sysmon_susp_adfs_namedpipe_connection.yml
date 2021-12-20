@@ -1,5 +1,6 @@
 
 title: ADFS Database Named Pipe Connection
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2021/10/08
 description: Detects suspicious local connections via a named pipe to the AD FS configuration
@@ -39,4 +40,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1005
-ruletype: SIGMA

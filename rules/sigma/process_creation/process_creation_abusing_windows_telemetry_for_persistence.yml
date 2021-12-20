@@ -1,5 +1,6 @@
 
 title: Abusing Windows Telemetry For Persistence
+ruletype: Sigma
 author: Sreeman
 date: 2020/09/29
 description: Windows telemetry makes use of the binary CompatTelRunner.exe to run
@@ -35,4 +36,3 @@ tags:
 - attack.persistence
 - attack.t1112
 - attack.t1053
-ruletype: SIGMA

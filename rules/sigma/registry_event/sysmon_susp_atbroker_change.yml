@@ -1,5 +1,6 @@
 
 title: Atbroker Registry Change
+ruletype: Sigma
 author: Mateusz Wydra, oscd.community
 date: 2020/10/13
 description: Detects creation/modification of Assisitive Technology applications and
@@ -33,4 +34,3 @@ tags:
 - attack.t1218
 - attack.persistence
 - attack.t1547
-ruletype: SIGMA

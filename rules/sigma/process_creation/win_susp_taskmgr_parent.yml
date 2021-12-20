@@ -1,5 +1,6 @@
 
 title: Taskmgr as Parent
+ruletype: Sigma
 author: Florian Roth
 date: 2018/03/13
 description: Detects the creation of a process from Windows task manager
@@ -25,8 +26,8 @@ level: low
 logsource:
   category: process_creation
   product: windows
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1036
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Direct Syscall of NtOpenProcess
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/07/28
 description: Detects the usage of the direct syscall of NtOpenProcess which might
@@ -23,4 +24,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1106
-ruletype: SIGMA

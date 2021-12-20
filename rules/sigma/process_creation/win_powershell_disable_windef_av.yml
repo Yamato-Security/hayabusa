@@ -1,5 +1,6 @@
 
 title: Powershell Used To Disable Windows Defender AV Security Monitoring
+ruletype: Sigma
 author: ok @securonix invrep-de, oscd.community, frack113
 date: 2020/10/12
 description: Detects attackers attempting to disable Windows Defender using Powershell
@@ -47,4 +48,3 @@ tags:
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.001
-ruletype: SIGMA

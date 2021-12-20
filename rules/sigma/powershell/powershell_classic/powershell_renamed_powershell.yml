@@ -1,5 +1,6 @@
 
 title: Renamed Powershell Under Powershell Channel
+ruletype: Sigma
 author: Harish Segar, frack113
 date: 2020/06/29
 description: Detects renamed powershell
@@ -27,4 +28,3 @@ tags:
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-ruletype: SIGMA

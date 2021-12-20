@@ -1,5 +1,6 @@
 
 title: Windows Defender Threat Detection Disabled
+ruletype: Sigma
 author: Ján Trenčanský, frack113, AlertIQ
 date: 2020/07/28
 description: Detects disabling Windows Defender threat protection
@@ -45,4 +46,3 @@ tags:
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.001
-ruletype: SIGMA

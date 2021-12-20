@@ -1,5 +1,6 @@
 
 title: EfsPotato Named Pipe
+ruletype: Sigma
 author: Florian Roth
 date: 2021/08/23
 description: Detects the pattern of a pipe name as used by the tool EfsPotato
@@ -34,4 +35,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1055
-ruletype: SIGMA

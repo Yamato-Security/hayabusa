@@ -1,5 +1,6 @@
 
 title: Taskmgr as LOCAL_SYSTEM
+ruletype: Sigma
 author: Florian Roth
 date: 2018/03/18
 description: Detects the creation of taskmgr.exe process in context of LOCAL_SYSTEM
@@ -25,4 +26,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1036
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: PowerShell Rundll32 Remote Thread Creation
+ruletype: Sigma
 author: Florian Roth
 date: 2018/06/25
 description: Detects PowerShell remote thread creation in Rundll32.exe
@@ -29,4 +30,3 @@ tags:
 - attack.t1218.011
 - attack.t1086
 - attack.t1059.001
-ruletype: SIGMA

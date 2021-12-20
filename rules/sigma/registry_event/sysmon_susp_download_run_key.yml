@@ -1,5 +1,6 @@
 
 title: Suspicious Run Key from Download
+ruletype: Sigma
 author: Florian Roth
 date: 2019/10/01
 description: Detects the suspicious RUN keys created by software located in Download
@@ -26,12 +27,11 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://app.any.run/tasks/c5bef5b7-f484-4c43-9cf3-d5c5c7839def/
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1060
 - attack.t1547.001
-ruletype: SIGMA

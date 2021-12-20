@@ -1,5 +1,6 @@
 
 title: Too Long PowerShell Commandlines
+ruletype: Sigma
 author: oscd.community, Natalia Shornikova
 date: 2020/10/06
 description: Detects Too long PowerShell command lines
@@ -24,11 +25,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2021/05/21
+modified: 2021/12/02
 references:
 - https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse
 status: experimental
 tags:
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

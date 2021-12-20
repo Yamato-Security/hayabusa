@@ -1,5 +1,6 @@
 
 title: Execution from Suspicious Folder
+ruletype: Sigma
 author: Florian Roth
 date: 2019/01/16
 description: Detects a suspicious execution from an uncommon folder
@@ -49,4 +50,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1036
-ruletype: SIGMA

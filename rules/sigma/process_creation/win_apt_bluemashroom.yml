@@ -1,5 +1,6 @@
 
 title: BlueMashroom DLL Load
+ruletype: Sigma
 author: Florian Roth
 date: 2019/10/02
 description: Detects a suspicious DLL loading from AppData Local path as described
@@ -21,11 +22,11 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.virusbulletin.com/conference/vb2019/abstracts/apt-cases-exploiting-vulnerabilities-region-specific-software
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1117
 - attack.t1218.010
-ruletype: SIGMA

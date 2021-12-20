@@ -1,5 +1,6 @@
 
 title: Monitoring Wuauclt.exe For Lolbas Execution Of DLL
+ruletype: Sigma
 author: Sreeman
 date: 2020/10/29
 description: Adversaries can abuse wuauclt.exe (Windows Update client) to run code
@@ -32,4 +33,3 @@ tags:
 - attack.execution
 - attack.t1085
 - attack.t1218.011
-ruletype: SIGMA

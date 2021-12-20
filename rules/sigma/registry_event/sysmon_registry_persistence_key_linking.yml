@@ -1,5 +1,6 @@
 
 title: Windows Registry Persistence COM Key Linking
+ruletype: Sigma
 author: Kutepov Anton, oscd.community
 date: 2019/10/23
 description: Detects COM object hijacking via TreatAs subkey
@@ -35,4 +36,3 @@ tags:
 - attack.persistence
 - attack.t1122
 - attack.t1546.015
-ruletype: SIGMA

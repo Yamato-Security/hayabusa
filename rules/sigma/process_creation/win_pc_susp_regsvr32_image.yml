@@ -1,0 +1,27 @@
+
+title: Suspicious Regsvr32 Execution With Image Extension
+ruletype: Sigma
+author: frack113
+date: 2021/11/29
+description: utilizes REGSVR32.exe to execute this DLL masquerading as a Image file
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\regsvr32.exe'
+  SELECTION_3:
+    CommandLine: '*.jpg'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- unknown
+id: 089fc3d2-71e8-4763-a8a5-c97fbb0a403e
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://thedfirreport.com/2021/11/29/continuing-the-bazar-ransomware-story/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218.010

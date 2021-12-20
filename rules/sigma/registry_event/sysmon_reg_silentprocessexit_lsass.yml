@@ -1,5 +1,6 @@
 
 title: SilentProcessExit Monitor Registrytion for LSASS
+ruletype: Sigma
 author: Florian Roth
 date: 2021/02/26
 description: Detects changes to the Registry in which a monitor program gets registered
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1003.007
-ruletype: SIGMA

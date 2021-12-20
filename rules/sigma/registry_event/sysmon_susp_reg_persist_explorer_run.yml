@@ -1,5 +1,6 @@
 
 title: Registry Persistence via Explorer Run Key
+ruletype: Sigma
 author: Florian Roth, oscd.community
 date: 2018/07/18
 description: Detects a possible persistence mechanism using RUN key for Windows Explorer
@@ -36,12 +37,11 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://researchcenter.paloaltonetworks.com/2018/07/unit42-upatre-continues-evolve-new-anti-analysis-techniques/
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1060
 - attack.t1547.001
-ruletype: SIGMA

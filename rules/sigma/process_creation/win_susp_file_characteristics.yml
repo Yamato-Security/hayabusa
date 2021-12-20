@@ -1,5 +1,6 @@
 
 title: Suspicious File Characteristics Due to Missing Fields
+ruletype: Sigma
 author: Markus Neis, Sander Wiebing
 date: 2018/11/22
 description: Detects Executables in the Downloads folder without FileVersion,Description,Product,Company
@@ -39,4 +40,3 @@ tags:
 - attack.t1059.006
 - attack.defense_evasion
 - attack.t1064
-ruletype: SIGMA

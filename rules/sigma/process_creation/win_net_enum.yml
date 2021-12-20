@@ -1,5 +1,6 @@
 
 title: Windows Network Enumeration
+ruletype: Sigma
 author: Endgame, JHasenbusch (ported for oscd.community)
 date: 2018/10/30
 description: Identifies attempts to enumerate hosts in a network using the built-in
@@ -35,4 +36,3 @@ status: stable
 tags:
 - attack.discovery
 - attack.t1018
-ruletype: SIGMA

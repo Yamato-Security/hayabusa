@@ -1,5 +1,6 @@
 
 title: Mshta JavaScript Execution
+ruletype: Sigma
 author: E.M. Anhaus (originally from Atomic Blue Detections, Endgame), oscd.community
 date: 2019/10/24
 description: Identifies suspicious mshta.exe commands.
@@ -22,13 +23,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://eqllib.readthedocs.io/en/latest/analytics/6bc283c4-21f2-4aed-a05c-a9a3ffa95dd4.html
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1218.005/T1218.005.md
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1170
 - attack.t1218.005
-ruletype: SIGMA

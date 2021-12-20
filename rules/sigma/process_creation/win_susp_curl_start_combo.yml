@@ -1,5 +1,6 @@
 
 title: Curl Start Combination
+ruletype: Sigma
 author: Sreeman
 date: 2020/01/13
 description: Adversaries can use curl to download payloads remotely and execute them.
@@ -22,13 +23,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/05
+modified: 2021/11/27
 references:
 - https://medium.com/@reegun/curl-exe-is-the-new-rundll32-exe-lolbin-3f79c5f35983
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1218
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

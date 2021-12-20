@@ -1,5 +1,6 @@
 
 title: Operation Wocao Activity
+ruletype: Sigma
 author: Florian Roth, frack113
 date: 2019/12/20
 description: Detects activity mentioned in Operation Wocao report
@@ -46,4 +47,3 @@ tags:
 - attack.t1053
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Direct Autorun Keys Modification
+ruletype: Sigma
 author: Victor Sergeev, Daniil Yugoslavskiy, oscd.community
 date: 2019/10/25
 description: Detects direct modification of autostart extensibility point (ASEP) in
@@ -36,12 +37,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/10
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1547.001/T1547.001.md
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1547.001
 - attack.t1060
-ruletype: SIGMA

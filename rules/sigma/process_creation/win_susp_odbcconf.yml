@@ -1,5 +1,6 @@
 
 title: Application Whitelisting Bypass via DLL Loaded by odbcconf.exe
+ruletype: Sigma
 author: Kirill Kiryanov, Beyu Denis, Daniil Yugoslavskiy, oscd.community
 date: 2019/10/25
 description: Detects defence evasion attempt via odbcconf.exe execution to load DLL
@@ -24,14 +25,13 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/07
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Odbcconf.yml
 - https://twitter.com/Hexacorn/status/1187143326673330176
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218.008
 - attack.execution
 - attack.t1218
-ruletype: SIGMA

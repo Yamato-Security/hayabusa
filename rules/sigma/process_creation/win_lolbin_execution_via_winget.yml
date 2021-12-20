@@ -1,5 +1,6 @@
 
 title: Monitoring Winget For LOLbin Execution
+ruletype: Sigma
 author: Sreeman
 date: 2020/21/04
 description: Adversaries can abuse winget to download payloads remotely and execute
@@ -11,8 +12,7 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    CommandLine:
-    - '*.*(?i)winget install (--m|-m).*'
+    CommandLine|re: .*(?i)winget install (--m|-m).*
   condition: (SELECTION_1 and SELECTION_2)
 falsepositives:
 - Admin activity installing packages not in the official Microsoft repo. Winget probably
@@ -24,7 +24,7 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2021/06/11
+modified: 2021/09/12
 references:
 - https://docs.microsoft.com/en-us/windows/package-manager/winget/install#local-install
 status: experimental
@@ -32,4 +32,3 @@ tags:
 - attack.defense_evasion
 - attack.execution
 - attack.t1059
-ruletype: SIGMA

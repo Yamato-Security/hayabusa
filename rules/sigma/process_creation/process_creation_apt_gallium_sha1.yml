@@ -1,5 +1,6 @@
 
 title: GALLIUM Artefacts
+ruletype: Sigma
 author: Tim Burrell
 date: 2020/02/07
 description: Detects artefacts associated with activity group GALLIUM - Microsoft
@@ -46,4 +47,3 @@ tags:
 - attack.t1212
 - attack.command_and_control
 - attack.t1071
-ruletype: SIGMA

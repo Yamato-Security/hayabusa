@@ -1,5 +1,6 @@
 
 title: CreateRemoteThread API and LoadLibrary
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/08/11
 description: Detects potential use of CreateRemoteThread api and LoadLibrary function
@@ -19,12 +20,11 @@ level: critical
 logsource:
   category: create_remote_thread
   product: windows
-modified: 2020/08/28
+modified: 2021/11/27
 references:
 - https://threathunterplaybook.com/notebooks/windows/05_defense_evasion/WIN-180719170510.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1055
 - attack.t1055.001
-ruletype: SIGMA

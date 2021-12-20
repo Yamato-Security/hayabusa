@@ -1,5 +1,6 @@
 
 title: Suspicious SYSVOL Domain Group Policy Access
+ruletype: Sigma
 author: Markus Neis, Jonhnathan Ribeiro, oscd.community
 date: 2018/04/09
 description: Detects Access to Domain Group Policies stored in SYSVOL
@@ -27,4 +28,3 @@ tags:
 - attack.credential_access
 - attack.t1552.006
 - attack.t1003
-ruletype: SIGMA

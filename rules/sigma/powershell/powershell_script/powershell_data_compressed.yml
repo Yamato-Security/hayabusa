@@ -1,5 +1,6 @@
 
 title: Data Compressed - PowerShell
+ruletype: Sigma
 author: Timur Zinniatullin, oscd.community
 date: 2019/10/21
 description: An adversary may compress data (e.g., sensitive documents) that is collected
@@ -29,4 +30,3 @@ tags:
 - attack.exfiltration
 - attack.t1560
 - attack.t1002
-ruletype: SIGMA

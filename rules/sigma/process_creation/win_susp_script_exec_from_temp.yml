@@ -1,5 +1,6 @@
 
 title: Suspicious Script Execution From Temp Folder
+ruletype: Sigma
 author: Florian Roth, Max Altgelt
 date: 2021/07/14
 description: Detects a suspicious script executions from temporary folder
@@ -42,4 +43,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1059
-ruletype: SIGMA

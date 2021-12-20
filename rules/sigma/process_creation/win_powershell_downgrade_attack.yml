@@ -1,5 +1,6 @@
 
 title: PowerShell Downgrade Attack
+ruletype: Sigma
 author: Harish Segar (rule)
 date: 2020/03/20
 description: Detects PowerShell downgrade attack by comparing the host versions with
@@ -26,15 +27,15 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - http://www.leeholmes.com/blog/2017/03/17/detecting-and-preventing-powershell-downgrade-attacks/
 related:
 - id: 6331d09b-4785-4c13-980f-f96661356249
   type: derived
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-ruletype: SIGMA

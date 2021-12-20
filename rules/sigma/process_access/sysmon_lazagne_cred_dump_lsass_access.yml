@@ -1,5 +1,6 @@
 
 title: Credential Dumping by LaZagne
+ruletype: Sigma
 author: Bhabesh Raj, Jonhnathan Ribeiro
 date: 2020/09/09
 description: Detects LSASS process access by LaZagne for credential dumping.
@@ -34,4 +35,3 @@ tags:
 - attack.credential_access
 - attack.t1003.001
 - attack.s0349
-ruletype: SIGMA

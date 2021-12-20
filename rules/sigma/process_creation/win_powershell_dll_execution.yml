@@ -1,5 +1,6 @@
 
 title: Detection of PowerShell Execution via DLL
+ruletype: Sigma
 author: Markus Neis
 date: 2018/08/25
 description: Detects PowerShell Strings applied to rundll as seen in PowerShdll.dll
@@ -24,12 +25,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://github.com/p3nt4/PowerShdll/blob/master/README.md
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1085
 - attack.t1218.011
-ruletype: SIGMA

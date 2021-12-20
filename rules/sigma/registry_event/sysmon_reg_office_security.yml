@@ -1,5 +1,6 @@
 
 title: Office Security Settings Changed
+ruletype: Sigma
 author: Trent Liffick (@tliffick)
 date: 2020/05/22
 description: Detects registry changes to Office macro settings
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

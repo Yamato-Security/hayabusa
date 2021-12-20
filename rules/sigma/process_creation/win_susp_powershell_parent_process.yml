@@ -1,5 +1,6 @@
 
 title: Suspicious PowerShell Parent Process
+ruletype: Sigma
 author: Teymur Kheirkhabarov, Harish Segar (rule)
 date: 2020/03/20
 description: Detects a suspicious parents of powershell.exe
@@ -57,11 +58,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/12/02
 references:
 - https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=26
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious Runscripthelper.exe
+ruletype: Sigma
 author: Victor Sergeev, oscd.community
 date: 2020/10/09
 description: Detects execution of powershell scripts via Runscripthelper.exe
@@ -20,12 +21,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Runscripthelper.yml
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059
 - attack.defense_evasion
 - attack.t1202
-ruletype: SIGMA

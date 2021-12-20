@@ -1,5 +1,6 @@
 
 title: Svchost DLL Search Order Hijack
+ruletype: Sigma
 author: SBousseaden
 date: 2019/10/28
 description: IKEEXT and SessionEnv service, as they call LoadLibrary on files that
@@ -29,10 +30,10 @@ level: high
 logsource:
   category: image_load
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://posts.specterops.io/lateral-movement-scm-and-dll-hijacking-primer-d2f61e8ab992
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.defense_evasion
@@ -40,4 +41,3 @@ tags:
 - attack.t1574.002
 - attack.t1038
 - attack.t1574.001
-ruletype: SIGMA

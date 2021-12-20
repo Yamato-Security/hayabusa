@@ -1,5 +1,6 @@
 
 title: PowerShell Encoded Character Syntax
+ruletype: Sigma
 author: Florian Roth
 date: 2020/07/09
 description: Detects suspicious encoded character syntax often used for defense evasion
@@ -16,13 +17,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/0gtweet/status/1281103918693482496
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
 - attack.defense_evasion
 - attack.t1027
-ruletype: SIGMA

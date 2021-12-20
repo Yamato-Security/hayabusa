@@ -1,5 +1,6 @@
 
 title: Powershell Detect Virtualization Environment
+ruletype: Sigma
 author: frack113
 date: 2021/08/03
 description: Adversaries may employ various system checks to detect and avoid virtualization
@@ -22,7 +23,7 @@ logsource:
   category: ps_script
   definition: EnableScriptBlockLogging must be set to enable
   product: windows
-modified: 2021/10/16
+modified: 2021/12/02
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1497.001/T1497.001.md
 - https://techgenix.com/malicious-powershell-scripts-evade-detection/
@@ -30,4 +31,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1497.001
-ruletype: SIGMA

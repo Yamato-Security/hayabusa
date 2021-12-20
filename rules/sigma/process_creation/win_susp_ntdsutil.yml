@@ -1,5 +1,6 @@
 
 title: Invocation of Active Directory Diagnostic Tool (ntdsutil.exe)
+ruletype: Sigma
 author: Thomas Patzke
 date: 2019/01/16
 description: Detects execution of ntdsutil.exe, which can be used for various attacks
@@ -25,4 +26,3 @@ tags:
 - attack.credential_access
 - attack.t1003.003
 - attack.t1003
-ruletype: SIGMA

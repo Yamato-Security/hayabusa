@@ -1,5 +1,6 @@
 
 title: dotNET DLL Loaded Via Office Applications
+ruletype: Sigma
 author: Antonlovesdnb
 date: 2020/02/19
 description: Detects any assembly DLL being loaded by an Office Product
@@ -23,12 +24,11 @@ level: high
 logsource:
   category: image_load
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://medium.com/threatpunter/detecting-adversary-tradecraft-with-image-load-event-logging-and-eql-8de93338c16
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1204
 - attack.t1204.002
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Renamed PowerShell
+ruletype: Sigma
 author: Florian Roth, frack113
 date: 2019/08/22
 description: Detects the execution of a renamed PowerShell often used by attackers
@@ -35,4 +36,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.003
-ruletype: SIGMA

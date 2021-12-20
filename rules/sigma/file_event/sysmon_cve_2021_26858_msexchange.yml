@@ -1,5 +1,6 @@
 
 title: CVE-2021-26858 Exchange Exploitation
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/03/03
 description: Detects possible successful exploitation for vulnerability described
@@ -36,4 +37,3 @@ tags:
 - attack.t1203
 - attack.execution
 - cve.2021.26858
-ruletype: SIGMA

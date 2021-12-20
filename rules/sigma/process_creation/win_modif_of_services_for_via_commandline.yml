@@ -1,5 +1,6 @@
 
 title: Modification Of Existing Services For Persistence
+ruletype: Sigma
 author: Sreeman
 date: 2020/09/29
 description: Detects modification of an existing service on a compromised host in
@@ -32,4 +33,3 @@ tags:
 - attack.t1543.003
 - attack.t1058
 - attack.t1574.011
-ruletype: SIGMA

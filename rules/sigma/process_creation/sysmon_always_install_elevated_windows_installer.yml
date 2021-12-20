@@ -1,30 +1,37 @@
 
 title: Always Install Elevated Windows Installer
+ruletype: Sigma
 author: Teymur Kheirkhabarov (idea), Mangatas Tondang (rule), oscd.community
 date: 2020/10/13
-description: This rule will looks for Windows Installer service (msiexec.exe) when
-  it tries to install MSI packages with SYSTEM privilege
+description: This rule looks for Windows Installer service (msiexec.exe) trying to
+  install MSI packages with SYSTEM privilege
 detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
+    Image: '*\Windows\Installer\\*'
+  SELECTION_3:
+    Image: '*msi*'
+  SELECTION_4:
+    Image:
+    - '*tmp'
+  SELECTION_5:
     User:
     - NT AUTHORITY\SYSTEM*
     - AUTORITE NT\Sys*
-  SELECTION_3:
-    Image: '*\Windows\Installer\\*'
-  SELECTION_4:
-    Image: '*msi*'
-  SELECTION_5:
-    Image:
-    - '*tmp'
   SELECTION_6:
     Image:
     - '*\msiexec.exe'
   SELECTION_7:
+    User:
+    - NT AUTHORITY\SYSTEM*
+    - AUTORITE NT\Sys*
+  SELECTION_8:
     IntegrityLevel: System
-  condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4 and SELECTION_5)
-    or (SELECTION_6 and SELECTION_7)))
+  SELECTION_9:
+    CommandLine: '*\system32\msiexec.exe /V'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or ((SELECTION_6 and SELECTION_7 and SELECTION_8) and  not (SELECTION_9))))
 falsepositives:
 - System administrator Usage
 - Penetration test
@@ -37,11 +44,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2021/08/26
+modified: 2021/12/09
 references:
 - https://image.slidesharecdn.com/kheirkhabarovoffzonefinal-181117201458/95/hunting-for-privilege-escalation-in-windows-environment-48-638.jpg
 status: experimental
 tags:
 - attack.privilege_escalation
 - attack.t1548.002
-ruletype: SIGMA

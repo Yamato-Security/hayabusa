@@ -1,5 +1,6 @@
 
 title: Suspicious Curl Usage on Windows
+ruletype: Sigma
 author: Florian Roth
 date: 2020/07/03
 description: Detects a suspicious curl process start on Windows and outputs the requested
@@ -25,11 +26,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/05
+modified: 2021/11/27
 references:
 - https://twitter.com/reegun21/status/1222093798009790464
-status: experimental
+status: test
 tags:
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

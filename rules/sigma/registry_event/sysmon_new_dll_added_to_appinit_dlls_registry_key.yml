@@ -1,5 +1,6 @@
 
 title: New DLL Added to AppInit_DLLs Registry Key
+ruletype: Sigma
 author: Ilyas Ochkov, oscd.community, Tim Shelton
 date: 2019/10/25
 description: DLLs that are specified in the AppInit_DLLs value in the Registry key
@@ -44,4 +45,3 @@ tags:
 - attack.persistence
 - attack.t1103
 - attack.t1546.010
-ruletype: SIGMA

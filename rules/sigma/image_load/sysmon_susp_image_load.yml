@@ -1,5 +1,6 @@
 
 title: Possible Process Hollowing Image Loading
+ruletype: Sigma
 author: Markus Neis
 date: 2018/01/07
 description: Detects Loading of samlib.dll, WinSCard.dll from untypical process e.g.
@@ -22,12 +23,11 @@ level: high
 logsource:
   category: image_load
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://cyberwardog.blogspot.com/2017/03/chronicles-of-threat-hunter-hunting-for.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1073
 - attack.t1574.002
-ruletype: SIGMA

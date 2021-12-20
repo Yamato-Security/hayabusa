@@ -1,5 +1,6 @@
 
 title: Excel Network Connections
+ruletype: Sigma
 author: Christopher Peacock '@securepeacock', SCYTHE '@scythe_io', Florian Roth '@Neo23x0"
 date: 2021/11/10
 description: Detects an Excel process that opens suspicious network connections to
@@ -58,4 +59,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1203
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious Scripting in a WMI Consumer
+ruletype: Sigma
 author: Florian Roth, Jonhnathan Ribeiro
 date: 2019/04/15
 description: Detects suspicious scripting in WMI Event Consumers
@@ -57,4 +58,3 @@ tags:
 - attack.t1086
 - attack.execution
 - attack.t1059.005
-ruletype: SIGMA

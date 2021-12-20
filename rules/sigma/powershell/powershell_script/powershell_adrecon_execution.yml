@@ -1,5 +1,6 @@
 
 title: PowerShell ADRecon Execution
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/07/16
 description: Detects execution of ADRecon.ps1 for AD reconnaissance which has been
@@ -27,4 +28,3 @@ tags:
 - attack.discovery
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

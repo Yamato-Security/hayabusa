@@ -1,5 +1,6 @@
 
 title: Using SettingSyncHost.exe as LOLBin
+ruletype: Sigma
 author: Anton Kutepov, oscd.community
 date: 2020/02/05
 description: Detects using SettingSyncHost.exe to run hijacked binary
@@ -28,12 +29,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/10/10
+modified: 2021/11/27
 references:
 - https://www.hexacorn.com/blog/2020/02/02/settingsynchost-exe-as-a-lolbin
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.defense_evasion
 - attack.t1574.008
-ruletype: SIGMA

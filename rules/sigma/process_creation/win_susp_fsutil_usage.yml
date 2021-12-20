@@ -1,5 +1,6 @@
 
 title: Fsutil Suspicious Invocation
+ruletype: Sigma
 author: Ecco, E.M. Anhaus, oscd.community
 date: 2019/09/26
 description: Detects suspicious parameters of fsutil (deleting USN journal, configuring
@@ -25,13 +26,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2019/11/11
+modified: 2021/11/27
 references:
 - https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-usn
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1070/T1070.md
 - https://eqllib.readthedocs.io/en/latest/analytics/c91f422a-5214-4b17-8664-c5fcf115c0a2.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1070
-ruletype: SIGMA

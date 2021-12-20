@@ -1,5 +1,6 @@
 
 title: Leviathan Registry Key Activity
+ruletype: Sigma
 author: Aidan Bracher
 date: 2020/07/07
 description: Detects registry key used by Leviathan APT in Malaysian focused campaign
@@ -26,4 +27,3 @@ tags:
 - attack.persistence
 - attack.t1060
 - attack.t1547.001
-ruletype: SIGMA

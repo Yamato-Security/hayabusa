@@ -1,5 +1,6 @@
 
 title: Suspicious Driver Load from Temp
+ruletype: Sigma
 author: Florian Roth
 date: 2017/02/12
 description: Detects a driver load from a temporary directory
@@ -16,11 +17,10 @@ level: high
 logsource:
   category: driver_load
   product: windows
-modified: 2020/08/23
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.persistence
 - attack.privilege_escalation
 - attack.t1050
 - attack.t1543.003
-ruletype: SIGMA

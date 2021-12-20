@@ -1,5 +1,6 @@
 
 title: AdFind Usage Detection
+ruletype: Sigma
 author: Janantha Marasinghe (https://github.com/blueteam0ps)
 date: 2021/02/02
 description: AdFind continues to be seen across majority of breaches. It is used to
@@ -45,4 +46,3 @@ tags:
 - attack.discovery
 - attack.t1482
 - attack.t1018
-ruletype: SIGMA

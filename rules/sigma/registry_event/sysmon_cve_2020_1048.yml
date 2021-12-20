@@ -1,5 +1,6 @@
 
 title: Suspicious New Printer Ports in Registry (CVE-2020-1048)
+ruletype: Sigma
 author: EagleEye Team, Florian Roth, NVISO
 date: 2020/05/13
 description: Detects a new and suspicious printer port creation in Registry that could
@@ -28,13 +29,12 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://windows-internals.com/printdemon-cve-2020-1048/
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.execution
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

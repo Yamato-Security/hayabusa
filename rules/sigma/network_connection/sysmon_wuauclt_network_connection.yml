@@ -1,5 +1,6 @@
 
 title: Wuauclt Network Connection
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/10/12
 description: Detects the use of the Windows Update Client binary (wuauclt.exe) to
@@ -19,10 +20,10 @@ level: medium
 logsource:
   category: network_connection
   product: windows
+modified: 2021/11/27
 references:
 - https://dtm.uk/wuauclt/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

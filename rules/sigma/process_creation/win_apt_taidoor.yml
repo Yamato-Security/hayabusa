@@ -1,5 +1,6 @@
 
 title: TAIDOOR RAT DLL Load
+ruletype: Sigma
 author: Florian Roth
 date: 2020/07/30
 description: Detects specific process characteristics of Chinese TAIDOOR RAT malware
@@ -12,14 +13,12 @@ detection:
     - '*dll,MyStart*'
     - '*dll MyStart*'
   SELECTION_3:
-    EventID: 1
-  SELECTION_4:
     CommandLine:
     - '* MyStart'
-  SELECTION_5:
+  SELECTION_4:
     CommandLine:
     - '*rundll32.exe*'
-  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and SELECTION_5)))
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4)))
 falsepositives:
 - Unknown
 id: d1aa3382-abab-446f-96ea-4de52908210b
@@ -27,11 +26,11 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://us-cert.cisa.gov/ncas/analysis-reports/ar20-216a
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1055
 - attack.t1055.001
-ruletype: SIGMA

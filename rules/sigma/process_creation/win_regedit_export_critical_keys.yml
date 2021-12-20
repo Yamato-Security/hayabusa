@@ -1,5 +1,6 @@
 
 title: Exports Critical Registry Keys To a File
+ruletype: Sigma
 author: Oddvar Moe, Sander Wiebing, oscd.community
 date: 2020/10/12
 description: Detects the export of a crital Registry key to a file.
@@ -30,11 +31,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Regedit.yml
 - https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f
-status: experimental
+status: test
 tags:
 - attack.exfiltration
 - attack.t1012
-ruletype: SIGMA

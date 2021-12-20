@@ -1,5 +1,6 @@
 
 title: Suspicious Usage of the Manage-bde.wsf Script
+ruletype: Sigma
 author: oscd.community, Natalia Shornikova
 date: 2020/10/13
 description: Detects a usage of the manage-bde.wsf script that may indicate an attempt
@@ -30,4 +31,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1216
-ruletype: SIGMA

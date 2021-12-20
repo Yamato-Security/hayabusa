@@ -1,5 +1,6 @@
 
 title: COM Hijack via Sdclt
+ruletype: Sigma
 author: Omkar Gudhate
 date: 2020/09/27
 description: Detects changes to 'HKCU\Software\Classes\Folder\shell\open\command\DelegateExecute'
@@ -21,12 +22,12 @@ level: high
 logsource:
   category: registry_event
   product: windows
+modified: 2021/11/27
 references:
 - http://blog.sevagas.com/?Yet-another-sdclt-UAC-bypass
 - https://www.exploit-db.com/exploits/47696
-status: experimental
+status: test
 tags:
 - attack.privilege_escalation
 - attack.t1546
 - attack.t1548
-ruletype: SIGMA

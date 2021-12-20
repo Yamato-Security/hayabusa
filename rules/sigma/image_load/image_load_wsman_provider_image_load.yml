@@ -1,0 +1,57 @@
+
+title: Suspicious WSMAN Provider Image Loads
+ruletype: Sigma
+author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
+date: 2020/06/24
+description: Detects signs of potential use of the WSMAN provider from uncommon processes
+  locally and remote execution.
+detection:
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    ImageLoaded:
+    - '*\WsmSvc.dll'
+    - '*\WsmAuto.dll'
+    - '*\Microsoft.WSMan.Management.ni.dll'
+  SELECTION_3:
+    OriginalFileName:
+    - WsmSvc.dll
+    - WSMANAUTOMATION.DLL
+    - Microsoft.WSMan.Management.dll
+  SELECTION_4:
+    Image: '*\svchost.exe'
+  SELECTION_5:
+    OriginalFileName: WsmWmiPl.dll
+  SELECTION_6:
+    Image:
+    - '*\powershell.exe'
+    - '*C:\Windows\System32\sdiagnhost.exe'
+  SELECTION_7:
+    CommandLine:
+    - '*svchost.exe -k netsvcs -p -s BITS*'
+    - '*svchost.exe -k GraphicsPerfSvcGroup -s GraphicsPerfSvc*'
+  SELECTION_8:
+    Image: C:\Windows\Microsoft.NET\Framework64\\*
+  SELECTION_9:
+    Image: '*\mscorsvw.exe'
+  condition: (SELECTION_1 and ((SELECTION_2 or SELECTION_3) or (SELECTION_4 and SELECTION_5))
+    and  not ((SELECTION_6) or (SELECTION_7) or (SELECTION_8 and SELECTION_9)))
+falsepositives:
+- Unknown
+id: ad1f4bb9-8dfb-4765-adb6-2a7cfb6c0f94
+level: medium
+logsource:
+  category: image_load
+  product: windows
+modified: 2021/12/03
+references:
+- https://twitter.com/chadtilbury/status/1275851297770610688
+- https://bohops.com/2020/05/12/ws-management-com-another-approach-for-winrm-lateral-movement/
+- https://docs.microsoft.com/en-us/windows/win32/winrm/windows-remote-management-architecture
+- https://github.com/bohops/WSMan-WinRM
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.lateral_movement
+- attack.t1021.003

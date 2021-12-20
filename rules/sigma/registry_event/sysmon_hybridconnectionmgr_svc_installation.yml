@@ -1,5 +1,6 @@
 
 title: HybridConnectionManager Service Installation
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2021/04/12
 description: Detects the installation of the Azure Hybrid Connection Manager service
@@ -29,4 +30,3 @@ status: experimental
 tags:
 - attack.resource_development
 - attack.t1608
-ruletype: SIGMA

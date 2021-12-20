@@ -1,5 +1,6 @@
 
 title: Disabled IE Security Features
+ruletype: Sigma
 author: Florian Roth
 date: 2020/06/19
 description: Detects command lines that indicate unwanted modifications to registry
@@ -28,11 +29,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://unit42.paloaltonetworks.com/operation-ke3chang-resurfaces-with-new-tidepool-malware/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1562.001
 - attack.t1089
-ruletype: SIGMA

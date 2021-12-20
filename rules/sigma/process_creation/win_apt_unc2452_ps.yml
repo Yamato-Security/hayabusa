@@ -1,5 +1,6 @@
 
 title: UNC2452 PowerShell Pattern
+ruletype: Sigma
 author: Florian Roth
 date: 2021/01/20
 description: Detects a specific PowerShell command line pattern used by the UNC2452
@@ -33,4 +34,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1047
-ruletype: SIGMA

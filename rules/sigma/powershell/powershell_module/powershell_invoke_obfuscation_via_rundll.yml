@@ -1,5 +1,6 @@
 
 title: Invoke-Obfuscation RUNDLL LAUNCHER
+ruletype: Sigma
 author: Timur Zinniatullin, oscd.community
 date: 2020/10/18
 description: Detects Obfuscated Powershell via RUNDLL LAUNCHER
@@ -27,4 +28,3 @@ tags:
 - attack.t1027
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

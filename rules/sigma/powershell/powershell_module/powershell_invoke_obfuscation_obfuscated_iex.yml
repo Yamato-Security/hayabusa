@@ -1,5 +1,6 @@
 
 title: Invoke-Obfuscation Obfuscated IEX Invocation
+ruletype: Sigma
 author: Daniel Bohannon (@Mandiant/@FireEye), oscd.community
 date: 2019/11/08
 description: Detects all variations of obfuscated powershell IEX invocation code generated
@@ -40,4 +41,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

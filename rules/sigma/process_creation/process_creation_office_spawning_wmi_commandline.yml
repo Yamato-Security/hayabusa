@@ -1,5 +1,6 @@
 
 title: Office Applications Spawning Wmi Cli
+ruletype: Sigma
 author: Vadim Khrykov (ThreatIntel), Cyb3rEng (Rule)
 date: 2021/08/23
 description: Initial execution of malicious document calls wmic to execute the file
@@ -35,4 +36,3 @@ tags:
 - attack.t1218.010
 - attack.execution
 - attack.defense_evasion
-ruletype: SIGMA

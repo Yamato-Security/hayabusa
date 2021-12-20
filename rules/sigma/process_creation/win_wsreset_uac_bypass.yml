@@ -1,5 +1,6 @@
 
 title: Wsreset UAC Bypass
+ruletype: Sigma
 author: Florian Roth
 date: 2020/01/30
 description: Detects a method that uses Wsreset.exe tool that can be used to reset
@@ -20,15 +21,14 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/29
+modified: 2021/11/27
 references:
 - https://lolbas-project.github.io/lolbas/Binaries/Wsreset/
 - https://www.activecyber.us/activelabs/windows-uac-bypass
 - https://twitter.com/ReaQta/status/1222548288731217921
-status: experimental
+status: test
 tags:
 - attack.privilege_escalation
 - attack.defense_evasion
 - attack.t1548.002
 - attack.t1088
-ruletype: SIGMA

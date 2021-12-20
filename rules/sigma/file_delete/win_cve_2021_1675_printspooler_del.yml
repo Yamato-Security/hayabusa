@@ -1,5 +1,6 @@
 
 title: Windows Spooler Service Suspicious File Deletion
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/07/01
 description: Detect DLL deletions from Spooler Service driver folder
@@ -31,4 +32,3 @@ tags:
 - attack.privilege_escalation
 - attack.t1574
 - cve.2021.1675
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Delete Volume Shadow Copies Via WMI With PowerShell
+ruletype: Sigma
 author: frack113
 date: 2021/06/03
 description: Shadow Copies deletion using operating systems utilities via PowerShell
@@ -33,4 +34,3 @@ status: experimental
 tags:
 - attack.impact
 - attack.t1490
-ruletype: SIGMA

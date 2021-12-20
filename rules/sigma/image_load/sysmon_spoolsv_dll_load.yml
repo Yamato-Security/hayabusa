@@ -1,5 +1,6 @@
 
 title: Windows Spooler Service Suspicious Binary Load
+ruletype: Sigma
 author: FPT.EagleEye, Thomas Patzke (improvements)
 date: 2021/06/29
 description: Detect DLL Load from Spooler Service backup folder
@@ -31,4 +32,3 @@ tags:
 - attack.t1574
 - cve.2021.1675
 - cve.2021.34527
-ruletype: SIGMA

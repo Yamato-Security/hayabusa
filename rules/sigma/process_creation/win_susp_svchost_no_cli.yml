@@ -1,5 +1,6 @@
 
 title: Suspect Svchost Activity
+ruletype: Sigma
 author: David Burkett
 date: 2019/12/28
 description: It is extremely abnormal for svchost.exe to spawn without any CLI arguments
@@ -9,19 +10,17 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    EventID: 1
-  SELECTION_3:
     CommandLine: '*svchost.exe'
-  SELECTION_4:
+  SELECTION_3:
     Image: '*\svchost.exe'
-  SELECTION_5:
+  SELECTION_4:
     ParentImage:
     - '*\rpcnet.exe'
     - '*\rpcnetp.exe'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine|re: ^$
-  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3 and SELECTION_4) and  not
-    (SELECTION_5 or SELECTION_6))
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4
+    or SELECTION_5))
 falsepositives:
 - rpcnet.exe / rpcnetp.exe which is a lojack style software. https://www.blackhat.com/docs/us-14/materials/us-14-Kamlyuk-Kamluk-Computrace-Backdoor-Revisited.pdf
 fields:
@@ -40,4 +39,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1055
-ruletype: SIGMA

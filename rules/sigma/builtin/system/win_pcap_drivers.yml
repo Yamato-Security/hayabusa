@@ -1,0 +1,44 @@
+
+title: Windows Pcap Drivers
+ruletype: Sigma
+author: Cian Heasley
+date: 2020/06/10
+description: Detects Windows Pcap driver installation based on a list of associated
+  .sys files.
+detection:
+  SELECTION_1:
+    EventID: 4697
+  SELECTION_2:
+    ServiceFileName:
+    - '*pcap*'
+    - '*npcap*'
+    - '*npf*'
+    - '*nm3*'
+    - '*ndiscap*'
+    - '*nmnt*'
+    - '*windivert*'
+    - '*USBPcap*'
+    - '*pktmon*'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- unknown
+fields:
+- EventID
+- ServiceFileName
+- Account_Name
+- Computer_Name
+- Originating_Computer
+- ServiceName
+id: 7b687634-ab20-11ea-bb37-0242ac130002
+level: medium
+logsource:
+  product: windows
+  service: security
+modified: 2021/11/27
+references:
+- https://ragged-lab.blogspot.com/2020/06/capturing-pcap-driver-installations.html#more
+status: test
+tags:
+- attack.discovery
+- attack.credential_access
+- attack.t1040

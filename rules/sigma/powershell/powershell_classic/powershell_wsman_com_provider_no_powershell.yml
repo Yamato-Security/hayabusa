@@ -1,5 +1,6 @@
 
 title: Suspicious Non PowerShell WSMAN COM Provider
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/06/24
 description: Detects suspicious use of the WSMAN provider without PowerShell.exe as
@@ -29,4 +30,3 @@ tags:
 - attack.t1059.001
 - attack.lateral_movement
 - attack.t1021.003
-ruletype: SIGMA

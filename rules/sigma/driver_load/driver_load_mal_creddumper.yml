@@ -1,5 +1,6 @@
 
 title: Credential Dumping Tools Service Execution
+ruletype: Sigma
 author: Florian Roth, Teymur Kheirkhabarov, Daniil Yugoslavskiy, oscd.community
 date: 2017/03/05
 description: Detects well-known credential dumping tools execution via service execution
@@ -43,4 +44,3 @@ tags:
 - attack.t1035
 - attack.t1569.002
 - attack.s0005
-ruletype: SIGMA

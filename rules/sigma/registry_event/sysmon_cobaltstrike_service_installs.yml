@@ -1,5 +1,6 @@
 
 title: CobaltStrike Service Installations in Registry
+ruletype: Sigma
 author: Wojciech Lesicki
 date: 2021/06/29
 description: Detects known malicious service installs that appear in cases in which
@@ -29,7 +30,7 @@ detection:
     Details: '*%COMSPEC%*'
   SELECTION_9:
     Details: '*start*'
-  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 and SELECTION_5)
     and ((SELECTION_6 and SELECTION_7) or (SELECTION_8 and SELECTION_9 and SELECTION_10)))
 falsepositives:
 - unknown
@@ -48,4 +49,3 @@ tags:
 - attack.t1021.002
 - attack.t1543.003
 - attack.t1569.002
-ruletype: SIGMA

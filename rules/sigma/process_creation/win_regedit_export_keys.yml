@@ -1,5 +1,6 @@
 
 title: Exports Registry Key To a File
+ruletype: Sigma
 author: Oddvar Moe, Sander Wiebing, oscd.community
 date: 2020/10/07
 description: Detects the export of the target Registry key to a file.
@@ -11,18 +12,16 @@ detection:
   SELECTION_3:
     CommandLine: '* /E *'
   SELECTION_4:
-    EventID: 1
-  SELECTION_5:
     CommandLine:
     - '*hklm*'
     - '*hkey_local_machine*'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine:
     - '*\system'
     - '*\sam'
     - '*\security'
   condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4
-    and SELECTION_5 and SELECTION_6)))
+    and SELECTION_5)))
 falsepositives:
 - Legitimate export of keys
 fields:
@@ -33,11 +32,11 @@ level: low
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Regedit.yml
 - https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f
-status: experimental
+status: test
 tags:
 - attack.exfiltration
 - attack.t1012
-ruletype: SIGMA

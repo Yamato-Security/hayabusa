@@ -1,5 +1,6 @@
 
 title: DLL Execution via Rasautou.exe
+ruletype: Sigma
 author: Julia Fomina, oscd.community
 date: 2020/10/09
 description: Detects using Rasautou.exe for loading arbitrary .DLL specified in -d
@@ -27,12 +28,12 @@ logsource:
     in 4688 by default, to detect this attack you need Sysmon 1 configured or KB3004375
     installed for command-line auditing (https://support.microsoft.com/en-au/help/3004375/microsoft-security-advisory-update-to-improve-windows-command-line-aud)
   product: windows
+modified: 2021/11/27
 references:
 - https://lolbas-project.github.io/lolbas/Binaries/Rasautou/
 - https://github.com/fireeye/DueDLLigence
 - https://www.fireeye.com/blog/threat-research/2019/10/staying-hidden-on-the-endpoint-evading-detection-with-shellcode.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

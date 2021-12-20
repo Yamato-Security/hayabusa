@@ -1,5 +1,6 @@
 
 title: Clear PowerShell History
+ruletype: Sigma
 author: Ilyas Ochkov, Jonhnathan Ribeiro, Daniil Yugoslavskiy, oscd.community
 date: 2019/10/25
 description: Detects keywords that could indicate clearing PowerShell history
@@ -37,4 +38,3 @@ tags:
 - attack.defense_evasion
 - attack.t1070.003
 - attack.t1146
-ruletype: SIGMA

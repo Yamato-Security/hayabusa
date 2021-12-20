@@ -1,5 +1,6 @@
 
 title: Suspicious MSHTA Process Patterns
+ruletype: Sigma
 author: Florian Roth
 date: 2021/07/17
 description: Detects suspicious mshta process patterns
@@ -46,4 +47,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1106
-ruletype: SIGMA

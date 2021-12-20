@@ -1,5 +1,6 @@
 
 title: Typical HiveNightmare SAM File Export
+ruletype: Sigma
 author: Florian Roth
 date: 2021/07/23
 description: Detects files written by the different tools that exploit HiveNightmare
@@ -37,4 +38,3 @@ tags:
 - attack.credential_access
 - attack.t1552.001
 - cve.2021.36934
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Process Dump via Comsvcs DLL
+ruletype: Sigma
 author: Modexp (idea)
 date: 2019/09/02
 description: Detects process memory dump via comsvcs.dll and rundll32
@@ -28,15 +29,14 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/05
+modified: 2021/11/27
 references:
 - https://modexp.wordpress.com/2019/08/30/minidumpwritedump-via-com-services-dll/
 - https://twitter.com/SBousseaden/status/1167417096374050817
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218.011
 - attack.credential_access
 - attack.t1003.001
 - attack.t1003
-ruletype: SIGMA

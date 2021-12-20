@@ -1,5 +1,6 @@
 
 title: CobaltStrike Named Pipe Patterns
+ruletype: Sigma
 author: Florian Roth, Christian Burkard
 date: 2021/07/30
 description: Detects the creation of a named pipe with a pattern found in CobaltStrike
@@ -74,4 +75,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1055
-ruletype: SIGMA

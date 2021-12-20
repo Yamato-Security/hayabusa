@@ -1,5 +1,6 @@
 
 title: Application Whitelisting Bypass via Dnx.exe
+ruletype: Sigma
 author: Beyu Denis, oscd.community
 date: 2019/10/26
 description: Execute C# code located in the consoleapp folder
@@ -16,14 +17,13 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/30
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OtherMSBinaries/Csi.yml
 - https://enigma0x3.net/2016/11/17/bypassing-application-whitelisting-by-using-dnx-exe/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
 - attack.t1027.004
 - attack.execution
-ruletype: SIGMA

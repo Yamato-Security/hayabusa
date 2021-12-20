@@ -1,5 +1,6 @@
 
 title: SQL Client Tools PowerShell Session Detection
+ruletype: Sigma
 author: Agro (@agro_sev) oscd.communitly
 date: 2020/10/13
 description: This rule detects execution of a PowerShell code through the sqltoolsps.exe
@@ -27,13 +28,13 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OtherMSBinaries/Sqltoolsps.yml
 - https://twitter.com/pabraeken/status/993298228840992768
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.001
 - attack.defense_evasion
 - attack.t1127
-ruletype: SIGMA

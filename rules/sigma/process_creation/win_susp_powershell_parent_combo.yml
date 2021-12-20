@@ -1,5 +1,6 @@
 
 title: Suspicious PowerShell Invocation Based on Parent Process
+ruletype: Sigma
 author: Florian Roth
 date: 2019/01/16
 description: Detects suspicious powershell invocations from interpreters or unusual
@@ -35,4 +36,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

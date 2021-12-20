@@ -1,5 +1,6 @@
 
 title: Suspicious Camera and Microphone Access
+ruletype: Sigma
 author: Den Iuzvyk
 date: 2020/06/07
 description: Detects Processes accessing the camera and microphone from suspicious
@@ -45,4 +46,3 @@ tags:
 - attack.collection
 - attack.t1125
 - attack.t1123
-ruletype: SIGMA

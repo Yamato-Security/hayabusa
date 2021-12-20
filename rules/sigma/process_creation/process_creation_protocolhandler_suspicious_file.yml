@@ -1,5 +1,6 @@
 
 title: ProtocolHandler.exe Downloaded Suspicious File
+ruletype: Sigma
 author: frack113
 date: 2021/07/13
 description: Emulates attack via documents through protocol handler in Microsoft Office.
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Judgement Panda Credential Access Activity
+ruletype: Sigma
 author: Florian Roth
 date: 2019/02/21
 description: Detects Russian group activity as described in Global Threat Report 2019
@@ -39,14 +40,13 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/26
+modified: 2021/11/27
 references:
 - https://www.crowdstrike.com/resources/reports/2019-crowdstrike-global-threat-report/
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1081
 - attack.t1003
 - attack.t1552.001
 - attack.t1003.003
-ruletype: SIGMA

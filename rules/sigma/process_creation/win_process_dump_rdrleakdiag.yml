@@ -1,5 +1,6 @@
 
 title: Process Dump via RdrLeakDiag.exe
+ruletype: Sigma
 author: Cedric MAURUGEON
 date: 2021/09/24
 description: Detects a process memory dump performed by RdrLeakDiag.exe
@@ -24,4 +25,3 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1003.001
-ruletype: SIGMA

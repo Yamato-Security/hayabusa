@@ -1,5 +1,6 @@
 
 title: Bloodhound and Sharphound Hack Tool
+ruletype: Sigma
 author: Florian Roth
 date: 2019/12/20
 description: Detects command line parameters used by Bloodhound and Sharphound hack
@@ -34,11 +35,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2019/12/21
+modified: 2021/11/27
 references:
 - https://github.com/BloodHoundAD/BloodHound
 - https://github.com/BloodHoundAD/SharpHound
-status: experimental
+status: test
 tags:
 - attack.discovery
 - attack.t1087.001
@@ -51,4 +52,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

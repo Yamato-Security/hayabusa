@@ -1,5 +1,6 @@
 
 title: Suspicious Calculator Usage
+ruletype: Sigma
 author: Florian Roth
 date: 2019/02/09
 description: Detects suspicious use of calc.exe with command line parameters or in
@@ -10,13 +11,10 @@ detection:
   SELECTION_2:
     CommandLine: '*\calc.exe *'
   SELECTION_3:
-    EventID: 1
-  SELECTION_4:
     Image: '*\calc.exe'
-  SELECTION_5:
+  SELECTION_4:
     Image: '*\Windows\Sys*'
-  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and  not
-    (SELECTION_5))))
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and  not (SELECTION_4))))
 falsepositives:
 - Unknown
 id: 737e618a-a410-49b5-bec3-9e55ff7fbc15
@@ -24,10 +22,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/ItsReallyNick/status/1094080242686312448
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1036
-ruletype: SIGMA

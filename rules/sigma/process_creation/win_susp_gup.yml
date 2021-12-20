@@ -1,5 +1,6 @@
 
 title: Suspicious GUP Usage
+ruletype: Sigma
 author: Florian Roth
 date: 2019/02/06
 description: Detects execution of the Notepad++ updater in a suspicious directory,
@@ -23,12 +24,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/11/09
+modified: 2021/11/27
 references:
 - https://www.fireeye.com/blog/threat-research/2018/09/apt10-targeting-japanese-corporations-using-updated-ttps.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1574.002
 - attack.t1073
-ruletype: SIGMA

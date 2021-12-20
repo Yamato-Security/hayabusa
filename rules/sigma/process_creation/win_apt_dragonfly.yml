@@ -1,5 +1,6 @@
 
 title: CrackMapExecWin
+ruletype: Sigma
 author: Markus Neis
 date: 2018/04/08
 description: Detects CrackMapExecWin Activity as Described by NCSC
@@ -17,14 +18,14 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.ncsc.gov.uk/alerts/hostile-state-actors-compromising-uk-organisations-focus-engineering-and-industrial-control
 - https://attack.mitre.org/software/S0488/
-status: experimental
+status: test
 tags:
 - attack.g0035
 - attack.credential_access
 - attack.discovery
 - attack.t1110
 - attack.t1087
-ruletype: SIGMA

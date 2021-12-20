@@ -1,5 +1,6 @@
 
 title: Malicious Nishang PowerShell Commandlets
+ruletype: Sigma
 author: Alec Costello
 date: 2019/05/16
 description: Detects Commandlet names and arguments from the Nishang exploitation
@@ -94,4 +95,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

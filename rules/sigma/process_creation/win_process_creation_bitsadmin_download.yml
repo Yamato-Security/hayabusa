@@ -1,5 +1,6 @@
 
 title: Bitsadmin Download
+ruletype: Sigma
 author: Michael Haag, FPT.EagleEye
 date: 2017/03/09
 description: Detects usage of bitsadmin downloading a file
@@ -7,25 +8,23 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    EventID: 1
-  SELECTION_3:
     Image:
     - '*\bitsadmin.exe'
-  SELECTION_4:
+  SELECTION_3:
     CommandLine:
     - '* /create *'
     - '* /addfile *'
-  SELECTION_5:
+  SELECTION_4:
     CommandLine:
     - '*http*'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine:
     - '* /transfer *'
-  SELECTION_7:
+  SELECTION_6:
     CommandLine:
     - '*copy bitsadmin.exe*'
-  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and ((SELECTION_4 and
-    SELECTION_5) or SELECTION_6)) or SELECTION_7))
+  condition: (SELECTION_1 and ((SELECTION_2 and ((SELECTION_3 and SELECTION_4) or
+    SELECTION_5)) or SELECTION_6))
 falsepositives:
 - Some legitimate apps use this, but limited.
 fields:
@@ -48,4 +47,3 @@ tags:
 - attack.t1197
 - attack.s0190
 - attack.t1036.003
-ruletype: SIGMA

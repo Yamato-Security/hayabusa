@@ -1,5 +1,6 @@
 
 title: Whoami Execution
+ruletype: Sigma
 author: Florian Roth
 date: 2018/08/13
 description: Detects the execution of whoami, which is often used by attackers after
@@ -19,12 +20,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://brica.de/alerts/alert/public/1247926/agent-tesla-keylogger-delivered-inside-a-power-iso-daa-archive/
 - https://app.any.run/tasks/7eaba74e-c1ea-400f-9c17-5e30eee89906/
-status: experimental
+status: test
 tags:
 - attack.discovery
 - attack.t1033
 - car.2016-03-001
-ruletype: SIGMA

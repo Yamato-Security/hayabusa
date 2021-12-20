@@ -1,5 +1,6 @@
 
 title: Possible DNS Rebinding
+ruletype: Sigma
 author: Ilyas Ochkov, oscd.community
 date: 2019/10/25
 description: Detects several different DNS-answers by one domain with IPs from internal
@@ -61,16 +62,16 @@ detection:
   condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and (SELECTION_5
     and SELECTION_6) and  not (SELECTION_7)) | count(QueryName) by ComputerName >
     3
+  timeframe: 30s
 id: eb07e747-2552-44cd-af36-b659ae0958e4
 level: medium
 logsource:
   category: dns_query
   product: windows
-modified: 2020/08/28
+modified: 2021/11/27
 references:
 - https://medium.com/@brannondorsey/attacking-private-networks-from-the-internet-with-dns-rebinding-ea7098a2d325
-status: experimental
+status: test
 tags:
 - attack.initial_access
 - attack.t1189
-ruletype: SIGMA

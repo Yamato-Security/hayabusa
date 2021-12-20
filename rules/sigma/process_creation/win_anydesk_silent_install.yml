@@ -1,5 +1,6 @@
 
 title: AnyDesk Silent Installation
+ruletype: Sigma
 author: Ján Trenčanský
 date: 2021/08/06
 description: AnyDesk Remote Desktop silent installation can be used by attacker to
@@ -31,4 +32,3 @@ references:
 status: experimental
 tags:
 - attack.t1219
-ruletype: SIGMA

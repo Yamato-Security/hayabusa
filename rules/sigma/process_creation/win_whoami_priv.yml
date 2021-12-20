@@ -1,5 +1,6 @@
 
 title: Run Whoami Showing Privileges
+ruletype: Sigma
 author: Florian Roth
 date: 2021/05/05
 description: Detects a whoami.exe executed with the /priv command line flag instructing
@@ -27,4 +28,3 @@ tags:
 - attack.privilege_escalation
 - attack.discovery
 - attack.t1033
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: AWL Bypass with Winrm.vbs and Malicious WsmPty.xsl/WsmTxt.xsl
+ruletype: Sigma
 author: Julia Fomina, oscd.community
 date: 2020/10/06
 description: Detects execution of attacker-controlled WsmPty.xsl or WsmTxt.xsl via
@@ -34,4 +35,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1216
-ruletype: SIGMA

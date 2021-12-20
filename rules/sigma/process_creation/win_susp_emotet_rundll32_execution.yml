@@ -1,5 +1,6 @@
 
 title: Emotet RunDLL32 Process Creation
+ruletype: Sigma
 author: FPT.EagleEye
 date: 2020/12/25
 description: Detecting Emotet DLL loading by looking for rundll32.exe processes with
@@ -39,4 +40,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218.011
-ruletype: SIGMA

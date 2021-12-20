@@ -1,5 +1,6 @@
 
 title: Powershell Reverse Shell Connection
+ruletype: Sigma
 author: FPT.EagleEye, wagga
 date: 2021/03/03
 description: Detects the Nishang Invoke-PowerShellTcpOneLine reverse shell
@@ -31,4 +32,3 @@ tags:
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-ruletype: SIGMA

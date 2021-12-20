@@ -1,5 +1,6 @@
 
 title: Stealthy VSTO Persistence
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/01/10
 description: Detects persistence via Visual Studio Tools for Office (VSTO) add-ins
@@ -39,4 +40,3 @@ status: experimental
 tags:
 - attack.t1137.006
 - attack.persistence
-ruletype: SIGMA

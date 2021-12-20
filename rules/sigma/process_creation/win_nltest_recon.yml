@@ -1,5 +1,6 @@
 
 title: Recon Activity with NLTEST
+ruletype: Sigma
 author: Craig Young, oscd.community, Georg Lauenstein
 date: 2021/07/24
 description: Detects nltest commands that can be used for information discovery
@@ -44,4 +45,3 @@ tags:
 - attack.discovery
 - attack.t1016
 - attack.t1482
-ruletype: SIGMA

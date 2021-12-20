@@ -1,5 +1,6 @@
 
 title: Uninstall Crowdstrike Falcon
+ruletype: Sigma
 author: frack113
 date: 2021/07/12
 description: Adversaries may disable security tools to avoid possible detection of
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

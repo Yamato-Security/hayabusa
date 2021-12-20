@@ -1,5 +1,6 @@
 
 title: Invoke-Obfuscation Via Use Rundll32
+ruletype: Sigma
 author: Nikita Nazarov, oscd.community
 date: 2019/10/08
 description: Detects Obfuscated Powershell via use Rundll32 in Scripts
@@ -27,4 +28,3 @@ tags:
 - attack.t1027
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

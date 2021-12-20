@@ -1,5 +1,6 @@
 
 title: Narrator's Feedback-Hub Persistence
+ruletype: Sigma
 author: Dmitriy Lifanov, oscd.community
 date: 2019/10/25
 description: Detects abusing Windows 10 Narrator's Feedback-Hub
@@ -25,12 +26,11 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://giuliocomi.blogspot.com/2019/10/abusing-windows-10-narrators-feedback.html
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.t1060
 - attack.t1547.001
-ruletype: SIGMA

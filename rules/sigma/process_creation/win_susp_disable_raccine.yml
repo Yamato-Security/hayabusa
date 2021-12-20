@@ -1,5 +1,6 @@
 
 title: Raccine Uninstall
+ruletype: Sigma
 author: Florian Roth
 date: 2021/01/21
 description: Detects commands that indicate a Raccine removal from an end system.
@@ -39,4 +40,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

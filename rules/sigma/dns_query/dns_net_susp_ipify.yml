@@ -1,5 +1,6 @@
 
 title: Suspicious DNS Query for IP Lookup Service APIs
+ruletype: Sigma
 author: Brandon George (blog post), Thomas Patzke (rule)
 date: 2021/07/08
 description: Detects DNS queries for ip lookup services such as api.ipify.org not
@@ -49,4 +50,3 @@ status: experimental
 tags:
 - attack.reconnaissance
 - attack.t1590
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Windows Firewall Profile Disabled
+ruletype: Sigma
 author: Austin Songer @austinsonger
 date: 2021/10/12
 description: Detects when a user disables the Windows Firewall via a Profile to help
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.004
-ruletype: SIGMA

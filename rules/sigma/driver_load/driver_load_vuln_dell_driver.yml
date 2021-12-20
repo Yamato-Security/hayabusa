@@ -1,5 +1,6 @@
 
 title: Vulnerable Dell BIOS Update Driver Load
+ruletype: Sigma
 author: Florian Roth
 date: 2021/05/05
 description: Detects the load of the vulnerable Dell BIOS update driver as reported
@@ -32,4 +33,3 @@ tags:
 - attack.privilege_escalation
 - cve.2021.21551
 - attack.t1543
-ruletype: SIGMA

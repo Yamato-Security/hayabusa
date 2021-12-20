@@ -1,5 +1,6 @@
 
 title: Suspicious VBScript UN2452 Pattern
+ruletype: Sigma
 author: Florian Roth
 date: 2021/03/05
 description: Detects suspicious inline VBScript keywords as used by UNC2452
@@ -34,4 +35,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1547.001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Proxy Execution Via Explorer.exe
+ruletype: Sigma
 author: Furkan CALISKAN, @caliskanfurkan_, @oscd_initiative
 date: 2020/10/05
 description: Attackers can use explorer.exe for evading defense mechanisms
@@ -23,10 +24,10 @@ level: low
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/CyberRaiju/status/1273597319322058752
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

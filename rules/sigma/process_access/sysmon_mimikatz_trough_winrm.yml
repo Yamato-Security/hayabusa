@@ -1,5 +1,6 @@
 
 title: Mimikatz through Windows Remote Management
+ruletype: Sigma
 author: Patryk Prauze - ING Tech
 date: 2019/05/20
 description: Detects usage of mimikatz through WinRM protocol by monitoring access
@@ -34,4 +35,3 @@ tags:
 - attack.t1021.006
 - attack.t1028
 - attack.s0002
-ruletype: SIGMA

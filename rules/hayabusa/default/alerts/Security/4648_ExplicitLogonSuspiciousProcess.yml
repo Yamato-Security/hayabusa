@@ -1,0 +1,45 @@
+author: Zach Mathis
+date: 2021/12/17
+modified: 2021/12/17
+
+title: "Explicit Logon: Suspicious Process"
+title_jp: "不審なプロセスからの明示的なログオン"
+output: 'Source User: %SubjectUserName%  :  Target User: %TargetUserName%  :  IP Address: %IpAddress%  :  Process: %ProcessName%  :  Target Server: %TargetInfo%'
+output_jp: 'ソースユーザ: %SubjectUserName%  :  ターゲットユーザ: %TargetUserName%  :  IPアドレス: %IpAddress%  :  プロセス: %ProcessName%  :  ターゲットサーバ: %TargetInfo%'
+description: Alter on explicit credential logons with suspicous processes like powershell and wmic which are often abused by malware like Cobalt Strike.
+description_jp:
+
+id: 7616e857-8e41-4976-bc21-811d122b9fc9
+level: medium
+status: stable
+detection:
+    selection_basic_info:
+        Channel: Security
+        EventID: 4648
+    selection_TargetUserIsComputerAccount:
+        TargetUserName|endswith: "$"  
+        IpAddress: "-"
+    filter_UsersAndTargetServerAreComputerAccounts:     #Filter system noise
+        SubjectUserName|endswith: "$"
+        TargetUserName|endswith: "$"
+        TargetInfo|endswith: "$"
+    filter_SubjectUserIsComputerAccount:
+        SubjectUserName|endswith: "$" 
+    filter_SystemAccounts:
+        TargetUserName|re: "(DWM|UMFD)-([0-9]|1[0-2])$" #Filter out default Desktop Windows Manager and User Mode Driver Framework accounts
+        IpAddress: "-"                                  #Don't filter if the IP address is remote to catch attackers who created backdoor accounts that look like DWM-12, etc..
+    selection_SuspiciousProcess:
+        - ProcessName|endswith: "powershell.exe"
+        - ProcessName|endswith: "WMIC.exe"
+    condition: selection_basic_info and selection_SuspiciousProcess and not (selection_TargetUserIsComputerAccount 
+               and not filter_SubjectUserIsComputerAccount) and not filter_SystemAccounts and not filter_UsersAndTargetServerAreComputerAccounts
+falsepositives:
+    - normal system usage
+tags:
+    - attack.privilege_escalation
+    - attack.lateral_movement
+references:
+    - https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/event.aspx?eventID=4648
+sample-evtx: ./EVTX-ATTACK-SAMPLES/Privilege Escalation/Runas_4624_4648_Webshell_CreateProcessAsUserA.evtx
+logsource: default
+ruletype: Hayabusa

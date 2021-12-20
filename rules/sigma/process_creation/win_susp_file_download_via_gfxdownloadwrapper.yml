@@ -1,5 +1,6 @@
 
 title: GfxDownloadWrapper.exe Downloads File from Suspicious URL
+ruletype: Sigma
 author: Victor Sergeev, oscd.community
 date: 2020/10/09
 description: Detects when GfxDownloadWrapper.exe downloads file from non standard
@@ -23,10 +24,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/GfxDownloadWrapper.yml
-status: experimental
+status: test
 tags:
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

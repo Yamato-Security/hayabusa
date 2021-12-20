@@ -1,5 +1,6 @@
 
 title: WSF/JSE/JS/VBA/VBE File Execution
+ruletype: Sigma
 author: Michael Haag
 date: 2019/01/16
 description: Detects suspicious file execution by wscript and cscript
@@ -28,11 +29,10 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/28
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.execution
 - attack.t1059.005
 - attack.t1059.007
 - attack.t1064
-ruletype: SIGMA

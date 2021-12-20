@@ -1,5 +1,6 @@
 
 title: Excel Proxy Executing Regsvr32 With Payload
+ruletype: Sigma
 author: Vadim Khrykov (ThreatIntel), Cyb3rEng (Rule)
 date: 2021/08/23
 description: Excel called wmic to finally proxy execute regsvr32 with the payload.
@@ -56,4 +57,3 @@ tags:
 - attack.t1218.010
 - attack.execution
 - attack.defense_evasion
-ruletype: SIGMA

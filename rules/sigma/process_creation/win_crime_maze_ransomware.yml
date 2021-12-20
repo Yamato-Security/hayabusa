@@ -1,5 +1,6 @@
 
 title: Maze Ransomware
+ruletype: Sigma
 author: Florian Roth
 date: 2020/05/08
 description: Detects specific process characteristics of Maze ransomware word document
@@ -49,4 +50,3 @@ tags:
 - attack.t1047
 - attack.impact
 - attack.t1490
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Regedit as Trusted Installer
+ruletype: Sigma
 author: Florian Roth
 date: 2021/05/27
 description: Detects a regedit started with TrustedInstaller privileges or by ProcessHacker.exe
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.privilege_escalation
 - attack.t1548
-ruletype: SIGMA

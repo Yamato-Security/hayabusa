@@ -1,5 +1,6 @@
 
 title: MSTSC Shadowing
+ruletype: Sigma
 author: Florian Roth
 date: 2020/01/24
 description: Detects RDP session hijacking by using MSTSC shadowing
@@ -18,12 +19,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://twitter.com/kmkz_security/status/1220694202301976576
 - https://github.com/kmkz/Pentesting/blob/master/Post-Exploitation-Cheat-Sheet
-status: experimental
+status: test
 tags:
 - attack.lateral_movement
 - attack.t1563.002
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Execution in Outlook Temp Folder
+ruletype: Sigma
 author: Florian Roth
 date: 2019/10/01
 description: Detects a suspicious program execution in Outlook temp folder
@@ -25,4 +26,3 @@ tags:
 - attack.initial_access
 - attack.t1566.001
 - attack.t1193
-ruletype: SIGMA

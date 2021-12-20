@@ -1,5 +1,6 @@
 
 title: Use of CLIP
+ruletype: Sigma
 author: frack113
 date: 2021/07/27
 description: Adversaries may collect data stored in the clipboard from users copying
@@ -24,4 +25,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1115
-ruletype: SIGMA

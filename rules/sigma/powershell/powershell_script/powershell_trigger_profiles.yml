@@ -1,5 +1,6 @@
 
 title: Powershell Trigger Profiles by Add_Content
+ruletype: Sigma
 author: frack113
 date: 2021/08/18
 description: Adversaries may gain persistence and elevate privileges by executing
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.privilege_escalation
 - attack.t1546.013
-ruletype: SIGMA

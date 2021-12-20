@@ -1,5 +1,6 @@
 
 title: Indirect Command Execution By Program Compatibility Wizard
+ruletype: Sigma
 author: A. Sungurov , oscd.community
 date: 2020/10/12
 description: Detect indirect command execution via Program Compatibility Assistant
@@ -24,12 +25,12 @@ level: low
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/pabraeken/status/991335019833708544
 - https://lolbas-project.github.io/lolbas/Binaries/Pcwrun/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
 - attack.execution
-ruletype: SIGMA

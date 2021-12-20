@@ -1,5 +1,6 @@
 
 title: Xwizard DLL Sideloading
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/09/20
 description: Detects the execution of Xwizard tool from the non-default directory
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1574.002
-ruletype: SIGMA

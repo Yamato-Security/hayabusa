@@ -1,5 +1,6 @@
 
 title: Renamed ProcDump
+ruletype: Sigma
 author: Florian Roth
 date: 2019/11/18
 description: Detects the execution of a renamed ProcDump executable often used by
@@ -8,23 +9,21 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    EventID: 1
-  SELECTION_3:
     OriginalFileName: procdump
+  SELECTION_3:
+    CommandLine: '* -ma *'
   SELECTION_4:
-    CommandLine: '* -ma *'
-  SELECTION_5:
     CommandLine: '* -accepteula *'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine: '* -ma *'
-  SELECTION_7:
+  SELECTION_6:
     CommandLine: '*.dmp*'
-  SELECTION_8:
+  SELECTION_7:
     Image:
     - '*\procdump.exe'
     - '*\procdump64.exe'
-  condition: (SELECTION_1 and (SELECTION_2 and ((SELECTION_3 or (SELECTION_4 and SELECTION_5))
-    or (SELECTION_6 and SELECTION_7))) and  not (SELECTION_8))
+  condition: (SELECTION_1 and ((SELECTION_2 or (SELECTION_3 and SELECTION_4)) or (SELECTION_5
+    and SELECTION_6)) and  not (SELECTION_7))
 falsepositives:
 - Procdump illegaly bundled with legitimate software
 - Weird admins who renamed binaries
@@ -41,4 +40,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.003
-ruletype: SIGMA

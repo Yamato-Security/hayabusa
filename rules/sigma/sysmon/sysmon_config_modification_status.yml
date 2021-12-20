@@ -1,5 +1,6 @@
 
 title: Sysmon Configuration Modification
+ruletype: Sigma
 author: frack113
 date: 2021/06/04
 description: Someone try to hide from Sysmon
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1564
-ruletype: SIGMA

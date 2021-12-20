@@ -1,5 +1,6 @@
 
 title: APT PRIVATELOG Image Load Pattern
+ruletype: Sigma
 author: Florian Roth
 date: 2021/09/07
 description: Detects an image load pattern as seen when a tool named PRIVATELOG is
@@ -26,4 +27,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1055
-ruletype: SIGMA

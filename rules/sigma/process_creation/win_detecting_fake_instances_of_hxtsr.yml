@@ -1,5 +1,6 @@
 
 title: Detecting Fake Instances Of Hxtsr.exe
+ruletype: Sigma
 author: Sreeman
 date: 2020/04/17
 description: HxTsr.exe is a Microsoft compressed executable file called Microsoft
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1036
-ruletype: SIGMA

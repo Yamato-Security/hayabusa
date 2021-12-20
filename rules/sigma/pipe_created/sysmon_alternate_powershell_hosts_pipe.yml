@@ -1,5 +1,6 @@
 
 title: Alternate PowerShell Hosts Pipe
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/09/12
 description: Detects alternate PowerShell hosts potentially bypassing detections looking
@@ -15,6 +16,8 @@ detection:
     Image:
     - '*\powershell.exe'
     - '*\powershell_ise.exe'
+    - '*\WINDOWS\System32\sdiagnhost.exe'
+    - '*\WINDOWS\System32\wsmprovhost.exe'
   condition: ((SELECTION_1 or SELECTION_2) and SELECTION_3 and  not (SELECTION_4))
 falsepositives:
 - Programs using PowerShell directly without invocation of a dedicated interpreter.
@@ -28,12 +31,11 @@ level: medium
 logsource:
   category: pipe_created
   product: windows
-modified: 2019/11/10
+modified: 2021/12/09
 references:
 - https://threathunterplaybook.com/notebooks/windows/02_execution/WIN-190815181010.html
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-ruletype: SIGMA

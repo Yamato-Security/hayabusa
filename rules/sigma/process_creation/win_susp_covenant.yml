@@ -1,5 +1,6 @@
 
 title: Covenant Launcher Indicators
+ruletype: Sigma
 author: Florian Roth, Jonhnathan Ribeiro, oscd.community
 date: 2020/06/04
 description: Detects suspicious command lines used in Covenant luanchers
@@ -31,13 +32,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://posts.specterops.io/covenant-v0-5-eee0507b85ba
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.defense_evasion
 - attack.t1059.001
 - attack.t1564.003
 - attack.t1086
-ruletype: SIGMA

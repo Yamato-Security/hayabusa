@@ -1,5 +1,6 @@
 
 title: Suspicious ADSI-Cache Usage By Unknown Tool
+ruletype: Sigma
 author: xknow @xknow_infosec
 date: 2019/03/24
 description: Detects the usage of ADSI (LDAP) operations by tools. This may also detect
@@ -27,14 +28,13 @@ level: high
 logsource:
   category: file_event
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://medium.com/@ivecodoe/detecting-ldapfragger-a-newly-released-cobalt-strike-beacon-using-ldap-for-c2-communication-c274a7f00961
 - https://blog.fox-it.com/2020/03/19/ldapfragger-command-and-control-over-ldap-attributes/
 - https://github.com/fox-it/LDAPFragger
-status: experimental
+status: test
 tags:
 - attack.t1071
 - attack.t1001.003
 - attack.command_and_control
-ruletype: SIGMA

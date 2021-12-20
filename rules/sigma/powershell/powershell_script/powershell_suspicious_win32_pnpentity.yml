@@ -1,5 +1,6 @@
 
 title: Powershell Suspicious Win32_PnPEntity
+ruletype: Sigma
 author: frack113
 date: 2021/08/23
 description: Adversaries may attempt to gather information about attached peripheral
@@ -23,4 +24,3 @@ status: experimental
 tags:
 - attack.discovery
 - attack.t1120
-ruletype: SIGMA

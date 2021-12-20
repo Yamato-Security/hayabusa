@@ -1,5 +1,6 @@
 
 title: Suspicious Desktopimgdownldr Target File
+ruletype: Sigma
 author: Florian Roth
 date: 2020/07/03
 description: Detects a suspicious Microsoft desktopimgdownldr file creation that stores
@@ -31,11 +32,11 @@ level: high
 logsource:
   category: file_event
   product: windows
+modified: 2021/11/27
 references:
 - https://labs.sentinelone.com/living-off-windows-land-a-new-native-file-downldr/
 - https://twitter.com/SBousseaden/status/1278977301745741825
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1105
-ruletype: SIGMA

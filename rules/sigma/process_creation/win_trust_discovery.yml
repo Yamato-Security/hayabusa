@@ -1,5 +1,6 @@
 
 title: Domain Trust Discovery
+ruletype: Sigma
 author: E.M. Anhaus (originally from Atomic Blue Detections, Tony Lambert), oscd.community,
   omkar72
 date: 2019/10/24
@@ -49,4 +50,3 @@ status: experimental
 tags:
 - attack.discovery
 - attack.t1482
-ruletype: SIGMA

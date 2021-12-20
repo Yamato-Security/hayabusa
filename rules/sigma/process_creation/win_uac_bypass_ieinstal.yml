@@ -1,5 +1,6 @@
 
 title: UAC Bypass Using IEInstal - Process
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/08/30
 description: Detects the pattern of UAC Bypass using IEInstal.exe (UACMe 64)
@@ -31,4 +32,3 @@ tags:
 - attack.defense_evasion
 - attack.privilege_escalation
 - attack.t1548.002
-ruletype: SIGMA

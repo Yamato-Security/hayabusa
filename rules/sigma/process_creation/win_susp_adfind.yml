@@ -1,5 +1,6 @@
 
 title: Suspicious AdFind Execution
+ruletype: Sigma
 author: FPT.EagleEye Team, omkar72, oscd.community
 date: 2020/09/26
 description: Detects the execution of a AdFind for Active Directory enumeration
@@ -35,4 +36,3 @@ tags:
 - attack.t1087.002
 - attack.t1482
 - attack.t1069.002
-ruletype: SIGMA

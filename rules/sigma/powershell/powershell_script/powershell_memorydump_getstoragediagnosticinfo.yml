@@ -1,5 +1,6 @@
 
 title: Live Memory Dump Using Powershell
+ruletype: Sigma
 author: Max Altgelt
 date: 2021/09/21
 description: Detects usage of a PowerShell command to dump the live memory of a Windows
@@ -24,4 +25,3 @@ references:
 status: experimental
 tags:
 - attack.t1003
-ruletype: SIGMA

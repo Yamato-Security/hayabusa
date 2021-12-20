@@ -1,5 +1,6 @@
 
 title: Sysinternals SDelete Registry Keys
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/05/02
 description: A General detection to trigger for the creation or modification of .*\Software\Sysinternals\SDelete
@@ -29,4 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1070.004
-ruletype: SIGMA

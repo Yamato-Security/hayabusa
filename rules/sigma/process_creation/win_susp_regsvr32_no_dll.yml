@@ -1,5 +1,6 @@
 
 title: Regsvr32 Command Line Without DLL
+ruletype: Sigma
 author: Florian Roth
 date: 2019/07/17
 description: Detects a regsvr.exe execution that doesn't contain a DLL in the command
@@ -41,4 +42,3 @@ tags:
 - attack.defense_evasion
 - attack.t1574
 - attack.execution
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: RDP Sensitive Settings Changed
+ruletype: Sigma
 author: Samir Bousseaden
 date: 2019/04/03
 description: Detects changes to RDP terminal service sensitive settings
@@ -23,11 +24,10 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://blog.menasec.net/2019/02/threat-hunting-rdp-hijacking-via.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

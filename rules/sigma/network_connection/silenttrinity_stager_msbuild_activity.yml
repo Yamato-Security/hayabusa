@@ -1,5 +1,6 @@
 
 title: Silenttrinity Stager Msbuild Activity
+ruletype: Sigma
 author: Kiran kumar s, oscd.community
 date: 2020/10/11
 description: Detects a possible remote connections to Silenttrinity c2
@@ -22,10 +23,10 @@ level: high
 logsource:
   category: network_connection
   product: windows
+modified: 2021/11/27
 references:
 - https://www.blackhillsinfosec.com/my-first-joyride-with-silenttrinity/
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1127.001
-ruletype: SIGMA

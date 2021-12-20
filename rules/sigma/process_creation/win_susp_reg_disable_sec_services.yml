@@ -1,5 +1,6 @@
 
 title: Reg Disable Security Service
+ruletype: Sigma
 author: Florian Roth, John Lambert (idea)
 date: 2021/07/14
 description: Detects a suspicious reg.exe invocation that looks as if it would disable
@@ -44,4 +45,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

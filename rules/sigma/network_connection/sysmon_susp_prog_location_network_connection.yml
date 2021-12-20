@@ -1,5 +1,6 @@
 
 title: Suspicious Program Location with Network Connections
+ruletype: Sigma
 author: Florian Roth
 date: 2017/03/19
 description: Detects programs with network connections running in suspicious files
@@ -34,10 +35,10 @@ logsource:
   definition: Use the following config to generate the necessary Event ID 3 Network
     Connection events
   product: windows
+modified: 2021/11/27
 references:
 - https://docs.google.com/spreadsheets/d/17pSTDNpa0sf6pHeRhusvWG6rThciE8CsXTSlDUAZDyo
-status: experimental
+status: test
 tags:
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

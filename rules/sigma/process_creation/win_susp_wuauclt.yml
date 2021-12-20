@@ -1,5 +1,6 @@
 
 title: Windows Update Client LOLBIN
+ruletype: Sigma
 author: FPT.EagleEye Team
 date: 2020/10/17
 description: Detects code execution via the Windows Update client (wuauclt)
@@ -37,4 +38,3 @@ tags:
 - attack.execution
 - attack.t1105
 - attack.t1218
-ruletype: SIGMA

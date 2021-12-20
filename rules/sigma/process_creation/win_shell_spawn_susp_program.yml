@@ -1,5 +1,6 @@
 
 title: Windows Shell Spawning Suspicious Program
+ruletype: Sigma
 author: Florian Roth
 date: 2018/04/06
 description: Detects a suspicious child process of a Windows shell
@@ -35,10 +36,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://mgreen27.github.io/posts/2018/04/02/DownloadCradle.html
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.defense_evasion
@@ -46,4 +47,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.001
 - attack.t1218
-ruletype: SIGMA

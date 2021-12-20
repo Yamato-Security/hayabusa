@@ -1,5 +1,6 @@
 
 title: MSHTA Spwaned by SVCHOST
+ruletype: Sigma
 author: Markus Neis
 date: 2018/06/07
 description: Detects MSHTA.EXE spwaned by SVCHOST as seen in LethalHTA and described
@@ -19,12 +20,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://codewhitesec.blogspot.com/2018/07/lethalhta.html
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218.005
 - attack.execution
 - attack.t1170
-ruletype: SIGMA

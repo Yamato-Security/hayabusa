@@ -1,5 +1,6 @@
 
 title: WMIExec VBS Script
+ruletype: Sigma
 author: Florian Roth
 date: 2017/04/07
 description: Detects suspicious file execution by wscript and cscript
@@ -23,12 +24,12 @@ level: critical
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://www.pwc.co.uk/cyber-security/pdf/cloud-hopper-annex-b-final.pdf
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.g0045
 - attack.t1064
 - attack.t1059.005
-ruletype: SIGMA

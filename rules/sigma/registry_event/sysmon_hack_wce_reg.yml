@@ -1,5 +1,6 @@
 
 title: Windows Credential Editor Registry
+ruletype: Sigma
 author: Florian Roth
 date: 2019/12/31
 description: Detects the use of Windows Credential Editor (WCE)
@@ -20,13 +21,12 @@ level: critical
 logsource:
   category: registry_event
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://www.ampliasecurity.com/research/windows-credentials-editor/
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003
 - attack.t1003.001
 - attack.s0005
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Disable Microsoft Office Security Features
+ruletype: Sigma
 author: frack113
 date: 2021/06/08
 description: Disable Microsoft Office Security Features by registry
@@ -40,4 +41,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Scheduled Task Creation
+ruletype: Sigma
 author: Florian Roth
 date: 2019/01/16
 description: Detects the creation of scheduled tasks in user session
@@ -36,4 +37,3 @@ tags:
 - attack.t1053
 - attack.s0111
 - car.2013-08-001
-ruletype: SIGMA

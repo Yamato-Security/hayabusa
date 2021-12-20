@@ -1,5 +1,6 @@
 
 title: Disable Tamper Protection on Windows Defender
+ruletype: Sigma
 author: Austin Songer @austinsonger
 date: 2021/08/04
 description: Detects disabling Windows Defender Tamper Protection
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

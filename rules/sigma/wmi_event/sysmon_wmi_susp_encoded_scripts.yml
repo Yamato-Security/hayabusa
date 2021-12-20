@@ -1,5 +1,6 @@
 
 title: Suspicious Encoded Scripts in a WMI Consumer
+ruletype: Sigma
 author: Florian Roth
 date: 2021/09/01
 description: Detects suspicious encoded payloads in WMI Event Consumers
@@ -40,4 +41,3 @@ tags:
 - attack.t1047
 - attack.persistence
 - attack.t1546.003
-ruletype: SIGMA

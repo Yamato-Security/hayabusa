@@ -1,5 +1,6 @@
 
 title: CMSTP Execution Registry Event
+ruletype: Sigma
 author: Nik Seetharaman
 date: 2018/07/16
 description: Detects various indicators of Microsoft Connection Manager Profile Installer
@@ -36,4 +37,3 @@ tags:
 - attack.t1218.003
 - attack.g0069
 - car.2019-04-001
-ruletype: SIGMA

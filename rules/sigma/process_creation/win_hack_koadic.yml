@@ -1,5 +1,6 @@
 
 title: Koadic Execution
+ruletype: Sigma
 author: wagga, Jonhnathan Ribeiro, oscd.community
 date: 2020/01/12
 description: Detects command line parameters used by Koadic hack tool
@@ -38,4 +39,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.007
 - attack.t1064
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: UAC Bypass via Sdclt
+ruletype: Sigma
 author: Omer Yampel, Christian Burkard
 date: 2017/03/17
 description: Detects the pattern of UAC Bypass using registry key manipulation of
@@ -37,4 +38,3 @@ tags:
 - attack.t1088
 - attack.t1548.002
 - car.2019-04-001
-ruletype: SIGMA

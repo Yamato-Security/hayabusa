@@ -1,5 +1,6 @@
 
 title: VBScript Payload Stored in Registry
+ruletype: Sigma
 author: Florian Roth
 date: 2021/03/05
 description: Detects VBScript content stored into registry keys as seen being used
@@ -42,4 +43,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1547.001
-ruletype: SIGMA

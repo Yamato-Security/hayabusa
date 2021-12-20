@@ -1,5 +1,6 @@
 
 title: Shells Spawned by Web Servers
+ruletype: Sigma
 author: Thomas Patzke
 date: 2019/01/16
 description: Web servers that spawn shell processes could be the result of a successfully
@@ -33,11 +34,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/03/25
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.persistence
 - attack.t1505.003
 - attack.privilege_escalation
 - attack.t1190
-ruletype: SIGMA

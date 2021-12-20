@@ -1,5 +1,6 @@
 
 title: Dllhost Internet Connection
+ruletype: Sigma
 author: bartblaze
 date: 2020/07/13
 description: Detects Dllhost that communicates with public IP addresses
@@ -30,8 +31,11 @@ detection:
     - 172.29.*
     - 172.30.*
     - 172.31.*
-    - 127.*
-  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+  SELECTION_5:
+    DestinationIp:
+    - 0:0:0:0:0:0:0:1
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not ((SELECTION_4)
+    or (SELECTION_5)))
 falsepositives:
 - Communication to other corporate systems that use IP addresses from public address
   spaces
@@ -40,14 +44,13 @@ level: medium
 logsource:
   category: network_connection
   product: windows
-modified: 2020/08/24
+modified: 2021/12/07
 references:
 - https://github.com/Neo23x0/sigma/blob/master/rules/windows/network_connection/sysmon_rundll32_net_connections.yml
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
 - attack.execution
 - attack.t1559.001
 - attack.t1175
-ruletype: SIGMA

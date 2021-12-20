@@ -1,5 +1,6 @@
 
 title: Bad Opsec Defaults Sacrificial Processes With Improper Arguments
+ruletype: Sigma
 author: Oleg Kolesnikov @securonix invrep_de, oscd.community, Florian Roth, Christian
   Burkard
 date: 2020/10/23
@@ -61,4 +62,3 @@ tags:
 - attack.defense_evasion
 - attack.t1085
 - attack.t1218.011
-ruletype: SIGMA

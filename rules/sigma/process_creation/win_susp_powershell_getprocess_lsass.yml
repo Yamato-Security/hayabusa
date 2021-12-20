@@ -1,5 +1,6 @@
 
 title: PowerShell Get-Process LSASS
+ruletype: Sigma
 author: Florian Roth
 date: 2021/04/23
 description: Detects a Get-Process command on lsass process, which is in almost all
@@ -24,4 +25,3 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1552.004
-ruletype: SIGMA

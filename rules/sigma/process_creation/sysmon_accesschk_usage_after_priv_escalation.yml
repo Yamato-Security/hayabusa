@@ -1,5 +1,6 @@
 
 title: Accesschk Usage After Privilege Escalation
+ruletype: Sigma
 author: Teymur Kheirkhabarov (idea), Mangatas Tondang (rule), oscd.community
 date: 2020/10/13
 description: Accesschk is an access and privilege audit tool developed by SysInternal
@@ -27,10 +28,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://image.slidesharecdn.com/kheirkhabarovoffzonefinal-181117201458/95/hunting-for-privilege-escalation-in-windows-environment-43-638.jpg
-status: experimental
+status: test
 tags:
 - attack.discovery
 - attack.t1069.001
-ruletype: SIGMA

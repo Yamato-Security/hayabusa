@@ -1,5 +1,6 @@
 
 title: Suspicious Auditpol Usage
+ruletype: Sigma
 author: Janantha Marasinghe (https://github.com/blueteam0ps)
 date: 2021/02/02
 description: Threat actors can use auditpol binary to change audit policy configuration
@@ -32,4 +33,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.002
-ruletype: SIGMA

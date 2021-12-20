@@ -1,5 +1,6 @@
 
 title: Suspicious Call by Ordinal
+ruletype: Sigma
 author: Florian Roth
 date: 2019/10/22
 description: Detects suspicious calls of DLLs in rundll32.dll exports by ordinal
@@ -7,9 +8,12 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    CommandLine: '*\rundll32.exe*'
+    Image: '*\rundll32.exe'
   SELECTION_3:
-    CommandLine: '*,#*'
+    CommandLine:
+    - '*,#*'
+    - '*, #*'
+    - '*.dll #*'
   SELECTION_4:
     CommandLine: '*EDGEHTML.dll*'
   SELECTION_5:
@@ -25,7 +29,7 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2021/04/29
+modified: 2021/12/08
 references:
 - https://techtalk.pcmatic.com/2017/11/30/running-dll-files-malware-analysis/
 - https://github.com/Neo23x0/DLLRunner
@@ -36,4 +40,3 @@ tags:
 - attack.execution
 - attack.t1218.011
 - attack.t1085
-ruletype: SIGMA

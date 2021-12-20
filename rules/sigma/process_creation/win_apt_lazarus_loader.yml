@@ -1,5 +1,6 @@
 
 title: Lazarus Loaders
+ruletype: Sigma
 author: Florian Roth, wagga
 date: 2020/12/23
 description: Detects different loaders as described in various threat reports on Lazarus
@@ -45,4 +46,3 @@ tags:
 - attack.g0032
 - attack.execution
 - attack.t1059
-ruletype: SIGMA

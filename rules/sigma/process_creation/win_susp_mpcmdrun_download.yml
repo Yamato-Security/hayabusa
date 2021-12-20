@@ -1,5 +1,6 @@
 
 title: Windows Defender Download Activity
+ruletype: Sigma
 author: Matthew Matchen
 date: 2020/09/04
 description: Detect the use of Windows Defender to download payloads
@@ -24,13 +25,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/djmtshepana/status/1301608169496612866
 - https://lolbas-project.github.io/lolbas/Binaries/MpCmdRun/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1218
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

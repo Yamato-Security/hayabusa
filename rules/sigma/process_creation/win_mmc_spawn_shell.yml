@@ -1,5 +1,6 @@
 
 title: MMC Spawning Windows Shell
+ruletype: Sigma
 author: Karneades, Swisscom CSIRT
 date: 2019/08/05
 description: Detects a Windows command line executable started from MMC
@@ -31,12 +32,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://enigma0x3.net/2017/01/05/lateral-movement-using-the-mmc20-application-com-object/
-status: experimental
+status: test
 tags:
 - attack.lateral_movement
 - attack.t1175
 - attack.t1021.003
-ruletype: SIGMA

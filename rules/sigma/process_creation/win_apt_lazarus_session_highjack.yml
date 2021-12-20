@@ -1,5 +1,6 @@
 
 title: Lazarus Session Highjacker
+ruletype: Sigma
 author: Trent Liffick (@tliffick), Bartlomiej Czyz (@bczyz1)
 date: 2020/06/03
 description: Detects executables launched outside their default directories as used
@@ -23,11 +24,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://media.kasperskycontenthub.com/wp-content/uploads/sites/43/2018/03/07180244/Lazarus_Under_The_Hood_PDF_final.pdf
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1036.005
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Detected Windows Software Discovery
+ruletype: Sigma
 author: Nikita Nazarov, oscd.community
 date: 2020/10/16
 description: Adversaries may attempt to enumerate software for a variety of reasons,
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.discovery
 - attack.t1518
-ruletype: SIGMA

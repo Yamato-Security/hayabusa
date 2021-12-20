@@ -1,5 +1,6 @@
 
 title: Suspicious Plink Remote Forwarding
+ruletype: Sigma
 author: Florian Roth
 date: 2021/01/19
 description: Detects suspicious Plink tunnel remote forarding to a local port
@@ -27,4 +28,3 @@ tags:
 - attack.t1572
 - attack.lateral_movement
 - attack.t1021.001
-ruletype: SIGMA

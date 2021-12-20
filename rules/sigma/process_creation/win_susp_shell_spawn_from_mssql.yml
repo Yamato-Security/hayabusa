@@ -1,5 +1,6 @@
 
 title: Suspicious Shells Spawn by SQL Server
+ruletype: Sigma
 author: FPT.EagleEye Team, wagga
 date: 2020/12/11
 description: Detects suspicious shell spawn from MSSQL process, this might be sight
@@ -31,4 +32,3 @@ tags:
 - attack.initial_access
 - attack.persistence
 - attack.privilege_escalation
-ruletype: SIGMA

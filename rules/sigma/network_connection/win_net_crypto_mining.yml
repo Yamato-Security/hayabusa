@@ -1,5 +1,6 @@
 
 title: Windows Crypto Mining Pool Connections
+ruletype: Sigma
 author: Florian Roth
 date: 2021/10/26
 description: Detects process connections to a Monero crypto mining pool
@@ -44,4 +45,3 @@ status: stable
 tags:
 - attack.impact
 - attack.t1496
-ruletype: SIGMA

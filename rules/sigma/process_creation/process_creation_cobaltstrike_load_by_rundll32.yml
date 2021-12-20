@@ -1,5 +1,6 @@
 
 title: CobaltStrike Load by Rundll32
+ruletype: Sigma
 author: Wojciech Lesicki
 date: 2021/06/01
 description: Rundll32 can be use by Cobalt Strike with StartW function to load DLLs
@@ -29,4 +30,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218.011
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Usage of Sysinternals Tools
+ruletype: Sigma
 author: Markus Neis
 date: 2017/08/28
 description: Detects the usage of Sysinternals Tools due to accepteula key being added
@@ -28,4 +29,3 @@ status: experimental
 tags:
 - attack.resource_development
 - attack.t1588.002
-ruletype: SIGMA

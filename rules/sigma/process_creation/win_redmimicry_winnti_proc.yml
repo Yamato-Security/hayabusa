@@ -1,5 +1,6 @@
 
 title: RedMimicry Winnti Playbook Execute
+ruletype: Sigma
 author: Alexander Rausch
 date: 2020/06/24
 description: Detects actions caused by the RedMimicry Winnti playbook
@@ -23,10 +24,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/06
+modified: 2021/11/27
 references:
 - https://redmimicry.com
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.defense_evasion
@@ -34,4 +35,3 @@ tags:
 - attack.t1106
 - attack.t1059.003
 - attack.t1218.011
-ruletype: SIGMA

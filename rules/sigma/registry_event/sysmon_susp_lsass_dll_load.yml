@@ -1,5 +1,6 @@
 
 title: DLL Load via LSASS
+ruletype: Sigma
 author: Florian Roth
 date: 2019/10/16
 description: Detects a method to load DLL via LSASS process using an undocumented
@@ -23,14 +24,13 @@ level: high
 logsource:
   category: registry_event
   product: windows
-modified: 2020/07/01
+modified: 2021/11/27
 references:
 - https://blog.xpnsec.com/exploring-mimikatz-part-1/
 - https://twitter.com/SBousseaden/status/1183745981189427200
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.persistence
 - attack.t1177
 - attack.t1547.008
-ruletype: SIGMA

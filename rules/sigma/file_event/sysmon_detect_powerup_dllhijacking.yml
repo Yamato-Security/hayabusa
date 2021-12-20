@@ -1,5 +1,6 @@
 
 title: Powerup Write Hijack DLL
+ruletype: Sigma
 author: Subhash Popuri (@pbssubhash)
 date: 2021/08/21
 description: Powerup tool's Write Hijack DLL exploits DLL hijacking for privilege
@@ -30,4 +31,3 @@ tags:
 - attack.privilege_escalation
 - attack.defense_evasion
 - attack.t1574.001
-ruletype: SIGMA

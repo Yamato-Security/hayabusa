@@ -1,5 +1,6 @@
 
 title: Shell Open Registry Keys Manipulation
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/08/30
 description: Detects the shell open key manipulation (exefile and ms-settings) used
@@ -8,12 +9,6 @@ description: Detects the shell open key manipulation (exefile and ms-settings) u
 detection:
   SELECTION_1:
     EventID: 12
-  SELECTION_10:
-    TargetObject:
-    - '*Classes\ms-settings\shell\open\command\(Default)'
-    - '*Classes\exefile\shell\open\command\(Default)'
-  SELECTION_11:
-    Details: (Empty)
   SELECTION_2:
     EventID: 13
   SELECTION_3:
@@ -25,14 +20,13 @@ detection:
   SELECTION_6:
     TargetObject: '*Classes\ms-settings\shell\open\command\DelegateExecute'
   SELECTION_7:
-    EventID: 12
+    TargetObject:
+    - '*Classes\ms-settings\shell\open\command\(Default)'
+    - '*Classes\exefile\shell\open\command\(Default)'
   SELECTION_8:
-    EventID: 13
-  SELECTION_9:
-    EventID: 14
+    Details: (Empty)
   condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (((SELECTION_4 and SELECTION_5)
-    or SELECTION_6) or ((SELECTION_7 or SELECTION_8 or SELECTION_9) and SELECTION_10
-    and  not (SELECTION_11))))
+    or SELECTION_6) or (SELECTION_7 and  not (SELECTION_8))))
 falsepositives:
 - Unknown
 id: 152f3630-77c1-4284-bcc0-4cc68ab2f6e7
@@ -52,4 +46,3 @@ tags:
 - attack.privilege_escalation
 - attack.t1548.002
 - attack.t1546.001
-ruletype: SIGMA

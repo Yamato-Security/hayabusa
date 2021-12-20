@@ -1,5 +1,6 @@
 
 title: Turla Group Named Pipes
+ruletype: Sigma
 author: Markus Neis
 date: 2017/11/06
 description: Detects a named pipe used by Turla group samples
@@ -29,12 +30,12 @@ logsource:
     https://github.com/olafhartong/sysmon-modular. How to test detection? You can
     check powershell script from this site https://svch0st.medium.com/guide-to-named-pipes-and-hunting-for-cobalt-strike-pipes-dc46b2c5f575
   product: windows
+modified: 2021/11/27
 references:
 - Internal Research
 - https://attack.mitre.org/groups/G0010/
-status: experimental
+status: test
 tags:
 - attack.g0010
 - attack.execution
 - attack.t1106
-ruletype: SIGMA

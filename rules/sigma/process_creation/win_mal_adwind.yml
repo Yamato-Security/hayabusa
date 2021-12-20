@@ -1,5 +1,6 @@
 
 title: Adwind RAT / JRAT
+ruletype: Sigma
 author: Florian Roth, Tom Ueltschi, Jonhnathan Ribeiro, oscd.community
 date: 2017/11/10
 description: Detects javaw.exe in AppData folder as used by Adwind / JRAT
@@ -35,4 +36,3 @@ tags:
 - attack.t1059.005
 - attack.t1059.007
 - attack.t1064
-ruletype: SIGMA

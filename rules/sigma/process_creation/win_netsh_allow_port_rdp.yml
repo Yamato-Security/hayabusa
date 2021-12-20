@@ -1,5 +1,6 @@
 
 title: Netsh RDP Port Opening
+ruletype: Sigma
 author: Sander Wiebing
 date: 2020/05/23
 description: Detects netsh commands that opens the port 3389 used for RDP, used in
@@ -30,12 +31,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://labs.sentinelone.com/sarwent-malware-updates-command-detonation/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.004
-ruletype: SIGMA

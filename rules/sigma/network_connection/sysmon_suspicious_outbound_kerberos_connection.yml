@@ -1,5 +1,6 @@
 
 title: Suspicious Outbound Kerberos Connection
+ruletype: Sigma
 author: Ilyas Ochkov, oscd.community
 date: 2019/10/24
 description: Detects suspicious outbound network activity via kerberos default port
@@ -17,6 +18,7 @@ detection:
     - '*\opera.exe'
     - '*\chrome.exe'
     - '*\firefox.exe'
+    - '*\tomcat\bin\tomcat8.exe'
   condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
 falsepositives:
 - Other browsers
@@ -25,10 +27,10 @@ level: high
 logsource:
   category: network_connection
   product: windows
-modified: 2020/08/24
+modified: 2021/12/02
 references:
 - https://github.com/GhostPack/Rubeus
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1558
@@ -36,4 +38,3 @@ tags:
 - attack.lateral_movement
 - attack.t1550.003
 - attack.t1097
-ruletype: SIGMA

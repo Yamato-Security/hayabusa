@@ -1,5 +1,6 @@
 
 title: Suspicious WebDav Client Execution
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/05/02
 description: A General detection for svchost.exe spawning rundll32.exe with command
@@ -20,11 +21,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/OTRF/detection-hackathon-apt29/issues/17
 - https://threathunterplaybook.com/evals/apt29/detections/7.B.4_C10730EA-6345-4934-AA0F-B0EFCA0C4BA6.html
-status: experimental
+status: test
 tags:
 - attack.exfiltration
 - attack.t1048.003
-ruletype: SIGMA

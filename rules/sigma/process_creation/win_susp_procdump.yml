@@ -1,5 +1,6 @@
 
 title: Suspicious Use of Procdump
+ruletype: Sigma
 author: Florian Roth
 date: 2021/02/02
 description: Detects suspicious uses of the SysInternals Procdump utility by using
@@ -30,4 +31,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - attack.t1003.001
-ruletype: SIGMA

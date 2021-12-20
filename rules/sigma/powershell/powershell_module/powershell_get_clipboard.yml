@@ -1,5 +1,6 @@
 
 title: PowerShell Get Clipboard
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/05/02
 description: A General detection for the Get-Clipboard commands in PowerShell logs.
@@ -27,4 +28,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1115
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Cmd.exe CommandLine Path Traversal
+ruletype: Sigma
 author: xknow @xknow_infosec
 date: 2020/06/11
 description: detects the usage of path traversal in cmd.exe indicating possible command/argument
@@ -22,12 +23,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://hackingiscool.pl/cmdhijack-command-argument-confusion-with-path-traversal-in-cmd-exe/
 - https://twitter.com/Oddvarmoe/status/1270633613449723905
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1059.003
 - attack.t1059
-ruletype: SIGMA

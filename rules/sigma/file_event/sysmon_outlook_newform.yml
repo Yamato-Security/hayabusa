@@ -1,5 +1,6 @@
 
 title: Outlook Form Installation
+ruletype: Sigma
 author: Tobias Michalski
 date: 2021/06/10
 description: Detects the creation of new Outlook form which can contain malicious
@@ -27,4 +28,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1137.003
-ruletype: SIGMA

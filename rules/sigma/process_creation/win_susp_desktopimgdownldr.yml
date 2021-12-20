@@ -1,5 +1,6 @@
 
 title: Suspicious Desktopimgdownldr Command
+ruletype: Sigma
 author: Florian Roth
 date: 2020/07/03
 description: Detects a suspicious Microsoft desktopimgdownldr execution with parameters
@@ -8,20 +9,18 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_2:
-    EventID: 1
-  SELECTION_3:
     CommandLine: '* /lockscreenurl:*'
-  SELECTION_4:
+  SELECTION_3:
     CommandLine:
     - '*.jpg*'
     - '*.jpeg*'
     - '*.png*'
-  SELECTION_5:
+  SELECTION_4:
     CommandLine: '*reg delete*'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine: '*\PersonalizationCSP*'
-  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and  not (SELECTION_4))
-    or (SELECTION_5 and SELECTION_6)))
+  condition: (SELECTION_1 and ((SELECTION_2 and  not (SELECTION_3)) or (SELECTION_4
+    and SELECTION_5)))
 falsepositives:
 - False positives depend on scripts and administrative tools used in the monitored
   environment
@@ -33,12 +32,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/30
+modified: 2021/11/27
 references:
 - https://labs.sentinelone.com/living-off-windows-land-a-new-native-file-downldr/
 - https://twitter.com/SBousseaden/status/1278977301745741825
-status: experimental
+status: test
 tags:
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

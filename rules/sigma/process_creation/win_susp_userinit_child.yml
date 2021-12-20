@@ -1,5 +1,6 @@
 
 title: Suspicious Userinit Child Process
+ruletype: Sigma
 author: Florian Roth (rule), Samir Bousseaden (idea)
 date: 2019/06/17
 description: Detects a suspicious child process of userinit
@@ -30,4 +31,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1055
-ruletype: SIGMA

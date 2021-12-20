@@ -1,5 +1,6 @@
 
 title: Suspicious Export-PfxCertificate
+ruletype: Sigma
 author: Florian Roth
 date: 2021/04/23
 description: Detects Commandlet that is used to export certificates from the local
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.credential_access
 - attack.t1552.004
-ruletype: SIGMA

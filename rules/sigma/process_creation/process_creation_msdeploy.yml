@@ -1,5 +1,6 @@
 
 title: Execute Files with Msdeploy.exe
+ruletype: Sigma
 author: Beyu Denis, oscd.community
 date: 2020/10/18
 description: Detects file execution using the msdeploy.exe lolbin
@@ -29,12 +30,12 @@ level: medium
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OtherMSBinaries/Msdeploy.yml
 - https://twitter.com/pabraeken/status/995837734379032576
 - https://twitter.com/pabraeken/status/999090532839313408
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1218
-ruletype: SIGMA

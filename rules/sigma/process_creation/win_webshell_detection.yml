@@ -1,5 +1,6 @@
 
 title: Webshell Detection With Command Line Keywords
+ruletype: Sigma
 author: Florian Roth, Jonhnathan Ribeiro, Anton Kutepov, oscd.community
 date: 2017/01/01
 description: Detects certain command line parameters often used during reconnaissance
@@ -8,10 +9,8 @@ detection:
   SELECTION_1:
     EventID: 1
   SELECTION_10:
-    Image: '*\wmic.exe'
-  SELECTION_11:
     CommandLine: '* /node:*'
-  SELECTION_12:
+  SELECTION_11:
     Image:
     - '*\whoami.exe'
     - '*\systeminfo.exe'
@@ -24,7 +23,7 @@ detection:
     - '*\vssadmin.exe'
     - '*\wevtutil.exe'
     - '*\tasklist.exe'
-  SELECTION_13:
+  SELECTION_12:
     CommandLine:
     - '* Test-NetConnection *'
     - '*dir \\*'
@@ -39,27 +38,27 @@ detection:
     - '*\apache*'
     - '*\tomcat*'
   SELECTION_4:
-    EventID: 1
-  SELECTION_5:
     Image:
     - '*\net.exe'
     - '*\net1.exe'
-  SELECTION_6:
+  SELECTION_5:
     CommandLine:
     - '* user *'
     - '* use *'
     - '* group *'
-  SELECTION_7:
+  SELECTION_6:
     Image: '*\ping.exe'
-  SELECTION_8:
+  SELECTION_7:
     CommandLine: '* -n *'
-  SELECTION_9:
+  SELECTION_8:
     CommandLine:
     - '*&cd&echo*'
     - '*cd /d *'
-  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (SELECTION_4 and (((SELECTION_5
-    and SELECTION_6) or (SELECTION_7 and SELECTION_8) or SELECTION_9) or (SELECTION_10
-    and SELECTION_11) or SELECTION_12 or SELECTION_13)))
+  SELECTION_9:
+    Image: '*\wmic.exe'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and (((SELECTION_4 and
+    SELECTION_5) or (SELECTION_6 and SELECTION_7) or SELECTION_8) or (SELECTION_9
+    and SELECTION_10) or SELECTION_11 or SELECTION_12))
 falsepositives:
 - unknown
 fields:
@@ -83,4 +82,3 @@ tags:
 - attack.t1087
 - attack.privilege_escalation
 - attack.t1100
-ruletype: SIGMA

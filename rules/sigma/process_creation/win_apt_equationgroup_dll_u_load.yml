@@ -1,5 +1,6 @@
 
 title: Equation Group DLL_U Load
+ruletype: Sigma
 author: Florian Roth
 date: 2019/03/04
 description: Detects a specific tool and export used by EquationGroup
@@ -20,15 +21,14 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/27
+modified: 2021/11/27
 references:
 - https://github.com/adamcaudill/EquationGroupLeak/search?utf8=%E2%9C%93&q=dll_u&type=
 - https://securelist.com/apt-slingshot/84312/
 - https://twitter.com/cyb3rops/status/972186477512839170
-status: experimental
+status: test
 tags:
 - attack.g0020
 - attack.defense_evasion
 - attack.t1085
 - attack.t1218.011
-ruletype: SIGMA

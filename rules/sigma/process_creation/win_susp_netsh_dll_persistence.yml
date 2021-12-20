@@ -1,5 +1,6 @@
 
 title: Suspicious Netsh DLL Persistence
+ruletype: Sigma
 author: Victor Sergeev, oscd.community
 date: 2019/10/25
 description: Detects persitence via netsh helper
@@ -25,7 +26,7 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/30
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1546.007/T1546.007.md
 - https://attack.mitre.org/software/S0108/
@@ -34,4 +35,3 @@ tags:
 - attack.privilege_escalation
 - attack.t1546.007
 - attack.s0108
-ruletype: SIGMA

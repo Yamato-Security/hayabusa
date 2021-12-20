@@ -1,5 +1,6 @@
 
 title: Windows Suspicious Use Of Web Request in CommandLine
+ruletype: Sigma
 author: James Pemberton / @4A616D6573
 date: 2019/10/24
 description: Detects the use of various web request with commandline tools or Windows
@@ -32,4 +33,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

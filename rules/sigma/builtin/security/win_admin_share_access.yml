@@ -1,0 +1,29 @@
+
+title: Access to ADMIN$ Share
+ruletype: Sigma
+author: Florian Roth
+date: 2017/03/04
+description: Detects access to $ADMIN share
+detection:
+  SELECTION_1:
+    EventID: 5140
+  SELECTION_2:
+    ShareName: Admin$
+  SELECTION_3:
+    SubjectUserName: '*$'
+  condition: ((SELECTION_1 and SELECTION_2) and  not (SELECTION_3))
+falsepositives:
+- Legitimate administrative activity
+id: 098d7118-55bc-4912-a836-dc6483a8d150
+level: low
+logsource:
+  definition: The advanced audit policy setting "Object Access > Audit File Share"
+    must be configured for Success/Failure
+  product: windows
+  service: security
+modified: 2021/11/27
+status: test
+tags:
+- attack.lateral_movement
+- attack.t1077
+- attack.t1021.002

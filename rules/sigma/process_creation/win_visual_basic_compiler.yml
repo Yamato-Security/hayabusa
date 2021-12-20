@@ -1,5 +1,6 @@
 
 title: Visual Basic Command Line Compiler Usage
+ruletype: Sigma
 author: Ensar Şamil, @sblmsrsn, @oscd_initiative
 date: 2020/10/07
 description: Detects successful code compilation via Visual Basic Command Line Compiler
@@ -19,10 +20,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://lolbas-project.github.io/lolbas/Binaries/Vbc/
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1027.004
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Windows Crypto Mining Indicators
+ruletype: Sigma
 author: Florian Roth
 date: 2021/10/26
 description: Detects command line parameters or strings often used by crypto miners
@@ -38,4 +39,3 @@ status: stable
 tags:
 - attack.impact
 - attack.t1496
-ruletype: SIGMA

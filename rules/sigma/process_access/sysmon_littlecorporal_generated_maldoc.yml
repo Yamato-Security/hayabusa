@@ -1,5 +1,6 @@
 
 title: LittleCorporal Generated Maldoc Injection
+ruletype: Sigma
 author: Christian Burkard
 date: 2021/08/09
 description: Detects the process injection of a LittleCorporal generated Maldoc.
@@ -27,4 +28,3 @@ tags:
 - attack.execution
 - attack.t1204.002
 - attack.t1055.003
-ruletype: SIGMA

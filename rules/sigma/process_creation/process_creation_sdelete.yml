@@ -1,5 +1,6 @@
 
 title: Sysinternals SDelete Delete File
+ruletype: Sigma
 author: frack113
 date: 2021/06/03
 description: Use of SDelete to erase a file not the free space
@@ -33,4 +34,3 @@ status: experimental
 tags:
 - attack.impact
 - attack.t1485
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Explorer Root Flag Process Tree Break
+ruletype: Sigma
 author: Florian Roth
 date: 2019/06/29
 description: Detects a command line process that uses explorer.exe /root, which is
@@ -20,12 +21,11 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/30
+modified: 2021/11/27
 references:
 - https://twitter.com/CyberRaiju/status/1273597319322058752
 - https://twitter.com/bohops/status/1276357235954909188?s=12
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1036
-ruletype: SIGMA

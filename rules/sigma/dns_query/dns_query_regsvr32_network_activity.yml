@@ -1,5 +1,6 @@
 
 title: Regsvr32 Network Activity
+ruletype: Sigma
 author: Dmitriy Lifanov, oscd.community
 date: 2019/10/25
 description: Detects network connections and DNS queries initiated by Regsvr32.exe
@@ -38,4 +39,3 @@ tags:
 - attack.defense_evasion
 - attack.t1218.010
 - attack.t1117
-ruletype: SIGMA

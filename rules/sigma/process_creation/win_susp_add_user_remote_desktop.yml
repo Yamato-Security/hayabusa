@@ -1,0 +1,38 @@
+
+title: Suspicious Add User to Remote Desktop Users Group
+ruletype: Sigma
+author: Florian Roth
+date: 2021/12/06
+description: Detects suspicious command line in which a user gets added to the local
+  Remote Desktop Users group
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*net *'
+  SELECTION_3:
+    CommandLine: '*localgroup*'
+  SELECTION_4:
+    CommandLine: '*Remote Desktop Users*'
+  SELECTION_5:
+    CommandLine: '*/add*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Administrative activity
+fields:
+- CommandLine
+- ParentCommandLine
+id: ffa28e60-bdb1-46e0-9f82-05f7a61cc06e
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://www.microsoft.com/security/blog/2021/11/16/evolving-trends-in-iranian-threat-actor-activity-mstic-presentation-at-cyberwarcon-2021/
+status: experimental
+tags:
+- attack.persistence
+- attack.t1133
+- attack.t1136.001
+- attack.lateral_movement
+- attack.t1021.001

@@ -1,5 +1,6 @@
 
 title: PowerShell Deleted Mounted Share
+ruletype: Sigma
 author: oscd.community, @redcanary, Zach Stanford @svch0st
 date: 2020/10/08
 description: Detects when when a mounted share is removed. Adversaries may remove
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1070.005
-ruletype: SIGMA

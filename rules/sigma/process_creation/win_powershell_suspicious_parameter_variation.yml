@@ -1,5 +1,6 @@
 
 title: Suspicious PowerShell Parameter Substring
+ruletype: Sigma
 author: Florian Roth (rule), Daniel Bohannon (idea), Roberto Rodriguez (Fix)
 date: 2019/01/16
 description: Detects suspicious PowerShell invocation with a parameter substring
@@ -59,12 +60,11 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/07/14
+modified: 2021/11/27
 references:
 - http://www.danielbohannon.com/blog-1/2017/3/12/powershell-execution-argument-obfuscation-how-it-can-make-detection-easier
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1086
 - attack.t1059.001
-ruletype: SIGMA

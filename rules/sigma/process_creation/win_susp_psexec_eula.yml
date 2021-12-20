@@ -1,5 +1,6 @@
 
 title: Psexec Accepteula Condition
+ruletype: Sigma
 author: omkar72 - https://www.fireeye.com/blog/threat-research/2020/10/kegtap-and-singlemalt-with-a-ransomware-chaser.html
 date: 2020/10/30
 description: Detect ed user accept agreement execution in psexec commandline
@@ -22,9 +23,9 @@ level: medium
 logsource:
   category: process_creation
   product: windows
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.execution
 - attack.t1569
 - attack.t1021
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Cabinet File Expansion
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/07/30
 description: Adversaries can use the inbuilt expand utility to decompress cab files
@@ -40,4 +41,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1218
-ruletype: SIGMA

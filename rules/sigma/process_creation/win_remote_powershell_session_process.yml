@@ -1,5 +1,6 @@
 
 title: Remote PowerShell Session Host Process (WinRM)
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g
 date: 2019/09/12
 description: Detects remote PowerShell sections by monitoring for wsmprovhost (WinRM
@@ -33,4 +34,3 @@ tags:
 - attack.t1086
 - attack.t1059.001
 - attack.t1021.006
-ruletype: SIGMA

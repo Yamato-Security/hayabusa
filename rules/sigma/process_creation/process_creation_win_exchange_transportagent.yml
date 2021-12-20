@@ -1,5 +1,6 @@
 
 title: MSExchange Transport Agent Installation
+ruletype: Sigma
 author: Tobias Michalski
 date: 2021/06/08
 description: Detects the Installation of a Exchange Transport Agent
@@ -26,4 +27,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1505.002
-ruletype: SIGMA

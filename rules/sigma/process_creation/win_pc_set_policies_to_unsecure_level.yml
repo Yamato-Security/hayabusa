@@ -1,5 +1,6 @@
 
 title: Change PowerShell Policies to a Unsecure Level
+ruletype: Sigma
 author: frack113
 date: 2021/11/01
 description: Detects use of executionpolicy option to set a unsecure policies
@@ -30,4 +31,3 @@ status: experimental
 tags:
 - attack.execution
 - attack.t1059.001
-ruletype: SIGMA

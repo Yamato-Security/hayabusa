@@ -1,5 +1,6 @@
 
 title: Rundll32 Without Parameters
+ruletype: Sigma
 author: Bartlomiej Czyz, Relativity
 date: 2021/01/31
 description: Detects rundll32 execution without parameters as observed when running
@@ -32,4 +33,3 @@ tags:
 - attack.t1570
 - attack.execution
 - attack.t1569.002
-ruletype: SIGMA

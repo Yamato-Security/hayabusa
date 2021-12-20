@@ -1,5 +1,6 @@
 
 title: Judgement Panda Exfil Activity
+ruletype: Sigma
 author: Florian Roth
 date: 2019/02/21
 description: Detects Judgement Panda activity as described in Global Threat Report
@@ -28,10 +29,10 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/27
+modified: 2021/11/27
 references:
 - https://www.crowdstrike.com/resources/reports/2019-crowdstrike-global-threat-report/
-status: experimental
+status: test
 tags:
 - attack.lateral_movement
 - attack.g0010
@@ -41,4 +42,3 @@ tags:
 - attack.exfiltration
 - attack.t1002
 - attack.t1560.001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: SecurityXploded Tool
+ruletype: Sigma
 author: Florian Roth
 date: 2018/12/19
 description: Detects the execution of SecurityXploded Tools
@@ -30,4 +31,3 @@ tags:
 - attack.t1555
 - attack.t1003
 - attack.t1503
-ruletype: SIGMA

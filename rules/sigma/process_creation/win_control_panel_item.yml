@@ -1,5 +1,6 @@
 
 title: Control Panel Items
+ruletype: Sigma
 author: Kyaw Min Thein, Furkan Caliskan (@caliskanfurkan_)
 date: 2020/06/22
 description: Detects the malicious use of a control panel item
@@ -40,4 +41,3 @@ tags:
 - attack.t1196
 - attack.persistence
 - attack.t1546
-ruletype: SIGMA

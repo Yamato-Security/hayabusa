@@ -1,5 +1,6 @@
 
 title: Using Sticky-keys To Obtain Unauthenticated, Privileged Console Access
+ruletype: Sigma
 author: Sreeman
 date: 2020/02/18
 description: By replacing the sticky keys executable with the local admins CMD executable,
@@ -31,4 +32,3 @@ tags:
 - attack.t1015
 - attack.t1546.008
 - attack.privilege_escalation
-ruletype: SIGMA

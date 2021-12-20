@@ -1,5 +1,6 @@
 
 title: Suspicious Reg Add BitLocker
+ruletype: Sigma
 author: frack113
 date: 2021/11/15
 description: Suspicious add key for BitLocker
@@ -41,4 +42,3 @@ status: experimental
 tags:
 - attack.impact
 - attack.t1486
-ruletype: SIGMA

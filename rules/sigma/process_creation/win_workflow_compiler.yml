@@ -1,5 +1,6 @@
 
 title: Microsoft Workflow Compiler
+ruletype: Sigma
 author: Nik Seetharaman, frack113
 date: 2019/01/16
 description: Detects invocation of Microsoft Workflow Compiler, which may permit the
@@ -34,4 +35,3 @@ tags:
 - attack.execution
 - attack.t1127
 - attack.t1218
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Fax Service DLL Search Order Hijack
+ruletype: Sigma
 author: NVISO
 date: 2020/05/04
 description: The Fax service attempts to load ualapi.dll, which is non-existent. An
@@ -24,10 +25,10 @@ level: high
 logsource:
   category: image_load
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://windows-internals.com/faxing-your-way-to-system/
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.defense_evasion
@@ -35,4 +36,3 @@ tags:
 - attack.t1038
 - attack.t1574.001
 - attack.t1574.002
-ruletype: SIGMA

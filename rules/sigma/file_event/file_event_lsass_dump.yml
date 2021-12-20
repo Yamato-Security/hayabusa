@@ -1,5 +1,6 @@
 
 title: LSASS Process Memory Dump Files
+ruletype: Sigma
 author: Florian Roth
 date: 2021/11/15
 description: Detects file names used by different memory dumping tools to create a
@@ -12,6 +13,7 @@ detection:
     - '*\lsass.dmp'
     - '*\lsass.zip'
     - '*\lsass.rar'
+    - '*\Temp\dumpert.dmp'
   SELECTION_3:
     TargetFilename:
     - '*\lsass_2*'
@@ -27,6 +29,7 @@ logsource:
   product: windows
 references:
 - https://www.google.com/search?q=procdump+lsass
+- https://medium.com/@markmotig/some-ways-to-dump-lsass-exe-c4a75fdc49bf
 related:
 - id: db2110f3-479d-42a6-94fb-d35bc1e46492
   type: obsoletes
@@ -35,4 +38,3 @@ tags:
 - attack.credential_access
 - attack.t1003.001
 - attack.t1003
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: PsExec Pipes Artifacts
+ruletype: Sigma
 author: Nikita Nazarov, oscd.community
 date: 2020/05/10
 description: Detecting use PsExec via Pipe Creation/Access to pipes
@@ -28,10 +29,10 @@ logsource:
     https://github.com/olafhartong/sysmon-modular. How to test detection? You can
     check powershell script from this site https://svch0st.medium.com/guide-to-named-pipes-and-hunting-for-cobalt-strike-pipes-dc46b2c5f575
   product: windows
+modified: 2021/11/27
 references:
 - https://drive.google.com/file/d/1lKya3_mLnR3UQuCoiYruO3qgu052_iS_/view
-status: experimental
+status: test
 tags:
 - attack.lateral_movement
 - attack.t1021.002
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: ShimCache Flush
+ruletype: Sigma
 author: Florian Roth
 date: 2021/02/01
 description: Detects actions that clear the local ShimCache and remove forensic evidence
@@ -39,4 +40,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

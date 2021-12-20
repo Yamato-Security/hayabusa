@@ -1,5 +1,6 @@
 
 title: Non-privileged Usage of Reg or Powershell
+ruletype: Sigma
 author: Teymur Kheirkhabarov (idea), Ryan Plas (rule), oscd.community
 date: 2020/10/05
 description: Search for usage of reg or Powershell by non-priveleged users to modify
@@ -30,7 +31,7 @@ detection:
     - '*FailureCommand*'
     - '*ServiceDLL*'
   condition: (SELECTION_1 and SELECTION_2 and ((SELECTION_3 and SELECTION_4) or (SELECTION_5
-    and SELECTION_6)) and SELECTION_7 and SELECTION_8 and SELECTION_9)
+    and SELECTION_6)) and (SELECTION_7 and SELECTION_8) and SELECTION_9)
 falsepositives:
 - Unknown
 fields:
@@ -42,10 +43,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/27
 references:
 - https://image.slidesharecdn.com/kheirkhabarovoffzonefinal-181117201458/95/hunting-for-privilege-escalation-in-windows-environment-20-638.jpg
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1112
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Powershell AMSI Bypass via .NET Reflection
+ruletype: Sigma
 author: Markus Neis
 date: 2018/08/17
 description: Detects Request to amsiInitFailed that can be used to disable AMSI Scanning
@@ -20,13 +21,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://twitter.com/mattifestation/status/735261176745988096
 - https://www.hybrid-analysis.com/sample/0ced17419e01663a0cd836c9c2eb925e3031ffb5b18ccf35f4dea5d586d0203e?environmentId=120
-status: experimental
+status: test
 tags:
 - attack.defense_evasion
 - attack.t1089
 - attack.t1562.001
-ruletype: SIGMA

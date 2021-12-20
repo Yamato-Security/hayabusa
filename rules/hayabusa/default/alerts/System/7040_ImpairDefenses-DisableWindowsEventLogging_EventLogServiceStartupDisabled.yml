@@ -1,0 +1,28 @@
+author: Eric Conrad, Zach Mathis
+creation_date: 2020/11/08
+updated_date: 2021/11/22
+
+title: Event log service startup type changed to disabled
+title_jp: イベントログサービスのスタートアップの種類が無効に変更された
+output: 'Old setting: %param2%  :  New setting: %param3%'
+output: '設定前: %param2%  :  設定後: %param3%'
+
+id: ab3507cf-5231-4af6-ab1d-5d3b3ad467b5
+level: medium
+status: test
+detection:
+    selection:
+        Channel: System
+        EventID: 7040
+        param1: 'Windows Event Log'
+        param3: "disabled"
+    condition: selection
+falsepositives:
+    - system administrator
+tags:
+    - attack.defense_evasion
+    - attack.t1562.002
+references:
+    - https://attack.mitre.org/techniques/T1562/002/
+logsource: default
+ruletype: Hayabusa

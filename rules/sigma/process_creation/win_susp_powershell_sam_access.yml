@@ -1,5 +1,6 @@
 
 title: PowerShell SAM Copy
+ruletype: Sigma
 author: Florian Roth
 date: 2021/07/29
 description: Detects suspicious PowerShell scripts accessing SAM hives
@@ -26,10 +27,10 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/12/02
 references:
 - https://twitter.com/splinter_code/status/1420546784250769408
 status: experimental
 tags:
 - attack.credential_access
 - attack.t1003.002
-ruletype: SIGMA

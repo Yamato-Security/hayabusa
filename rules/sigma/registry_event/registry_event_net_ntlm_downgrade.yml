@@ -1,5 +1,6 @@
 
 title: NetNTLM Downgrade Attack
+ruletype: Sigma
 author: Florian Roth, wagga
 date: 2018/03/20
 description: Detects NetNTLM downgrade attack
@@ -39,4 +40,3 @@ tags:
 - attack.t1089
 - attack.t1562.001
 - attack.t1112
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Winrar Execution in Non-Standard Folder
+ruletype: Sigma
 author: Florian Roth, Tigzy
 date: 2021/11/17
 description: Detects a suspicious winrar execution in a folder which is not the default
@@ -14,7 +15,10 @@ detection:
   SELECTION_3:
     Description: Command line RAR
   SELECTION_4:
-    Image: '*\WinRAR*'
+    Image:
+    - '*\WinRAR*'
+    - '*C:\Windows\Temp*'
+    - '*\UnRAR.exe*'
   condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3) and  not (SELECTION_4))
 falsepositives:
 - Legitimate use of WinRAR in a folder of a software that bundles WinRAR
@@ -23,6 +27,7 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/11/22
 references:
 - https://twitter.com/cyb3rops/status/1460978167628406785
 status: experimental
@@ -31,4 +36,3 @@ tags:
 - attack.t1560.001
 - attack.exfiltration
 - attack.t1002
-ruletype: SIGMA

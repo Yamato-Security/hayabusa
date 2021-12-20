@@ -1,5 +1,6 @@
 
 title: Advanced IP Scanner
+ruletype: Sigma
 author: '@ROxPinTeddy'
 date: 2020/05/12
 description: Detects the use of Advanced IP Scanner. Seems to be a popular tool for
@@ -31,4 +32,3 @@ status: experimental
 tags:
 - attack.discovery
 - attack.t1046
-ruletype: SIGMA

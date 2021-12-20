@@ -1,5 +1,6 @@
 
 title: New TaskCache Entry
+ruletype: Sigma
 author: Syed Hasan (@syedhasan009)
 date: 2021/06/18
 description: Monitor the creation of a new key under 'TaskCache' when a new scheduled
@@ -15,7 +16,13 @@ detection:
     EventType: SetValue
   SELECTION_5:
     TargetObject: '*SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\\*'
-  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5)
+  SELECTION_6:
+    TargetObject:
+    - '*Microsoft\Windows\UpdateOrchestrator*'
+    - '*Microsoft\Windows\SoftwareProtectionPlatform\SvcRestartTask\Index*'
+    - '*Microsoft\Windows\Flighting\OneSettings\RefreshCache\Index*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 and SELECTION_5)
+    and  not (SELECTION_6))
 falsepositives:
 - Unknown
 id: 4720b7df-40c3-48fd-bbdf-fd4b3c464f0d
@@ -23,7 +30,7 @@ level: medium
 logsource:
   category: registry_event
   product: windows
-modified: 2021/07/27
+modified: 2021/12/06
 references:
 - https://thedfirreport.com/2021/03/29/sodinokibi-aka-revil-ransomware/
 status: experimental
@@ -31,4 +38,3 @@ tags:
 - attack.persistence
 - attack.t1053
 - attack.t1053.005
-ruletype: SIGMA

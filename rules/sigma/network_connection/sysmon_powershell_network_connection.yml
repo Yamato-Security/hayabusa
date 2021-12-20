@@ -1,5 +1,6 @@
 
 title: PowerShell Network Connections
+ruletype: Sigma
 author: Florian Roth
 date: 2017/03/13
 description: Detects a Powershell process that opens network connections - check for
@@ -36,15 +37,13 @@ detection:
     - 172.31.*
     - 127.0.0.1*
   SELECTION_6:
-    DestinationIsIpv6: 'false'
-  SELECTION_7:
     User: NT AUTHORITY\SYSTEM
-  SELECTION_8:
+  SELECTION_7:
     User: '*AUT*'
-  SELECTION_9:
+  SELECTION_8:
     User: '* NT*'
   condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3 and SELECTION_4) and  not
-    (SELECTION_5 and SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9))
+    (SELECTION_5 and SELECTION_6 and SELECTION_7 and SELECTION_8))
 falsepositives:
 - Administrative scripts
 id: 1f21ec3f-810d-4b0e-8045-322202e22b4b
@@ -52,7 +51,7 @@ level: low
 logsource:
   category: network_connection
   product: windows
-modified: 2021/06/14
+modified: 2021/12/01
 references:
 - https://www.youtube.com/watch?v=DLtJTxMWZ2o
 status: experimental
@@ -60,4 +59,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

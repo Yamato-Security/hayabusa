@@ -1,5 +1,6 @@
 
 title: Removal Amsi Provider Reg Key
+ruletype: Sigma
 author: frack113
 date: 2021/06/07
 description: Remove the AMSI Provider registry key in HKLM\Software\Microsoft\AMSI
@@ -33,4 +34,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1562.001
-ruletype: SIGMA

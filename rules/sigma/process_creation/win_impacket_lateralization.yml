@@ -1,5 +1,6 @@
 
 title: Impacket Lateralization Detection
+ruletype: Sigma
 author: Ecco, oscd.community, Jonhnathan Ribeiro
 date: 2019/09/03
 description: Detects wmiexec/dcomexec/atexec/smbexec from Impacket framework
@@ -42,13 +43,13 @@ level: critical
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://github.com/SecureAuthCorp/impacket/blob/master/examples/wmiexec.py
 - https://github.com/SecureAuthCorp/impacket/blob/master/examples/atexec.py
 - https://github.com/SecureAuthCorp/impacket/blob/master/examples/smbexec.py
 - https://github.com/SecureAuthCorp/impacket/blob/master/examples/dcomexec.py
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.t1047
@@ -56,4 +57,3 @@ tags:
 - attack.t1175
 - attack.t1021.003
 - attack.t1021
-ruletype: SIGMA

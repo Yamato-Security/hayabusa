@@ -1,5 +1,6 @@
 
 title: T1021 DCOM InternetExplorer.Application Iertutil DLL Hijack
+ruletype: Sigma
 author: Roberto Rodriguez @Cyb3rWard0g, Open Threat Research (OTR), wagga
 date: 2020/10/12
 description: Detects a threat actor creating a file named `iertutil.dll` in the `C:\Program
@@ -35,4 +36,3 @@ tags:
 - attack.lateral_movement
 - attack.t1021.002
 - attack.t1021.003
-ruletype: SIGMA

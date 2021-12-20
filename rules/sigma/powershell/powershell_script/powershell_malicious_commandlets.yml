@@ -1,5 +1,6 @@
 
 title: Malicious PowerShell Commandlets
+ruletype: Sigma
 author: Sean Metcalf (source), Florian Roth (rule), Bartlomiej Czyz @bczyz1 (update),
   oscd.community (update)
 date: 2017/03/05
@@ -103,7 +104,9 @@ detection:
     - '*Invoke-Mimikittenz*'
     - '*Invoke-AllChecks*'
   SELECTION_2:
-    ScriptBlockText: '*Get-SystemDriveInfo*'
+    ScriptBlockText:
+    - '*Get-SystemDriveInfo*'
+    - '*C:\ProgramData\Amazon\EC2-Windows\Launch\Module\Scripts\Set-Wallpaper.ps1*'
   condition: (SELECTION_1 and  not (SELECTION_2))
 falsepositives:
 - Penetration testing
@@ -113,7 +116,7 @@ logsource:
   category: ps_script
   definition: Script Block Logging must be enable
   product: windows
-modified: 2021/10/16
+modified: 2021/11/29
 references:
 - https://adsecurity.org/?p=2921
 status: experimental
@@ -121,4 +124,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Suspicious Csi.exe Usage
+ruletype: Sigma
 author: Konstantin Grishchenko, oscd.community
 date: 2020/10/17
 description: Csi.exe is a signed binary from Microsoft that comes with Visual Studio
@@ -45,4 +46,3 @@ tags:
 - attack.t1072
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

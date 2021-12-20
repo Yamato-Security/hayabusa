@@ -1,5 +1,6 @@
 
 title: Renamed MegaSync
+ruletype: Sigma
 author: Sittikorn S
 date: 2021/06/22
 description: Detects the execution of a renamed meg.exe of MegaSync during incident
@@ -13,13 +14,11 @@ detection:
   SELECTION_3:
     CommandLine: '*C:\Windows\Temp\meg.exe*'
   SELECTION_4:
-    EventID: 1
-  SELECTION_5:
     OriginalFileName: meg.exe
-  SELECTION_6:
+  SELECTION_5:
     Image: '*\meg.exe'
-  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and SELECTION_5
-    and  not (SELECTION_6))))
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and  not
+    (SELECTION_5))))
 falsepositives:
 - Software that illegaly integrates MegaSync in a renamed form
 - Administrators that have renamed MegaSync
@@ -34,4 +33,3 @@ status: experimental
 tags:
 - attack.defense_evasion
 - attack.t1218
-ruletype: SIGMA

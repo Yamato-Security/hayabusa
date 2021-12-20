@@ -1,5 +1,6 @@
 
 title: Suspicious Cobalt Strike DNS Beaconing
+ruletype: Sigma
 author: Florian Roth
 date: 2021/11/09
 description: Detects a program that invoked suspicious DNS queries known from Cobalt
@@ -32,4 +33,3 @@ tags:
 - attack.command_and_control
 - attack.t1071
 - attack.t1071.004
-ruletype: SIGMA

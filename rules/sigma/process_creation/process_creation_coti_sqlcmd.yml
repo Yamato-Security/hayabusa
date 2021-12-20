@@ -1,5 +1,6 @@
 
 title: Conti Backup Database
+ruletype: Sigma
 author: frack113
 date: 2021/08/16
 description: Detects a command used by conti to dump database
@@ -25,6 +26,7 @@ level: high
 logsource:
   category: process_creation
   product: windows
+modified: 2021/12/02
 references:
 - https://twitter.com/vxunderground/status/1423336151860002816?s=20
 - https://www.virustotal.com/gui/file/03e9b8c2e86d6db450e5eceec057d7e369ee2389b9daecaf06331a95410aa5f8/detection
@@ -33,4 +35,3 @@ status: experimental
 tags:
 - attack.collection
 - attack.t1005
-ruletype: SIGMA

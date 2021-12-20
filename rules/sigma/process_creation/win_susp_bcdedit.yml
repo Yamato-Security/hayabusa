@@ -1,5 +1,6 @@
 
 title: Possible Ransomware or Unauthorized MBR Modifications
+ruletype: Sigma
 author: '@neu5ron'
 date: 2019/02/07
 description: Detects, possibly, malicious unauthorized usage of bcdedit.exe
@@ -32,4 +33,3 @@ tags:
 - attack.persistence
 - attack.t1542.003
 - attack.t1067
-ruletype: SIGMA

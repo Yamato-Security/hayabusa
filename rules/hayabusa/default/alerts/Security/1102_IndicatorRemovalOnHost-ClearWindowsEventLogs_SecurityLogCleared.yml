@@ -1,0 +1,29 @@
+author: Eric Conrad, Yamato Security
+date: 2020/11/08
+modified:  2021/11/25
+
+title: Security log was cleared
+title_jp: セキュリティログがクリアされた
+output: "User: %LogFileClearedSubjectUserName%"
+output_jp: "ユーザ名: %LogFileClearedSubjectUserName%"
+description: Somebody has cleared the Security event log.
+description_jp: 誰かがセキュリティログをクリアした。
+
+id: c2f690ac-53f8-4745-8cfe-7127dda28c74
+level: high
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 1102
+    condition: selection
+falsepositives:
+    - system administrator
+tags:
+    - attack.defense_evasion
+    - attack.t1070.001
+references:
+    - https://attack.mitre.org/techniques/T1070/001/
+sample-evtx: ./sample-evtx/DeepBlueCLI/mimikatz-privesc-hashdump.evtx
+logsource: default
+ruletype: Hayabusa

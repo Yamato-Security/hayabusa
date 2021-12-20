@@ -1,5 +1,6 @@
 
 title: Suspicious Service Path Modification
+ruletype: Sigma
 author: Victor Sergeev, oscd.community
 date: 2019/10/21
 description: Detects service path modification to PowerShell or cmd.
@@ -27,13 +28,12 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/28
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1543.003/T1543.003.md
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.privilege_escalation
 - attack.t1543.003
 - attack.t1031
-ruletype: SIGMA

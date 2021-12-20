@@ -1,5 +1,6 @@
 
 title: Suspicious Process Start Locations
+ruletype: Sigma
 author: juju4, Jonhnathan Ribeiro, oscd.community
 date: 2019/01/16
 description: Detects suspicious process run from unusual locations
@@ -37,4 +38,3 @@ tags:
 - attack.defense_evasion
 - attack.t1036
 - car.2013-05-002
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: WMI Script Host Process Image Loaded
+ruletype: Sigma
 author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
 date: 2020/09/02
 description: Detects signs of the WMI script host process %SystemRoot%\system32\wbem\scrcons.exe
@@ -23,14 +24,14 @@ level: high
 logsource:
   category: image_load
   product: windows
+modified: 2021/11/27
 references:
 - https://twitter.com/HunterPlaybook/status/1301207718355759107
 - https://www.mdsec.co.uk/2020/09/i-like-to-move-it-windows-lateral-movement-part-1-wmi-event-subscription/
 - https://threathunterplaybook.com/notebooks/windows/08_lateral_movement/WIN-200902020333.html
-status: experimental
+status: test
 tags:
 - attack.lateral_movement
 - attack.privilege_escalation
 - attack.persistence
 - attack.t1546.003
-ruletype: SIGMA

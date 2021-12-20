@@ -1,5 +1,6 @@
 
 title: Cred Dump Tools Dropped Files
+ruletype: Sigma
 author: Teymur Kheirkhabarov, oscd.community
 date: 2019/11/01
 description: Files with well-known filenames (parts of credential dump software or
@@ -43,10 +44,10 @@ level: high
 logsource:
   category: file_event
   product: windows
-modified: 2020/08/23
+modified: 2021/11/27
 references:
 - https://www.slideshare.net/heirhabarov/hunting-for-credentials-dumping-in-windows-environment
-status: experimental
+status: test
 tags:
 - attack.credential_access
 - attack.t1003
@@ -55,4 +56,3 @@ tags:
 - attack.t1003.003
 - attack.t1003.004
 - attack.t1003.005
-ruletype: SIGMA

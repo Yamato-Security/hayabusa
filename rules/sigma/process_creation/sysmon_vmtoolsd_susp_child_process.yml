@@ -1,5 +1,6 @@
 
 title: VMToolsd Suspicious Child Process
+ruletype: Sigma
 author: behops, Bhabesh Raj
 date: 2021/10/08
 description: Detects suspicious child process creations of VMware Tools process which
@@ -43,4 +44,3 @@ tags:
 - attack.execution
 - attack.persistence
 - attack.t1059
-ruletype: SIGMA

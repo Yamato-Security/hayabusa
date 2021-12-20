@@ -1,5 +1,6 @@
 
 title: Mimikatz Kirbi File Creation
+ruletype: Sigma
 author: Florian Roth
 date: 2021/11/08
 description: Detects the creation of files that contain Kerberos tickets based on
@@ -23,4 +24,3 @@ status: test
 tags:
 - attack.credential_access
 - attack.t1558
-ruletype: SIGMA

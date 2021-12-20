@@ -1,5 +1,6 @@
 
 title: Pingback Backdoor
+ruletype: Sigma
 author: Bhabesh Raj
 date: 2021/05/05
 description: Detects the use of Pingback backdoor that creates ICMP tunnel for C2
@@ -27,4 +28,3 @@ status: experimental
 tags:
 - attack.persistence
 - attack.t1574.001
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: Powershell Profile.ps1 Modification
+ruletype: Sigma
 author: HieuTT35
 date: 2019/10/24
 description: Detects a change in profile.ps1 of the Powershell profile
@@ -20,12 +21,11 @@ level: high
 logsource:
   category: file_event
   product: windows
-modified: 2020/08/24
+modified: 2021/11/27
 references:
 - https://www.welivesecurity.com/2019/05/29/turla-powershell-usage/
-status: experimental
+status: test
 tags:
 - attack.persistence
 - attack.privilege_escalation
 - attack.t1546.013
-ruletype: SIGMA

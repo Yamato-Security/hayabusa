@@ -1,5 +1,6 @@
 
 title: Suspicious XOR Encoded PowerShell Command Line
+ruletype: Sigma
 author: Teymur Kheirkhabarov, Harish Segar (rule)
 date: 2020/06/29
 description: Detects suspicious powershell process which includes bxor command, alternative
@@ -27,4 +28,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

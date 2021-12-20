@@ -1,5 +1,6 @@
 
 title: Finger.exe Suspicious Invocation
+ruletype: Sigma
 author: Florian Roth, omkar72, oscd.community
 date: 2021/02/24
 description: Detects suspicious aged finger.exe tool execution often used in malware
@@ -25,4 +26,3 @@ status: experimental
 tags:
 - attack.command_and_control
 - attack.t1105
-ruletype: SIGMA

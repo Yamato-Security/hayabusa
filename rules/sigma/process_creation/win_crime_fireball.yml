@@ -1,5 +1,6 @@
 
 title: Fireball Archer Install
+ruletype: Sigma
 author: Florian Roth
 date: 2017/06/03
 description: Detects Archer malware invocation via rundll32
@@ -21,14 +22,13 @@ level: high
 logsource:
   category: process_creation
   product: windows
-modified: 2020/08/29
+modified: 2021/11/27
 references:
 - https://www.virustotal.com/en/file/9b4971349ae85aa09c0a69852ed3e626c954954a3927b3d1b6646f139b930022/analysis/
 - https://www.hybrid-analysis.com/sample/9b4971349ae85aa09c0a69852ed3e626c954954a3927b3d1b6646f139b930022?environmentId=100
-status: experimental
+status: test
 tags:
 - attack.execution
 - attack.defense_evasion
 - attack.t1218.011
 - attack.t1085
-ruletype: SIGMA

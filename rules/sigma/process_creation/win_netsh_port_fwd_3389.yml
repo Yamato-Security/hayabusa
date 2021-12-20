@@ -1,5 +1,6 @@
 
 title: Netsh RDP Port Forwarding
+ruletype: Sigma
 author: Florian Roth, oscd.community
 date: 2019/01/29
 description: Detects netsh commands that configure a port forwarding of port 3389
@@ -35,4 +36,3 @@ tags:
 - attack.defense_evasion
 - attack.command_and_control
 - attack.t1090
-ruletype: SIGMA

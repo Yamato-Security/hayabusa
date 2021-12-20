@@ -1,5 +1,6 @@
 
 title: Local Accounts Discovery
+ruletype: Sigma
 author: Timur Zinniatullin, Daniil Yugoslavskiy, oscd.community
 date: 2019/10/21
 description: Local accounts, System Owner/User discovery using operating systems utilities
@@ -69,13 +70,12 @@ level: low
 logsource:
   category: process_creation
   product: windows
-modified: 2020/09/01
+modified: 2021/11/27
 references:
 - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1033/T1033.md
-status: experimental
+status: test
 tags:
 - attack.discovery
 - attack.t1033
 - attack.t1087.001
 - attack.t1087
-ruletype: SIGMA

@@ -1,5 +1,6 @@
 
 title: WMI Event Subscription
+ruletype: Sigma
 author: Tom Ueltschi (@c_APT_ure)
 date: 2019/01/12
 description: Detects creation of WMI event subscription persistence method
@@ -18,9 +19,9 @@ level: high
 logsource:
   category: wmi_event
   product: windows
-status: experimental
+modified: 2021/11/27
+status: test
 tags:
 - attack.t1084
 - attack.persistence
 - attack.t1546.003
-ruletype: SIGMA

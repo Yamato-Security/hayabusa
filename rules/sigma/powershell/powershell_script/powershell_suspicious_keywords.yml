@@ -1,5 +1,6 @@
 
 title: Suspicious PowerShell Keywords
+ruletype: Sigma
 author: Florian Roth, Perez Diego (@darkquassar)
 date: 2019/02/11
 description: Detects keywords that could indicate the use of some PowerShell exploitation
@@ -37,4 +38,3 @@ tags:
 - attack.execution
 - attack.t1059.001
 - attack.t1086
-ruletype: SIGMA

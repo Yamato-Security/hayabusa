@@ -1,5 +1,6 @@
 
 title: MS Office Product Spawning Exe in User Dir
+ruletype: Sigma
 author: Jason Lynch
 date: 2019/04/02
 description: Detects an executable in the users directory started from Microsoft Word,
@@ -43,4 +44,3 @@ tags:
 - attack.t1204.002
 - attack.g0046
 - car.2013-05-002
-ruletype: SIGMA
