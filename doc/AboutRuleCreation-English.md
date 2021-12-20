@@ -9,8 +9,8 @@ Example:
 ```yaml
 #Author section
 author: Eric Conrad, Zach Mathis
-creation_date: 2020/11/08
-updated_date: 2021/11/26
+date: 2020/11/08
+modified: 2021/11/26
 
 #Alert section
 title: User added to local Administrators group
@@ -45,8 +45,8 @@ ruletype: Hayabusa
 > ## Author section
 * **author [required]**: Name of the author(s).
 * **contributor** [optional]: Name of any contributor(s) (anyone who made any minor corrections).
-* **creation_date [required]**: Date the rule was made.
-* **updated_date** [optional]: Date the rule was updated.
+* **date [required]**: Date the rule was made.
+* **modified** [optional]: Date the rule was updated.
 
 > ## Alert section
 * **title [required]**: Rule file title. This will also be the name of the alert that gets displayed so the briefer the better. (Should not be longer than 85 characters.)
@@ -408,15 +408,15 @@ detection:
 ### Basics
 The `condition` keyword described above implements not only `AND` and `OR` logic, but is also able to count or "aggregate" events.
 This function is called the "aggregation condition" and is specified by connecting a condition with a pipe. 
-In the example below, a conditional expression is used to determine if there are ten or more `AccountName` values for any given `ComputerName` within a timeframe of 24 hours.
+In this password spray detection example below, a conditional expression is used to determine if there are 5 or more `TargetUserName` values from one source `IpAddress` within a timeframe of 5 minutes.
 
 ```yaml
 detection:
   selection:
     Channel: Security
     EventID: 4648
-  condition: selection | count(AccountName) by ComputerName >= 10
-  timeframe: 24h
+  condition: selection | count(TargetUserName) by IpAddress > 5
+  timeframe: 5m
 ```
 
 Aggregation conditions can be defined in the following format:
@@ -443,12 +443,12 @@ Aggregation conditions can be defined in the following format:
 ### Four patterns for aggregation conditions:
 1. No count argument or `by` keyword. Example: `selection | count() > 10`
    > If `selection` is matches more than 10 times within the timeframe, the condition will match.
-2. No count argument but there is a `by` keyword. Example: `selection | count() by Date > 10`
-   > `selection` will have to be true more than 10 times for the **same** `Date`.
-3. There is a count argument but no `by` keyword. Example: `selection | count(Users) > 10`
+2. No count argument but there is a `by` keyword. Example: `selection | count() by IpAddress > 10`
+   > `selection` will have to be true more than 10 times for the **same** `IpAddress`.
+3. There is a count argument but no `by` keyword. Example: `selection | count(TargetUserName) > 10`
    > If `selection` matches and `Users` is **different** more than 10 times within the timeframe, the condition will match.
-4. There is both a count argument and `by` keyword. Example: `selection | count(Users) by Date > 10`
-   > For the **same** `Date`, there will need to be more than 10 **different** `Users` in order for the condition to match.
+4. There is both a count argument and `by` keyword. Example: `selection | count(Users) by IpAddress > 10`
+   > For the **same** `IpAddress`, there will need to be more than 10 **different** `TargetUserName` in order for the condition to match.
 
 ### Pattern 1 example:
 This is the most basic pattern: `count() {operator} {number}`. The rule below will match if `selection` happens 3 or more times.

@@ -1,6 +1,6 @@
 # ルールファイル
 Hayabusaの検知ルールは、[YAML](https://en.wikipedia.org/wiki/YAML) 形式で記述されています。
-単純な文字列のマッチングだけでなく、正規表現や`AND`、`OR`などの条件を組み合わせて複雑な検出ルールを表現することができます。
+単純な文字列のマッチングだけでなく、正規表現や`AND`、`OR`などの条件を組み合わせて複雑な検知ルールを表現することができます。
 本節では、Hayabusaの検知ルールの書き方について説明します。
 
 # ルールファイル形式
@@ -60,7 +60,7 @@ ruletype: Hayabusa
 * **id [必須]**: ルールを一意に識別するために使用される、ランダムに生成されたバージョン4のUUIDです。 [ここ](https://www.uuidgenerator.net/version4) で生成することができます。
 * **level [必須]**: [sigmaルールの定義](https://github.com/SigmaHQ/sigma/wiki/Specification)に基づく重要度レベル。 以下のいずれかを記述してください。 `informational`,`low`,`medium`,`high`,`critical`
 * **status[必須]**: テスト済みのルールには `stable` を、テストが必要なルールには `testing` を指定します。
-* **detection  [必須]**: 検出ロジックはここに入ります。(以下で説明します。)
+* **detection  [必須]**: 検知ロジックはここに入ります。(以下で説明します。)
 * **falsepositives [必須]**: 誤検知の可能性について記載を行います。例: `system administrator`, `normal user usage`, `normal system usage`, `legacy application`, `security team`, `none`。 不明な場合は `unknown` と記述してください。
 * **tags** [オプション]: もしその技術が[LOLBINS/LOLBAS](https://lolbas-project.github.io/)の技術であれば、`lolbas` タグを追加してください。アラートを[MITRE ATT&CK](https://attack.mitre.org/) フレームワークにマッピングできる場合は、戦術ID（例：`attack.t1098`）や以下に該当する戦術を追加してください。
     * `attack.impact` -> Impact
@@ -78,7 +78,7 @@ ruletype: Hayabusa
     * `attack.exfiltration` -> Exfiltration
     * `attack.resource_development` -> Resource Development 
 * **references** [オプション]: 参考文献への任意のリンク。
-* **sample-evtx [必須]**: このルールが検出するイベントログファイルへのファイルパスまたはURL。
+* **sample-evtx [必須]**: このルールが検知するイベントログファイルへのファイルパスまたはURL。
 * **logsource [必須]**: ログの出所。以下のいずれかを指定してください。
   * `default`: Windowsでデフォルトで有効になっているログの場合等
   * `non-default`: グループポリシーやセキュリティベースラインなどで有効にする必要があるログ用。
@@ -88,12 +88,12 @@ ruletype: Hayabusa
 
 # 検知フィールド
 ## 検知の基礎知識
-まず、検出ルールの作り方の基本を説明します。
+まず、検知の作り方の基本を説明します。
 
 
 ### AND論理とOR論理の書き方
 ANDロジックを書くには、ネストされた辞書を使用します。
-以下の検出ルールでは、ルールがマッチするためには、**両方の条件**が真でなければならないと定義しています。
+以下の検知ルールでは、ルールがマッチするためには、**両方の条件**が真でなければならないと定義しています。
 
 * イベントIDは `7040` であること。
 * チャンネルは `System` であること。
@@ -107,7 +107,7 @@ detection:
 ```
 
 OR論理を記述するには、リスト（`- `で始まる辞書）を使用します。
-以下の検出ルールでは、**片方**の条件がトリガーされることになります。
+以下の検知ルールでは、**片方**の条件がトリガーされることになります。
 
 * イベントIDは `7040` であること。
   
@@ -170,7 +170,7 @@ detection:
 ```
 
 #### 注意: 未定義のイベントキーエイリアスについて
-すべてのイベントキーエイリアスが `config\eventkey_alias.txt`で定義されているわけではありません。`output`（アラートの詳細）メッセージで正しいデータを取得しておらず、代わりに`%EventID%`のような結果を取得している場合、または検出ロジックの選択が正しく機能していない場合は、新しいエイリアスを使用して `config\eventkey_alias.txt`を更新する必要があります。
+すべてのイベントキーエイリアスが `config\eventkey_alias.txt`で定義されているわけではありません。`output`（アラートの詳細）メッセージで正しいデータを取得しておらず、代わりに`%EventID%`のような結果を取得している場合、または検知ロジックの選択が正しく機能していない場合は、新しいエイリアスを使用して `config\eventkey_alias.txt`を更新する必要があります。
 
 ### 条件におけるXML属性の使用方法
 XML要素には、スペースを入れることで属性を設定することができます。例えば、以下の `Provider Name` の `Name` は `Provider` 要素のXML属性です。
@@ -262,7 +262,7 @@ detection:
 </Event>
 ```
 
-上記のようなイベントログを検出するには、`EventData`という名前のイベントキーを指定します。この場合、`Name`属性を持たないネストされたタグのいずれかがマッチする限り、条件はマッチします。
+上記のようなイベントログを検知するには、`EventData`という名前のイベントキーを指定します。この場合、`Name`属性を持たないネストされたタグのいずれかがマッチする限り、条件はマッチします。
 
 ```yaml
 detection:
@@ -274,7 +274,7 @@ detection:
 ```
 
 ## パイプ
-パイプは、以下のようにイベントキーと組み合わせて、文字列のマッチングに使用することができます。これまで説明した条件はすべて完全一致ですが、パイプを使うことで、より柔軟な検出ルールを記述することができます。以下の例では、`EventData`の値が正規表現 `[\s\S]*EngineVersion=2.0[\s\S]*` にマッチする場合、条件にマッチすることになります。
+パイプは、以下のようにイベントキーと組み合わせて、文字列のマッチングに使用することができます。これまで説明した条件はすべて完全一致ですが、パイプを使うことで、より柔軟な検知ルールを記述することができます。以下の例では、`EventData`の値が正規表現 `[\s\S]*EngineVersion=2.0[\s\S]*` にマッチする場合、条件にマッチすることになります。
 
 ```yaml
 detection:
@@ -290,7 +290,7 @@ detection:
 * endswith: 文字列の末尾をチェックします。
 * contains: ある単語がデータ内に含まれているかどうかをチェックします。
 * re: 正規表現を使用します。(私たちは regex crate を使っているので、正しい正規表現の書き方については https://docs.rs/regex/1.5.4/regex/ のドキュメントを参照してください)。 
-  > 注意: 正規表現を使用するSigmaルールの中には、Rustが正規表現を使用する方法の違いにより、 検出に失敗するものがあります。
+  > 注意: 正規表現を使用するSigmaルールの中には、Rustが正規表現を使用する方法の違いにより、 検知に失敗するものがあります。
 
 ## ワイルドカード
 イベントキーにワイルドカードを使用することができます。以下の例では、`ProcessCommandLine` が "malware" という文字列で始まる場合、このルールはマッチします。
@@ -343,7 +343,7 @@ detection:
 
 ### regexesとallowlistキーワード
 Hayabusaに`.\rules\hayabusa\default\alerts\System\7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml`のルールのために使う2つの正規表現ファイルが用意されています。
-* `./config/regex/detectlist_suspicous_services.txt`: 怪しいサービス名を検出するためのものです。
+* `./config/regex/detectlist_suspicous_services.txt`: 怪しいサービス名を検知するためのものです。
 * `./config/regex/allowlist_legitimate_services.txt`: 正規のサービスを許可するためのものです。
   
 `regexes` と `allowlist` で定義されたファイルは、ルールファイル自体を変更することなく、それらを参照するすべてのルールの動作を変更するために編集することが可能です。
@@ -388,7 +388,7 @@ detection:
 > ただし、可能な限り読みやすくするために、 `selection_1`、` selection_2`、 `filter_1`、` filter_2`などの標準的な規則を使用してください。
 
 ## notロジック
-多くのルールは誤検出を引き起こすので、検索するシグネチャーの選択と同時に、誤検知が無いようにフィルターの選択をすることはよくあります。
+多くのルールは誤検知を引き起こすので、検索するシグネチャーの選択と同時に、誤検知が無いようにフィルターの選択をすることはよくあります。
 
 例えば
 
@@ -416,15 +416,15 @@ detection:
 ### 基本事項
 上記の `condition` キーワードは `AND` や `OR` ロジックを実装しているだけでなく、イベントをカウントしたり、「aggregate(集約)」したりすることも可能です。
 この機能は「集計条件」と呼ばれ、条件をパイプでつないで指定をします。
-以下の例では、24時間以内に任意の`ComputerName`に対して10個以上の `AccountName` 値があるかどうかを判断するために条件式が使用されています。
+以下のパスワードスプレー攻撃の例では、5分以内に同じ送信元の`IpAddress`で5個以上の `TargetUserName`があるかどうかを判断するために条件式が使用されています。
 
 ```yaml
 detection:
   selection:
     Channel: Security
     EventID: 4648
-  condition: selection | count(AccountName) by ComputerName >= 10
-  timeframe: 24h
+  condition: selection | count(TargetUserName) by IpAddress > 5
+  timeframe: 5m
 ```
 
 集計条件は以下の形式で定義することができます。
@@ -451,11 +451,11 @@ detection:
 ### 集計条件として4パターン:
 1. count 引数または `by` キーワードを指定しない。例: `selection | count() > 10`
    > もし `selection` が時間枠内に10回以上マッチすれば、条件にマッチします。
-2. count 引数はないが、`by` キーワードはある。例: `selection | count() by Date > 10`
-   > `selection` は**同じ**`Date` に対して10回以上 true になる必要があります。
-3. count 引数があるが、`by` キーワードがない場合。例:  `selection | count(Users) > 10`
-   > `selection` がマッチし、かつ `Users` が時間枠内で10回以上**異なる**場合であれば、条件にマッチします。
-4. count 引数と `by` キーワードの両方が存在する。例: `selection | count(Users) by Date > 10`
+2. count 引数はないが、`by` キーワードはある。例: `selection | count() by IpAddress > 10`
+   > `selection` は**同じ**`IpAddress` に対して10回以上 true になる必要があります。
+3. count 引数があるが、`by` キーワードがない場合。例:  `selection | count(TargetUserName) > 10`
+   > `selection` がマッチし、かつ `TargetUserName` が時間枠内で10回以上**異なる**場合であれば、条件にマッチします。
+4. count 引数と `by` キーワードの両方が存在する。例: `selection | count(TargetUserName) by IpAddress > 10`
    > **同じ**「日付」に対して、条件が一致するためには、10人以上の**異なる**「ユーザ」が存在する必要があります。
 
 
