@@ -68,7 +68,6 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -t --thread-number=[NUMBER] 'Thread number (default: optimal number for performance)'
     -s --statistics 'Prints statistics of event IDs'
     -q --quiet 'Quiet mode. Do not display the launch banner'
-    -Q --quiet-errors 'Quiet errors mode. Do not display errors or save error logs'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
@@ -141,7 +140,7 @@ impl TargetEventTime {
                 Err(err) => {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
-                        format!("start-timeline field: {}", err),
+                        format!("starttimeline field: {}", err),
                     )
                     .ok();
                     None
@@ -158,7 +157,7 @@ impl TargetEventTime {
             Err(err) => {
                     AlertMessage::alert(
                         &mut std::io::stderr().lock(),
-                        format!("end-timeline field: {}", err),
+                        format!("endtimeline field: {}", err),
                     )
                     .ok();
                     None
