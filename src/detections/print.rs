@@ -50,22 +50,6 @@ lazy_static! {
         .is_present("quiet-errors");
 }
 
-#[derive(Copy, Clone)]
-/// エラーログに出力したエラー回数を保持した構造体
-pub struct Counter {
-    pub count: u128,
-}
-
-impl Counter {
-    pub fn new() -> Self {
-        Counter { count: 0 }
-    }
-    /// エラーログに出力したエラー回数を1増やす
-    pub fn countup(mut self) {
-        self.count += 1;
-    }
-}
-
 impl Message {
     pub fn new() -> Self {
         let messages: BTreeMap<DateTime<Utc>, Vec<DetectInfo>> = BTreeMap::new();
