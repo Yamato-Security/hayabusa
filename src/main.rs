@@ -83,6 +83,7 @@ impl App {
                 return;
             }
         }
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {
                 AlertMessage::alert(
