@@ -1,0 +1,27 @@
+
+title: Invoke-Obfuscation RUNDLL LAUNCHER
+ruletype: Sigma
+author: Timur Zinniatullin, oscd.community
+date: 2020/10/18
+description: Detects Obfuscated Powershell via RUNDLL LAUNCHER
+detection:
+  SELECTION_1:
+    ScriptBlockText|re: (?i).*rundll32(?:\.exe)?(?:\s+)?shell32\.dll.*shellexec_rundll.*powershell.*"
+  condition: SELECTION_1
+falsepositives:
+- Unknown
+id: e6cb92b4-b470-4eb8-8a9d-d63e8583aae0
+level: medium
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/10/16
+references:
+- https://github.com/Neo23x0/sigma/issues/1009
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001

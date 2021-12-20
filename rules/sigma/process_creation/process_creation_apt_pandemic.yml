@@ -1,0 +1,37 @@
+
+title: Pandemic Registry Key
+ruletype: Sigma
+author: Florian Roth
+date: 2017/06/01
+description: Detects Pandemic Windows Implant
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*loaddll -a *'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- unknown
+fields:
+- EventID
+- CommandLine
+- ParentCommandLine
+- Image
+- User
+- TargetObject
+id: 9fefd33c-339d-4495-9cba-b96ca006f512
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/09/12
+references:
+- https://wikileaks.org/vault7/#Pandemic
+- https://twitter.com/MalwareJake/status/870349480356454401
+related:
+- id: 47e0852a-cf81-4494-a8e6-31864f8c86ed
+  type: derived
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1105

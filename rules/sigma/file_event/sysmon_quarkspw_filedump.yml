@@ -1,0 +1,29 @@
+
+title: QuarksPwDump Dump File
+ruletype: Sigma
+author: Florian Roth
+date: 2018/02/10
+description: Detects a dump file written by QuarksPwDump password dumper
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename: '*\AppData\Local\Temp\SAM-*'
+  SELECTION_3:
+    TargetFilename: '*.dmp*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 847def9e-924d-4e90-b7c4-5f581395a2b4
+level: critical
+logsource:
+  category: file_event
+  product: windows
+modified: 2021/11/27
+references:
+- https://jpcertcc.github.io/ToolAnalysisResultSheet/details/QuarksPWDump.htm
+status: test
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1003.002

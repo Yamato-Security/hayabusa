@@ -1,0 +1,37 @@
+title: EDR WMI Command Execution by Office Applications
+ruletype: Sigma
+author: Vadim Khrykov (ThreatIntel), Cyb3rEng (Rule)
+date: 2021/08/23
+description: Initial execution of malicious document calls wmic Win32_Process::Create
+  to execute the file with regsvr32
+detection:
+  SELECTION_1:
+    EventLog: EDR
+  SELECTION_2:
+    EventType: WMIExecution
+  SELECTION_3:
+    WMIcommand: '*Win32_Process\:\:Create*'
+  SELECTION_4:
+    Image:
+    - '*\winword.exe'
+    - '*\excel.exe'
+    - '*\powerpnt.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Unknown
+id: 3ee1bba8-b9e2-4e35-bec5-7fb66b6b3815
+level: high
+logsource:
+  category: edr
+  product: windows
+modified: 2021/11/09
+references:
+- https://thedfirreport.com/2021/03/29/sodinokibi-aka-revil-ransomware/
+- https://github.com/vadim-hunter/Detection-Ideas-Rules/blob/main/Threat%20Intelligence/The%20DFIR%20Report/20210329_Sodinokibi_(aka_REvil)_Ransomware.yaml
+status: experimental
+tags:
+- attack.t1204.002
+- attack.t1047
+- attack.t1218.010
+- attack.execution
+- attack.defense_evasion

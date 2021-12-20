@@ -1,0 +1,44 @@
+
+title: Suspicious PowerShell Command Line
+ruletype: Sigma
+author: Teymur Kheirkhabarov (idea), Vasiliy Burov (rule), oscd.community, Tim Shelton
+  (fp)
+date: 2020/10/15
+description: Detects the PowerShell command lines with special characters
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\powershell.exe'
+  SELECTION_3:
+    CommandLine|re: .*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*\+.*
+  SELECTION_4:
+    CommandLine|re: .*\{.*\{.*\{.*\{.*\{.*\{.*\{.*\{.*\{.*\{.*
+  SELECTION_5:
+    CommandLine|re: .*\{.*\{.*\{.*\{.*\{.*
+  SELECTION_6:
+    CommandLine|re: .*\^.*\^.*\^.*\^.*\^.*
+  SELECTION_7:
+    CommandLine|re: .*`.*`.*`.*`.*`.*
+  SELECTION_8:
+    ParentImage:
+    - C:\Program Files\Amazon\SSM\ssm-document-worker.exe
+  condition: (SELECTION_1 and (SELECTION_2 and (SELECTION_3 or SELECTION_4 or SELECTION_5
+    or SELECTION_6 or SELECTION_7)) and  not (SELECTION_8))
+falsepositives:
+- Unlikely
+- Amazon SSM Document Worker
+id: d7bcd677-645d-4691-a8d4-7a5602b780d1
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/12/06
+references:
+- https://speakerdeck.com/heirhabarov/hunting-for-powershell-abuse?slide=64
+status: test
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001

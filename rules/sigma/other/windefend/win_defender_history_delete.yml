@@ -1,0 +1,31 @@
+
+title: Windows Defender Malware Detection History Deletion
+ruletype: Sigma
+author: Cian Heasley
+date: 2020/08/13
+description: Windows Defender logs when the history of detected infections is deleted.
+  Log file will contain the message "Windows Defender Antivirus has removed history
+  of malware and other potentially unwanted software".
+detection:
+  SELECTION_1:
+    EventID: 1013
+  SELECTION_2:
+    EventType: 4
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Deletion of Defender malware detections history for legitimate reasons
+fields:
+- EventID
+- EventType
+id: 2afe6582-e149-11ea-87d0-0242ac130003
+level: high
+logsource:
+  product: windows
+  service: windefend
+modified: 2021/05/30
+references:
+- https://docs.microsoft.com/en-us/windows/security/threat-protection/microsoft-defender-antivirus/troubleshoot-microsoft-defender-antivirus
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1070.001

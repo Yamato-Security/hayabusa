@@ -1,0 +1,45 @@
+
+title: Suspicious Script Execution From Temp Folder
+ruletype: Sigma
+author: Florian Roth, Max Altgelt
+date: 2021/07/14
+description: Detects a suspicious script executions from temporary folder
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\powershell.exe'
+    - '*\mshta.exe'
+    - '*\wscript.exe'
+    - '*\cscript.exe'
+  SELECTION_3:
+    CommandLine:
+    - '*\Windows\Temp*'
+    - '*\Temporary Internet*'
+    - '*\AppData\Local\Temp*'
+    - '*\AppData\Roaming\Temp*'
+    - '*%TEMP%*'
+    - '*%TMP%*'
+    - '*%LocalAppData%\Temp*'
+  SELECTION_4:
+    CommandLine:
+    - '* >*'
+    - '*Out-File*'
+    - '*ConvertTo-Json*'
+    - '*-WindowStyle hidden -Verb runAs*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+falsepositives:
+- Administrative scripts
+id: a6a39bdb-935c-4f0a-ab77-35f4bbf44d33
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/11
+references:
+- https://www.microsoft.com/security/blog/2021/07/13/microsoft-discovers-threat-actor-targeting-solarwinds-serv-u-software-with-0-day-exploit/
+status: experimental
+tags:
+- attack.execution
+- attack.t1059

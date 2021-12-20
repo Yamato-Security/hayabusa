@@ -1,0 +1,31 @@
+author: Zach Mathis
+date: 2020/11/08
+modified: 2021/11/26
+
+title: Logon Type 3 - Network
+title_jp: ログオンタイプ 3 - ネットワーク
+output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%'
+output_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  ポート番号: %IpPort%  :  ログオンID: %TargetLogonId%'
+description: Prints logon information
+description_jp: Prints logon information
+
+id: c7b22878-e5d8-4c30-b245-e51fd354359e
+level: informational
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4624
+        LogonType: 3
+    filter:
+        - IpAddress: "-"
+        - IpAddress: "127.0.0.1"
+        - IpAddress: "::1"
+    condition: selection and not filter
+falsepositives:
+    - normal system usage
+tags:
+references:
+sample-evtx: 
+logsource: default
+ruletype: Hayabusa

@@ -1,0 +1,35 @@
+
+title: SyncAppvPublishingServer VBS Execute Arbitrary PowerShell Code
+ruletype: Sigma
+author: frack113
+date: 2021/07/16
+description: Executes arbitrary PowerShell code using SyncAppvPublishingServer.vbs
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*\SyncAppvPublishingServer.vbs*'
+  SELECTION_3:
+    CommandLine: '*"n;*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- User
+- CommandLine
+- ParentCommandLine
+id: 36475a7d-0f6d-4dce-9b01-6aeb473bbaf1
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/09/12
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1216/T1216.md
+- https://lolbas-project.github.io/lolbas/Binaries/Syncappvpublishingserver/
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1218
+- attack.t1216

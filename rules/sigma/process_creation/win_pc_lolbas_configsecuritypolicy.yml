@@ -1,0 +1,31 @@
+
+title: Suspicious ConfigSecurityPolicy Execution
+ruletype: Sigma
+author: frack113
+date: 2021/11/26
+description: Upload file, credentials or data exfiltration with Binary part of Windows
+  Defender
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*ConfigSecurityPolicy.exe*'
+  SELECTION_3:
+    CommandLine:
+    - '*https://*'
+    - '*http://*'
+    - '*ftp://*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- unknown
+id: 1f0f6176-6482-4027-b151-00071af39d7e
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://lolbas-project.github.io/lolbas/Binaries/ConfigSecurityPolicy/
+status: experimental
+tags:
+- attack.exfiltration
+- attack.t1567

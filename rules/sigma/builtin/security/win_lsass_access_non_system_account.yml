@@ -1,0 +1,69 @@
+
+title: LSASS Access from Non System Account
+ruletype: Sigma
+author: Roberto Rodriguez @Cyb3rWard0g
+date: 2019/06/20
+description: Detects potential mimikatz-like tools accessing LSASS from non system
+  account
+detection:
+  SELECTION_1:
+    EventID: 4663
+  SELECTION_2:
+    EventID: 4656
+  SELECTION_3:
+    AccessMask:
+    - '0x40'
+    - '0x1400'
+    - '0x100000'
+    - '0x1410'
+    - '0x1010'
+    - '0x1438'
+    - '0x143a'
+    - '0x1418'
+    - '0x1f0fff'
+    - '0x1f1fff'
+    - '0x1f2fff'
+    - '0x1f3fff'
+    - '40'
+    - '1400'
+    - '1000'
+    - '100000'
+    - '1410'
+    - '1010'
+    - '1438'
+    - 143a
+    - '1418'
+    - 1f0fff
+    - 1f1fff
+    - 1f2fff
+    - 1f3fff
+  SELECTION_4:
+    ObjectType: Process
+  SELECTION_5:
+    ObjectName: '*\lsass.exe'
+  SELECTION_6:
+    SubjectUserName: '*$'
+  SELECTION_7:
+    ProcessName: C:\Program Files*
+  condition: (((SELECTION_1 or SELECTION_2) and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    and  not ((SELECTION_6) or (SELECTION_7)))
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- ObjectName
+- SubjectUserName
+- ProcessName
+id: 962fe167-e48d-4fd6-9974-11e5b9a5d6d1
+level: critical
+logsource:
+  product: windows
+  service: security
+modified: 2021/11/22
+references:
+- https://threathunterplaybook.com/notebooks/windows/06_credential_access/WIN-170105221010.html
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1003.001

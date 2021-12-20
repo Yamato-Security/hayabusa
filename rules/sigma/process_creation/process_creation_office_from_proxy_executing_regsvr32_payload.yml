@@ -1,0 +1,59 @@
+
+title: Excel Proxy Executing Regsvr32 With Payload
+ruletype: Sigma
+author: Vadim Khrykov (ThreatIntel), Cyb3rEng (Rule)
+date: 2021/08/23
+description: Excel called wmic to finally proxy execute regsvr32 with the payload.
+  An attacker wanted to break suspicious parent-child chain (Office app spawns LOLBin).But
+  we have command-line in the event which allow us to "restore" this suspicious parent-child
+  chain and detect it. Monitor process creation with "wmic process call create" and
+  LOLBins in command-line with parent Office application processes.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    ParentCommandLine: '*call*'
+  SELECTION_2:
+    Image: '*\wbem\WMIC.exe'
+  SELECTION_3:
+    ParentCommandLine: '*wmic *'
+  SELECTION_4:
+    OriginalFileName: wmic.exe
+  SELECTION_5:
+    Description: WMI Commandline Utility
+  SELECTION_6:
+    CommandLine:
+    - '*regsvr32*'
+    - '*rundll32*'
+    - '*msiexec*'
+    - '*mshta*'
+    - '*verclsid*'
+  SELECTION_7:
+    ParentImage:
+    - '*winword.exe'
+    - '*excel.exe'
+    - '*powerpnt.exe'
+  SELECTION_8:
+    ParentCommandLine: '*process*'
+  SELECTION_9:
+    ParentCommandLine: '*create*'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3 or SELECTION_4 or SELECTION_5)
+    and SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9 and SELECTION_10)
+falsepositives:
+- Unknown
+id: 9d1c72f5-43f0-4da5-9320-648cf2099dd0
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/09
+references:
+- https://thedfirreport.com/2021/03/29/sodinokibi-aka-revil-ransomware/
+- https://github.com/vadim-hunter/Detection-Ideas-Rules/blob/main/Threat%20Intelligence/The%20DFIR%20Report/20210329_Sodinokibi_(aka_REvil)_Ransomware.yaml
+status: experimental
+tags:
+- attack.t1204.002
+- attack.t1047
+- attack.t1218.010
+- attack.execution
+- attack.defense_evasion

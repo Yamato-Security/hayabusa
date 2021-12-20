@@ -1,0 +1,42 @@
+
+title: Imports Registry Key From an ADS
+ruletype: Sigma
+author: Oddvar Moe, Sander Wiebing, oscd.community
+date: 2020/10/12
+description: Detects the import of a alternate datastream to the registry with regedit.exe.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\regedit.exe'
+  SELECTION_3:
+    CommandLine:
+    - '* /i *'
+    - '*.reg*'
+  SELECTION_4:
+    CommandLine|re: :[^ \\\\]
+  SELECTION_5:
+    CommandLine:
+    - '* /e *'
+    - '* /a *'
+    - '* /c *'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3 and SELECTION_4) and  not
+    (SELECTION_5))
+falsepositives:
+- Unknown
+fields:
+- ParentImage
+- CommandLine
+id: 0b80ade5-6997-4b1d-99a1-71701778ea61
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/OSBinaries/Regedit.yml
+- https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f
+status: test
+tags:
+- attack.t1112
+- attack.defense_evasion

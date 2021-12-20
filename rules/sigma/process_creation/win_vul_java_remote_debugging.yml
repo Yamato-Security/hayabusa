@@ -1,0 +1,32 @@
+
+title: Java Running with Remote Debugging
+ruletype: Sigma
+author: Florian Roth
+date: 2019/01/16
+description: Detects a JAVA process running with remote debugging allowing more than
+  just localhost to connect
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*transport=dt_socket,address=*'
+  SELECTION_3:
+    CommandLine: '*address=127.0.0.1*'
+  SELECTION_4:
+    CommandLine: '*address=localhost*'
+  condition: (SELECTION_1 and SELECTION_2 and  not (SELECTION_3 or SELECTION_4))
+falsepositives:
+- unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: 8f88e3f6-2a49-48f5-a5c4-2f7eedf78710
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+status: test
+tags:
+- attack.t1203
+- attack.execution

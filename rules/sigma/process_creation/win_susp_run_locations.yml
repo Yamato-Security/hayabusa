@@ -1,0 +1,40 @@
+
+title: Suspicious Process Start Locations
+ruletype: Sigma
+author: juju4, Jonhnathan Ribeiro, oscd.community
+date: 2019/01/16
+description: Detects suspicious process run from unusual locations
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*:\RECYCLER\\*'
+    - '*:\SystemVolumeInformation\\*'
+  SELECTION_3:
+    Image:
+    - C:\Windows\Tasks\\*
+    - C:\Windows\debug\\*
+    - C:\Windows\fonts\\*
+    - C:\Windows\help\\*
+    - C:\Windows\drivers\\*
+    - C:\Windows\addins\\*
+    - C:\Windows\cursors\\*
+    - C:\Windows\system32\tasks\\*
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
+falsepositives:
+- False positives depend on scripts and administrative tools used in the monitored
+  environment
+id: 15b75071-74cc-47e0-b4c6-b43744a62a2b
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2020/11/28
+references:
+- https://car.mitre.org/wiki/CAR-2013-05-002
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036
+- car.2013-05-002

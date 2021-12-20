@@ -1,0 +1,29 @@
+
+title: Audio Capture via SoundRecorder
+ruletype: Sigma
+author: E.M. Anhaus (originally from Atomic Blue Detections, Endgame), oscd.community
+date: 2019/10/24
+description: Detect attacker collecting audio via SoundRecorder application.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\SoundRecorder.exe'
+  SELECTION_3:
+    CommandLine: '*/FILE*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Legitimate audio capture by legitimate user.
+id: 83865853-59aa-449e-9600-74b9d89a6d6e
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1123/T1123.md
+- https://eqllib.readthedocs.io/en/latest/analytics/f72a98cb-7b3d-4100-99c3-a138b6e9ff6e.html
+status: test
+tags:
+- attack.collection
+- attack.t1123

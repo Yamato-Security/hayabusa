@@ -1,0 +1,30 @@
+
+title: Suspicious PowerShell Download
+ruletype: Sigma
+author: Florian Roth
+date: 2017/03/05
+description: Detects suspicious PowerShell download command
+detection:
+  SELECTION_1:
+    ScriptBlockText: '*System.Net.WebClient*'
+  SELECTION_2:
+    ScriptBlockText:
+    - '*.DownloadFile(*'
+    - '*.DownloadString(*'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- PowerShell scripts that download content from the Internet
+id: 403c2cc0-7f6b-4925-9423-bfa573bed7eb
+level: medium
+logsource:
+  category: ps_script
+  product: windows
+modified: 2021/10/18
+related:
+- id: 65531a81-a694-4e31-ae04-f8ba5bc33759
+  type: derived
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086

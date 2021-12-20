@@ -1,0 +1,55 @@
+
+title: Ngrok Usage
+ruletype: Sigma
+author: Florian Roth
+date: 2021/05/14
+description: Detects the use of Ngrok, a utility used for port forwarding and tunneling,
+  often used by threat actors to make local protected services publicly available.
+  Involved domains are bin.equinox.io for download and *.ngrok.io for connections.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '* tcp 139*'
+    - '* tcp 445*'
+    - '* tcp 3389*'
+    - '* tcp 5985*'
+    - '* tcp 5986*'
+  SELECTION_3:
+    CommandLine: '* start *'
+  SELECTION_4:
+    CommandLine: '*--all*'
+  SELECTION_5:
+    CommandLine: '*--config*'
+  SELECTION_6:
+    CommandLine: '*.yml*'
+  SELECTION_7:
+    Image:
+    - '*ngrok.exe'
+  SELECTION_8:
+    CommandLine:
+    - '* tcp *'
+    - '* http *'
+    - '* authtoken *'
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6) or (SELECTION_7 and SELECTION_8)))
+falsepositives:
+- Another tool that uses the command line switches of Ngrok
+- ngrok http 3978 (https://docs.microsoft.com/en-us/azure/bot-service/bot-service-debug-channel-ngrok?view=azure-bot-service-4.0)
+id: ee37eb7c-a4e7-4cd5-8fa4-efa27f1c3f31
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/06/07
+references:
+- https://ngrok.com/docs
+- https://www.fireeye.com/blog/threat-research/2021/05/shining-a-light-on-darkside-ransomware-operations.html
+- https://stackoverflow.com/questions/42442320/ssh-tunnel-to-ngrok-and-initiate-rdp
+- https://www.virustotal.com/gui/file/58d21840d915aaf4040ceb89522396124c82f325282f805d1085527e1e2ccfa1/detection
+- https://cybleinc.com/2021/02/15/ngrok-platform-abused-by-hackers-to-deliver-a-new-wave-of-phishing-attacks/.
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1572

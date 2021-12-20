@@ -1,0 +1,31 @@
+
+title: LSASS Access Detected via Attack Surface Reduction
+ruletype: Sigma
+author: Markus Neis
+date: 2018/08/26
+description: Detects Access to LSASS Process
+detection:
+  SELECTION_1:
+    EventID: 1121
+  SELECTION_2:
+    Path: '*\lsass.exe'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Google Chrome GoogleUpdate.exe
+- Some Taskmgr.exe related activity
+id: a0a278fe-2c0e-4de2-ac3c-c68b08a9ba98
+level: high
+logsource:
+  definition: 'Requirements:Enabled Block credential stealing from the Windows local
+    security authority subsystem (lsass.exe) from Attack Surface Reduction (GUID:
+    9e6c4e1f-7d60-472f-ba1a-a39ef669e4b2)'
+  product: windows
+  service: windefend
+modified: 2021/11/13
+references:
+- https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-exploit-guard/attack-surface-reduction-exploit-guard?WT.mc_id=twitter
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1003.001

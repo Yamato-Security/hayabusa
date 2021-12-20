@@ -1,0 +1,61 @@
+
+title: Windows Registry Persistence COM Search Order Hijacking
+ruletype: Sigma
+author: Maxime Thiebaut (@0xThiebaut), oscd.community, Cédric Hien
+date: 2020/04/14
+description: Detects potential COM object hijacking leveraging the COM Search Order
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_10:
+    Details: '*\AppData\Roaming\Dropbox\\*'
+  SELECTION_11:
+    Details: '*\DropboxExt64.*.dll*'
+  SELECTION_12:
+    Details: '*TmopIEPlg.dll'
+  SELECTION_13:
+    Image:
+    - C:\WINDOWS\system32\wuauclt.exe
+    - C:\WINDOWS\system32\svchost.exe
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject:
+    - HKCR\CLSID\\*
+    - HKCU\Software\Classes\CLSID\\*
+  SELECTION_5:
+    TargetObject: '*\InprocServer32\(Default)'
+  SELECTION_6:
+    Details:
+    - '*%%systemroot%%\system32\\*'
+    - '*%%systemroot%%\SysWow64\\*'
+  SELECTION_7:
+    Details:
+    - '*\AppData\Local\Microsoft\OneDrive\\*'
+    - '*\FileCoAuthLib64.dll*'
+    - '*\FileSyncShell64.dll*'
+    - '*\FileSyncApi64.dll*'
+  SELECTION_8:
+    Details: '*\AppData\Local\Microsoft\TeamsMeetingAddin\\*'
+  SELECTION_9:
+    Details: '*\Microsoft.Teams.AddinLoader.dll*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and (SELECTION_4 and SELECTION_5)
+    and  not ((SELECTION_6) or (SELECTION_7) or (SELECTION_8 and SELECTION_9) or (SELECTION_10
+    and SELECTION_11) or (SELECTION_12) or (SELECTION_13)))
+falsepositives:
+- Some installed utilities (i.e. OneDrive) may serve new COM objects at user-level
+id: a0ff33d8-79e4-4cef-b4f3-9dc4133ccd12
+level: medium
+logsource:
+  category: registry_event
+  product: windows
+modified: 2021/12/03
+references:
+- https://www.cyberbit.com/blog/endpoint-security/com-hijacking-windows-overlooked-security-vulnerability/
+- https://attack.mitre.org/techniques/T1546/015/
+status: experimental
+tags:
+- attack.persistence
+- attack.t1546.015

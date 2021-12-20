@@ -1,0 +1,45 @@
+
+title: Discover Private Keys
+ruletype: Sigma
+author: frack113
+date: 2021/07/20
+description: Adversaries may search for private key certificate files on compromised
+  systems for insecurely stored credential
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '*dir *'
+    - '*findstr *'
+  SELECTION_3:
+    CommandLine:
+    - '*.key*'
+    - '*.pgp*'
+    - '*.gpg*'
+    - '*.ppk*'
+    - '*.p12*'
+    - '*.pem*'
+    - '*.pfx*'
+    - '*.cer*'
+    - '*.p7b*'
+    - '*.asc*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+fields:
+- ComputerName
+- User
+- CommandLine
+- ParentCommandLine
+id: 213d6a77-3d55-4ce8-ba74-fcfef741974e
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1552.004/T1552.004.md
+status: experimental
+tags:
+- attack.credential_access
+- attack.t1552.004

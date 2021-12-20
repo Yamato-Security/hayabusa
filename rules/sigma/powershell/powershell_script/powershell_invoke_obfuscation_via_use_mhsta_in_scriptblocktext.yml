@@ -1,0 +1,27 @@
+
+title: Invoke-Obfuscation Via Use MSHTA
+ruletype: Sigma
+author: Nikita Nazarov, oscd.community
+date: 2020/10/08
+description: Detects Obfuscated Powershell via use MSHTA in Scripts
+detection:
+  SELECTION_1:
+    ScriptBlockText|re: (?i).*(set).*(&&).*(mshta).*(vbscript:createobject).*(\.run).*\(window\.close\).*"
+  condition: SELECTION_1
+falsepositives:
+- Unknown
+id: e55a5195-4724-480e-a77e-3ebe64bd3759
+level: high
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/10/16
+references:
+- https://github.com/Neo23x0/sigma/issues/1009
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1027
+- attack.execution
+- attack.t1059.001

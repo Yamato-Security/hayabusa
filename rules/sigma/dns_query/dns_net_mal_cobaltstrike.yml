@@ -1,0 +1,35 @@
+
+title: Suspicious Cobalt Strike DNS Beaconing
+ruletype: Sigma
+author: Florian Roth
+date: 2021/11/09
+description: Detects a program that invoked suspicious DNS queries known from Cobalt
+  Strike beacons
+detection:
+  SELECTION_1:
+    EventID: 22
+  SELECTION_2:
+    QueryName:
+    - aaa.stage.*
+    - post.1*
+  SELECTION_3:
+    QueryName: '*.stage.123456.*'
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
+falsepositives:
+- Unknown
+fields:
+- Image
+- CommandLine
+id: f356a9c4-effd-4608-bbf8-408afd5cd006
+level: critical
+logsource:
+  category: dns_query
+  product: windows
+references:
+- https://www.icebrg.io/blog/footprints-of-fin7-tracking-actor-patterns
+- https://www.sekoia.io/en/hunting-and-detecting-cobalt-strike/
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1071
+- attack.t1071.004

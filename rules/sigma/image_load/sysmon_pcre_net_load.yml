@@ -1,0 +1,27 @@
+
+title: PCRE.NET Package Image Load
+ruletype: Sigma
+author: Roberto Rodriguez (Cyb3rWard0g), OTR (Open Threat Research)
+date: 2020/10/29
+description: Detects processes loading modules related to PCRE.NET package
+detection:
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    ImageLoaded: '*\AppData\Local\Temp\ba9ea7344a4a5f591d6e5dc32a13494b\\*'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: 84b0a8f3-680b-4096-a45b-e9a89221727c
+level: high
+logsource:
+  category: image_load
+  product: windows
+modified: 2021/08/14
+references:
+- https://twitter.com/rbmaslen/status/1321859647091970051
+- https://twitter.com/tifkin_/status/1321916444557365248
+status: experimental
+tags:
+- attack.execution
+- attack.t1059

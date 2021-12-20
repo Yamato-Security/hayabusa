@@ -1,0 +1,37 @@
+
+title: Suspicious VBScript UN2452 Pattern
+ruletype: Sigma
+author: Florian Roth
+date: 2021/03/05
+description: Detects suspicious inline VBScript keywords as used by UNC2452
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*Execute*'
+  SELECTION_3:
+    CommandLine: '*CreateObject*'
+  SELECTION_4:
+    CommandLine: '*RegRead*'
+  SELECTION_5:
+    CommandLine: '*window.close*'
+  SELECTION_6:
+    CommandLine: '*\Microsoft\Windows\CurrentVersion*'
+  SELECTION_7:
+    CommandLine:
+    - '*\Software\Microsoft\Windows\CurrentVersion\Run*'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6) and  not (SELECTION_7))
+falsepositives:
+- Unknown
+id: 20c3f09d-c53d-4e85-8b74-6aa50e2f1b61
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://www.microsoft.com/security/blog/2021/03/04/goldmax-goldfinder-sibot-analyzing-nobelium-malware/
+status: experimental
+tags:
+- attack.persistence
+- attack.t1547.001

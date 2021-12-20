@@ -1,0 +1,34 @@
+
+title: Microsoft Binary Suspicious Communication Endpoint
+ruletype: Sigma
+author: Florian Roth
+date: 2018/08/30
+description: Detects an executable in the Windows folder accessing suspicious domains
+detection:
+  SELECTION_1:
+    EventID: 3
+  SELECTION_2:
+    Initiated: 'true'
+  SELECTION_3:
+    DestinationHostname:
+    - '*dl.dropboxusercontent.com'
+    - '*.pastebin.com'
+    - '*.githubusercontent.com'
+  SELECTION_4:
+    Image: C:\Windows\\*
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Unknown
+id: e0f8ab85-0ac9-423b-a73a-81b3c7b1aa97
+level: high
+logsource:
+  category: network_connection
+  product: windows
+modified: 2021/11/27
+references:
+- https://twitter.com/M_haggis/status/900741347035889665
+- https://twitter.com/M_haggis/status/1032799638213066752
+status: test
+tags:
+- attack.lateral_movement
+- attack.t1105

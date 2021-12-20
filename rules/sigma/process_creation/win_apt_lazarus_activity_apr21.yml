@@ -1,0 +1,43 @@
+
+title: Lazarus Activity
+ruletype: Sigma
+author: Bhabesh Raj
+date: 2021/04/20
+description: Detects different process creation events as described in Malwarebytes's
+  threat report on Lazarus group activity
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*mshta*'
+  SELECTION_3:
+    CommandLine: '*.zip*'
+  SELECTION_4:
+    ParentImage:
+    - C:\Windows\System32\wbem\wmiprvse.exe
+  SELECTION_5:
+    Image:
+    - C:\Windows\System32\mshta.exe
+  SELECTION_6:
+    ParentImage:
+    - '*:\Users\Public\\*'
+  SELECTION_7:
+    Image:
+    - C:\Windows\System32\rundll32.exe
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or (SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7)))
+falsepositives:
+- Should not be any false positives
+id: 4a12fa47-c735-4032-a214-6fab5b120670
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/06/27
+references:
+- https://blog.malwarebytes.com/malwarebytes-news/2021/04/lazarus-apt-conceals-malicious-code-within-bmp-file-to-drop-its-rat/
+status: experimental
+tags:
+- attack.g0032
+- attack.execution
+- attack.t1106

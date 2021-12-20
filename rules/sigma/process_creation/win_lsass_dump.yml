@@ -1,0 +1,46 @@
+
+title: LSASS Memory Dumping
+ruletype: Sigma
+author: E.M. Anhaus (originally from Atomic Blue Detections, Tony Lambert), oscd.community
+date: 2019/10/24
+description: Detect creation of dump files containing the memory space of lsass.exe,
+  which contains sensitive credentials. Identifies usage of Sysinternals procdump.exe
+  to export the memory space of lsass.exe which contains sensitive credentials.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*lsass*'
+  SELECTION_3:
+    CommandLine: '*.dmp*'
+  SELECTION_4:
+    Image: '*\werfault.exe'
+  SELECTION_5:
+    Image: '*\procdump*'
+  SELECTION_6:
+    Image: '*.exe'
+  SELECTION_7:
+    CommandLine: '*lsass*'
+  condition: (SELECTION_1 and (((SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+    or (SELECTION_5 and SELECTION_6 and SELECTION_7)))
+falsepositives:
+- Unlikely
+fields:
+- ComputerName
+- User
+- CommandLine
+id: ffa6861c-4461-4f59-8a41-578c39f3f23e
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://eqllib.readthedocs.io/en/latest/analytics/1e1ef6be-12fc-11e9-8d76-4d6bb837cda4.html
+- https://eqllib.readthedocs.io/en/latest/analytics/210b4ea4-12fc-11e9-8d76-4d6bb837cda4.html
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003/T1003.md
+status: test
+tags:
+- attack.credential_access
+- attack.t1003.001
+- attack.t1003

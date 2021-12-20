@@ -1,0 +1,54 @@
+
+title: Suspicious Encoded PowerShell Command Line
+ruletype: Sigma
+author: Florian Roth, Markus Neis, Jonhnathan Ribeiro, Daniil Yugoslavskiy, Anton
+  Kutepov, oscd.community
+date: 2018/09/03
+description: Detects suspicious powershell process starts with base64 encoded commands
+  (e.g. Emotet)
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine: '*remotesigned *'
+  SELECTION_2:
+    CommandLine: '* -e*'
+  SELECTION_3:
+    CommandLine: '* JAB*'
+  SELECTION_4:
+    CommandLine: '* -w*'
+  SELECTION_5:
+    CommandLine: '* hidden *'
+  SELECTION_6:
+    CommandLine: '* -e*'
+  SELECTION_7:
+    CommandLine:
+    - '* BA^J*'
+    - '* SUVYI*'
+    - '* SQBFAFgA*'
+    - '* aQBlAHgA*'
+    - '* aWV4I*'
+    - '* IAA*'
+    - '* IAB*'
+    - '* UwB*'
+    - '* cwB*'
+  SELECTION_8:
+    CommandLine:
+    - '*.exe -ENCOD *'
+  SELECTION_9:
+    CommandLine: '* -ExecutionPolicy*'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7) or SELECTION_8) and  not (SELECTION_9 and SELECTION_10))
+id: ca2092a1-c273-4878-9b4b-0d60115bf5ea
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/03/02
+references:
+- https://app.any.run/tasks/6217d77d-3189-4db2-a957-8ab239f3e01e
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086

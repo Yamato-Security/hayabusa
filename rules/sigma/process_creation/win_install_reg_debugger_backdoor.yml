@@ -1,0 +1,38 @@
+
+title: Suspicious Debugger Registration Cmdline
+ruletype: Sigma
+author: Florian Roth, oscd.community, Jonhnathan Ribeiro
+date: 2019/09/06
+description: Detects the registration of a debugger for a program that is available
+  in the logon screen (sticky key backdoor).
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*\CurrentVersion\Image File Execution Options\\*'
+  SELECTION_3:
+    CommandLine:
+    - '*sethc.exe*'
+    - '*utilman.exe*'
+    - '*osk.exe*'
+    - '*magnify.exe*'
+    - '*narrator.exe*'
+    - '*displayswitch.exe*'
+    - '*atbroker.exe*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Penetration Tests
+id: ae215552-081e-44c7-805f-be16f975c8a2
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://blogs.technet.microsoft.com/jonathantrull/2016/10/03/detecting-sticky-key-backdoors/
+status: test
+tags:
+- attack.persistence
+- attack.privilege_escalation
+- attack.t1546.008
+- attack.t1015

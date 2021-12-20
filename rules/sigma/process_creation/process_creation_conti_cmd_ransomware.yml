@@ -1,0 +1,38 @@
+
+title: Conti Ransomware Execution
+ruletype: Sigma
+author: frack113
+date: 2021/10/12
+description: Conti ransomware command line ioc
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*-m *'
+  SELECTION_3:
+    CommandLine: '*-net *'
+  SELECTION_4:
+    CommandLine: '*-size *'
+  SELECTION_5:
+    CommandLine: '*-nomutex *'
+  SELECTION_6:
+    CommandLine: '*-p \\\*'
+  SELECTION_7:
+    CommandLine: '*$*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7)
+falsepositives:
+- Unknown should be low
+id: 689308fc-cfba-4f72-9897-796c1dc61487
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://news.sophos.com/en-us/2021/09/03/conti-affiliates-use-proxyshell-exchange-exploit-in-ransomware-attacks/
+- https://twitter.com/VK_Intel/status/1447795359900704769?t=Xz7vaLTvaaCZ5kHoZa6gMw&s=19
+status: experimental
+tags:
+- attack.impact
+- attack.s0575
+- attack.t1486

@@ -1,0 +1,72 @@
+
+title: Load of dbghelp/dbgcore DLL from Suspicious Process
+ruletype: Sigma
+author: Perez Diego (@darkquassar), oscd.community, Ecco
+date: 2019/10/27
+description: Detects the load of dbghelp/dbgcore DLL (used to make memory dumps) by
+  suspicious processes. Tools like ProcessHacker and some attacker tradecract use
+  MiniDumpWriteDump API found in dbghelp.dll or dbgcore.dll. As an example, SilentTrynity
+  C2 Framework has a module that leverages this API to dump the contents of Lsass.exe
+  and transfer it over the network back to the attacker's machine.
+detection:
+  SELECTION_1:
+    EventID: 7
+  SELECTION_2:
+    ImageLoaded:
+    - '*\dbghelp.dll'
+    - '*\dbgcore.dll'
+  SELECTION_3:
+    Image:
+    - '*\msbuild.exe'
+    - '*\cmd.exe'
+    - '*\svchost.exe'
+    - '*\rundll32.exe'
+    - '*\powershell.exe'
+    - '*\word.exe'
+    - '*\excel.exe'
+    - '*\powerpnt.exe'
+    - '*\outlook.exe'
+    - '*\monitoringhost.exe'
+    - '*\wmic.exe'
+    - '*\bash.exe'
+    - '*\wscript.exe'
+    - '*\cscript.exe'
+    - '*\mshta.exe'
+    - '*\regsvr32.exe'
+    - '*\schtasks.exe'
+    - '*\dnx.exe'
+    - '*\regsvcs.exe'
+    - '*\sc.exe'
+    - '*\scriptrunner.exe'
+  SELECTION_4:
+    Signed: 'FALSE'
+  SELECTION_5:
+    Image: '*Visual Studio*'
+  SELECTION_6:
+    CommandLine: '*-k LocalSystemNetworkRestricted*'
+  SELECTION_7:
+    CommandLine: C:\WINDOWS\winsxs\*\TiWorker.exe -Embedding
+  condition: (SELECTION_1 and ((SELECTION_2 and (SELECTION_3 or SELECTION_4)) and  not
+    (SELECTION_5 or SELECTION_6)) and  not (SELECTION_7))
+falsepositives:
+- Penetration tests
+fields:
+- ComputerName
+- User
+- Image
+- ImageLoaded
+id: 0e277796-5f23-4e49-a490-483131d4f6e1
+level: high
+logsource:
+  category: image_load
+  product: windows
+modified: 2021/12/05
+references:
+- https://docs.microsoft.com/en-us/windows/win32/api/minidumpapiset/nf-minidumpapiset-minidumpwritedump
+- https://www.pinvoke.net/default.aspx/dbghelp/MiniDumpWriteDump.html
+- https://medium.com/@fsx30/bypass-edrs-memory-protection-introduction-to-hooking-2efb21acffd6
+status: test
+tags:
+- attack.credential_access
+- attack.t1003
+- attack.t1003.001

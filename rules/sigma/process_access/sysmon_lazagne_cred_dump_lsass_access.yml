@@ -1,0 +1,37 @@
+
+title: Credential Dumping by LaZagne
+ruletype: Sigma
+author: Bhabesh Raj, Jonhnathan Ribeiro
+date: 2020/09/09
+description: Detects LSASS process access by LaZagne for credential dumping.
+detection:
+  SELECTION_1:
+    EventID: 10
+  SELECTION_2:
+    TargetImage: '*\lsass.exe'
+  SELECTION_3:
+    CallTrace: '*C:\\Windows\\SYSTEM32\\ntdll.dll+*'
+  SELECTION_4:
+    CallTrace: '*|C:\\Windows\\System32\\KERNELBASE.dll+*'
+  SELECTION_5:
+    CallTrace: '*_ctypes.pyd+*'
+  SELECTION_6:
+    CallTrace: '*python27.dll+*'
+  SELECTION_7:
+    GrantedAccess: '0x1FFFFF'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6 and SELECTION_7)
+falsepositives:
+- Unknown
+id: 4b9a8556-99c4-470b-a40c-9c8d02c77ed0
+level: critical
+logsource:
+  category: process_access
+  product: windows
+references:
+- https://twitter.com/bh4b3sh/status/1303674603819081728
+status: stable
+tags:
+- attack.credential_access
+- attack.t1003.001
+- attack.s0349

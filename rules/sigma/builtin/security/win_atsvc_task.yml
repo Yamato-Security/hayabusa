@@ -1,0 +1,37 @@
+
+title: Remote Task Creation via ATSVC Named Pipe
+ruletype: Sigma
+author: Samir Bousseaden
+date: 2019/04/03
+description: Detects remote task creation via at.exe or API interacting with ATSVC
+  namedpipe
+detection:
+  SELECTION_1:
+    EventID: 5145
+  SELECTION_2:
+    ShareName: \\\*\IPC$
+  SELECTION_3:
+    RelativeTargetName: atsvc
+  SELECTION_4:
+    Accesses: '*WriteData*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- pentesting
+id: f6de6525-4509-495a-8a82-1f8b0ed73a00
+level: medium
+logsource:
+  definition: The advanced audit policy setting "Object Access > Audit Detailed File
+    Share" must be configured for Success/Failure
+  product: windows
+  service: security
+modified: 2021/11/27
+references:
+- https://blog.menasec.net/2019/03/threat-hunting-25-scheduled-tasks-for.html
+status: test
+tags:
+- attack.lateral_movement
+- attack.persistence
+- attack.t1053
+- car.2013-05-004
+- car.2015-04-001
+- attack.t1053.002

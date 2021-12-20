@@ -1,0 +1,35 @@
+
+title: UAC Bypass Using DismHost
+ruletype: Sigma
+author: Christian Burkard
+date: 2021/08/30
+description: Detects the pattern of UAC Bypass using DismHost DLL hijacking (UACMe
+  63)
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    ParentImage: '*C:\Users\\*'
+  SELECTION_3:
+    ParentImage: '*\AppData\Local\Temp\\*'
+  SELECTION_4:
+    ParentImage: '*\DismHost.exe*'
+  SELECTION_5:
+    IntegrityLevel:
+    - High
+    - System
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Unknown
+id: 853e74f9-9392-4935-ad3b-2e8c040dae86
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/hfiref0x/UACME
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.privilege_escalation
+- attack.t1548.002

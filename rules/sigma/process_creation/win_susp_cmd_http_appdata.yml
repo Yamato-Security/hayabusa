@@ -1,0 +1,41 @@
+
+title: Command Line Execution with Suspicious URL and AppData Strings
+ruletype: Sigma
+author: Florian Roth, Jonhnathan Ribeiro, oscd.community
+date: 2019/01/16
+description: Detects a suspicious command line execution that includes an URL and
+  AppData string in the command line parameters as used by several droppers (js/vbs
+  > powershell)
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\cmd.exe'
+  SELECTION_3:
+    CommandLine: '*http*'
+  SELECTION_4:
+    CommandLine: '*://*'
+  SELECTION_5:
+    CommandLine: '*%AppData%*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+falsepositives:
+- High
+fields:
+- CommandLine
+- ParentCommandLine
+id: 1ac8666b-046f-4201-8aba-1951aaec03a3
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://www.hybrid-analysis.com/sample/3a1f01206684410dbe8f1900bbeaaa543adfcd07368ba646b499fa5274b9edf6?environmentId=100
+- https://www.hybrid-analysis.com/sample/f16c729aad5c74f19784a24257236a8bbe27f7cdc4a89806031ec7f1bebbd475?environmentId=100
+status: test
+tags:
+- attack.execution
+- attack.t1059.003
+- attack.t1059.001
+- attack.command_and_control
+- attack.t1105

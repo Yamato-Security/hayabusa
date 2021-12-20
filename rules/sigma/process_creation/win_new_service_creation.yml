@@ -1,0 +1,37 @@
+
+title: New Service Creation
+ruletype: Sigma
+author: Timur Zinniatullin, Daniil Yugoslavskiy, oscd.community
+date: 2019/10/21
+description: Detects creation of a new service.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\sc.exe'
+  SELECTION_3:
+    CommandLine: '*create*'
+  SELECTION_4:
+    CommandLine: '*binpath*'
+  SELECTION_5:
+    Image: '*\powershell.exe'
+  SELECTION_6:
+    CommandLine: '*new-service*'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4) or (SELECTION_5
+    and SELECTION_6)))
+falsepositives:
+- Legitimate administrator or user creates a service for legitimate reasons.
+id: 7fe71fc9-de3b-432a-8d57-8c809efc10ab
+level: low
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1543.003/T1543.003.md
+status: test
+tags:
+- attack.persistence
+- attack.privilege_escalation
+- attack.t1050
+- attack.t1543.003

@@ -1,0 +1,37 @@
+
+title: Suspicious Run Key from Download
+ruletype: Sigma
+author: Florian Roth
+date: 2019/10/01
+description: Detects the suspicious RUN keys created by software located in Download
+  or temporary Outlook/Internet Explorer directories
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    Image:
+    - '*\Downloads\\*'
+    - '*\Temporary Internet Files\Content.Outlook\\*'
+    - '*\Local Settings\Temporary Internet Files\\*'
+  SELECTION_5:
+    TargetObject: '*\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\\*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4 and SELECTION_5)
+falsepositives:
+- Software installers downloaded and used by users
+id: 9c5037d1-c568-49b3-88c7-9846a5bdc2be
+level: high
+logsource:
+  category: registry_event
+  product: windows
+modified: 2021/11/27
+references:
+- https://app.any.run/tasks/c5bef5b7-f484-4c43-9cf3-d5c5c7839def/
+status: test
+tags:
+- attack.persistence
+- attack.t1060
+- attack.t1547.001

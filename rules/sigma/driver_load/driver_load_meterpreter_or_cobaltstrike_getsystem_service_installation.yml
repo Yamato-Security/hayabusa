@@ -1,0 +1,69 @@
+
+title: Meterpreter or Cobalt Strike Getsystem Service Installation
+ruletype: Sigma
+author: Teymur Kheirkhabarov, Ecco, Florian Roth
+date: 2019/10/26
+description: Detects the use of getsystem Meterpreter/Cobalt Strike command by detecting
+  a specific service installation
+detection:
+  SELECTION_1:
+    EventID: 6
+  SELECTION_10:
+    ImagePath: '*cmd.exe*'
+  SELECTION_11:
+    ImagePath: '*/c*'
+  SELECTION_12:
+    ImagePath: '*echo*'
+  SELECTION_13:
+    ImagePath: '*\pipe\\*'
+  SELECTION_14:
+    ImagePath: '*rundll32*'
+  SELECTION_15:
+    ImagePath: '*.dll,a*'
+  SELECTION_16:
+    ImagePath: '*/p:*'
+  SELECTION_2:
+    ImagePath: '*cmd*'
+  SELECTION_3:
+    ImagePath: '*/c*'
+  SELECTION_4:
+    ImagePath: '*echo*'
+  SELECTION_5:
+    ImagePath: '*\pipe\\*'
+  SELECTION_6:
+    ImagePath: '*%COMSPEC%*'
+  SELECTION_7:
+    ImagePath: '*/c*'
+  SELECTION_8:
+    ImagePath: '*echo*'
+  SELECTION_9:
+    ImagePath: '*\pipe\\*'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3 and SELECTION_4 and SELECTION_5)
+    or (SELECTION_6 and SELECTION_7 and SELECTION_8 and SELECTION_9) or (SELECTION_10
+    and SELECTION_11 and SELECTION_12 and SELECTION_13) or (SELECTION_14 and SELECTION_15
+    and SELECTION_16)))
+falsepositives:
+- Highly unlikely
+fields:
+- ComputerName
+- SubjectDomainName
+- SubjectUserName
+- ImagePath
+id: d585ab5a-6a69-49a8-96e8-4a726a54de46
+level: critical
+logsource:
+  category: driver_load
+  product: windows
+modified: 2021/09/21
+references:
+- https://speakerdeck.com/heirhabarov/hunting-for-privilege-escalation-in-windows-environment
+- https://blog.cobaltstrike.com/2014/04/02/what-happens-when-i-type-getsystem/
+related:
+- id: 843544a7-56e0-4dcc-a44f-5cc266dd97d6
+  type: derived
+status: experimental
+tags:
+- attack.privilege_escalation
+- attack.t1134
+- attack.t1134.001
+- attack.t1134.002

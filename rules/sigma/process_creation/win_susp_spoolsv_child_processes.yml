@@ -1,0 +1,82 @@
+
+title: Suspicious Spool Service Child Process
+ruletype: Sigma
+author: Justin C. (@endisphotic), @dreadphones (detection), Thomas Patzke (Sigma rule)
+date: 2021/07/11
+description: Detects suspicious print spool service (spoolsv.exe) child processes.
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_10:
+    CommandLine:
+    - '*add portopening*'
+    - '*rule name*'
+  SELECTION_11:
+    Image: '*\powershell.exe'
+  SELECTION_12:
+    CommandLine: '*.spl*'
+  SELECTION_13:
+    Image: '*\rundll32.exe'
+  SELECTION_14:
+    CommandLine: '*rundll32.exe'
+  SELECTION_2:
+    ParentImage: '*\\spoolsv.exe'
+  SELECTION_3:
+    IntegrityLevel: System
+  SELECTION_4:
+    Image:
+    - '*\gpupdate.exe'
+    - '*\whoami.exe'
+    - '*\nltest.exe'
+    - '*\taskkill.exe'
+    - '*\wmic.exe'
+    - '*\taskmgr.exe'
+    - '*\sc.exe'
+    - '*\findstr.exe'
+    - '*\curl.exe'
+    - '*\wget.exe'
+    - '*\certutil.exe'
+    - '*\bitsadmin.exe'
+    - '*\accesschk.exe'
+    - '*\wevtutil.exe'
+    - '*\bcdedit.exe'
+    - '*\fsutil.exe'
+    - '*\cipher.exe'
+    - '*\schtasks.exe'
+    - '*\write.exe'
+    - '*\wuauclt.exe'
+  SELECTION_5:
+    Image: '*\net.exe'
+  SELECTION_6:
+    CommandLine: '*start*'
+  SELECTION_7:
+    Image: '*\cmd.exe'
+  SELECTION_8:
+    CommandLine:
+    - '*.spl*'
+    - '*route add*'
+    - '*program files*'
+  SELECTION_9:
+    Image: '*\netsh.exe'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and (((((SELECTION_4 or
+    (SELECTION_5 and  not (SELECTION_6))) or (SELECTION_7 and  not (SELECTION_8)))
+    or (SELECTION_9 and  not (SELECTION_10))) or (SELECTION_11 and  not (SELECTION_12)))
+    or (SELECTION_13 and SELECTION_14)))
+falsepositives:
+- None known
+fields:
+- Image
+- CommandLine
+id: dcdbc940-0bff-46b2-95f3-2d73f848e33b
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://github.com/microsoft/Microsoft-365-Defender-Hunting-Queries/blob/master/Exploits/Print%20Spooler%20RCE/Suspicious%20Spoolsv%20Child%20Process.md
+status: stable
+tags:
+- attack.execution
+- attack.t1203
+- attack.privilege_escalation
+- attack.t1068

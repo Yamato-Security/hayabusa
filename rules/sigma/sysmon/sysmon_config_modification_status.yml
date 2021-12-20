@@ -1,0 +1,31 @@
+
+title: Sysmon Configuration Modification
+ruletype: Sigma
+author: frack113
+date: 2021/06/04
+description: Someone try to hide from Sysmon
+detection:
+  SELECTION_1:
+    EventID: 4
+  SELECTION_2:
+    EventID: 16
+  SELECTION_3:
+    State: Stopped
+  SELECTION_4:
+  - Sysmon config state changed
+  condition: ((SELECTION_1 or SELECTION_2) and (SELECTION_3 or SELECTION_4))
+falsepositives:
+- legitimate administrative action
+id: 1f2b5353-573f-4880-8e33-7d04dcf97744
+level: high
+logsource:
+  category: sysmon_status
+  product: windows
+modified: 2021/09/07
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1562.001/T1562.001.md
+- https://talesfrominfosec.blogspot.com/2017/12/killing-sysmon-silently.html
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1564

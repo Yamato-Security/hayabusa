@@ -1,0 +1,52 @@
+
+title: Execution from Suspicious Folder
+ruletype: Sigma
+author: Florian Roth
+date: 2019/01/16
+description: Detects a suspicious execution from an uncommon folder
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image:
+    - '*\$Recycle.bin\\*'
+    - '*\config\systemprofile\\*'
+    - '*\Intel\Logs\\*'
+    - '*\RSA\MachineKeys\\*'
+    - '*\Users\All Users\\*'
+    - '*\Users\Default\\*'
+    - '*\Users\NetworkService\\*'
+    - '*\Users\Public\\*'
+    - '*\Windows\addins\\*'
+    - '*\Windows\debug\\*'
+    - '*\Windows\Fonts\\*'
+    - '*\Windows\Help\\*'
+    - '*\Windows\IME\\*'
+    - '*\Windows\Media\\*'
+    - '*\Windows\repair\\*'
+    - '*\Windows\security\\*'
+    - '*\Windows\System32\Tasks\\*'
+    - '*\Windows\Tasks\\*'
+  SELECTION_3:
+    Image: C:\Perflogs\\*
+  condition: (SELECTION_1 and (SELECTION_2 or SELECTION_3))
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: 3dfd06d2-eaf4-4532-9555-68aca59f57c4
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/03/31
+references:
+- https://github.com/mbevilacqua/appcompatprocessor/blob/master/AppCompatSearch.txt
+- https://www.secureworks.com/research/bronze-butler-targets-japanese-businesses
+- https://www.crowdstrike.com/resources/reports/2019-crowdstrike-global-threat-report/
+- https://github.com/ThreatHuntingProject/ThreatHunting/blob/master/hunts/suspicious_process_creation_via_windows_event_logs.md
+status: experimental
+tags:
+- attack.defense_evasion
+- attack.t1036

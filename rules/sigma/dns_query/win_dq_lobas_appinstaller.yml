@@ -1,0 +1,29 @@
+
+title: AppInstaller Attempts From URL by DNS
+ruletype: Sigma
+author: frack113
+date: 2021/11/24
+description: AppInstaller.exe is spawned by the default handler for the URI, it attempts
+  to load/install a package from the URL
+detection:
+  SELECTION_1:
+    EventID: 22
+  SELECTION_2:
+    Image: C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*
+  SELECTION_3:
+    Image: '*\AppInstaller.exe'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown
+id: 7cff77e1-9663-46a3-8260-17f2e1aa9d0a
+level: medium
+logsource:
+  category: dns_query
+  product: windows
+references:
+- https://twitter.com/notwhickey/status/1333900137232523264
+- https://lolbas-project.github.io/lolbas/Binaries/AppInstaller/
+status: experimental
+tags:
+- attack.command_and_control
+- attack.t1105

@@ -1,0 +1,31 @@
+
+title: Rare Service Installs
+ruletype: Sigma
+author: Florian Roth
+date: 2017/03/08
+description: Detects rare service installs that only appear a few times per time frame
+  and could reveal password dumpers, backdoor installs or other types of malicious
+  services
+detection:
+  SELECTION_1:
+    Provider_Name: Service Control Manager
+  SELECTION_2:
+    EventID: 7045
+  condition: (SELECTION_1 and SELECTION_2) | count() by ServiceName < 5
+  timeframe: 7d
+falsepositives:
+- Software installation
+- Software updates
+id: 66bfef30-22a5-4fcd-ad44-8d81e60922ae
+level: low
+logsource:
+  product: windows
+  service: system
+modified: 2021/11/30
+status: test
+tags:
+- attack.persistence
+- attack.privilege_escalation
+- attack.t1050
+- car.2013-09-005
+- attack.t1543.003

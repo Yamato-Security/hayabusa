@@ -1,0 +1,46 @@
+
+title: PsExec/PAExec Flags
+ruletype: Sigma
+author: Florian Roth
+date: 2021/05/22
+description: Detects suspicious flags used by PsExec and PAExec but no usual program
+  name in command line
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine:
+    - '* -s cmd.exe'
+    - '* -s -i cmd.exe'
+  SELECTION_3:
+    CommandLine: '*accepteula*'
+  SELECTION_4:
+    CommandLine: '* -u *'
+  SELECTION_5:
+    CommandLine: '* -p *'
+  SELECTION_6:
+    CommandLine: '* \\\*'
+  SELECTION_7:
+    CommandLine:
+    - '*paexec*'
+    - '*PsExec*'
+  condition: (SELECTION_1 and (SELECTION_2 or (SELECTION_3 and SELECTION_4 and SELECTION_5
+    and SELECTION_6)) and  not (SELECTION_7))
+falsepositives:
+- Weird admins that rename their tools
+- Software companies that bundle PsExec/PAExec with their software and rename it,
+  so that it is less embarrassing
+id: 207b0396-3689-42d9-8399-4222658efc99
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/23
+references:
+- https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
+- https://www.poweradmin.com/paexec/
+- https://www.fireeye.com/blog/threat-research/2020/10/kegtap-and-singlemalt-with-a-ransomware-chaser.html
+status: experimental
+tags:
+- attack.develop_capabilities
+- attack.t1587.001

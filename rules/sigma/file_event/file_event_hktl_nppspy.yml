@@ -1,0 +1,28 @@
+
+title: NPPSpy Hacktool Usage
+ruletype: Sigma
+author: Florian Roth
+date: 2021/11/29
+description: Detects the use of NPPSpy hacktool that stores cleartext passwords of
+  users that logged in to a local file
+detection:
+  SELECTION_1:
+    EventID: 11
+  SELECTION_2:
+    TargetFilename:
+    - '*\NPPSpy.txt'
+    - '*\NPPSpy.dll'
+  condition: (SELECTION_1 and SELECTION_2)
+falsepositives:
+- Unknown
+id: cad1fe90-2406-44dc-bd03-59d0b58fe722
+level: high
+logsource:
+  category: file_event
+  product: windows
+references:
+- https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003/T1003.md#atomic-test-2---credential-dumping-with-nppspy
+- https://twitter.com/0gtweet/status/1465282548494487554
+status: experimental
+tags:
+- attack.credential_access

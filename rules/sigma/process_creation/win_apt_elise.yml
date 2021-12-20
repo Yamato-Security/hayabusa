@@ -1,0 +1,34 @@
+
+title: Elise Backdoor
+ruletype: Sigma
+author: Florian Roth
+date: 2018/01/31
+description: Detects Elise backdoor acitivty as used by APT32
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: C:\Windows\SysWOW64\cmd.exe
+  SELECTION_3:
+    CommandLine: '*\Windows\Caches\NavShExt.dll *'
+  SELECTION_4:
+    CommandLine: '*\AppData\Roaming\MICROS~1\Windows\Caches\NavShExt.dll,Setting'
+  condition: (SELECTION_1 and ((SELECTION_2 and SELECTION_3) or SELECTION_4))
+falsepositives:
+- Unknown
+id: e507feb7-5f73-4ef6-a970-91bb6f6d744f
+level: critical
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://community.rsa.com/community/products/netwitness/blog/2018/02/13/lotus-blossom-continues-asean-targeting
+status: test
+tags:
+- attack.g0030
+- attack.g0050
+- attack.s0081
+- attack.execution
+- attack.t1059
+- attack.t1059.003

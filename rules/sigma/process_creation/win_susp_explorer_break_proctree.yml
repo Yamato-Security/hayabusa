@@ -1,0 +1,31 @@
+
+title: Explorer Root Flag Process Tree Break
+ruletype: Sigma
+author: Florian Roth
+date: 2019/06/29
+description: Detects a command line process that uses explorer.exe /root, which is
+  similar to cmd.exe /c, only it breaks the process tree and makes its parent a new
+  instance of explorer
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    CommandLine: '*explorer.exe*'
+  SELECTION_3:
+    CommandLine: '* /root,*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3)
+falsepositives:
+- Unknown how many legitimate software products use that method
+id: 949f1ffb-6e85-4f00-ae1e-c3c5b190d605
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://twitter.com/CyberRaiju/status/1273597319322058752
+- https://twitter.com/bohops/status/1276357235954909188?s=12
+status: test
+tags:
+- attack.defense_evasion
+- attack.t1036

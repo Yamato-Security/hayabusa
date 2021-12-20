@@ -1,0 +1,67 @@
+
+title: Suspicious SYSTEM User Process Creation
+ruletype: Sigma
+author: Florian Roth
+date: 2021/12/08
+description: Detects a suspicious process creation as SYSTEM user (suspicious program
+  or command line parameter)
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    IntegrityLevel: System
+  SELECTION_3:
+    User: '*AUT*'
+  SELECTION_4:
+    User: '*SYSTEM*'
+  SELECTION_5:
+    Image:
+    - '*\calc.exe'
+    - '*\wscript.exe'
+    - '*\cscript.exe'
+    - '*\hh.exe'
+    - '*\mshta.exe'
+    - '*\forfiles.exe'
+    - '*\ping.exe'
+  SELECTION_6:
+    CommandLine:
+    - '*sc stop *'
+    - '* -NoP *'
+    - '* -W Hidden *'
+    - '* -decode *'
+    - '* /decode *'
+    - '* /urlcache *'
+    - '* -urlcache *'
+    - '* -e* JAB*'
+    - '* -e* SUVYI*'
+    - '* -e* SQBFAFgA*'
+    - '* -e* aWV4I*'
+    - '* -e* IAB*'
+    - '* -e* PAA*'
+    - '* -e* aQBlAHgA*'
+    - '*vssadmin delete shadows*'
+    - '*reg SAVE HKLM*'
+    - '* -ma *'
+    - '*Microsoft\Windows\CurrentVersion\Run*'
+    - '*.downloadstring(*'
+    - '*.downloadfile(*'
+    - '* /ticket:*'
+    - '* sekurlsa*'
+    - '* p::d *'
+    - '*;iex(*'
+    - '*MiniDump*'
+    - '*net user *'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3 and SELECTION_4) and (SELECTION_5
+    or SELECTION_6))
+falsepositives:
+- Administrative activity
+- Scripts and administrative tools used in the monitored environment
+- Monitoring activity
+id: 2617e7ed-adb7-40ba-b0f3-8f9945fe6c09
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- Internal Research
+status: experimental

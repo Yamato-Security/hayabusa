@@ -1,0 +1,40 @@
+
+title: Suspicious VBoxDrvInst.exe Parameters
+ruletype: Sigma
+author: Konstantin Grishchenko, oscd.community
+date: 2020/10/06
+description: Detect VBoxDrvInst.exe run with parameters allowing processing INF file.
+  This allows to create values in the registry and install drivers. For example one
+  could use this technique to obtain persistence via modifying one of Run or RunOnce
+  registry keys
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\VBoxDrvInst.exe'
+  SELECTION_3:
+    CommandLine: '*driver*'
+  SELECTION_4:
+    CommandLine: '*executeinf*'
+  condition: (SELECTION_1 and SELECTION_2 and SELECTION_3 and SELECTION_4)
+falsepositives:
+- Legitimate use of VBoxDrvInst.exe utility by VirtualBox Guest Additions installation
+  process
+fields:
+- ComputerName
+- User
+- CommandLine
+- ParentCommandLine
+id: b7b19cb6-9b32-4fc4-a108-73f19acfe262
+level: medium
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/LOLUtilz/OtherBinaries/VBoxDrvInst.yml
+- https://twitter.com/pabraeken/status/993497996179492864
+status: test
+tags:
+- attack.defense_evasion
+- attack.t1112

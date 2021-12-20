@@ -1,0 +1,35 @@
+
+title: Regsvr32 Flags Anomaly
+ruletype: Sigma
+author: Florian Roth
+date: 2019/07/13
+description: Detects a flag anomaly in which regsvr32.exe uses a /i flag without using
+  a /n flag at the same time
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\regsvr32.exe'
+  SELECTION_3:
+    CommandLine: '* /i:*'
+  SELECTION_4:
+    CommandLine: '* /n *'
+  condition: (SELECTION_1 and (SELECTION_2 and SELECTION_3) and  not (SELECTION_4))
+falsepositives:
+- Unknown
+fields:
+- CommandLine
+- ParentCommandLine
+id: b236190c-1c61-41e9-84b3-3fe03f6d76b0
+level: high
+logsource:
+  category: process_creation
+  product: windows
+modified: 2021/11/27
+references:
+- https://twitter.com/sbousseaden/status/1282441816986484737?s=12
+status: test
+tags:
+- attack.defense_evasion
+- attack.t1218.010
+- attack.t1117

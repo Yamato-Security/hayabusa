@@ -1,0 +1,26 @@
+
+title: PowerShell PSAttack
+ruletype: Sigma
+author: Sean Metcalf (source), Florian Roth (rule)
+date: 2017/03/05
+description: Detects the use of PSAttack PowerShell hack tool
+detection:
+  SELECTION_1:
+    ScriptBlockText: '*PS ATTACK!!!*'
+  condition: SELECTION_1
+falsepositives:
+- Pentesters
+id: b7ec41a4-042c-4f31-a5db-d0fcde9fa5c5
+level: high
+logsource:
+  category: ps_script
+  definition: Script block logging must be enabled
+  product: windows
+modified: 2021/10/16
+references:
+- https://adsecurity.org/?p=2921
+status: experimental
+tags:
+- attack.execution
+- attack.t1059.001
+- attack.t1086

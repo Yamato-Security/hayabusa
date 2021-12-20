@@ -1,0 +1,38 @@
+
+title: Pandemic Registry Key
+ruletype: Sigma
+author: Florian Roth
+date: 2017/06/01
+description: Detects Pandemic Windows Implant
+detection:
+  SELECTION_1:
+    EventID: 12
+  SELECTION_2:
+    EventID: 13
+  SELECTION_3:
+    EventID: 14
+  SELECTION_4:
+    TargetObject: '*\SYSTEM\CurrentControlSet\services\null\Instance*'
+  condition: ((SELECTION_1 or SELECTION_2 or SELECTION_3) and SELECTION_4)
+falsepositives:
+- unknown
+fields:
+- EventID
+- CommandLine
+- ParentCommandLine
+- Image
+- User
+- TargetObject
+id: 47e0852a-cf81-4494-a8e6-31864f8c86ed
+level: critical
+logsource:
+  category: registry_event
+  product: windows
+modified: 2021/09/12
+references:
+- https://wikileaks.org/vault7/#Pandemic
+- https://twitter.com/MalwareJake/status/870349480356454401
+status: experimental
+tags:
+- attack.lateral_movement
+- attack.t1105

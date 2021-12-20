@@ -1,0 +1,28 @@
+
+title: Execution Of Other File Type Than .exe
+ruletype: Sigma
+author: Max Altgelt
+date: 2021/12/09
+description: Checks whether the image specified in a process creation event doesn't
+  refer to an .exe file (caused by process ghosting or other unorthodox methods to
+  start a process)
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*.exe'
+  SELECTION_3:
+    Image|re: ^$
+  condition: (SELECTION_1 and  not (SELECTION_2) and  not (SELECTION_3))
+falsepositives:
+- unknown
+id: c09dad97-1c78-4f71-b127-7edb2b8e491a
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://pentestlaboratories.com/2021/12/08/process-ghosting/
+status: experimental
+tags:
+- attack.defense_evasion

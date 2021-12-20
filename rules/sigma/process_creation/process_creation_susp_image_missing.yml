@@ -1,0 +1,28 @@
+
+title: Execution Of Not Existing File
+ruletype: Sigma
+author: Max Altgelt
+date: 2021/12/09
+description: Checks whether the image specified in a process creation event is not
+  a full, absolute path (caused by process ghosting or other unorthodox methods to
+  start a process)
+detection:
+  SELECTION_1:
+    EventID: 1
+  SELECTION_2:
+    Image: '*\\*'
+  SELECTION_3:
+    Image|re: ^$
+  condition: (SELECTION_1 and  not (SELECTION_2) and  not (SELECTION_3))
+falsepositives:
+- unknown
+id: 71158e3f-df67-472b-930e-7d287acaa3e1
+level: high
+logsource:
+  category: process_creation
+  product: windows
+references:
+- https://pentestlaboratories.com/2021/12/08/process-ghosting/
+status: experimental
+tags:
+- attack.defense_evasion
