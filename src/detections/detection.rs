@@ -1,7 +1,6 @@
 extern crate csv;
 
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_PATH;
 use crate::detections::print::MESSAGES;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
@@ -12,8 +11,6 @@ use crate::yaml::ParseYaml;
 use hashbrown;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::fs::OpenOptions;
-use std::io::BufWriter;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use std::sync::Arc;
@@ -61,12 +58,7 @@ impl Detection {
             rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level, exclude_ids);
         if result_readdir.is_err() {
             AlertMessage::alert(
-                &mut BufWriter::new(
-                    OpenOptions::new()
-                        .append(true)
-                        .open(ERROR_LOG_PATH.to_string())
-                        .unwrap(),
-                ),
+                &mut std::io::stderr().lock(),
                 format!("{}", result_readdir.unwrap_err()),
             )
             .ok();

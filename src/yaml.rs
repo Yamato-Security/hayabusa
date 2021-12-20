@@ -3,14 +3,11 @@ extern crate yaml_rust;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_PATH;
 use crate::filter::RuleExclude;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
-use std::fs::OpenOptions;
 use std::io;
-use std::io::BufWriter;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use yaml_rust::Yaml;
@@ -75,12 +72,7 @@ impl ParseYaml {
             let read_content = self.read_file(path);
             if read_content.is_err() {
                 AlertMessage::warn(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
+                    &mut std::io::stdout().lock(),
                     format!(
                         "fail to read file: {}\n{} ",
                         entry.path().display(),
@@ -95,12 +87,7 @@ impl ParseYaml {
             let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
             if yaml_contents.is_err() {
                 AlertMessage::warn(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
+                    &mut std::io::stdout().lock(),
                     format!(
                         "Failed to parse yml: {}\n{} ",
                         entry.path().display(),
