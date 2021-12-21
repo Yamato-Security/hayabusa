@@ -444,21 +444,21 @@ fn _get_timestamp(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> i64 {
     return datas[idx as usize].record_time.timestamp();
 }
 
-fn _get_timestamp_subsec_nano( idx: i64, datas: &Vec<AggRecordTimeInfo> ) -> u32 {
+fn _get_timestamp_subsec_nano(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> u32 {
     return datas[idx as usize].record_time.timestamp_subsec_nanos();
 }
 
 // data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
-fn _is_in_timeframe( left:i64, right: i64, frame: i64, datas: &Vec<AggRecordTimeInfo> ) -> bool {
+fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &Vec<AggRecordTimeInfo>) -> bool {
     let left_time = _get_timestamp(left, datas);
     let left_time_nano = _get_timestamp_subsec_nano(left, datas);
     // evtxのSystemTimeは小数点7桁秒まで記録されているので、それを考慮する
     let mut right_time = _get_timestamp(right, datas);
     let right_time_nano = _get_timestamp_subsec_nano(right, datas);
     if right_time_nano > left_time_nano {
-        right_time+=1;
+        right_time += 1;
     }
-    return right_time - left_time <= frame;    
+    return right_time - left_time <= frame;
 }
 
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
@@ -489,7 +489,7 @@ pub fn judge_timeframe(
     // rightは開区間なので+1
     while left < data_len && right < data_len + 1 {
         // timeframeの範囲にある限りrightをincrement
-        while right < data_len && _is_in_timeframe(left,right,frame,&datas) {
+        while right < data_len && _is_in_timeframe(left, right, frame, &datas) {
             counter.add_data(right, &datas, rule);
             right = right + 1;
         }
