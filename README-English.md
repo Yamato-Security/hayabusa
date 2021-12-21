@@ -86,6 +86,15 @@ If you have rust installed, you can compile from source with the following comma
 cargo build --release
 ```
 
+## Advanced: Updating packages
+You can update to the latest rust crates before compiling to get the latest libraries:
+
+```bash
+cargo update
+```
+
+Please let us know if anything breaks after you update.
+
 ## Testing hayabusa out on sample evtx files
 We have provided some sample evtx files for you to test hayabusa and/or create new rules at [https://github.com/Yamato-Security/hayabusa-sample-evtx](https://github.com/Yamato-Security/hayabusa-sample-evtx)
 
@@ -94,7 +103,7 @@ You can download the sample evtx files to a new `hayabusa-sample-evtx` sub-direc
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
 
-> Note: Please run this command from the hayabusa root folder.
+> Note: Please run this command from the hayabusa root folder if you want to follow along in the examples below.
 
 # Usage
 ## Command line options
@@ -254,15 +263,20 @@ You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `conf
 You can also add a rule ID to `config/noisy-rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
 
 ## Event ID filtering
-You can perform Event ID filtering by placing the `EventID` numbers in the `config/target_eventids.txt` text file.
-If you only need to search for certain IDs, you can greatly improve performance by filtering them.
+In order to increase performance, by default, hayabusa will only analyze Event IDs listed in `config/target_eventids.txt`.
+This list was created from all of the `EventID` fields in all of the rules.
+
+> Caution: You may miss detections if a rule didn't define an `EventID` field and it is not listed in `config/target_eventids.txt`. If you need to do the most thorough scan, please make a backup copy of this file and delete the contents in order to scan all event records.
+  
+If you want to only search for certain IDs, you can greatly improve performance by filtering them by editing this file.
 
 # Other Windows event log analyzers and related projects
 There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
 
 - [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Attack detection tool written in Python.
-- [Chainsaw](https://github.com/countercept/chainsaw) - A similar SIGMA based attack detection tool written in Rust.
+- [Chainsaw](https://github.com/countercept/chainsaw) - A similar sigma-based attack detection tool written in Rust.
 - [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI) - Attack detection tool written in Powershell  by [Eric Conrad](https://twitter.com/eric_conrad).
+- [EVTXtract](https://github.com/williballenthin/EVTXtract) - Recover EVTX log files from unallocated space and memory images.
 - [EvtxToElk](https://www.dragos.com/blog/industry-news/evtxtoelk-a-python-module-to-load-windows-event-logs-into-elasticsearch/) - Python tool to send Evtx data to Elastic Stack.
 - [EVTX ATTACK Samples](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) - EVTX attack sample event log files by [SBousseaden](https://twitter.com/SBousseaden).
 - [EVTX-to-MITRE-Attack](https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack) - Another great repository of EVTX attack sample logs mapped to ATT&CK.
@@ -273,7 +287,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 - [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - Import evtx files into Security Onion.
 - [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - The best CSV timeline analyzer by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
 - [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - by Forward Defense's Steve Anson.
-- [Zircolite](https://github.com/wagga40/Zircolite) - SIGMA based attack detection tool written in Python.
+- [Zircolite](https://github.com/wagga40/Zircolite) - Sigma-based attack detection tool written in Python.
 
 ## Comparison to other similar tools that support sigma
 Please understand that it is not possible to do a perfect comparison as results will differ based on the target sample data, command-line options, rule tuning, etc...
@@ -284,11 +298,13 @@ The following benchmarks were taken on a Lenovo P51 based on approximately 500 e
 | | Elapsed Time | Memory Usage | Unique Sigma Rules With Detections |
 | :---: | :---: | :---: | :---: |
 | Chainsaw | 7.5 seconds | 75 MB | 170 |
-| Hayabusa | 7.5 seconds | 400 MB | 267 |
-| Zircolite | 34 seconds | 380 MB | 237 |
+| Hayabusa | 7.5 seconds | 340 MB | 267 |
+| Zircolite | 34 seconds | 380 MB (normally requires 3 times the size of the log files) | 237 |
 
-With hayabusa rules enabled, it will detect over 300 unique alerts and events. 
-Just by looking at these benchmarks it looks like Hayabusa will use more memory than Zircolite as it usually uses a minimum of around 00MB. However, Hayabusa will normally not go over the file size of large evtx files compared to Zircolite's memory usage which usually requires 2~3 times the size of the logs.   
+* With hayabusa rules enabled, it will detect around 300 unique alerts and events. 
+* When tested on many event logs files totaling 7.5 GB it finishes in under 12 minutes and does not use more than 1 GB of memory.
+* It is the only tool that provides a consolidated single CSV timeline to analysis in tools like [Timeline Explorer](https://ericzimmerman.github.io/#!index.md).
+
 
 # License
 
