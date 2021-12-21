@@ -1,0 +1,29 @@
+author: Zach Mathis
+date: 2021/12/20
+modified: 2021/12/22
+
+title: User Guessing Attempt
+title_jp: ユーザ名推測の試行
+output: ''  #Cannot be used because this is a count rule
+output_jp: '' 
+description: Search for many 4625 failed logon attempts due to wrong usernames in a short period of time.
+description_jp:
+
+id: 4574194d-e7ca-4356-a95c-21b753a1787e
+level: medium
+status: stable
+detection:
+    selection:
+        Channel: Security
+        EventID: 4625
+        SubStatus: "0xc0000064" #Username does not exist
+    condition: selection | count() by IpAddress >= 5
+    timeframe: 5m
+falsepositives:
+tags:
+    - attack.t1110.003
+    - attack.credential_access
+references: https://attack.mitre.org/techniques/T1110/003/
+sample-evtx: ./hayabusa-sample-evtx/EVTX-to-MITRE-Attack/TA0006-Credential Access/T1110.xxx-Bruteforce/ID4625-OpenSSH brutforce with non existing user.evtx
+logsource: default
+ruletype: Hayabusa
