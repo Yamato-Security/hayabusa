@@ -302,7 +302,7 @@ The following benchmarks were taken on a Lenovo P51 based on approximately 500 e
 | Zircolite | 34 seconds | 380 MB (normally requires 3 times the size of the log files) | 237 |
 
 * With hayabusa rules enabled, it will detect around 300 unique alerts and events. 
-* When tested on many event logs files totaling 7.5 GB it finishes in under 12 minutes and does not use more than 1 GB of memory.
+* When tested on many event logs files totaling 7.5 GB it finishes in under 7 minutes and does not use more than 1 GB of memory.
 * It is the only tool that provides a consolidated single CSV timeline to analysis in tools like [Timeline Explorer](https://ericzimmerman.github.io/#!index.md).
 
 
