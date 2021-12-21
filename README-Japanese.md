@@ -296,11 +296,11 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 以下のベンチマークは、2021/12/19に [sample-evtx repository](https://github.com/Yamato-Security/Hayabusa-sample-evtx) から約500個のevtxファイル（130MB）を基に、Lenovo P51で計測したものです。
 
-| | 経過時間 | メモリ使用量 | 検知機能を備えた独自のSigmaルール数 |
+| | 経過時間 | メモリ使用量 | 利用可能のSigmaルール数 |
 | :---: | :---: | :---: | :---: |
 | Chainsaw | 7.5 seconds | 70 MB | 170 |
 | Hayabusa | 7.5 seconds | 340 MB | 267 |
-| Zircolite | 34 seconds | 380 MB | 237 |
+| Zircolite | 34 seconds | 380 MB (通常、ログファイルの3倍のサイズが必要) | 237 |
 
 * Hayabusaルールも有効にすると、約300のユニークなアラートとイベントを検知します。
 * 合計7.5GBの多数のイベントログファイルでテストしたところ、12分以内に終了し、1GB以上のメモリを使用しませんでした。
