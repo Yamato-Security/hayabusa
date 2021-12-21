@@ -263,12 +263,12 @@ You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `conf
 You can also add a rule ID to `config/noisy-rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
 
 ## Event ID filtering
-In order to increase performance, by default, hayabusa will only analyze Event IDs listed in `config/target_eventids.txt`.
-This list was created from all of the `EventID` fields in all of the rules.
+You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
+This will increase performance so it is recommended if you only need to search for certain IDs.
 
-> Caution: You may miss detections if a rule didn't define an `EventID` field and it is not listed in `config/target_eventids.txt`. If you need to do the most thorough scan, please make a backup copy of this file and delete the contents in order to scan all event records.
-  
-If you want to only search for certain IDs, you can greatly improve performance by filtering them by editing this file.
+We have provided a sample ID filter list at `config/target_eventids_sample.txt` created from the `EventID` field in all of the rules as well as IDs seen in actual results.
+
+Please use this list if you want the best performance but be aware that there is a slight possibility for false positives. 
 
 # Other Windows event log analyzers and related projects
 There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
