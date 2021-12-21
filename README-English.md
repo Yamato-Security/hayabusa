@@ -86,7 +86,7 @@ If you have rust installed, you can compile from source with the following comma
 cargo build --release
 ```
 
-## Advanced: Updating packages
+## Advanced: Updating Rust packages
 You can update to the latest rust crates before compiling to get the latest libraries:
 
 ```bash
@@ -125,6 +125,7 @@ USAGE:
     -t --thread-number=[NUMBER] 'Thread number (default: optimal number for performance)'
     -s --statistics 'Prints statistics of event IDs'
     -q --quiet 'Quiet mode. Do not display the launch banner'
+    -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --contributors 'Prints the list of contributors'
 ```
 
@@ -184,7 +185,7 @@ hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
 hayabusa.exe -f Security.evtx -s
 ```
 
-* Print verbose information (useful for determining which files take long to process, etc...):
+* Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 ```bash
 hayabusa.exe -d .\hayabusa-sample-evtx -v
 ```
@@ -202,6 +203,10 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
 ```
+
+* Quiet error mode:
+By default, hayabusa will save error messages to error log files.
+If you do not want to save error messages, please add `-Q`.
 
 # Hayabusa output
 When Hayabusa output is being displayed to the screen (the default), it will display the following information:

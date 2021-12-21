@@ -87,8 +87,8 @@ rustがインストールされている場合、以下のコマンドでソー�
 cargo build --release
 ```
 
-## アドバンス: パッケージに更新
-コンパイル前に最新のRust crateにアップデートすることで、最新のライブラリを取得することができます:
+## アドバンス: Rustパッケージの更新
+コンパイル前に最新のRust crateにアップデートすることで、最新のライブラリを利用することができます:
 
 ```bash
 cargo update
@@ -126,6 +126,7 @@ USAGE:
     -t --thread-number=[NUMBER] 'Thread number (default: optimal number for performance)'
     -s --statistics 'Prints statistics of event IDs'
     -q --quiet 'Quiet mode. Do not display the launch banner'
+    -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --contributors 'Prints the list of contributors'
 ```
 
@@ -185,7 +186,7 @@ hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
 hayabusa.exe -f Security.evtx -s
 ```
 
-* 詳細なメッセージを出力します(処理に時間がかかるファイル等を特定するのに便利):
+* 詳細なメッセージを出力します(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 ```bash
 hayabusa.exe -d .\hayabusa-sample-evtx -v
 ```
@@ -203,6 +204,10 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
 ```
+
+* Quiet error mode:
+デフォルトでは、Hayabusaはエラーメッセージをエラーログに保存します。
+エラーメッセージを保存したくない場合は、`-Q`を追加してください。
 
 # Hayabusaの出力
 Hayabusaの出力を画面に表示しているとき（デフォルト）は、以下の情報を表示します:
