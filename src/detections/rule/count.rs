@@ -444,6 +444,23 @@ fn _get_timestamp(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> i64 {
     return datas[idx as usize].record_time.timestamp();
 }
 
+fn _get_timestamp_subsec_nano( idx: i64, datas: &Vec<AggRecordTimeInfo> ) -> u32 {
+    return datas[idx as usize].record_time.timestamp_subsec_nanos();
+}
+
+// data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
+fn _is_in_timeframe( left:i64, right: i64, frame: i64, datas: &Vec<AggRecordTimeInfo> ) -> bool {
+    let left_time = _get_timestamp(left, datas);
+    let left_time_nano = _get_timestamp_subsec_nano(left, datas);
+    // evtxのSystemTimeは小数点7桁秒まで記録されているので、それを考慮する
+    let mut right_time = _get_timestamp(right, datas);
+    let right_time_nano = _get_timestamp_subsec_nano(right, datas);
+    if right_time_nano > left_time_nano {
+        right_time+=1;
+    }
+    return right_time - left_time <= frame;    
+}
+
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
 pub fn judge_timeframe(
     rule: &RuleNode,
@@ -467,27 +484,26 @@ pub fn judge_timeframe(
     // left <= i < rightの範囲にあるdata[i]がtimeframe内にあるデータであると考える
     let mut left: i64 = 0;
     let mut right: i64 = 0;
-    let mut judge = _create_counter(rule);
+    let mut counter = _create_counter(rule);
     let data_len = datas.len() as i64;
     // rightは開区間なので+1
     while left < data_len && right < data_len + 1 {
-        // timeframeを満たすギリギリまでrightをincrementする
-        let left_time = _get_timestamp(left, &datas);
-        while right < data_len && _get_timestamp(right, &datas) - left_time <= frame {
-            judge.add_data(right, &datas, rule);
+        // timeframeの範囲にある限りrightをincrement
+        while right < data_len && _is_in_timeframe(left,right,frame,&datas) {
+            counter.add_data(right, &datas, rule);
             right = right + 1;
         }
 
-        let cnt = judge.count();
+        let cnt = counter.count();
         if select_aggcon(cnt as i64, rule) {
-            // 条件を満たすframeが見つかった
-            ret.push(judge.create_agg_result(left, &datas, cnt, key, rule));
+            // 条件を満たすtimeframeが見つかった
+            ret.push(counter.create_agg_result(left, &datas, cnt, key, rule));
             left = right;
         } else {
-            // 条件を満たさなかったので、次のframeを見る
-            judge.add_data(right, &datas, rule);
+            // 条件を満たさなかったので、rightとleftを+1ずらす
+            counter.add_data(right, &datas, rule);
             right += 1;
-            judge.remove_data(left, &datas, rule);
+            counter.remove_data(left, &datas, rule);
             left += 1;
         }
     }
