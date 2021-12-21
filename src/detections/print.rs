@@ -239,7 +239,7 @@ impl AlertMessage {
             return;
         }
         println!(
-            "Generated error was output to {}. Please see the file for details.",
+            "Errors were generated. Please check {} for details.",
             ERROR_LOG_PATH.to_string()
         );
     }
