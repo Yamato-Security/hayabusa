@@ -24,18 +24,29 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 # Screenshots
 ## Startup:
 
-![Hayabusa Startup](/screenshots/hayabusa-start.png)
+![Hayabusa Startup](/screenshots/Hayabusa-Startup.png)
 
 
 ## Terminal output:
 
-![Hayabusa terminal output](/screenshots/hayabusa-results.png)
+![Hayabusa terminal output](/screenshots/Hayabusa-Results.png)
 
 
 ## Results summary:
 
-![Hayabusa results summary](/screenshots/hayabusa-results-summary.png)
+![Hayabusa results summary](/screenshots/HayabusaResultsSummary.png)
 
+## Analysis in Excel:
+
+![Hayabusa analysis in Excel](/screenshots/ExcelScreenshot.png)
+
+## Analysis in Timeline Explorer:
+
+![Hayabusa analysis in Timeline Explorer](screenshots/TimelineExplorer-ColoredTimeline.png)
+
+## Critical alert filtering and computer grouping in Timeline Explorer:
+
+![Critical alert filtering and computer grouping in Timeline Explorer](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
 
 # Features
 * Cross-platform support: Windows, Linux, macOS
@@ -61,18 +72,10 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 You can `git clone` the repository with the following command:
 
 ```bash
-git clone --recurse-submodules https://github.com/Yamato-Security/hayabusa.git
+git clone https://github.com/Yamato-Security/hayabusa.git
 ```
 
-> Note: The rules are located in a [different repository](https://github.com/Yamato-Security/hayabusa-rules/) and managed as a sub-module so you need to add the --recurse-submodules option.
-
-If you forget to clone the repository with the `--recurse-submodules` option, you can download the rules into the `hayabusa\rules` directory with the following command:
-
-```bash
-git submodule update -i
-```
-
-Optionally,, you can also manually download and extract Hayabusa from [https://github.com/Yamato-Security/hayabusa](https://github.com/Yamato-Security/hayabusa) and the rules from [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) and save the rules to a new `rules` directory.
+You can also manually download and extract Hayabusa from [https://github.com/Yamato-Security/hayabusa](https://github.com/Yamato-Security/hayabusa).
 
 After that, you need to download a pre-compiled binary for the Windows, Linux or macOS at the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page and save it to the `hayabusa` root folder.
 
@@ -172,22 +175,45 @@ hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
 hayabusa.exe -f Security.evtx -s
 ```
 
+* Print verbose information (useful for determining which files take long to process, etc...):
+```bash
+hayabusa.exe -d .\hayabusa-sample-evtx -v
+```
+
+* Verbose output example:
+```bash
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
+1 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.20 % 1s 
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
+2 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.39 % 1s 
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
+3 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.59 % 1s 
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
+4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s 
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
+5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+```
+
 # Hayabusa output
 When Hayabusa output is being displayed to the screen (the default), it will display the following information:
 
 * `Timestamp`: Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. This comes from the `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--utc` option.
-* `Computer name`: This comes from the `<Event><System><Computer>` field in the event log.
-* `Event ID`: This comes from the `<Event><System><EventRecordID>` field in the event log.
+* `Computer`: This comes from the `<Event><System><Computer>` field in the event log.
+* `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
-* `Alert`: This comes from the `title` field in the YML detection rule.
+* `Title`: This comes from the `title` field in the YML detection rule.
 * `Details`: This comes from the `output` field in the YML detection rule, however, only Hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc...
 
 When saving to a CSV file an additional two fields will be added:
-* `Rule path`: The path to the detection rule that generated the alert or event.
-* `File path`: The path to the evtx file that caused the alert or event.
+* `Rule Path`: The path to the detection rule that generated the alert or event.
+* `File Path`: The path to the evtx file that caused the alert or event.
+
+## Progress bar
+The progress bar will only work with multiple evtx files.
+It will display in real time the number and percent of evtx files that it has analyzed.
 
 # Hayabusa rules
-Hayabusa detection rules are written in a sigma-like YML format and are located at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules).
+Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder. In the future, we plan to host the rules at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
 
 Please read [AboutRuleCreation-English.md](./doc/AboutRuleCreation-English.md) to understand about the rule format how to create rules.
 
@@ -226,6 +252,10 @@ Like firewalls and IDSes, any signature-based tool will require some tuning to f
 You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `config/exclude-rules.txt` in order to ignore any rule that you do not need or cannot be used.
 
 You can also add a rule ID to `config/noisy-rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
+
+## Event ID filtering
+You can perform Event ID filtering by placing the `EventID` numbers in the `config/target_eventids.txt` text file.
+If you only need to search for certain IDs, you can greatly improve performance by filtering them.
 
 # Other Windows event log analyzers and related projects
 There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.

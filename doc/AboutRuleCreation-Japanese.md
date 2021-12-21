@@ -462,22 +462,30 @@ detection:
 ### パターン1の例：
 これは最も基本的なパターンです：`count() {operator} {number}`. 以下のルールは、`selection`が3回以上発生した場合にマッチします。
 
-![](count1_JP.png)
+![](CountRulePattern-1-JP.png)
 
 ### パターン2の例：
-`count() by {eventkey} {operator} {number}`： パイプの前の `condition` にマッチするログイベントは、**同じ**`{eventkey}` でグループ化されます。各グループ化において、マッチしたイベントの数が `{operator}` と `{number}` で指定した条件を満たした場合、条件にマッチすることになります。
+`count() by {eventkey} {operator} {number}`： パイプの前の `condition` にマッチするログイベントは、**同じ**`{eventkey}`でグループ化されます。各グループ化において、マッチしたイベントの数が`{operator}`と`{number}`で指定した条件を満たした場合、条件にマッチすることになります。
 
-![](count2_JP.png)
+![](CountRulePattern-2-JP.png)
 
 ### パターン3の例：
-`count({eventkey}) {operator} {number}`： 条件パイプの前に、条件にマッチする `{eventkey}` の**異なる**値がいくつログイベント内に存在するかを数えます。その数が `{operator}` と `{number}` で指定された条件式を満たす場合、条件を満たしたものとみなします。
+`count({eventkey}) {operator} {number}`： 条件パイプの前に、条件にマッチする `{eventkey}` の**異なる**値がいくつログイベント内に存在するかを数えます。その数が`{operator}`と`{number}`で指定された条件式を満たす場合、条件を満たしたものとみなします。
 
-![](count3_JP.png)
+![](CountRulePattern-3-JP.png)
 
 ### パターン4の例：
-`count({eventkey_1}) by {eventkey_2} {operator} {number}`： 条件パイプの前にある条件にマッチしたログを**同じ**`{eventkey_2}` でグループ化し、各グループに含まれる `{eventkey_1}` の**異なる**値の数をカウントしています。各グループでカウントされた値が `{operator}` と `{number}` で指定された条件式を満たした場合、条件にマッチすることになります。
+`count({eventkey_1}) by {eventkey_2} {operator} {number}`： 条件パイプの前にある条件にマッチしたログを**同じ**`{eventkey_2}`でグループ化し、各グループに含まれる`{eventkey_1}`の**異なる**値の数をカウントしています。各グループでカウントされた値が`{operator}`と`{number}`で指定された条件式を満たした場合、条件にマッチすることになります。
 
-![](count4_JP.png)
+![](CountRulePattern-4-JP.png)
+
+### Countルールの出力:
+CountルールのDetails出力は固定で、`[condition]`にcount条件と`[result]`に記録されたイベントキーが出力されます。
+
+以下の例では、ブルートフォースされた`TargetUserName`のユーザ名のリストと送信元の`IpAddress`が出力されます：
+```
+[condition] count(TargetUserName) by IpAddress >= 5 in timeframe [result] count:41 TargetUserName:jorchilles/jlake/cspizor/lpesce/bgalbraith/jkulikowski/baker/eskoudis/dpendolino/sarmstrong/lschifano/drook/rbowes/ebooth/melliott/econrad/sanson/dmashburn/bking/mdouglas/cragoso/psmith/bhostetler/zmathis/thessman/kperryman/cmoody/cdavis/cfleener/gsalinas/wstrzelec/jwright/edygert/ssims/jleytevidal/celgee/Administrator/mtoussain/smisenar/tbennett/bgreenwood IpAddress:10.10.2.22 timeframe:5m
+```
 
 # ルール作成のアドバイス
 1. **可能な場合は、常に `Channel`と`EventID`を指定してください。** 将来的には、チャネル名とイベンドIDでフィルタリングする可能性があるため、適切な` Channel`と`EventID`が設定されていない場合はルールが無視される可能性があります。

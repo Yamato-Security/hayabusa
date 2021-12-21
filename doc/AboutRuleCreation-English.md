@@ -442,33 +442,42 @@ Aggregation conditions can be defined in the following format:
 
 ### Four patterns for aggregation conditions:
 1. No count argument or `by` keyword. Example: `selection | count() > 10`
-   > If `selection` is matches more than 10 times within the timeframe, the condition will match.
+   > If `selection` matches more than 10 times within the timeframe, the condition will match.
 2. No count argument but there is a `by` keyword. Example: `selection | count() by IpAddress > 10`
    > `selection` will have to be true more than 10 times for the **same** `IpAddress`.
 3. There is a count argument but no `by` keyword. Example: `selection | count(TargetUserName) > 10`
-   > If `selection` matches and `Users` is **different** more than 10 times within the timeframe, the condition will match.
+   > If `selection` matches and `TargetUserName` is **different** more than 10 times within the timeframe, the condition will match.
 4. There is both a count argument and `by` keyword. Example: `selection | count(Users) by IpAddress > 10`
    > For the **same** `IpAddress`, there will need to be more than 10 **different** `TargetUserName` in order for the condition to match.
 
 ### Pattern 1 example:
 This is the most basic pattern: `count() {operator} {number}`. The rule below will match if `selection` happens 3 or more times.
 
-![](count1_EN.png)
+![](CountRulePattern-1-EN.png)
 
 ### Pattern 2 example:
 `count() by {eventkey} {operator} {number}`: Log events that match the `condition` before the pipe are grouped by the **same** `{eventkey}`. If the number of matched events for each grouping satisfies the condition specified by `{operator}` and `{number}`, then the condition will match.
 
-![](count2_EN.png)
+![](CountRulePattern-2-EN.png)
 
 ### Pattern 3 example:
 `count({eventkey}) {operator} {number}`: Counts how many **different** values of `{eventkey}` exist in the log event that match the condition before the condition pipe. If the number satisfies the conditional expression specified in `{operator}` and `{number}`, the condition is considered to have been met.
 
-![](count3_EN.png)
+![](CountRulePattern-3-EN.png)
 
 ### Pattern 4 example:
 `count({eventkey_1}) by {eventkey_2} {operator} {number}`: The logs that match the condition before the condition pipe are grouped by the **same** `{eventkey_2}`, and the number of **different** values of `{eventkey_1}` in each group is counted. If the values counted for each grouping satisfy the conditional expression specified by `{operator}` and `{number}`, the condition will match.
 
-![](count4_EN.png)
+![](CountRulePattern-4-EN.png)
+
+### Count rule output:
+The details output for count rules is fixed and will print the original count condition in `[condition]` followed by the recorded eventkeys in `[result]`. 
+
+In the example below, a list of `TargetUserName` usernames that were being bruteforced followed by the source `IpAddress`:
+```
+[condition] count(TargetUserName) by IpAddress >= 5 in timeframe [result] count:41 TargetUserName:jorchilles/jlake/cspizor/lpesce/bgalbraith/jkulikowski/baker/eskoudis/dpendolino/sarmstrong/lschifano/drook/rbowes/ebooth/melliott/econrad/sanson/dmashburn/bking/mdouglas/cragoso/psmith/bhostetler/zmathis/thessman/kperryman/cmoody/cdavis/cfleener/gsalinas/wstrzelec/jwright/edygert/ssims/jleytevidal/celgee/Administrator/mtoussain/smisenar/tbennett/bgreenwood IpAddress:10.10.2.22 timeframe:5m
+```
+
 
 # Rule creation advice
 1. **When possible, always specify `Channel` and `EventID` name.** In the future, we may filter on channel names and event IDs so your rule may be ignored if this is not set.
