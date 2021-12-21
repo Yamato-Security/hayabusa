@@ -13,23 +13,23 @@ use std::process;
 #[serde(rename_all = "PascalCase")]
 pub struct CsvFormat<'a> {
     time: &'a str,
-    computername: &'a str,
-    eventid: &'a str,
+    computer: &'a str,
+    event_i_d: &'a str,
     level: &'a str,
-    alert: &'a str,
+    rule_title: &'a str,
     details: &'a str,
-    rulepath: &'a str,
-    filepath: &'a str,
+    rule_path: &'a str,
+    file_path: &'a str,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct DisplayFormat<'a> {
     time: &'a str,
-    computername: &'a str,
-    eventid: &'a str,
+    computer: &'a str,
+    event_i_d: &'a str,
     level: &'a str,
-    alert: &'a str,
+    rule_title: &'a str,
     details: &'a str,
 }
 
@@ -91,21 +91,21 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                 wtr.serialize(DisplayFormat {
                     time: &format!("{} ", &format_time(time)),
                     level: &format!(" {} ", &detect_info.level),
-                    computername: &format!(" {} ", &detect_info.computername),
-                    eventid: &format!(" {} ", &detect_info.eventid),
-                    alert: &format!(" {} ", &detect_info.alert),
+                    computer: &format!(" {} ", &detect_info.computername),
+                    event_i_d: &format!(" {} ", &detect_info.eventid),
+                    rule_title: &format!(" {} ", &detect_info.alert),
                     details: &format!(" {}", &detect_info.detail),
                 })?;
             } else {
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {
                     time: &format_time(time),
-                    filepath: &detect_info.filepath,
-                    rulepath: &detect_info.rulepath,
+                    file_path: &detect_info.filepath,
+                    rule_path: &detect_info.rulepath,
                     level: &detect_info.level,
-                    computername: &detect_info.computername,
-                    eventid: &detect_info.eventid,
-                    alert: &detect_info.alert,
+                    computer: &detect_info.computername,
+                    event_i_d: &detect_info.eventid,
+                    rule_title: &detect_info.alert,
                     details: &detect_info.detail,
                 })?;
             }
