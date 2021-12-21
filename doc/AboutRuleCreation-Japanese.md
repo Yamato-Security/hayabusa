@@ -9,8 +9,8 @@ Hayabusaの検知ルールは、[YAML](https://en.wikipedia.org/wiki/YAML) 形�
 ```yaml
 #Author section
 author: Eric Conrad, Zach Mathis
-creation_date: 2020/11/08
-updated_date: 2021/11/26
+date: 2020/11/08
+modified: 2021/11/26
 
 #Alert section
 title: User added to local Administrators group
@@ -45,8 +45,8 @@ ruletype: Hayabusa
 > ## 著者名欄
 * **author [必須]**: 著者名（複数可）。
 * **contributor** [オプション]: 寄稿者の名前（細かい修正をした人）。
-* **creation_date [必須]**: ルールが作成された日付。
-* **updated_date** [オプション]: ルールが更新された日付。
+* **date [必須]**: ルールが作成された日付。
+* **modified** [オプション]: ルールが更新された日付。
 
 > ## アラートセクション
 * **title [必須]**: ルールファイルのタイトル。これは表示されるアラートの名前にもなるので、簡潔であるほどよいです。(85文字以下でなければなりません。)
