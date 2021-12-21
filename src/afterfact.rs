@@ -12,7 +12,7 @@ use std::process;
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct CsvFormat<'a> {
-    time: &'a str,
+    timestamp: &'a str,
     computer: &'a str,
     event_i_d: &'a str,
     level: &'a str,
@@ -25,7 +25,7 @@ pub struct CsvFormat<'a> {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct DisplayFormat<'a> {
-    time: &'a str,
+    timestamp: &'a str,
     computer: &'a str,
     event_i_d: &'a str,
     level: &'a str,
@@ -89,7 +89,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
         for detect_info in detect_infos {
             if displayflag {
                 wtr.serialize(DisplayFormat {
-                    time: &format!("{} ", &format_time(time)),
+                    timestamp: &format!("{} ", &format_time(time)),
                     level: &format!(" {} ", &detect_info.level),
                     computer: &format!(" {} ", &detect_info.computername),
                     event_i_d: &format!(" {} ", &detect_info.eventid),
@@ -99,7 +99,7 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
             } else {
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {
-                    time: &format_time(time),
+                    timestamp: &format_time(time),
                     file_path: &detect_info.filepath,
                     rule_path: &detect_info.rulepath,
                     level: &detect_info.level,
@@ -243,7 +243,7 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let expect = "Time,Computername,Eventid,Level,Alert,Details,Rulepath,Filepath\n"
+        let expect = "Timestamp,Computer,EventID,Level,RuleTitle,Details,RulePath,FilePath\n"
             .to_string()
             + &expect_tz
                 .clone()
@@ -319,7 +319,7 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let expect = "Time|Computername|Eventid|Level|Alert|Details\n".to_string()
+        let expect = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n".to_string()
             + &expect_tz
                 .clone()
                 .format("%Y-%m-%d %H:%M:%S%.3f %:z")
