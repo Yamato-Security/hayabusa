@@ -131,7 +131,11 @@ impl Detection {
         return self;
     }
 
-    pub fn add_aggcondition_msg(&self) {
+    pub fn add_aggcondition_msges(self, rt: &Runtime) {
+        return rt.block_on(self.add_aggcondition_msg());
+    }
+
+    async fn add_aggcondition_msg(&self) {
         for rule in &self.rules {
             if !rule.has_agg_condition() {
                 continue;

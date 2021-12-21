@@ -170,7 +170,7 @@ impl App {
             detection = self.analysis_file(evtx_file, detection);
             pb.inc();
         }
-        detection.add_aggcondition_msg();
+        detection.add_aggcondition_msges(&self.rt);
         after_fact();
     }
 
