@@ -4,6 +4,7 @@ extern crate yaml_rust;
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_PATH;
+use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::filter::RuleExclude;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -74,19 +75,25 @@ impl ParseYaml {
             // 個別のファイルの読み込みは即終了としない。
             let read_content = self.read_file(path);
             if read_content.is_err() {
-                AlertMessage::warn(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
-                    format!(
-                        "fail to read file: {}\n{} ",
-                        entry.path().display(),
-                        read_content.unwrap_err()
-                    ),
-                )?;
+                let errmsg = format!(
+                    "fail to read file: {}\n{} ",
+                    entry.path().display(),
+                    read_content.unwrap_err()
+                );
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                }
+                if !*QUIET_ERRORS_FLAG {
+                    AlertMessage::warn(
+                        &mut BufWriter::new(
+                            OpenOptions::new()
+                                .append(true)
+                                .open(ERROR_LOG_PATH.to_string())
+                                .unwrap(),
+                        ),
+                        &errmsg,
+                    )?;
+                }
                 self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }
@@ -94,19 +101,25 @@ impl ParseYaml {
             // ここも個別のファイルの読み込みは即終了としない。
             let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
             if yaml_contents.is_err() {
-                AlertMessage::warn(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
-                    format!(
-                        "Failed to parse yml: {}\n{} ",
-                        entry.path().display(),
-                        yaml_contents.unwrap_err()
-                    ),
-                )?;
+                let errmsg = format!(
+                    "Failed to parse yml: {}\n{} ",
+                    entry.path().display(),
+                    yaml_contents.unwrap_err()
+                );
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                }
+                if !*QUIET_ERRORS_FLAG {
+                    AlertMessage::warn(
+                        &mut BufWriter::new(
+                            OpenOptions::new()
+                                .append(true)
+                                .open(ERROR_LOG_PATH.to_string())
+                                .unwrap(),
+                        ),
+                        &errmsg,
+                    )?;
+                }
                 self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }

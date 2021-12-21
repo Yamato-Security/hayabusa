@@ -5,6 +5,7 @@ use clap::{App, AppSettings, ArgMatches};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
+use std::io::BufWriter;
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
@@ -140,8 +141,8 @@ impl TargetEventTime {
                 Ok(dt) => Some(dt.with_timezone(&Utc)),
                 Err(err) => {
                     AlertMessage::alert(
-                        &mut std::io::stderr().lock(),
-                        format!("start-timeline field: {}", err),
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("start-timeline field: {}", err),
                     )
                     .ok();
                     None
@@ -157,8 +158,8 @@ impl TargetEventTime {
             Ok(dt) => Some(dt.with_timezone(&Utc)),
             Err(err) => {
                     AlertMessage::alert(
-                        &mut std::io::stderr().lock(),
-                        format!("end-timeline field: {}", err),
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("end-timeline field: {}", err),
                     )
                     .ok();
                     None

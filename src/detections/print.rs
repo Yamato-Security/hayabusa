@@ -249,6 +249,7 @@ impl AlertMessage {
 mod tests {
     use crate::detections::print::{AlertMessage, Message};
     use serde_json::Value;
+    use std::io::BufWriter;
 
     #[test]
     fn test_create_and_append_message() {
@@ -361,17 +362,21 @@ mod tests {
     #[test]
     fn test_error_message() {
         let input = "TEST!";
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stdout().lock()),
+            &input.to_string(),
+        )
+        .expect("[ERROR] TEST!");
     }
 
     #[test]
     fn test_warn_message() {
         let input = "TESTWarn!";
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::warn(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
+        AlertMessage::warn(
+            &mut BufWriter::new(std::io::stdout().lock()),
+            &input.to_string(),
+        )
+        .expect("[WARN] TESTWarn!");
     }
 
     #[test]

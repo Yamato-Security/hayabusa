@@ -1,5 +1,7 @@
+use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_PATH;
+use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::AggregationParseInfo;
 use crate::detections::rule::Message;
@@ -69,35 +71,41 @@ fn get_alias_value_in_record(
             return Some(value.to_string().replace("\"", ""));
         }
         None => {
-            AlertMessage::alert(
-                &mut BufWriter::new(
-                    OpenOptions::new()
-                        .append(true)
-                        .open(ERROR_LOG_PATH.to_string())
-                        .unwrap(),
-                ),
-                match is_by_alias {
-                    true => format!(
-            "count by clause alias value not found in count process. rule file:{} EventID:{}",
-            Path::new(&rule.rulepath)
-              .file_name()
-              .unwrap()
-              .to_str()
-              .unwrap(),
-            utils::get_event_value(&utils::get_event_id_key(), record).unwrap()
-          ),
-                    false => format!(
-            "count field clause alias value not found in count process. rule file:{} EventID:{}",
-            Path::new(&rule.rulepath)
-              .file_name()
-              .unwrap()
-              .to_str()
-              .unwrap(),
-            utils::get_event_value(&utils::get_event_id_key(), record).unwrap()
-          ),
-                },
-            )
-            .ok();
+            let errmsg = match is_by_alias {
+                true => format!(
+          "count by clause alias value not found in count process. rule file:{} EventID:{}",
+          Path::new(&rule.rulepath)
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap(),
+          utils::get_event_value(&utils::get_event_id_key(), record).unwrap()
+        ),
+                false => format!(
+          "count field clause alias value not found in count process. rule file:{} EventID:{}",
+          Path::new(&rule.rulepath)
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap(),
+          utils::get_event_value(&utils::get_event_id_key(), record).unwrap()
+        ),
+            };
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+            }
+            if !*QUIET_ERRORS_FLAG {
+                AlertMessage::alert(
+                    &mut BufWriter::new(
+                        OpenOptions::new()
+                            .append(true)
+                            .open(ERROR_LOG_PATH.to_string())
+                            .unwrap(),
+                    ),
+                    &errmsg,
+                )
+                .ok();
+            }
             return None;
         }
     };
@@ -190,16 +198,22 @@ impl TimeFrameInfo {
             ttype = "d".to_owned();
             tnum.retain(|c| c != 'd');
         } else {
-            AlertMessage::alert(
-                &mut BufWriter::new(
-                    OpenOptions::new()
-                        .append(true)
-                        .open(ERROR_LOG_PATH.to_string())
-                        .unwrap(),
-                ),
-                format!("Timeframe is invalid. Input value:{}", value),
-            )
-            .ok();
+            let errmsg = format!("Timeframe is invalid. Input value:{}", value);
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+            }
+            if !*QUIET_ERRORS_FLAG {
+                AlertMessage::alert(
+                    &mut BufWriter::new(
+                        OpenOptions::new()
+                            .append(true)
+                            .open(ERROR_LOG_PATH.to_string())
+                            .unwrap(),
+                    ),
+                    &errmsg,
+                )
+                .ok();
+            }
         }
         return TimeFrameInfo {
             timetype: ttype,
@@ -227,16 +241,22 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
             }
         }
         Err(err) => {
-            AlertMessage::alert(
-                &mut BufWriter::new(
-                    OpenOptions::new()
-                        .append(true)
-                        .open(ERROR_LOG_PATH.to_string())
-                        .unwrap(),
-                ),
-                format!("Timeframe number is invalid. timeframe.{}", err),
-            )
-            .ok();
+            let errmsg = format!("Timeframe number is invalid. timeframe. {}", err);
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+            }
+            if !*QUIET_ERRORS_FLAG {
+                AlertMessage::alert(
+                    &mut BufWriter::new(
+                        OpenOptions::new()
+                            .append(true)
+                            .open(ERROR_LOG_PATH.to_string())
+                            .unwrap(),
+                    ),
+                    &errmsg,
+                )
+                .ok();
+            }
             return Option::None;
         }
     }

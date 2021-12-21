@@ -1,8 +1,10 @@
 extern crate csv;
 
+use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_PATH;
 use crate::detections::print::MESSAGES;
+use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -88,10 +90,10 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                AlertMessage::warn(&mut std::io::stdout().lock(), errmsg_body).ok();
+                AlertMessage::warn(&mut std::io::stdout().lock(), &errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
-                    AlertMessage::warn(&mut std::io::stdout().lock(), err_msg.to_string()).ok();
+                    AlertMessage::warn(&mut std::io::stdout().lock(), &err_msg.to_string()).ok();
                 });
                 parseerror_count += 1;
                 println!(""); // 一行開けるためのprintln
