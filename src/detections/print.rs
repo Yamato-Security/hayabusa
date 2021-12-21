@@ -196,6 +196,9 @@ impl Message {
 impl AlertMessage {
     ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
     pub fn create_error_log(path_str: String) {
+        if *QUIET_ERRORS_FLAG {
+            return;
+        }
         let path = Path::new(&path_str);
         if !path.parent().unwrap().exists() {
             create_dir(path.parent().unwrap()).ok();
@@ -221,25 +224,20 @@ impl AlertMessage {
     }
 
     /// ERRORメッセージを表示する関数
-    pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        if !*QUIET_ERRORS_FLAG {
-            writeln!(w, "[ERROR] {}", contents)
-        } else {
-            Ok(())
-        }
+    pub fn alert<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
+        writeln!(w, "[ERROR] {}", contents)
     }
 
     /// WARNメッセージを表示する関数
-    pub fn warn<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
-        if !*QUIET_ERRORS_FLAG {
-            writeln!(w, "[WARN] {}", contents)
-        } else {
-            Ok(())
-        }
+    pub fn warn<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
+        writeln!(w, "[WARN] {}", contents)
     }
 
     /// エラーログへのERRORメッセージの出力数を確認して、0であったらファイルを削除する。1以上あればエラーを書き出した旨を標準出力に表示する
     pub fn output_error_log_exist() {
+        if *QUIET_ERRORS_FLAG {
+            return;
+        }
         println!(
             "Generated error was output to {}. Please see the file for details.",
             ERROR_LOG_PATH.to_string()

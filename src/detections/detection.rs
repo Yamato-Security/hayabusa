@@ -59,16 +59,22 @@ impl Detection {
         let result_readdir =
             rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level, exclude_ids);
         if result_readdir.is_err() {
-            AlertMessage::alert(
-                &mut BufWriter::new(
-                    OpenOptions::new()
-                        .append(true)
-                        .open(ERROR_LOG_PATH.to_string())
-                        .unwrap(),
-                ),
-                format!("{}", result_readdir.unwrap_err()),
-            )
-            .ok();
+            let errmsg = format!("{}", result_readdir.unwrap_err());
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+            }
+            if !*QUIET_ERRORS_FLAG {
+                AlertMessage::alert(
+                    &mut BufWriter::new(
+                        OpenOptions::new()
+                            .append(true)
+                            .open(ERROR_LOG_PATH.to_string())
+                            .unwrap(),
+                    ),
+                    &errmsg,
+                )
+                .ok();
+            }
             return vec![];
         }
         let mut parseerror_count = rulefile_loader.errorrule_count;
