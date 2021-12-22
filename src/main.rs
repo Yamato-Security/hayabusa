@@ -7,6 +7,7 @@ use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::AlertMessage;
 use hayabusa::detections::print::ERROR_LOG_PATH;
+use hayabusa::detections::print::ERROR_LOG_STACK;
 use hayabusa::detections::print::QUIET_ERRORS_FLAG;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
@@ -18,7 +19,6 @@ use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
-use std::fs::OpenOptions;
 use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
@@ -84,14 +84,6 @@ impl App {
                 return;
             }
         }
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("quiet-errors")
-        {
-            AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-        }
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {
                 AlertMessage::alert(
@@ -126,7 +118,11 @@ impl App {
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
         println!("");
-        AlertMessage::output_error_log_exist();
+
+        // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
+        if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
+            AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+        }
     }
 
     fn collect_evtxfiles(&self, dirpath: &str) -> Vec<PathBuf> {
@@ -137,16 +133,10 @@ impl App {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                AlertMessage::alert(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
-                    &errmsg,
-                )
-                .ok();
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg));
             }
             return vec![];
         }
@@ -255,16 +245,10 @@ impl App {
                             .ok();
                     }
                     if !*QUIET_ERRORS_FLAG {
-                        AlertMessage::alert(
-                            &mut BufWriter::new(
-                                OpenOptions::new()
-                                    .append(true)
-                                    .open(ERROR_LOG_PATH.to_string())
-                                    .unwrap(),
-                            ),
-                            &errmsg,
-                        )
-                        .ok();
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[ERROR] {}", errmsg));
                     }
                     continue;
                 }

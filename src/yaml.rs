@@ -3,13 +3,12 @@ extern crate yaml_rust;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_PATH;
+use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::filter::RuleExclude;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
-use std::fs::OpenOptions;
 use std::io;
 use std::io::BufWriter;
 use std::io::{BufReader, Read};
@@ -84,15 +83,10 @@ impl ParseYaml {
                     AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
-                    AlertMessage::warn(
-                        &mut BufWriter::new(
-                            OpenOptions::new()
-                                .append(true)
-                                .open(ERROR_LOG_PATH.to_string())
-                                .unwrap(),
-                        ),
-                        &errmsg,
-                    )?;
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(ret);
@@ -110,15 +104,10 @@ impl ParseYaml {
                     AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
-                    AlertMessage::warn(
-                        &mut BufWriter::new(
-                            OpenOptions::new()
-                                .append(true)
-                                .open(ERROR_LOG_PATH.to_string())
-                                .unwrap(),
-                        ),
-                        &errmsg,
-                    )?;
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(ret);

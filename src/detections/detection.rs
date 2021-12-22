@@ -2,7 +2,7 @@ extern crate csv;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_PATH;
+use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::rule;
@@ -14,7 +14,6 @@ use crate::yaml::ParseYaml;
 use hashbrown;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::fs::OpenOptions;
 use std::io::BufWriter;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
@@ -66,16 +65,10 @@ impl Detection {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                AlertMessage::alert(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
-                    &errmsg,
-                )
-                .ok();
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg));
             }
             return vec![];
         }
@@ -93,7 +86,7 @@ impl Detection {
                 AlertMessage::warn(&mut std::io::stdout().lock(), &errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
-                    AlertMessage::warn(&mut std::io::stdout().lock(), &err_msg.to_string()).ok();
+                    AlertMessage::warn(&mut std::io::stdout().lock(), err_msg).ok();
                 });
                 parseerror_count += 1;
                 println!(""); // 一行開けるためのprintln

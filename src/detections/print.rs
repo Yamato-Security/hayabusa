@@ -46,6 +46,7 @@ lazy_static! {
         .unwrap()
         .args
         .is_present("quiet-errors");
+    pub static ref ERROR_LOG_STACK: Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
 
 impl Message {
@@ -203,24 +204,30 @@ impl AlertMessage {
         if !path.parent().unwrap().exists() {
             create_dir(path.parent().unwrap()).ok();
         }
-        // 1行目は必ず実行したコマンド情報を入れておく。
-        let mut ret = BufWriter::new(File::create(path).unwrap());
-
-        ret.write(
-            format!(
-                "user input: {:?}\n",
-                format_args!(
-                    "{}",
-                    env::args()
-                        .map(|arg| arg)
-                        .collect::<Vec<String>>()
-                        .join(" ")
+        let mut error_log_writer = BufWriter::new(File::create(path).unwrap());
+        error_log_writer
+            .write(
+                format!(
+                    "user input: {:?}\n",
+                    format_args!(
+                        "{}",
+                        env::args()
+                            .map(|arg| arg)
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    )
                 )
+                .as_bytes(),
             )
-            .as_bytes(),
-        )
-        .unwrap();
-        ret.flush().ok();
+            .unwrap();
+        for error_log in ERROR_LOG_STACK.lock().unwrap().iter() {
+            writeln!(error_log_writer, "{}", error_log).ok();
+        }
+        println!(
+            "Errors were generated. Please check {} for details.",
+            ERROR_LOG_PATH.to_string()
+        );
+        println!("");
     }
 
     /// ERRORメッセージを表示する関数
@@ -231,18 +238,6 @@ impl AlertMessage {
     /// WARNメッセージを表示する関数
     pub fn warn<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
         writeln!(w, "[WARN] {}", contents)
-    }
-
-    /// エラーログへのERRORメッセージの出力数を確認して、0であったらファイルを削除する。1以上あればエラーを書き出した旨を標準出力に表示する
-    pub fn output_error_log_exist() {
-        if *QUIET_ERRORS_FLAG {
-            return;
-        }
-        println!(
-            "Errors were generated. Please check {} for details.",
-            ERROR_LOG_PATH.to_string()
-        );
-        println!("");
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_PATH;
+use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::AggregationParseInfo;
@@ -9,7 +9,6 @@ use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
 use serde_json::Value;
-use std::fs::OpenOptions;
 use std::io::BufWriter;
 use std::num::ParseIntError;
 use std::path::Path;
@@ -95,16 +94,10 @@ fn get_alias_value_in_record(
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                AlertMessage::alert(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
-                    &errmsg,
-                )
-                .ok();
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg));
             }
             return None;
         }
@@ -203,16 +196,10 @@ impl TimeFrameInfo {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                AlertMessage::alert(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
-                    &errmsg,
-                )
-                .ok();
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg));
             }
         }
         return TimeFrameInfo {
@@ -246,16 +233,10 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                AlertMessage::alert(
-                    &mut BufWriter::new(
-                        OpenOptions::new()
-                            .append(true)
-                            .open(ERROR_LOG_PATH.to_string())
-                            .unwrap(),
-                    ),
-                    &errmsg,
-                )
-                .ok();
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg.to_string()));
             }
             return Option::None;
         }

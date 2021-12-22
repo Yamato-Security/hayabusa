@@ -1,7 +1,6 @@
 Hayabusa was possible thanks to the following people (in alphabetical order):
 
 Akira Nishikawa (@nishikawaakira): Previous lead developer, core hayabusa rule support, etc...
-DustInDark(@hitenkoku): Core Developer
 Garigariganzy (@garigariganzy31): Developer, event ID statistics implementation, etc... 
 ItiB (@itiB_S144) :  Core developer, sigmac hayabusa backend, rule creation, etc...
 James Takai / hachiyone(@hach1yon): Current lead developer, tokio multi-threading, sigma aggregation logic, sigmac backend, rule creation, sigma count implementation etc…
@@ -14,7 +13,6 @@ Hayabusa would not have been possible without first creating RustyBlue, so we wo
 
 Zach Mathis (@yamatosecurity, Yamato Security Founder): Project Leader
 Nishikawa Akira (@nishikawaakira): Lead Developer
-DustInDark (@hitenkoku): Core Developer
 kazuminn (@k47_um1n): Core Developer
 itiB (@itiB_S144): Core Developer
 James Takai / hachiyone (@hach1yon): Core Developer
