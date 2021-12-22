@@ -477,7 +477,7 @@ In the example below, a list of `TargetUserName` usernames that were being brute
 ```
 [condition] count(TargetUserName) by IpAddress >= 5 in timeframe [result] count:41 TargetUserName:jorchilles/jlake/cspizor/lpesce/bgalbraith/jkulikowski/baker/eskoudis/dpendolino/sarmstrong/lschifano/drook/rbowes/ebooth/melliott/econrad/sanson/dmashburn/bking/mdouglas/cragoso/psmith/bhostetler/zmathis/thessman/kperryman/cmoody/cdavis/cfleener/gsalinas/wstrzelec/jwright/edygert/ssims/jleytevidal/celgee/Administrator/mtoussain/smisenar/tbennett/bgreenwood IpAddress:10.10.2.22 timeframe:5m
 ```
-
+The timestamp of the alert will be the time from the first event detected.
 
 # Rule creation advice
 1. **When possible, always specify `Channel` and `EventID` name.** In the future, we may filter on channel names and event IDs so your rule may be ignored if this is not set.

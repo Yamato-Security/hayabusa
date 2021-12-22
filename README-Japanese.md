@@ -7,12 +7,12 @@
 </div>
 
 # Hayabusa について
-Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**であります。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とてもしつけやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/Sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様に、できるだけ簡単にカスタマイズや拡張ができるようにYMLで書かれています。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つの CSV タイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
+Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**であります。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/Sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様に、できるだけ簡単にカスタマイズや拡張ができるようにYMLで書かれています。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つの CSV タイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
 
 ## 主な目的
 
-### 脅威ハンティング
-Hayabusa には現在、1000以上のSigmaルールと約50のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントの後で、または定期的な脅威ハンティングのために、HayabusaエージェントをすべてのWindows端末にプッシュして、中央サーバーにアラートを返すことができるようにすることです。
+### スレット(脅威)ハンティング
+Hayabusa には現在、1000以上のSigmaルールと約50のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントの後で、または定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にプッシュして、中央サーバーにアラートを返すことができるようにすることです。
 
 ### フォレンジックタイムラインの高速生成
 Windowsのイベントログは、
@@ -54,14 +54,14 @@ Windowsのイベントログは、
 * Rustで開発され、メモリセーフでハヤブサよりも高速です！
 * マルチスレッド対応により、最大5倍のスピードアップを実現!
 * フォレンジック調査やインシデントレスポンスのために、分析しやすいCSVタイムラインを作成します。
-* 読みやすい/作成/編集可能なYMLベースのHayabusaルールで作成されたIoCシグネチャに基づく脅威ハンティング 
+* 読みやすい/作成/編集可能なYMLベースのHayabusaルールで作成されたIoCシグネチャに基づくスレット 
 * SigmaルールをHayabusaルールに変換するためのSigmaルールのサポートがされています。
 * 現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルールにも対応しています。
 * イベントログの統計（どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。）
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 
 # 予定されている機能
-* すべてのエンドポイントでの企業全体の脅威ハンティング
+* すべてのエンドポイントでの企業全体のスレットハンティング
 * 日本語対応
 * MITRE ATT&CK とのマッピング
 * MITRE ATT&CK ヒートマップ生成機能
@@ -84,6 +84,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git
 rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
 ```bash
+cargo clean
 cargo build --release
 ```
 

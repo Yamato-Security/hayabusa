@@ -83,6 +83,7 @@ After that, you need to download a pre-compiled binary for the Windows, Linux or
 If you have rust installed, you can compile from source with the following command:
 
 ```bash
+cargo clean
 cargo build --release
 ```
 
@@ -298,7 +299,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 Please understand that it is not possible to do a perfect comparison as results will differ based on the target sample data, command-line options, rule tuning, etc...
 In our tests, we have found hayabusa to support the largest number of sigma rules out of all the tools while still maintaining very fast speeds and does not require a great amount of memory. 
 
-The following benchmarks were taken on a Lenovo P51 based on approximately 500 evtx files (130MB) from our [sample-evtx repository](https://github.com/Yamato-Security/hayabusa-sample-evtx) at 2021/12/19.
+The following benchmarks were taken on a Lenovo P51 based on approximately 500 evtx files (130MB) from our [sample-evtx repository](https://github.com/Yamato-Security/hayabusa-sample-evtx) at 2021/12/19. Hayabusa version 1.0.0 was used.
 
 | | Elapsed Time | Memory Usage | Unique Sigma Rules With Detections |
 | :---: | :---: | :---: | :---: |
