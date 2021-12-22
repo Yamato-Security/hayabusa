@@ -48,6 +48,9 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 
 ![Critical alert filtering and computer grouping in Timeline Explorer](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
 
+# Sample timeline results
+You can check out sample CSV and manually edited XLSX timeline results [here](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results).
+
 # Features
 * Cross-platform support: Windows, Linux, macOS
 * Developed in Rust to be memory safe and faster than a hayabusa falcon!
@@ -272,7 +275,7 @@ You can also add a rule ID to `config/noisy-rules.txt` in order to ignore the ru
 You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
 This will increase performance so it is recommended if you only need to search for certain IDs.
 
-We have provided a sample ID filter list at `config/target_eventids_sample.txt` created from the `EventID` field in all of the rules as well as IDs seen in actual results.
+We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
 
 Please use this list if you want the best performance but be aware that there is a slight possibility for false positives. 
 

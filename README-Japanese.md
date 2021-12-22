@@ -49,6 +49,9 @@ Windowsのイベントログは、
 
 ![Timeline ExplorerでCriticalアラートのフィルタリングとコンピュータグルーピング](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
 
+# タイムラインのサンプル結果
+CSVと手動で編集したXLSXのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
+
 # 特徴
 * クロスプラットフォーム対応: Windows, Linux, macOS
 * Rustで開発され、メモリセーフでハヤブサよりも高速です！
@@ -274,7 +277,7 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 `config/target_eventids.txt`にイベントID番号を追加することで、イベントIDでフィルタリングすることができます。
 これはパフォーマンスを向上させるので、特定のIDだけを検索したい場合に推奨されます。
 
-すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを`config/target_eventids_sample.txt`で提供しています。
+すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
 
 最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、誤検出の可能性が若干あることにご注意ください。
 
