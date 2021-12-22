@@ -1,7 +1,10 @@
 extern crate csv;
 
+use crate::detections::configs;
 use crate::detections::print::AlertMessage;
+use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
+use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -11,9 +14,9 @@ use crate::yaml::ParseYaml;
 use hashbrown;
 use serde_json::Value;
 use std::collections::HashMap;
-use tokio::{runtime::Runtime, spawn, task::JoinHandle};
-
+use std::io::BufWriter;
 use std::sync::Arc;
+use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 const DIRPATH_RULES: &str = "rules";
 
@@ -57,11 +60,16 @@ impl Detection {
         let result_readdir =
             rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level, exclude_ids);
         if result_readdir.is_err() {
-            AlertMessage::alert(
-                &mut std::io::stderr().lock(),
-                format!("{}", result_readdir.unwrap_err()),
-            )
-            .ok();
+            let errmsg = format!("{}", result_readdir.unwrap_err());
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+            }
+            if !*QUIET_ERRORS_FLAG {
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg));
+            }
             return vec![];
         }
         let mut parseerror_count = rulefile_loader.errorrule_count;
@@ -75,10 +83,10 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                AlertMessage::warn(&mut std::io::stdout().lock(), errmsg_body).ok();
+                AlertMessage::warn(&mut std::io::stdout().lock(), &errmsg_body).ok();
 
                 err_msgs.iter().for_each(|err_msg| {
-                    AlertMessage::warn(&mut std::io::stdout().lock(), err_msg.to_string()).ok();
+                    AlertMessage::warn(&mut std::io::stdout().lock(), err_msg).ok();
                 });
                 parseerror_count += 1;
                 println!(""); // 一行開けるためのprintln

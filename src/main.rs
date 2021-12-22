@@ -6,6 +6,9 @@ use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::AlertMessage;
+use hayabusa::detections::print::ERROR_LOG_PATH;
+use hayabusa::detections::print::ERROR_LOG_STACK;
+use hayabusa::detections::print::QUIET_ERRORS_FLAG;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
@@ -16,6 +19,8 @@ use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
+use std::io::BufWriter;
+use std::path::Path;
 use std::sync::Arc;
 use std::{
     fs::{self, File},
@@ -66,11 +71,24 @@ impl App {
             );
             return;
         }
+        if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+            if Path::new(csv_path).exists() {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!(
+                        " The file {} already exists. Please specify a different filename.",
+                        csv_path
+                    ),
+                )
+                .ok();
+                return;
+            }
+        }
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {
                 AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
-                    "--filepath only accepts .evtx files.".to_owned(),
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &"--filepath only accepts .evtx files.".to_string(),
                 )
                 .ok();
                 return;
@@ -80,8 +98,8 @@ impl App {
             let evtx_files = self.collect_evtxfiles(&directory);
             if evtx_files.len() == 0 {
                 AlertMessage::alert(
-                    &mut std::io::stderr().lock(),
-                    "No .evtx files were found.".to_owned(),
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &"No .evtx files were found.".to_string(),
                 )
                 .ok();
                 return;
@@ -100,14 +118,26 @@ impl App {
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
         println!("");
+
+        // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
+        if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
+            AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+        }
     }
 
     fn collect_evtxfiles(&self, dirpath: &str) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
-            let stderr = std::io::stderr();
-            let mut stderr = stderr.lock();
-            AlertMessage::alert(&mut stderr, format!("{}", entries.unwrap_err())).ok();
+            let errmsg = format!("{}", entries.unwrap_err());
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+            }
+            if !*QUIET_ERRORS_FLAG {
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg));
+            }
             return vec![];
         }
 
@@ -139,7 +169,11 @@ impl App {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => println!("{}", contents),
             Err(err) => {
-                AlertMessage::alert(&mut std::io::stderr().lock(), format!("{}", err)).ok();
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!("{}", err),
+                )
+                .ok();
             }
         }
     }
@@ -207,7 +241,16 @@ impl App {
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
-                    AlertMessage::alert(&mut std::io::stderr().lock(), errmsg).ok();
+                    if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                        AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)
+                            .ok();
+                    }
+                    if !*QUIET_ERRORS_FLAG {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[ERROR] {}", errmsg));
+                    }
                     continue;
                 }
 

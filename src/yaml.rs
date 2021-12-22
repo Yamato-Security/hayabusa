@@ -3,11 +3,14 @@ extern crate yaml_rust;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
+use crate::detections::print::ERROR_LOG_STACK;
+use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::filter::RuleExclude;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
+use std::io::BufWriter;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use yaml_rust::Yaml;
@@ -71,14 +74,20 @@ impl ParseYaml {
             // 個別のファイルの読み込みは即終了としない。
             let read_content = self.read_file(path);
             if read_content.is_err() {
-                AlertMessage::warn(
-                    &mut std::io::stdout().lock(),
-                    format!(
-                        "fail to read file: {}\n{} ",
-                        entry.path().display(),
-                        read_content.unwrap_err()
-                    ),
-                )?;
+                let errmsg = format!(
+                    "fail to read file: {}\n{} ",
+                    entry.path().display(),
+                    read_content.unwrap_err()
+                );
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                }
+                if !*QUIET_ERRORS_FLAG {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {}", errmsg));
+                }
                 self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }
@@ -86,14 +95,20 @@ impl ParseYaml {
             // ここも個別のファイルの読み込みは即終了としない。
             let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
             if yaml_contents.is_err() {
-                AlertMessage::warn(
-                    &mut std::io::stdout().lock(),
-                    format!(
-                        "Failed to parse yml: {}\n{} ",
-                        entry.path().display(),
-                        yaml_contents.unwrap_err()
-                    ),
-                )?;
+                let errmsg = format!(
+                    "Failed to parse yml: {}\n{} ",
+                    entry.path().display(),
+                    yaml_contents.unwrap_err()
+                );
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                }
+                if !*QUIET_ERRORS_FLAG {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {}", errmsg));
+                }
                 self.errorrule_count += 1;
                 return io::Result::Ok(ret);
             }
@@ -176,6 +191,8 @@ impl ParseYaml {
 #[cfg(test)]
 mod tests {
 
+    use crate::detections::print::AlertMessage;
+    use crate::detections::print::ERROR_LOG_PATH;
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
@@ -185,6 +202,8 @@ mod tests {
 
     #[test]
     fn test_read_dir_yaml() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+
         let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
@@ -275,6 +294,8 @@ mod tests {
     }
     #[test]
     fn test_all_exclude_rules_file() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path.to_path_buf(), &"", &filter::exclude_ids())
@@ -283,6 +304,8 @@ mod tests {
     }
     #[test]
     fn test_none_exclude_rules_file() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         let exclude_ids = RuleExclude {

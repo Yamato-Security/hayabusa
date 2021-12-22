@@ -5,6 +5,7 @@ use clap::{App, AppSettings, ArgMatches};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
+use std::io::BufWriter;
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
@@ -68,6 +69,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -t --thread-number=[NUMBER] 'Thread number (default: optimal number for performance)'
     -s --statistics 'Prints statistics of event IDs'
     -q --quiet 'Quiet mode. Do not display the launch banner'
+    -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
@@ -139,8 +141,8 @@ impl TargetEventTime {
                 Ok(dt) => Some(dt.with_timezone(&Utc)),
                 Err(err) => {
                     AlertMessage::alert(
-                        &mut std::io::stderr().lock(),
-                        format!("starttimeline field: {}", err),
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("start-timeline field: {}", err),
                     )
                     .ok();
                     None
@@ -156,8 +158,8 @@ impl TargetEventTime {
             Ok(dt) => Some(dt.with_timezone(&Utc)),
             Err(err) => {
                     AlertMessage::alert(
-                        &mut std::io::stderr().lock(),
-                        format!("endtimeline field: {}", err),
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("end-timeline field: {}", err),
                     )
                     .ok();
                     None

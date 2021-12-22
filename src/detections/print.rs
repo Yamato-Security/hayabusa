@@ -2,13 +2,18 @@ extern crate lazy_static;
 use crate::detections::configs;
 use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Local, TimeZone, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::env;
+use std::fs::create_dir;
+use std::fs::File;
+use std::io::BufWriter;
 use std::io::{self, Write};
+use std::path::Path;
 use std::sync::Mutex;
 
 #[derive(Debug)]
@@ -32,6 +37,16 @@ pub struct AlertMessage {}
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
+    pub static ref ERROR_LOG_PATH: String = format!(
+        "./logs/errorlog-{}.log",
+        Local::now().format("%Y%m%d_%H%M%S")
+    );
+    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("quiet-errors");
+    pub static ref ERROR_LOG_STACK: Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
 
 impl Message {
@@ -180,10 +195,48 @@ impl Message {
 }
 
 impl AlertMessage {
-    pub fn alert<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
+    ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
+    pub fn create_error_log(path_str: String) {
+        if *QUIET_ERRORS_FLAG {
+            return;
+        }
+        let path = Path::new(&path_str);
+        if !path.parent().unwrap().exists() {
+            create_dir(path.parent().unwrap()).ok();
+        }
+        let mut error_log_writer = BufWriter::new(File::create(path).unwrap());
+        error_log_writer
+            .write(
+                format!(
+                    "user input: {:?}\n",
+                    format_args!(
+                        "{}",
+                        env::args()
+                            .map(|arg| arg)
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    )
+                )
+                .as_bytes(),
+            )
+            .unwrap();
+        for error_log in ERROR_LOG_STACK.lock().unwrap().iter() {
+            writeln!(error_log_writer, "{}", error_log).ok();
+        }
+        println!(
+            "Errors were generated. Please check {} for details.",
+            ERROR_LOG_PATH.to_string()
+        );
+        println!("");
+    }
+
+    /// ERRORメッセージを表示する関数
+    pub fn alert<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
         writeln!(w, "[ERROR] {}", contents)
     }
-    pub fn warn<W: Write>(w: &mut W, contents: String) -> io::Result<()> {
+
+    /// WARNメッセージを表示する関数
+    pub fn warn<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
         writeln!(w, "[WARN] {}", contents)
     }
 }
@@ -192,6 +245,7 @@ impl AlertMessage {
 mod tests {
     use crate::detections::print::{AlertMessage, Message};
     use serde_json::Value;
+    use std::io::BufWriter;
 
     #[test]
     fn test_create_and_append_message() {
@@ -304,17 +358,21 @@ mod tests {
     #[test]
     fn test_error_message() {
         let input = "TEST!";
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string()).expect("[ERROR] TEST!");
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stdout().lock()),
+            &input.to_string(),
+        )
+        .expect("[ERROR] TEST!");
     }
 
     #[test]
     fn test_warn_message() {
         let input = "TESTWarn!";
-        let stdout = std::io::stdout();
-        let mut stdout = stdout.lock();
-        AlertMessage::alert(&mut stdout, input.to_string()).expect("[WARN] TESTWarn!");
+        AlertMessage::warn(
+            &mut BufWriter::new(std::io::stdout().lock()),
+            &input.to_string(),
+        )
+        .expect("[WARN] TESTWarn!");
     }
 
     #[test]
