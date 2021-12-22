@@ -45,7 +45,7 @@ pub fn after_fact() {
 
     let mut displayflag = false;
     let mut target: Box<dyn io::Write> =
-        if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+        if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("details") {
             // ファイル出力する場合
             match File::create(csv_path) {
                 Ok(file) => Box::new(BufWriter::new(file)),

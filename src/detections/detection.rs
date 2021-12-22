@@ -187,7 +187,7 @@ impl Detection {
                 .unwrap_or("-".to_owned())
                 .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
-            rule.yaml["output"].as_str().unwrap_or("").to_string(),
+            rule.yaml["details"].as_str().unwrap_or("").to_string(),
         );
     }
 
