@@ -258,7 +258,10 @@ impl Detection {
         });
         println!("Ignored rules: {}", ignore_count);
         println!("Rule parsing errors: {}", parseerror_count);
-        println!("Total detection rules: {}", total);
+        println!(
+            "Total enabled detection rules: {}",
+            total - ignore_count - parseerror_count
+        );
         println!("");
     }
 }
