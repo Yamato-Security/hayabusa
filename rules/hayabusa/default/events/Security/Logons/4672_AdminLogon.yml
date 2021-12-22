@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: Admin Logon
 title_jp: 管理者ログオン
-output: 'User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
-output_jp: 'ユーザ: %SubjectUserName%  :  ログオンID: %SubjectLogonId%'
+details: 'User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
+details_jp: 'ユーザ: %SubjectUserName%  :  ログオンID: %SubjectLogonId%'
 description: Prints logon information. 
 description_jp: Prints logon information.
 

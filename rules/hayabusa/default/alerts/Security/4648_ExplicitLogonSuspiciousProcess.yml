@@ -4,8 +4,8 @@ modified: 2021/12/17
 
 title: "Explicit Logon: Suspicious Process"
 title_jp: "不審なプロセスからの明示的なログオン"
-output: 'Source User: %SubjectUserName%  :  Target User: %TargetUserName%  :  IP Address: %IpAddress%  :  Process: %ProcessName%  :  Target Server: %TargetInfo%'
-output_jp: 'ソースユーザ: %SubjectUserName%  :  ターゲットユーザ: %TargetUserName%  :  IPアドレス: %IpAddress%  :  プロセス: %ProcessName%  :  ターゲットサーバ: %TargetInfo%'
+details: 'Source User: %SubjectUserName%  :  Target User: %TargetUserName%  :  IP Address: %IpAddress%  :  Process: %ProcessName%  :  Target Server: %TargetInfo%'
+details_jp: 'ソースユーザ: %SubjectUserName%  :  ターゲットユーザ: %TargetUserName%  :  IPアドレス: %IpAddress%  :  プロセス: %ProcessName%  :  ターゲットサーバ: %TargetInfo%'
 description: Alter on explicit credential logons with suspicous processes like powershell and wmic which are often abused by malware like Cobalt Strike.
 description_jp:
 

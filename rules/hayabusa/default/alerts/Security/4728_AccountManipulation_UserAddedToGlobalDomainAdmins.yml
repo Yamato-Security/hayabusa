@@ -1,11 +1,11 @@
 author: Zach Mathis
 creation_date: 2020/11/08
-updated_date: 2021/11/26
+updated_date: 2021/12/22
 
 title: User added to the global Domain Admins group
 title_jp: ユーザがグローバルドメイン管理者グループに追加された
-output: 'Member added: %MemberName%  :  SID: %MemberSid%  :  Group: %TargetUserName%  :  Subject user: %SubjectUserName%  :  Subject domain: %SubjectDomainName%'
-output_jp: '追加されたメンバー: %MemberName%  :  SID: %MemberSid%  :  グループ: %TargetUserName%  :  サブジェクトユーザ: %SubjectUserName%  :  サブジェクトドメイン: %SubjectDomainName%'
+details: 'User: %SubjectUserName%  :  Group: %TargetUserName%  :  LogonID: %SubjectLogonId%'
+details_jp: 'ユーザ: %SubjectUserName%  :  グループ: %TargetUserName%  :  ログオンID: %SubjectLogonId%'
 description: A user was added to the Domain Admins group. 
 description_jp: ユーザがドメイン管理者グループに追加された。
 

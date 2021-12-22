@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: Connection to wireless access point
 title_jp: ローカルアカウントへのNTLMログオン
-output: 'SSID: %SSID%  :  Type: %AuthenticationAlgorithm%  :  BSSType: %BSSType%'
-output_jp: 'SSID: %SSID%  :  タイプ: %AuthenticationAlgorithm%  :  BSSタイプ: %BSSType%'
+details: 'SSID: %SSID%  :  Type: %AuthenticationAlgorithm%  :  BSSType: %BSSType%'
+details_jp: 'SSID: %SSID%  :  タイプ: %AuthenticationAlgorithm%  :  BSSタイプ: %BSSType%'
 description: Prints connection info to wireless access points.
 description_jp: Prints connection info to wireless access points.
 

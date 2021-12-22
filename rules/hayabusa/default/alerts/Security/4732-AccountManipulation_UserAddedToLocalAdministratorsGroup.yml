@@ -1,11 +1,11 @@
 author: Eric Conrad, Zach Mathis
 creation_date: 2020/11/08
-updated_date: 2021/11/26
+updated_date: 2021/12/22
 
 title: User added to local Administrators group
 title_jp: ユーザがローカル管理者グループに追加された
-output: 'User: %MemberName%  :  SID: %MemberSid%  :  Group: %TargetUserName%'
-output_jp: 'ユーザ: %MemberName%  :  SID: %MemberSid%  :  グループ名: %TargetUserName%'
+details: 'User: %SubjectUserName%  :  Group: %TargetUserName%  :  LogonID: %SubjectLogonId%'
+details_jp: 'ユーザ: %SubjectUserName%  :  グループ名: %TargetUserName%  :  ログオンID: %SubjectLogonId%'
 description: A user was added to the local Administrators group.
 description_jp: ユーザがローカル管理者グループに追加された。
 

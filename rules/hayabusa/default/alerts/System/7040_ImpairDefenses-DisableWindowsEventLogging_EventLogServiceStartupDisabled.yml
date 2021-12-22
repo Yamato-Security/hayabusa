@@ -4,8 +4,8 @@ updated_date: 2021/11/22
 
 title: Event log service startup type changed to disabled
 title_jp: イベントログサービスのスタートアップの種類が無効に変更された
-output: 'Old setting: %param2%  :  New setting: %param3%'
-output: '設定前: %param2%  :  設定後: %param3%'
+details: 'Old setting: %param2%  :  New setting: %param3%'
+details_jp: '設定前: %param2%  :  設定後: %param3%'
 
 id: ab3507cf-5231-4af6-ab1d-5d3b3ad467b5
 level: medium

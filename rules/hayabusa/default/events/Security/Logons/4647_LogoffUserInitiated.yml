@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: Logoff - User Initiated
 title_jp: ログオフ - ユーザが行った
-output: 'User: %TargetUserName%  :  LogonID: %TargetLogonId%'
-output_jp: 'ユーザ: %TargetUserName%  :  ログオンID: %TargetLogonId%'
+details: 'User: %TargetUserName%  :  LogonID: %TargetLogonId%'
+details_jp: 'ユーザ: %TargetUserName%  :  ログオンID: %TargetLogonId%'
 description: Prints logon information. 
 description_jp: Prints logon information.
 

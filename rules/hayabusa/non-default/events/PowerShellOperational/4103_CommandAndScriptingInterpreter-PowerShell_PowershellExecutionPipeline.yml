@@ -4,8 +4,8 @@ modified: 2021/11/22
 
 title: PowerShell Execution Pipeline
 title_jp: PowerShellパイプライン実行
-output: 'Command: %CommandLine%'
-output_jp: 'コマンド: %CommandLine%'
+details: 'Command: %CommandLine%'
+details_jp: 'コマンド: %CommandLine%'
 description: Displays powershell execution
 description_jp: Powershellの実行を出力する。
 

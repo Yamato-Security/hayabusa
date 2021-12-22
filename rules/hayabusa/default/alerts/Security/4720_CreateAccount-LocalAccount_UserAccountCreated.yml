@@ -1,11 +1,11 @@
 author: Eric Conrad, Yamato Security
 creation_date: 2020/11/08
-uodated_date:  2021/11/26
+uodated_date:  2021/12/22
 
 title: Local user account created
 title_jp: ローカルユーザアカウントが作成された
-output: 'User: %TargetUserName%  :  SID:%TargetSid%'
-output_jp: 'ユーザ名: %TargetUserName%  :  SID:%TargetSid%'
+details: 'User: %TargetUserName%  :  SID: %TargetSid%'
+details_jp: 'ユーザ名: %TargetUserName%  :  SID: %TargetSid%'
 description: A local user account was created.
 description_jp: ローカルユーザアカウントが作成された.
 
