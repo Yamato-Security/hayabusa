@@ -165,7 +165,14 @@ impl App {
                 });
             } else {
                 let path_str = path.to_str().unwrap_or("");
-                if path_str.ends_with(".evtx") && !path_str.starts_with(".") {
+                if path_str.ends_with(".evtx")
+                    && !Path::new(path_str)
+                        .file_stem()
+                        .unwrap_or(OsStr::new("."))
+                        .to_str()
+                        .unwrap()
+                        .starts_with(".")
+                {
                     ret.push(path);
                 }
             }
