@@ -4,8 +4,8 @@ modified:  2021/11/25
 
 title: Security log was cleared
 title_jp: セキュリティログがクリアされた
-output: "User: %LogFileClearedSubjectUserName%"
-output_jp: "ユーザ名: %LogFileClearedSubjectUserName%"
+details: "User: %LogFileClearedSubjectUserName%"
+details_jp: "ユーザ: %LogFileClearedSubjectUserName%"
 description: Somebody has cleared the Security event log.
 description_jp: 誰かがセキュリティログをクリアした。
 

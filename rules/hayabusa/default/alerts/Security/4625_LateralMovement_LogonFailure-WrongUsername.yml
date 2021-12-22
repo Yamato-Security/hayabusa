@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: Logon Failure - Username does not exist
 title_jp: ログオンに失敗 - ユーザ名は存在しない
-output: 'User: %TargetUserName%  :  Type: %LogonType%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  SubStatus: %SubStatus%  :  AuthPackage: %AuthenticationPackageName%'
-output_jp: 'ユーザ: %TargetUserName%  :  タイプ: %LogonType%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  サブステータス: %SubStatus%  :  認証パッケージ: %AuthenticationPackageName%'
+details: 'User: %TargetUserName%  :  Type: %LogonType%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  AuthPackage: %AuthenticationPackageName%'
+details_jp: 'ユーザ: %TargetUserName%  :  タイプ: %LogonType%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  認証パッケージ: %AuthenticationPackageName%'
 description: Prints failed logons
 description_jp: ログオンに失敗したイベントを出力する
 

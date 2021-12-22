@@ -1,11 +1,11 @@
 author: Zach Mathis
 date: 2020/11/08
-modified: 2021/11/26
+modified: 2021/12/22
 
 title: Unknown process used a high privilege
 title_jp: 不明なプロセスが高い権限を使った
-output: 'Process: %ProcessName%  :  User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
-output_jp: 'プロセス名: %ProcessName%  :  ユーザ名: %SubjectUserName%  :  ログオンID: %SubjectLogonId%'
+details: 'Process: %ProcessName%  :  User: %SubjectUserName%  :  LogonID: %SubjectLogonId%'
+details_jp: 'プロセス名: %ProcessName%  :  ユーザ名: %SubjectUserName%  :  ログオンID: %SubjectLogonId%'
 description: |
     Malware may generate a 4673 event (A privileged service was called) when dumping hashes or wiping disk. 
     For example, mimikatz will generate 4 logs using SeTcbPrivilege (Act as part of the OS.) 

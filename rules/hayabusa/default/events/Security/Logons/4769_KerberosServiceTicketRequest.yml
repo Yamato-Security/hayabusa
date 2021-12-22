@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: Kerberos Service Ticket Requested
 title_jp: Kerberosサービスチケットが要求された
-output: 'User: %TargetUserName%  :  Service: %ServiceName%  :  IP Address: %IpAddress%  :  Status: %Status%'
-output_jp: 'ユーザ: %TargetUserName%  :  サービス: %ServiceName%  :  IPアドレス: %IpAddress%  :  ステータス: %Status%'
+details: 'User: %TargetUserName%  :  Service: %ServiceName%  :  IP Address: %IpAddress%  :  Status: %Status%'
+details_jp: 'ユーザ: %TargetUserName%  :  サービス: %ServiceName%  :  IPアドレス: %IpAddress%  :  ステータス: %Status%'
 description: Prints logon information. 
 description_jp: Prints logon information.
 
