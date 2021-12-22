@@ -1,6 +1,5 @@
 use crate::detections::print::AlertMessage;
 use crate::detections::rule::AggResult;
-use crate::detections::rule::AggregationParseInfo;
 use crate::detections::rule::Message;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
@@ -196,7 +195,8 @@ impl TimeFrameInfo {
 }
 
 /// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
-pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
+pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
+    let timeframe = rule.detection.timeframe.as_ref();
     if timeframe.is_none() {
         return Option::None;
     }
@@ -224,38 +224,44 @@ pub fn get_sec_timeframe(timeframe: &Option<TimeFrameInfo>) -> Option<i64> {
     }
 }
 /// conditionのパイプ以降の処理をAggregationParseInfoを参照し、conditionの条件を満たすか判定するための関数
-pub fn select_aggcon(cnt: i32, aggcondition: &AggregationParseInfo) -> bool {
-    match aggcondition._cmp_op {
+pub fn select_aggcon(cnt: i64, rule: &RuleNode) -> bool {
+    let agg_condition = rule.detection.aggregation_condition.as_ref();
+    if agg_condition.is_none() {
+        return false;
+    }
+
+    let agg_condition = agg_condition.unwrap();
+    match agg_condition._cmp_op {
         AggregationConditionToken::EQ => {
-            if cnt == aggcondition._cmp_num {
+            if cnt == agg_condition._cmp_num {
                 return true;
             } else {
                 return false;
             }
         }
         AggregationConditionToken::GE => {
-            if cnt >= aggcondition._cmp_num {
+            if cnt >= agg_condition._cmp_num {
                 return true;
             } else {
                 return false;
             }
         }
         AggregationConditionToken::GT => {
-            if cnt > aggcondition._cmp_num {
+            if cnt > agg_condition._cmp_num {
                 return true;
             } else {
                 return false;
             }
         }
         AggregationConditionToken::LE => {
-            if cnt <= aggcondition._cmp_num {
+            if cnt <= agg_condition._cmp_num {
                 return true;
             } else {
                 return false;
             }
         }
         AggregationConditionToken::LT => {
-            if cnt < aggcondition._cmp_num {
+            if cnt < agg_condition._cmp_num {
                 return true;
             } else {
                 return false;
@@ -280,6 +286,181 @@ fn _if_condition_fn_caller<T: FnMut() -> S, S, U: FnMut() -> S>(
     }
 }
 
+/**
+ * count()の数え方の違いを吸収するtrait
+ */
+trait CountStrategy {
+    /**
+     * datas[idx]のデータをtimeframeに追加します
+     */
+    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, rule: &RuleNode);
+    /**
+     * datas[idx]のデータをtimeframeから削除します。
+     */
+    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, rule: &RuleNode);
+    /**
+     * count()の値を返します。
+     */
+    fn count(&mut self) -> i64;
+    /**
+     * AggResultを作成します。
+     */
+    fn create_agg_result(
+        &mut self,
+        left: i64,
+        datas: &Vec<AggRecordTimeInfo>,
+        cnt: i64,
+        key: &String,
+        rule: &RuleNode,
+    ) -> AggResult;
+}
+
+/**
+ * countにfieldが指定されている場合のjudgeの計算方法を表す構造体
+ */
+struct FieldStrategy {
+    value_2_cnt: HashMap<String, i64>,
+}
+
+impl CountStrategy for FieldStrategy {
+    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+        if idx >= datas.len() as i64 || idx < 0 {
+            return;
+        }
+
+        let value = &datas[idx as usize].field_record_value;
+        let key_val = self.value_2_cnt.get_key_value_mut(value);
+        if key_val.is_none() {
+            self.value_2_cnt.insert(value.to_string(), 1);
+        } else {
+            let (_, val) = key_val.unwrap();
+            *val += 1;
+        }
+    }
+
+    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+        if idx >= datas.len() as i64 || idx < 0 {
+            return;
+        }
+
+        let record_value = &datas[idx as usize].field_record_value;
+        let key_val = self.value_2_cnt.get_key_value_mut(record_value);
+        if key_val.is_none() {
+            return;
+        }
+
+        let val: &mut i64 = key_val.unwrap().1;
+        if val <= &mut 1 {
+            // 0になる場合はキー自体削除する
+            self.value_2_cnt.remove(record_value);
+        } else {
+            *val += -1; // 個数を減らす
+        }
+    }
+
+    fn count(&mut self) -> i64 {
+        return self.value_2_cnt.keys().len() as i64;
+    }
+
+    fn create_agg_result(
+        &mut self,
+        left: i64,
+        datas: &Vec<AggRecordTimeInfo>,
+        _cnt: i64,
+        key: &String,
+        rule: &RuleNode,
+    ) -> AggResult {
+        let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect(); // drainで初期化
+        return AggResult::new(
+            values.len() as i64,
+            key.to_string(),
+            values,
+            datas[left as usize].record_time,
+            get_str_agg_eq(rule),
+        );
+    }
+}
+
+/**
+ * countにfieldが指定されていない場合のjudgeの計算方法を表す構造体
+ */
+struct NoFieldStrategy {
+    cnt: i64,
+}
+
+impl CountStrategy for NoFieldStrategy {
+    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+        if idx >= datas.len() as i64 || idx < 0 {
+            return;
+        }
+
+        self.cnt += 1;
+    }
+
+    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+        if idx >= datas.len() as i64 || idx < 0 {
+            return;
+        }
+
+        self.cnt += -1;
+    }
+
+    fn count(&mut self) -> i64 {
+        return self.cnt;
+    }
+
+    fn create_agg_result(
+        &mut self,
+        left: i64,
+        datas: &Vec<AggRecordTimeInfo>,
+        cnt: i64,
+        key: &String,
+        rule: &RuleNode,
+    ) -> AggResult {
+        let ret = AggResult::new(
+            cnt as i64,
+            key.to_string(),
+            vec![],
+            datas[left as usize].record_time,
+            get_str_agg_eq(rule),
+        );
+        self.cnt = 0; //cntを初期化
+        return ret;
+    }
+}
+
+fn _create_counter(rule: &RuleNode) -> Box<dyn CountStrategy> {
+    let agg_cond = rule.get_agg_condition().unwrap();
+    if agg_cond._field_name.is_some() {
+        return Box::new(FieldStrategy {
+            value_2_cnt: HashMap::new(),
+        });
+    } else {
+        return Box::new(NoFieldStrategy { cnt: 0 });
+    }
+}
+
+fn _get_timestamp(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> i64 {
+    return datas[idx as usize].record_time.timestamp();
+}
+
+fn _get_timestamp_subsec_nano(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> u32 {
+    return datas[idx as usize].record_time.timestamp_subsec_nanos();
+}
+
+// data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
+fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &Vec<AggRecordTimeInfo>) -> bool {
+    let left_time = _get_timestamp(left, datas);
+    let left_time_nano = _get_timestamp_subsec_nano(left, datas);
+    // evtxのSystemTimeは小数点7桁秒まで記録されているので、それを考慮する
+    let mut right_time = _get_timestamp(right, datas);
+    let right_time_nano = _get_timestamp_subsec_nano(right, datas);
+    if right_time_nano > left_time_nano {
+        right_time += 1;
+    }
+    return right_time - left_time <= frame;
+}
+
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
 pub fn judge_timeframe(
     rule: &RuleNode,
@@ -287,163 +468,46 @@ pub fn judge_timeframe(
     key: &String,
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
-    let mut time_data = time_datas.clone();
-    // 番兵
-    let stop_time = Utc.ymd(9999, 12, 31).and_hms(23, 59, 59);
-    let aggcondition = rule.detection.aggregation_condition.as_ref().unwrap();
-    let exist_field = aggcondition._field_name.is_some();
+    if time_datas.is_empty() {
+        return ret;
+    }
 
-    let mut start_point = 0;
-    // timeframeで指定された基準の値を秒数として保持
-    let judge_sec_frame = get_sec_timeframe(&rule.detection.timeframe);
-    let mut loaded_field_value: HashMap<String, u128> = HashMap::new();
+    // AggRecordTimeInfoを時間順がソートされている前提で処理を進める
+    let mut datas = time_datas.clone();
+    datas.sort_by(|a, b| a.record_time.cmp(&b.record_time));
 
-    let mut stop_time_datas: Vec<AggRecordTimeInfo> = (1..=aggcondition._cmp_num)
-        .map(|_a| AggRecordTimeInfo {
-            record_time: stop_time,
-            field_record_value: "".to_string(),
-        })
-        .collect();
+    // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。
+    let def_frame = &datas.last().unwrap().record_time.timestamp()
+        - &datas.first().unwrap().record_time.timestamp();
+    let frame = get_sec_timeframe(rule).unwrap_or(def_frame);
 
-    time_data.append(&mut stop_time_datas);
-    time_data.sort_by(|a, b| a.record_time.cmp(&b.record_time));
-
-    // 次のチェックポイントのindexを取得する関数
-    let get_next_checkpoint = |cal_point| {
-        if cal_point + aggcondition._cmp_num - 1 > (time_data.len() - 1) as i32 {
-            (time_data.len() - 1) as i32
-        } else {
-            cal_point + aggcondition._cmp_num - 1
+    // left <= i < rightの範囲にあるdata[i]がtimeframe内にあるデータであると考える
+    let mut left: i64 = 0;
+    let mut right: i64 = 0;
+    let mut counter = _create_counter(rule);
+    let data_len = datas.len() as i64;
+    // rightは開区間なので+1
+    while left < data_len && right < data_len + 1 {
+        // timeframeの範囲にある限りrightをincrement
+        while right < data_len && _is_in_timeframe(left, right, frame, &datas) {
+            counter.add_data(right, &datas, rule);
+            right = right + 1;
         }
-    };
 
-    // 最初はcountの条件として記載されている分のレコードを取得するためのindex指定
-    let mut check_point = get_next_checkpoint(start_point);
-
-    *loaded_field_value
-        .entry(time_data[0].field_record_value.to_string())
-        .or_insert(0) += 1;
-
-    while time_data[start_point as usize].record_time != stop_time
-        && check_point < time_data.len() as i32
-    {
-        // 基準となるレコードと時刻比較を行う対象のレコード時刻情報を取得する
-        let check_point_date = &time_data[check_point as usize];
-        let diff = check_point_date.record_time.timestamp()
-            - time_data[start_point as usize].record_time.timestamp();
-        // timeframeで指定した情報と比較して時刻差がtimeframeの枠を超えていた場合
-        if judge_sec_frame.is_some() && diff > judge_sec_frame.unwrap() {
-            // 検査対象データが1個しかない状態でaggregation conditionの条件が1であるときにデータ個数が0になってしまう問題への対応
-            let count_set_cnt = check_point - start_point;
-            // timeframe内に入っている場合があるため判定を行う
-            let result_set_cnt: i32 = _if_condition_fn_caller(
-                exist_field,
-                || {
-                    time_data[(start_point as usize + 1)..(check_point as usize)]
-                        .iter()
-                        .for_each(|timedata| {
-                            *loaded_field_value
-                                .entry(timedata.field_record_value.to_string())
-                                .or_insert(0) += 1;
-                        });
-                    loaded_field_value.len() as i32
-                },
-                || count_set_cnt as i32,
-            );
-            // timeframe内の対象のレコード数がcountの条件を満たさなかった場合、基準となるレコードを1つずらし、countの判定基準分のindexを設定して、次のレコードから始まるtimeframeの判定を行う
-            if !select_aggcon(result_set_cnt, &aggcondition) {
-                _if_condition_fn_caller(
-                    exist_field && time_data[start_point as usize].record_time != stop_time,
-                    || {
-                        let counter = loaded_field_value
-                            .entry(
-                                time_data[start_point as usize]
-                                    .field_record_value
-                                    .to_string(),
-                            )
-                            .or_insert(1);
-                        *counter -= 1;
-                        if *counter == 0 as u128 {
-                            loaded_field_value
-                                .remove(&time_data[start_point as usize].field_record_value);
-                        }
-                    },
-                    || {},
-                );
-                start_point += 1;
-                check_point = get_next_checkpoint(start_point);
-                continue;
-            }
-            let field_values: Vec<String> = loaded_field_value
-                .keys()
-                .filter(|key| **key != "")
-                .map(|key| key.to_string())
-                .collect();
-            //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
-            ret.push(AggResult::new(
-                result_set_cnt,
-                key.to_string(),
-                field_values,
-                time_data[start_point as usize].record_time,
-                get_str_agg_eq(rule),
-            ));
-            // timeframe投入内の対象レコード数がcountの条件を満たした場合は、すでに判定済みのtimeframe内では同様に検知を行うことになり、過検知となってしまうため、今回timeframe内と判定された最後のレコードの次のレコードを次の基準として参照するようにindexを設定する
-            start_point = check_point;
-            check_point = get_next_checkpoint(start_point);
-            loaded_field_value = HashMap::new();
-            *loaded_field_value
-                .entry(time_data[0].field_record_value.to_string())
-                .or_insert(0) += 1;
+        let cnt = counter.count();
+        if select_aggcon(cnt as i64, rule) {
+            // 条件を満たすtimeframeが見つかった
+            ret.push(counter.create_agg_result(left, &datas, cnt, key, rule));
+            left = right;
         } else {
-            // 条件の基準が1の時に最初の要素を2回読み込む事を防止するため
-            _if_condition_fn_caller(
-                check_point_date.record_time != stop_time && check_point != 0,
-                || {
-                    *loaded_field_value
-                        .entry(check_point_date.field_record_value.to_string())
-                        .or_insert(0) += 1;
-                    ()
-                },
-                || {},
-            );
-            // timeframeで指定した情報と比較して、時刻差がtimeframeの枠を超えていない場合は次のレコード時刻情報を参照して、timeframe内であるかを判定するため
-            check_point += 1;
+            // 条件を満たさなかったので、rightとleftを+1ずらす
+            counter.add_data(right, &datas, rule);
+            right += 1;
+            counter.remove_data(left, &datas, rule);
+            left += 1;
         }
     }
 
-    // timeframeがないルールの場合の判定(フィールドの読み込みはwhile内で実施済み)
-
-    if judge_sec_frame.is_none() {
-        if exist_field && select_aggcon(loaded_field_value.keys().len() as i32, &aggcondition) {
-            let field_values: Vec<String> = loaded_field_value
-                .keys()
-                .filter(|key| **key != "")
-                .map(|key| key.to_string())
-                .collect();
-            //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
-            ret.push(AggResult::new(
-                loaded_field_value.values().map(|value| *value as i32).sum(),
-                key.to_string(),
-                field_values,
-                time_data[start_point as usize].record_time,
-                get_str_agg_eq(rule),
-            ));
-        } else {
-            if select_aggcon(
-                *loaded_field_value.get("").unwrap_or(&0) as i32,
-                &aggcondition,
-            ) {
-                //timeframe内の対象のレコード数がcountの条件を満たした場合は返却用の変数に結果を投入する
-                ret.push(AggResult::new(
-                    *loaded_field_value.get("").unwrap_or(&0) as i32,
-                    key.to_string(),
-                    vec![],
-                    time_data[start_point as usize].record_time,
-                    get_str_agg_eq(rule),
-                ));
-            }
-        }
-    }
     return ret;
 }
 
@@ -520,7 +584,7 @@ mod tests {
         )];
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR, record_str],
+            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -580,7 +644,7 @@ mod tests {
         ));
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR, record_str],
+            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -612,7 +676,7 @@ mod tests {
         );
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR],
+            &vec![SIMPLE_RECORD_STR.to_string()],
             expected_count,
             vec![expected_agg_result],
         );
@@ -669,7 +733,7 @@ mod tests {
         ));
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR, record_str],
+            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -726,7 +790,7 @@ mod tests {
         ));
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR, record_str],
+            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -829,7 +893,7 @@ mod tests {
         ));
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR, record_str],
+            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -880,10 +944,349 @@ mod tests {
         ));
         check_count(
             rule_str,
-            vec![SIMPLE_RECORD_STR, record_str],
+            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
+    }
+
+    // timeframeのsecondsが動くことを確認
+    #[test]
+    fn test_count_timeframe_seconds() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T00:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T00:30:10Z"),
+            test_create_recstr_std("3", "1977-01-09T00:30:20Z"),
+        ];
+
+        // timeframe=20sはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "20s");
+            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=19sはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "19s");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // timeframeのminitutesが動くことを確認
+    #[test]
+    fn test_count_timeframe_minitues() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T00:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T00:40:00Z"),
+            test_create_recstr_std("3", "1977-01-09T00:50:00Z"),
+        ];
+
+        // timeframe=20mはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "20m");
+            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=19mはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "19m");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // timeframeのhourが動くことを確認
+    #[test]
+    fn test_count_timeframe_hour() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T00:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T02:30:00Z"),
+        ];
+
+        // timeframe=3hはHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "3h");
+            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=2hはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "2h");
+            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=1hはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "1h");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+
+        // timeframe=120minはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "120m");
+            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=119minはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "119m");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // timeframeのdayが動くことを確認
+    #[test]
+    fn test_count_timeframe_day() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T00:30:00Z"),
+            test_create_recstr_std("2", "1977-01-13T00:30:00Z"),
+            test_create_recstr_std("3", "1977-01-20T00:30:00Z"),
+        ];
+
+        // timeframe=11dはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "11d");
+            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=10dはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "10d");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // evtx的には小数点の秒数が指定されうるので、それが正しく制御できることを確認
+    #[test]
+    fn test_count_timeframe_milsecs() {
+        let recs = vec![
+            test_create_recstr_std("1", "2021-12-21T10:40:00.0000000Z"),
+            test_create_recstr_std("2", "2021-12-21T10:40:05.0000000Z"),
+            test_create_recstr_std("3", "2021-12-21T10:40:10.0003000Z"),
+        ];
+
+        // timeframe=11secはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "11s");
+            let default_time = Utc.ymd(2021, 12, 21).and_hms(10, 40, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=10dはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "10s");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // evtx的には小数点の秒数が指定されうるので、それが正しく制御できることを確認
+    #[test]
+    fn test_count_timeframe_milsecs2() {
+        let recs = vec![
+            test_create_recstr_std("1", "2021-12-21T10:40:00.0500000Z"),
+            test_create_recstr_std("2", "2021-12-21T10:40:05.0000000Z"),
+            test_create_recstr_std("3", "2021-12-21T10:40:10.0400000Z"),
+        ];
+
+        // timeframe=10secはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "10s");
+            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 50);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=10dはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "9s");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // evtx的には小数点の秒数が指定されうるので、それが正しく制御できることを確認
+    #[test]
+    fn test_count_timeframe_milsecs3() {
+        let recs = vec![
+            test_create_recstr_std("1", "2021-12-21T10:40:00.0500000Z"),
+            test_create_recstr_std("2", "2021-12-21T10:40:05.0000000Z"),
+            test_create_recstr_std("3", "2021-12-21T10:40:10.0600000Z"),
+        ];
+
+        // timeframe=11secはギリギリHit
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "11s");
+            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 50);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                default_time,
+                ">= 3".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // timeframe=10dはギリギリHitしない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "10s");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // Hitしたレコードがない時のテスト
+    #[test]
+    fn test_count_norecord() {
+        let recs = vec![];
+
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "10s");
+            let expected_count = HashMap::new();
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // 1レコードで正しく検知できることを確認
+    #[test]
+    fn test_count_onerecord() {
+        let recs = vec![test_create_recstr_std("1", "2021-12-21T10:40:00.0000000Z")];
+
+        // byない
+        {
+            let rule_str = create_std_rule("count(EventID) >= 1", "1s");
+            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 1);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                1,
+                "_".to_owned(),
+                vec!["1".to_owned()],
+                default_time,
+                ">= 1".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+
+        // byある
+        {
+            let rule_str = create_std_rule("count(EventID) by param1>= 1", "1s");
+            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 0);
+            let mut expected_count = HashMap::new();
+            expected_count.insert("Windows Event Log".to_owned(), 1);
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                1,
+                "Windows Event Log".to_owned(),
+                vec!["1".to_owned()],
+                default_time,
+                ">= 1".to_string(),
+            ));
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
     }
 
     // timeframeの検査
@@ -895,275 +1298,216 @@ mod tests {
     // 1:30 EventID=1
     // 2:30 EventID=2
     // 3:30 EventID=3
+    // 10:30 EventID=4
+    // 11:30 EventID=5
+    // 12:30 EventID=4
     #[test]
-    fn test_count_timeframe() {
-        let record_str1: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 1,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T00:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
+    fn test_count_timeframe1() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T00:30:00Z"),
+            test_create_recstr_std("1", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T02:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T03:30:00Z"),
+            test_create_recstr_std("4", "1977-01-09T10:30:00Z"),
+            test_create_recstr_std("5", "1977-01-09T11:30:00Z"),
+            test_create_recstr_std("4", "1977-01-09T12:30:00Z"),
+        ];
+        let rule_str = create_std_rule("count(EventID) >= 3", "2h");
 
-        let record_str2: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 1,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T01:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str3: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 2,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T02:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str4: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 3,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T03:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection1:
-                param1: 'Windows Event Log'
-            condition: selection1 | count(EventID) >= 3
-            timeframe: 2h
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
-        "#;
-
-        let default_time = Utc.ymd(1977, 1, 9).and_hms(1, 30, 0);
         let mut expected_count = HashMap::new();
-        expected_count.insert("_".to_owned(), 4);
+        expected_count.insert("_".to_owned(), 7);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
             3,
             "_".to_owned(),
             vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
-            default_time,
+            Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
             ">= 3".to_string(),
         ));
-        check_count(
-            rule_str,
-            vec![record_str1, record_str2, record_str3, record_str4],
-            expected_count,
-            expected_agg_result,
-        );
+        check_count(&rule_str, &recs, expected_count, expected_agg_result);
+    }
+
+    // ずっと微妙に検知しない
+    #[test]
+    fn test_count_timeframe2() {
+        let recs = vec![
+            test_create_recstr_std("2", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T02:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T03:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T04:30:00Z"),
+            test_create_recstr_std("1", "1977-01-09T05:30:00Z"),
+            test_create_recstr_std("1", "1977-01-09T06:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T07:30:00Z"),
+        ];
+
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "2h");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 7);
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // 同じ時刻のレコードがあっても正しくcount出来る
+    #[test]
+    fn test_count_sametime() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T02:30:00Z"),
+            test_create_recstr_std("4", "1977-01-09T02:30:00Z"),
+        ];
+
+        {
+            let rule_str = create_std_rule("count(EventID) >= 4", "1h");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 4);
+
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                4,
+                "_".to_owned(),
+                vec![
+                    "1".to_owned(),
+                    "2".to_owned(),
+                    "3".to_owned(),
+                    "4".to_owned(),
+                ],
+                Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+                ">= 4".to_string(),
+            ));
+
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+    }
+
+    // countの実装で番兵をおいてないので、それで正しく動くかチェック
+    // Hitした全レコードのtimeframeが条件のtimeframeよりも狭い場合にエラーがでないかチェック
+    #[test]
+    fn test_count_sentinel() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T02:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T03:30:00Z"),
+        ];
+
+        // Hitするパターン
+        {
+            let rule_str = create_std_rule("count(EventID) >= 3", "1d");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+                Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+                ">= 3".to_string(),
+            ));
+
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
+        // Hitしないパターン
+        {
+            let rule_str = create_std_rule("count(EventID) >= 4", "1d");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), 3);
+
+            check_count(&rule_str, &recs, expected_count, Vec::new());
+        }
+    }
+
+    // 1:30-4:30までEventIDが4種類あって、2:30-5:30までEventIDが4種類あるが、
+    // 1:30-4:30までで4種類あったら、今度は5:30から数え始めていることを確認
+    #[test]
+    fn test_count_timeframe_reset() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T02:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T03:30:00Z"),
+            test_create_recstr_std("4", "1977-01-09T04:30:00Z"),
+            test_create_recstr_std("1", "1977-01-09T05:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T06:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T07:30:00Z"),
+            test_create_recstr_std("4", "1977-01-09T08:30:00Z"),
+            test_create_recstr_std("1", "1977-01-09T09:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T10:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T11:30:00Z"),
+            test_create_recstr_std("4", "1977-01-09T12:30:00Z"),
+        ];
+
+        {
+            let rule_str = create_std_rule("count(EventID) >= 4", "3h");
+            let mut expected_count = HashMap::new();
+            expected_count.insert("_".to_owned(), recs.len() as i32);
+
+            let mut expected_agg_result: Vec<AggResult> = Vec::new();
+            expected_agg_result.push(AggResult::new(
+                4,
+                "_".to_owned(),
+                vec![
+                    "1".to_owned(),
+                    "2".to_owned(),
+                    "3".to_owned(),
+                    "4".to_owned(),
+                ],
+                Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+                ">= 4".to_string(),
+            ));
+            expected_agg_result.push(AggResult::new(
+                4,
+                "_".to_owned(),
+                vec![
+                    "1".to_owned(),
+                    "2".to_owned(),
+                    "3".to_owned(),
+                    "4".to_owned(),
+                ],
+                Utc.ymd(1977, 1, 9).and_hms(5, 30, 0),
+                ">= 4".to_string(),
+            ));
+            expected_agg_result.push(AggResult::new(
+                4,
+                "_".to_owned(),
+                vec![
+                    "1".to_owned(),
+                    "2".to_owned(),
+                    "3".to_owned(),
+                    "4".to_owned(),
+                ],
+                Utc.ymd(1977, 1, 9).and_hms(9, 30, 0),
+                ">= 4".to_string(),
+            ));
+
+            check_count(&rule_str, &recs, expected_count, expected_agg_result);
+        }
     }
 
     // timeframeの検査
     // timeframe=2hで、パイプ以降はcount(EventID) >= 3とする。
     //
-    // このパターンをチェック
-    // 0:30 EventID=1
-    // 1:30 EventID=1
-    // 2:30 EventID=2
-    // 3:30 EventID=2
-    // 4:30 EventID=3
-    // 5:30 EventID=4
-    // 19:00 EventID=1
-    // 20:00 EventID=1
-    // 21:00 EventID=3
-    // 22:00 EventID=4
+    // test_count_timeframe()のパターンが2回続く場合
     #[test]
-    fn test_count_timeframe2() {
-        let record_str1: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 1,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T00:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
+    fn test_count_timeframe_twice() {
+        let recs = vec![
+            test_create_recstr_std("1", "1977-01-09T00:30:00Z"),
+            test_create_recstr_std("1", "1977-01-09T01:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T02:30:00Z"),
+            test_create_recstr_std("2", "1977-01-09T03:30:00Z"),
+            test_create_recstr_std("3", "1977-01-09T04:30:00Z"),
+            test_create_recstr_std("4", "1977-01-09T05:30:00Z"),
+            test_create_recstr_std("1", "1977-01-09T19:00:00Z"),
+            test_create_recstr_std("1", "1977-01-09T20:00:00Z"),
+            test_create_recstr_std("3", "1977-01-09T21:00:00Z"),
+            test_create_recstr_std("4", "1977-01-09T21:30:00Z"),
+            test_create_recstr_std("5", "1977-01-09T22:00:00Z"),
+        ];
 
-        let record_str2: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 1,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T01:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str3: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 2,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T02:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str4: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 2,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T03:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str5: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 3,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T04:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str6: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 4,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T05:30:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str7: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 1,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T19:00:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str8: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 1,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T20:00:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str9: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 3,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T21:00:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let record_str10: &str = r#"
-        {
-          "Event": {
-            "System": {
-              "EventID": 4,
-              "TimeCreated_attributes": {
-                "SystemTime": "1977-01-09T22:00:00Z"
-              }
-            },
-            "EventData": {
-              "param1": "Windows Event Log"
-            }
-          }
-        }"#;
-
-        let rule_str = r#"
-        enabled: true
-        detection:
-            selection1:
-                param1: 'Windows Event Log'
-            condition: selection1 | count(EventID) >= 3
-            timeframe: 2h
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
-        "#;
+        let rule_str = create_std_rule("count(EventID) >= 3", "2h");
 
         let mut expected_count = HashMap::new();
-        expected_count.insert("_".to_owned(), 10);
+        expected_count.insert("_".to_owned(), 11);
         let mut expected_agg_result: Vec<AggResult> = Vec::new();
         expected_agg_result.push(AggResult::new(
             3,
@@ -1174,35 +1518,64 @@ mod tests {
         ));
 
         expected_agg_result.push(AggResult::new(
-            3,
+            4,
             "_".to_owned(),
-            vec!["1".to_owned(), "3".to_owned(), "4".to_owned()],
+            vec![
+                "1".to_owned(),
+                "3".to_owned(),
+                "4".to_owned(),
+                "5".to_owned(),
+            ],
             Utc.ymd(1977, 1, 9).and_hms(20, 00, 0),
             ">= 3".to_string(),
         ));
-        check_count(
-            rule_str,
-            vec![
-                record_str1,
-                record_str2,
-                record_str3,
-                record_str4,
-                record_str5,
-                record_str6,
-                record_str7,
-                record_str8,
-                record_str9,
-                record_str10,
-            ],
-            expected_count,
-            expected_agg_result,
-        );
+        check_count(&rule_str, &recs, expected_count, expected_agg_result);
+    }
+
+    fn test_create_recstr_std(event_id: &str, time: &str) -> String {
+        return test_create_recstr(event_id, time, "Windows Event Log");
+    }
+
+    fn test_create_recstr(event_id: &str, time: &str, param1: &str) -> String {
+        let template: &str = r#"
+    {
+      "Event": {
+        "System": {
+          "EventID": ${EVENT_ID},
+          "TimeCreated_attributes": {
+            "SystemTime": "${TIME}"
+          }
+        },
+        "EventData": {
+          "param1": "${PARAM1}"
+        }
+      }
+    }"#;
+        return template
+            .replace("${EVENT_ID}", event_id)
+            .replace("${TIME}", time)
+            .replace("${PARAM1}", param1);
+    }
+
+    fn create_std_rule(count: &str, timeframe: &str) -> String {
+        let template = r#"
+    enabled: true
+    detection:
+        selection1:
+            param1: 'Windows Event Log'
+        condition: selection1 | ${COUNT}
+        timeframe: ${TIME_FRAME}
+    output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+    "#;
+        return template
+            .replace("${COUNT}", count)
+            .replace("${TIME_FRAME}", timeframe);
     }
 
     /// countで対象の数値確認を行うためのテスト用関数
     fn check_count(
         rule_str: &str,
-        records_str: Vec<&str>,
+        records_str: &Vec<String>,
         expected_counts: HashMap<String, i32>,
         expect_agg_results: Vec<AggResult>,
     ) {
@@ -1214,7 +1587,7 @@ mod tests {
             assert!(false, "Failed to init rulenode");
         }
         for record_str in records_str {
-            match serde_json::from_str(record_str) {
+            match serde_json::from_str(&record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
@@ -1248,6 +1621,7 @@ mod tests {
             expect_condition_op_num.push(expect_agg.condition_op_num);
         }
         for agg_result in agg_results {
+            println!("{}", &agg_result.start_timedate);
             //ここですでにstart_timedateの格納を確認済み
             let index = expect_start_timedate
                 .binary_search(&agg_result.start_timedate)

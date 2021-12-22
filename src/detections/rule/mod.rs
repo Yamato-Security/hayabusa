@@ -303,7 +303,7 @@ impl DetectionNode {
 /// countなどのaggregationの結果を出力する構造体
 pub struct AggResult {
     /// countなどの値
-    pub data: i32,
+    pub data: i64,
     /// count byで指定された条件のレコード内での値
     pub key: String,
     /// countの括弧内指定された項目の検知されたレコード内での値の配列。括弧内で指定がなかった場合は長さ0の配列となる
@@ -316,7 +316,7 @@ pub struct AggResult {
 
 impl AggResult {
     pub fn new(
-        data: i32,
+        data: i64,
         key: String,
         field_values: Vec<String>,
         start_timedate: DateTime<Utc>,

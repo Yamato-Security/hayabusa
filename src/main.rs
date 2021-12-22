@@ -170,6 +170,7 @@ impl App {
             detection = self.analysis_file(evtx_file, detection);
             pb.inc();
         }
+        detection.add_aggcondition_msges(&self.rt);
         after_fact();
     }
 
@@ -236,7 +237,6 @@ impl App {
             detection = detection.start(&self.rt, records_per_detect);
         }
 
-        detection.add_aggcondition_msg();
         tl.tm_stats_dsp_msg();
 
         return detection;

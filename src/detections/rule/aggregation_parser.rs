@@ -23,7 +23,7 @@ pub struct AggregationParseInfo {
     pub _field_name: Option<String>,    // countの括弧に囲まれた部分の文字
     pub _by_field_name: Option<String>, // count() by の後に指定される文字列
     pub _cmp_op: AggregationConditionToken, // (必須)<とか>とか何が指定されたのか
-    pub _cmp_num: i32,                  // (必須)<とか>とかの後にある数値
+    pub _cmp_num: i64,                  // (必須)<とか>とかの後にある数値
 }
 
 #[derive(Debug)]
@@ -202,7 +202,7 @@ impl AggegationConditionCompiler {
 
         let token = token_ite.next().unwrap_or(AggregationConditionToken::SPACE);
         let cmp_number = if let AggregationConditionToken::KEYWORD(number) = token {
-            let number: Result<i32, _> = number.parse();
+            let number: Result<i64, _> = number.parse();
             if number.is_err() {
                 // 比較演算子の後に数値が無い。
                 return Result::Err("The compare operator needs a number like '> 3'.".to_string());
@@ -460,7 +460,7 @@ mod tests {
         );
     }
 
-    fn check_aggregation_condition_ope(expr: String, cmp_num: i32) -> AggregationConditionToken {
+    fn check_aggregation_condition_ope(expr: String, cmp_num: i64) -> AggregationConditionToken {
         let compiler = AggegationConditionCompiler::new();
         let result = compiler.compile(expr);
 
