@@ -303,16 +303,16 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 対象となるサンプルデータ、コマンドラインオプション、ルールのチューニング等によって結果が異なるため、完全な比較はできませんが、ご了承ください。
 我々のテストでは、Hayabusaはすべてのツールの中で最も多くのSigmaルールをサポートしながらも、非常に高速な速度を維持し、大量のメモリを必要としないことが分かっています。
 
-以下のベンチマークは、2021/12/19に [sample-evtx repository](https://github.com/Yamato-Security/Hayabusa-sample-evtx) から約500個のevtxファイル（130MB）を基に、Lenovo P51で計測したものです。
+以下のベンチマークは、2021/12/23に [sample-evtx repository](https://github.com/Yamato-Security/Hayabusa-sample-evtx) から約500個のevtxファイル（130MB）を基に、Lenovo P51で計測したものです。Hayabusa 1.0.0を使いました。
 
 | | 経過時間 | メモリ使用量 | 利用可能のSigmaルール数 |
 | :---: | :---: | :---: | :---: |
 | Chainsaw | 7.5 seconds | 70 MB | 170 |
-| Hayabusa | 7.5 seconds | 340 MB | 267 |
+| Hayabusa | 7.8 seconds | 340 MB | 267 |
 | Zircolite | 34 seconds | 380 MB (通常、ログファイルの3倍のサイズが必要) | 237 |
 
 * Hayabusaルールも有効にすると、約300のユニークなアラートとイベントを検知します。
-* 合計7.5GBの多数のイベントログファイルでテストしたところ、7分以内に終了し、1GB以上のメモリを使用しませんでした。
+* 合計7.5GBの多数のイベントログファイルでテストしたところ、7分以内に終了し、1GB以上のメモリを使用しませんでした。消費されるメモリ量は、ターゲットのevtxファイルのサイズではなく、結果のサイズによって増えます。
 * [Timeline Explorer](https://ericzimmerman.github.io/#!index.md)などのツールで解析するために、結果を1つのCSVタイムラインにまとめる唯一のツールです。
 
 # ライセンス

@@ -302,16 +302,16 @@ There is no "one tool to rule them all" and we have found that each has its own 
 Please understand that it is not possible to do a perfect comparison as results will differ based on the target sample data, command-line options, rule tuning, etc...
 In our tests, we have found hayabusa to support the largest number of sigma rules out of all the tools while still maintaining very fast speeds and does not require a great amount of memory. 
 
-The following benchmarks were taken on a Lenovo P51 based on approximately 500 evtx files (130MB) from our [sample-evtx repository](https://github.com/Yamato-Security/hayabusa-sample-evtx) at 2021/12/19. Hayabusa version 1.0.0 was used.
+The following benchmarks were taken on a Lenovo P51 based on approximately 500 evtx files (130MB) from our [sample-evtx repository](https://github.com/Yamato-Security/hayabusa-sample-evtx) at 2021/12/23 with Hayabusa version 1.0.0.
 
 | | Elapsed Time | Memory Usage | Unique Sigma Rules With Detections |
 | :---: | :---: | :---: | :---: |
 | Chainsaw | 7.5 seconds | 75 MB | 170 |
-| Hayabusa | 7.5 seconds | 340 MB | 267 |
+| Hayabusa | 7.8 seconds | 340 MB | 267 |
 | Zircolite | 34 seconds | 380 MB (normally requires 3 times the size of the log files) | 237 |
 
 * With hayabusa rules enabled, it will detect around 300 unique alerts and events. 
-* When tested on many event logs files totaling 7.5 GB it finishes in under 7 minutes and does not use more than 1 GB of memory.
+* When tested on many event logs files totaling 7.5 GB, it finished in under 7 minutes and used around 1 GB of memory. The amount of memory consumed is based on the size of the results, not on the size of the target evtx files.
 * It is the only tool that provides a consolidated single CSV timeline to analysis in tools like [Timeline Explorer](https://ericzimmerman.github.io/#!index.md).
 
 
