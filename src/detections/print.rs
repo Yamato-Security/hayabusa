@@ -242,6 +242,7 @@ impl AlertMessage {
             "Errors were generated. Please check {} for details.",
             ERROR_LOG_PATH.to_string()
         );
+        println!("");
     }
 }
 
