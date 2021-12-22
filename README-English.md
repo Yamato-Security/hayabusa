@@ -220,7 +220,7 @@ When Hayabusa output is being displayed to the screen (the default), it will dis
 * `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
 * `Title`: This comes from the `title` field in the YML detection rule.
-* `Details`: This comes from the `output` field in the YML detection rule, however, only Hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc...
+* `Details`: This comes from the `details` field in the YML detection rule, however, only Hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc...
 
 When saving to a CSV file an additional two fields will be added:
 * `Rule Path`: The path to the detection rule that generated the alert or event.
@@ -254,7 +254,7 @@ Please check out the current rules to use as a template in creating new ones or 
 
 ## Hayabusa v.s. converted Sigma rules
 Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa/blob/main/tools/sigmac/README-English.md). Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
-1. An extra `output` field to display additional information taken from only the useful fields in the log.
+1. An extra `details` field to display additional information taken from only the useful fields in the log.
 2. They are all tested against sample logs and are known to work. 
    > Some sigma rules may not work as intended due to bugs in the conversion process, unsupported features, or differences in implementation (such as in regular expressions).
    

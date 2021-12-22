@@ -1,9 +1,9 @@
-# ルールファイル
+# ルールファイルについて
 Hayabusaの検知ルールは、[YAML](https://en.wikipedia.org/wiki/YAML) 形式で記述されています。
 単純な文字列のマッチングだけでなく、正規表現や`AND`、`OR`などの条件を組み合わせて複雑な検知ルールを表現することができます。
 本節では、Hayabusaの検知ルールの書き方について説明します。
 
-# ルールファイル形式
+## ルールファイル形式
 記述例:
 
 ```yaml
@@ -15,8 +15,8 @@ modified: 2021/11/26
 #Alert section
 title: User added to local Administrators group
 title_jp: ユーザがローカル管理者グループに追加された
-output: 'User: %MemberName%  :  SID: %MemberSid%  :  Group: %TargetUserName%'
-output_jp: 'ユーザ: %MemberName%  :  SID: %MemberSid%  :  グループ名: %TargetUserName%'
+details: 'User: %SubjectUserName%  :  Group: %TargetUserName%  :  LogonID: %SubjectLogonId%'
+details_jp: 'ユーザ: %SubjectUserName%  :  グループ名: %TargetUserName%  :  ログオンID: %SubjectLogonId%'
 description: A user was added to the local Administrators group.
 description_jp: ユーザがローカル管理者グループに追加された。
 
@@ -51,8 +51,8 @@ ruletype: Hayabusa
 > ## アラートセクション
 * **title [必須]**: ルールファイルのタイトル。これは表示されるアラートの名前にもなるので、簡潔であるほどよいです。(85文字以下でなければなりません。)
 * **title_jp** [オプション]: 日本語のタイトルです。
-* output [オプション]: 表示されるアラートの詳細です。Windowsイベントログの中で解析に有効なフィールドがあれば出力してください。フィールドは `" : "` で区切られます（両側ともスペース2つ）。フィールドのプレースホルダは `%` で囲まれ (例: `%MemberName%`) 、`config_eventkey_alias.txt` で定義する必要があります。(以下で説明します)
-* **output_jp** [オプション]: 日本語の出力メッセージ。
+* details [オプション]: 表示されるアラートの詳細です。Windowsイベントログの中で解析に有効なフィールドがあれば出力してください。フィールドは `" : "` で区切られます（両側ともスペース2つ）。フィールドのプレースホルダは `%` で囲まれ (例: `%MemberName%`) 、`config_eventkey_alias.txt` で定義する必要があります。(以下で説明します)
+* **details_jp** [オプション]: 日本語の出力メッセージ。
 * **description** [オプション]: ルールの説明。これは表示されないので、長く詳細に記述することができます。
 * **description_jp** [オプション]: 日本語の説明文です。
 
@@ -170,7 +170,7 @@ detection:
 ```
 
 #### 注意: 未定義のイベントキーエイリアスについて
-すべてのイベントキーエイリアスが `config\eventkey_alias.txt`で定義されているわけではありません。`output`（アラートの詳細）メッセージで正しいデータを取得しておらず、代わりに`%EventID%`のような結果を取得している場合、または検知ロジックの選択が正しく機能していない場合は、新しいエイリアスを使用して `config\eventkey_alias.txt`を更新する必要があります。
+すべてのイベントキーエイリアスが `config\eventkey_alias.txt`で定義されているわけではありません。`details`（アラートの詳細）メッセージで正しいデータを取得しておらず、代わりに`%EventID%`のような結果を取得している場合、または検知ロジックの選択が正しく機能していない場合は、新しいエイリアスを使用して `config\eventkey_alias.txt`を更新する必要があります。
 
 ### 条件におけるXML属性の使用方法
 XML要素には、スペースを入れることで属性を設定することができます。例えば、以下の `Provider Name` の `Name` は `Provider` 要素のXML属性です。

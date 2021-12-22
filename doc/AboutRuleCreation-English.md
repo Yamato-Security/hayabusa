@@ -1,4 +1,4 @@
-# Rule files
+## About rule files
 Hayabusa detection rules are written in [YAML](https://en.wikipedia.org/wiki/YAML) format.
 It can express complex detection rules by combining not only simple string matching but also regular expressions, `AND`, `OR`, and other conditions.
 In this section, we will explain how to write hayabusa detection rules.
@@ -15,8 +15,8 @@ modified: 2021/11/26
 #Alert section
 title: User added to local Administrators group
 title_jp: ユーザがローカル管理者グループに追加された
-output: 'User: %MemberName%  :  SID: %MemberSid%  :  Group: %TargetUserName%'
-output_jp: 'ユーザ: %MemberName%  :  SID: %MemberSid%  :  グループ名: %TargetUserName%'
+details: 'User: %SubjectUserName%  :  Group: %TargetUserName%  :  LogonID: %SubjectLogonId%'
+details_jp: 'ユーザ: %SubjectUserName%  :  グループ名: %TargetUserName%  :  ログオンID: %SubjectLogonId%'
 description: A user was added to the local Administrators group.
 description_jp: ユーザがローカル管理者グループに追加された。
 
@@ -51,8 +51,8 @@ ruletype: Hayabusa
 > ## Alert section
 * **title [required]**: Rule file title. This will also be the name of the alert that gets displayed so the briefer the better. (Should not be longer than 85 characters.)
 * **title_jp** [optional]: The title in Japanese.
-* output [optional]: The details of the alert that gets displayed. Please output any fields in the Windows event log that are useful for analysis. Fields are seperated by `"  :  "` (two spaces on both sides). Field placeholders are enclosed with a `%` (Example: `%MemberName%`) and need to be defined in `config\eventkey_alias.txt`. (Explained below.)
-* **output_jp** [optional]: The output message in Japanese.
+* details [optional]: The details of the alert that gets displayed. Please output any fields in the Windows event log that are useful for analysis. Fields are seperated by `"  :  "` (two spaces on both sides). Field placeholders are enclosed with a `%` (Example: `%MemberName%`) and need to be defined in `config\eventkey_alias.txt`. (Explained below.)
+* **details_jp** [optional]: The details message in Japanese.
 * **description** [optional]: A description of the rule. This does not get displayed so you can make this long and detailed.
 * **description_jp** [optional]: The description in Japanese.
 
@@ -163,7 +163,7 @@ detection:
 ```
 
 #### Caution: Undefined Eventkey Aliases
-Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are not getting the correct data in the `output`(Alert details) message, and instead are getting results like `%EventID%` or if the selection in your detection logic is not working properly, then you need to update `config\eventkey_alias.txt` with a new alias.
+Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are not getting the correct data in the `details`(Alert details) message, and instead are getting results like `%EventID%` or if the selection in your detection logic is not working properly, then you need to update `config\eventkey_alias.txt` with a new alias.
 
 ### How to use XML attributes in conditions
 XML elements may have attributes set by adding a space to the element. For example, `Name` in `Provider Name` below is an XML attribute of the `Provider` element. 
