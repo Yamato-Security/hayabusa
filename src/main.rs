@@ -18,6 +18,7 @@ use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::ffi::OsStr;
 use std::fmt::Display;
 use std::io::BufWriter;
 use std::path::Path;
@@ -85,10 +86,18 @@ impl App {
             }
         }
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
-            if !filepath.ends_with(".evtx") {
+            if !filepath.ends_with(".evtx")
+                || Path::new(filepath)
+                    .file_stem()
+                    .unwrap_or(OsStr::new("."))
+                    .to_str()
+                    .unwrap()
+                    .trim()
+                    .starts_with(".")
+            {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    &"--filepath only accepts .evtx files.".to_string(),
+                    &"--filepath only accepts .evtx files. no hidden file.".to_string(),
                 )
                 .ok();
                 return;
@@ -156,7 +165,7 @@ impl App {
                 });
             } else {
                 let path_str = path.to_str().unwrap_or("");
-                if path_str.ends_with(".evtx") {
+                if path_str.ends_with(".evtx") && !path_str.starts_with(".") {
                     ret.push(path);
                 }
             }
