@@ -7,22 +7,22 @@
 </div>
 
 # Hayabusa について
-Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**であります。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/Sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様に、できるだけ簡単にカスタマイズや拡張ができるようにYMLで書かれています。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つの CSV タイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
+Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/Sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つのCSVタイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
 
 ## 主な目的
 
 ### スレット(脅威)ハンティング
-Hayabusa には現在、1000以上のSigmaルールと約50のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントの後で、または定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にプッシュして、中央サーバーにアラートを返すことができるようにすることです。
+Hayabusa には現在、1000以上のSigmaルールと約50のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントレスポンスや定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にインストールして、中央サーバーにアラートを返す仕組みを作ることです。
 
 ### フォレンジックタイムラインの高速生成
 Windowsのイベントログは、
   1）解析が困難なデータ形式であること
   2）データの大半がノイズであり調査に有用でないこと
 から、従来は非常に長い時間と手間がかかる解析作業となっていました。 Hayabusa は、有用なデータのみを抽出し、専門的なトレーニングを受けた分析者だけでなく、Windowsのシステム管理者であれば誰でも利用できる読みやすい形式で提示することを主な目的としています。
-[Evtx Explorer](https://ericzimmerman.github.io/#!index.md)や[Event Log Explorer](https://eventlogxp.com/)のような、より深く掘り下げた分析を行うツールの代替となることは意図していませんが、分析者が20%の時間で80%の作業を行えるようにすることを目的としています。
+[Evtx Explorer](https://ericzimmerman.github.io/#!index.md)や[Event Log Explorer](https://eventlogxp.com/)のような深掘り分析を行うツールの代替ではなく、分析者が20%の時間で80%の作業を行えるようにすることを目的としています。
 
 # 開発について
-[DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI)というWindowsイベントログ解析ツールに触発されて、2020年に[RustyBlue](https://github.com/Yamato-Security/RustyBlue)プロジェクト用にRustに移植することから始めました。その後、YMLで書かれたSigmaのような柔軟な検知シグネチャを作り、Sigmaルールを我々のHayabusaルール形式へ変換するサポートをSigmaへのバックエンドとして追加しています。
+[DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI)というWindowsイベントログ解析ツールに触発されて、2020年に[RustyBlue](https://github.com/Yamato-Security/RustyBlue)プロジェクト用にRustに移植することから始めました。その後、YMLで書かれたSigmaのような柔軟な検知シグネチャを作り、Sigmaルールを我々のHayabusaルール形式へ変換するツールも作成しました。
 
 # スクリーンショット
 ## 起動画面:
@@ -214,7 +214,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 エラーメッセージを保存したくない場合は、`-Q`を追加してください。
 
 # Hayabusaの出力
-Hayabusaの出力を画面に表示しているとき（デフォルト）は、以下の情報を表示します:
+Hayabusaの結果を標準出力に表示しているとき（デフォルト）は、以下の情報を表示します:
 
 * `Timestamp`: デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっています。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ています。デフォルトのタイムゾーンはローカルのタイムゾーンになりますが、`--utc` オプションで UTC に変更することができます。
 * `Computer`: イベントログの`<Event><System><Computer>`フィールドから来ています。
@@ -232,13 +232,13 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 解析したevtxファイルの数と割合をリアルタイムで表示します。
 
 # Hayabusa ルール
-Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的人[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
+Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
 
 ルールの作成方法については、[AboutRuleCreation-Japanase.md](./doc/AboutRuleCreation-Japanase.md) をお読みください。
 
 [hayabusa-rulesレポジトリ](https://github.com/Yamato-Security/hayabusa-rules)にあるすべてのルールは、`rules`フォルダに配置する必要があります。
 
-情報レベルのルールは `events` とみなされ、`level`が`low` 以上のものは `alerts` とみなされます。
+`level`がinformationのルールは `events` とみなされ、`low` 以上は `alerts` とみなされます。
 
 Hayabusaルールのディレクトリ構造は、3つのディレクトリに分かれています。
  * `default`: Windows OSでデフォルトで記録されるログ
