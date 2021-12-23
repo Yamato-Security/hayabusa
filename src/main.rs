@@ -88,6 +88,7 @@ impl App {
         }
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
+            println!("");
         }
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {

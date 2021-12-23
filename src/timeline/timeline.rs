@@ -38,10 +38,10 @@ impl Timeline {
         let mut sammsges: Vec<String> = Vec::new();
         sammsges.push("---------------------------------------".to_string());
         sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-        sammsges.push(format!("Total Event Records : {}\n", self.stats.total));
+        sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
         sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
         sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        sammsges.push("count(Percent)\tID\tEvent\t\tTimeline".to_string());
+        sammsges.push("Count (Percent)\tID\tEvent\t\tTimeline".to_string());
         sammsges.push("--------------- ------- --------------- -------".to_string());
 
         // 集計件数でソート
