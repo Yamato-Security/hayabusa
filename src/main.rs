@@ -70,6 +70,7 @@ impl App {
                 "{}",
                 configs::CONFIG.read().unwrap().args.usage().to_string()
             );
+            println!("");
             return;
         }
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
@@ -87,6 +88,7 @@ impl App {
         }
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
+            println!("");
         }
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {

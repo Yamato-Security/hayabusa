@@ -228,10 +228,12 @@ impl AlertMessage {
         for error_log in ERROR_LOG_STACK.lock().unwrap().iter() {
             writeln!(error_log_writer, "{}", error_log).ok();
         }
+        println!("");
         println!(
             "Errors were generated. Please check {} for details.",
             ERROR_LOG_PATH.to_string()
         );
+        println!("");
         println!("");
     }
 

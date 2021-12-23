@@ -37,11 +37,11 @@ impl Timeline {
         //println!("map -> {:#?}", evtstat_map);
         let mut sammsges: Vec<String> = Vec::new();
         sammsges.push("---------------------------------------".to_string());
-        sammsges.push(format!("Evtx_File_Path:{}", self.stats.filepath));
-        sammsges.push(format!("Total_counts : {}\n", self.stats.total));
-        sammsges.push(format!("firstevent_time: {}", self.stats.start_time));
-        sammsges.push(format!("lastevent_time: {}\n", self.stats.end_time));
-        sammsges.push("count(rate)\tID\tevent\t\ttimeline".to_string());
+        sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+        sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
+        sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+        sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+        sammsges.push("Count (Percent)\tID\tEvent\t\tTimeline".to_string());
         sammsges.push("--------------- ------- --------------- -------".to_string());
 
         // 集計件数でソート
