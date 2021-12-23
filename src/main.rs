@@ -70,6 +70,7 @@ impl App {
                 "{}",
                 configs::CONFIG.read().unwrap().args.usage().to_string()
             );
+            println!("");
             return;
         }
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
