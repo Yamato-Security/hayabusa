@@ -9,6 +9,7 @@ use hayabusa::detections::print::AlertMessage;
 use hayabusa::detections::print::ERROR_LOG_PATH;
 use hayabusa::detections::print::ERROR_LOG_STACK;
 use hayabusa::detections::print::QUIET_ERRORS_FLAG;
+use hayabusa::detections::print::STATISTICS_FLAG;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
@@ -205,7 +206,9 @@ impl App {
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
-        after_fact();
+        if !*STATISTICS_FLAG {
+            after_fact();
+        }
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
@@ -223,7 +226,9 @@ impl App {
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
-
+        if !*STATISTICS_FLAG {
+            println!("Generating Event ID Statistics");
+        }
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -273,11 +278,13 @@ impl App {
                 self.rule_keys.clone(),
             ));
 
-            // // timeline機能の実行
+            // timeline機能の実行
             tl.start(&records_per_detect);
 
-            // // ruleファイルの検知
-            detection = detection.start(&self.rt, records_per_detect);
+            if !*STATISTICS_FLAG {
+                // ruleファイルの検知
+                detection = detection.start(&self.rt, records_per_detect);
+            }
         }
 
         tl.tm_stats_dsp_msg();
