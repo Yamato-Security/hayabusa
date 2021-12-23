@@ -117,6 +117,7 @@ impl App {
         }
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
+        println!("");
         println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
         println!("");
 
