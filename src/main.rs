@@ -227,7 +227,7 @@ impl App {
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
-        if !*STATISTICS_FLAG {
+        if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
         }
         loop {
