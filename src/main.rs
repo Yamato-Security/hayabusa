@@ -85,6 +85,9 @@ impl App {
                 return;
             }
         }
+        if *STATISTICS_FLAG {
+            println!("Generating Event ID Statistics");
+        }
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {
                 AlertMessage::alert(
@@ -227,9 +230,7 @@ impl App {
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
-        if *STATISTICS_FLAG {
-            println!("Generating Event ID Statistics");
-        }
+
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
