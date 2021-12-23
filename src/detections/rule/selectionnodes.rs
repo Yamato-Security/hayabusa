@@ -418,7 +418,7 @@ mod tests {
             selection:
                 Channel: Security
                 EventID: 4103
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -451,7 +451,7 @@ mod tests {
                 Channel: Security
                 EventID: 4103
                 Computer: DESKTOP-ICHIICHIN
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -483,7 +483,7 @@ mod tests {
                 Channel: 
                     - PowerShell
                     - Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -515,7 +515,7 @@ mod tests {
                 Channel: 
                     - PowerShell
                     - Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -547,7 +547,7 @@ mod tests {
                 Channel: 
                     - PowerShell
                     - Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"

@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: NTLM Logon to Local Account
 title_jp: ローカルアカウントへのNTLMログオン
-output: 'User: %TargetUserName%  :  Workstation %Workstation%  :  Status: %Status%'
-output_jp: 'ユーザ: %TargetUserName%  :  端末: %Workstation%  :  ステータス: %Status%'
+details: 'User: %TargetUserName%  :  Workstation %Workstation%  :  Status: %Status%'
+details_jp: 'ユーザ: %TargetUserName%  :  端末: %Workstation%  :  ステータス: %Status%'
 description: Prints logon information. 
 description_jp: Prints logon information.
 

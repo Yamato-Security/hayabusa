@@ -1,11 +1,11 @@
 author: Zach Mathis
 creation_date: 2020/11/08
-uodated_date:  2021/11/26
+uodated_date:  2021/12/22
 
 title: Hidden user account created! (Possible Backdoor)
 title_jp: 隠しユーザアカウントが作成された!（バックドアの可能性あり）
-output: 'User: %TargetUserName%  :  SID:%TargetSid%'
-output_jp: 'ユーザ名: %TargetUserName%  :  SID:%TargetSid%'
+details: 'User: %TargetUserName%  :  SID: %TargetSid%'
+details_jp: 'ユーザ名: %TargetUserName%  :  SID: %TargetSid%'
 description: A computer account (an account that ends with a $) was created. These accounts are not displayed by default so will be hidden.
 description_jp: A computer account (an account that ends with a $) was created. These accounts are not displayed by default so will be hidden.
 

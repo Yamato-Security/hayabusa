@@ -590,7 +590,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 and selection2 and selection3 | count() >= 1
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 2);
@@ -642,7 +642,7 @@ mod tests {
                 param1: 'Windows Event Log'
             condition: selection1 and selection2 and selection3 | count() >= 1
             timeframe: 15m
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 2);
@@ -682,7 +682,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 and selection2 and selection3 | count(Channel) >= 1
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 1);
@@ -729,7 +729,7 @@ mod tests {
             selection1:
                 param1: 'Windows Event Log'
             condition: selection1 | count(EventID) by Channel >= 1
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         let mut expected_count = HashMap::new();
@@ -787,7 +787,7 @@ mod tests {
                 Channel: 'System'
             condition: selection1 | count(EventID) by param1 >= 1
             timeframe: 1h
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
         let mut expected_count = HashMap::new();
         expected_count.insert("Windows Event Log".to_owned(), 1);
@@ -840,7 +840,7 @@ mod tests {
                 Channel: 'System'
             condition: selection1 | count(EventID) >= 2
             timeframe: 1h
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
@@ -897,7 +897,7 @@ mod tests {
                 param1: 'Windows Event Log'
             condition: selection1 | count(EventID) by Channel >= 2
             timeframe: 30m
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         let mut expected_count = HashMap::new();
@@ -947,7 +947,7 @@ mod tests {
                 param1: 'Windows Event Log'
             condition: selection1 | count(EventID) by Channel >= 1
             timeframe: 1h
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
@@ -1584,7 +1584,7 @@ mod tests {
             param1: 'Windows Event Log'
         condition: selection1 | ${COUNT}
         timeframe: ${TIME_FRAME}
-    output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+    details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
     "#;
         return template
             .replace("${COUNT}", count)

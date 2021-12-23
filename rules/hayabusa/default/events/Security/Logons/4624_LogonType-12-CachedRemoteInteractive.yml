@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: Logon Type 12 - CachedRemoteInteractive
 title_jp: ログオンタイプ 12 - キャッシュされたリモートインタラクティブ
-output: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  Port: %IpPort%  :  LogonID: %TargetLogonId%  :  (Warning: Credentials are stored in memory)'
-output_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  ポート番号: %IpPort%  :  ログオンID: %TargetLogonId%  :  (注意: 資格情報がメモリに格納される)'
+details: 'User: %TargetUserName%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  LogonID: %TargetLogonId%  :  (Warning: Credentials are stored in memory)'
+details_jp: 'ユーザ: %TargetUserName%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  ログオンID: %TargetLogonId%  :  (注意: 資格情報がメモリに格納される)'
 description: Prints logon information. 
 description_jp: Prints logon information.
 

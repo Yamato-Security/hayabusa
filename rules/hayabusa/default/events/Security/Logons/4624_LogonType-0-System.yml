@@ -4,8 +4,8 @@ modified: 2021/11/26
 
 title: Logon Type 0 - System
 title_jp: ログオンタイプ 0 - System
-output: 'Bootup'
-output_jp: 'システム起動'
+details: 'Bootup'
+details_jp: 'システム起動'
 description: Prints logon information
 description_jp: Prints logon information
 

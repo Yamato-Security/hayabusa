@@ -4,8 +4,8 @@ modified: 2021/12/11
 
 title: Process Creation
 title_jp: プロセス起動
-output: 'Command: %CommandLine%  :  Path: %Image%  :  User: %User%  :  Parent Command: %ParentCommandLine%'
-output_jp: 'コマンド: %CommandLine%  :  パス: %Image%  :  ユーザ: %User%  :  親コマンド: %ParentCommandLine%'
+details: 'Command: %CommandLine%  :  Path: %Image%  :  User: %User%  :  Parent Command: %ParentCommandLine%'
+details_jp: 'コマンド: %CommandLine%  :  パス: %Image%  :  ユーザ: %User%  :  親コマンド: %ParentCommandLine%'
 description: Sysmon process creation. Displays only commands that have not been flagged with a sysmon detection rule.
 description_jp: Sysmonログによるプロセス起動のログ
 

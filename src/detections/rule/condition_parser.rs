@@ -556,7 +556,7 @@ mod tests {
                 Channel: 'System'
                 EventID: 7040
                 param1: 'Windows Event Log'
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         let record_json_str = r#"
@@ -600,7 +600,7 @@ mod tests {
                 Channel: 'System'
                 EventID: 7041
                 param1: 'Windows Event Log'
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         let record_json_str = r#"
@@ -646,7 +646,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 and selection2 and selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -666,7 +666,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 and selection2 and selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -686,7 +686,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 and selection2 and selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -706,7 +706,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection1 and selection2 and selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -726,7 +726,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection1 and selection2 and selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -746,7 +746,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection1 and selection2 and selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -765,7 +765,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -784,7 +784,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -803,7 +803,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -822,7 +822,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -841,7 +841,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Log'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -860,7 +860,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -879,7 +879,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -898,7 +898,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection1 or selection2 or selection3
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -913,7 +913,7 @@ mod tests {
             selection1:
                 Channel: 'Systemn'
             condition: not selection1
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -928,7 +928,7 @@ mod tests {
             selection1:
                 Channel: 'System'
             condition: not selection1
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -947,7 +947,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection2 and (selection2 or selection3)
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -966,7 +966,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection2 and (selection2 and selection3)
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -985,7 +985,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection2 and (((selection2 or selection3)))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -1004,7 +1004,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: selection2 and ((((selection2 and selection3))))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -1023,7 +1023,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: (selection2 and selection1) and not ((selection2 and selection3))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -1042,7 +1042,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: (selection2 and selection1) and not (not(selection2 and selection3))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -1061,7 +1061,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: (selection2 and selection1) and (selection2 or selection3)
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -1080,7 +1080,7 @@ mod tests {
             selection3:
                 param1: 'Windows Event Logn'
             condition: (selection2 and selection1) and (selection2 and selection3)
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -1101,7 +1101,7 @@ mod tests {
             selection4:
                 param2: 'auto start'
             condition: (selection1 and (selection2 and ( selection3 and selection4 )))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -1122,7 +1122,7 @@ mod tests {
             selection4:
                 param2: 'auto start'
             condition: (selection1 and (selection2 and ( selection3 and selection4 )))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -1143,7 +1143,7 @@ mod tests {
             selection4:
                 param2: 'auto start'
             condition: (selection1 and (selection2 and ( selection3 or selection4 )))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, true);
@@ -1164,7 +1164,7 @@ mod tests {
             selection4:
                 param2: 'auto startn'
             condition: (selection1 and (selection2 and ( selection3 or selection4 )))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
@@ -1181,7 +1181,7 @@ mod tests {
                 EventID: 7041
             selection2:
                 param1: 'Windows Event Log'
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
@@ -1207,7 +1207,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection-1 and selection2
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(
@@ -1230,7 +1230,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 and ((selection2)
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(
@@ -1253,7 +1253,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 and (selection2))
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(
@@ -1276,7 +1276,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 and )selection2(
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(
@@ -1299,7 +1299,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 selection2
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(rule_str,vec!["A condition parse error has occured. Unknown error. Maybe it is because there are multiple names of selection nodes.".to_string()]);
@@ -1317,7 +1317,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: and selection1 or selection2
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(
@@ -1341,7 +1341,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 or selection2 or
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(
@@ -1365,7 +1365,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 or or selection2
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(rule_str,vec!["A condition parse error has occured. The use of a logical operator(and, or) was wrong.".to_string()]);
@@ -1383,7 +1383,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 or ( not )
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(
@@ -1404,7 +1404,7 @@ mod tests {
             selection2:
                 param1: 'Windows Event Log'
             condition: selection1 or ( not not )
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         check_rule_parse_error(

@@ -356,7 +356,7 @@ mod tests {
         detection:
             selection:
                 Event.System.Computer: DESKTOP-ICHIICHI
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -386,7 +386,7 @@ mod tests {
         detection:
             selection:
                 Event.System.Computer: DESKTOP-ICHIICHIN
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -416,7 +416,7 @@ mod tests {
         detection:
             selection:
                 Channel: NOTDETECT
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -471,7 +471,7 @@ mod tests {
             selection:
                 EventID: 4797
                 Event.System.Provider_attributes.Guid: 54849625-5478-4994-A5BA-3E3B0328C30D
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -530,7 +530,7 @@ mod tests {
             selection:
                 EventID: 4797
                 Event.System.Provider_attributes.Guid: 54849625-5478-4994-A5BA-3E3B0328C30DSS
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -610,7 +610,7 @@ mod tests {
             selection:
                 Event.EventData.Workstation: 'TEST WorkStation'
                 Event.EventData.TargetUserName: ichiichi11
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -654,7 +654,7 @@ mod tests {
             selection:
                 EventID: 4103
                 TargetUserName: ichiichi11
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -699,7 +699,7 @@ mod tests {
             selection:
                 EventID: 4103
                 TargetUserName: ichiichi12
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -746,7 +746,7 @@ mod tests {
             selection:
                 EventID: 403
                 EventData|re: '[\s\S]*EngineVersion=2\.0[\s\S]*'
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -810,7 +810,7 @@ mod tests {
             selection:
                 EventID: 403
                 EventData: '[\s\S]*EngineVersion=3.0[\s\S]*'
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -876,7 +876,7 @@ mod tests {
                 param2|startswith:
                     - "disa"
                     - "aut"
-        output: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
         let record_json_str = r#"
@@ -918,7 +918,7 @@ mod tests {
             selection:
                 Channel|failed: Security
                 EventID: 0
-        output: 'Rule parse test'
+        details: 'Rule parse test'
         "#;
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
@@ -938,7 +938,7 @@ mod tests {
         let rule_str = r#"
         enabled: true
         detection:
-        output: 'Rule parse test'
+        details: 'Rule parse test'
         "#;
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());

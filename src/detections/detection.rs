@@ -83,11 +83,25 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                AlertMessage::warn(&mut std::io::stdout().lock(), &errmsg_body).ok();
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    AlertMessage::warn(&mut std::io::stdout().lock(), &errmsg_body).ok();
 
-                err_msgs.iter().for_each(|err_msg| {
-                    AlertMessage::warn(&mut std::io::stdout().lock(), err_msg).ok();
-                });
+                    err_msgs.iter().for_each(|err_msg| {
+                        AlertMessage::warn(&mut std::io::stdout().lock(), err_msg).ok();
+                    });
+                }
+                if !*QUIET_ERRORS_FLAG {
+                    ERROR_LOG_STACK
+                        .lock()
+                        .unwrap()
+                        .push(format!("[WARN] {}", errmsg_body));
+                    err_msgs.iter().for_each(|err_msg| {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {}", err_msg));
+                    });
+                }
                 parseerror_count += 1;
                 println!(""); // 一行開けるためのprintln
             });
@@ -187,7 +201,7 @@ impl Detection {
                 .unwrap_or("-".to_owned())
                 .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
-            rule.yaml["output"].as_str().unwrap_or("").to_string(),
+            rule.yaml["details"].as_str().unwrap_or("").to_string(),
         );
     }
 

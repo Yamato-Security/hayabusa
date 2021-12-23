@@ -4,8 +4,8 @@ modified: 2021/12/01
 
 title: Windows Defender Alert
 title_jp: Windows Defenderアラート
-output: 'Threat: %ThreatName%  :  Severity: %SeverityName%  :  Type: %CategoryName%  :  User: %DetectionUser%  :  Path: %Path%  :  Process: %WindowsDefenderProcessName%'
-output_jp: '脅威: %ThreatName%  :  深刻度: %SeverityName%  :  種類: %CategoryName%  :  ユーザ: %DetectionUser%  :  パス: %Path%  :  プロセス: %WindowsDefenderProcessName%'
+details: 'Threat: %ThreatName%  :  Severity: %SeverityName%  :  Type: %CategoryName%  :  User: %DetectionUser%  :  Path: %Path%  :  Process: %WindowsDefenderProcessName%'
+details_jp: '脅威: %ThreatName%  :  深刻度: %SeverityName%  :  種類: %CategoryName%  :  ユーザ: %DetectionUser%  :  パス: %Path%  :  プロセス: %WindowsDefenderProcessName%'
 description: Windows defender malware detection
 description_jp: Windows defenderのマルウェア検知
 

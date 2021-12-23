@@ -1,11 +1,11 @@
 author: Zach Mathis
 date: 2020/11/08
-modified: 2021/11/26
+modified: 2021/12/22
 
 title: Logon Failure - Unknown Reason
 title_jp: ログオンに失敗 - 不明な理由
-output: 'User: %TargetUserName%  :  Type: %LogonType%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  SubStatus: %SubStatus%  :  AuthPackage: %AuthenticationPackageName%'
-output_jp: 'ユーザ: %TargetUserName%  :  タイプ: %LogonType%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  サブステータス: %SubStatus%  :  認証パッケージ: %AuthenticationPackageName%'
+details: 'User: %TargetUserName%  :  Type: %LogonType%  :  Workstation: %WorkstationName%  :  IP Address: %IpAddress%  :  AuthPackage: %AuthenticationPackageName%'
+details_jp: 'ユーザ: %TargetUserName%  :  タイプ: %LogonType%  :  端末: %WorkstationName%  :  IPアドレス: %IpAddress%  :  認証パッケージ: %AuthenticationPackageName%'
 description: Prints logon information. 
 description_jp: Prints logon information.
 

@@ -4,8 +4,8 @@ updated_date: 2021/11/23
 
 title: Malicious service installed
 title_jp: 悪意のあるサービスがインストールされた
-output: 'Service: %ServiceName%  :  Path: %ImagePath%'
-output_jp: 'サービス名: %ServiceName%  :  パス: %ImagePath%'
+details: 'Service: %ServiceName%  :  Path: %ImagePath%'
+details_jp: 'サービス: %ServiceName%  :  パス: %ImagePath%'
 description: Malicious service was installed based on suspicious entries in ./config/regex/regexes_suspicous_service.txt
 description_jp: Malicious service was installed based on suspicious entries in ./config/regex/regexes_suspicous_service.txt
 

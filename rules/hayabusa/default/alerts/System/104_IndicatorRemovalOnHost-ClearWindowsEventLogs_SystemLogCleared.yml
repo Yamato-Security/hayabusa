@@ -4,8 +4,8 @@ modified:  2021/11/25
 
 title: System log file was cleared
 title_jp: システムログがクリアされた
-output: "User: %LogFileClearedSubjectUserName%"
-output_jp: "ユーザ名: %LogFileClearedSubjectUserName%"
+details: "User: %LogFileClearedSubjectUserName%"
+details_jp: "ユーザ: %LogFileClearedSubjectUserName%"
 description: Somebody has cleared the System event log.
 description_jp: 誰かがシステムログをクリアした。
 

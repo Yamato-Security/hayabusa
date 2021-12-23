@@ -509,7 +509,7 @@ mod tests {
         falsepositives:
             - unknown
         level: medium
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         creation_date: 2020/11/8
         updated_date: 2020/11/8
         "#;
@@ -692,7 +692,7 @@ mod tests {
         detection:
             selection:
                 EventID: 4103
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -723,7 +723,7 @@ mod tests {
         detection:
             selection:
                 EventID: 4103
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -753,7 +753,7 @@ mod tests {
         detection:
             selection:
                 EventID: 4103
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -784,7 +784,7 @@ mod tests {
         detection:
             selection:
                 Channel: Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -815,7 +815,7 @@ mod tests {
         detection:
             selection:
                 Channel: Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -845,7 +845,7 @@ mod tests {
         detection:
             selection:
                 Channel: Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -875,7 +875,7 @@ mod tests {
         detection:
             selection:
                 Channel: Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -906,7 +906,7 @@ mod tests {
             selection:
                 Channel:
                     min_length: 10
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -937,7 +937,7 @@ mod tests {
             selection:
                 Channel:
                     min_length: 10
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -968,7 +968,7 @@ mod tests {
             selection:
                 Channel:
                     min_length: 10
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -999,7 +999,7 @@ mod tests {
             selection:
                 Channel:
                     min_length: 10
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1030,7 +1030,7 @@ mod tests {
             selection:
                 Channel:
                     min_length: 11
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1060,7 +1060,7 @@ mod tests {
         detection:
             selection:
                 Channel|re: ^Program$
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1093,7 +1093,7 @@ mod tests {
                 EventID: 4103
                 Channel:
                     - allowlist: ./config/regex/allowlist_legitimate_services.txt
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         // JSONで値としてダブルクオートを使う場合、\でエスケープが必要なのに注意
@@ -1127,7 +1127,7 @@ mod tests {
                 EventID: 4103
                 Channel:
                     - allowlist: ./config/regex/allowlist_legitimate_services.txt
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         // JSONで値としてダブルクオートを使う場合、\でエスケープが必要なのに注意
@@ -1161,7 +1161,7 @@ mod tests {
                 EventID: 4103
                 Channel:
                     - allowlist: ./config/regex/allowlist_legitimate_services.txt
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1193,7 +1193,7 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|startswith: "Administrators"
-        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
         let record_json_str = r#"
@@ -1235,7 +1235,7 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|startswith: "Administrators"
-        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
         let record_json_str = r#"
@@ -1277,7 +1277,7 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|endswith: "Administrators"
-        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
         let record_json_str = r#"
@@ -1319,7 +1319,7 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|endswith: "Administrators"
-        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
         let record_json_str = r#"
@@ -1361,7 +1361,7 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|contains: "Administrators"
-        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
         let record_json_str = r#"
@@ -1403,7 +1403,7 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|contains: "Administrators"
-        output: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
         let record_json_str = r#"
@@ -1443,7 +1443,7 @@ mod tests {
         detection:
             selection:
                 Channel: ホストアプリケーション
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1473,7 +1473,7 @@ mod tests {
         detection:
             selection:
                 Channel: ホスとアプリケーション
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1503,7 +1503,7 @@ mod tests {
         detection:
             selection:
                 Channel: Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1591,7 +1591,7 @@ mod tests {
         detection:
             selection:
                 - 4103
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1621,7 +1621,7 @@ mod tests {
         detection:
             selection:
                 - 4104
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1653,7 +1653,7 @@ mod tests {
             selection:
                 Channel: 
                     value: Security
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
@@ -1685,7 +1685,7 @@ mod tests {
             selection:
                 Channel: 
                     value: Securiteen
-        output: 'command=%CommandLine%'
+        details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"

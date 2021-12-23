@@ -4,8 +4,8 @@ modified: 2021/11/22
 
 title: Powershell 2.0 Downgrade Attack
 title_jp: Powershell 2.0へのダウングレード攻撃
-output: 'Powershell 2.0 downgrade attack detected!'
-output_jp: 'Powershell 2.0へのダウングレード攻撃が検知されました!'
+details: 'Powershell 2.0 downgrade attack detected!'
+details_jp: 'Powershell 2.0へのダウングレード攻撃が検知されました!'
 description: An attacker may have started Powershell 2.0 to evade detection.
 description_jp: 攻撃者は検知されないようにPowershell 2.0を起動したリスクがある。
 

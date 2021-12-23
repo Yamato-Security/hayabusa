@@ -4,8 +4,8 @@ modified: 2021/12/16
 
 title: Network Share Access
 title_jp: ネットワーク共有へのアクセス
-output: 'User: %SubjectUserName%  :  Share Name: %ShareName%  :  Share Path: %ShareLocalPath%  :  IP Address: %IpAddress%'
-output_jp: 'ユーザ: %SubjectUserName%  :  共有名: %ShareName%  :  共有パス: %ShareLocalPath%  :  IPアドレス: %IpAddress%'
+details: 'User: %SubjectUserName%  :  Share Name: %ShareName%  :  Share Path: %ShareLocalPath%  :  IP Address: %IpAddress%  :  LogonID: %SubjectLogonId%'
+details_jp: 'ユーザ: %SubjectUserName%  :  共有名: %ShareName%  :  共有パス: %ShareLocalPath%  :  IPアドレス: %IpAddress%  :  ログオンID: %SubjectLogonId%'
 description: 
 description_jp: 
 

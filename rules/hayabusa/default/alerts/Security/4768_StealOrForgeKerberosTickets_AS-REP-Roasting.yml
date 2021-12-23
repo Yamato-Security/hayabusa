@@ -4,14 +4,14 @@ updated_date: 2021/11/26
 
 title: Possible AS-REP Roasting
 title_jp: AS-REPロースティングの可能性
-output: 'Possible AS-REP Roasting'
-output_jp: 'AS-REPロースティングのリスクがある'
+details: 'Possible AS-REP Roasting'
+details_jp: 'AS-REPロースティングのリスクがある'
 description: For each account found without preauthentication, an adversary may send an AS-REQ message without the encrypted timestamp and receive an AS-REP message with TGT data which may be encrypted with an insecure algorithm such as RC4.
 description_jp: For each account found without preauthentication, an adversary may send an AS-REQ message without the encrypted timestamp and receive an AS-REP message with TGT data which may be encrypted with an insecure algorithm such as RC4.
 
 id: dee2a01e-5d7c-45b4-aec3-ad9722f2165a
 level: medium
-status: test
+status: testing
 detection:
     selection:
         Channel: Security
@@ -26,5 +26,6 @@ tags:
     - attack.t1558.004
 references:
     - https://attack.mitre.org/techniques/T1558/004/
+sample-evtx: 
 logsource: default
 ruletype: Hayabusa
