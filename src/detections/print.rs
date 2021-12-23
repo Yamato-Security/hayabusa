@@ -47,6 +47,11 @@ lazy_static! {
         .args
         .is_present("quiet-errors");
     pub static ref ERROR_LOG_STACK: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    pub static ref STATISTICS_FLAG: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("statistics");
 }
 
 impl Message {

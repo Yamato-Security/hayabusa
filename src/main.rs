@@ -9,6 +9,7 @@ use hayabusa::detections::print::AlertMessage;
 use hayabusa::detections::print::ERROR_LOG_PATH;
 use hayabusa::detections::print::ERROR_LOG_STACK;
 use hayabusa::detections::print::QUIET_ERRORS_FLAG;
+use hayabusa::detections::print::STATISTICS_FLAG;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
@@ -84,6 +85,9 @@ impl App {
                 return;
             }
         }
+        if *STATISTICS_FLAG {
+            println!("Generating Event ID Statistics");
+        }
         if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx") {
                 AlertMessage::alert(
@@ -116,6 +120,7 @@ impl App {
         }
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
+        println!("");
         println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
         println!("");
 
@@ -205,7 +210,9 @@ impl App {
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
-        after_fact();
+        if !*STATISTICS_FLAG {
+            after_fact();
+        }
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
@@ -273,11 +280,13 @@ impl App {
                 self.rule_keys.clone(),
             ));
 
-            // // timeline機能の実行
+            // timeline機能の実行
             tl.start(&records_per_detect);
 
-            // // ruleファイルの検知
-            detection = detection.start(&self.rt, records_per_detect);
+            if !*STATISTICS_FLAG {
+                // ruleファイルの検知
+                detection = detection.start(&self.rt, records_per_detect);
+            }
         }
 
         tl.tm_stats_dsp_msg();
