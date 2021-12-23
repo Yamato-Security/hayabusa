@@ -5,6 +5,7 @@ use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
 use crate::detections::print::QUIET_ERRORS_FLAG;
+use crate::detections::print::STATISTICS_FLAG;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -273,6 +274,9 @@ impl Detection {
         parseerror_count: &u128,
         ignore_count: &u128,
     ) {
+        if *STATISTICS_FLAG {
+            return;
+        }
         let mut total = parseerror_count + ignore_count;
         rc.into_iter().for_each(|(key, value)| {
             println!("{} rules: {}", key, value);
