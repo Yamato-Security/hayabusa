@@ -65,6 +65,14 @@ impl App {
                 &analysis_start_time.day().to_owned()
             ));
         }
+        if !Path::new("./config").exists() {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./bin/hayabusa-1.0.0-windows-x64.exe".to_string()
+            )
+            .ok();
+            return;
+        }
         if configs::CONFIG.read().unwrap().args.args.len() == 0 {
             println!(
                 "{}",

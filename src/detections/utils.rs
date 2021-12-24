@@ -76,11 +76,14 @@ pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
 }
 
 pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
-    let mut f = File::open(filename).expect("File not found!!!");
+    let f = File::open(filename);
+    if f.is_err() {
+        return Result::Err(format!("Cannot open file. [file:{}]", filename));
+    }
     let mut contents: String = String::new();
     let mut ret = vec![];
-    let read_res = f.read_to_string(&mut contents);
-    if f.read_to_string(&mut contents).is_err() {
+    let read_res = f.unwrap().read_to_string(&mut contents);
+    if read_res.is_err() {
         return Result::Err(read_res.unwrap_err().to_string());
     }
 

@@ -114,8 +114,17 @@ impl TargetEventIds {
 
 fn load_target_ids(path: &str) -> TargetEventIds {
     let mut ret = TargetEventIds::new();
-    let lines = utils::read_txt(path).unwrap(); // ファイルが存在しなければエラーとする
-    for line in lines {
+    let lines = utils::read_txt(path); // ファイルが存在しなければエラーとする
+    if lines.is_err() {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &lines.as_ref().unwrap_err(),
+        )
+        .ok();
+        return ret;
+    }
+
+    for line in lines.unwrap() {
         if line.is_empty() {
             continue;
         }
@@ -226,6 +235,14 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
     let read_result = utils::read_csv(path);
+    if read_result.is_err() {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &read_result.as_ref().unwrap_err(),
+        )
+        .ok();
+        return config;
+    }
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 2 {
@@ -290,6 +307,15 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut infodata = EventInfo::new();
     let mut config = EventInfoConfig::new();
     let read_result = utils::read_csv(path);
+    if read_result.is_err() {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &read_result.as_ref().unwrap_err(),
+        )
+        .ok();
+        return config;
+    }
+
     // timeline_event_infoが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 4 {
