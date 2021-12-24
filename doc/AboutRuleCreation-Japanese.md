@@ -289,10 +289,10 @@ detection:
 * endswith: 指定された文字列で終わることをチェックします。
 * contains: 指定された文字列が含まれることをチェックします。
 * re: 正規表現を使用します。(正規表現の書き方については https://docs.rs/regex/1.5.4/regex/ を参照してください)。 
-  > 注意: SigmaルールとHayabusaルールは正規表現の記法に一部差異があります。そのため、hayabusaではSigmaルールを正しく検知できない場合があります。
+  > 注意: SigmaルールとHayabusaルールは正規表現の記法に一部差異があります。そのため、HayabusaではSigmaルールを正しく検知できない場合があります。
 
 ## ワイルドカード
-hayabusaルールではワイルドカードを使用することができます。以下の例では、`ProcessCommandLine` が "malware" という文字列で始まる場合、このルールでログが検知されます。この仕様はSigmaルールのワイルドカードと同じです。
+Hayabusaルールではワイルドカードを使用することができます。以下の例では、`ProcessCommandLine` が "malware" という文字列で始まる場合、このルールでログが検知されます。この仕様はSigmaルールのワイルドカードと同じです。
 
 ```yaml
 detection:
