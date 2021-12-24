@@ -111,6 +111,14 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 > ※ 以下の例でHayabusaを試したい方は、上記コマンドをhayabusaのルートフォルダから実行してください。
 
 # 使用方法
+Hayabusaはのルートディレクトリから、バイナリを実行する必要があります。
+.\bin` には、OSやアーキテクチャごとにコンパイルされたバイナリが用意されています。
+また、コンパイル時に使用されるevtxライブラリの`0.6.7`と`0.7.2`の2つのバージョンに分かれています。
+`0.7.2`バージョンでも動作するはずですが、`0.6.7`でしかテストしていませんので、`0.7.2`で問題が発生した場合はそちらをご利用ください。
+以下の例の `hayabusa.exe` は、適切なHayabusaのバイナリファイル名に置き換えてください。 
+
+> 注意: Hayabusaのルートディレクトリから、バイナリを実行する必要があります。
+
 ## コマンドラインオプション
 ```bash
 USAGE:
@@ -137,62 +145,62 @@ USAGE:
 ## 使用例
 * 1 つのWindowsイベントログファイルに対してHayabusaを実行します:
 ```bash
-hayabusa.exe -f eventlog.evtx
+.\bin\hayabusa.exe -f eventlog.evtx
 ```
 
 * 複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行します:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx
 ```
 
 * 1 つのCSVファイルにエクスポートして、EXCELやTimeline Explorerでさらに分析することができます:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
 ```
 
 * Hayabusaルールのみを実行します（デフォルトでは `-r .\rules` にあるすべてのルールが利用されます）:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行します:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行します:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Sigmaルールのみを実行します:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\config\noisy-rules.txt`にルールIDが書かれているルール)を有効にします:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
 ```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -u -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -u -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
 ```bash
-hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
+.\bin\hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
 ```
 
 * イベントIDの統計情報を取得します:
 ```bash
-hayabusa.exe -f Security.evtx -s
+.\bin\hayabusa.exe -f Security.evtx -s
 ```
 
 * 詳細なメッセージを出力します(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -v
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
