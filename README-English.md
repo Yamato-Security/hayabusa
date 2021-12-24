@@ -107,9 +107,17 @@ You can download the sample evtx files to a new `hayabusa-sample-evtx` sub-direc
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
 
-> Note: Please run this command from the hayabusa root folder if you want to follow along in the examples below.
+> Note: You need to run the binary from the Hayabusa root directory. 
 
 # Usage
+You need to run the binary from the Hayabusa root directory.
+There are different binary versions in `.\bin` compiled for different operating systems and architectures.
+Also, there are two different versions of the evtx library being used when compiled: `0.6.7` and `0.7.2`.
+The `0.7.2` version should work but we have only tested it with `0.6.7` so please use that if you experience any problems with `0.7.2`.
+Please replace `hayabusa.exe` in the examples below with the appropriate Hayabusa binary filename.  
+
+> Note: You need to run the Hayabusa binary from the Hayabusa root directory. 
+
 ## Command line options
 ```bash
 USAGE:
@@ -136,62 +144,62 @@ USAGE:
 ## Usage examples
 * Run hayabusa against one Windows event log file:
 ```bash
-hayabusa.exe -f eventlog.evtx
+.\bin\hayabusa.exe -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx
 ```
 
 * Export to a single CSV file for further analysis with excel or timeline explorer:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\config\noisy-rules.txt`):
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -u -o results.csv
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -u -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 ```bash
-hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
+.\bin\hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
 ```
 
 * Get event ID statistics:
 ```bash
-hayabusa.exe -f Security.evtx -s
+.\bin\hayabusa.exe -f Security.evtx -s
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -v
+.\bin\hayabusa.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:

@@ -1,7 +1,7 @@
 # ルールファイルについて
-Hayabusaの検知ルールは、[YAML](https://en.wikipedia.org/wiki/YAML) 形式で記述されています。
+Hayabusaの検知ルールは[YAML](https://en.wikipedia.org/wiki/YAML) 形式で記述されています。
 単純な文字列のマッチングだけでなく、正規表現や`AND`、`OR`などの条件を組み合わせて複雑な検知ルールを表現することができます。
-本節では、Hayabusaの検知ルールの書き方について説明します。
+本節ではHayabusaの検知ルールの書き方について説明します。
 
 ## ルールファイル形式
 記述例:
@@ -51,7 +51,7 @@ ruletype: Hayabusa
 > ## アラートセクション
 * **title [必須]**: ルールファイルのタイトル。これは表示されるアラートの名前にもなるので、簡潔であるほどよいです。(85文字以下でなければなりません。)
 * **title_jp** [オプション]: 日本語のタイトルです。
-* details [オプション]: 表示されるアラートの詳細です。Windowsイベントログの中で解析に有効なフィールドがあれば出力してください。フィールドは `" : "` で区切られます（両側ともスペース2つ）。フィールドのプレースホルダは `%` で囲まれ (例: `%MemberName%`) 、`config_eventkey_alias.txt` で定義する必要があります。(以下で説明します)
+* **details** [オプション]: 表示されるアラートの詳細です。Windowsイベントログの中で解析に有効なフィールドがあれば出力してください。フィールドは `" : "` で区切られます（両側ともスペース2つ）。フィールドのプレースホルダは `%` で囲まれ (例: `%MemberName%`) 、`config_eventkey_alias.txt` で定義する必要があります。(以下で説明します)
 * **details_jp** [オプション]: 日本語の出力メッセージ。
 * **description** [オプション]: ルールの説明。これは表示されないので、長く詳細に記述することができます。
 * **description_jp** [オプション]: 日本語の説明文です。
@@ -62,7 +62,7 @@ ruletype: Hayabusa
 * **status[必須]**: テスト済みのルールには `stable` を、テストが必要なルールには `testing` を指定します。
 * **detection  [必須]**: 検知ロジックはここに入ります。(以下で説明します。)
 * **falsepositives [必須]**: 誤検知の可能性について記載を行います。例: `system administrator`, `normal user usage`, `normal system usage`, `legacy application`, `security team`, `none`。 不明な場合は `unknown` と記述してください。
-* **tags** [オプション]: もしその技術が[LOLBINS/LOLBAS](https://lolbas-project.github.io/)の技術であれば、`lolbas` タグを追加してください。アラートを[MITRE ATT&CK](https://attack.mitre.org/) フレームワークにマッピングできる場合は、戦術ID（例：`attack.t1098`）や以下に該当する戦術を追加してください。
+* **tags** [オプション]: [LOLBINS/LOLBAS](https://lolbas-project.github.io/)という手法を利用している場合、`lolbas` タグを追加してください。アラートを[MITRE ATT&CK](https://attack.mitre.org/) フレームワークにマッピングできる場合は、以下のリストから該当するものを追加してください。戦術ID（例：`attack.t1098`）を指定することも可能です。
     * `attack.impact` -> Impact
     * `attack.initial_access` -> Initial Access
     * `attack.execution` -> Execution
@@ -86,17 +86,17 @@ ruletype: Hayabusa
 * **non-default-setting** [オプション]: `non-default` のログソースのログ設定をオンにする方法の説明です。
 * **ruletype [必須]**: Hayabusaルールには `Hayabusa` を指定します。SigmaのWindowsルールから自動変換されたルールは `Sigma` になります。
 
-# 検知フィールド
-## 検知の基礎知識
-まず、検知の作り方の基本を説明します。
+# detectionフィールド
+## selectionの基礎知識
+まず、selectionの作り方の基本を説明します。
 
 
-### AND論理とOR論理の書き方
-ANDロジックを書くには、ネストされた辞書を使用します。
-以下の検知ルールでは、ルールがマッチするためには、**両方の条件**が真でなければならないと定義しています。
+### 論理積(AND)と論理和(OR)の書き方
+ANDを表現するには辞書（YAMLでは辞書を`:`で表します）を使用します。
+このルールでログが検知されるには、**両方の条件**が真である必要があります。
 
-* イベントIDは `7040` であること。
-* チャンネルは `System` であること。
+* イベントIDが `7040` であること。
+* チャンネルが `System` であること。
 
 ```yaml
 detection:
@@ -106,13 +106,11 @@ detection:
     condition: selection
 ```
 
-OR論理を記述するには、リスト（`- `で始まる辞書）を使用します。
-以下の検知ルールでは、**片方**の条件がトリガーされることになります。
+ORを表現するには、配列（YAMLでは配列を`- `で表します）を使用します。
+このルールでログが検知されるには、**片方の条件**が真である必要があります。
 
-* イベントIDは `7040` であること。
-  
-**または**
-* チャンネルは `System` であること。
+* イベントIDが `7040` であること。
+* チャンネルが `System` であること。
 
 ```yaml
 detection:
@@ -122,10 +120,10 @@ detection:
     condition: selection 
 ```
 
-また、以下のように「AND」と「OR」の論理を組み合わせることも可能です。
-この場合、以下の2つの条件が両方成立したときにルールがマッチします。
+また、以下のように「AND」と「OR」を組み合わせることも可能です。
+この場合、以下の2つの条件が両方成立したときに、このルールでログが検知されます。
 
-* イベントID が `7040` **または** `7041` のどちらかであること。
+* イベントIDが `7040` **または** `7041` のどちらかであること。
 * チャンネルが `System` であること。
 
 ```yaml
@@ -139,11 +137,7 @@ detection:
 ```
 
 ### イベントキー
-以下は、Windowsイベントログの抜粋で、オリジナルのXMLでフォーマットしたものです。上記のルールファイルの例の  `Event.System.Channel` フィールドは、オリジナルのXMLタグを参照しています。 
-
-`<Event><System><Channel>System<Channel><System></Event>`
-
-ネストされたXMLタグはドット(`.`)で区切られたタグ名で置き換えられます。Hayabusaのルールでは、ドットでつながれたこれらのフィールド文字列は `eventkeys` と呼ばれます。
+WindowsイベントログをXML形式で出力すると下記のようになります。
 
 ```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -158,8 +152,12 @@ detection:
 </Event>
 ```
 
+論理和の例で示したルールの `Event.System.Channel` フィールドは、下記のXMLタグで囲まれた値を参照しています。 ネストされたXMLタグはドット(`.`)で区切られたタグ名で置き換えられます。Hayabusaのルールでは、このドットでつながれた文字列のことをイベントキーと呼んでいます。
+
+`<Event><System><Channel>System<Channel><System></Event>`
+
 #### イベントキーエイリアス
-`.`の区切りが多くて長いイベントキーが一般的であるため、Hayabusaはエイリアスを使って簡単に扱えるようにします。エイリアスは `config\eventkey_alias.txt`ファイルで定義されています。このファイルは `alias` と `event_key` のマッピングで構成される CSV  ファイルです。以下に示すように、エイリアスを使用して上記のルールを書き直し、ルールを読みやすくすることができます。
+`.`の区切りが多くて長いイベントキーが一般的であるため、Hayabusaはエイリアスを使って簡単に扱えるようにします。エイリアスは `config\eventkey_alias.txt`ファイルで定義されています。このファイルは `alias` と `event_key` のマッピングで構成されるCSVファイルです。以下に示すように、エイリアスを使用して上記のルールを書き直し、ルールを読みやすくすることができます。
 
 ```yaml
 detection:
@@ -170,10 +168,10 @@ detection:
 ```
 
 #### 注意: 未定義のイベントキーエイリアスについて
-すべてのイベントキーエイリアスが `config\eventkey_alias.txt`で定義されているわけではありません。`details`（アラートの詳細）メッセージで正しいデータを取得しておらず、代わりに`%EventID%`のような結果を取得している場合、または検知ロジックの選択が正しく機能していない場合は、新しいエイリアスを使用して `config\eventkey_alias.txt`を更新する必要があります。
+すべてのイベントキーエイリアスが `config\eventkey_alias.txt`に定義されているわけではありません。検知するはずのルールが検知しない場合や、`details`（アラートの詳細）メッセージに`%EventID%`のようなプレースホルダーが表示されている場合、`config\eventkey_alias.txt`の設定を確認してください。
 
-### 条件におけるXML属性の使用方法
-XML要素には、スペースを入れることで属性を設定することができます。例えば、以下の `Provider Name` の `Name` は `Provider` 要素のXML属性です。
+### XML属性を条件に使用する方法
+XMLのタグにはタグ名とは別に属性を設定できます。例えば、以下の `Provider Name` の `Name` は `Provider` タグの属性です。
 
 ```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -186,7 +184,8 @@ XML要素には、スペースを入れることで属性を設定すること�
     </System>
 </Event>
 ```
-イベントキーのXML属性を指定するには、`{eventkey}_attributes.{attribute_name}`という形式を使います。例えば、ルールファイルの `Provider` 要素の `Name` 属性を指定する場合は、以下のようになります。
+
+イベントキーでXMLの属性を指定するには、`{eventkey}_attributes.{attribute_name}`という形式で記述します。例えば、ルールファイルの `Provider` 要素の `Name` 属性を指定する場合は、以下のようになります。
 
 ```yaml
 detection:
@@ -200,7 +199,7 @@ detection:
 ### grep検索
 Hayabusaではeventkeyを指定せず、WindowsEventログに含まれる文字列にマッチするかどうかを判定する機能も用意されています。この機能をHayabusaではgrep検索と呼んでいます。
 
-grep検索をするには下記のようにdetectionを指定します。この場合、`mimikatz`または`metasploit`という文字列がWindowsEventログに含まれる場合に、条件に一致したものとして条件に一致したものとして処理されます。また、grep検索にはワイルドカードを指定することも可能です。
+grep検索をするには下記のようにdetectionを指定します。この場合、`mimikatz`または`metasploit`という文字列がWindowsEventログに含まれる場合に、ルールが検知されます。また、grep検索にはワイルドカードを指定することも可能です。
 
 ```yaml
 detection:
@@ -209,10 +208,10 @@ detection:
         - `metasploit`
 ```
 
-> ※ Hayabusaでは内部的にWindowsEventログをJSON形式に変換して上で処理を行っています。そのため、XMLのタグをgrep検索でマッチさせることはできません。
+> ※ Hayabusaでは内部的にWindowsEventログをJSON形式に変換しています。そのため、grep検索ではXMLのタグをマッチさせることはできません。
 
-### イベントデータ
-Windowsのイベントログは、基本データ（イベントID、タイムスタンプ、レコードID、ログ名（チャンネル））が書き込まれる`System`部分と、イベントIDに応じて任意のデータが書き込まれる`EventData`部分の2つに分けられます。問題は、`EventData` にネストされたタグの名前がすべて `Data` であるため、これまで説明したイベントキーでは `SubjectUserSid` と `SubjectUserName` を区別できないことです。
+### EventData
+Windowsのイベントログは、基本データ（イベントID、タイムスタンプ、レコードID、ログ名（チャンネル））が書き込まれる`System`タグと、イベントIDに応じて任意のデータが書き込まれる`EventData`タグの2つに分けられます。その内、`EventData`タグ はネストされたタグの名前がすべて `Data` であり、これまで説明したイベントキーでは `SubjectUserSid` と `SubjectUserName` を区別できません。
 
 ```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -232,7 +231,7 @@ Windowsのイベントログは、基本データ（イベントID、タイム�
 </Event>
 ```
 
-この問題に対処するために、`Data Name`で割り当てられた値を指定することができます。例えば、EventData に含まれる `SubjectUserName` と `SubjectDomainName` をルールの条件として利用したい場合、以下のように記述することが可能です。
+この問題に対処するため、`Data`タグの`Name`属性に指定された値をイベントキーとして利用できます。例えば、EventData の `SubjectUserName` と `SubjectDomainName` を条件として利用する場合、以下のように記述することが可能です。
 
 ```yaml
 detection:
@@ -244,8 +243,8 @@ detection:
     condition: selection
 ```
 
-### EventDataの異常なパターン
-`EventData` にネストされたいくつかのタグは `Name` 属性を持ちません。
+### EventDataの例外的なパターン
+`EventData` タグにネストされたいくつかのタグは `Name` 属性を持ちません。
 
 ```xml
 <Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -262,7 +261,7 @@ detection:
 </Event>
 ```
 
-上記のようなイベントログを検知するには、`EventData`という名前のイベントキーを指定します。この場合、`Name`属性を持たないネストされたタグのいずれかがマッチする限り、条件はマッチします。
+上記のようなイベントログを検知するには、`EventData`というイベントキーを指定します。この場合、`EventData`にネストされたタグの内、値がNoneになるタグが1つ以上存在すれば、条件にマッチすることになります。
 
 ```yaml
 detection:
@@ -274,7 +273,7 @@ detection:
 ```
 
 ## パイプ
-パイプは、以下のようにイベントキーと組み合わせて、文字列のマッチングに使用することができます。これまで説明した条件はすべて完全一致ですが、パイプを使うことで、より柔軟な検知ルールを記述することができます。以下の例では、`EventData`の値が正規表現 `[\s\S]*EngineVersion=2.0[\s\S]*` にマッチする場合、条件にマッチすることになります。
+イベントキーにはパイプを指定することができます。ここまで説明した書き方では完全一致しか表現できませんでしたが、パイプを使うことでより柔軟な検知ルールを記載できるようになります。以下の例では、`EventData`の値が正規表現 `[\s\S]*EngineVersion=2.0[\s\S]*` に当てはまる場合、条件にマッチすることになります。
 
 ```yaml
 detection:
@@ -285,16 +284,15 @@ detection:
     condition: selection
 ```
 
-パイプの後に指定できるものの一覧です。現時点では、Hayabusa は複数のパイプを連結することはサポートしていません。
-* startswith: 文字列を先頭からチェックします。
-* endswith: 文字列の末尾をチェックします。
-* contains: ある単語がデータ内に含まれているかどうかをチェックします。
-* re: 正規表現を使用します。(私たちは regex crate を使っているので、正しい正規表現の書き方については https://docs.rs/regex/1.5.4/regex/ のドキュメントを参照してください)。 
-  > 注意: 正規表現を使用するSigmaルールの中には、Rustが正規表現を使用する方法の違いにより、 検知に失敗するものがあります。
+パイプには以下のキーワードを指定できます。v1の時点で複数のパイプを連結することはできません。
+* startswith: 指定された文字列で始まることをチェックします。
+* endswith: 指定された文字列で終わることをチェックします。
+* contains: 指定された文字列が含まれることをチェックします。
+* re: 正規表現を使用します。(正規表現の書き方については https://docs.rs/regex/1.5.4/regex/ を参照してください)。 
+  > 注意: SigmaルールとHayabusaルールは正規表現の記法に一部差異があります。そのため、HayabusaではSigmaルールを正しく検知できない場合があります。
 
 ## ワイルドカード
-イベントキーにワイルドカードを使用することができます。以下の例では、`ProcessCommandLine` が "malware" という文字列で始まる場合、このルールはマッチします。
-この仕様は、Sigmaルールのワイルドカードと基本的に同じです。
+Hayabusaルールではワイルドカードを使用することができます。以下の例では、`ProcessCommandLine` が "malware" という文字列で始まる場合、このルールでログが検知されます。この仕様はSigmaルールのワイルドカードと同じです。
 
 ```yaml
 detection:
@@ -306,20 +304,16 @@ detection:
 ```
 
 以下の2つのワイルドカードを使用することができます。
-* `*`: 0文字以上の任意の文字列にマッチします。(内部的には正規表現 `.*` に変換されます)。
-* `?`: 任意の1文字にマッチします。(内部的には正規表現 `. ` に変換されます)。
+* `*`: 0文字以上の任意の文字列にマッチします。(内部的には`.*`という正規表現に変換されます)。
+* `?`: 任意の1文字にマッチします。(内部的には`.`という正規表現に変換されます)。
 
 ワイルドカードのエスケープについて
-* ワイルドカード(`*` and `?`)は、バックスラッシュでエスケープできます: `\*` と `\?`.
-* もし、ワイルドカードの直前にバックスラッシュを使用したい場合は、 `\\*` または `\\?` と記述してください。
-* バックスラッシュを単独で使用する場合は、エスケープは必要ありません。
+* ワイルドカード(`*`と`?`)はバックスラッシュでエスケープできます: `\*` と `\?`.
+* ワイルドカードの直前にバックスラッシュを使用する場合、 `\\*` または `\\?` と記述してください。
+* バックスラッシュを単独で使用する場合、エスケープは不要です。
 
 ## イベントキー内のキーワードのネスト
-イベントキーは、特定のキーワードでネストすることができます。
-以下の例では、以下の場合にルールがマッチします。
-* `ServiceName` が `malicious-service` であるか、または `./config/regex/regexes_suspicous_service.txt` にある正規表現を含んでいる場合。
-* `ImagePath` は1000文字以上であること。
-* `ImagePath` は `allowlist` にマッチするものが一つもありません。
+イベントキーには特定のキーワードをネストすることができます。
 
 ```yaml
 detection:
@@ -338,22 +332,21 @@ detection:
 現在、指定できるキーワードは以下の通りです。
 * `value`: 文字列によるマッチング (ワイルドカードやパイプも指定可能)。
 * `min_length`: 指定された文字数以上の場合にマッチします。
-* `regexes`: このフィールドで指定したファイル内の正規表現のいずれかにマッチする場合にマッチします。
-* `allowlist`: このフィールドで指定したファイル内の正規表現のリストにマッチするものがある場合、ルールはスキップされます。
+* `regexes`: 指定されたファイルに定義された正規表現に1つ以上に一致する場合、**条件にマッチした**ものとして扱われます。
+* `allowlist`: 指定されたファイルに定義された正規表現に1つ以上に一致する場合、**条件にマッチしてない**ものとして扱われます。
 
 ### regexesとallowlistキーワード
 Hayabusaに`.\rules\hayabusa\default\alerts\System\7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml`のルールのために使う2つの正規表現ファイルが用意されています。
 * `./config/regex/detectlist_suspicous_services.txt`: 怪しいサービス名を検知するためのものです。
 * `./config/regex/allowlist_legitimate_services.txt`: 正規のサービスを許可するためのものです。
   
-`regexes` と `allowlist` で定義されたファイルは、ルールファイル自体を変更することなく、それらを参照するすべてのルールの動作を変更するために編集することが可能です。
+`regexes` と `allowlist` で定義されたファイルの正規表現を変更すると、それらを参照するすべてのルールの動作を一度に変更できます。
 
-また、自分で作成した異なる regexes と allowlist テキストファイルを使用することもできます。
+また、`regexes` と `allowlist` にはユーザーが独自で作成したファイルを指定することも可能です。
 デフォルトの `./config/detectlist_suspicous_services.txt` と `./config/allowlist_legitimate_services.txt` を参考にして、独自のファイルを作成してください。
 
 ## condition (条件)
-上記で説明した表記法では、`AND`や`OR`の論理を表現することができますが、複雑な論理を定義しようとすると混乱してしまうでしょう。
-より複雑なルールを作りたい場合は、以下のように `condition` キーワードを使用します。
+これまで説明した記法では簡単な`AND`や`OR`であれば表現可能ですが、複雑な条件は定義できません。そのような場合、`condition` キーワードを使用します。
 
 ```yaml
 detection:
@@ -379,18 +372,15 @@ detection:
 ```
 
  `condition`には、以下の式を用いることができます。
-* `{expression1} and {expression2}`: {expression1} と {expression2} の両方を必要とする。
-* `{expression1} or {expression2}`: {expression1} または {expression2} のどちらかを必要とする
-* `not {expression}`: {expression} の論理を反転させる
-* `( {expression} )`: {expression} の優先順位を設定する。数学と同じ優先順位の論理に従う。
+* `{expression1} and {expression2}`: {expression1} と {expression2} の両方が真である場合にマッチします。
+* `{expression1} or {expression2}`: {expression1} または {expression2} のどちらかが真である場合にマッチします。
+* `not {expression}`: {expression} の真偽を反転させます。
+* `( {expression} )`: `()`で囲まれた {expression} を先に評価します。数学と同じ優先順位に従います。
 
-上記の例では、 `SELECTION_1`、` SELECTION_2`などの選択名が使用されていますが、次の文字 `a-z A-Z 0-9 _`のみが含まれている限り、任意の名前を付けることができます。
-> ただし、可能な限り読みやすくするために、 `selection_1`、` selection_2`、 `filter_1`、` filter_2`などの標準的な規則を使用してください。
+上記の例では、 `SELECTION_1`、` SELECTION_2`などの名前が使用されていますが、名前には `a-z A-Z 0-9 _`の文字を使用可能です。ただし、`selection_1`、` selection_2`、 `filter_1`、` filter_2`などの標準的な規則の利用を推奨します。
 
 ## notロジック
-多くのルールは誤検知を引き起こすので、検索するシグネチャーの選択と同時に、誤検知が無いようにフィルターの選択をすることはよくあります。
-
-例えば
+ルールを作成する場合、誤検知を減らすためにフィルターを作成することはよくあります。以下に利用例を示します。
 
 ```yaml
 detection:
@@ -412,11 +402,10 @@ detection:
     condition: selection and not filter
 ```
 
-## aggregation condition (集計条件) (別名: カウントルール)
+## aggregation condition
 ### 基本事項
-上記の `condition` キーワードは `AND` や `OR` ロジックを実装しているだけでなく、イベントをカウントしたり、「aggregate(集約)」したりすることも可能です。
-この機能は「集計条件」と呼ばれ、条件をパイプでつないで指定をします。
-以下のパスワードスプレー攻撃の例では、5分以内に同じ送信元の`IpAddress`で5個以上の `TargetUserName`があるかどうかを判断するために条件式が使用されています。
+上記の `condition` キーワードは `AND` や `OR` だけでなく、マッチしたイベントの集計も可能です。この機能を利用するには`aggregation condition`を利用します。指定するには条件をパイプでつなぎます。
+以下のパスワードスプレー攻撃の例では、5分以内に同じ送信元の`IpAddress`で5個以上の `TargetUserName`があるかどうかを判断します。
 
 ```yaml
 detection:
@@ -427,7 +416,7 @@ detection:
   timeframe: 5m
 ```
 
-集計条件は以下の形式で定義することができます。
+`aggregation condition`は以下の形式で定義します。
 * `count() {operator} {number}`: パイプの前の最初の条件にマッチするログイベントに対して、マッチしたログの数が `{operator}` と `{number}` で指定した条件式を満たす場合に条件がマッチします。 
 
 `{operator}` は以下のいずれかになります。
@@ -445,37 +434,36 @@ detection:
 * `12h`: 12時間
 * `7d`: 7日間
 * `3M`: 3ヶ月
-> `timeframe` は必須ではありませんが、パフォーマンスとメモリ効率のために、可能な限り定義することが強く推奨されます。
 
 
-### 集計条件として4パターン:
-1. count 引数または `by` キーワードを指定しない。例: `selection | count() > 10`
-   > もし `selection` が時間枠内に10回以上マッチすれば、条件にマッチします。
-2. count 引数はないが、`by` キーワードはある。例: `selection | count() by IpAddress > 10`
-   > `selection` は**同じ**`IpAddress` に対して10回以上 true になる必要があります。
-3. count 引数があるが、`by` キーワードがない場合。例:  `selection | count(TargetUserName) > 10`
-   > `selection` がマッチし、かつ `TargetUserName` が時間枠内で10回以上**異なる**場合であれば、条件にマッチします。
-4. count 引数と `by` キーワードの両方が存在する。例: `selection | count(TargetUserName) by IpAddress > 10`
-   > **同じ**「日付」に対して、条件が一致するためには、10人以上の**異なる**「ユーザ」が存在する必要があります。
+### countの4パターン
+1. countの引数と`by` キーワード共に指定しないパターン。例: `selection | count() > 10`
+   > `selection`にマッチしたログが10件以上ある場合、このルールは検知します。
+2. countの引数はないが、`by` キーワードはある。例: `selection | count() by date > 10`
+   > `selection`にマッチするログが10件以上あるかどうか、日付毎にチェックします。
+3. countの引数があるが、`by` キーワードがない場合。例:  `selection | count(TargetUserName) > 10`
+   > `selection`に一致する`TargetUserName`が10人以上存在する場合、このルールは検知します。
+4. count 引数と `by` キーワードの両方が存在する。例: `selection | count(TargetUserName) by date > 10`
+   > `selection`に一致する`TargetUserName`が10人以上存在するかどうか、日付毎にチェックします。
 
 
 ### パターン1の例：
-これは最も基本的なパターンです：`count() {operator} {number}`. 以下のルールは、`selection`が3回以上発生した場合にマッチします。
+これは最も基本的なパターンです：`count() {operator} {number}`. 以下のルールは、`selection`にマッチしたログが3つ以上である場合、このルールが検知されます。
 
 ![](CountRulePattern-1-JP.png)
 
 ### パターン2の例：
-`count() by {eventkey} {operator} {number}`： パイプの前の `condition` にマッチするログイベントは、**同じ**`{eventkey}`でグループ化されます。各グループ化において、マッチしたイベントの数が`{operator}`と`{number}`で指定した条件を満たした場合、条件にマッチすることになります。
+`count() by {eventkey} {operator} {number}`： `selection`にマッチしたログは、`{eventkey}`の値が**同じログ毎にグルーピング**されます。各グループにおいて、マッチしたイベントの数が`{operator}`と`{number}`で指定した条件を満たした場合、このルールが検知されます。
 
 ![](CountRulePattern-2-JP.png)
 
 ### パターン3の例：
-`count({eventkey}) {operator} {number}`： 条件パイプの前に、条件にマッチする `{eventkey}` の**異なる**値がいくつログイベント内に存在するかを数えます。その数が`{operator}`と`{number}`で指定された条件式を満たす場合、条件を満たしたものとみなします。
+`count({eventkey}) {operator} {number}`：`selection`にマッチしたログの内、 `{eventkey}` が**異なる**値の数をカウントします。そのカウントされた値が`{operator}`と`{number}`で指定された条件式を満たす場合、このルールが検知されます。
 
 ![](CountRulePattern-3-JP.png)
 
 ### パターン4の例：
-`count({eventkey_1}) by {eventkey_2} {operator} {number}`： 条件パイプの前にある条件にマッチしたログを**同じ**`{eventkey_2}`でグループ化し、各グループに含まれる`{eventkey_1}`の**異なる**値の数をカウントしています。各グループでカウントされた値が`{operator}`と`{number}`で指定された条件式を満たした場合、条件にマッチすることになります。
+`count({eventkey_1}) by {eventkey_2} {operator} {number}`： `selection`にマッチしたログは、`{eventkey}`の値が**同じログ毎にグルーピングし**、各グループに含まれる`{eventkey_1}`が**異なる**値の数をカウントします。各グループでカウントされた値が`{operator}`と`{number}`で指定された条件式を満たした場合、このルールが検知されます。
 
 ![](CountRulePattern-4-JP.png)
 
@@ -486,7 +474,7 @@ CountルールのDetails出力は固定で、`[condition]`にcount条件と`[res
 ```
 [condition] count(TargetUserName) by IpAddress >= 5 in timeframe [result] count:41 TargetUserName:jorchilles/jlake/cspizor/lpesce/bgalbraith/jkulikowski/baker/eskoudis/dpendolino/sarmstrong/lschifano/drook/rbowes/ebooth/melliott/econrad/sanson/dmashburn/bking/mdouglas/cragoso/psmith/bhostetler/zmathis/thessman/kperryman/cmoody/cdavis/cfleener/gsalinas/wstrzelec/jwright/edygert/ssims/jleytevidal/celgee/Administrator/mtoussain/smisenar/tbennett/bgreenwood IpAddress:10.10.2.22 timeframe:5m
 ```
-アラートのタイムスタンプは、最初に検知されたイベントからの時間になります。
+アラートのタイムスタンプには、timeframe内で最初に検知されたイベントの時間が表示されます。
 
 # ルール作成のアドバイス
 1. **可能な場合は、常に `Channel`と`EventID`を指定してください。** 将来的には、チャネル名とイベンドIDでフィルタリングする可能性があるため、適切な` Channel`と`EventID`が設定されていない場合はルールが無視される可能性があります。
@@ -599,6 +587,6 @@ detection:
 ```
 
 # SigmaルールからHayabusaルール形式への自動変換
-SigmaルールからHayabusaルール形式への自動変換を行うsigmacのバックエンドを[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/tools/sigmac)で作成しました。
+SigmaルールからHayabusaルール形式に自動で変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/sigmac)を作成しました。
 
-使い方のReadmeは[こちら](https://github.com/Yamato-Security/hayabusa/blob/main/tools/sigmac/README-Japanese.md)です。
+使用方法は[Readme](https://github.com/Yamato-Security/hayabusa/blob/main/tools/sigmac/README-Japanese.md)を参照してください。

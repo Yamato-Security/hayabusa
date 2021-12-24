@@ -87,8 +87,8 @@ ruletype: Hayabusa
 * **ruletype [required]**: `Hayabusa` for hayabusa rules. Rules automatically converted from sigma Windows rules will be `Sigma`.
 
 # Detection field
-## Detection fundamentals
-First, the fundamentals of how to create a detection rule will be explained.
+## Selection fundamentals
+First, the fundamentals of how to create a selection rule will be explained.
 
 ### How to write AND and OR logic
 To write AND logic, we use nested dictionaries.
@@ -437,7 +437,6 @@ Aggregation conditions can be defined in the following format:
 * `12h`: 12 hours
 * `7d`: 7 days
 * `3M`: 3 months
-> `timeframe` is not required but highly encouraged to define when possible for performance and memory efficiency.
 
 
 ### Four patterns for aggregation conditions:
