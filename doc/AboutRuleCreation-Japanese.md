@@ -438,11 +438,11 @@ detection:
 
 ### countの4パターン
 1. countの引数と`by` キーワード共に指定しないパターン。例: `selection | count() > 10`
-   > `selection`にマッチしたログが10件以上あれば、このルールが検知されたことになります。
+   > `selection`にマッチしたログが10件以上ある場合、このルールは検知します。
 2. countの引数はないが、`by` キーワードはある。例: `selection | count() by date > 10`
    > `selection`にマッチするログが10件以上あるかどうか、日付毎にチェックします。
 3. countの引数があるが、`by` キーワードがない場合。例:  `selection | count(TargetUserName) > 10`
-   > `selection`に一致する`TargetUserName`が10人以上存在する場合、このルールが検知されたことになります。
+   > `selection`に一致する`TargetUserName`が10人以上存在する場合、このルールは検知します。
 4. count 引数と `by` キーワードの両方が存在する。例: `selection | count(TargetUserName) by date > 10`
    > `selection`に一致する`TargetUserName`が10人以上存在するかどうか、日付毎にチェックします。
 
