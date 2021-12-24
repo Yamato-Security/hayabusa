@@ -243,7 +243,7 @@ detection:
     condition: selection
 ```
 
-### EventDataの異常なパターン
+### EventDataの例外的なパターン
 `EventData` タグにネストされたいくつかのタグは `Name` 属性を持ちません。
 
 ```xml
