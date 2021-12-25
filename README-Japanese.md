@@ -239,7 +239,7 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 # Hayabusa ルール
 Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
 
-ルールの作成方法については、[AboutRuleCreation-Japanase.md](./doc/AboutRuleCreation-Japanase.md) をお読みください。
+ルールの作成方法については、[AboutRuleCreation-Japanese.md](./doc/AboutRuleCreation-Japanese.md) をお読みください。
 
 [hayabusa-rulesレポジトリ](https://github.com/Yamato-Security/hayabusa-rules)にあるすべてのルールは、`rules`フォルダに配置する必要があります。
 
