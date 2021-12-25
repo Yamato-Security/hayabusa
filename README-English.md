@@ -51,6 +51,8 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 # Sample timeline results
 You can check out sample CSV and manually edited XLSX timeline results [here](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results).
 
+You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here](doc/CSV-AnalysisWithExcelAndTimelineExplorer-English.pdf).
+
 # Features
 * Cross-platform support: Windows, Linux, macOS
 * Developed in Rust to be memory safe and faster than a hayabusa falcon!
