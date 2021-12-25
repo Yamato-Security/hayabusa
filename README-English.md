@@ -80,7 +80,10 @@ git clone https://github.com/Yamato-Security/hayabusa.git
 
 You can also manually download and extract Hayabusa from [https://github.com/Yamato-Security/hayabusa](https://github.com/Yamato-Security/hayabusa).
 
-After that, you need to download a pre-compiled binary for the Windows, Linux or macOS at the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page and save it to the `hayabusa` root folder.
+After that, you need to download a pre-compiled binary for Windows or macOS at the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page and save it to the `hayabusa\bin` folder.
+
+There are two different versions of the evtx library being used when compiled: `0.6.7` and `0.7.2`.
+The `0.7.2` version should work but we have only tested it with `0.6.7` so please use that version if you experience any problems with `0.7.2`.
 
 # Compiling from source (Optional)
 If you have rust installed, you can compile from source with the following command:
@@ -110,13 +113,7 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 > Note: You need to run the binary from the Hayabusa root directory. 
 
 # Usage
-You need to run the binary from the Hayabusa root directory.
-There are different binary versions in `.\bin` compiled for different operating systems and architectures.
-Also, there are two different versions of the evtx library being used when compiled: `0.6.7` and `0.7.2`.
-The `0.7.2` version should work but we have only tested it with `0.6.7` so please use that if you experience any problems with `0.7.2`.
-Please replace `hayabusa.exe` in the examples below with the appropriate Hayabusa binary filename.  
-
-> Note: You need to run the Hayabusa binary from the Hayabusa root directory. 
+> Note: You need to run the Hayabusa binary from the Hayabusa root directory. Example: `.\bin\hayabusa.exe`
 
 ## Command line options
 ```bash

@@ -81,7 +81,10 @@ git clone https://github.com/Yamato-Security/hayabusa.git
 
 または、手動で[https://github.com/Yamato-Security/hayabusa](https://github.com/Yamato-Security/hayabusa)からHayabusaをダウンロードすることもできます。
 
-その後、Windows、Linux、macOS用のコンパイル済みバイナリを[Releases](https://github.com/Yamato-Security/Hayabusa/releases)からダウンロードして、`hayabusa`のディレクトリに置く必要があります。
+その後、Windows、macOS用のコンパイル済みバイナリを[Releases](https://github.com/Yamato-Security/Hayabusa/releases)からダウンロードして、`hayabusa\bin`のディレクトリに置く必要があります。
+
+evtxライブラリのバージョン(`0.6.7`と`0.7.2`)毎に、コンパイルされたバイナリが用意されています。
+`0.7.2`バージョンでも動作するはずですが、`0.6.7`でしかテストしていませんので、`0.7.2`で問題が発生した場合はそちらをご利用ください。
 
 # ソースコードからのコンパイル（任意）
 rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
@@ -111,13 +114,7 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 > ※ 以下の例でHayabusaを試したい方は、上記コマンドをhayabusaのルートフォルダから実行してください。
 
 # 使用方法
-Hayabusaはルートディレクトリでバイナリを実行する必要があります。
-.\bin` には、OSやアーキテクチャごとにコンパイルされたバイナリが用意されています。
-また、evtxライブラリのバージョン(`0.6.7`と`0.7.2`)毎に、コンパイルされたバイナリが用意されています。
-`0.7.2`バージョンでも動作するはずですが、`0.6.7`でしかテストしていませんので、`0.7.2`で問題が発生した場合はそちらをご利用ください。
-以下の例の `hayabusa.exe` は、適切なHayabusaのバイナリファイル名に置き換えてください。 
-
-> 注意: Hayabusaのルートディレクトリから、バイナリを実行する必要があります。
+> 注意: Hayabusaのルートディレクトリから、バイナリを実行する必要があります。例：`.\bin\hayabusa.exe`
 
 ## コマンドラインオプション
 ```bash
