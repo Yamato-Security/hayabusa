@@ -73,7 +73,7 @@ CSVと手動で編集したXLSXのタイムライン結果のサンプルは[こ
 * JSONへの出力→Elastic Stack/Splunkへのインポート
 
 # ダウンロード
-Hayabusaは[https://github.com/Yamato-Security/hayabusa](https://github.com/Yamato-Security/hayabusa)のReleaseから最新版をダウンロードできます。
+Hayabusaの[Releases](https://github.com/Yamato-Security/hayabusa/releases)から最新版をダウンロードできます。
 
 または、以下の`git clone`コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です。
 
@@ -112,7 +112,7 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 > ※ 以下の例でHayabusaを試したい方は、上記コマンドをhayabusaのルートフォルダから実行してください。
 
 # 使用方法
-> 注意: Hayabusaのルートディレクトリから、バイナリを実行する必要があります。例：`.\bin\hayabusa.exe`
+> 注意: Hayabusaのルートディレクトリから、バイナリを実行する必要があります。例：`.\hayabusa.exe`
 
 ## コマンドラインオプション
 ```bash

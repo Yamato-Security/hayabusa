@@ -72,7 +72,7 @@ You can check out sample CSV and manually edited XLSX timeline results [here](ht
 * JSON support for sending alerts to Elastic Stack/Splunk, etc...
 
 # Downloads
-You can download latests Hayabusa from Release.
+You can download the latest Hayabusa version from the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page.
 
 You can also `git clone` the repository with the following command and compile binary from source code.:
 
