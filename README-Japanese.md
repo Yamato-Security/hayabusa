@@ -52,6 +52,8 @@ Windowsのイベントログは、
 # タイムラインのサンプル結果
 CSVと手動で編集したXLSXのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
 
+CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
+
 # 特徴
 * クロスプラットフォーム対応: Windows, Linux, macOS
 * Rustで開発され、メモリセーフでハヤブサよりも高速です！
