@@ -19,7 +19,7 @@ pub fn exclude_ids() -> RuleExclude {
     };
     let reader = BufReader::new(f);
     for v in reader.lines() {
-        let v = v.unwrap().split("#").collect::<Vec<&str>>()[0].to_string();
+        let v = v.unwrap().split("#").collect::<Vec<&str>>()[0].trim().to_string();
         if v.is_empty() {
             // 空行は無視する。
             continue;
@@ -39,7 +39,7 @@ pub fn exclude_ids() -> RuleExclude {
         };
         let reader = BufReader::new(f);
         for v in reader.lines() {
-            let v = v.unwrap().split("#").collect::<Vec<&str>>()[0].to_string();
+            let v = v.unwrap().split("#").collect::<Vec<&str>>()[0].trim().to_string();
             if v.is_empty() {
                 // 空行は無視する。
                 continue;
