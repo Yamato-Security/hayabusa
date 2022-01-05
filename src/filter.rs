@@ -45,7 +45,7 @@ impl RuleExclude {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    &format!("[ERROR] {}", f.as_ref().unwrap_err()),
+                    &format!("{} does not exist", filename),
                 )
                 .ok();
             }
@@ -53,7 +53,7 @@ impl RuleExclude {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", f.as_ref().unwrap_err()));
+                    .push(format!("{} does not exist", filename));
             }
             return ();
         }
