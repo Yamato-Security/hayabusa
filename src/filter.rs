@@ -62,7 +62,7 @@ impl RuleExclude {
                 .trim()
                 .to_string();
             if v.is_empty() || !IDS_REGEX.is_match(&v) {
-                // 空行は無視する。
+                // 空行は無視する。IDの検証
                 continue;
             }
             self.no_use_rule.insert(v);
