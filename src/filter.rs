@@ -2,15 +2,16 @@ use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::QUIET_ERRORS_FLAG;
+use lazy_static::lazy_static;
+use regex::Regex;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::{BufRead, BufReader};
-use lazy_static::lazy_static;
-use regex::Regex;
 
 lazy_static! {
-    static ref IDS_REGEX :Regex = Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+    static ref IDS_REGEX: Regex =
+        Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
 }
 
 #[derive(Clone, Debug)]
