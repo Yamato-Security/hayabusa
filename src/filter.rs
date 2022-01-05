@@ -6,6 +6,12 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::{BufRead, BufReader};
+use lazy_static::lazy_static;
+use regex::Regex;
+
+lazy_static! {
+    static ref IDS_REGEX :Regex = Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+}
 
 #[derive(Clone, Debug)]
 pub struct RuleExclude {
@@ -55,7 +61,7 @@ impl RuleExclude {
             let v = v.unwrap().split("#").collect::<Vec<&str>>()[0]
                 .trim()
                 .to_string();
-            if v.is_empty() {
+            if v.is_empty() || !IDS_REGEX.is_match(&v) {
                 // 空行は無視する。
                 continue;
             }
