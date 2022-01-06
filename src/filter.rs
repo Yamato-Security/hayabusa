@@ -43,7 +43,7 @@ impl RuleExclude {
         let f = File::open(filename);
         if f.is_err() {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::alert(
+                AlertMessage::warn(
                     &mut BufWriter::new(std::io::stderr().lock()),
                     &format!("{} does not exist", filename),
                 )
