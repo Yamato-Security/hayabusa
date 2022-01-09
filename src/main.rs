@@ -151,7 +151,7 @@ impl App {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("{}", errmsg));
             }
             return vec![];
         }
@@ -266,7 +266,7 @@ impl App {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[ERROR] {}", errmsg));
+                            .push(format!("{}", errmsg));
                     }
                     continue;
                 }

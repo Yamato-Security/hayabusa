@@ -69,7 +69,7 @@ impl Detection {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("{}", errmsg));
             }
             return vec![];
         }
@@ -95,12 +95,12 @@ impl Detection {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("[WARN] {}", errmsg_body));
+                        .push(format!("{}", errmsg_body));
                     err_msgs.iter().for_each(|err_msg| {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[WARN] {}", err_msg));
+                            .push(format!("{}", err_msg));
                     });
                 }
                 parseerror_count += 1;

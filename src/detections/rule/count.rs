@@ -96,7 +96,7 @@ fn get_alias_value_in_record(
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("{}", errmsg));
             }
             return None;
         }
@@ -198,7 +198,7 @@ impl TimeFrameInfo {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("{}", errmsg));
             }
         }
         return TimeFrameInfo {
@@ -236,7 +236,7 @@ pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg.to_string()));
+                    .push(format!("{}", errmsg.to_string()));
             }
             return Option::None;
         }
