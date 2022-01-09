@@ -66,10 +66,7 @@ impl Detection {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                ERROR_LOG_STACK
-                    .lock()
-                    .unwrap()
-                    .push(format!("{}", errmsg));
+                ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
             }
             return vec![];
         }
@@ -97,10 +94,7 @@ impl Detection {
                         .unwrap()
                         .push(format!("{}", errmsg_body));
                     err_msgs.iter().for_each(|err_msg| {
-                        ERROR_LOG_STACK
-                            .lock()
-                            .unwrap()
-                            .push(format!("{}", err_msg));
+                        ERROR_LOG_STACK.lock().unwrap().push(format!("{}", err_msg));
                     });
                 }
                 parseerror_count += 1;

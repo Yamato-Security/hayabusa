@@ -93,10 +93,7 @@ fn get_alias_value_in_record(
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                ERROR_LOG_STACK
-                    .lock()
-                    .unwrap()
-                    .push(format!("{}", errmsg));
+                ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
             }
             return None;
         }
@@ -195,10 +192,7 @@ impl TimeFrameInfo {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                ERROR_LOG_STACK
-                    .lock()
-                    .unwrap()
-                    .push(format!("{}", errmsg));
+                ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
             }
         }
         return TimeFrameInfo {

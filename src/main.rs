@@ -148,10 +148,7 @@ impl App {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
-                ERROR_LOG_STACK
-                    .lock()
-                    .unwrap()
-                    .push(format!("{}", errmsg));
+                ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
             }
             return vec![];
         }
@@ -263,10 +260,7 @@ impl App {
                             .ok();
                     }
                     if !*QUIET_ERRORS_FLAG {
-                        ERROR_LOG_STACK
-                            .lock()
-                            .unwrap()
-                            .push(format!("{}", errmsg));
+                        ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
                     }
                     continue;
                 }

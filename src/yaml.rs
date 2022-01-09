@@ -62,10 +62,7 @@ impl ParseYaml {
                 AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
             }
             if !*QUIET_ERRORS_FLAG {
-                ERROR_LOG_STACK
-                    .lock()
-                    .unwrap()
-                    .push(format!("{}", errmsg));
+                ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
             }
         }
         let mut yaml_docs = vec![];
@@ -93,10 +90,7 @@ impl ParseYaml {
                     AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
-                    ERROR_LOG_STACK
-                        .lock()
-                        .unwrap()
-                        .push(format!("{}", errmsg));
+                    ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -114,10 +108,7 @@ impl ParseYaml {
                     AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
-                    ERROR_LOG_STACK
-                        .lock()
-                        .unwrap()
-                        .push(format!("{}", errmsg));
+                    ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -159,10 +150,7 @@ impl ParseYaml {
                         AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
-                        ERROR_LOG_STACK
-                            .lock()
-                            .unwrap()
-                            .push(format!("{}", errmsg));
+                        ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
@@ -180,10 +168,7 @@ impl ParseYaml {
                         AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
-                        ERROR_LOG_STACK
-                            .lock()
-                            .unwrap()
-                            .push(format!("{}", errmsg));
+                        ERROR_LOG_STACK.lock().unwrap().push(format!("{}", errmsg));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
