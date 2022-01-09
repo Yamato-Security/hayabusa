@@ -53,8 +53,21 @@ impl ParseYaml {
         exclude_ids: &RuleExclude,
     ) -> io::Result<String> {
         let metadata = fs::metadata(path.as_ref());
-        if metadata.is_err() {}
-
+        if metadata.is_err() {
+            let errmsg = format!(
+                "fail to read metadata of file: {}",
+                path.as_ref().to_path_buf().display(),
+            );
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+            }
+            if !*QUIET_ERRORS_FLAG {
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("{}", errmsg));
+            }
+        }
         let mut yaml_docs = vec![];
         if metadata.unwrap().file_type().is_file() {
             // 拡張子がymlでないファイルは無視
@@ -83,7 +96,7 @@ impl ParseYaml {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("[WARN] {}", errmsg));
+                        .push(format!("{}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -104,7 +117,7 @@ impl ParseYaml {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("[WARN] {}", errmsg));
+                        .push(format!("{}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -149,7 +162,7 @@ impl ParseYaml {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[WARN] {}", errmsg));
+                            .push(format!("{}", errmsg));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
@@ -170,7 +183,7 @@ impl ParseYaml {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[WARN] {}", errmsg));
+                            .push(format!("{}", errmsg));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
