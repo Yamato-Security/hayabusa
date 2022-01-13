@@ -16,9 +16,11 @@ use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
+use is_elevated::is_elevated;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::env;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::io::BufWriter;
@@ -99,7 +101,34 @@ impl App {
             println!("Generating Event ID Statistics");
             println!("");
         }
-        if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("liveanalysis")
+        {
+            if env::consts::OS == "Windows" && !is_elevated() {
+                let log_dir = env::var("windir").expect("windir is not found");
+                let evtx_files = self
+                    .collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
+                if evtx_files.len() == 0 {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &"No .evtx files were found.".to_string(),
+                    )
+                    .ok();
+                    return;
+                }
+                self.analysis_files(evtx_files);
+            } else {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &"--liveanalysis should be run as Administrator on Windows.".to_string(),
+                )
+                .ok();
+                return;
+            }
+        } else if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx")
                 || Path::new(filepath)
                     .file_stem()
