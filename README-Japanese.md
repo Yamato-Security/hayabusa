@@ -80,7 +80,14 @@ Hayabusaの[Releases](https://github.com/Yamato-Security/hayabusa/releases)か�
 または、以下の`git clone`コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です。
 
 ```bash
-git clone https://github.com/Yamato-Security/hayabusa.git
+git clone https://github.com/Yamato-Security/hayabusa.git --recursive
+```
+
+`--recursive` をつけ忘れた場合、サブモジュールとして管理されている `rules/` 内のファイルが取得できません。
+以下のコマンドでサブモジュールを取得してください。
+
+```bash
+git submodule update --init
 ```
 
 evtxライブラリのバージョン(`0.6.7`と`0.7.2`)毎に、コンパイルされたバイナリが用意されています。
