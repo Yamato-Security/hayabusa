@@ -79,7 +79,14 @@ You can download the latest Hayabusa version from the [Releases](https://github.
 You can also `git clone` the repository with the following command and compile binary from source code.:
 
 ```bash
-git clone https://github.com/Yamato-Security/hayabusa.git
+git clone https://github.com/Yamato-Security/hayabusa.git --recursive
+```
+
+If you forget to use `--recursive` option, `rules/` files which managed in submodule did not cloned.
+Use following command to import submodules.
+
+```bash
+git submodule update --init
 ```
 
 There are two different versions of the evtx library being used when compiled: `0.6.7` and `0.7.2`.
