@@ -1,9 +1,0 @@
-4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6 # ./rules/sigma/other/msexchange/win_exchange_transportagent.yml
-c92f1896-d1d2-43c3-92d5-7a5b35c217bb # ./rules/sigma/other/msexchange/win_exchange_cve_2021_42321.yml
-9f7aa113-9da6-4a8d-907c-5f1a4b908299 # ./rules/sigma/deprecated/powershell_syncappvpublishingserver_exe.yml
-
-# Replaced by hayabusa rules
-c265cf08-3f99-46c1-8d59-328247057d57 # ./rules/sigma/builtin/security/win_user_added_to_local_administrators.yml
-66b6be3d-55d0-4f47-9855-d69df21740ea # ./rules/sigma/builtin/security/win_user_creation.yml
-7b449a5e-1db5-4dd0-a2dc-4e3a67282538 # ./rules/sigma/builtin/security/win_hidden_user_creation.yml
-b20f6158-9438-41be-83da-a5a16ac90c2b # ./rules/sigma/other/taskscheduler/win_rare_schtask_creation.yml
