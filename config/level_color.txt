@@ -3,4 +3,3 @@ critical,ff0000
 high,ffff00
 medium,00ff00
 low,00ffff
-informational,ffffff
