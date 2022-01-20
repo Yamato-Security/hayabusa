@@ -55,7 +55,7 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
         }
         let empty = &"".to_string();
         let level = line.get(0).unwrap_or(empty);
-        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty));
+        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
         if convert_color_result.is_err() {
             AlertMessage::warn(
                 &mut BufWriter::new(std::io::stderr().lock()),
@@ -64,7 +64,7 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
             .ok();
         }
         let color_code = convert_color_result.unwrap();
-        if level.len() == 0 || color_code.len() != 3 {
+        if level.len() == 0 || color_code.len() < 3 {
             return;
         }
         color_map.insert(level.to_string(), color_code);
