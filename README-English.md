@@ -235,6 +235,10 @@ When saving to a CSV file an additional two fields will be added:
 The progress bar will only work with multiple evtx files.
 It will display in real time the number and percent of evtx files that it has analyzed.
 
+## Color Output
+Hayabusa output to the screen can change font color by `Level`.
+Config file is `.\config\level_color.txt`. format is `level,(RGB 6digit ColorHex)`.
+
 # Hayabusa rules
 Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder. In the future, we plan to host the rules at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
 
