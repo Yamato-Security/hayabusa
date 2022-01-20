@@ -1,6 +1,6 @@
 level,colorcode
 critical,ff0000
 high,ffff00
-middle,00ff00
+medium,00ff00
 low,00ffff
 informational,ffffff
