@@ -65,7 +65,7 @@ impl ParseYaml {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("{}", errmsg));
+                    .push(format!("[ERROR] {}", errmsg));
             }
         }
         let mut yaml_docs = vec![];
@@ -96,7 +96,7 @@ impl ParseYaml {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("{}", errmsg));
+                        .push(format!("[WARN] {}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -117,7 +117,7 @@ impl ParseYaml {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("{}", errmsg));
+                        .push(format!("[WARN] {}", errmsg));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -162,7 +162,7 @@ impl ParseYaml {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("{}", errmsg));
+                            .push(format!("[WARN] {}", errmsg));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
@@ -183,7 +183,7 @@ impl ParseYaml {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("{}", errmsg));
+                            .push(format!("[WARN] {}", errmsg));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
