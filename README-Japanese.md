@@ -243,6 +243,11 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 プログレス・バーは、複数のevtxファイルに対してのみ機能します。
 解析したevtxファイルの数と割合をリアルタイムで表示します。
 
+## 標準出力へのカラー設定
+Hayabusaの結果はLevel毎に文字色を変えることができます。
+`.\config\level_color.txt`の値を変更することで文字色を変えることができます。
+形式は`level名,(6桁のRGBのカラーhex)`です。
+
 # Hayabusa ルール
 Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
 

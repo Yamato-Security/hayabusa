@@ -1,7 +1,10 @@
 use crate::detections::configs;
 use crate::detections::print;
 use crate::detections::print::AlertMessage;
+use crate::detections::utils;
 use chrono::{DateTime, Local, TimeZone, Utc};
+use colored::*;
+use hashbrown::HashMap;
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
@@ -26,11 +29,48 @@ pub struct CsvFormat<'a> {
 #[serde(rename_all = "PascalCase")]
 pub struct DisplayFormat<'a> {
     timestamp: &'a str,
-    computer: &'a str,
-    event_i_d: &'a str,
-    level: &'a str,
-    rule_title: &'a str,
-    details: &'a str,
+    pub computer: &'a str,
+    pub event_i_d: &'a str,
+    pub level: &'a str,
+    pub rule_title: &'a str,
+    pub details: &'a str,
+}
+
+/// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
+pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
+    let read_result = utils::read_csv("config/level_color.txt");
+    if read_result.is_err() {
+        // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
+        AlertMessage::warn(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &read_result.as_ref().unwrap_err(),
+        )
+        .ok();
+        return None;
+    }
+    let mut color_map: HashMap<String, Vec<u8>> = HashMap::new();
+    read_result.unwrap().into_iter().for_each(|line| {
+        if line.len() != 2 {
+            return;
+        }
+        let empty = &"".to_string();
+        let level = line.get(0).unwrap_or(empty);
+        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
+        if convert_color_result.is_err() {
+            AlertMessage::warn(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &format!("Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",line.join(","))
+            )
+            .ok();
+            return;
+        }
+        let color_code = convert_color_result.unwrap();
+        if level.len() == 0 || color_code.len() < 3 {
+            return;
+        }
+        color_map.insert(level.to_string(), color_code);
+    });
+    return Some(color_map);
 }
 
 pub fn after_fact() {
@@ -63,13 +103,17 @@ pub fn after_fact() {
             // 標準出力に出力する場合
             Box::new(BufWriter::new(io::stdout()))
         };
-
-    if let Err(err) = emit_csv(&mut target, displayflag) {
+    let color_map = set_output_color();
+    if let Err(err) = emit_csv(&mut target, displayflag, color_map) {
         fn_emit_csv_err(Box::new(err));
     }
 }
 
-fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<()> {
+fn emit_csv<W: std::io::Write>(
+    writer: &mut W,
+    displayflag: bool,
+    color_map: Option<HashMap<String, Vec<u8>>>,
+) -> io::Result<()> {
     let mut wtr;
     if displayflag {
         wtr = csv::WriterBuilder::new()
@@ -88,13 +132,63 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
+                // カラーをつけない場合は255,255,255で出力する
+                let mut output_color: Vec<u8> = vec![255, 255, 255];
+                if color_map.is_some() {
+                    let target_color = color_map.as_ref().unwrap().get(&detect_info.level);
+                    if target_color.is_some() {
+                        output_color = target_color.unwrap().to_vec();
+                    }
+                }
                 wtr.serialize(DisplayFormat {
-                    timestamp: &format!("{} ", &format_time(time)),
-                    level: &format!(" {} ", &detect_info.level),
-                    computer: &format!(" {} ", &detect_info.computername),
-                    event_i_d: &format!(" {} ", &detect_info.eventid),
-                    rule_title: &format!(" {} ", &detect_info.alert),
-                    details: &format!(" {}", &detect_info.detail),
+                    timestamp: &format!(
+                        "{} ",
+                        &format_time(time).truecolor(
+                            output_color[0],
+                            output_color[1],
+                            output_color[2]
+                        )
+                    ),
+                    level: &format!(
+                        " {} ",
+                        &detect_info.level.truecolor(
+                            output_color[0],
+                            output_color[1],
+                            output_color[2]
+                        )
+                    ),
+                    computer: &format!(
+                        " {} ",
+                        &detect_info.computername.truecolor(
+                            output_color[0],
+                            output_color[1],
+                            output_color[2]
+                        )
+                    ),
+                    event_i_d: &format!(
+                        " {} ",
+                        &detect_info.eventid.truecolor(
+                            output_color[0],
+                            output_color[1],
+                            output_color[2]
+                        )
+                    ),
+                    rule_title: &format!(
+                        " {} ",
+                        &detect_info.alert.truecolor(
+                            output_color[0],
+                            output_color[1],
+                            output_color[2]
+                        )
+                    ),
+                    details: &format!(
+                        " {}",
+                        &detect_info.detail.truecolor(
+                            output_color[0],
+                            output_color[1],
+                            output_color[2]
+                        )
+                    ),
                 })?;
             } else {
                 // csv出力時フォーマット
@@ -266,7 +360,7 @@ mod tests {
             + "\n";
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
-        assert!(emit_csv(&mut file, false).is_ok());
+        assert!(emit_csv(&mut file, false, None).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -337,7 +431,7 @@ mod tests {
             + "\n";
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_display.txt".to_string()).unwrap());
-        assert!(emit_csv(&mut file, true).is_ok());
+        assert!(emit_csv(&mut file, true, None).is_ok());
         match read_to_string("./test_emit_csv_display.txt") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
