@@ -59,9 +59,10 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
         if convert_color_result.is_err() {
             AlertMessage::warn(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"Failed hex convert in level_color.txt. Color output is disabled.".to_string(),
+                &format!("Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",line.join(","))
             )
             .ok();
+            return;
         }
         let color_code = convert_color_result.unwrap();
         if level.len() == 0 || color_code.len() < 3 {
