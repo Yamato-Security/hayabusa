@@ -3,7 +3,8 @@ use crate::detections::print::Message;
 
 use chrono::{DateTime, Utc};
 
-use std::{collections::HashMap, fmt::Debug, sync::Arc, vec};
+use hashbrown::HashMap;
+use std::{fmt::Debug, sync::Arc, vec};
 
 use yaml_rust::Yaml;
 

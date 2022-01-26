@@ -5,7 +5,8 @@ use self::selectionnodes::{
     AndSelectionNode, NotSelectionNode, OrSelectionNode, RefSelectionNode, SelectionNode,
 };
 use super::selectionnodes;
-use std::{collections::HashMap, sync::Arc};
+use hashbrown::HashMap;
+use std::sync::Arc;
 
 lazy_static! {
     pub static ref CONDITION_REGEXMAP: Vec<Regex> = vec![

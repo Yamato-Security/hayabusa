@@ -1,5 +1,5 @@
 use crate::detections::{configs, detection::EvtxRecordInfo, utils};
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct EventStatistics {
