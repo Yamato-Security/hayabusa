@@ -301,7 +301,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 - [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - Import evtx files into Security Onion.
 - [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - The best CSV timeline analyzer by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
 - [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - by Forward Defense's Steve Anson.
-- [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/blob/main/README-English.md) - The swiff-army knife for Windows event logs by [Yamato Security](https://github.com/Yamato-Security/)
+- [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA) - The swiff-army knife for Windows event logs by [Yamato Security](https://github.com/Yamato-Security/)
 - [Zircolite](https://github.com/wagga40/Zircolite) - Sigma-based attack detection tool written in Python.
 
 ## Comparison to other similar tools that support sigma
