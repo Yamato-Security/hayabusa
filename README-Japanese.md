@@ -284,7 +284,7 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
 
-最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、誤検出の可能性が若干あることにご注意ください。
+最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、検出漏れの可能性が若干あることにご注意ください。
 
 # その他のWindowsイベントログ解析ツールおよび関連プロジェクト
 「すべてを統治する1つのツール」というものはなく、それぞれにメリットがあるため、これらの他の優れたツールやプロジェクトをチェックして、どれが気に入ったかを確認することをお勧めします。
@@ -302,6 +302,7 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 - [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - evtxファイルをSecurityOnionにインポートします。
 - [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - [Eric Zimmerman](https://twitter.com/ericrzimmerman) による最高のCSVタイムラインアナライザーです。
 - [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - Forward DefenseのSteve Ansonによるものです。
+- [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/) - [Yamato Security](https://github.com/Yamato-Security/)によるWindowsイベントログ解析のマルチツール。
 - [Zircolite](https://github.com/wagga40/Zircolite) - Pythonで書かれたSigmaベースの攻撃検知ツール。
 
 ## Sigmaをサポートする他の類似ツールとの比較
