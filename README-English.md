@@ -15,7 +15,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 Hayabusa currently has over 1000 sigma rules and around 50 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
 
 ### Fast forensics timeline generation
-Windows event log analysis has traditionally been a very long and tedious process because Windows event logs are 1) in a data format that is hard to analyze and 2) the majority of data is noise and not useful for investigations. Hayabusa's main goal is to extract out only useful data and present it in an easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
+Windows event log analysis has traditionally been a very long and tedious process because Windows event logs are 1) in a data format that is hard to analyze and 2) the majority of data is noise and not useful for investigations. Hayabusa's main goal is to extract out only useful data and present it in an easy-to-read format that is usable not only by professionally trained analysts but also by any Windows system administrator.
 Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](https://ericzimmerman.github.io/#!index.md) or [Event Log Explorer](https://eventlogxp.com/) for more deep-dive analysis but is intended for letting analysts get 80% of their work done in 20% of the time. 
 
 # About the development
@@ -282,7 +282,7 @@ This will increase performance so it is recommended if you only need to search f
 
 We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
 
-Please use this list if you want the best performance but be aware that there is a slight possibility for false positives. 
+Please use this list if you want the best performance but be aware that there is a slight possibility for missing events (false negatives). 
 
 # Other Windows event log analyzers and related projects
 There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
@@ -301,6 +301,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 - [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - Import evtx files into Security Onion.
 - [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - The best CSV timeline analyzer by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
 - [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - by Forward Defense's Steve Anson.
+- [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/blob/main/README-English.md) - The swiff-army knife for Windows event logs by [Yamato Security](https://github.com/Yamato-Security/)
 - [Zircolite](https://github.com/wagga40/Zircolite) - Sigma-based attack detection tool written in Python.
 
 ## Comparison to other similar tools that support sigma
