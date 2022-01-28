@@ -1,42 +1,36 @@
 [package]
 name = "hayabusa"
-version = "1.0.0"
-authors = ["Yamato Security @yamatosecurity"]
+version = "1.1.0"
+authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-evtx = { git = "https://github.com/omerbenamram/evtx.git" }
-quick-xml = {version = "0.17", features = ["serialize"] }
-serde = { version = "1.0", features = ["derive"] }
+evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" }
+quick-xml = {version = "0.22.0", features = ["serialize"] }
+serde = { version = "1.0.*", features = ["derive"] }
 serde_json = { version = "1.0"}
-serde_derive = "1.0"
+serde_derive = "1.0.*"
 clap = "2.*"
-regex = "1.5.4"
-csv = "1.1"
+regex = "1.5.*"
+csv = "1.1.*"
 base64 = "*"
-flate2 = "1.0"
+flate2 = "1.0.*"
 lazy_static = "1.4.0"
 chrono = "0.4.19"
-yaml-rust = "0.4"
-linked-hash-map = "0.5.3"
+yaml-rust = "0.4.*"
+linked-hash-map = "0.5.*"
 tokio = { version = "1", features = ["full"] }
-num_cpus = "1.13.0"
-mopa = "0.2.2"
+num_cpus = "1.13.*"
+mopa = "0.2.*"
 slack-hook = "0.8"
-dotenv = "0.15.0"
+dotenv = "0.15.*"
 hhmmss = "*"
 pbr = "*"
-hashbrown = "0.11.2"
-colored = "2.0.0"
-hex = "0.4.3"
-
-[target.x86_64-pc-windows-gnu]
-linker = "x86_64-w64-mingw32-gcc"
-
-[target.i686-pc-windows-gnu]
-linker = "i686-w64-mingw32-gcc"
+hashbrown = "0.12.*"
+colored = "2.*"
+hex = "0.4.*"
 
 [profile.release]
 lto = true
