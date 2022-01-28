@@ -428,8 +428,7 @@ mod tests {
                 .unwrap()
                 .to_string();
         }
-        println!("color_term:{:?}", color_term);
-        println!("color_term:{:?}", env::consts::OS);
+
         let mut expect = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n".to_string();
         if env::consts::OS == "windows"
             || (color_term.contains("truecolor") || color_term.contains("24bit"))
