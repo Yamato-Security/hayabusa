@@ -56,6 +56,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     let usages = "-d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
     -f --filepath=[FILEPATH] 'File path to one .evtx file'
     -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
+    -c --color 'Output with color by level(Terminal needs to support true color )'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. Example: results.csv'
     -v --verbose 'Output verbose information'
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated'

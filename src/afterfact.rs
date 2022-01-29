@@ -38,6 +38,9 @@ pub struct DisplayFormat<'a> {
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
+    if !configs::CONFIG.read().unwrap().args.is_present("color") {
+        return None;
+    }
     let read_result = utils::read_csv("config/level_color.txt");
     if read_result.is_err() {
         // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
