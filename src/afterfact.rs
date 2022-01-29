@@ -297,8 +297,6 @@ mod tests {
     use crate::detections::print;
     use chrono::{Local, TimeZone, Utc};
     use serde_json::Value;
-    use std::env;
-    use std::ffi::OsString;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;
@@ -428,59 +426,22 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
 
-        let default_osstr = OsString::default();
-        let color_term;
-        let env_color_term = env::var_os("COLOETERM");
-        if env_color_term.is_none() {
-            color_term = String::default();
-        } else {
-            color_term = env_color_term
-                .unwrap_or(default_osstr)
-                .to_str()
-                .unwrap()
-                .to_string();
-        }
-
-        let mut expect = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n".to_string();
-        if env::consts::OS == "windows"
-            || (color_term.contains("truecolor") || color_term.contains("24bit"))
-        {
-            expect = expect
-                + &get_white_color_string(
-                    &expect_tz
-                        .clone()
-                        .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                        .to_string(),
-                )
-                + " | "
-                + &get_white_color_string(test_computername)
-                + " | "
-                + &get_white_color_string(test_eventid)
-                + " | "
-                + &get_white_color_string(test_level)
-                + " | "
-                + &get_white_color_string(test_title)
-                + " | "
-                + &get_white_color_string(output)
-                + "\n";
-        } else {
-            expect = expect
-                + &expect_tz
-                    .clone()
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string()
-                + " | "
-                + test_computername
-                + " | "
-                + test_eventid
-                + " | "
-                + test_level
-                + " | "
-                + test_title
-                + " | "
-                + output
-                + "\n";
-        }
+        let expect = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n".to_string()
+            + &expect_tz
+                .clone()
+                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
+            + " | "
+            + test_computername
+            + " | "
+            + test_eventid
+            + " | "
+            + test_level
+            + " | "
+            + test_title
+            + " | "
+            + output
+            + "\n";
 
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_display.txt".to_string()).unwrap());
@@ -492,12 +453,5 @@ mod tests {
             }
         };
         assert!(remove_file("./test_emit_csv_display.txt").is_ok());
-    }
-
-    fn get_white_color_string(target: &str) -> String {
-        let white_color_header = "\u{1b}[38;2;255;255;255m";
-        let white_color_footer = "\u{1b}[0m";
-
-        return white_color_header.to_owned() + target + white_color_footer;
     }
 }
