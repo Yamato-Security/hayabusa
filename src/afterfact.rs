@@ -142,57 +142,66 @@ fn emit_csv<W: std::io::Write>(
                     if target_color.is_some() {
                         output_color = target_color.unwrap().to_vec();
                     }
+                    wtr.serialize(DisplayFormat {
+                        timestamp: &format!(
+                            "{} ",
+                            &format_time(time).truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        level: &format!(
+                            " {} ",
+                            &detect_info.level.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        computer: &format!(
+                            " {} ",
+                            &detect_info.computername.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        event_i_d: &format!(
+                            " {} ",
+                            &detect_info.eventid.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        rule_title: &format!(
+                            " {} ",
+                            &detect_info.alert.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        details: &format!(
+                            " {}",
+                            &detect_info.detail.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                    })?;
+                } else {
+                    wtr.serialize(DisplayFormat {
+                        timestamp: &format!("{} ", &format_time(time)),
+                        level: &format!(" {} ", &detect_info.level),
+                        computer: &format!(" {} ", &detect_info.computername),
+                        event_i_d: &format!(" {} ", &detect_info.eventid),
+                        rule_title: &format!(" {} ", &detect_info.alert),
+                        details: &format!(" {}", &detect_info.detail),
+                    })?;
                 }
-                wtr.serialize(DisplayFormat {
-                    timestamp: &format!(
-                        "{} ",
-                        &format_time(time).truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    level: &format!(
-                        " {} ",
-                        &detect_info.level.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    computer: &format!(
-                        " {} ",
-                        &detect_info.computername.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    event_i_d: &format!(
-                        " {} ",
-                        &detect_info.eventid.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    rule_title: &format!(
-                        " {} ",
-                        &detect_info.alert.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    details: &format!(
-                        " {}",
-                        &detect_info.detail.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                })?;
             } else {
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {
