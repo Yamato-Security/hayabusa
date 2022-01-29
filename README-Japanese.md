@@ -126,24 +126,26 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ## コマンドラインオプション
 ```bash
 USAGE:
-    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
-    -f --filepath=[FILEPATH] 'File path to one .evtx file'
-    -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. Example: results.csv'
-    -v --verbose 'Output verbose information'
-    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated'
-    -n --enable-noisy-rules 'Enable rules marked as noisy'
-    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
-    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
-    --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
-    --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
+    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
+    -f --filepath=[FILEPATH] 'File path to one .evtx file.'
+    -r --rules=[RULEDIRECTORY] 'Rule file directory. (Default: ./rules)'
+    -c --color 'Output with color. (Terminal needs to support True Color.)'
+    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
+    -v --verbose 'Output verbose information.'
+    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
+    -n --enable-noisy-rules 'Enable rules marked as noisy.'
+    -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
+    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (Example: '2018/11/28 12:00:00 +09:00')'
+    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (Example: '2018/11/28 12:00:00 +09:00')'
+    --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
+    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
     -u --utc 'Output time in UTC format (default: local time)'
-    -t --thread-number=[NUMBER] 'Thread number (default: optimal number for performance)'
-    -s --statistics 'Prints statistics of event IDs'
-    -q --quiet 'Quiet mode. Do not display the launch banner'
+    -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
+    -s --statistics 'Prints statistics of event IDs.'
+    -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --contributors 'Prints the list of contributors'
+    --contributors 'Prints the list of contributors.'
+    -h --help 'Print help menu.'
 ```
 
 ## 使用例
@@ -244,9 +246,11 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 解析したevtxファイルの数と割合をリアルタイムで表示します。
 
 ## 標準出力へのカラー設定
-Hayabusaの結果はLevel毎に文字色を変えることができます。
+`-c`または`--color`を指定することで、Hayabusaの結果は`level`毎に文字色を変えることができます。
 `.\config\level_color.txt`の値を変更することで文字色を変えることができます。
 形式は`level名,(6桁のRGBのカラーhex)`です。
+注意: True Colorに対応しているターミナルが必要です。
+例: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) またはmacOSの[iTerm2](https://iterm2.com/)。
 
 # Hayabusa ルール
 Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
