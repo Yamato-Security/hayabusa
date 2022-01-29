@@ -90,9 +90,6 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 git submodule update --init
 ```
 
-evtxライブラリのバージョン(`0.6.7`と`0.7.2`)毎に、コンパイルされたバイナリが用意されています。
-`0.7.2`バージョンでも動作するはずですが、`0.6.7`でしかテストしていませんので、`0.7.2`で問題が発生した場合はそちらをご利用ください。
-
 # ソースコードからのコンパイル（任意）
 rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
@@ -314,6 +311,7 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 - [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - evtxファイルをSecurityOnionにインポートします。
 - [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - [Eric Zimmerman](https://twitter.com/ericrzimmerman) による最高のCSVタイムラインアナライザーです。
 - [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - Forward DefenseのSteve Ansonによるものです。
+- [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/) - [Yamato Security](https://github.com/Yamato-Security/)によるWindowsイベントログ解析のマルチツール。
 - [Zircolite](https://github.com/wagga40/Zircolite) - Pythonで書かれたSigmaベースの攻撃検知ツール。
 
 ## Sigmaをサポートする他の類似ツールとの比較

@@ -89,9 +89,6 @@ Use following command to import submodules.
 git submodule update --init
 ```
 
-There are two different versions of the evtx library being used when compiled: `0.6.7` and `0.7.2`.
-The `0.7.2` version should work but we have only tested it with `0.6.7` so please use that version if you experience any problems with `0.7.2`.
-
 # Compiling from source (Optional)
 If you have rust installed, you can compile from source with the following command:
 
@@ -293,7 +290,7 @@ This will increase performance so it is recommended if you only need to search f
 
 We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
 
-Please use this list if you want the best performance but be aware that there is a slight possibility for false positives. 
+Please use this list if you want the best performance but be aware that there is a slight possibility for missing events (false negatives). 
 
 # Other Windows event log analyzers and related projects
 There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
@@ -312,6 +309,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 - [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - Import evtx files into Security Onion.
 - [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - The best CSV timeline analyzer by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
 - [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - by Forward Defense's Steve Anson.
+- [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA) - The swiff-army knife for Windows event logs by [Yamato Security](https://github.com/Yamato-Security/)
 - [Zircolite](https://github.com/wagga40/Zircolite) - Sigma-based attack detection tool written in Python.
 
 ## Comparison to other similar tools that support sigma
