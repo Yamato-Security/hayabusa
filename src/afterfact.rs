@@ -136,13 +136,9 @@ fn emit_csv<W: std::io::Write>(
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
-                // カラーをつけない場合は255,255,255で出力する
-                let mut output_color: Vec<u8> = vec![255, 255, 255];
                 if color_map.is_some() {
-                    let target_color = color_map.as_ref().unwrap().get(&detect_info.level);
-                    if target_color.is_some() {
-                        output_color = target_color.unwrap().to_vec();
-                    }
+                    let output_color =
+                        _get_output_color(&color_map.as_ref().unwrap(), &detect_info.level);
                     wtr.serialize(DisplayFormat {
                         timestamp: &format!(
                             "{} ",
@@ -283,22 +279,28 @@ fn _print_unique_results(
         if color_map.is_none() {
             output_str = output_raw_str;
         } else {
-            // カラーをつけない場合は255,255,255で出力する
-            let mut output_color: Vec<u8> = vec![255, 255, 255];
-            if color_map.is_some() {
-                let target_color = color_map.as_ref().unwrap().get(&level_name.to_string());
-                if target_color.is_some() {
-                    output_color = target_color.unwrap().to_vec();
-                }
-            }
+            let output_color =
+                _get_output_color(&color_map.as_ref().unwrap(), &level_name.to_string());
             output_str = output_raw_str
                 .truecolor(output_color[0], output_color[1], output_color[2])
                 .to_string();
         }
-        writeln!(wtr, "{}", output_str);
+        writeln!(wtr, "{}", output_str).ok();
     }
     wtr.flush().ok();
 }
+
+/// levelに対応したtruecolorの値の配列を返す関数
+fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &String) -> Vec<u8> {
+    // カラーをつけない場合は255,255,255で出力する
+    let mut output_color: Vec<u8> = vec![255, 255, 255];
+    let target_color = color_map.get(level);
+    if target_color.is_some() {
+        output_color = target_color.unwrap().to_vec();
+    }
+    return output_color;
+}
+
 fn format_time(time: &DateTime<Utc>) -> String {
     if configs::CONFIG.read().unwrap().args.is_present("utc") {
         format_rfc(time)
