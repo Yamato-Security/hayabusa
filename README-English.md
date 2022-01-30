@@ -125,24 +125,26 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ## Command line options
 ```bash
 USAGE:
-    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files'
-    -f --filepath=[FILEPATH] 'File path to one .evtx file'
-    -r --rules=[RULEDIRECTORY] 'Rule file directory (default: ./rules)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. Example: results.csv'
-    -v --verbose 'Output verbose information'
-    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated'
-    -n --enable-noisy-rules 'Enable rules marked as noisy'
-    -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
-    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
-    --rfc-2822 'Output date and time in RFC 2822 format. Example: Mon, 07 Aug 2006 12:34:56 -0600'
-    --rfc-3339 'Output date and time in RFC 3339 format. Example: 2006-08-07T12:34:56.485214 -06:00'
+    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
+    -f --filepath=[FILEPATH] 'File path to one .evtx file.'
+    -r --rules=[RULEDIRECTORY] 'Rule file directory. (Default: ./rules)'
+    -c --color 'Output with color. (Terminal needs to support True Color.)'
+    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
+    -v --verbose 'Output verbose information.'
+    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
+    -n --enable-noisy-rules 'Enable rules marked as noisy.'
+    -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
+    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (Example: '2018/11/28 12:00:00 +09:00')'
+    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (Example: '2018/11/28 12:00:00 +09:00')'
+    --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
+    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
     -u --utc 'Output time in UTC format (default: local time)'
-    -t --thread-number=[NUMBER] 'Thread number (default: optimal number for performance)'
-    -s --statistics 'Prints statistics of event IDs'
-    -q --quiet 'Quiet mode. Do not display the launch banner'
+    -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
+    -s --statistics 'Prints statistics of event IDs.'
+    -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --contributors 'Prints the list of contributors'
+    --contributors 'Prints the list of contributors.'
+    -h --help 'Print help menu.'
 ```
 
 ## Usage examples
@@ -240,11 +242,13 @@ When saving to a CSV file an additional two fields will be added:
 
 ## Progress bar
 The progress bar will only work with multiple evtx files.
-It will display in real time the number and percent of evtx files that it has analyzed.
+It will display in real time the number and percent of evtx files that it has finished analyzing.
 
 ## Color Output
-Hayabusa output to the screen can change font color by `Level`.
-Config file is `.\config\level_color.txt`. format is `level,(RGB 6digit ColorHex)`.
+You can output the alerts in color based on the alert `level` by specifying `-c` or `--color`.
+You can change the default colors in the config file at `.\config\level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
+Note: Color can only be displayed in terminals that support [True Color](https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)).
+Example: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) or [iTerm2](https://iterm2.com/) for macOS.
 
 # Hayabusa rules
 Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder. In the future, we plan to host the rules at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
