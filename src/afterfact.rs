@@ -4,6 +4,7 @@ use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use colored::*;
+use csv::QuoteStyle;
 use hashbrown::HashMap;
 use serde::Serialize;
 use std::error::Error;
@@ -117,6 +118,8 @@ fn emit_csv<W: std::io::Write>(
     let mut wtr;
     if displayflag {
         wtr = csv::WriterBuilder::new()
+            .double_quote(false)
+            .quote_style(QuoteStyle::Never)
             .delimiter(b'|')
             .from_writer(writer);
     } else {
