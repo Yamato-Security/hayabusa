@@ -1,7 +1,8 @@
 ## About rule files
 Hayabusa detection rules are written in [YAML](https://en.wikipedia.org/wiki/YAML) format.
-It can express complex detection rules by combining not only simple string matching but also regular expressions, `AND`, `OR`, and other conditions.
-In this section, we will explain how to write hayabusa detection rules.
+They are a subset of sigma rules with some additions. We are trying to make them as close to sigma rules as possible so that it is easy to convert Hayabusa rules back to sigma to give back to the community.
+Hayabusa rules can express complex detection rules by combining not only simple string matching but also regular expressions, `AND`, `OR`, and other conditions.
+In this section, we will explain how to write Hayabusa detection rules.
 
 # Rule file format
 Example:
@@ -481,9 +482,9 @@ The timestamp of the alert will be the time from the first event detected.
 # Rule creation advice
 1. **When possible, always specify `Channel` and `EventID` name.** In the future, we may filter on channel names and event IDs so your rule may be ignored if this is not set.
    
-2. **Do not use multiple `selection` or `filter` fields and excessive grouping when it is not needed.** For example:
+2. **Please do not use multiple `selection` or `filter` fields and excessive grouping when it is not needed.** For example:
 
-### Bad example:
+### Instead of:
 ```yaml
 detection:
     SELECTION_1:
@@ -499,7 +500,7 @@ detection:
     condition: SELECTION_1 and SELECTION_2 and SELECTION_3 and not (FILTER_1 or FILTER_2)
 ```
 
-### Good example:
+### Please do this:
 ```yaml
 detection:
     selection:
@@ -514,7 +515,7 @@ detection:
 
 3. **When you need multiple sections, please name the first section with channel and event ID information in the `section_basic_info` section and other selections with meaningful names after `section_` and `filter_`, or use the notation `section_1`, `filter_1`, etc... Also, please write comments to explain anything difficult to understand.**
 
-### Bad example:
+### Instead of:
 ```yaml
 detection:
     Takoyaki:
@@ -538,7 +539,7 @@ detection:
     condition: Takoyaki and Daisuki and not (Naruto and not Godzilla) and not Ninja and not Sushi
 ```
 
-### OK example:
+### Please do this:
 ```yaml
 detection:
     selection_1:
@@ -562,7 +563,7 @@ detection:
     condition: selection_1 and selection_4 and not (selection_2 and not filter_2) and not filter_3 and not filter_1
 ```
 
-### Good example:
+### Or ideally something like this:
 ```yaml
 detection:
     selection_basic_info:
