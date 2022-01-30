@@ -10,6 +10,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io;
 use std::io::BufWriter;
+use std::io::Write;
 use std::process;
 
 #[derive(Debug, Serialize)]
@@ -233,17 +234,25 @@ fn emit_csv<W: std::io::Write>(
         total_detect_counts_by_level,
         "Total".to_string(),
         "detections".to_string(),
+        &color_map,
     );
     _print_unique_results(
         unique_detect_counts_by_level,
         "Unique".to_string(),
         "rules".to_string(),
+        &color_map,
     );
     Ok(())
 }
 
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
-fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail_word: String) {
+fn _print_unique_results(
+    mut counts_by_level: Vec<u128>,
+    head_word: String,
+    tail_word: String,
+    color_map: &Option<HashMap<String, Vec<u8>>>,
+) {
+    let mut wtr = BufWriter::new(io::stdout());
     let levels = Vec::from([
         "critical",
         "high",
@@ -257,18 +266,38 @@ fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail
     counts_by_level.reverse();
 
     // 全体の集計(levelの記載がないためformatの第二引数は空の文字列)
-    println!(
+    writeln!(
+        wtr,
         "{} {}: {}",
         head_word,
         tail_word,
         counts_by_level.iter().sum::<u128>()
-    );
+    )
+    .ok();
     for (i, level_name) in levels.iter().enumerate() {
-        println!(
+        let output_str;
+        let output_raw_str = format!(
             "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
         );
+        if color_map.is_none() {
+            output_str = output_raw_str;
+        } else {
+            // カラーをつけない場合は255,255,255で出力する
+            let mut output_color: Vec<u8> = vec![255, 255, 255];
+            if color_map.is_some() {
+                let target_color = color_map.as_ref().unwrap().get(&level_name.to_string());
+                if target_color.is_some() {
+                    output_color = target_color.unwrap().to_vec();
+                }
+            }
+            output_str = output_raw_str
+                .truecolor(output_color[0], output_color[1], output_color[2])
+                .to_string();
+        }
+        writeln!(wtr, "{}", output_str);
     }
+    wtr.flush().ok();
 }
 fn format_time(time: &DateTime<Utc>) -> String {
     if configs::CONFIG.read().unwrap().args.is_present("utc") {
