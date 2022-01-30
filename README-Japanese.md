@@ -331,10 +331,6 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 * 合計7.5GBの多数のイベントログファイルでテストしたところ、7分以内に終了し、1GB以上のメモリを使用しませんでした。消費されるメモリ量は、ターゲットのevtxファイルのサイズではなく、結果のサイズによって増えます。
 * [Timeline Explorer](https://ericzimmerman.github.io/#!index.md)などのツールで解析するために、結果を1つのCSVタイムラインにまとめる唯一のツールです。
 
-# ライセンス
-
-Hayabusaは[GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)で公開され、すべてのルールは[Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md)で公開されています。
-
 # コミュニティによるドキュメンテーション
 
 ## 英語
@@ -352,3 +348,7 @@ Hayabusaは[GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)で公開され�
 どのような形でも構いませんので、ご協力をお願いします。プルリクエスト、ルール作成、evtxログのサンプルなどがベストですが、機能リクエスト、バグの通知なども大歓迎です。
 
 少なくとも、私たちのツールを気に入っていただけたなら、Githubで星を付けて、あなたのサポートを表明してください。
+
+# ライセンス
+
+Hayabusaは[GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)で公開され、すべてのルールは[Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md)で公開されています。

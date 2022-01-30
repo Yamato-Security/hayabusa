@@ -329,11 +329,6 @@ The following benchmarks were taken on a Lenovo P51 based on approximately 500 e
 * When tested on many event logs files totaling 7.5 GB, it finished in under 7 minutes and used around 1 GB of memory. The amount of memory consumed is based on the size of the results, not on the size of the target evtx files.
 * It is the only tool that provides a consolidated single CSV timeline to analysis in tools like [Timeline Explorer](https://ericzimmerman.github.io/#!index.md).
 
-
-# License
-
-Hayabusa is released under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) and all rules are released under the [Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md).
-
 # Community Documentation
 
 ## English 
@@ -351,3 +346,7 @@ Hayabusa is released under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)
 We would love any form of contribution. Pull requests, rule creation and sample evtx logs are the best but feature requests, notifying us of bugs, etc... are also very welcome.
 
 At the least, if you like our tool then please give us a star on Github and show your support!
+
+# License
+
+Hayabusa is released under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) and all rules are released under the [Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md).
