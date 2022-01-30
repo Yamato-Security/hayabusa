@@ -566,7 +566,7 @@ detection:
 ### Or ideally something like this:
 ```yaml
 detection:
-    selection_basic_info:
+    selection_BasicInfo:
         Channel: Security
         EventID: 4648
     selection_TargetUserIsComputerAccount:
