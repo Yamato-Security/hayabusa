@@ -564,7 +564,7 @@ detection:
 ### 良い例：
 ```yaml
 detection:
-    selection_basic_info:
+    selection_BasicInfo:
         Channel: Security
         EventID: 4648
     selection_TargetUserIsComputerAccount:
