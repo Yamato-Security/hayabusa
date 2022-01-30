@@ -124,11 +124,6 @@ impl ParseYaml {
         let files: Vec<(String, Yaml)> = yaml_docs
             .into_iter()
             .filter_map(|(filepath, yaml_doc)| {
-                // ignoreフラグがONになっているルールは無視する。
-                if yaml_doc["ignore"].as_bool().unwrap_or(false) {
-                    self.ignorerule_count += 1;
-                    return Option::None;
-                }
                 self.rulecounter.insert(
                     yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
                     self.rulecounter
