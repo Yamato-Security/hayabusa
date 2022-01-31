@@ -125,24 +125,52 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 USAGE:
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEDIRECTORY] 'Rule file directory. (Default: ./rules)'
+    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
+    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (example: results.csv)'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
-    -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (Example: '2018/11/28 12:00:00 +09:00')'
-    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (Example: '2018/11/28 12:00:00 +09:00')'
-    --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
-    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
-    -u --utc 'Output time in UTC format (default: local time)'
-    -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
+    -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
+    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
+    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
+    --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
+    --rfc-3339 'Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214 -06:00)'
+    -u --utc 'Output time in UTC format. (default: local time)'
+    -t --thread-number=[NUMBER] 'Thread number. (default: optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --contributors 'Prints the list of contributors.'
-    -h --help 'Print help menu.'
+
+FLAGS:
+    -c, --color                      Output with color. (Terminal needs to support True Color.)
+        --contributors               Prints the list of contributors.
+    -D, --enable-deprecated-rules    Enable sigma rules marked as deprecated.
+    -n, --enable-noisy-rules         Enable rules marked as noisy.
+    -h, --help                       Prints help information
+    -q, --quiet                      Quiet mode. Do not display the launch banner.
+    -Q, --quiet-errors               Quiet errors mode. Do not save error logs.
+        --rfc-2822                   Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)
+        --rfc-3339                   Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214
+                                     -06:00)
+    -s, --statistics                 Prints statistics of event IDs.
+    -u, --utc                        Output time in UTC format. (default: local time)
+    -V, --version                    Prints version information
+    -v, --verbose                    Output verbose information.
+
+OPTIONS:
+    -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
+        --end-timeline <ENDTIMELINE>        End time of the event to load from event file. (example: '2018/11/28
+                                            12:00:00 +09:00')
+    -f, --filepath <FILEPATH>               File path to one .evtx file.
+    -m, --min-level <LEVEL>                 Minimum level for rules. (default: informational)
+    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (example: results.csv)
+    -r, --rules <RULEDIRECTORY/RULEFILE>    Rule file or directory (default: ./rules)
+        --start-timeline <STARTTIMELINE>    Start time of the event to load from event file. (example: '2018/11/28
+                                            12:00:00 +09:00')
+    -t, --thread-number <NUMBER>            Thread number. (default: optimal number for performance.)
+
 ```
 
 ## 使用例
