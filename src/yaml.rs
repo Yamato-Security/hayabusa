@@ -278,7 +278,7 @@ mod tests {
     use yaml_rust::YamlLoader;
 
     #[test]
-    fn test_read_one_file() {
+    fn test_read_file_yaml() {
         AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
 
         let mut yaml = yaml::ParseYaml::new();
