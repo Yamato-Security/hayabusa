@@ -278,6 +278,22 @@ mod tests {
     use yaml_rust::YamlLoader;
 
     #[test]
+    fn test_read_one_file() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+
+        let mut yaml = yaml::ParseYaml::new();
+        let exclude_ids = RuleExclude {
+            no_use_rule: HashSet::new(),
+        };
+        let _ = &yaml.read_dir(
+            "test_files/rules/yaml/1.yml".to_string(),
+            &String::default(),
+            &exclude_ids,
+        );
+        assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
     fn test_read_dir_yaml() {
         AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
 
