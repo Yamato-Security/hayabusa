@@ -134,6 +134,11 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 > 注意: Hayabusaのルートディレクトリから、バイナリを実行する必要があります。例：`.\hayabusa.exe`
 
+## Windows Terminalで利用する際の注意事項
+
+2021/02/01現在、Windows Terminalから標準出力でhayabusaを使ったときに、コントロールコード0x9Dが検知結果に入っていると出力が止まることが確認されています。
+Windows Terminalからhayabusaを標準出力で解析させたい場合は、 `-c` (カラー出力)のオプションをつければ出力が止まることを回避できます。
+
 ## コマンドラインオプション
 
 ```bash

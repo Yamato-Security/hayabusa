@@ -132,6 +132,11 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 > Note: You need to run the Hayabusa binary from the Hayabusa root directory. Example: `.\hayabusa.exe`
 
+## Caution: When output to the screen stopped in Windows Terminal
+
+In Feb 1, 2022、 We checked stop output to the when you execute hayabusa included control code 0x9D in hayabusa deteciton output.
+This is Windows Terminal bug. You can avoid this bug to add `-c`(colored output) option when you run hayabusa.
+
 ## Command line options
 
 ```bash
