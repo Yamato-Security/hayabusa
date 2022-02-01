@@ -2,7 +2,7 @@
  <p>
 
   ![Hayabusa Logo](hayabusa-logo.png)
- `
+ 
  </p>
 </div>
 
@@ -132,10 +132,11 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 > Note: You need to run the Hayabusa binary from the Hayabusa root directory. Example: `.\hayabusa.exe`
 
-## Caution: When output to the screen stopped in Windows Terminal
+## Caution: Output printed to screen may stop in Windows Terminal
 
-In Feb 1, 2022、 We checked stop output to the when you execute hayabusa included control code 0x9D in hayabusa deteciton output.
-This is Windows Terminal bug. You can avoid this bug to add `-c`(colored output) option when you run hayabusa.
+As of Feb 1, 2022, Windows Terminal will freeze midway when displaying results to the screen when run against the sample evtx files.
+This is because there is a control code (0x9D) in the output.
+This is known Windows Terminal bug which will eventually be fixed but for the meantime, you can avoid this bug by adding the `-c` (colored output) option when you run hayabusa.
 
 ## Command line options
 
@@ -373,9 +374,11 @@ Please use this list if you want the best performance but be aware that there is
 There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
 
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Attack detection tool written in Python.
+* [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  Collection of Event ID resources useful for Digital Forensics and Incident Response
 * [Chainsaw](https://github.com/countercept/chainsaw) - A similar sigma-based attack detection tool written in Rust.
 * [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI) - Attack detection tool written in Powershell by [Eric Conrad](https://twitter.com/eric_conrad).
-* [EventList](https://github.com/miriamxyra/EventList/) - Map security baseline event IDs to MITRE ATT&CK by [Miriam Wiesner](https://github.com/miriamxyra)
+* [EventList](https://github.com/miriamxyra/EventList/) - Map security baseline event IDs to MITRE ATT&CK by [Miriam Wiesner](https://github.com/miriamxyra).
+* [EvtxECmd](https://github.com/EricZimmerman/evtx) - Evtx parser by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
 * [EVTXtract](https://github.com/williballenthin/EVTXtract) - Recover EVTX log files from unallocated space and memory images.
 * [EvtxToElk](https://www.dragos.com/blog/industry-news/evtxtoelk-a-python-module-to-load-windows-event-logs-into-elasticsearch/) - Python tool to send Evtx data to Elastic Stack.
 * [EVTX ATTACK Samples](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) - EVTX attack sample event log files by [SBousseaden](https://twitter.com/SBousseaden).
