@@ -80,14 +80,13 @@ Hayabusaの[Releases](https://github.com/Yamato-Security/hayabusa/releases)か�
 または、以下の`git clone`コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です。
 
 ```bash
-git clone https://github.com/Yamato-Security/hayabusa.git --recursive
+git clone https://github.com/Yamato-Security/hayabusa.git
 ```
 
-`--recursive` をつけ忘れた場合、サブモジュールとして管理されている `rules/` 内のファイルが取得できません。
-以下のコマンドでサブモジュールを取得してください。
+Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。
 
 ```bash
-git submodule update --init
+.\hayabusa.exe -U
 ```
 
 # ソースコードからのコンパイル（任意）
@@ -130,6 +129,7 @@ USAGE:
     -v --verbose 'Output verbose information'
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated'
     -n --enable-noisy-rules 'Enable rules marked as noisy'
+    -U --rule-update 'Clone latest hayabusa-rule'
     -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
     --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
     --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''

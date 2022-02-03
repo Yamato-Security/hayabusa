@@ -79,7 +79,13 @@ You can download the latest Hayabusa version from the [Releases](https://github.
 You can also `git clone` the repository with the following command and compile binary from source code.:
 
 ```bash
-git clone https://github.com/Yamato-Security/hayabusa.git --recursive
+git clone https://github.com/Yamato-Security/hayabusa.git 
+```
+
+You can get latest Hayabusa rules with the execute following command.
+
+```bash
+.\hayabusa.exe -U
 ```
 
 If you forget to use `--recursive` option, `rules/` files which managed in submodule did not cloned.
@@ -129,6 +135,7 @@ USAGE:
     -v --verbose 'Output verbose information'
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated'
     -n --enable-noisy-rules 'Enable rules marked as noisy'
+    -U --rule-update 'Clone latest hayabusa-rule'
     -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
     --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
     --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
