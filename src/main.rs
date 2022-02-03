@@ -58,7 +58,7 @@ impl App {
 
     fn exec(&mut self) {
         let analysis_start_time: DateTime<Local> = Local::now();
-        if !configs::CONFIG
+        if configs::CONFIG
             .read()
             .unwrap()
             .args
