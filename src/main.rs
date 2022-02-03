@@ -4,6 +4,7 @@ extern crate serde_derive;
 use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
+use git2::Repository;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::AlertMessage;
 use hayabusa::detections::print::ERROR_LOG_PATH;
@@ -57,6 +58,15 @@ impl App {
 
     fn exec(&mut self) {
         let analysis_start_time: DateTime<Local> = Local::now();
+        if !configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("update-rules")
+        {
+            self.update_rules();
+            return;
+        }
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
             println!("");
@@ -419,6 +429,28 @@ impl App {
                 println!("{}", content);
             }
         }
+    }
+
+    /// hayabusa-rulesをcloneで取得する関数
+    fn update_rules(&self) {
+        let url = "https://github.com/Yamato-Security/hayabusa-rules.git";
+        let _repo = match Repository::clone(url, "rules") {
+            Ok(repo) => {
+                println!("Finished clone hayabusa-rules repository.");
+                repo
+            }
+            Err(e) => {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!(
+                        "Failed git clone to rules folder. Please renme rules folder name. {}",
+                        e
+                    ),
+                )
+                .ok();
+                return;
+            }
+        };
     }
 }
 
