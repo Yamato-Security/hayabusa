@@ -85,7 +85,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git
 You can get latest Hayabusa rules with the execute following command.
 
 ```bash
-.\hayabusa.exe -U
+.\hayabusa.exe -u
 ```
 
 If you forget to use `--recursive` option, `rules/` files which managed in submodule did not cloned.

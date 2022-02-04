@@ -86,7 +86,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git
 Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。
 
 ```bash
-.\hayabusa.exe -U
+.\hayabusa.exe -u
 ```
 
 # ソースコードからのコンパイル（任意）
