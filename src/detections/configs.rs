@@ -60,7 +60,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -v --verbose 'Output verbose information'
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated'
     -n --enable-noisy-rules 'Enable rules marked as noisy'
-    -u --rule-update 'Clone latest hayabusa-rule'
+    -u --update-rules 'Clone latest hayabusa-rule'
     -m --min-level=[LEVEL] 'Minimum level for rules (default: informational)'
     --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
     --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. Example: '2018/11/28 12:00:00 +09:00''
@@ -74,7 +74,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --contributors 'Prints the list of contributors'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
-        .version("1.0.0")
+        .version("1.1.0")
         .author("Yamato-Security(https://github.com/Yamato-Security/hayabusa)")
         .setting(AppSettings::VersionlessSubcommands)
         .usage(usages)
