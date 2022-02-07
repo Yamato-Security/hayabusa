@@ -416,7 +416,26 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let expect = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n".to_string()
+        let expect_header = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n";
+        let expect_colored = expect_header.to_string()
+            + &get_white_color_string(
+                &expect_tz
+                    .clone()
+                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                    .to_string(),
+            )
+            + " | "
+            + &get_white_color_string(test_computername)
+            + " | "
+            + &get_white_color_string(test_eventid)
+            + " | "
+            + &get_white_color_string(test_level)
+            + " | "
+            + &get_white_color_string(test_title)
+            + " | "
+            + &get_white_color_string(output)
+            + "\n";
+        let expect_nocoloed = expect_header.to_string()
             + &expect_tz
                 .clone()
                 .format("%Y-%m-%d %H:%M:%S%.3f %:z")
@@ -438,9 +457,16 @@ mod tests {
         match read_to_string("./test_emit_csv_display.txt") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
-                assert_eq!(s, expect);
+                assert!(s == expect_colored || s == expect_nocoloed);
             }
         };
         assert!(remove_file("./test_emit_csv_display.txt").is_ok());
+    }
+
+    fn get_white_color_string(target: &str) -> String {
+        let white_color_header = "\u{1b}[38;2;255;255;255m";
+        let white_color_footer = "\u{1b}[0m";
+
+        return white_color_header.to_owned() + target + white_color_footer;
     }
 }
