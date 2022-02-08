@@ -201,34 +201,6 @@ impl ParseYaml {
         let files: Vec<(String, Yaml)> = yaml_docs
             .into_iter()
             .filter_map(|(filepath, yaml_doc)| {
-                // ignoreフラグがONになっているルールは無視する。
-                if yaml_doc["ignore"].as_bool().unwrap_or(false) {
-                    self.ignorerule_count += 1;
-                    return Option::None;
-                }
-                self.rulecounter.insert(
-                    yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
-                    self.rulecounter
-                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
-                        .unwrap_or(&0)
-                        + 1,
-                );
-
-                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    println!("Loaded yml file path: {}", filepath);
-                }
-                // 指定されたレベルより低いルールは無視する
-                let doc_level = &yaml_doc["level"]
-                    .as_str()
-                    .unwrap_or("informational")
-                    .to_string()
-                    .to_uppercase();
-                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
-                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
-                if doc_level_num < args_level_num {
-                    return Option::None;
-                }
-
                 //除外されたルールは無視する
                 let rule_id = &yaml_doc["id"].as_str();
                 if rule_id.is_some() {
@@ -242,6 +214,30 @@ impl ParseYaml {
                             return Option::None;
                         }
                     }
+                }
+
+                self.rulecounter.insert(
+                    yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
+                    self.rulecounter
+                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
+                        .unwrap_or(&0)
+                        + 1,
+                );
+
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    println!("Loaded yml file path: {}", filepath);
+                }
+
+                // 指定されたレベルより低いルールは無視する
+                let doc_level = &yaml_doc["level"]
+                    .as_str()
+                    .unwrap_or("informational")
+                    .to_string()
+                    .to_uppercase();
+                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
+                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
+                if doc_level_num < args_level_num {
+                    return Option::None;
                 }
 
                 if !configs::CONFIG
