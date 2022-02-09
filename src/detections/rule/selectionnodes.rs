@@ -329,11 +329,13 @@ impl SelectionNode for LeafSelectionNode {
             let eventdata_data = values.unwrap();
             if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
             {
+                let control_trim_data =
+                    utils::remove_space_control_character(event_record.get_value(self.get_key()));
                 return self
                     .matcher
                     .as_ref()
                     .unwrap()
-                    .is_match(event_record.get_value(self.get_key()), event_record);
+                    .is_match(control_trim_data.as_ref(), event_record);
             }
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
@@ -343,11 +345,13 @@ impl SelectionNode for LeafSelectionNode {
                     .iter()
                     .any(|ary_element| {
                         let aryelement_val = utils::value_to_string(ary_element);
+                        let control_trim_aryelement_val =
+                            utils::remove_space_control_character(aryelement_val.as_ref());
                         return self
                             .matcher
                             .as_ref()
                             .unwrap()
-                            .is_match(aryelement_val.as_ref(), event_record);
+                            .is_match(control_trim_aryelement_val.as_ref(), event_record);
                     });
             } else {
                 return self
@@ -359,11 +363,12 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         let event_value = self.get_event_value(&event_record);
+        let control_trim_event_value = utils::remove_space_control_character(event_value);
         return self
             .matcher
             .as_ref()
             .unwrap()
-            .is_match(event_value, event_record);
+            .is_match(control_trim_event_value.as_ref(), event_record);
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {

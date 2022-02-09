@@ -39,6 +39,21 @@ pub fn check_regex(string: &str, regex_list: &Vec<Regex>) -> bool {
     return false;
 }
 
+/// removed all \r \n \t to input
+pub fn remove_space_control_character<'a>(string: Option<&'a String>) -> Option<String> {
+    if string.is_none() {
+        return None;
+    }
+    let ret = string
+        .unwrap()
+        .as_str()
+        .replace("\r", "")
+        .replace("\t", "")
+        .replace("\n", "")
+        .to_string();
+    return Some(ret);
+}
+
 pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
     for regex in regexes {
         if regex.is_match(target) {
