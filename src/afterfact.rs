@@ -459,7 +459,6 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-
         let expect_header = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n";
         let expect_colored = expect_header.to_string()
             + &get_white_color_string(
