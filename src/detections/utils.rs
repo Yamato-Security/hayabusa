@@ -341,4 +341,21 @@ mod tests {
 
         assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"]).is_none());
     }
+
+    #[test]
+    /// 指定された文字から\r \n \tを取り除く関数が動作するかのテスト
+    fn test_remove_space_control() {
+        let none_test_str: Option<&String> = None;
+        assert_eq!(
+            utils::remove_space_control_character(none_test_str).is_none(),
+            true
+        );
+
+        let tmp = "h\ra\ny\ta\tb\nu\r\nsa".to_string();
+        let test_str: Option<&String> = Some(&tmp);
+        assert_eq!(
+            utils::remove_space_control_character(test_str).unwrap(),
+            "hayabusa"
+        );
+    }
 }
