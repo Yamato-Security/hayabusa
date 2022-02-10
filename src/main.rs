@@ -34,7 +34,7 @@ use tokio::spawn;
 use tokio::task::JoinHandle;
 
 #[cfg(target_os = "windows")]
-use is_elevated::is_elevated;
+use {is_elevated::is_elevated, std::env};
 
 // 一度にtimelineやdetectionを実行する行数
 const MAX_DETECT_RECORDS: usize = 5000;
