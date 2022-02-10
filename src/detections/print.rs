@@ -284,6 +284,7 @@ mod tests {
             "1".to_string(),
             "test1".to_string(),
             "CommandLine1: %CommandLine%".to_string(),
+            "txxx.001".to_string(),
         );
 
         let json_str_2 = r##"
@@ -310,6 +311,7 @@ mod tests {
             "2".to_string(),
             "test2".to_string(),
             "CommandLine2: %CommandLine%".to_string(),
+            "txxx.002".to_string(),
         );
 
         let json_str_3 = r##"
@@ -336,6 +338,7 @@ mod tests {
             "3".to_string(),
             "test3".to_string(),
             "CommandLine3: %CommandLine%".to_string(),
+            "txxx.003".to_string(),
         );
 
         let json_str_4 = r##"
@@ -357,11 +360,12 @@ mod tests {
             "4".to_string(),
             "test4".to_string(),
             "CommandLine4: %CommandLine%".to_string(),
+            "txxx.004".to_string(),
         );
 
         let display = format!("{}", format_args!("{:?}", message));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", alert: \"test4\", detail: \"CommandLine4: hoge\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", alert: \"test1\", detail: \"CommandLine1: hoge\" }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", alert: \"test2\", detail: \"CommandLine2: hoge\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", alert: \"test3\", detail: \"CommandLine3: hoge\" }]} }";
+        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\" }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\" }]} }";
         assert_eq!(display, expect);
     }
 
