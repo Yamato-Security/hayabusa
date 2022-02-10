@@ -62,7 +62,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
     -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
-    --liveanalysis 'Analyze to WINDIR\\System32\\winevt\\Logs (Windows Only. Need Administrator privileges.)'
+    -l --live-analysis 'Analyze to WINDIR\\System32\\winevt\\Logs (Windows Only. Need Administrator privileges.)'
     --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
