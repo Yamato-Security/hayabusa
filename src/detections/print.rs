@@ -30,6 +30,7 @@ pub struct DetectInfo {
     pub eventid: String,
     pub alert: String,
     pub detail: String,
+    pub tag_info: String,
 }
 
 pub struct AlertMessage {}
@@ -71,6 +72,7 @@ impl Message {
         eventid: String,
         event_title: String,
         event_detail: String,
+        tag_info: String,
     ) {
         let detect_info = DetectInfo {
             filepath: target_file,
@@ -80,6 +82,7 @@ impl Message {
             eventid: eventid,
             alert: event_title,
             detail: event_detail,
+            tag_info: tag_info,
         };
 
         match self.map.get_mut(&event_time) {
@@ -104,6 +107,7 @@ impl Message {
         eventid: String,
         event_title: String,
         output: String,
+        tag_info: String,
     ) {
         let message = &self.parse_message(event_record, output);
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
@@ -117,6 +121,7 @@ impl Message {
             eventid,
             event_title,
             message.to_string(),
+            tag_info,
         )
     }
 

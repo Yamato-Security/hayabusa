@@ -23,6 +23,7 @@ pub struct CsvFormat<'a> {
     level: &'a str,
     rule_title: &'a str,
     details: &'a str,
+    mitre_attack: &'a str,
     rule_path: &'a str,
     file_path: &'a str,
 }
@@ -213,6 +214,7 @@ fn emit_csv<W: std::io::Write>(
                     event_i_d: &detect_info.eventid,
                     rule_title: &detect_info.alert,
                     details: &detect_info.detail,
+                    mitre_attack: &detect_info.tag_info,
                 })?;
             }
             let level_suffix = *configs::LEVELMAP
