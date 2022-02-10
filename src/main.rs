@@ -16,7 +16,6 @@ use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timeline::Timeline};
 use hhmmss::Hhmmss;
-use is_elevated::is_elevated;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -107,7 +106,7 @@ impl App {
             .args
             .is_present("live-analysis")
         {
-            if env::consts::OS == "windows" && is_elevated() {
+            if env::consts::OS == "windows" && is_elevated::is_elevated() {
                 let log_dir = env::var("windir").expect("windir is not found");
                 let evtx_files = self
                     .collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
