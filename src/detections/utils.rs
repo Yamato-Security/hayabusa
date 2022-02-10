@@ -350,7 +350,7 @@ mod tests {
     fn test_remove_space_control() {
         let none_test_str: Option<&String> = None;
         assert_eq!(
-            utils::remove_space_control_character(none_test_str).is_none(),
+            utils::replace_space_control_character(none_test_str, "").is_none(),
             true
         );
 
