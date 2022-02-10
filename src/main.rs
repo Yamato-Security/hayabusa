@@ -107,7 +107,7 @@ impl App {
             .args
             .is_present("liveanalysis")
         {
-            if env::consts::OS == "Windows" && !is_elevated() {
+            if env::consts::OS == "windows" && is_elevated() {
                 let log_dir = env::var("windir").expect("windir is not found");
                 let evtx_files = self
                     .collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
