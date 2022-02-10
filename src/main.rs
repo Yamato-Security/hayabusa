@@ -1,4 +1,3 @@
-extern crate is_elevated;
 extern crate serde;
 extern crate serde_derive;
 
@@ -20,7 +19,6 @@ use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::io::BufWriter;
