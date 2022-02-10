@@ -31,7 +31,9 @@ pbr = "*"
 hashbrown = "0.12.*"
 colored = "2.*"
 hex = "0.4.*"
-is_elevated = {git="https://github.com/yandexx/is_elevated", rev="aa04209"}
+
+[target.'cfg(windows)'.dependencies]
+is_elevated = "0.1.2"
 
 [profile.release]
 lto = true
