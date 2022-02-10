@@ -209,7 +209,7 @@ impl Detection {
                 .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["details"].as_str().unwrap_or("").to_string(),
-            tag_info.join(" / "),
+            tag_info.join(" : "),
         );
     }
 
