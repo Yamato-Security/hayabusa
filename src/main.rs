@@ -105,7 +105,7 @@ impl App {
             .read()
             .unwrap()
             .args
-            .is_present("liveanalysis")
+            .is_present("live-analysis")
         {
             if env::consts::OS == "windows" && is_elevated() {
                 let log_dir = env::var("windir").expect("windir is not found");
