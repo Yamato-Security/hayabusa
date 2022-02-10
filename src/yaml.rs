@@ -6,7 +6,7 @@ use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::filter::RuleExclude;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -52,31 +52,41 @@ impl ParseYaml {
         level: &str,
         exclude_ids: &RuleExclude,
     ) -> io::Result<String> {
-        let mut entries = fs::read_dir(path)?;
-        let yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
-            let entry = entry?;
-            // フォルダは再帰的に呼び出す。
-            if entry.file_type()?.is_dir() {
-                self.read_dir(entry.path(), level, exclude_ids)?;
-                return io::Result::Ok(ret);
+        let metadata = fs::metadata(path.as_ref());
+        if metadata.is_err() {
+            let errmsg = format!(
+                "fail to read metadata of file: {}",
+                path.as_ref().to_path_buf().display(),
+            );
+            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
             }
-            // ファイル以外は無視
-            if !entry.file_type()?.is_file() {
-                return io::Result::Ok(ret);
+            if !*QUIET_ERRORS_FLAG {
+                ERROR_LOG_STACK
+                    .lock()
+                    .unwrap()
+                    .push(format!("[ERROR] {}", errmsg));
             }
-
+        }
+        let mut yaml_docs = vec![];
+        if metadata.unwrap().file_type().is_file() {
             // 拡張子がymlでないファイルは無視
-            let path = entry.path();
-            if path.extension().unwrap_or(OsStr::new("")) != "yml" {
-                return io::Result::Ok(ret);
+            if path
+                .as_ref()
+                .to_path_buf()
+                .extension()
+                .unwrap_or(OsStr::new(""))
+                != "yml"
+            {
+                return io::Result::Ok(String::default());
             }
 
             // 個別のファイルの読み込みは即終了としない。
-            let read_content = self.read_file(path);
+            let read_content = self.read_file(path.as_ref().to_path_buf());
             if read_content.is_err() {
                 let errmsg = format!(
                     "fail to read file: {}\n{} ",
-                    entry.path().display(),
+                    path.as_ref().to_path_buf().display(),
                     read_content.unwrap_err()
                 );
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
@@ -89,7 +99,7 @@ impl ParseYaml {
                         .push(format!("[WARN] {}", errmsg));
                 }
                 self.errorrule_count += 1;
-                return io::Result::Ok(ret);
+                return io::Result::Ok(String::default());
             }
 
             // ここも個別のファイルの読み込みは即終了としない。
@@ -97,7 +107,7 @@ impl ParseYaml {
             if yaml_contents.is_err() {
                 let errmsg = format!(
                     "Failed to parse yml: {}\n{} ",
-                    entry.path().display(),
+                    path.as_ref().to_path_buf().display(),
                     yaml_contents.unwrap_err()
                 );
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
@@ -110,48 +120,87 @@ impl ParseYaml {
                         .push(format!("[WARN] {}", errmsg));
                 }
                 self.errorrule_count += 1;
-                return io::Result::Ok(ret);
+                return io::Result::Ok(String::default());
             }
 
-            let yaml_contents = yaml_contents.unwrap().into_iter().map(|yaml_content| {
-                let filepath = format!("{}", entry.path().display());
+            yaml_docs.extend(yaml_contents.unwrap().into_iter().map(|yaml_content| {
+                let filepath = format!("{}", path.as_ref().to_path_buf().display());
                 return (filepath, yaml_content);
-            });
-            ret.extend(yaml_contents);
-            return io::Result::Ok(ret);
-        })?;
+            }));
+        } else {
+            let mut entries = fs::read_dir(path)?;
+            yaml_docs = entries.try_fold(vec![], |mut ret, entry| {
+                let entry = entry?;
+                // フォルダは再帰的に呼び出す。
+                if entry.file_type()?.is_dir() {
+                    self.read_dir(entry.path(), level, exclude_ids)?;
+                    return io::Result::Ok(ret);
+                }
+                // ファイル以外は無視
+                if !entry.file_type()?.is_file() {
+                    return io::Result::Ok(ret);
+                }
+
+                // 拡張子がymlでないファイルは無視
+                let path = entry.path();
+                if path.extension().unwrap_or(OsStr::new("")) != "yml" {
+                    return io::Result::Ok(ret);
+                }
+
+                // 個別のファイルの読み込みは即終了としない。
+                let read_content = self.read_file(path);
+                if read_content.is_err() {
+                    let errmsg = format!(
+                        "fail to read file: {}\n{} ",
+                        entry.path().display(),
+                        read_content.unwrap_err()
+                    );
+                    if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                        AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                    }
+                    if !*QUIET_ERRORS_FLAG {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {}", errmsg));
+                    }
+                    self.errorrule_count += 1;
+                    return io::Result::Ok(ret);
+                }
+
+                // ここも個別のファイルの読み込みは即終了としない。
+                let yaml_contents = YamlLoader::load_from_str(&read_content.unwrap());
+                if yaml_contents.is_err() {
+                    let errmsg = format!(
+                        "Failed to parse yml: {}\n{} ",
+                        entry.path().display(),
+                        yaml_contents.unwrap_err()
+                    );
+                    if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                        AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                    }
+                    if !*QUIET_ERRORS_FLAG {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {}", errmsg));
+                    }
+                    self.errorrule_count += 1;
+                    return io::Result::Ok(ret);
+                }
+
+                let yaml_contents = yaml_contents.unwrap().into_iter().map(|yaml_content| {
+                    let filepath = format!("{}", entry.path().display());
+                    return (filepath, yaml_content);
+                });
+                ret.extend(yaml_contents);
+                return io::Result::Ok(ret);
+            })?;
+        }
 
         let files: Vec<(String, Yaml)> = yaml_docs
             .into_iter()
             .filter_map(|(filepath, yaml_doc)| {
-                // ignoreフラグがONになっているルールは無視する。
-                if yaml_doc["ignore"].as_bool().unwrap_or(false) {
-                    self.ignorerule_count += 1;
-                    return Option::None;
-                }
-                self.rulecounter.insert(
-                    yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
-                    self.rulecounter
-                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
-                        .unwrap_or(&0)
-                        + 1,
-                );
-
-                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    println!("Loaded yml file path: {}", filepath);
-                }
-                // 指定されたレベルより低いルールは無視する
-                let doc_level = &yaml_doc["level"]
-                    .as_str()
-                    .unwrap_or("informational")
-                    .to_string()
-                    .to_uppercase();
-                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
-                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
-                if doc_level_num < args_level_num {
-                    return Option::None;
-                }
-
                 //除外されたルールは無視する
                 let rule_id = &yaml_doc["id"].as_str();
                 if rule_id.is_some() {
@@ -165,6 +214,30 @@ impl ParseYaml {
                             return Option::None;
                         }
                     }
+                }
+
+                self.rulecounter.insert(
+                    yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
+                    self.rulecounter
+                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
+                        .unwrap_or(&0)
+                        + 1,
+                );
+
+                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    println!("Loaded yml file path: {}", filepath);
+                }
+
+                // 指定されたレベルより低いルールは無視する
+                let doc_level = &yaml_doc["level"]
+                    .as_str()
+                    .unwrap_or("informational")
+                    .to_string()
+                    .to_uppercase();
+                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
+                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
+                if doc_level_num < args_level_num {
+                    return Option::None;
                 }
 
                 if !configs::CONFIG
@@ -196,9 +269,25 @@ mod tests {
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
-    use std::collections::HashSet;
+    use hashbrown::HashSet;
     use std::path::Path;
     use yaml_rust::YamlLoader;
+
+    #[test]
+    fn test_read_file_yaml() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+
+        let mut yaml = yaml::ParseYaml::new();
+        let exclude_ids = RuleExclude {
+            no_use_rule: HashSet::new(),
+        };
+        let _ = &yaml.read_dir(
+            "test_files/rules/yaml/1.yml".to_string(),
+            &String::default(),
+            &exclude_ids,
+        );
+        assert_eq!(yaml.files.len(), 1);
+    }
 
     #[test]
     fn test_read_dir_yaml() {
