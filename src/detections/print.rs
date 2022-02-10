@@ -79,7 +79,8 @@ impl Message {
             computername: computername,
             eventid: eventid,
             alert: event_title,
-            detail: event_detail,
+            detail: utils::replace_space_control_character(Some(event_detail).as_ref(), " ")
+                .unwrap_or(String::default()),
         };
 
         match self.map.get_mut(&event_time) {

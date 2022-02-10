@@ -39,17 +39,20 @@ pub fn check_regex(string: &str, regex_list: &Vec<Regex>) -> bool {
     return false;
 }
 
-/// removed all \r \n \t to input
-pub fn remove_space_control_character<'a>(string: Option<&'a String>) -> Option<String> {
+/// replace string from all \r \n \t in input to target str
+pub fn replace_space_control_character<'a>(
+    string: Option<&'a String>,
+    replaced_str: &'a str,
+) -> Option<String> {
     if string.is_none() {
         return None;
     }
     let ret = string
         .unwrap()
         .as_str()
-        .replace("\r", "")
-        .replace("\t", "")
-        .replace("\n", "")
+        .replace("\r", replaced_str)
+        .replace("\t", replaced_str)
+        .replace("\n", replaced_str)
         .to_string();
     return Some(ret);
 }
@@ -354,7 +357,7 @@ mod tests {
         let tmp = "h\ra\ny\ta\tb\nu\r\nsa".to_string();
         let test_str: Option<&String> = Some(&tmp);
         assert_eq!(
-            utils::remove_space_control_character(test_str).unwrap(),
+            utils::replace_space_control_character(test_str, "").unwrap(),
             "hayabusa"
         );
     }

@@ -329,8 +329,10 @@ impl SelectionNode for LeafSelectionNode {
             let eventdata_data = values.unwrap();
             if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
             {
-                let control_trim_data =
-                    utils::remove_space_control_character(event_record.get_value(self.get_key()));
+                let control_trim_data = utils::replace_space_control_character(
+                    event_record.get_value(self.get_key()),
+                    "",
+                );
                 return self
                     .matcher
                     .as_ref()
@@ -346,7 +348,7 @@ impl SelectionNode for LeafSelectionNode {
                     .any(|ary_element| {
                         let aryelement_val = utils::value_to_string(ary_element);
                         let control_trim_aryelement_val =
-                            utils::remove_space_control_character(aryelement_val.as_ref());
+                            utils::replace_space_control_character(aryelement_val.as_ref(), "");
                         return self
                             .matcher
                             .as_ref()
@@ -363,7 +365,7 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         let event_value = self.get_event_value(&event_record);
-        let control_trim_event_value = utils::remove_space_control_character(event_value);
+        let control_trim_event_value = utils::replace_space_control_character(event_value, "");
         return self
             .matcher
             .as_ref()
