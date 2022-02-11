@@ -167,7 +167,7 @@ impl App {
     fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &"--liveanalysis should be run as Administrator on Windows.".to_string(),
+            &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
         )
         .ok();
         return None;
@@ -191,7 +191,7 @@ impl App {
         } else {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"--liveanalysis should be run as Administrator on Windows.".to_string(),
+                &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
             )
             .ok();
             return None;
