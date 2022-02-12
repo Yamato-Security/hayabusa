@@ -3,12 +3,12 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs;
+use crate::filter::DataFilterRule;
 
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
 
 use chrono::{DateTime, TimeZone, Utc};
-use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
 use std::fs::File;
@@ -18,10 +18,6 @@ use std::str;
 use std::string::String;
 
 use super::detection::EvtxRecordInfo;
-
-lazy_static! {
-    pub static ref SPACE_CONTROL_REGEXMAP: Regex = Regex::new(r"[\r\t\n]+").unwrap();
-}
 
 pub fn concat_selection_key(key_list: &Vec<String>) -> String {
     return key_list
@@ -44,20 +40,26 @@ pub fn check_regex(string: &str, regex_list: &Vec<Regex>) -> bool {
     return false;
 }
 
-/// replace string from all \r \n \t in input to replace_str
-pub fn replace_space_control_character<'a>(
+/// replace string from all defined regex in input to replace_str
+pub fn replace_target_character<'a>(
     input_str: Option<&'a String>,
-    replace_str: &'a str,
+    replace_rule: Option<&'a DataFilterRule>,
 ) -> Option<String> {
     if input_str.is_none() {
         return None;
     }
-    let replace_target = input_str.unwrap();
-    if self::SPACE_CONTROL_REGEXMAP.is_match(replace_target) {
-        let replaced_vec: Vec<&str> = self::SPACE_CONTROL_REGEXMAP.split(replace_target).collect();
-        return Some(replaced_vec.join(replace_str));
+    if replace_rule.is_none() {
+        return Some(input_str.unwrap().to_string());
     }
-    return Some(replace_target.to_string());
+
+    let replace_regex_rule = &replace_rule.unwrap().regex_rule;
+    let replace_str = &replace_rule.unwrap().replace_str;
+
+    return Some(
+        replace_regex_rule
+            .replace_all(input_str.unwrap(), replace_str)
+            .to_string(),
+    );
 }
 
 pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
@@ -259,6 +261,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRec
 #[cfg(test)]
 mod tests {
     use crate::detections::utils;
+    use crate::filter::DataFilterRule;
     use regex::Regex;
     use serde_json::Value;
 

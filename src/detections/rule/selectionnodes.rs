@@ -1,4 +1,5 @@
 use crate::detections::{detection::EvtxRecordInfo, utils};
+use crate::filter::FILTER_REGEX;
 use mopa::mopafy;
 use std::{sync::Arc, vec};
 use yaml_rust::Yaml;
@@ -314,6 +315,9 @@ impl SelectionNode for LeafSelectionNode {
                     ]
                 }
         */
+
+        let filter_rule = FILTER_REGEX.get(self.get_key());
+
         if self.get_key() == "EventData" {
             let values =
                 utils::get_event_value(&"Event.EventData.Data".to_string(), &event_record.record);
@@ -329,15 +333,15 @@ impl SelectionNode for LeafSelectionNode {
             let eventdata_data = values.unwrap();
             if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
             {
-                let control_trim_data = utils::replace_space_control_character(
+                let replaced_str = utils::replace_target_character(
                     event_record.get_value(self.get_key()),
-                    "",
+                    filter_rule,
                 );
                 return self
                     .matcher
                     .as_ref()
                     .unwrap()
-                    .is_match(control_trim_data.as_ref(), event_record);
+                    .is_match(replaced_str.as_ref(), event_record);
             }
             // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
             if eventdata_data.is_array() {
@@ -346,14 +350,15 @@ impl SelectionNode for LeafSelectionNode {
                     .unwrap()
                     .iter()
                     .any(|ary_element| {
-                        let aryelement_val = utils::value_to_string(ary_element);
-                        let control_trim_aryelement_val =
-                            utils::replace_space_control_character(aryelement_val.as_ref(), "");
+                        let replaced_str = utils::replace_target_character(
+                            utils::value_to_string(ary_element).as_ref(),
+                            filter_rule,
+                        );
                         return self
                             .matcher
                             .as_ref()
                             .unwrap()
-                            .is_match(control_trim_aryelement_val.as_ref(), event_record);
+                            .is_match(replaced_str.as_ref(), event_record);
                     });
             } else {
                 return self
@@ -364,13 +369,14 @@ impl SelectionNode for LeafSelectionNode {
             }
         }
 
-        let event_value = self.get_event_value(&event_record);
-        let control_trim_event_value = utils::replace_space_control_character(event_value, "");
+        let replaced_str =
+            utils::replace_target_character(self.get_event_value(&event_record), filter_rule);
+
         return self
             .matcher
             .as_ref()
             .unwrap()
-            .is_match(control_trim_event_value.as_ref(), event_record);
+            .is_match(replaced_str.as_ref(), event_record);
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
