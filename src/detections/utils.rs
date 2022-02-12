@@ -352,18 +352,28 @@ mod tests {
     }
 
     #[test]
-    /// 指定された文字から\r \n \tを取り除く関数が動作するかのテスト
+    /// 指定された文字から指定されたregexぉ実行する関数が動作するかのテスト
     fn test_remove_space_control() {
+        let test_filter_rule = DataFilterRule {
+            regex_rule: Regex::new(r"[\r\n\t]+").unwrap(),
+            replace_str: "".to_string(),
+        };
         let none_test_str: Option<&String> = None;
+
         assert_eq!(
-            utils::replace_space_control_character(none_test_str, "").is_none(),
+            utils::replace_target_character(none_test_str, None).is_none(),
+            true
+        );
+
+        assert_eq!(
+            utils::replace_target_character(none_test_str, Some(&test_filter_rule)).is_none(),
             true
         );
 
         let tmp = "h\ra\ny\ta\tb\nu\r\nsa".to_string();
         let test_str: Option<&String> = Some(&tmp);
         assert_eq!(
-            utils::replace_space_control_character(test_str, "").unwrap(),
+            utils::replace_target_character(test_str, Some(&test_filter_rule)).unwrap(),
             "hayabusa"
         );
     }
