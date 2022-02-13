@@ -64,7 +64,16 @@ impl App {
             .args
             .is_present("update-rules")
         {
-            self.update_rules();
+            match self.update_rules() {
+                Ok(_ok) => println!("Rules updated successfully"),
+                Err(e) => {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("Failed update rules. {:?}  ", e),
+                    )
+                    .ok();
+                }
+            }
             return;
         }
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
@@ -431,24 +440,80 @@ impl App {
         }
     }
 
-    /// hayabusa-rulesをcloneで取得する関数
-    fn update_rules(&self) {
-        let url = "https://github.com/Yamato-Security/hayabusa-rules.git";
-        let _repo = match Repository::clone(url, "rules") {
-            Ok(repo) => {
+    /// hayabusa-rulesを更新する関数。他レポジトリに誤ってマージしてしまうことを避けるために、同一階層のrulesフォルダのみを対象として更新する
+    fn update_rules(&self) -> Result<(), git2::Error> {
+        let rule_repo = Repository::open(Path::new("./rules"));
+        if rule_repo.is_err() {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"Failed open git repository. ".to_string(),
+            )
+            .ok();
+            println!("Chceking git clone hayabusa-rules to rules folder.");
+            // レポジトリが開けなかった段階でgit cloneを実施する
+            return self.clone_rules();
+        }
+
+        let mut exit_flag = false;
+        let rule_repo = rule_repo.unwrap();
+        // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
+        rule_repo
+            .find_remote("origin")?
+            .fetch(&["main"], None, None)
+            .map_err(|e| {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!("Failed git fetch to rules folder. {}", e),
+                )
+                .ok();
+                exit_flag = true;
+            })
+            .ok();
+        if exit_flag {
+            return Err(git2::Error::from_str(&String::default()));
+        }
+        let fetch_head = rule_repo.find_reference("FETCH_HEAD")?;
+        let fetch_commit = rule_repo.reference_to_annotated_commit(&fetch_head)?;
+        let analysis = rule_repo.merge_analysis(&[&fetch_commit])?;
+        if analysis.0.is_up_to_date() {
+            Ok(())
+        } else if analysis.0.is_fast_forward() {
+            let refname = "refs/heads/main";
+            let mut reference = rule_repo.find_reference(&refname)?;
+            reference.set_target(fetch_commit.id(), "Fast-Forward")?;
+            rule_repo.set_head(&refname)?;
+            rule_repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
+        } else {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"update-rules option is git Fast-Forward merge only. please check your rules folder."
+                    .to_string(),
+            )
+            .ok();
+            return Err(git2::Error::from_str(&String::default()));
+        }
+    }
+
+    /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
+    fn clone_rules(&self) -> Result<(), git2::Error> {
+        match Repository::clone(
+            "https://github.com/Yamato-Security/hayabusa-rules.git",
+            "rules",
+        ) {
+            Ok(_repo) => {
                 println!("Finished clone hayabusa-rules repository.");
-                repo
+                return Ok(());
             }
             Err(e) => {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
                     &format!(
-                        "Failed git clone to rules folder. Please renme rules folder name. {}",
+                        "Failed git clone to rules folder. Please rename rules folder name. {}",
                         e
                     ),
                 )
                 .ok();
-                return;
+                return Err(git2::Error::from_str(&String::default()));
             }
         };
     }
