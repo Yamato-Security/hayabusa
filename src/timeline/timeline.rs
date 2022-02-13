@@ -1,7 +1,7 @@
 use crate::detections::{configs, detection::EvtxRecordInfo};
 
 use super::statistics::EventStatistics;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct Timeline {

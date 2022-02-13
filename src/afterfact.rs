@@ -11,6 +11,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io;
 use std::io::BufWriter;
+use std::io::Write;
 use std::process;
 
 #[derive(Debug, Serialize)]
@@ -39,6 +40,9 @@ pub struct DisplayFormat<'a> {
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
+    if !configs::CONFIG.read().unwrap().args.is_present("color") {
+        return None;
+    }
     let read_result = utils::read_csv("config/level_color.txt");
     if read_result.is_err() {
         // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
@@ -135,64 +139,69 @@ fn emit_csv<W: std::io::Write>(
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
-                // カラーをつけない場合は255,255,255で出力する
-                let mut output_color: Vec<u8> = vec![255, 255, 255];
                 if color_map.is_some() {
-                    let target_color = color_map.as_ref().unwrap().get(&detect_info.level);
-                    if target_color.is_some() {
-                        output_color = target_color.unwrap().to_vec();
-                    }
+                    let output_color =
+                        _get_output_color(&color_map.as_ref().unwrap(), &detect_info.level);
+                    wtr.serialize(DisplayFormat {
+                        timestamp: &format!(
+                            "{} ",
+                            &format_time(time).truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        level: &format!(
+                            " {} ",
+                            &detect_info.level.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        computer: &format!(
+                            " {} ",
+                            &detect_info.computername.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        event_i_d: &format!(
+                            " {} ",
+                            &detect_info.eventid.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        rule_title: &format!(
+                            " {} ",
+                            &detect_info.alert.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        details: &format!(
+                            " {}",
+                            &detect_info.detail.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                    })?;
+                } else {
+                    wtr.serialize(DisplayFormat {
+                        timestamp: &format!("{} ", &format_time(time)),
+                        level: &format!(" {} ", &detect_info.level),
+                        computer: &format!(" {} ", &detect_info.computername),
+                        event_i_d: &format!(" {} ", &detect_info.eventid),
+                        rule_title: &format!(" {} ", &detect_info.alert),
+                        details: &format!(" {}", &detect_info.detail),
+                    })?;
                 }
-                wtr.serialize(DisplayFormat {
-                    timestamp: &format!(
-                        "{} ",
-                        &format_time(time).truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    level: &format!(
-                        " {} ",
-                        &detect_info.level.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    computer: &format!(
-                        " {} ",
-                        &detect_info.computername.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    event_i_d: &format!(
-                        " {} ",
-                        &detect_info.eventid.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    rule_title: &format!(
-                        " {} ",
-                        &detect_info.alert.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                    details: &format!(
-                        " {}",
-                        &detect_info.detail.truecolor(
-                            output_color[0],
-                            output_color[1],
-                            output_color[2]
-                        )
-                    ),
-                })?;
             } else {
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {
@@ -224,17 +233,25 @@ fn emit_csv<W: std::io::Write>(
         total_detect_counts_by_level,
         "Total".to_string(),
         "detections".to_string(),
+        &color_map,
     );
     _print_unique_results(
         unique_detect_counts_by_level,
         "Unique".to_string(),
         "rules".to_string(),
+        &color_map,
     );
     Ok(())
 }
 
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
-fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail_word: String) {
+fn _print_unique_results(
+    mut counts_by_level: Vec<u128>,
+    head_word: String,
+    tail_word: String,
+    color_map: &Option<HashMap<String, Vec<u8>>>,
+) {
+    let mut wtr = BufWriter::new(io::stdout());
     let levels = Vec::from([
         "critical",
         "high",
@@ -248,19 +265,45 @@ fn _print_unique_results(mut counts_by_level: Vec<u128>, head_word: String, tail
     counts_by_level.reverse();
 
     // 全体の集計(levelの記載がないためformatの第二引数は空の文字列)
-    println!(
+    writeln!(
+        wtr,
         "{} {}: {}",
         head_word,
         tail_word,
         counts_by_level.iter().sum::<u128>()
-    );
+    )
+    .ok();
     for (i, level_name) in levels.iter().enumerate() {
-        println!(
+        let output_str;
+        let output_raw_str = format!(
             "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
         );
+        if color_map.is_none() {
+            output_str = output_raw_str;
+        } else {
+            let output_color =
+                _get_output_color(&color_map.as_ref().unwrap(), &level_name.to_string());
+            output_str = output_raw_str
+                .truecolor(output_color[0], output_color[1], output_color[2])
+                .to_string();
+        }
+        writeln!(wtr, "{}", output_str).ok();
     }
+    wtr.flush().ok();
 }
+
+/// levelに対応したtruecolorの値の配列を返す関数
+fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &String) -> Vec<u8> {
+    // カラーをつけない場合は255,255,255で出力する
+    let mut output_color: Vec<u8> = vec![255, 255, 255];
+    let target_color = color_map.get(level);
+    if target_color.is_some() {
+        output_color = target_color.unwrap().to_vec();
+    }
+    return output_color;
+}
+
 fn format_time(time: &DateTime<Utc>) -> String {
     if configs::CONFIG.read().unwrap().args.is_present("utc") {
         format_rfc(time)
@@ -416,7 +459,26 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let expect = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n".to_string()
+        let expect_header = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n";
+        let expect_colored = expect_header.to_string()
+            + &get_white_color_string(
+                &expect_tz
+                    .clone()
+                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                    .to_string(),
+            )
+            + " | "
+            + &get_white_color_string(test_computername)
+            + " | "
+            + &get_white_color_string(test_eventid)
+            + " | "
+            + &get_white_color_string(test_level)
+            + " | "
+            + &get_white_color_string(test_title)
+            + " | "
+            + &get_white_color_string(output)
+            + "\n";
+        let expect_nocoloed = expect_header.to_string()
             + &expect_tz
                 .clone()
                 .format("%Y-%m-%d %H:%M:%S%.3f %:z")
@@ -432,15 +494,23 @@ mod tests {
             + " | "
             + output
             + "\n";
+
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_display.txt".to_string()).unwrap());
         assert!(emit_csv(&mut file, true, None).is_ok());
         match read_to_string("./test_emit_csv_display.txt") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
-                assert_eq!(s, expect);
+                assert!(s == expect_colored || s == expect_nocoloed);
             }
         };
         assert!(remove_file("./test_emit_csv_display.txt").is_ok());
+    }
+
+    fn get_white_color_string(target: &str) -> String {
+        let white_color_header = "\u{1b}[38;2;255;255;255m";
+        let white_color_footer = "\u{1b}[0m";
+
+        return white_color_header.to_owned() + target + white_color_footer;
     }
 }
