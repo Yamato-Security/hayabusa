@@ -156,12 +156,13 @@ USAGE:
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
+    -u --update-rules 'Clone latest hayabusa-rule'
     -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
     --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
     --rfc-3339 'Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214 -06:00)'
-    -u --utc 'Output time in UTC format. (default: local time)'
+    -U --utc 'Output time in UTC format. (default: local time)'
     -t --thread-number=[NUMBER] 'Thread number. (default: optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
@@ -180,7 +181,8 @@ FLAGS:
         --rfc-3339                   Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214
                                      -06:00)
     -s, --statistics                 Prints statistics of event IDs.
-    -u, --utc                        Output time in UTC format. (default: local time)
+    -u, --update-rules               Clone latest hayabusa-rule
+    -U, --utc                        Output time in UTC format. (default: local time)
     -V, --version                    Prints version information
     -v, --verbose                    Output verbose information.
 
