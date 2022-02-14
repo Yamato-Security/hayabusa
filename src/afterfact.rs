@@ -23,6 +23,7 @@ pub struct CsvFormat<'a> {
     level: &'a str,
     rule_title: &'a str,
     details: &'a str,
+    mitre_attack: &'a str,
     rule_path: &'a str,
     file_path: &'a str,
 }
@@ -213,6 +214,7 @@ fn emit_csv<W: std::io::Write>(
                     event_i_d: &detect_info.eventid,
                     rule_title: &detect_info.alert,
                     details: &detect_info.detail,
+                    mitre_attack: &detect_info.tag_info,
                 })?;
             }
             let level_suffix = *configs::LEVELMAP
@@ -350,6 +352,7 @@ mod tests {
         let test_computername = "testcomputer";
         let test_eventid = "1111";
         let output = "pokepoke";
+        let test_attack = "execution/txxxx.yyy";
         {
             let mut messages = print::MESSAGES.lock().unwrap();
             messages.clear();
@@ -377,33 +380,37 @@ mod tests {
                 test_eventid.to_string(),
                 test_title.to_string(),
                 output.to_string(),
+                test_attack.to_string(),
             );
         }
         let expect_time = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let expect = "Timestamp,Computer,EventID,Level,RuleTitle,Details,RulePath,FilePath\n"
-            .to_string()
-            + &expect_tz
-                .clone()
-                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+        let expect =
+            "Timestamp,Computer,EventID,Level,RuleTitle,Details,MitreAttack,RulePath,FilePath\n"
                 .to_string()
-            + ","
-            + test_computername
-            + ","
-            + test_eventid
-            + ","
-            + test_level
-            + ","
-            + test_title
-            + ","
-            + output
-            + ","
-            + testrulepath
-            + ","
-            + &testfilepath.to_string()
-            + "\n";
+                + &expect_tz
+                    .clone()
+                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                    .to_string()
+                + ","
+                + test_computername
+                + ","
+                + test_eventid
+                + ","
+                + test_level
+                + ","
+                + test_title
+                + ","
+                + output
+                + ","
+                + test_attack
+                + ","
+                + testrulepath
+                + ","
+                + &testfilepath.to_string()
+                + "\n";
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
         assert!(emit_csv(&mut file, false, None).is_ok());
@@ -425,6 +432,7 @@ mod tests {
         let test_computername = "testcomputer2";
         let test_eventid = "2222";
         let output = "displaytest";
+        let test_attack = "execution/txxxx.zzz";
         {
             let mut messages = print::MESSAGES.lock().unwrap();
             messages.clear();
@@ -452,6 +460,7 @@ mod tests {
                 test_eventid.to_string(),
                 test_title.to_string(),
                 output.to_string(),
+                test_attack.to_string(),
             );
             messages.debug();
         }
