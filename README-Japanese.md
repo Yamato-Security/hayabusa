@@ -4,7 +4,7 @@
   ![Hayabusa Logo](hayabusa-logo.png)
  
  </p>
-  [<a href="Readme.md">English</a>] | [<a href="Readme-Japanese.md">日本語</a>]
+  [<a href="README.md">English</a>] | [<a href="README-Japanese.md">日本語</a>]
 </div>
 
 ---
