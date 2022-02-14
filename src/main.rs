@@ -33,6 +33,9 @@ use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
 
+#[cfg(target_os = "windows")]
+use {is_elevated::is_elevated, std::env};
+
 // 一度にtimelineやdetectionを実行する行数
 const MAX_DETECT_RECORDS: usize = 5000;
 
@@ -99,7 +102,18 @@ impl App {
             println!("Generating Event ID Statistics");
             println!("");
         }
-        if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("live-analysis")
+        {
+            let live_analysis_list = self.collect_liveanalysis_files();
+            if live_analysis_list.is_none() {
+                return;
+            }
+            self.analysis_files(live_analysis_list.unwrap());
+        } else if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx")
                 || Path::new(filepath)
                     .file_stem()
@@ -146,6 +160,41 @@ impl App {
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
+        )
+        .ok();
+        return None;
+    }
+
+    #[cfg(target_os = "windows")]
+    fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
+        if is_elevated() {
+            let log_dir = env::var("windir").expect("windir is not found");
+            let evtx_files =
+                self.collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
+            if evtx_files.len() == 0 {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &"No .evtx files were found.".to_string(),
+                )
+                .ok();
+                return None;
+            }
+            return Some(evtx_files);
+        } else {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
+            )
+            .ok();
+            return None;
         }
     }
 
