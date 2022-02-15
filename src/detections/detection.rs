@@ -1,6 +1,7 @@
 extern crate csv;
 
 use crate::detections::configs;
+use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
@@ -181,6 +182,11 @@ impl Detection {
             if !agg_condition {
                 Detection::insert_message(&rule, record_info);
             }
+
+            PIVOT_KEYWORD
+                .lock()
+                .unwrap()
+                .insert_pivot_keyword(&record_info.record);
         }
 
         rule

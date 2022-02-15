@@ -1,8 +1,11 @@
-use crate::detections::configs;
-use crate::detections::utils::get_serde_number_to_string;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
+use lazy_static::lazy_static;
 use serde_json::Value;
+use std::sync::Mutex;
+
+use crate::detections::configs;
+use crate::detections::utils::get_serde_number_to_string;
 
 #[derive(Debug, Clone)]
 pub struct PivotKeyword {
@@ -22,8 +25,21 @@ IP Addresses: %IpAddress%
 Processes: %Image%
 */
 
+lazy_static! {
+    pub static ref PIVOT_KEYWORD: Mutex<PivotKeyword> = Mutex::new(PivotKeyword::new());
+}
+
 impl PivotKeyword {
-    pub fn get_pivot_keyword(&mut self, event_record: &Value) {
+    fn new() -> PivotKeyword {
+        return PivotKeyword {
+            users: HashSet::new(),
+            logon_ids: HashSet::new(),
+            workstation_names: HashSet::new(),
+            ip_addresses: HashSet::new(),
+            processes: HashSet::new(),
+        };
+    }
+    pub fn insert_pivot_keyword(&mut self, event_record: &Value) {
         let mut fields = HashMap::new();
         fields.insert("SubjectUserName", "users");
         fields.insert("TargetUserName", "users");
