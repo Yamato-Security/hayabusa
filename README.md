@@ -1,8 +1,6 @@
 <div align="center">
  <p>
-
-  ![Hayabusa Logo](hayabusa-logo.png)
-
+    <img alt="Hayabusa Logo" src="hayabusa-logo.png" width="50%">
  </p>
  [<a href="README.md">English</a>] | [<a href="README-Japanese.md">日本語</a>]
 </div>
