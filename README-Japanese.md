@@ -96,9 +96,10 @@ Hayabusaの[Releases](https://github.com/Yamato-Security/hayabusa/releases)か�
 または、以下の`git clone`コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です。
 
 ```bash
-git clone https://github.com/Yamato-Security/hayabusa.git
+git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
+--recursive をつけ忘れた場合、サブモジュールとして管理されている rules/ 内のファイルが取得できません。
 Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。
 
 ```bash
