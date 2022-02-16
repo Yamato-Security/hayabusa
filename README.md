@@ -94,7 +94,7 @@ You can download the latest Hayabusa version from the [Releases](https://github.
 You can also `git clone` the repository with the following command and compile binary from source code.:
 
 ```bash
-git clone https://github.com/Yamato-Security/hayabusa.git --recursive
+git clone https://github.com/Yamato-Security/hayabusa.git
 ```
 
 You can get latest Hayabusa rules with the execute following command.
