@@ -1,10 +1,17 @@
 <div align="center">
  <p>
-
-  ![Hayabusa Logo](hayabusa-logo.png)
- 
+    <img alt="Hayabusa Logo" src="hayabusa-logo.png" width="50%">
  </p>
+  [<a href="README.md">English</a>] | [<b>日本語</b>]
 </div>
+
+---
+
+[tag-1]: https://img.shields.io/github/downloads/Yamato-Security/hayabusa/total?style=plastic&label=GitHub%F0%9F%A6%85DownLoads
+[tag-2]: https://img.shields.io/github/stars/Yamato-Security/hayabusa?style=plastic&label=GitHub%F0%9F%A6%85Stars
+[tag-3]: https://img.shields.io/github/v/release/Yamato-Security/hayabusa?display_name=tag&label=latest-version&style=plastic
+
+![tag-1] ![tag-2] ![tag-3]
 
 # Hayabusa について
 
