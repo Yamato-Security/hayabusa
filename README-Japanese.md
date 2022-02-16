@@ -1,10 +1,17 @@
 <div align="center">
  <p>
-
-  ![Hayabusa Logo](hayabusa-logo.png)
- 
+    <img alt="Hayabusa Logo" src="hayabusa-logo.png" width="50%">
  </p>
+  [<a href="README.md">English</a>] | [<b>日本語</b>]
 </div>
+
+---
+
+[tag-1]: https://img.shields.io/github/downloads/Yamato-Security/hayabusa/total?style=plastic&label=GitHub%F0%9F%A6%85DownLoads
+[tag-2]: https://img.shields.io/github/stars/Yamato-Security/hayabusa?style=plastic&label=GitHub%F0%9F%A6%85Stars
+[tag-3]: https://img.shields.io/github/v/release/Yamato-Security/hayabusa?display_name=tag&label=latest-version&style=plastic
+
+![tag-1] ![tag-2] ![tag-3]
 
 # Hayabusa について
 
@@ -152,6 +159,7 @@ USAGE:
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
     -u --update-rules 'Clone latest hayabusa-rule'
     -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
+    -l --live-analysis 'Analyze to WINDIR\System32\winevt\Logs (Windows Only. Need Administrator privileges.)'
     --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
@@ -169,6 +177,8 @@ FLAGS:
     -D, --enable-deprecated-rules    Enable sigma rules marked as deprecated.
     -n, --enable-noisy-rules         Enable rules marked as noisy.
     -h, --help                       Prints help information
+    -l, --live-analysis              Analyze to WINDIR\System32\winevt\Logs (Windows Only. Need Administrator
+                                     privileges.)
     -q, --quiet                      Quiet mode. Do not display the launch banner.
     -Q, --quiet-errors               Quiet errors mode. Do not save error logs.
         --rfc-2822                   Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)
