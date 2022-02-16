@@ -3,6 +3,7 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs;
+use crate::filter::DataFilterRule;
 
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
@@ -37,6 +38,28 @@ pub fn check_regex(string: &str, regex_list: &Vec<Regex>) -> bool {
     }
 
     return false;
+}
+
+/// replace string from all defined regex in input to replace_str
+pub fn replace_target_character<'a>(
+    input_str: Option<&'a String>,
+    replace_rule: Option<&'a DataFilterRule>,
+) -> Option<String> {
+    if input_str.is_none() {
+        return None;
+    }
+    if replace_rule.is_none() {
+        return Some(input_str.unwrap().to_string());
+    }
+
+    let replace_regex_rule = &replace_rule.unwrap().regex_rule;
+    let replace_str = &replace_rule.unwrap().replace_str;
+
+    return Some(
+        replace_regex_rule
+            .replace_all(input_str.unwrap(), replace_str)
+            .to_string(),
+    );
 }
 
 pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
@@ -238,6 +261,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRec
 #[cfg(test)]
 mod tests {
     use crate::detections::utils;
+    use crate::filter::DataFilterRule;
     use regex::Regex;
     use serde_json::Value;
 
@@ -325,5 +349,32 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"]).is_none());
+    }
+
+    #[test]
+    /// 指定された文字から指定されたregexぉ実行する関数が動作するかのテスト
+    fn test_remove_space_control() {
+        let test_filter_rule = DataFilterRule {
+            regex_rule: Regex::new(r"[\r\n\t]+").unwrap(),
+            replace_str: "".to_string(),
+        };
+        let none_test_str: Option<&String> = None;
+
+        assert_eq!(
+            utils::replace_target_character(none_test_str, None).is_none(),
+            true
+        );
+
+        assert_eq!(
+            utils::replace_target_character(none_test_str, Some(&test_filter_rule)).is_none(),
+            true
+        );
+
+        let tmp = "h\ra\ny\ta\tb\nu\r\nsa".to_string();
+        let test_str: Option<&String> = Some(&tmp);
+        assert_eq!(
+            utils::replace_target_character(test_str, Some(&test_filter_rule)).unwrap(),
+            "hayabusa"
+        );
     }
 }
