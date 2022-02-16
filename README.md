@@ -97,11 +97,10 @@ You can also `git clone` the repository with the following command and compile b
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
-If you forget to use `--recursive` option, `rules/` files which managed in submodule did not cloned.
-Use following command to import submodules.
+You can get latest Hayabusa rules with the execute following command.
 
 ```bash
-git submodule update --init
+.\hayabusa.exe -u
 ```
 
 # Compiling from source (Optional)
