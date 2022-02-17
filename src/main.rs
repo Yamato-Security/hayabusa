@@ -512,7 +512,7 @@ impl App {
 
     /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
     fn clone_rules(&self) -> Result<(), git2::Error> {
-        match Repository::clone_recurse(
+        match Repository::clone(
             "https://github.com/Yamato-Security/hayabusa-rules.git",
             "rules",
         ) {
