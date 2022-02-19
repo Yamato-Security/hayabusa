@@ -77,11 +77,11 @@ impl App {
             .is_present("update-rules")
         {
             match self.update_rules() {
-                Ok(_ok) => println!("Rules updated successfully"),
+                Ok(_ok) => println!("Rules updated successfully."),
                 Err(e) => {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("Failed update rules. {:?}  ", e),
+                        &format!("Failed to update rules. {:?}  ", e),
                     )
                     .ok();
                 }
@@ -91,7 +91,7 @@ impl App {
         if !Path::new("./config").exists() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./bin/hayabusa-1.0.0-windows-x64.exe".to_string()
+                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe".to_string()
             )
             .ok();
             return;
@@ -495,10 +495,12 @@ impl App {
         if open_result.is_err() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"Failed open hayabusa git repository. ".to_string(),
+                &"Failed to open the git repository.".to_string(),
             )
             .ok();
-            println!("Checking git clone hayabusa-rules to rules folder.");
+            println!(
+                "Attempting to git clone the hayabusa-rules repository into the rules folder."
+            );
             // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
             return self.clone_rules();
         }
@@ -517,14 +519,14 @@ impl App {
             "rules",
         ) {
             Ok(_repo) => {
-                println!("Finished clone hayabusa-rules repository.");
+                println!("Finished cloning the hayabusa-rules repository.");
                 return Ok(());
             }
             Err(e) => {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
                     &format!(
-                        "Failed git clone to rules folder. Please rename rules folder name. {}",
+                        "Failed to git clone into the rules folder. Please rename your rules folder name. {}",
                         e
                     ),
                 )
