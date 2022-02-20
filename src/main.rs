@@ -498,7 +498,9 @@ impl App {
                 &"Failed to open the git repository. ".to_string(),
             )
             .ok();
-            println!("Attempting to git clone the hayabusa-rules repository into the rules folder.");
+            println!(
+                "Attempting to git clone the hayabusa-rules repository into the rules folder."
+            );
             // レポジトリが開けなかった段階でgit cloneを実施する
             return self.clone_rules();
         }
