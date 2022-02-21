@@ -1,3 +1,4 @@
+use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
@@ -63,7 +64,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
     -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
+    -o --output=[OUTPUT_FILE] 'Save the output to a file. (Example: output.csv, pivot-keywords-list.txt)'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
@@ -77,6 +78,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -U --utc 'Output time in UTC format. (Default: local time)'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
+    --pivot-keywords-list 'Create a list of pivot keywords.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --contributors 'Prints the list of contributors.'";
@@ -163,24 +165,23 @@ impl Default for TargetEventTime {
 
 impl TargetEventTime {
     pub fn new() -> Self {
-        let start_time =
-            if let Some(s_time) = CONFIG.read().unwrap().args.value_of("start-timeline") {
-                match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+        let start_time = if let Some(s_time) = CONFIG.read().unwrap().args.value_of("") {
+            match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
                 .or_else(|_| DateTime::parse_from_str(s_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
             {
                 Ok(dt) => Some(dt.with_timezone(&Utc)),
                 Err(err) => {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("start-timeline field: {}", err),
+                        &format!(" field: {}", err),
                     )
                     .ok();
                     None
                 }
             }
-            } else {
-                None
-            };
+        } else {
+            None
+        };
         let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("end-timeline") {
             match DateTime::parse_from_str(e_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
             .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
@@ -261,7 +262,8 @@ impl Default for EventKeyAliasConfig {
 fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
-    let read_result = utils::read_csv(path);
+    // eventkey_aliasが読み込めなかったらエラーで終了とする。
+    let read_result = utils::read_csv(path, false);
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
@@ -270,7 +272,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         .ok();
         return config;
     }
-    // eventkey_aliasが読み込めなかったらエラーで終了とする。
+
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 2 {
             return;
@@ -293,6 +295,31 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     });
     config.key_to_eventkey.shrink_to_fit();
     config
+}
+
+fn load_pivot_keywords(path: &str) {
+    let read_result = utils::read_csv(path, true);
+    if read_result.is_err() {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &read_result.as_ref().unwrap_err(),
+        )
+        .ok();
+    }
+
+    read_result.unwrap().into_iter().for_each(|line| {
+        let key = line[0].clone();
+
+        for field in &line[1..] {
+            match key.as_str() {
+                key => PIVOT_KEYWORD
+                    .fields.write().unwrap()
+                    .get(key)
+                    .unwrap()
+                    .insert(field.to_string()),
+            };
+        }
+    });
 }
 
 #[derive(Debug, Clone)]
@@ -345,7 +372,7 @@ impl EventInfoConfig {
 fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut infodata = EventInfo::new();
     let mut config = EventInfoConfig::new();
-    let read_result = utils::read_csv(path);
+    let read_result = utils::read_csv(path, false);
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),

@@ -5,13 +5,14 @@ extern crate serde_derive;
 #[cfg(target_os = "windows")]
 extern crate static_vcruntime;
 
+use crate::configs::PIVOT_KEYWORD_MAP;
 use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::{
-    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+    AlertMessage, PIVOT_KEYWORD, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
@@ -25,7 +26,7 @@ use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::fs::create_dir;
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::Arc;
 use std::{
@@ -185,6 +186,76 @@ impl App {
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+        }
+
+        if let Some(pivot_file) = configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .value_of("pivot-keywords-list")
+        {
+            let mut f = BufWriter::new(fs::File::create(pivot_file).unwrap());
+            let pivot = PIVOT_KEYWORD.lock().unwrap();
+            let mut output = "".to_string();
+            output += &format!("Users: ").to_string();
+            for v in &pivot.users {
+                output += &format!("{}, ", v).to_string();
+            }
+            output += &format!("\n").to_string();
+            output += &format!("field's list: (");
+            for v in &PIVOT_KEYWORD_MAP.users {
+                output += &format!("%{}%, ", v).to_string();
+            }
+            output += &format!(")");
+            output += &format!("\n\n").to_string();
+
+            output += &format!("Logon IDs: ").to_string();
+            for v in &pivot.logon_ids {
+                output += &format!("{}, ", v).to_string();
+            }
+            output += &format!("\n").to_string();
+            output += &format!("field's list: (");
+            for v in &PIVOT_KEYWORD_MAP.logon_ids {
+                output += &format!("%{}%, ", v).to_string();
+            }
+            output += &format!(")");
+            output += &format!("\n\n").to_string();
+
+            output += &format!("Workstation Names: ").to_string();
+            for v in &pivot.workstation_names {
+                output += &format!("{}, ", v).to_string();
+            }
+            output += &format!("\n").to_string();
+            output += &format!("field's list: (");
+            for v in &PIVOT_KEYWORD_MAP.workstation_names {
+                output += &format!("{}, ", v).to_string();
+            }
+            output += &format!(")");
+            output += &format!("\n\n").to_string();
+
+            output += &format!("IP Addresses: ").to_string();
+            for v in &pivot.ip_addresses {
+                output += &format!("{}, ", v).to_string();
+            }
+            output += &format!("\n").to_string();
+            output += &format!("field's list: (");
+            for v in &PIVOT_KEYWORD_MAP.ip_addresses {
+                output += &format!("%{}%, ", v).to_string();
+            }
+            output += &format!(")");
+            output += &format!("\n\n").to_string();
+
+            output += &format!("Processes: ").to_string();
+            for v in &pivot.processes {
+                output += &format!("{}, ", v).to_string();
+            }
+            output += &format!("\n").to_string();
+            output += &format!("field's list: (");
+            for v in &PIVOT_KEYWORD_MAP.processes {
+                output += &format!("%{}%, ", v).to_string();
+            }
+            output += &format!(")");
+            f.write(output.as_bytes()).unwrap();
         }
     }
 

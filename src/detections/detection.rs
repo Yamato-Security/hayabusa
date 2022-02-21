@@ -183,10 +183,7 @@ impl Detection {
                 Detection::insert_message(&rule, record_info);
             }
 
-            PIVOT_KEYWORD
-                .lock()
-                .unwrap()
-                .insert_pivot_keyword(&record_info.record);
+            PIVOT_KEYWORD.insert_pivot_keyword(&record_info.record);
         }
 
         rule

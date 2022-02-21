@@ -44,7 +44,7 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
     if !configs::CONFIG.read().unwrap().args.is_present("color") {
         return None;
     }
-    let read_result = utils::read_csv("config/level_color.txt");
+    let read_result = utils::read_csv("config/level_color.txt", false);
     if read_result.is_err() {
         // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
         AlertMessage::warn(
