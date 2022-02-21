@@ -644,13 +644,13 @@ mod tests {
                 // regexes.txtの中身と一致していることを確認
                 let csvcontent = &ancestor_matcher.regexes;
 
-                assert_eq!(csvcontent.len(), 17);
+                assert_eq!(csvcontent.len(), 16);
                 assert_eq!(
                     csvcontent[0].as_str().to_string(),
                     r"^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$"
                 );
                 assert_eq!(
-                    csvcontent[14].as_str().to_string(),
+                    csvcontent[13].as_str().to_string(),
                     r"\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp"
                 );
             }
