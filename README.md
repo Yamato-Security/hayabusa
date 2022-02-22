@@ -40,6 +40,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Advanced: Updating Rust packages](#advanced-updating-rust-packages)
   - [Testing hayabusa out on sample evtx files](#testing-hayabusa-out-on-sample-evtx-files)
 - [Usage](#usage)
+  - [Caution: Need to install prepare package in Windows Environment](#caution-need-to-install-prepare-package-in-windows-environment)
   - [Caution: Output printed to screen may stop in Windows Terminal](#caution-output-printed-to-screen-may-stop-in-windows-terminal)
   - [Command line options](#command-line-options)
   - [Usage examples](#usage-examples)
@@ -179,6 +180,10 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 # Usage
 
 > Note: You need to run the Hayabusa binary from the Hayabusa root directory. Example: `.\hayabusa.exe`
+
+## Caution: Need to install prepare package in Windows Environment
+
+you need to install [Visual C++ Restributable package](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022) when you use hayabusa on Windows.
 
 ## Caution: Output printed to screen may stop in Windows Terminal
 
