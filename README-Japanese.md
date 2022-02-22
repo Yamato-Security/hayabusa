@@ -185,9 +185,8 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 ## Windows環境で利用する際に必要なパッケージ
 
-Windows環境で利用する際は以下のVisual C++再頒布可能パッケージをインストールする必要があります。
-
-https://docs.microsoft.com/ja-JP/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
+Windows環境で利用するは[Visual C++再頒布可能パッケージ](https://docs.microsoft.com/ja-JP/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
+)をインストールする必要があります。
 
 ## Windows Terminalで利用する際の注意事項
 
