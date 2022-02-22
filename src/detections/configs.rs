@@ -297,7 +297,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
-fn load_pivot_keywords(path: &str) {
+pub fn load_pivot_keywords(path: &str) {
     let read_result = utils::read_csv(path, true);
     if read_result.is_err() {
         AlertMessage::alert(
@@ -313,8 +313,10 @@ fn load_pivot_keywords(path: &str) {
         for field in &line[1..] {
             match key.as_str() {
                 key => PIVOT_KEYWORD
-                    .fields.write().unwrap()
-                    .get(key)
+                    .write()
+                    .unwrap()
+                    .fields
+                    .get_mut(key)
                     .unwrap()
                     .insert(field.to_string()),
             };

@@ -6,10 +6,8 @@ extern crate serde_derive;
 extern crate static_vcruntime;
 
 use crate::configs::PIVOT_KEYWORD_MAP;
-use chrono::Datelike;
-use chrono::{DateTime, Local};
-use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
+use hayabusa::detections::configs::load_pivot_keywords;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::{
     AlertMessage, PIVOT_KEYWORD, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
@@ -70,6 +68,8 @@ impl App {
     }
 
     fn exec(&mut self) {
+        load_pivot_keywords("config/pivot_keywords.txt");
+
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
@@ -195,66 +195,27 @@ impl App {
             .value_of("pivot-keywords-list")
         {
             let mut f = BufWriter::new(fs::File::create(pivot_file).unwrap());
-            let pivot = PIVOT_KEYWORD.lock().unwrap();
+
             let mut output = "".to_string();
-            output += &format!("Users: ").to_string();
-            for v in &pivot.users {
-                output += &format!("{}, ", v).to_string();
-            }
-            output += &format!("\n").to_string();
-            output += &format!("field's list: (");
-            for v in &PIVOT_KEYWORD_MAP.users {
-                output += &format!("%{}%, ", v).to_string();
-            }
-            output += &format!(")");
-            output += &format!("\n\n").to_string();
+            for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
+                output += &format!("{}: ", key).to_string();
+                for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
+                    for i in v.iter() {
+                    output += &format!("{}, ", i).to_string();
+                    }
+                }
+                output += &format!("\n").to_string();
 
-            output += &format!("Logon IDs: ").to_string();
-            for v in &pivot.logon_ids {
-                output += &format!("{}, ", v).to_string();
+                output += &format!("field's list: (");
+                for v in &PIVOT_KEYWORD.read().unwrap().fields.get(key) {
+                    for i in v.iter() {
+                        output += &format!("%{}%, ", i).to_string();
+                    }
+                }
+                output += &format!(")");
+                output += &format!("\n\n");
             }
-            output += &format!("\n").to_string();
-            output += &format!("field's list: (");
-            for v in &PIVOT_KEYWORD_MAP.logon_ids {
-                output += &format!("%{}%, ", v).to_string();
-            }
-            output += &format!(")");
-            output += &format!("\n\n").to_string();
 
-            output += &format!("Workstation Names: ").to_string();
-            for v in &pivot.workstation_names {
-                output += &format!("{}, ", v).to_string();
-            }
-            output += &format!("\n").to_string();
-            output += &format!("field's list: (");
-            for v in &PIVOT_KEYWORD_MAP.workstation_names {
-                output += &format!("{}, ", v).to_string();
-            }
-            output += &format!(")");
-            output += &format!("\n\n").to_string();
-
-            output += &format!("IP Addresses: ").to_string();
-            for v in &pivot.ip_addresses {
-                output += &format!("{}, ", v).to_string();
-            }
-            output += &format!("\n").to_string();
-            output += &format!("field's list: (");
-            for v in &PIVOT_KEYWORD_MAP.ip_addresses {
-                output += &format!("%{}%, ", v).to_string();
-            }
-            output += &format!(")");
-            output += &format!("\n\n").to_string();
-
-            output += &format!("Processes: ").to_string();
-            for v in &pivot.processes {
-                output += &format!("{}, ", v).to_string();
-            }
-            output += &format!("\n").to_string();
-            output += &format!("field's list: (");
-            for v in &PIVOT_KEYWORD_MAP.processes {
-                output += &format!("%{}%, ", v).to_string();
-            }
-            output += &format!(")");
             f.write(output.as_bytes()).unwrap();
         }
     }

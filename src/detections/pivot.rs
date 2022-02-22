@@ -9,56 +9,56 @@ use crate::detections::utils::get_serde_number_to_string;
 
 #[derive(Debug)]
 pub struct PivotKeyword {
-    pub keywords: RwLock<HashMap<String, HashSet<String>>>,
-    pub fields: RwLock<HashMap<String, HashSet<String>>>,
+    pub keywords: HashMap<String, HashSet<String>>,
+    pub fields: HashMap<String, HashSet<String>>,
 }
 
 lazy_static! {
-    pub static ref PIVOT_KEYWORD: PivotKeyword = PivotKeyword::new();
+    pub static ref PIVOT_KEYWORD: RwLock<PivotKeyword> = RwLock::new(PivotKeyword::new());
 }
 
 impl PivotKeyword {
     pub fn new() -> PivotKeyword {
-        let pivot_keyword = PivotKeyword {
-            keywords: RwLock::new(HashMap::new()),
-            fields: RwLock::new(HashMap::new()),
+        let mut pivot_keyword = PivotKeyword {
+            keywords: HashMap::new(),
+            fields: HashMap::new(),
         };
         pivot_keyword
-            .keywords.write().unwrap()
+            .keywords
             .insert("Users".to_string(), HashSet::new());
         pivot_keyword
-            .keywords.write().unwrap()
+            .keywords
             .insert("Logon IDs".to_string(), HashSet::new());
         pivot_keyword
-            .keywords.write().unwrap()
+            .keywords
             .insert("Workstation Names".to_string(), HashSet::new());
         pivot_keyword
-            .keywords.write().unwrap()
+            .keywords
             .insert("Ip Addresses".to_string(), HashSet::new());
         pivot_keyword
-            .keywords.write().unwrap()
+            .keywords
             .insert("Processes".to_string(), HashSet::new());
 
         pivot_keyword
-            .fields.write().unwrap()
+            .fields
             .insert("Users".to_string(), HashSet::new());
         pivot_keyword
-            .fields.write().unwrap()
+            .fields
             .insert("Logon IDs".to_string(), HashSet::new());
         pivot_keyword
-            .fields.write().unwrap()
+            .fields
             .insert("Workstation Names".to_string(), HashSet::new());
         pivot_keyword
-            .fields.write().unwrap()
+            .fields
             .insert("Ip Addresses".to_string(), HashSet::new());
         pivot_keyword
-            .fields.write().unwrap()
+            .fields
             .insert("Processes".to_string(), HashSet::new());
         return pivot_keyword;
     }
 
     pub fn insert_pivot_keyword(&mut self, event_record: &Value) {
-        for (key, fields) in self.fields.read().unwrap().iter() {
+        for (key, fields) in self.fields.iter() {
             for field in fields {
                 if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field))
                 {
@@ -80,8 +80,8 @@ impl PivotKeyword {
                                     if hash_value.as_ref().unwrap() == "-" {
                                         continue;
                                     }
-                                    self.keywords.write().unwrap()
-                                        .get("Workstation Names")
+                                    self.keywords
+                                        .get_mut("Workstation Names")
                                         .unwrap()
                                         .insert(hash_value.unwrap())
                                 }
@@ -91,12 +91,16 @@ impl PivotKeyword {
                                     {
                                         continue;
                                     }
-                                    self.keywords.write().unwrap()
-                                        .get("Ip Addresses")
+                                    self.keywords
+                                        .get_mut("Ip Addresses")
                                         .unwrap()
                                         .insert(hash_value.unwrap())
                                 }
-                                k => self.keywords.write().unwrap().get(k).unwrap().insert(hash_value.unwrap()),
+                                k => self
+                                    .keywords
+                                    .get_mut(k)
+                                    .unwrap()
+                                    .insert(hash_value.unwrap()),
                             };
                         };
                     }
