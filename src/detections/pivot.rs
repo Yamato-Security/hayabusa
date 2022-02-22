@@ -75,20 +75,16 @@ impl PivotKeyword {
                         let hash_value = get_serde_number_to_string(tmp_event_record);
 
                         if hash_value.is_some() {
-                            match key.as_str() {
-                                key => {
-                                    if hash_value.as_ref().unwrap() == "-"
-                                        || hash_value.as_ref().unwrap() == "127.0.0.1"
-                                        || hash_value.as_ref().unwrap() == "::1"
-                                    {
-                                        continue;
-                                    }
-                                    self.keywords
-                                        .get_mut(key)
-                                        .unwrap()
-                                        .insert(hash_value.unwrap())
-                                }
-                            };
+                            if hash_value.as_ref().unwrap() == "-"
+                                || hash_value.as_ref().unwrap() == "127.0.0.1"
+                                || hash_value.as_ref().unwrap() == "::1"
+                            {
+                                continue;
+                            }
+                            self.keywords
+                                .get_mut(key)
+                                .unwrap()
+                                .insert(hash_value.unwrap());
                         };
                     }
                 }
@@ -99,11 +95,13 @@ impl PivotKeyword {
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::configs::load_pivot_keywords;
     use crate::detections::pivot::PIVOT_KEYWORD;
     use serde_json;
 
     #[test]
     fn insert_pivot_keyword_local_ip4() {
+        load_pivot_keywords("config/pivot_keywords.txt");
         let record_json_str = r#"
         {
             "Event": {"EventData": {"IpAddress": "127.0.0.1"}}
@@ -124,6 +122,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_ip4() {
+        load_pivot_keywords("config/pivot_keywords.txt");
         let record_json_str = r#"
         {
             "Event": {"EventData": {"IpAddress": "10.0.0.1"}}
@@ -133,18 +132,18 @@ mod tests {
             .unwrap()
             .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
-        assert!(
-            PIVOT_KEYWORD
-                .write()
-                .unwrap()
-                .keywords
-                .get_mut("Ip Addresses")
-                .unwrap()
-                .contains("10.0.0.1"));
+        assert!(PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .keywords
+            .get_mut("Ip Addresses")
+            .unwrap()
+            .contains("10.0.0.1"));
     }
 
     #[test]
     fn insert_pivot_keyword_ip_empty() {
+        load_pivot_keywords("config/pivot_keywords.txt");
         let record_json_str = r#"
         {
             "Event": {"EventData": {"IpAddress": "-"}}
@@ -165,6 +164,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_local_ip6() {
+        load_pivot_keywords("config/pivot_keywords.txt");
         let record_json_str = r#"
         {
             "Event": {"EventData": {"IpAddress": "::1"}}
@@ -182,5 +182,4 @@ mod tests {
             .unwrap()
             .contains("::1"));
     }
-
 }
