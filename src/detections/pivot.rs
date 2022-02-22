@@ -76,31 +76,18 @@ impl PivotKeyword {
 
                         if hash_value.is_some() {
                             match key.as_str() {
-                                "Workstation Names" => {
-                                    if hash_value.as_ref().unwrap() == "-" {
-                                        continue;
-                                    }
-                                    self.keywords
-                                        .get_mut("Workstation Names")
-                                        .unwrap()
-                                        .insert(hash_value.unwrap())
-                                }
-                                "Ip Addresses" => {
+                                key => {
                                     if hash_value.as_ref().unwrap() == "-"
                                         || hash_value.as_ref().unwrap() == "127.0.0.1"
+                                        || hash_value.as_ref().unwrap() == "::1"
                                     {
                                         continue;
                                     }
                                     self.keywords
-                                        .get_mut("Ip Addresses")
+                                        .get_mut(key)
                                         .unwrap()
                                         .insert(hash_value.unwrap())
                                 }
-                                k => self
-                                    .keywords
-                                    .get_mut(k)
-                                    .unwrap()
-                                    .insert(hash_value.unwrap()),
                             };
                         };
                     }
@@ -108,4 +95,92 @@ impl PivotKeyword {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::detections::pivot::PIVOT_KEYWORD;
+    use serde_json;
+
+    #[test]
+    fn insert_pivot_keyword_local_ip4() {
+        let record_json_str = r#"
+        {
+            "Event": {"EventData": {"IpAddress": "127.0.0.1"}}
+        }"#;
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+
+        assert!(!PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .keywords
+            .get_mut("Ip Addresses")
+            .unwrap()
+            .contains("127.0.0.1"));
+    }
+
+    #[test]
+    fn insert_pivot_keyword_ip4() {
+        let record_json_str = r#"
+        {
+            "Event": {"EventData": {"IpAddress": "10.0.0.1"}}
+        }"#;
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+
+        assert!(
+            PIVOT_KEYWORD
+                .write()
+                .unwrap()
+                .keywords
+                .get_mut("Ip Addresses")
+                .unwrap()
+                .contains("10.0.0.1"));
+    }
+
+    #[test]
+    fn insert_pivot_keyword_ip_empty() {
+        let record_json_str = r#"
+        {
+            "Event": {"EventData": {"IpAddress": "-"}}
+        }"#;
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+
+        assert!(!PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .keywords
+            .get_mut("Ip Addresses")
+            .unwrap()
+            .contains("-"));
+    }
+
+    #[test]
+    fn insert_pivot_keyword_local_ip6() {
+        let record_json_str = r#"
+        {
+            "Event": {"EventData": {"IpAddress": "::1"}}
+        }"#;
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+
+        assert!(!PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .keywords
+            .get_mut("Ip Addresses")
+            .unwrap()
+            .contains("::1"));
+    }
+
 }

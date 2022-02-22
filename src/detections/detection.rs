@@ -183,10 +183,17 @@ impl Detection {
                 Detection::insert_message(&rule, record_info);
             }
 
-            PIVOT_KEYWORD
-                .write()
+            if configs::CONFIG
+                .read()
                 .unwrap()
-                .insert_pivot_keyword(&record_info.record);
+                .args
+                .is_present("pivot-keywords-list")
+            {
+                PIVOT_KEYWORD
+                    .write()
+                    .unwrap()
+                    .insert_pivot_keyword(&record_info.record);
+            }
         }
 
         rule
