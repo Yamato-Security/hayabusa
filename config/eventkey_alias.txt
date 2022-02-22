@@ -62,6 +62,7 @@ ImageLoaded,Event.EventData.ImageLoaded
 ImagePath,Event.EventData.ImagePath
 Imphash,Event.EventData.Hashes
 Initiated,Event.EventData.Initiated
+InstanceID,Event.UserData.UMDFHostDeviceArrivalBegin.InstanceId
 IntegrityLevel,Event.EventData.IntegrityLevel
 IpAddress,Event.EventData.IpAddress
 IpPort,Event.EventData.IpPort
@@ -85,6 +86,8 @@ NewTemplateContent, Event.EventData.NewTemplateContent
 NewUacValue,Event.EventData.NewUacValue
 NewValue,Event.EventData.NewValue
 New_Value,Event.EventData.New Value
+NewProcessName,Event.EventData.NewProcessName
+NewProcessId,Event.EventData.NewProcessId
 ObjectClass,Event.EventData.ObjectClass
 ObjectName,Event.EventData.ObjectName
 ObjectServer,Event.EventData.ObjectServer
@@ -92,7 +95,12 @@ ObjectType,Event.EventData.ObjectType
 ObjectValueName,Event.EventData.ObjectValueName
 OldUacValue,Event.EventData.OldUacValue
 Origin,Event.EventData.Origin
-OriginalFileName,Event.EventData.OriginalFileName
+OriginalFilename,Event.EventData.OriginalFileName
+param1,Event.EventData.param1
+param2,Event.EventData.param2
+param3,Event.EventData.param3
+param4,Event.EventData.param4
+param5,Event.EventData.param5
 ParentCommandLine,Event.EventData.ParentCommandLine
 ParentImage,Event.EventData.ParentImage
 ParentIntegrityLevel,Event.EventData.ParentIntegrityLevel
@@ -144,6 +152,7 @@ Source_WorkStation,Event.EventData.Source_WorkStation
 StartAddress,Event.EventData.StartAddress
 StartFunction,Event.EventData.StartFunction
 StartModule,Event.EventData.StartModule
+StartType,Event.EventData.StartType
 State,Event.EventData.State
 Status,Event.EventData.Status
 SubStatus,Event.EventData.SubStatus

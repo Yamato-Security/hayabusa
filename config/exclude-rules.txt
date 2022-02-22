@@ -1,9 +1,18 @@
-4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6 # ./rules/sigma/other/msexchange/win_exchange_transportagent.yml
-c92f1896-d1d2-43c3-92d5-7a5b35c217bb # ./rules/sigma/other/msexchange/win_exchange_cve_2021_42321.yml
-9f7aa113-9da6-4a8d-907c-5f1a4b908299 # ./rules/sigma/deprecated/powershell_syncappvpublishingserver_exe.yml
+# Cannot parse rule or generates errors:
+4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6 # "MSExchange Transport Agent Installation"
+b20f6158-9438-41be-83da-a5a16ac90c2b # "Rare Scheduled Task Creations"
+c92f1896-d1d2-43c3-92d5-7a5b35c217bb # "Possible Exploitation of Exchange RCE CVE-2021-42321"
+9f7aa113-9da6-4a8d-907c-5f1a4b908299 # "SyncAppvPublishingServer Execution to Bypass Powershell Restriction"
 
-# Replaced by hayabusa rules
-c265cf08-3f99-46c1-8d59-328247057d57 # ./rules/sigma/builtin/security/win_user_added_to_local_administrators.yml
-66b6be3d-55d0-4f47-9855-d69df21740ea # ./rules/sigma/builtin/security/win_user_creation.yml
-7b449a5e-1db5-4dd0-a2dc-4e3a67282538 # ./rules/sigma/builtin/security/win_hidden_user_creation.yml
-b20f6158-9438-41be-83da-a5a16ac90c2b # ./rules/sigma/other/taskscheduler/win_rare_schtask_creation.yml
+# Replaced by Hayabusa rules
+c265cf08-3f99-46c1-8d59-328247057d57 # "User Added to Local Administrators"
+66b6be3d-55d0-4f47-9855-d69df21740ea # "Local User Creation"
+7b449a5e-1db5-4dd0-a2dc-4e3a67282538 # "Hidden Local User Creation".
+
+# Disabled due to too many false positives:
+71158e3f-df67-472b-930e-7d287acaa3e1 # "Execution Of Not Existing File"
+c09dad97-1c78-4f71-b127-7edb2b8e491a # "Execution Of Other File Type Than .exe". Replaced with Hayabusa rule: 8d1487f1-7664-4bda-83b5-cb2f79491b6a
+1a4bd6e3-4c6e-405d-a9a3-53a116e341d4 # "USB Device Plugged" False positives due to not filtering on provider properly.
+db809f10-56ce-4420-8c86-d6a7d793c79c # "Raw Disk Access Using Illegitimate Tools" Need to test if false positives lower when filtering on just sysmon logs.
+57b649ef-ff42-4fb0-8bf6-62da243a1708 # "Windows Defender Threat Detected" Replaced by Hayabusa rule.
+0eb2107b-a596-422e-b123-b389d5594ed7 # "Hurricane Panda Activity"
