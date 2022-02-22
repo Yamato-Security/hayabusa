@@ -22,6 +22,7 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fmt::Display;
+use std::fs::create_dir;
 use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
@@ -503,6 +504,10 @@ impl App {
             );
             // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
             return self.clone_rules();
+        }
+        let rules_path = Path::new("./rules");
+        if !rules_path.exists() {
+            create_dir(rules_path).ok();
         }
         let hayabusa_repo = open_result.unwrap();
         let submodules = hayabusa_repo.submodules()?;
