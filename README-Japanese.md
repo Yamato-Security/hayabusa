@@ -40,6 +40,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
   - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [使用方法](#使用方法)
+  - [Windows環境で利用する際に必要なパッケージ](#windows環境で利用する際に必要なパッケージ)
   - [Windows Terminalで利用する際の注意事項](#windows-terminalで利用する際の注意事項)
   - [コマンドラインオプション](#コマンドラインオプション)
   - [使用例](#使用例)
@@ -181,6 +182,12 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 # 使用方法
 
 > 注意: Hayabusaのルートディレクトリから、バイナリを実行する必要があります。例：`.\hayabusa.exe`
+
+## Windows環境で利用する際に必要なパッケージ
+
+Windows環境で利用する際は以下のVisual C++再頒布可能パッケージをインストールする必要があります。
+
+https://docs.microsoft.com/ja-JP/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
 
 ## Windows Terminalで利用する際の注意事項
 
