@@ -201,7 +201,7 @@ impl App {
                 output += &format!("{}: ", key).to_string();
                 for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
                     for i in v.iter() {
-                    output += &format!("{}, ", i).to_string();
+                        output += &format!("{}, ", i).to_string();
                     }
                 }
                 output += &format!("\n").to_string();
