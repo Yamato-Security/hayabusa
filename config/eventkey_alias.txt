@@ -93,6 +93,7 @@ ObjectValueName,Event.EventData.ObjectValueName
 OldUacValue,Event.EventData.OldUacValue
 Origin,Event.EventData.Origin
 OriginalFilename,Event.EventData.OriginalFileName
+OriginalFileName,Event.EventData.OriginalFileName
 ParentCommandLine,Event.EventData.ParentCommandLine
 ParentImage,Event.EventData.ParentImage
 ParentIntegrityLevel,Event.EventData.ParentIntegrityLevel
