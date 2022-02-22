@@ -95,7 +95,7 @@ ObjectType,Event.EventData.ObjectType
 ObjectValueName,Event.EventData.ObjectValueName
 OldUacValue,Event.EventData.OldUacValue
 Origin,Event.EventData.Origin
-OriginalFilename,Event.EventData.OriginalFileName
+OriginalFileName,Event.EventData.OriginalFileName
 param1,Event.EventData.param1
 param2,Event.EventData.param2
 param3,Event.EventData.param3
