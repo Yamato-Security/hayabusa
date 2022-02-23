@@ -1,5 +1,6 @@
 extern crate serde;
 extern crate serde_derive;
+extern crate static_vcruntime;
 
 use chrono::Datelike;
 use chrono::{DateTime, Local};

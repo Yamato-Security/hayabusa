@@ -34,6 +34,7 @@ hex = "0.4.*"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
+static_vcruntime = "1.5.*"
 
 [profile.release]
 lto = true
