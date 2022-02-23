@@ -81,7 +81,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --pivot-keywords-list 'Create a list of pivot keywords.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --pivot-keywords-list=[OUTPUT-FILENAME] 'Create a list of pivot keywords.'
+    -p --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")

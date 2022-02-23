@@ -178,21 +178,24 @@ impl Detection {
             if !result {
                 continue;
             }
-            // aggregation conditionが存在しない場合はそのまま出力対応を行う
-            if !agg_condition {
-                Detection::insert_message(&rule, record_info);
-            }
 
             if configs::CONFIG
                 .read()
                 .unwrap()
                 .args
                 .is_present("pivot-keywords-list")
+                && configs::CONFIG.read().unwrap().args.is_present("output")
             {
                 PIVOT_KEYWORD
                     .write()
                     .unwrap()
                     .insert_pivot_keyword(&record_info.record);
+                continue;
+            }
+
+            // aggregation conditionが存在しない場合はそのまま出力対応を行う
+            if !agg_condition {
+                Detection::insert_message(&rule, &record_info);
             }
         }
 

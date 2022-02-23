@@ -68,7 +68,14 @@ impl App {
     }
 
     fn exec(&mut self) {
-        load_pivot_keywords("config/pivot_keywords.txt");
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("pivot-keywords-list")
+        {
+            load_pivot_keywords("config/pivot_keywords.txt");
+        }
 
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
@@ -124,6 +131,22 @@ impl App {
                 return;
             }
         }
+
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("pivot-keywords-list")
+            && !configs::CONFIG.read().unwrap().args.is_present("output")
+        {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &format!("-o Option required",),
+            )
+            .ok();
+            return;
+        }
+
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
             println!();
@@ -188,35 +211,37 @@ impl App {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
         }
 
-        if let Some(pivot_file) = configs::CONFIG
+        if configs::CONFIG
             .read()
             .unwrap()
             .args
-            .value_of("pivot-keywords-list")
+            .is_present("pivot-keywords-list")
         {
-            let mut f = BufWriter::new(fs::File::create(pivot_file).unwrap());
+            if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
+                let mut f = BufWriter::new(fs::File::create(pivot_file).unwrap());
 
-            let mut output = "".to_string();
-            for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
-                output += &format!("{}: ", key).to_string();
-                for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
-                    for i in v.iter() {
-                        output += &format!("{}, ", i).to_string();
+                let mut output = "".to_string();
+                for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
+                    output += &format!("{}: ", key).to_string();
+                    for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
+                        for i in v.iter() {
+                            output += &format!("{}, ", i).to_string();
+                        }
                     }
-                }
-                output += &format!("\n").to_string();
+                    output += &format!("\n").to_string();
 
-                output += &format!("field's list: (");
-                for v in &PIVOT_KEYWORD.read().unwrap().fields.get(key) {
-                    for i in v.iter() {
-                        output += &format!("%{}%, ", i).to_string();
+                    output += &format!("field's list: (");
+                    for v in &PIVOT_KEYWORD.read().unwrap().fields.get(key) {
+                        for i in v.iter() {
+                            output += &format!("%{}%, ", i).to_string();
+                        }
                     }
+                    output += &format!(")");
+                    output += &format!("\n\n");
                 }
-                output += &format!(")");
-                output += &format!("\n\n");
+
+                f.write(output.as_bytes()).unwrap();
             }
-
-            f.write(output.as_bytes()).unwrap();
         }
     }
 
@@ -352,7 +377,13 @@ impl App {
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
-        if !*STATISTICS_FLAG {
+        if !*STATISTICS_FLAG
+            && !configs::CONFIG
+                .read()
+                .unwrap()
+                .args
+                .is_present("pivot-keywords-list")
+        {
             after_fact();
         }
     }
