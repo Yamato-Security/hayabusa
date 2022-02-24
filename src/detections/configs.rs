@@ -310,6 +310,10 @@ pub fn load_pivot_keywords(path: &str) {
     }
 
     read_result.unwrap().into_iter().for_each(|line| {
+        if line.len() == 1 {
+            return ();
+        }
+
         let key = line[0].clone();
 
         for field in &line[1..] {
