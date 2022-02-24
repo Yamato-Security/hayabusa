@@ -202,30 +202,33 @@ impl App {
             .args
             .is_present("pivot-keywords-list")
         {
+            //出力する文字列を準備
+            let mut output = format!("The following pivot keywords were found:\n",).to_string();
+            for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
+                output += &format!("{}: ", key).to_string();
+                for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
+                    for i in v.iter() {
+                        output += &format!("{}, ", i).to_string();
+                    }
+                }
+                output += &format!("\n").to_string();
+
+                output += &format!("field's list: (");
+                for v in &PIVOT_KEYWORD.read().unwrap().fields.get(key) {
+                    for i in v.iter() {
+                        output += &format!("%{}%, ", i).to_string();
+                    }
+                }
+                output += &format!(")");
+                output += &format!("\n\n");
+            }
+
+            //出力
             if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
                 let mut f = BufWriter::new(fs::File::create(pivot_file).unwrap());
-
-                let mut output = "".to_string();
-                for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
-                    output += &format!("{}: ", key).to_string();
-                    for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
-                        for i in v.iter() {
-                            output += &format!("{}, ", i).to_string();
-                        }
-                    }
-                    output += &format!("\n").to_string();
-
-                    output += &format!("field's list: (");
-                    for v in &PIVOT_KEYWORD.read().unwrap().fields.get(key) {
-                        for i in v.iter() {
-                            output += &format!("%{}%, ", i).to_string();
-                        }
-                    }
-                    output += &format!(")");
-                    output += &format!("\n\n");
-                }
-
                 f.write(output.as_bytes()).unwrap();
+            } else {
+                print!("\n {}", output);
             }
         }
     }

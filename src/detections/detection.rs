@@ -184,7 +184,6 @@ impl Detection {
                 .unwrap()
                 .args
                 .is_present("pivot-keywords-list")
-                && configs::CONFIG.read().unwrap().args.is_present("output")
             {
                 PIVOT_KEYWORD
                     .write()
