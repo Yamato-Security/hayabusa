@@ -22,6 +22,7 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fmt::Display;
+use std::fs::create_dir;
 use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
@@ -489,60 +490,31 @@ impl App {
         }
     }
 
-    /// hayabusa-rulesを更新する関数。他レポジトリに誤ってマージしてしまうことを避けるために、同一階層のrulesフォルダのみを対象として更新する
+    /// update rules(hayabusa-rules subrepository)
     fn update_rules(&self) -> Result<(), git2::Error> {
-        let rule_repo = Repository::open(Path::new("./rules"));
-        if rule_repo.is_err() {
+        let open_result = Repository::open(Path::new("."));
+        if open_result.is_err() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"Failed to open the git repository. ".to_string(),
+                &"Failed to open the git repository.".to_string(),
             )
             .ok();
             println!(
                 "Attempting to git clone the hayabusa-rules repository into the rules folder."
             );
-            // レポジトリが開けなかった段階でgit cloneを実施する
+            // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
             return self.clone_rules();
         }
-
-        let mut exit_flag = false;
-        let rule_repo = rule_repo.unwrap();
-        // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
-        rule_repo
-            .find_remote("origin")?
-            .fetch(&["main"], None, None)
-            .map_err(|e| {
-                AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
-                    &format!("Failed to git fetch into the rules folder. {}", e),
-                )
-                .ok();
-                exit_flag = true;
-            })
-            .ok();
-        if exit_flag {
-            return Err(git2::Error::from_str(&String::default()));
+        let rules_path = Path::new("./rules");
+        if !rules_path.exists() {
+            create_dir(rules_path).ok();
         }
-        let fetch_head = rule_repo.find_reference("FETCH_HEAD")?;
-        let fetch_commit = rule_repo.reference_to_annotated_commit(&fetch_head)?;
-        let analysis = rule_repo.merge_analysis(&[&fetch_commit])?;
-        if analysis.0.is_up_to_date() {
-            Ok(())
-        } else if analysis.0.is_fast_forward() {
-            let refname = "refs/heads/main";
-            let mut reference = rule_repo.find_reference(&refname)?;
-            reference.set_target(fetch_commit.id(), "Fast-Forward")?;
-            rule_repo.set_head(&refname)?;
-            rule_repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
-        } else {
-            AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                &"The update-rules option performs a git Fast-Forward merge only. Please check your rules folder."
-                    .to_string(),
-            )
-            .ok();
-            return Err(git2::Error::from_str(&String::default()));
+        let hayabusa_repo = open_result.unwrap();
+        let submodules = hayabusa_repo.submodules()?;
+        for mut submodule in submodules {
+            submodule.update(true, None)?;
         }
+        return Ok(());
     }
 
     /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
