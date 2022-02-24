@@ -120,6 +120,7 @@ mod tests {
     use crate::detections::pivot::PIVOT_KEYWORD;
     use serde_json;
 
+    //PIVOT_KEYWORDはグローバルなので注意が必要。
     #[test]
     fn insert_pivot_keyword_local_ip4() {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
