@@ -132,21 +132,6 @@ impl App {
             }
         }
 
-        if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("pivot-keywords-list")
-            && !configs::CONFIG.read().unwrap().args.is_present("output")
-        {
-            AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                &format!("-o Option required",),
-            )
-            .ok();
-            return;
-        }
-
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
             println!();

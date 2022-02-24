@@ -62,9 +62,9 @@ fn build_app<'a>() -> ArgMatches<'a> {
 
     let usages = "-d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
+    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[OUTPUT_FILE] 'Save the output to a file. (Example: output.csv, pivot-keywords-list.txt)'
+    -o --output=[OUTPUT_FILE] 'Save the output to a file. (Example: output.csv, pivot_keywords_list.txt)'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
