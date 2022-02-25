@@ -15,7 +15,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - run: git submodule update --init --recursive
+      with:
+        submodules: recursive
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly
