@@ -301,7 +301,7 @@ impl App {
         if rule_files.len() == 0 {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"No rules were loaded. Please download the latest rules with the --update option.\r\n".to_string(),
+                &"No rules were loaded. Please download the latest rules with the --update-rules option.\r\n".to_string(),
             )
             .ok();
             return;
