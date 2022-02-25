@@ -1092,7 +1092,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1126,7 +1126,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1160,7 +1160,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 

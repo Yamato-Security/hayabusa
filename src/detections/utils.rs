@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_check_regex() {
-        let regexes = utils::read_txt("./config/regex/detectlist_suspicous_services.txt")
+        let regexes = utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
             .unwrap()
             .into_iter()
             .map(|regex_str| Regex::new(&regex_str).unwrap())
@@ -282,7 +282,7 @@ mod tests {
     #[test]
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let allowlist = utils::read_txt("./config/regex/allowlist_legitimate_services.txt")
+        let allowlist = utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
             .unwrap()
             .into_iter()
             .map(|allow_str| Regex::new(&allow_str).unwrap())
