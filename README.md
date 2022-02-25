@@ -141,6 +141,9 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 If you forget to use --recursive option, rules/ files which managed in submodule did not cloned.
 You can get latest Hayabusa rules with the execute following command.
 
+When you modified or erased in rules/ , update is failed.
+In this case, you can get latest Hayabusa if you renamed rules folder and execute following command.
+
 ```bash
 .\hayabusa.exe -u
 ```

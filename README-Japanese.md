@@ -141,7 +141,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
 --recursive をつけ忘れた場合、サブモジュールとして管理されている rules/ 内のファイルが取得できません。
-Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。
+Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。rulesフォルダ配下でファイルを削除や更新をしていた場合は更新されないのでその場合はrulesフォルダを他の名前にリネームしたうえで以下のコマンドを打ってください。
 
 ```bash
 .\hayabusa.exe -u
