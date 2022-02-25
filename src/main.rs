@@ -4,6 +4,7 @@ extern crate serde_derive;
 #[cfg(target_os = "windows")]
 extern crate static_vcruntime;
 
+use crate::fs::read_dir;
 use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
@@ -296,6 +297,16 @@ impl App {
             configs::CONFIG.read().unwrap().args.value_of("rules"),
             &filter::exclude_ids(),
         );
+
+        if rule_files.len() == 0 {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"No rules were loaded. Please download the latest rules with the --update option.\r\n".to_string(),
+            )
+            .ok();
+            return;
+        }
+
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
         pb.show_speed = false;
         self.rule_keys = self.get_all_keys(&rule_files);

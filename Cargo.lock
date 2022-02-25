@@ -858,8 +858,8 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "slack-hook",
- "tokio 1.16.1",
  "static_vcruntime",
+ "tokio 1.16.1",
  "yaml-rust",
 ]
 
