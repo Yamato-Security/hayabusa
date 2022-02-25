@@ -283,7 +283,7 @@ OPTIONS:
 .\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
-* Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\config\noisy-rules.txt`):
+* Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```bash
 .\hayabusa.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
@@ -404,13 +404,13 @@ Sigma rules need to first be converted to hayabusa rule format explained [here](
 
 Like firewalls and IDSes, any signature-based tool will require some tuning to fit your environment so you may need to permanently or temporarily exclude certain rules.
 
-You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `config/exclude-rules.txt` in order to ignore any rule that you do not need or cannot be used.
+You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `rules\config\exclude_rules.txt` in order to ignore any rule that you do not need or cannot be used.
 
-You can also add a rule ID to `config/noisy-rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
+You can also add a rule ID to `rules\config\noisy_rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
 
 ## Event ID filtering
 
-You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
+You can filter on event IDs by placing event ID numbers in `config\target_eventids.txt`.
 This will increase performance so it is recommended if you only need to search for certain IDs.
 
 We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
