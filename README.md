@@ -17,6 +17,47 @@
 
 Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon") in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa/tree/main/tools/sigmac) to convert [sigma](https://github.com/SigmaHQ/sigma) rules into hayabusa rule format. The hayabusa detection rules, like sigma, are also written in YML in order to be as easily customizable and extensible as possible. It can be run either on running systems for live analysis or by gathering logs from multiple systems for offline analysis. (At the moment, it does not support real-time alerting or periodic scans.) The output will be consolidated into a single CSV timeline for easy analysis in Excel or [Timeline Explorer](https://ericzimmerman.github.io/#!index.md).
 
+## Table of Contents
+
+- [About Hayabusa](#about-hayabusa)
+  - [Table of Contents](#table-of-contents)
+  - [Main goals](#main-goals)
+    - [Threat hunting](#threat-hunting)
+    - [Fast forensics timeline generation](#fast-forensics-timeline-generation)
+- [About the development](#about-the-development)
+- [Screenshots](#screenshots)
+  - [Startup](#startup)
+  - [Terminal output](#terminal-output)
+  - [Results summary](#results-summary)
+  - [Analysis in Excel](#analysis-in-excel)
+  - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
+  - [Critical alert filtering and computer grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
+- [Sample timeline results](#sample-timeline-results)
+- [Features](#features)
+- [Planned Features](#planned-features)
+- [Downloads](#downloads)
+- [Compiling from source (Optional)](#compiling-from-source-optional)
+  - [Advanced: Updating Rust packages](#advanced-updating-rust-packages)
+  - [Testing hayabusa out on sample evtx files](#testing-hayabusa-out-on-sample-evtx-files)
+- [Usage](#usage)
+  - [Caution: Output printed to screen may stop in Windows Terminal](#caution-output-printed-to-screen-may-stop-in-windows-terminal)
+  - [Command line options](#command-line-options)
+  - [Usage examples](#usage-examples)
+- [Hayabusa output](#hayabusa-output)
+  - [Progress bar](#progress-bar)
+  - [Color Output](#color-output)
+- [Hayabusa rules](#hayabusa-rules)
+  - [Hayabusa v.s. converted Sigma rules](#hayabusa-vs-converted-sigma-rules)
+  - [Detection rule tuning](#detection-rule-tuning)
+  - [Event ID filtering](#event-id-filtering)
+- [Other Windows event log analyzers and related projects](#other-windows-event-log-analyzers-and-related-projects)
+  - [Comparison to other similar tools that support sigma](#comparison-to-other-similar-tools-that-support-sigma)
+- [Community Documentation](#community-documentation)
+  - [English](#english)
+  - [Japanese](#japanese)
+- [Contribution](#contribution)
+- [License](#license)
+
 ## Main goals
 
 ### Threat hunting

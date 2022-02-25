@@ -1,0 +1,9 @@
+keyname,regex,replaced_str
+AccessMask,"[\r\n\t]+",
+Accesses,"[\r\n\t]+",
+AuditPolicyChanges,"[\r\n\t]+",
+SidHistory,"[\r\n\t]+",
+AccessList,"[\r\n\t]+",
+Properties,"[\r\n\t]+",
+ScriptBlockText,"[\r\n\t]+",
+Payload,"[\r\n\t]+",

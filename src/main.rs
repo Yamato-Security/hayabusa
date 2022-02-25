@@ -1,6 +1,9 @@
 extern crate serde;
 extern crate serde_derive;
 
+#[cfg(target_os = "windows")]
+extern crate static_vcruntime;
+
 use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};

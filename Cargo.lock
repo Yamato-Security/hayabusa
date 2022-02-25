@@ -859,6 +859,7 @@ dependencies = [
  "serde_json",
  "slack-hook",
  "tokio 1.16.1",
+ "static_vcruntime",
  "yaml-rust",
 ]
 
@@ -2046,6 +2047,12 @@ checksum = "e113fb6f3de07a243d434a56ec6f186dfd51cb08448239fe7bcae73f87ff28ff"
 dependencies = [
  "version_check",
 ]
+
+[[package]]
+name = "static_vcruntime"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a88c15d6fe7210ea80c578b53855615fdea0188e1630b6d9c377e1b2f2c098fa"
 
 [[package]]
 name = "stdweb"
