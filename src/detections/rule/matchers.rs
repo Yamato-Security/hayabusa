@@ -504,8 +504,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
-                    regexes: ./config/regex/detectlist_suspicous_services.txt
-                    allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    regexes: ./rules/config/regex/detectlist_suspicous_services.txt
+                    allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         falsepositives:
             - unknown
         level: medium

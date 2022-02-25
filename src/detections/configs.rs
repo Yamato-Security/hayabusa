@@ -19,7 +19,7 @@ lazy_static! {
         return levelmap;
     };
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig =
-        load_eventkey_alias("config/eventkey_alias.txt");
+        load_eventkey_alias("./rules/config/eventkey_alias.txt");
 }
 
 #[derive(Clone)]
