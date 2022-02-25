@@ -51,7 +51,7 @@ ruletype: Hayabusa
 > ## アラートセクション
 * **title [必須]**: ルールファイルのタイトル。これは表示されるアラートの名前にもなるので、簡潔であるほどよいです。(85文字以下でなければなりません。)
 * **title_jp** [オプション]: 日本語のタイトルです。
-* **details** [オプション]: 表示されるアラートの詳細です。Windowsイベントログの中で解析に有効なフィールドがあれば出力してください。フィールドは `" : "` で区切られます（両側ともスペース2つ）。フィールドのプレースホルダは `%` で囲まれ (例: `%MemberName%`) 、`config_eventkey_alias.txt` で定義する必要があります。(以下で説明します)
+* **details** [オプション]: 表示されるアラートの詳細です。Windowsイベントログの中で解析に有効なフィールドがあれば出力してください。フィールドは `" : "` で区切られます（両側ともスペース2つ）。フィールドのプレースホルダは `%` で囲まれ (例: `%MemberName%`) 、`rules\config\eventkey_alias.txt` で定義する必要があります。(以下で説明します)
 * **details_jp** [オプション]: 日本語の出力メッセージ。
 * **description** [オプション]: ルールの説明。これは表示されないので、長く詳細に記述することができます。
 * **description_jp** [オプション]: 日本語の説明文です。
@@ -157,7 +157,7 @@ WindowsイベントログをXML形式で出力すると下記のようになり�
 `<Event><System><Channel>System<Channel><System></Event>`
 
 #### イベントキーエイリアス
-`.`の区切りが多くて長いイベントキーが一般的であるため、Hayabusaはエイリアスを使って簡単に扱えるようにします。エイリアスは `config\eventkey_alias.txt`ファイルで定義されています。このファイルは `alias` と `event_key` のマッピングで構成されるCSVファイルです。以下に示すように、エイリアスを使用して上記のルールを書き直し、ルールを読みやすくすることができます。
+`.`の区切りが多くて長いイベントキーが一般的であるため、Hayabusaはエイリアスを使って簡単に扱えるようにします。エイリアスは `rules\config\eventkey_alias.txt`ファイルで定義されています。このファイルは `alias` と `event_key` のマッピングで構成されるCSVファイルです。以下に示すように、エイリアスを使用して上記のルールを書き直し、ルールを読みやすくすることができます。
 
 ```yaml
 detection:
@@ -168,7 +168,7 @@ detection:
 ```
 
 #### 注意: 未定義のイベントキーエイリアスについて
-すべてのイベントキーエイリアスが `config\eventkey_alias.txt`に定義されているわけではありません。検知するはずのルールが検知しない場合や、`details`（アラートの詳細）メッセージに`%EventID%`のようなプレースホルダーが表示されている場合、`config\eventkey_alias.txt`の設定を確認してください。
+すべてのイベントキーエイリアスが `rules\config\eventkey_alias.txt`に定義されているわけではありません。検知するはずのルールが検知しない場合や、`details`（アラートの詳細）メッセージに`%EventID%`のようなプレースホルダーが表示されている場合、`rules\config\eventkey_alias.txt`の設定を確認してください。
 
 ### XML属性を条件に使用する方法
 XMLのタグにはタグ名とは別に属性を設定できます。例えば、以下の `Provider Name` の `Name` は `Provider` タグの属性です。
@@ -322,10 +322,10 @@ detection:
         EventID: 7045
         ServiceName:
             - value: malicious-service
-            - regexes: ./config/regex/detectlist_suspicous_services.txt
+            - regexes: ./rules/config/regex/detectlist_suspicous_services.txt
         ImagePath:
             min_length: 1000
-            allowlist: ./config/regex/allowlist_legitimate_services.txt
+            allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
     condition: selection
 ```
 
@@ -337,13 +337,13 @@ detection:
 
 ### regexesとallowlistキーワード
 Hayabusaに`.\rules\hayabusa\default\alerts\System\7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml`のルールのために使う2つの正規表現ファイルが用意されています。
-* `./config/regex/detectlist_suspicous_services.txt`: 怪しいサービス名を検知するためのものです。
-* `./config/regex/allowlist_legitimate_services.txt`: 正規のサービスを許可するためのものです。
+* `./rules/config/regex/detectlist_suspicous_services.txt`: 怪しいサービス名を検知するためのものです。
+* `./rules/config/regex/allowlist_legitimate_services.txt`: 正規のサービスを許可するためのものです。
   
 `regexes` と `allowlist` で定義されたファイルの正規表現を変更すると、それらを参照するすべてのルールの動作を一度に変更できます。
 
 また、`regexes` と `allowlist` にはユーザーが独自で作成したファイルを指定することも可能です。
-デフォルトの `./config/detectlist_suspicous_services.txt` と `./config/allowlist_legitimate_services.txt` を参考にして、独自のファイルを作成してください。
+デフォルトの `./rules/config/detectlist_suspicous_services.txt` と `./rules/config/allowlist_legitimate_services.txt` を参考にして、独自のファイルを作成してください。
 
 ## condition (条件)
 これまで説明した記法では簡単な`AND`や`OR`であれば表現可能ですが、複雑な条件は定義できません。そのような場合、`condition` キーワードを使用します。
