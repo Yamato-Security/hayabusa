@@ -280,6 +280,7 @@ detection:
 ```
 
 This is a list of what you can specify after the pipe. At the moment, hayabusa does not support chaining multiple pipes together.
+String match is case insensitive when rule do not use following list.
 String match is case sensitive when rule use following list.
 
 * startswith: Checks the string from the beginning
