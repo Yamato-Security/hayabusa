@@ -148,7 +148,7 @@ impl App {
             {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    &"--filepath only accepts .evtx files. no hidden file.".to_string(),
+                    &"--filepath only accepts .evtx files. Hidden files are ignored.".to_string(),
                 )
                 .ok();
                 return;
