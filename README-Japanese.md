@@ -140,11 +140,12 @@ Hayabusaの[Releases](https://github.com/Yamato-Security/hayabusa/releases)か�
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
-`--recursive` をつけ忘れた場合、サブモジュールとして管理されている `rules/` 内のファイルが取得できません。
-以下のコマンドでサブモジュールを取得してください。
+--recursive をつけ忘れた場合、サブモジュールとして管理されている rules/ 内のファイルが取得できません。
+Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。
+rulesフォルダ配下でファイルを削除や更新をしていた場合は更新されないのでその場合はrulesフォルダを他の名前にリネームしたうえで以下のコマンドを打ってください。
 
 ```bash
-git submodule update --init
+.\hayabusa.exe -u
 ```
 
 # ソースコードからのコンパイル（任意）
@@ -199,13 +200,14 @@ USAGE:
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
+    -u --update-rules 'Clone latest hayabusa-rule'
     -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
     -l --live-analysis 'Analyze to WINDIR\System32\winevt\Logs (Windows Only. Need Administrator privileges.)'
     --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
     --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
     --rfc-3339 'Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214 -06:00)'
-    -u --utc 'Output time in UTC format. (default: local time)'
+    -U --utc 'Output time in UTC format. (default: local time)'
     -t --thread-number=[NUMBER] 'Thread number. (default: optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
@@ -226,7 +228,8 @@ FLAGS:
         --rfc-3339                   Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214
                                      -06:00)
     -s, --statistics                 Prints statistics of event IDs.
-    -u, --utc                        Output time in UTC format. (default: local time)
+    -u, --update-rules               Clone latest hayabusa-rule
+    -U, --utc                        Output time in UTC format. (default: local time)
     -V, --version                    Prints version information
     -v, --verbose                    Output verbose information.
 
@@ -241,7 +244,6 @@ OPTIONS:
         --start-timeline <STARTTIMELINE>    Start time of the event to load from event file. (example: '2018/11/28
                                             12:00:00 +09:00')
     -t, --thread-number <NUMBER>            Thread number. (default: optimal number for performance.)
-
 ```
 
 ## 使用例

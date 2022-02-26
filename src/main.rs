@@ -7,6 +7,7 @@ extern crate static_vcruntime;
 use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
+use git2::Repository;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::AlertMessage;
 use hayabusa::detections::print::ERROR_LOG_PATH;
@@ -24,6 +25,7 @@ use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fmt::Display;
+use std::fs::create_dir;
 use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
@@ -72,10 +74,28 @@ impl App {
                 &analysis_start_time.day().to_owned()
             ));
         }
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("update-rules")
+        {
+            match self.update_rules() {
+                Ok(_ok) => println!("Rules updated successfully."),
+                Err(e) => {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("Failed to update rules. {:?}  ", e),
+                    )
+                    .ok();
+                }
+            }
+            return;
+        }
         if !Path::new("./config").exists() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./bin/hayabusa-1.0.0-windows-x64.exe".to_string()
+                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe".to_string()
             )
             .ok();
             return;
@@ -276,6 +296,16 @@ impl App {
             configs::CONFIG.read().unwrap().args.value_of("rules"),
             &filter::exclude_ids(),
         );
+
+        if rule_files.len() == 0 {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"No rules were loaded. Please download the latest rules with the --update-rules option.\r\n".to_string(),
+            )
+            .ok();
+            return;
+        }
+
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
         pb.show_speed = false;
         self.rule_keys = self.get_all_keys(&rule_files);
@@ -471,6 +501,57 @@ impl App {
                 println!("{}", content);
             }
         }
+    }
+
+    /// update rules(hayabusa-rules subrepository)
+    fn update_rules(&self) -> Result<(), git2::Error> {
+        let open_result = Repository::open(Path::new("."));
+        if open_result.is_err() {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"Failed to open the git repository.".to_string(),
+            )
+            .ok();
+            println!(
+                "Attempting to git clone the hayabusa-rules repository into the rules folder."
+            );
+            // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
+            return self.clone_rules();
+        }
+        let rules_path = Path::new("./rules");
+        if !rules_path.exists() {
+            create_dir(rules_path).ok();
+        }
+        let hayabusa_repo = open_result.unwrap();
+        let submodules = hayabusa_repo.submodules()?;
+        for mut submodule in submodules {
+            submodule.update(true, None)?;
+        }
+        return Ok(());
+    }
+
+    /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
+    fn clone_rules(&self) -> Result<(), git2::Error> {
+        match Repository::clone(
+            "https://github.com/Yamato-Security/hayabusa-rules.git",
+            "rules",
+        ) {
+            Ok(_repo) => {
+                println!("Finished cloning the hayabusa-rules repository.");
+                return Ok(());
+            }
+            Err(e) => {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!(
+                        "Failed to git clone into the rules folder. Please rename your rules folder name. {}",
+                        e
+                    ),
+                )
+                .ok();
+                return Err(git2::Error::from_str(&String::default()));
+            }
+        };
     }
 }
 

@@ -31,6 +31,7 @@ pbr = "*"
 hashbrown = "0.12.*"
 colored = "2.*"
 hex = "0.4.*"
+git2="0.13"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
