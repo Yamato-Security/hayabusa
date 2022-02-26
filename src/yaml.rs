@@ -67,6 +67,7 @@ impl ParseYaml {
                     .unwrap()
                     .push(format!("[ERROR] {}", errmsg));
             }
+            return io::Result::Ok(String::default());
         }
         let mut yaml_docs = vec![];
         if metadata.unwrap().file_type().is_file() {

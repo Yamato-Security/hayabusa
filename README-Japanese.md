@@ -290,7 +290,7 @@ OPTIONS:
 .\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
-* 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\config\noisy-rules.txt`にルールIDが書かれているルール)を有効にします:
+* 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にします:
 
 ```bash
 .\hayabusa.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
@@ -413,9 +413,9 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 ファイアウォールやIDSと同様に、シグネチャベースのツールは、環境に合わせて調整が必要になるため、特定のルールを永続的または一時的に除外する必要がある場合があります。
 
-ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `config/exclude-rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
+ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `rules\config\exclude_rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
 
-ルールIDを `config/noisy-rules.txt`に追加して、デフォルトでルールを無視することもできますが、` -n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
+ルールIDを `rules\config\noisy_rules.txt`に追加して、デフォルトでルールを無視することもできますが、` -n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
 
 ## イベントIDフィルタリング
 

@@ -52,7 +52,7 @@ ruletype: Hayabusa
 > ## Alert section
 * **title [required]**: Rule file title. This will also be the name of the alert that gets displayed so the briefer the better. (Should not be longer than 85 characters.)
 * **title_jp** [optional]: The title in Japanese.
-* details [optional]: The details of the alert that gets displayed. Please output any fields in the Windows event log that are useful for analysis. Fields are seperated by `"  :  "` (two spaces on both sides). Field placeholders are enclosed with a `%` (Example: `%MemberName%`) and need to be defined in `config\eventkey_alias.txt`. (Explained below.)
+* details [optional]: The details of the alert that gets displayed. Please output any fields in the Windows event log that are useful for analysis. Fields are seperated by `"  :  "` (two spaces on both sides). Field placeholders are enclosed with a `%` (Example: `%MemberName%`) and need to be defined in `rules\config\eventkey_alias.txt`. (Explained below.)
 * **details_jp** [optional]: The details message in Japanese.
 * **description** [optional]: A description of the rule. This does not get displayed so you can make this long and detailed.
 * **description_jp** [optional]: The description in Japanese.
@@ -153,7 +153,7 @@ The following is an excerpt of a Windows event log, formatted in the original XM
 ```
 
 #### Eventkey Aliases
-Long eventkeys with many `.` seperations are common, so hayabusa will use aliases to make them easier to work with. Aliases are defined in the `config\eventkey_alias.txt` file. This file is a CSV file made up of `alias` and `event_key` mappings. You can rewrite the rule above as shown below with aliases making the rule easier to read.
+Long eventkeys with many `.` seperations are common, so hayabusa will use aliases to make them easier to work with. Aliases are defined in the `rules\config\eventkey_alias.txt` file. This file is a CSV file made up of `alias` and `event_key` mappings. You can rewrite the rule above as shown below with aliases making the rule easier to read.
 
 ```yaml
 detection:
@@ -164,7 +164,7 @@ detection:
 ```
 
 #### Caution: Undefined Eventkey Aliases
-Not all eventkey aliases are defined in `config\eventkey_alias.txt`. If you are not getting the correct data in the `details`(Alert details) message, and instead are getting results like `%EventID%` or if the selection in your detection logic is not working properly, then you need to update `config\eventkey_alias.txt` with a new alias.
+Not all eventkey aliases are defined in `rules\config\eventkey_alias.txt`. If you are not getting the correct data in the `details`(Alert details) message, and instead are getting results like `%EventID%` or if the selection in your detection logic is not working properly, then you need to update `rules\config\eventkey_alias.txt` with a new alias.
 
 ### How to use XML attributes in conditions
 XML elements may have attributes set by adding a space to the element. For example, `Name` in `Provider Name` below is an XML attribute of the `Provider` element. 
@@ -313,7 +313,7 @@ About escaping wildcards:
 ## Nesting keywords inside eventkeys
 Eventkeys can be nested with specific keywords. 
 In the example below, the rule will match if the following are true:
-* `ServiceName` is called `malicious-service` or contains a regular expression in `./config/regex/detectlist_suspicous_services.txt`.
+* `ServiceName` is called `malicious-service` or contains a regular expression in `./rules/config/regex/detectlist_suspicous_services.txt`.
 * `ImagePath` has a minimum of 1000 characters.
 * `ImagePath` does not have any matches in the `allowlist`.
 
@@ -324,10 +324,10 @@ detection:
         EventID: 7045
         ServiceName:
             - value: malicious-service
-            - regexes: ./config/regex/detectlist_suspicous_services.txt
+            - regexes: ./rules/config/regex/detectlist_suspicous_services.txt
         ImagePath:
             min_length: 1000
-            allowlist: ./config/regex/allowlist_legitimate_services.txt
+            allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
     condition: selection
 ```
 
@@ -339,13 +339,13 @@ Currently, the following keywords can be specified:
 
 ### regexes and allowlist keywords
 Hayabusa has two built-in regular expression files used for the `.\rules\hayabusa\default\alerts\System\7045_CreateOrModiftySystemProcess-WindowsService_MaliciousServiceInstalled.yml` file:
-* `./config/regex/detectlist_suspicous_services.txt`: to detect suspicious service names
-* `./config/regex/allowlist_legitimate_services.txt`: to allow legitimate services
+* `./rules/config/regex/detectlist_suspicous_services.txt`: to detect suspicious service names
+* `./rules/config/regex/allowlist_legitimate_services.txt`: to allow legitimate services
   
 Files defined in `regexes` and `allowlist` can be edited to change the behavior of all rules that reference them without having to change any rule file itself.
 
 You can also use different detectlist and allowlist textfiles that you create.
-Please refer to the built-in `./config/regex/detectlist_suspicous_services.txt` and `./config/regex/allowlist_legitimate_services.txt` when creating your own.
+Please refer to the built-in `./rules/config/regex/detectlist_suspicous_services.txt` and `./rules/config/regex/allowlist_legitimate_services.txt` when creating your own.
 
 ## condition
 With the notation we explained above, you can express `AND` and `OR` logic but it will be confusing if you are trying to define complex logic.

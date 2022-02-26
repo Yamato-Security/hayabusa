@@ -24,7 +24,7 @@ pub struct DataFilterRule {
 }
 
 fn load_record_filters() -> HashMap<String, DataFilterRule> {
-    let file_path = "config/regex/record_data_filter.txt";
+    let file_path = "./rules/config/regex/record_data_filter.txt";
     let read_result = utils::read_csv(file_path);
     let mut ret = HashMap::new();
     if read_result.is_err() {
@@ -104,10 +104,10 @@ pub fn exclude_ids() -> RuleExclude {
         .args
         .is_present("enable-noisy-rules")
     {
-        exclude_ids.insert_ids("config/noisy-rules.txt");
+        exclude_ids.insert_ids("./rules/config/noisy_rules.txt");
     };
 
-    exclude_ids.insert_ids("config/exclude-rules.txt");
+    exclude_ids.insert_ids("./rules/config/exclude_rules.txt");
 
     return exclude_ids;
 }
