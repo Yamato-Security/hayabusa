@@ -9,11 +9,9 @@ use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::print::AlertMessage;
-use hayabusa::detections::print::ERROR_LOG_PATH;
-use hayabusa::detections::print::ERROR_LOG_STACK;
-use hayabusa::detections::print::QUIET_ERRORS_FLAG;
-use hayabusa::detections::print::STATISTICS_FLAG;
+use hayabusa::detections::print::{
+    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
@@ -526,6 +524,46 @@ impl App {
         let submodules = hayabusa_repo.submodules()?;
         for mut submodule in submodules {
             submodule.update(true, None)?;
+            let submodule_repo = submodule.open()?;
+            let mut exit_flag = false;
+            // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
+            submodule_repo
+                .find_remote("origin")?
+                .fetch(&["main"], None, None)
+                .map_err(|e| {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("Failed git fetch to rules folder. {}", e),
+                    )
+                    .ok();
+                    exit_flag = true;
+                })
+                .ok();
+            if exit_flag {
+                return Err(git2::Error::from_str(&String::default()));
+            }
+            let fetch_head = submodule_repo.find_reference("FETCH_HEAD")?;
+            let fetch_commit = submodule_repo.reference_to_annotated_commit(&fetch_head)?;
+            let analysis = submodule_repo.merge_analysis(&[&fetch_commit])?;
+            if analysis.0.is_up_to_date() {
+                continue;
+            } else if analysis.0.is_fast_forward() {
+                let refname = "refs/heads/main";
+                let mut reference = submodule_repo.find_reference(&refname)?;
+                reference.set_target(fetch_commit.id(), "Fast-Forward")?;
+                submodule_repo.set_head(&refname)?;
+                submodule_repo
+                    .checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
+                    .ok();
+            } else if analysis.0.is_normal() {
+                AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"update-rules option is git Fast-Forward merge only. please check your rules folder."
+                    .to_string(),
+            )
+            .ok();
+                return Err(git2::Error::from_str(&String::default()));
+            }
         }
         return Ok(());
     }
