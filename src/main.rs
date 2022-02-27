@@ -9,11 +9,9 @@ use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::print::AlertMessage;
-use hayabusa::detections::print::ERROR_LOG_PATH;
-use hayabusa::detections::print::ERROR_LOG_STACK;
-use hayabusa::detections::print::QUIET_ERRORS_FLAG;
-use hayabusa::detections::print::STATISTICS_FLAG;
+use hayabusa::detections::print::{
+    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
