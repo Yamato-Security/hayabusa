@@ -240,7 +240,7 @@ fn emit_csv<W: std::io::Write>(
     _print_unique_results(
         unique_detect_counts_by_level,
         "Unique".to_string(),
-        "rules".to_string(),
+        "detections".to_string(),
         &color_map,
     );
     Ok(())
