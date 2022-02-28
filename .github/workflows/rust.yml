@@ -25,8 +25,22 @@ jobs:
         override: true
     - name: Fmt Check
       run: cargo fmt -- --check
+    - name: Prepare Clippy
+      run: rustup component add clippy
     - name: rust-clippy-check
       uses: actions-rs/clippy-check@v1.0.7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
+    - name: Run clippy action to produce annotations
+        uses: actions-rs/clippy-check@v1.0.7
+        if: steps.check_permissions.outputs.has-permission
+        with:
+          args: --all-targets -- -D warnings
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run clippy manually without annotations
+        if: ${{ !steps.check_permissions.outputs.has-permission }}
+        run: cargo clippy --all-targets -- -D warnings
     - name: Build
       run: cargo build --verbose
     - name: Run tests
