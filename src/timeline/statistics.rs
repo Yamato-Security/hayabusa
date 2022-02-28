@@ -61,10 +61,7 @@ impl EventStatistics {
             let evttime = utils::get_event_value(
                 &"Event.System.TimeCreated_attributes.SystemTime".to_string(),
                 &record.record,
-            )
-            .and_then(|evt_value| {
-                Option::Some(evt_value.to_string())
-            });
+            ).map(|evt_value| evt_value.to_string());
             if evttime.is_none() {
                 continue;
             }

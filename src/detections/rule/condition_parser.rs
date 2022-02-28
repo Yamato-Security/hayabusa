@@ -185,8 +185,8 @@ impl ConditionCompiler {
     }
 
     /// 字句解析を行う
-    fn tokenize(&self, condition_str: &String) -> Result<Vec<ConditionToken>, String> {
-        let mut cur_condition_str = condition_str.clone();
+    fn tokenize(&self, condition_str: &str) -> Result<Vec<ConditionToken>, String> {
+        let mut cur_condition_str = condition_str.to_string();
 
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
@@ -531,7 +531,7 @@ mod tests {
                 assert_eq!(rule_node.select(&recinfo), expect_select);
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -573,8 +573,8 @@ mod tests {
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert!(rule_node.select(&recinfo));
             }
-            Err(_rec) => {
-                assert!(false);
+            Err(_) => {
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -617,8 +617,8 @@ mod tests {
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert!(!rule_node.select(&recinfo));
             }
-            Err(_rec) => {
-                assert!(false);
+            Err(_) => {
+                panic!("Failed to parse json record.");
             }
         }
     }

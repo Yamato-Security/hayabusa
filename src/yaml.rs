@@ -82,7 +82,7 @@ impl ParseYaml {
                 .as_ref()
                 .to_path_buf()
                 .extension()
-                .unwrap_or(OsStr::new(""))
+                .unwrap_or_else(|| OsStr::new(""))
                 != "yml"
             {
                 return io::Result::Ok(String::default());
@@ -150,7 +150,7 @@ impl ParseYaml {
 
                 // 拡張子がymlでないファイルは無視
                 let path = entry.path();
-                if path.extension().unwrap_or(OsStr::new("")) != "yml" {
+                if path.extension().unwrap_or_else(|| OsStr::new("")) != "yml" {
                     return io::Result::Ok(ret);
                 }
 

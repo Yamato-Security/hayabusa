@@ -370,7 +370,7 @@ mod tests {
                 assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -400,7 +400,7 @@ mod tests {
                 assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -430,7 +430,7 @@ mod tests {
                 assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -513,7 +513,7 @@ mod tests {
                 assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -572,7 +572,7 @@ mod tests {
                 assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -638,7 +638,7 @@ mod tests {
                 assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -682,7 +682,7 @@ mod tests {
                 assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -727,7 +727,7 @@ mod tests {
                 assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -791,7 +791,7 @@ mod tests {
                 assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -855,7 +855,7 @@ mod tests {
                 assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -901,7 +901,7 @@ mod tests {
                 assert!(rule_node.select(&recinfo));
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -965,7 +965,7 @@ mod tests {
                 );
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }

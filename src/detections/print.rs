@@ -230,20 +230,18 @@ impl AlertMessage {
         }
         let mut error_log_writer = BufWriter::new(File::create(path).unwrap());
         error_log_writer
-            .write(
+            .write_all(
                 format!(
                     "user input: {:?}\n",
                     format_args!(
                         "{}",
                         env::args()
-                            .map(|arg| arg)
                             .collect::<Vec<String>>()
                             .join(" ")
                     )
                 )
                 .as_bytes(),
-            )
-            .unwrap();
+            ).ok();
         for error_log in ERROR_LOG_STACK.lock().unwrap().iter() {
             writeln!(error_log_writer, "{}", error_log).ok();
         }

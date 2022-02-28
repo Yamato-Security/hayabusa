@@ -91,7 +91,7 @@ pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     Result::Ok(
         reader
             .lines()
-            .map(|line| line.unwrap_or(String::default()))
+            .map(|line| line.unwrap_or_default())
             .collect(),
     )
 }
@@ -203,7 +203,7 @@ pub fn get_thread_num() -> usize {
         .args
         .value_of("thread-number")
         .unwrap_or_else(|| def_thread_num_str.as_str());
-    threadnum.parse::<usize>().unwrap().clone()
+    threadnum.parse::<usize>().unwrap()
 }
 
 pub fn create_tokio_runtime() -> Runtime {

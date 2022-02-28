@@ -28,15 +28,15 @@ pub struct AggregationParseInfo {
 
 #[derive(Debug)]
 pub enum AggregationConditionToken {
-    COUNT(String),   // count
-    SPACE,           // 空白
+    Count(String),   // count
+    Space,           // 空白
     BY,              // by
     EQ,              // ..と等しい
     LE,              // ..以下
     LT,              // ..未満
     GE,              // ..以上
     GT,              // .よりおおきい
-    KEYWORD(String), // BYのフィールド名
+    Keyword(String), // BYのフィールド名
 }
 
 /// SIGMAルールでいうAggregationConditionを解析する。
@@ -105,7 +105,7 @@ impl AggegationConditionCompiler {
             let mached_str = captured.unwrap().get(0).unwrap().as_str();
             let token = self.to_enum(mached_str.to_string());
 
-            if let AggregationConditionToken::SPACE = token {
+            if let AggregationConditionToken::Space = token {
                 // 空白は特に意味ないので、読み飛ばす。
                 cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
                 continue;
@@ -137,7 +137,7 @@ impl AggegationConditionCompiler {
         let token = token_ite.next().unwrap();
 
         let mut count_field_name: Option<String> = Option::None;
-        if let AggregationConditionToken::COUNT(field_name) = token {
+        if let AggregationConditionToken::Count(field_name) = token {
             if !field_name.is_empty() {
                 count_field_name = Option::Some(field_name);
             }
@@ -166,7 +166,7 @@ impl AggegationConditionCompiler {
                 );
             }
 
-            if let AggregationConditionToken::KEYWORD(keyword) = after_by.unwrap() {
+            if let AggregationConditionToken::Keyword(keyword) = after_by.unwrap() {
                 by_field_name = Option::Some(keyword);
                 token_ite.next()
             } else {
@@ -193,8 +193,8 @@ impl AggegationConditionCompiler {
             );
         }
 
-        let token = token_ite.next().unwrap_or(AggregationConditionToken::SPACE);
-        let cmp_number = if let AggregationConditionToken::KEYWORD(number) = token {
+        let token = token_ite.next().unwrap_or(AggregationConditionToken::Space);
+        let cmp_number = if let AggregationConditionToken::Keyword(number) = token {
             let number: Result<i64, _> = number.parse();
             if let Ok(num) = number {
                 num
@@ -227,9 +227,9 @@ impl AggegationConditionCompiler {
                 .replacen("count(", "", 1)
                 .replacen(")", "", 1)
                 .replace(" ", "");
-            AggregationConditionToken::COUNT(count_field)
+            AggregationConditionToken::Count(count_field)
         } else if token == " " {
-            AggregationConditionToken::SPACE
+            AggregationConditionToken::Space
         } else if token == "by" {
             AggregationConditionToken::BY
         } else if token == "==" {
@@ -243,7 +243,7 @@ impl AggegationConditionCompiler {
         } else if token == ">" {
             AggregationConditionToken::GT
         } else {
-            AggregationConditionToken::KEYWORD(token)
+            AggregationConditionToken::Keyword(token)
         }
     }
 }

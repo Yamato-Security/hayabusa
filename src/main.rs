@@ -146,7 +146,7 @@ impl App {
             if !filepath.ends_with(".evtx")
                 || Path::new(filepath)
                     .file_stem()
-                    .unwrap_or(OsStr::new("."))
+                    .unwrap_or_else(|| OsStr::new("."))
                     .to_str()
                     .unwrap()
                     .trim()
@@ -251,7 +251,7 @@ impl App {
 
             let path = e.unwrap().path();
             if path.is_dir() {
-                path.to_str().and_then(|path_str| {
+                path.to_str().map(|path_str| {
                     let subdir_ret = self.collect_evtxfiles(path_str);
                     ret.extend(subdir_ret);
                     Option::Some(())
@@ -261,7 +261,7 @@ impl App {
                 if path_str.ends_with(".evtx")
                     && !Path::new(path_str)
                         .file_stem()
-                        .unwrap_or(OsStr::new("."))
+                        .unwrap_or_else(|| OsStr::new("."))
                         .to_str()
                         .unwrap()
                         .starts_with('.')
@@ -377,7 +377,7 @@ impl App {
 
                 // target_eventids.txtでフィルタする。
                 let data = record_result.unwrap().data;
-                if self._is_target_event_id(&data) == false {
+                if !self._is_target_event_id(&data) {
                     continue;
                 }
 
@@ -488,8 +488,8 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = &format!("art/logo.txt");
-        let content = fs::read_to_string(fp).unwrap_or("".to_owned());
+        let fp = &"art/logo.txt".to_string();
+        let content = fs::read_to_string(fp).unwrap_or_default();
         println!("{}", content);
     }
 
@@ -504,7 +504,7 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let content = fs::read_to_string(path).unwrap_or("".to_owned());
+                let content = fs::read_to_string(path).unwrap_or_default();
                 println!("{}", content);
             }
         }
