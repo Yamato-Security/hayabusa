@@ -69,22 +69,22 @@ impl Message {
         target_file: String,
         rule_path: String,
         event_time: DateTime<Utc>,
-        level: String,
-        computername: String,
-        eventid: String,
+        input_level: String,
+        computer_name: String,
+        event_id: String,
         event_title: String,
         event_detail: String,
-        tag_info: String,
+        tag: String,
     ) {
         let detect_info = DetectInfo {
             filepath: target_file,
             rulepath: rule_path,
-            level: level,
-            computername: computername,
-            eventid: eventid,
+            level: input_level,
+            computername: computer_name,
+            eventid: event_id,
             alert: event_title,
             detail: event_detail,
-            tag_info: tag_info,
+            tag_info: tag,
         };
 
         match self.map.get_mut(&event_time) {

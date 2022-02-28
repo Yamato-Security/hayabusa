@@ -42,10 +42,10 @@ unsafe impl Sync for RuleNode {}
 unsafe impl Send for RuleNode {}
 
 impl RuleNode {
-    pub fn new(rulepath: String, yaml: Yaml) -> RuleNode {
+    pub fn new(rule_path: String, yaml_data: Yaml) -> RuleNode {
         return RuleNode {
-            rulepath: rulepath,
-            yaml: yaml,
+            rulepath: rule_path,
+            yaml: yaml_data,
             detection: DetectionNode::new(),
             countdata: HashMap::new(),
         };
@@ -317,18 +317,18 @@ pub struct AggResult {
 
 impl AggResult {
     pub fn new(
-        data: i64,
-        key: String,
-        field_values: Vec<String>,
-        start_timedate: DateTime<Utc>,
-        condition_op_num: String,
+        count_data: i64,
+        key_name: String,
+        field_value: Vec<String>,
+        event_start_timedate: DateTime<Utc>,
+        condition_op_number: String,
     ) -> AggResult {
         return AggResult {
-            data: data,
-            key: key,
-            field_values: field_values,
-            start_timedate: start_timedate,
-            condition_op_num: condition_op_num,
+            data: count_data,
+            key: key_name,
+            field_values: field_value,
+            start_timedate: event_start_timedate,
+            condition_op_num: condition_op_number,
         };
     }
 }

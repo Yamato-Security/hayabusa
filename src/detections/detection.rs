@@ -42,8 +42,8 @@ pub struct Detection {
 }
 
 impl Detection {
-    pub fn new(rules: Vec<RuleNode>) -> Detection {
-        return Detection { rules: rules };
+    pub fn new(rule_nodes: Vec<RuleNode>) -> Detection {
+        return Detection { rules: rule_nodes };
     }
 
     pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> Self {

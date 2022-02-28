@@ -178,8 +178,8 @@ pub struct NotSelectionNode {
 }
 
 impl NotSelectionNode {
-    pub fn new(node: Box<dyn SelectionNode>) -> NotSelectionNode {
-        return NotSelectionNode { node: node };
+    pub fn new(select_node: Box<dyn SelectionNode>) -> NotSelectionNode {
+        return NotSelectionNode { node: select_node };
     }
 }
 
@@ -210,9 +210,9 @@ pub struct RefSelectionNode {
 }
 
 impl RefSelectionNode {
-    pub fn new(selection_node: Arc<Box<dyn SelectionNode>>) -> RefSelectionNode {
+    pub fn new(select_node: Arc<Box<dyn SelectionNode>>) -> RefSelectionNode {
         return RefSelectionNode {
-            selection_node: selection_node,
+            selection_node: select_node,
         };
     }
 }
@@ -244,10 +244,10 @@ pub struct LeafSelectionNode {
 }
 
 impl LeafSelectionNode {
-    pub fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
+    pub fn new(keys: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
         return LeafSelectionNode {
             key: String::default(),
-            key_list: key_list,
+            key_list: keys,
             select_value: value_yaml,
             matcher: Option::None,
         };

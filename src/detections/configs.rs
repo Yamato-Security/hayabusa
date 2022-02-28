@@ -184,12 +184,12 @@ impl TargetEventTime {
     }
 
     pub fn set(
-        start_time: Option<chrono::DateTime<chrono::Utc>>,
-        end_time: Option<chrono::DateTime<chrono::Utc>>,
+        input_start_time: Option<chrono::DateTime<chrono::Utc>>,
+        input_end_time: Option<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         return Self {
-            start_time: start_time,
-            end_time: end_time,
+            start_time: input_start_time,
+            end_time: input_end_time,
         };
     }
 
