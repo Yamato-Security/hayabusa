@@ -104,7 +104,7 @@ impl Detection {
                     });
                 }
                 parseerror_count += 1;
-                println!(""); // 一行開けるためのprintln
+                println!(); // 一行開けるためのprintln
             });
             return Option::None;
         };
@@ -302,7 +302,7 @@ impl Detection {
             "Total enabled detection rules: {}",
             total - ignore_count - parseerror_count
         );
-        println!("");
+        println!();
     }
 }
 

@@ -193,7 +193,7 @@ impl Message {
             }
             detect_count += detect_infos.len();
         }
-        println!("");
+        println!();
         println!("Total events:{:?}", detect_count);
     }
 
@@ -245,7 +245,7 @@ impl AlertMessage {
             "Errors were generated. Please check {} for details.",
             ERROR_LOG_PATH.to_string()
         );
-        println!("");
+        println!();
     }
 
     /// ERRORメッセージを表示する関数

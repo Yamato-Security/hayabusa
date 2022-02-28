@@ -227,10 +227,10 @@ fn emit_csv<W: std::io::Write>(
             total_detect_counts_by_level[level_suffix] += 1;
         }
     }
-    println!("");
+    println!();
 
     wtr.flush()?;
-    println!("");
+    println!();
     _print_unique_results(
         total_detect_counts_by_level,
         "Total".to_string(),

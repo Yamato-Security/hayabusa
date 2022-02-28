@@ -67,7 +67,7 @@ impl App {
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
-            println!("");
+            println!();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
                 &analysis_start_time.month().to_owned(),
@@ -105,7 +105,7 @@ impl App {
                 "{}",
                 configs::CONFIG.read().unwrap().args.usage().to_string()
             );
-            println!("");
+            println!();
             return;
         }
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
@@ -123,7 +123,7 @@ impl App {
         }
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
-            println!("");
+            println!();
         }
         if configs::CONFIG
             .read()
@@ -176,9 +176,9 @@ impl App {
         }
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        println!("");
+        println!();
         println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
-        println!("");
+        println!();
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
