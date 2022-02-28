@@ -28,12 +28,12 @@ jobs:
     - name: Prepare Clippy
       run: rustup component add clippy
     - name: Check workflow permissions
-        id: check_permissions
-        uses: scherermichael-oss/action-has-permission@1.0.6
-        with:
-          required-permission: write
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      id: check_permissions
+      uses: scherermichael-oss/action-has-permission@1.0.6
+      with:
+        required-permission: write
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Run clippy action to produce annotations
       uses: actions-rs/clippy-check@v1.0.7
       if: steps.check_permissions.outputs.has-permission
