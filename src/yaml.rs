@@ -407,8 +407,7 @@ mod tests {
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
         };
-        yaml.read_dir(path.to_path_buf(), "", &exclude_ids)
-            .unwrap();
+        yaml.read_dir(path.to_path_buf(), "", &exclude_ids).unwrap();
         assert_eq!(yaml.ignorerule_count, 0);
     }
     #[test]
@@ -418,8 +417,7 @@ mod tests {
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
         };
-        yaml.read_dir(path.to_path_buf(), "", &exclude_ids)
-            .unwrap();
+        yaml.read_dir(path.to_path_buf(), "", &exclude_ids).unwrap();
         assert_eq!(yaml.ignorerule_count, 1);
     }
 }

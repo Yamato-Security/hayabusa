@@ -329,9 +329,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::print::DetectInfo;
-use crate::afterfact::emit_csv;
+    use crate::afterfact::emit_csv;
     use crate::detections::print;
+    use crate::detections::print::DetectInfo;
     use chrono::{Local, TimeZone, Utc};
     use serde_json::Value;
     use std::fs::File;
@@ -384,7 +384,7 @@ use crate::afterfact::emit_csv;
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
-                }
+                },
             );
         }
         let expect_time = Utc
@@ -458,7 +458,7 @@ use crate::afterfact::emit_csv;
             messages.insert(
                 &event,
                 output.to_string(),
-                DetectInfo{
+                DetectInfo {
                     filepath: testfilepath.to_string(),
                     rulepath: testrulepath.to_string(),
                     level: test_level.to_string(),
@@ -467,7 +467,7 @@ use crate::afterfact::emit_csv;
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
-                }
+                },
             );
             messages.debug();
         }

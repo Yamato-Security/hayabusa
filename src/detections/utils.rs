@@ -144,7 +144,8 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
     if rfc3339_time.is_err() {
         return Option::None;
     }
-    Utc.from_local_datetime(&rfc3339_time.unwrap().naive_utc()).single()
+    Utc.from_local_datetime(&rfc3339_time.unwrap().naive_utc())
+        .single()
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
@@ -351,13 +352,9 @@ mod tests {
         };
         let none_test_str: Option<&String> = None;
 
-        assert!(
-            utils::replace_target_character(none_test_str, None).is_none()
-        );
+        assert!(utils::replace_target_character(none_test_str, None).is_none());
 
-        assert!(
-            utils::replace_target_character(none_test_str, Some(&test_filter_rule)).is_none()
-        );
+        assert!(utils::replace_target_character(none_test_str, Some(&test_filter_rule)).is_none());
 
         let tmp = "h\ra\ny\ta\tb\nu\r\nsa".to_string();
         let test_str: Option<&String> = Some(&tmp);

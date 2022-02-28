@@ -70,11 +70,7 @@ impl Message {
     }
 
     /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
-    pub fn insert_message(
-        &mut self,
-        detect_info: DetectInfo,
-        event_time: DateTime<Utc>,
-    ) {
+    pub fn insert_message(&mut self, detect_info: DetectInfo, event_time: DateTime<Utc>) {
         if let Some(v) = self.map.get_mut(&event_time) {
             v.push(detect_info);
         } else {
@@ -84,19 +80,11 @@ impl Message {
     }
 
     /// メッセージを設定
-    pub fn insert(
-        &mut self,
-        event_record: &Value,
-        output:String,
-        mut detect_info: DetectInfo,
-    ) {
+    pub fn insert(&mut self, event_record: &Value, output: String, mut detect_info: DetectInfo) {
         detect_info.detail = self.parse_message(event_record, output).to_string();
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time = Message::get_event_time(event_record).unwrap_or(default_time);
-        self.insert_message(
-            detect_info,
-            time,
-        )
+        self.insert_message(detect_info, time)
     }
 
     fn parse_message(&mut self, event_record: &Value, output: String) -> String {
@@ -199,15 +187,11 @@ impl AlertMessage {
             .write_all(
                 format!(
                     "user input: {:?}\n",
-                    format_args!(
-                        "{}",
-                        env::args()
-                            .collect::<Vec<String>>()
-                            .join(" ")
-                    )
+                    format_args!("{}", env::args().collect::<Vec<String>>().join(" "))
                 )
                 .as_bytes(),
-            ).ok();
+            )
+            .ok();
         for error_log in ERROR_LOG_STACK.lock().unwrap().iter() {
             writeln!(error_log_writer, "{}", error_log).ok();
         }
@@ -232,7 +216,7 @@ impl AlertMessage {
 #[cfg(test)]
 mod tests {
     use crate::detections::print::DetectInfo;
-use crate::detections::print::{AlertMessage, Message};
+    use crate::detections::print::{AlertMessage, Message};
     use serde_json::Value;
     use std::io::BufWriter;
 
@@ -257,15 +241,15 @@ use crate::detections::print::{AlertMessage, Message};
         message.insert(
             &event_record_1,
             "CommandLine1: %CommandLine%".to_string(),
-            DetectInfo{
-                filepath:"a".to_string(),
-                rulepath:"test_rule".to_string(),
-                level:"high".to_string(),
-                computername:"testcomputer1".to_string(),
-                eventid:"1".to_string(),
-                alert:"test1".to_string(),
+            DetectInfo {
+                filepath: "a".to_string(),
+                rulepath: "test_rule".to_string(),
+                level: "high".to_string(),
+                computername: "testcomputer1".to_string(),
+                eventid: "1".to_string(),
+                alert: "test1".to_string(),
                 detail: String::default(),
-                tag_info:"txxx.001".to_string()
+                tag_info: "txxx.001".to_string(),
             },
         );
 
@@ -296,7 +280,7 @@ use crate::detections::print::{AlertMessage, Message};
                 alert: "test2".to_string(),
                 detail: String::default(),
                 tag_info: "txxx.002".to_string(),
-            }
+            },
         );
 
         let json_str_3 = r##"
@@ -326,7 +310,7 @@ use crate::detections::print::{AlertMessage, Message};
                 alert: "test3".to_string(),
                 detail: String::default(),
                 tag_info: "txxx.003".to_string(),
-            }
+            },
         );
 
         let json_str_4 = r##"
@@ -351,7 +335,7 @@ use crate::detections::print::{AlertMessage, Message};
                 alert: "test4".to_string(),
                 detail: String::default(),
                 tag_info: "txxx.004".to_string(),
-            }
+            },
         );
 
         let display = format!("{}", format_args!("{:?}", message));

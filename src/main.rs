@@ -415,19 +415,18 @@ impl App {
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
-        let threads: Vec<JoinHandle<EvtxRecordInfo>> =
-            {
-                let this = records_per_detect
-                        .into_iter()
-                        .map(|rec| -> JoinHandle<EvtxRecordInfo> {
-                            let arc_rule_keys = Arc::clone(&rule_keys);
-                            let arc_path = Arc::clone(&path);
-                            spawn(async move {
-                                utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
-                            })
-                        });
-                FromIterator::from_iter(this)
-            };
+        let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
+            let this = records_per_detect
+                .into_iter()
+                .map(|rec| -> JoinHandle<EvtxRecordInfo> {
+                    let arc_rule_keys = Arc::clone(&rule_keys);
+                    let arc_path = Arc::clone(&path);
+                    spawn(async move {
+                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                    })
+                });
+            FromIterator::from_iter(this)
+        };
 
         let mut ret = vec![];
         for thread in threads.into_iter() {

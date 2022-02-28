@@ -61,8 +61,7 @@ fn load_record_filters() -> HashMap<String, DataFilterRule> {
             Err(_err) => {
                 let errmsg = "failed to read regex filter in record_data_filter.txt";
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), errmsg)
-                        .ok();
+                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), errmsg).ok();
                 }
                 if !*QUIET_ERRORS_FLAG {
                     ERROR_LOG_STACK

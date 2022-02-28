@@ -207,23 +207,18 @@ impl DefaultMatcher {
     /// 判定対象の文字列とこのmatcherが保持する正規表現が完全にマッチした場合のTRUEを返します。
     /// 例えば、判定対象文字列が"abc"で、正規表現が"ab"の場合、正規表現は判定対象文字列の一部分にしか一致していないので、この関数はfalseを返します。
     fn is_regex_fullmatch(&self, value: &str) -> bool {
-        return self
-            .re
-            .as_ref()
-            .unwrap()
-            .find_iter(value)
-            .any(|match_obj| {
-                return match_obj.as_str() == value;
-            });
+        return self.re.as_ref().unwrap().find_iter(value).any(|match_obj| {
+            return match_obj.as_str() == value;
+        });
     }
 
     /// YEAのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
     /// ワイルドカードの文字列を正規表現にする処理もこのメソッドに実装されています。patternにワイルドカードの文字列を指定して、pipesにPipeElement::Wildcardを指定すればOK!!
     fn from_pattern_to_regex_str(pattern: String, pipes: &Vec<PipeElement>) -> String {
         // パターンをPipeで処理する。
-        pipes.iter().fold(pattern, |acc, pipe| {
-            pipe.pipe_pattern(acc)
-        })
+        pipes
+            .iter()
+            .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
     }
 }
 
@@ -290,9 +285,10 @@ impl LeafMatcher for DefaultMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
-        let is_re = &self.pipes.iter().any(|pipe_element| {
-            matches!(pipe_element, PipeElement::Re)
-        });
+        let is_re = &self
+            .pipes
+            .iter()
+            .any(|pipe_element| matches!(pipe_element, PipeElement::Re));
         // 正規表現ではない場合、ワイルドカードであることを表す。
         // ワイルドカードは正規表現でマッチングするので、ワイルドカードを正規表現に変換するPipeを内部的に追加することにする。
         if !is_re {
@@ -452,11 +448,7 @@ impl PipeElement {
                     regex::escape(pattern)
                 } else {
                     // wildcardの場合、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
-                    let wildcard_regex_value = if *pattern == "*" {
-                        ".*"
-                    } else {
-                        "."
-                    };
+                    let wildcard_regex_value = if *pattern == "*" { ".*" } else { "." };
                     wildcard_regex_value.to_string()
                 };
 

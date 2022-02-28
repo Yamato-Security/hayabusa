@@ -41,9 +41,9 @@ impl AndSelectionNode {
 
 impl SelectionNode for AndSelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        self.child_nodes.iter().all(|child_node| {
-            child_node.select(event_record)
-        })
+        self.child_nodes
+            .iter()
+            .all(|child_node| child_node.select(event_record))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -87,9 +87,7 @@ impl SelectionNode for AndSelectionNode {
 
         self.child_nodes
             .iter()
-            .map(|child_node| {
-                child_node.get_descendants()
-            })
+            .map(|child_node| child_node.get_descendants())
             .flatten()
             .for_each(|descendant_node| {
                 ret.push(descendant_node);
@@ -114,9 +112,9 @@ impl OrSelectionNode {
 
 impl SelectionNode for OrSelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        self.child_nodes.iter().any(|child_node| {
-            child_node.select(event_record)
-        })
+        self.child_nodes
+            .iter()
+            .any(|child_node| child_node.select(event_record))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -160,9 +158,7 @@ impl SelectionNode for OrSelectionNode {
 
         self.child_nodes
             .iter()
-            .map(|child_node| {
-                child_node.get_descendants()
-            })
+            .map(|child_node| child_node.get_descendants())
             .flatten()
             .for_each(|descendant_node| {
                 ret.push(descendant_node);

@@ -272,9 +272,9 @@ impl ConditionCompiler {
         }
 
         // この時点で右括弧が残っている場合は右括弧の数が左括弧よりも多いことを表している。
-        let is_right_left = ret.iter().any(|token| {
-            matches!(token, ConditionToken::RightParenthesis)
-        });
+        let is_right_left = ret
+            .iter()
+            .any(|token| matches!(token, ConditionToken::RightParenthesis));
         if is_right_left {
             return Result::Err("'(' was expected but not found.".to_string());
         }

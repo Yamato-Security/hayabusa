@@ -94,7 +94,7 @@ impl RuleNode {
     pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
         match self.detection.aggregation_condition.as_ref() {
             None => None,
-            Some(agg_parse_info) => Some(agg_parse_info)
+            Some(agg_parse_info) => Some(agg_parse_info),
         }
     }
 }

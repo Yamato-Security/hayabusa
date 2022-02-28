@@ -120,7 +120,14 @@ impl AggegationConditionCompiler {
 
     /// 比較演算子かどうか判定します。
     fn is_cmp_op(&self, token: &AggregationConditionToken) -> bool {
-        matches!(token, AggregationConditionToken::EQ | AggregationConditionToken::LE | AggregationConditionToken::LT | AggregationConditionToken::GE | AggregationConditionToken::GT)
+        matches!(
+            token,
+            AggregationConditionToken::EQ
+                | AggregationConditionToken::LE
+                | AggregationConditionToken::LT
+                | AggregationConditionToken::GE
+                | AggregationConditionToken::GT
+        )
     }
 
     /// 構文解析します。

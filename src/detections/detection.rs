@@ -2,11 +2,11 @@ extern crate csv;
 
 use crate::detections::configs;
 use crate::detections::print::AlertMessage;
+use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
-use crate::detections::print::DetectInfo;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -133,9 +133,7 @@ impl Detection {
             .into_iter()
             .map(|rule| {
                 let records_cloned = Arc::clone(&records_arc);
-                spawn(async move {
-                    Detection::execute_rule(rule, records_cloned)
-                })
+                spawn(async move { Detection::execute_rule(rule, records_cloned) })
             })
             .collect();
 
@@ -204,15 +202,16 @@ impl Detection {
                 rulepath: rule.rulepath.to_string(),
                 level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
                 computername: record_info.record["Event"]["System"]["Computer"]
-                .to_string()
-                .replace("\"", ""),
-                eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-                .unwrap_or_else(|| "-".to_owned())
-                ,
+                    .to_string()
+                    .replace("\"", ""),
+                eventid: get_serde_number_to_string(
+                    &record_info.record["Event"]["System"]["EventID"],
+                )
+                .unwrap_or_else(|| "-".to_owned()),
                 alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
                 detail: String::default(),
                 tag_info: tag_info.join(" : "),
-            }
+            },
         );
     }
 
@@ -226,7 +225,7 @@ impl Detection {
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);
         MESSAGES.lock().unwrap().insert_message(
-            DetectInfo{
+            DetectInfo {
                 filepath: "-".to_owned(),
                 rulepath: rule.rulepath.to_owned(),
                 level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
@@ -251,10 +250,7 @@ impl Detection {
             .collect();
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
         let agg_condition = rule.get_agg_condition().unwrap();
-        let exist_timeframe = rule.yaml["detection"]["timeframe"]
-            .as_str()
-            .unwrap_or("")
-            != "";
+        let exist_timeframe = rule.yaml["detection"]["timeframe"].as_str().unwrap_or("") != "";
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
         ret.push_str(agg_condition_raw_str[1].trim());
         if exist_timeframe {
@@ -287,7 +283,6 @@ impl Detection {
 
         ret
     }
-
 
     pub fn print_rule_load_info(
         rc: &HashMap<String, u128>,
