@@ -234,7 +234,7 @@ pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg.to_string()));
+                    .push(format!("[ERROR] {}", errmsg));
             }
             Option::None
         }

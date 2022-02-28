@@ -149,7 +149,7 @@ impl Message {
             if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
                 let split: Vec<&str> = array_str.split('.').collect();
                 let mut is_exist_event_key = false;
-                let mut tmp_event_record: &Value = event_record.into();
+                let mut tmp_event_record: &Value = event_record;
                 for s in &split {
                     if let Some(record) = tmp_event_record.get(s) {
                         is_exist_event_key = true;

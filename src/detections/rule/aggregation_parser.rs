@@ -90,7 +90,7 @@ impl AggegationConditionCompiler {
         &self,
         condition_str: String,
     ) -> Result<Vec<AggregationConditionToken>, String> {
-        let mut cur_condition_str = condition_str.clone();
+        let mut cur_condition_str = condition_str;
 
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {

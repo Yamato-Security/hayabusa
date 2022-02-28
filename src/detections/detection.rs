@@ -133,8 +133,7 @@ impl Detection {
             .map(|rule| {
                 let records_cloned = Arc::clone(&records_arc);
                 spawn(async move {
-                    let moved_rule = Detection::execute_rule(rule, records_cloned);
-                    moved_rule
+                    Detection::execute_rule(rule, records_cloned)
                 })
             })
             .collect();
@@ -230,7 +229,7 @@ impl Detection {
             "-".to_owned(),
             "-".to_owned(),
             rule.yaml["title"].as_str().unwrap_or("").to_owned(),
-            output.to_owned(),
+            output,
             tag_info.join(" : "),
         )
     }
@@ -249,7 +248,6 @@ impl Detection {
         let exist_timeframe = rule.yaml["detection"]["timeframe"]
             .as_str()
             .unwrap_or("")
-            .to_string()
             != "";
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
         ret.push_str(agg_condition_raw_str[1].trim());

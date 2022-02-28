@@ -228,7 +228,7 @@ impl ConditionCompiler {
         } else if token == "or" {
             ConditionToken::Or
         } else {
-            ConditionToken::SelectionReference(token.clone())
+            ConditionToken::SelectionReference(token)
         }
     }
 

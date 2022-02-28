@@ -452,7 +452,7 @@ impl PipeElement {
                     regex::escape(pattern)
                 } else {
                     // wildcardの場合、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
-                    let wildcard_regex_value = if pattern.to_string() == "*" {
+                    let wildcard_regex_value = if *pattern == "*" {
                         ".*"
                     } else {
                         "."
