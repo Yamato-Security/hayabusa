@@ -88,7 +88,7 @@ impl RuleNode {
         return ret;
     }
     pub fn check_exist_countdata(&self) -> bool {
-        self.countdata.len() > 0
+        !self.countdata.is_empty()
     }
     /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
     pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
@@ -169,7 +169,7 @@ impl DetectionNode {
                 ]);
             }
 
-            keys.nth(0).unwrap().to_string()
+            keys.next().unwrap().to_string()
         };
 
         // conditionをパースして、SelectionNodeに変換する
@@ -221,7 +221,7 @@ impl DetectionNode {
         let mut err_msgs = vec![];
         for key in keys {
             let name = key.as_str().unwrap_or("");
-            if name.len() == 0 {
+            if name.is_empty() {
                 continue;
             }
             // condition等、特殊なキーワードを無視する。
@@ -248,7 +248,7 @@ impl DetectionNode {
         }
 
         // selectionノードが無いのはエラー
-        if self.name_to_selection.len() == 0 {
+        if self.name_to_selection.is_empty() {
             return Result::Err(vec![
                 "There is no selection node under detection.".to_string()
             ]);

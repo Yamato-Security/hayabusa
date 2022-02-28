@@ -50,7 +50,7 @@ impl EventStatistics {
     }
 
     fn stats_time_cnt(&mut self, records: &Vec<EvtxRecordInfo>) {
-        if records.len() == 0 {
+        if records.is_empty() {
             return;
         }
         self.filepath = records[0].evtx_filepath.as_str().to_owned();
@@ -70,10 +70,10 @@ impl EventStatistics {
             }
 
             let evttime = evttime.unwrap();
-            if self.start_time.len() == 0 || evttime < self.start_time {
+            if self.start_time.is_empty() || evttime < self.start_time {
                 self.start_time = evttime.to_string();
             }
-            if self.end_time.len() == 0 || evttime > self.end_time {
+            if self.end_time.is_empty() || evttime > self.end_time {
                 self.end_time = evttime;
             }
         }

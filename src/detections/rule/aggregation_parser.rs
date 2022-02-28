@@ -93,7 +93,7 @@ impl AggegationConditionCompiler {
         let mut cur_condition_str = condition_str.clone();
 
         let mut tokens = Vec::new();
-        while cur_condition_str.len() != 0 {
+        while !cur_condition_str.is_empty() {
             let captured = self::AGGREGATION_REGEXMAP.iter().find_map(|regex| {
                 return regex.captures(cur_condition_str.as_str());
             });

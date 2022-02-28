@@ -71,7 +71,7 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
             return;
         }
         let color_code = convert_color_result.unwrap();
-        if level.len() == 0 || color_code.len() < 3 {
+        if level.is_empty() || color_code.len() < 3 {
             return;
         }
         color_map.insert(level.to_string(), color_code);

@@ -172,7 +172,7 @@ impl ConditionCompiler {
         }
 
         let sub_tokens = token.sub_tokens();
-        if sub_tokens.len() == 0 {
+        if sub_tokens.is_empty() {
             return Result::Ok(token);
         }
 
@@ -189,7 +189,7 @@ impl ConditionCompiler {
         let mut cur_condition_str = condition_str.clone();
 
         let mut tokens = Vec::new();
-        while cur_condition_str.len() != 0 {
+        while !cur_condition_str.is_empty() {
             let captured = self::CONDITION_REGEXMAP.iter().find_map(|regex| {
                 return regex.captures(cur_condition_str.as_str());
             });
@@ -290,7 +290,7 @@ impl ConditionCompiler {
 
     /// AND, ORをパースする。
     fn parse_and_or_operator(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
-        if tokens.len() == 0 {
+        if tokens.is_empty() {
             // 長さ0は呼び出してはいけない
             return Result::Err("Unknown error.".to_string());
         }
@@ -360,7 +360,7 @@ impl ConditionCompiler {
             }
 
             // 0はありえないはず
-            if sub_tokens.len() == 0 {
+            if sub_tokens.is_empty() {
                 return Result::Err("Unknown error.".to_string());
             }
 
@@ -393,7 +393,7 @@ impl ConditionCompiler {
             }
         } else {
             let sub_tokens = parent_token.sub_tokens_without_parenthesis();
-            if sub_tokens.len() == 0 {
+            if sub_tokens.is_empty() {
                 return Result::Ok(parent_token);
             }
 

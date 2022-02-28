@@ -41,7 +41,7 @@ impl ConfigReader {
 
 fn build_app<'a>() -> ArgMatches<'a> {
     let program = std::env::args()
-        .nth(0)
+        .next()
         .and_then(|s| {
             std::path::PathBuf::from(s)
                 .file_stem()
@@ -255,7 +255,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         let empty = &"".to_string();
         let alias = line.get(0).unwrap_or(empty);
         let event_key = line.get(1).unwrap_or(empty);
-        if alias.len() == 0 || event_key.len() == 0 {
+        if alias.is_empty() || event_key.is_empty() {
             return;
         }
 

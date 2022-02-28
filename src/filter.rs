@@ -52,7 +52,7 @@ fn load_record_filters() -> HashMap<String, DataFilterRule> {
         let key = line.get(0).unwrap_or(empty).trim();
         let regex_str = line.get(1).unwrap_or(empty).trim();
         let replaced_str = line.get(2).unwrap_or(empty).trim();
-        if key.len() == 0 || regex_str.len() == 0 {
+        if key.is_empty() || regex_str.is_empty() {
             return;
         }
 

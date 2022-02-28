@@ -100,7 +100,7 @@ impl App {
             .ok();
             return;
         }
-        if configs::CONFIG.read().unwrap().args.args.len() == 0 {
+        if configs::CONFIG.read().unwrap().args.args.is_empty() {
             println!(
                 "{}",
                 configs::CONFIG.read().unwrap().args.usage().to_string()
@@ -156,7 +156,7 @@ impl App {
             self.analysis_files(vec![PathBuf::from(filepath)]);
         } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
             let evtx_files = self.collect_evtxfiles(&directory);
-            if evtx_files.len() == 0 {
+            if evtx_files.is_empty() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
                     &"No .evtx files were found.".to_string(),
@@ -202,7 +202,7 @@ impl App {
             let log_dir = env::var("windir").expect("windir is not found");
             let evtx_files =
                 self.collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
-            if evtx_files.len() == 0 {
+            if evtx_files.is_empty() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
                     &"No .evtx files were found.".to_string(),
@@ -297,7 +297,7 @@ impl App {
             &filter::exclude_ids(),
         );
 
-        if rule_files.len() == 0 {
+        if rule_files.is_empty() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
                 &"No rules were loaded. Please download the latest rules with the --update-rules option.\r\n".to_string(),
@@ -378,7 +378,7 @@ impl App {
                 // EvtxRecordInfo構造体に変更
                 records_per_detect.push(data);
             }
-            if records_per_detect.len() == 0 {
+            if records_per_detect.is_empty() {
                 break;
             }
 
