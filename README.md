@@ -37,6 +37,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Planned Features](#planned-features)
 - [Downloads](#downloads)
 - [Compiling from source (Optional)](#compiling-from-source-optional)
+  - [Notes on compiling on macOS](#notes-on-compiling-on-macos)
   - [Advanced: Updating Rust packages](#advanced-updating-rust-packages)
   - [Testing hayabusa out on sample evtx files](#testing-hayabusa-out-on-sample-evtx-files)
 - [Usage](#usage)
@@ -156,6 +157,14 @@ If you have rust installed, you can compile from source with the following comma
 ```bash
 cargo clean
 cargo build --release
+```
+
+## Notes on compiling on macOS
+
+If you receive compile errors about openssl, you will need to install [Homebrew](https://brew.sh/) and then install the following packages:
+```bash
+brew install pkg-config
+brew install openssl
 ```
 
 ## Advanced: Updating Rust packages

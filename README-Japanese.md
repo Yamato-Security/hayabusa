@@ -37,6 +37,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [予定されている機能](#予定されている機能)
 - [ダウンロード](#ダウンロード)
 - [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
+  - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
   - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
   - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [使用方法](#使用方法)
@@ -156,6 +157,14 @@ rustがインストールされている場合、以下のコマンドでソー�
 ```bash
 cargo clean
 cargo build --release
+```
+
+## macOSでのコンパイルの注意点
+
+opensslについてのコンパイルエラーが表示される場合は、[Homebrew](https://brew.sh/)をインストールしてから、以下のパッケージをインストールする必要があります：
+```bash
+brew install pkg-config
+brew install openssl
 ```
 
 ## アドバンス: Rustパッケージの更新
