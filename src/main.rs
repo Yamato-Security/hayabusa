@@ -511,7 +511,7 @@ impl App {
             );
             // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
             self.clone_rules()
-        } else if hayabusa_rule_repo.is_ok() && hayabusa_repo.is_err() {
+        } else if hayabusa_rule_repo.is_ok() {
             // rulesのrepositoryが確認できる場合
             // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
             self.pull_repository(hayabusa_rule_repo.unwrap())
@@ -524,6 +524,8 @@ impl App {
             let hayabusa_repo = hayabusa_repo.unwrap();
             let submodules = hayabusa_repo.submodules()?;
             let mut is_success_submodule_update = true;
+            // submoduleのname参照だと参照先を変えることで意図しないフォルダを削除する可能性があるためハードコーディングする
+            fs::remove_dir_all(".git/.submodule/rules").ok();
             for mut submodule in submodules {
                 submodule.update(true, None)?;
                 let submodule_repo = submodule.open()?;
