@@ -520,6 +520,6 @@ mod tests {
         let white_color_header = "\u{1b}[38;2;255;255;255m";
         let white_color_footer = "\u{1b}[0m";
 
-        return white_color_header.to_owned() + target + white_color_footer;
+        white_color_header.to_owned() + target + white_color_footer
     }
 }

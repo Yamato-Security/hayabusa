@@ -126,7 +126,7 @@ impl ParseYaml {
 
             yaml_docs.extend(yaml_contents.unwrap().into_iter().map(|yaml_content| {
                 let filepath = format!("{}", path.as_ref().to_path_buf().display());
-                return (filepath, yaml_content);
+                (filepath, yaml_content)
             }));
         } else {
             let mut entries = fs::read_dir(path)?;
@@ -192,10 +192,10 @@ impl ParseYaml {
 
                 let yaml_contents = yaml_contents.unwrap().into_iter().map(|yaml_content| {
                     let filepath = format!("{}", entry.path().display());
-                    return (filepath, yaml_content);
+                    (filepath, yaml_content)
                 });
                 ret.extend(yaml_contents);
-                return io::Result::Ok(ret);
+                io::Result::Ok(ret)
             })?;
         }
 
@@ -254,11 +254,11 @@ impl ParseYaml {
                     }
                 }
 
-                return Option::Some((filepath, yaml_doc));
+                Option::Some((filepath, yaml_doc))
             })
             .collect();
         self.files.extend(files);
-        return io::Result::Ok(String::default());
+        io::Result::Ok(String::default())
     }
 }
 
@@ -329,7 +329,7 @@ mod tests {
         let path = Path::new("test_files/rules/yaml/error.yml");
         let ret = yaml.read_file(path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret);
-        assert_eq!(rule.is_err(), true);
+        assert!(rule.is_err());
     }
 
     #[test]

@@ -37,7 +37,7 @@ pub struct MinlengthMatcher {
 
 impl MinlengthMatcher {
     pub fn new() -> MinlengthMatcher {
-        return MinlengthMatcher { min_len: 0 };
+        MinlengthMatcher { min_len: 0 }
     }
 }
 
@@ -61,14 +61,14 @@ impl LeafMatcher for MinlengthMatcher {
         }
 
         self.min_len = min_length.unwrap();
-        return Result::Ok(());
+        Result::Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
-        return match event_value {
+        match event_value {
             Some(s) => s.len() as i64 >= self.min_len,
             None => false,
-        };
+        }
     }
 }
 
@@ -80,7 +80,7 @@ pub struct RegexesFileMatcher {
 
 impl RegexesFileMatcher {
     pub fn new() -> RegexesFileMatcher {
-        return RegexesFileMatcher { regexes: vec![] };
+        RegexesFileMatcher { regexes: vec![] }
     }
 }
 
@@ -90,7 +90,7 @@ impl LeafMatcher for RegexesFileMatcher {
             return false;
         }
 
-        return key_list.get(1).unwrap() == "regexes";
+        key_list.get(1).unwrap() == "regexes"
     }
 
     fn init(&mut self, key_list: &Vec<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -118,14 +118,14 @@ impl LeafMatcher for RegexesFileMatcher {
             .map(|regex_str| Regex::new(&regex_str).unwrap())
             .collect();
 
-        return Result::Ok(());
+        Result::Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
-        return match event_value {
+        match event_value {
             Some(s) => utils::check_regex(s, &self.regexes),
             None => false,
-        };
+        }
     }
 }
 
@@ -137,7 +137,7 @@ pub struct AllowlistFileMatcher {
 
 impl AllowlistFileMatcher {
     pub fn new() -> AllowlistFileMatcher {
-        return AllowlistFileMatcher { regexes: vec![] };
+        AllowlistFileMatcher { regexes: vec![] }
     }
 }
 
@@ -175,14 +175,14 @@ impl LeafMatcher for AllowlistFileMatcher {
             .map(|regex_str| Regex::new(&regex_str).unwrap())
             .collect();
 
-        return Result::Ok(());
+        Result::Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
-        return match event_value {
+        match event_value {
             Some(s) => !utils::check_allowlist(s, &self.regexes),
             None => true,
-        };
+        }
     }
 }
 
@@ -196,11 +196,11 @@ pub struct DefaultMatcher {
 
 impl DefaultMatcher {
     pub fn new() -> DefaultMatcher {
-        return DefaultMatcher {
+        DefaultMatcher {
             re: Option::None,
             pipes: Vec::new(),
             key_list: Vec::new(),
-        };
+        }
     }
 
     /// このmatcherの正規表現とマッチするかどうか判定します。
@@ -221,9 +221,9 @@ impl DefaultMatcher {
     /// ワイルドカードの文字列を正規表現にする処理もこのメソッドに実装されています。patternにワイルドカードの文字列を指定して、pipesにPipeElement::Wildcardを指定すればOK!!
     fn from_pattern_to_regex_str(pattern: String, pipes: &Vec<PipeElement>) -> String {
         // パターンをPipeで処理する。
-        return pipes.iter().fold(pattern, |acc, pipe| {
-            return pipe.pipe_pattern(acc);
-        });
+        pipes.iter().fold(pattern, |acc, pipe| {
+            pipe.pipe_pattern(acc)
+        })
     }
 }
 
@@ -291,10 +291,10 @@ impl LeafMatcher for DefaultMatcher {
             return Result::Err(vec![errmsg]);
         }
         let is_re = &self.pipes.iter().any(|pipe_element| {
-            return match pipe_element {
+            match pipe_element {
                 PipeElement::Re => true,
                 _ => false,
-            };
+            }
         });
         // 正規表現ではない場合、ワイルドカードであることを表す。
         // ワイルドカードは正規表現でマッチングするので、ワイルドカードを正規表現に変換するPipeを内部的に追加することにする。
@@ -316,7 +316,7 @@ impl LeafMatcher for DefaultMatcher {
         }
         self.re = re_result.ok();
 
-        return Result::Ok(());
+        Result::Ok(())
     }
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
@@ -336,7 +336,7 @@ impl LeafMatcher for DefaultMatcher {
             return self.re.as_ref().unwrap().is_match(&event_value_str);
         } else {
             // 通常の検索はこっち
-            return self.is_regex_fullmatch(&event_value_str);
+            self.is_regex_fullmatch(&event_value_str)
         }
     }
 }
@@ -356,28 +356,28 @@ impl PipeElement {
         // enumでポリモーフィズムを実装すると、一つのメソッドに全部の型の実装をする感じになる。Java使い的にはキモイ感じがする。
         let fn_add_asterisk_end = |patt: String| {
             if patt.ends_with("//*") {
-                return patt;
+                patt
             } else if patt.ends_with("/*") {
-                return patt + "*";
+                patt + "*"
             } else if patt.ends_with('*') {
-                return patt;
+                patt
             } else {
-                return patt + "*";
+                patt + "*"
             }
         };
         let fn_add_asterisk_begin = |patt: String| {
             if patt.starts_with("//*") {
-                return patt;
+                patt
             } else if patt.starts_with("/*") {
-                return "*".to_string() + &patt;
+                "*".to_string() + &patt
             } else if patt.starts_with('*') {
-                return patt;
+                patt
             } else {
-                return "*".to_string() + &patt;
+                "*".to_string() + &patt
             }
         };
 
-        let val: String = match self {
+        match self {
             // startswithの場合はpatternの最後にwildcardを足すことで対応する
             PipeElement::Startswith => fn_add_asterisk_end(pattern),
             // endswithの場合はpatternの最初にwildcardを足すことで対応する
@@ -388,8 +388,7 @@ impl PipeElement {
             PipeElement::Re => pattern,
             // WildCardは正規表現に変換する。
             PipeElement::Wildcard => PipeElement::pipe_pattern_wildcard(pattern),
-        };
-        return val;
+        }
     }
 
     /// PipeElement::Wildcardのパイプ処理です。
@@ -470,7 +469,7 @@ impl PipeElement {
 
         // sigmaのwildcardはcase insensitive
         // なので、正規表現の先頭にcase insensitiveであることを表す記号を付与
-        return "(?i)".to_string() + &ret;
+        "(?i)".to_string() + &ret
     }
 }
 

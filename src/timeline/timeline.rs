@@ -17,7 +17,7 @@ impl Timeline {
         let statslst = HashMap::new();
 
         let statistic = EventStatistics::new(totalcnt, filepath, starttm, endtm, statslst);
-        return Timeline { stats: statistic };
+        Timeline { stats: statistic }
     }
 
     pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
@@ -95,6 +95,6 @@ impl Timeline {
             }
         }
         msges.push("---------------------------------------".to_string());
-        return msges;
+        msges
     }
 }

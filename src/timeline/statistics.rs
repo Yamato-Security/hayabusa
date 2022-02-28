@@ -20,13 +20,13 @@ impl EventStatistics {
         end_time: String,
         stats_list: HashMap<String, usize>,
     ) -> EventStatistics {
-        return EventStatistics {
+        EventStatistics {
             total,
             filepath,
             start_time,
             end_time,
             stats_list,
-        };
+        }
     }
 
     pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
@@ -63,7 +63,7 @@ impl EventStatistics {
                 &record.record,
             )
             .and_then(|evt_value| {
-                return Option::Some(evt_value.to_string());
+                Option::Some(evt_value.to_string())
             });
             if evttime.is_none() {
                 continue;

@@ -91,7 +91,7 @@ fn is_test_mode() -> bool {
         }
     }
 
-    return false;
+    false
 }
 
 #[derive(Debug, Clone)]
@@ -101,9 +101,9 @@ pub struct TargetEventIds {
 
 impl TargetEventIds {
     pub fn new() -> TargetEventIds {
-        return TargetEventIds {
+        TargetEventIds {
             ids: HashSet::new(),
-        };
+        }
     }
 
     pub fn is_target(&self, id: &String) -> bool {
@@ -111,7 +111,7 @@ impl TargetEventIds {
         if self.ids.is_empty() {
             return true;
         }
-        return self.ids.contains(id);
+        self.ids.contains(id)
     }
 }
 
@@ -134,7 +134,7 @@ fn load_target_ids(path: &str) -> TargetEventIds {
         ret.ids.insert(line);
     }
 
-    return ret;
+    ret
 }
 
 #[derive(Debug, Clone)]
@@ -180,17 +180,17 @@ impl TargetEventTime {
         } else {
             None
         };
-        return Self::set(start_time, end_time);
+        Self::set(start_time, end_time)
     }
 
     pub fn set(
         input_start_time: Option<chrono::DateTime<chrono::Utc>>,
         input_end_time: Option<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
-        return Self {
+        Self {
             start_time: input_start_time,
             end_time: input_end_time,
-        };
+        }
     }
 
     pub fn is_target(&self, eventtime: &Option<DateTime<Utc>>) -> bool {
@@ -207,7 +207,7 @@ impl TargetEventTime {
                 return false;
             }
         }
-        return true;
+        true
     }
 }
 
@@ -219,18 +219,18 @@ pub struct EventKeyAliasConfig {
 
 impl EventKeyAliasConfig {
     pub fn new() -> EventKeyAliasConfig {
-        return EventKeyAliasConfig {
+        EventKeyAliasConfig {
             key_to_eventkey: HashMap::new(),
             key_to_split_eventkey: HashMap::new(),
-        };
+        }
     }
 
     pub fn get_event_key(&self, alias: &String) -> Option<&String> {
-        return self.key_to_eventkey.get(alias);
+        self.key_to_eventkey.get(alias)
     }
 
     pub fn get_event_key_split(&self, alias: &String) -> Option<&Vec<usize>> {
-        return self.key_to_split_eventkey.get(alias);
+        self.key_to_split_eventkey.get(alias)
     }
 }
 
@@ -268,7 +268,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
             .insert(alias.to_owned(), splits);
     });
     config.key_to_eventkey.shrink_to_fit();
-    return config;
+    config
 }
 
 #[derive(Debug, Clone)]
@@ -283,11 +283,11 @@ impl EventInfo {
         let evttitle = "Unknown".to_string();
         let detectflg = "".to_string();
         let comment = "".to_string();
-        return EventInfo {
+        EventInfo {
             evttitle,
             detectflg,
             comment,
-        };
+        }
     }
 }
 #[derive(Debug, Clone)]
@@ -297,12 +297,12 @@ pub struct EventInfoConfig {
 
 impl EventInfoConfig {
     pub fn new() -> EventInfoConfig {
-        return EventInfoConfig {
+        EventInfoConfig {
             eventinfo: HashMap::new(),
-        };
+        }
     }
     pub fn get_event_id(&self, eventid: &String) -> Option<&EventInfo> {
-        return self.eventinfo.get(eventid);
+        self.eventinfo.get(eventid)
     }
 }
 
@@ -339,7 +339,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
             .eventinfo
             .insert(eventcode.to_owned(), infodata.to_owned());
     });
-    return config;
+    config
 }
 
 #[cfg(test)]

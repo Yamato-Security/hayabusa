@@ -85,7 +85,7 @@ fn load_record_filters() -> HashMap<String, DataFilterRule> {
             },
         );
     });
-    return ret;
+    ret
 }
 
 #[derive(Clone, Debug)]
@@ -109,7 +109,7 @@ pub fn exclude_ids() -> RuleExclude {
 
     exclude_ids.insert_ids("./rules/config/exclude_rules.txt");
 
-    return exclude_ids;
+    exclude_ids
 }
 
 impl RuleExclude {
@@ -129,7 +129,6 @@ impl RuleExclude {
                     .unwrap()
                     .push(format!("{} does not exist", filename));
             }
-            return ();
         }
         let reader = BufReader::new(f.unwrap());
         for v in reader.lines() {

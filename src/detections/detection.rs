@@ -32,7 +32,7 @@ pub struct EvtxRecordInfo {
 
 impl EvtxRecordInfo {
     pub fn get_value(&self, key: &String) -> Option<&String> {
-        return self.key_2_value.get(key);
+        self.key_2_value.get(key)
     }
 }
 
@@ -43,11 +43,11 @@ pub struct Detection {
 
 impl Detection {
     pub fn new(rule_nodes: Vec<RuleNode>) -> Detection {
-        return Detection { rules: rule_nodes };
+        Detection { rules: rule_nodes }
     }
 
     pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> Self {
-        return rt.block_on(self.execute_rules(records));
+        rt.block_on(self.execute_rules(records))
     }
 
     // ルールファイルをパースします。
@@ -106,7 +106,7 @@ impl Detection {
                 parseerror_count += 1;
                 println!(); // 一行開けるためのprintln
             });
-            return Option::None;
+            Option::None
         };
         // parse rule files
         let ret = rulefile_loader
@@ -120,7 +120,7 @@ impl Detection {
             &parseerror_count,
             &rulefile_loader.ignorerule_count,
         );
-        return ret;
+        ret
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
@@ -132,10 +132,10 @@ impl Detection {
             .into_iter()
             .map(|rule| {
                 let records_cloned = Arc::clone(&records_arc);
-                return spawn(async move {
+                spawn(async move {
                     let moved_rule = Detection::execute_rule(rule, records_cloned);
-                    return moved_rule;
-                });
+                    moved_rule
+                })
             })
             .collect();
 
@@ -151,7 +151,7 @@ impl Detection {
         // self.rulesが再度所有権を取り戻せるように、Detection::execute_ruleで引数に渡したruleを戻り値として返すようにしている。
         self.rules = rules;
 
-        return self;
+        self
     }
 
     pub fn add_aggcondition_msges(self, rt: &Runtime) {
@@ -185,7 +185,7 @@ impl Detection {
             }
         }
 
-        return rule;
+        rule
     }
 
     /// 条件に合致したレコードを表示するための関数
@@ -281,8 +281,10 @@ impl Detection {
             ));
         }
 
-        return ret;
+        ret
     }
+
+
     pub fn print_rule_load_info(
         rc: &HashMap<String, u128>,
         parseerror_count: &u128,

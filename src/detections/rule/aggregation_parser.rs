@@ -52,12 +52,12 @@ impl AggegationConditionCompiler {
     pub fn compile(&self, condition_str: String) -> Result<Option<AggregationParseInfo>, String> {
         let result = self.compile_body(condition_str);
         if let Result::Err(msg) = result {
-            return Result::Err(format!(
+            Result::Err(format!(
                 "An aggregation condition parse error has occurred. {}",
                 msg
-            ));
+            ))
         } else {
-            return result;
+            result
         }
     }
 
@@ -82,7 +82,7 @@ impl AggegationConditionCompiler {
 
         let tokens = self.tokenize(aggregation_str)?;
 
-        return self.parse(tokens);
+        self.parse(tokens)
     }
 
     /// 字句解析します。
@@ -115,19 +115,19 @@ impl AggegationConditionCompiler {
             cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
         }
 
-        return Result::Ok(tokens);
+        Result::Ok(tokens)
     }
 
     /// 比較演算子かどうか判定します。
     fn is_cmp_op(&self, token: &AggregationConditionToken) -> bool {
-        return match token {
+        match token {
             AggregationConditionToken::EQ => true,
             AggregationConditionToken::LE => true,
             AggregationConditionToken::LT => true,
             AggregationConditionToken::GE => true,
             AggregationConditionToken::GT => true,
             _ => false,
-        };
+        }
     }
 
     /// 構文解析します。
@@ -224,7 +224,7 @@ impl AggegationConditionCompiler {
             _cmp_op: cmp_token,
             _cmp_num: cmp_number,
         };
-        return Result::Ok(Option::Some(info));
+        Result::Ok(Option::Some(info))
     }
 
     /// 文字列をConditionTokenに変換する。
@@ -234,23 +234,23 @@ impl AggegationConditionCompiler {
                 .replacen("count(", "", 1)
                 .replacen(")", "", 1)
                 .replace(" ", "");
-            return AggregationConditionToken::COUNT(count_field);
+            AggregationConditionToken::COUNT(count_field)
         } else if token == " " {
-            return AggregationConditionToken::SPACE;
+            AggregationConditionToken::SPACE
         } else if token == "by" {
-            return AggregationConditionToken::BY;
+            AggregationConditionToken::BY
         } else if token == "==" {
-            return AggregationConditionToken::EQ;
+            AggregationConditionToken::EQ
         } else if token == "<=" {
-            return AggregationConditionToken::LE;
+            AggregationConditionToken::LE
         } else if token == ">=" {
-            return AggregationConditionToken::GE;
+            AggregationConditionToken::GE
         } else if token == "<" {
-            return AggregationConditionToken::LT;
+            AggregationConditionToken::LT
         } else if token == ">" {
-            return AggregationConditionToken::GT;
+            AggregationConditionToken::GT
         } else {
-            return AggregationConditionToken::KEYWORD(token);
+            AggregationConditionToken::KEYWORD(token)
         }
     }
 }
@@ -472,6 +472,6 @@ mod tests {
         assert_eq!(true, result._by_field_name.is_none());
         assert_eq!(true, result._field_name.is_none());
         assert_eq!(cmp_num, result._cmp_num);
-        return result._cmp_op;
+        result._cmp_op
     }
 }

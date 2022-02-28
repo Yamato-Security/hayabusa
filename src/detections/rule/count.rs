@@ -61,12 +61,12 @@ fn get_alias_value_in_record(
     record: &Value,
     is_by_alias: bool,
 ) -> Option<String> {
-    if alias == "" {
+    if alias.is_empty() {
         return None;
     }
     match utils::get_event_value(alias, record) {
         Some(value) => {
-            return Some(value.to_string().replace("\"", ""));
+            Some(value.to_string().replace("\"", ""))
         }
         None => {
             let errmsg = match is_by_alias {
@@ -98,9 +98,9 @@ fn get_alias_value_in_record(
                     .unwrap()
                     .push(format!("[ERROR] {}", errmsg));
             }
-            return None;
+            None
         }
-    };
+    }
 }
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
@@ -110,10 +110,10 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
     let agg_condition = rule.get_agg_condition().unwrap();
     if agg_condition._by_field_name.is_some() {
         let by_field_key = agg_condition._by_field_name.as_ref().unwrap();
-        return get_alias_value_in_record(rule, by_field_key, record, true)
-            .unwrap_or("_".to_string());
+        get_alias_value_in_record(rule, by_field_key, record, true)
+            .unwrap_or("_".to_string())
     } else {
-        return "_".to_string();
+        "_".to_string()
     }
 }
 
@@ -125,7 +125,7 @@ pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
     for (key, value) in value_map {
         ret.append(&mut judge_timeframe(&rule, &value, &key.to_string()));
     }
-    return ret;
+    ret
 }
 
 /// aggregation condition内での条件式を文字として返す関数
@@ -155,7 +155,7 @@ pub fn get_str_agg_eq(rule: &RuleNode) -> String {
         }
     }
     ret.push_str(&agg_condition._cmp_num.to_string());
-    return ret;
+    ret
 }
 
 #[derive(Clone, Debug)]
@@ -201,30 +201,28 @@ impl TimeFrameInfo {
                     .push(format!("[ERROR] {}", errmsg));
             }
         }
-        return TimeFrameInfo {
+        TimeFrameInfo {
             timetype: ttype,
             timenum: tnum.parse::<i64>(),
-        };
+        }
     }
 }
 
 /// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
 pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
     let timeframe = rule.detection.timeframe.as_ref();
-    if timeframe.is_none() {
-        return Option::None;
-    }
+    timeframe?;
     let tfi = timeframe.as_ref().unwrap();
     match &tfi.timenum {
         Ok(n) => {
             if tfi.timetype == "d" {
-                return Some(n * 86400);
+                Some(n * 86400)
             } else if tfi.timetype == "h" {
-                return Some(n * 3600);
+                Some(n * 3600)
             } else if tfi.timetype == "m" {
-                return Some(n * 60);
+                Some(n * 60)
             } else {
-                return Some(*n);
+                Some(*n)
             }
         }
         Err(err) => {
@@ -238,7 +236,7 @@ pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
                     .unwrap()
                     .push(format!("[ERROR] {}", errmsg.to_string()));
             }
-            return Option::None;
+            Option::None
         }
     }
 }
@@ -252,42 +250,22 @@ pub fn select_aggcon(cnt: i64, rule: &RuleNode) -> bool {
     let agg_condition = agg_condition.unwrap();
     match agg_condition._cmp_op {
         AggregationConditionToken::EQ => {
-            if cnt == agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
+            cnt == agg_condition._cmp_num
         }
         AggregationConditionToken::GE => {
-            if cnt >= agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
+            cnt >= agg_condition._cmp_num
         }
         AggregationConditionToken::GT => {
-            if cnt > agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
+            cnt > agg_condition._cmp_num 
         }
         AggregationConditionToken::LE => {
-            if cnt <= agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
+            cnt <= agg_condition._cmp_num
         }
         AggregationConditionToken::LT => {
-            if cnt < agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
+            cnt < agg_condition._cmp_num 
         }
         _ => {
-            return false;
+            false
         }
     }
 }
@@ -390,13 +368,13 @@ impl CountStrategy for FieldStrategy {
         rule: &RuleNode,
     ) -> AggResult {
         let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect(); // drainで初期化
-        return AggResult::new(
+        AggResult::new(
             values.len() as i64,
             key.to_string(),
             values,
             datas[left as usize].record_time,
             get_str_agg_eq(rule),
-        );
+        )
     }
 }
 
@@ -425,7 +403,7 @@ impl CountStrategy for NoFieldStrategy {
     }
 
     fn count(&mut self) -> i64 {
-        return self.cnt;
+        self.cnt
     }
 
     fn create_agg_result(
@@ -444,27 +422,27 @@ impl CountStrategy for NoFieldStrategy {
             get_str_agg_eq(rule),
         );
         self.cnt = 0; //cntを初期化
-        return ret;
+        ret
     }
 }
 
 fn _create_counter(rule: &RuleNode) -> Box<dyn CountStrategy> {
     let agg_cond = rule.get_agg_condition().unwrap();
     if agg_cond._field_name.is_some() {
-        return Box::new(FieldStrategy {
+        Box::new(FieldStrategy {
             value_2_cnt: HashMap::new(),
-        });
+        })
     } else {
-        return Box::new(NoFieldStrategy { cnt: 0 });
+        Box::new(NoFieldStrategy { cnt: 0 })
     }
 }
 
 fn _get_timestamp(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> i64 {
-    return datas[idx as usize].record_time.timestamp();
+    datas[idx as usize].record_time.timestamp()
 }
 
 fn _get_timestamp_subsec_nano(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> u32 {
-    return datas[idx as usize].record_time.timestamp_subsec_nanos();
+    datas[idx as usize].record_time.timestamp_subsec_nanos()
 }
 
 // data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
@@ -477,7 +455,7 @@ fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &Vec<AggRecordTime
     if right_time_nano > left_time_nano {
         right_time += 1;
     }
-    return right_time - left_time <= frame;
+    right_time - left_time <= frame
 }
 
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
@@ -527,7 +505,7 @@ pub fn judge_timeframe(
         }
     }
 
-    return ret;
+    ret
 }
 
 #[cfg(test)]
@@ -1552,7 +1530,7 @@ mod tests {
     }
 
     fn test_create_recstr_std(event_id: &str, time: &str) -> String {
-        return test_create_recstr(event_id, time, "Windows Event Log");
+        test_create_recstr(event_id, time, "Windows Event Log")
     }
 
     fn test_create_recstr(event_id: &str, time: &str, param1: &str) -> String {
@@ -1570,10 +1548,10 @@ mod tests {
         }
       }
     }"#;
-        return template
+        template
             .replace("${EVENT_ID}", event_id)
             .replace("${TIME}", time)
-            .replace("${PARAM1}", param1);
+            .replace("${PARAM1}", param1)
     }
 
     fn create_std_rule(count: &str, timeframe: &str) -> String {
@@ -1586,9 +1564,9 @@ mod tests {
         timeframe: ${TIME_FRAME}
     details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
     "#;
-        return template
+        template
             .replace("${COUNT}", count)
-            .replace("${TIME_FRAME}", timeframe);
+            .replace("${TIME_FRAME}", timeframe)
     }
 
     /// countで対象の数値確認を行うためのテスト用関数

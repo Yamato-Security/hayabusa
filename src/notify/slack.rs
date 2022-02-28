@@ -18,7 +18,7 @@ impl SlackNotify {
             eprintln!("WEBHOOK_URL not found");
             return false;
         }
-        return true;
+        true
     }
 
     // send message to slack.
