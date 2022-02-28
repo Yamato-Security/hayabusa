@@ -514,7 +514,7 @@ impl App {
         } else if hayabusa_rule_repo.is_ok() && hayabusa_repo.is_err() {
             // rulesのrepositoryが確認できる場合
             // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
-            self.pull_repository( hayabusa_rule_repo.unwrap())
+            self.pull_repository(hayabusa_rule_repo.unwrap())
         } else {
             //hayabusa repositoryがあればsubmodule情報もあると思われるのでupdate
             let rules_path = Path::new("./rules");
@@ -529,11 +529,13 @@ impl App {
                 let submodule_repo = submodule.open()?;
                 match self.pull_repository(submodule_repo) {
                     Ok(it) => it,
-                    Err(e) => {AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("Failed submodule update. {}", e),
-                        ).ok();
-                        is_success_submodule_update =false;
+                    Err(e) => {
+                        AlertMessage::alert(
+                            &mut BufWriter::new(std::io::stderr().lock()),
+                            &format!("Failed submodule update. {}", e),
+                        )
+                        .ok();
+                        is_success_submodule_update = false;
                     }
                 }
             }
@@ -546,16 +548,17 @@ impl App {
     }
 
     /// Pull(fetch and fast-forward merge) repositoryto input_repo.
-    fn pull_repository(&self,input_repo :Repository) -> Result<(),git2::Error>{
-        match input_repo.find_remote("origin")?
-                .fetch(&["main"], None, None)
-                .map_err(|e| {
-                    AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("Failed git fetch to rules folder. {}", e),
-                    )
-                    .ok();
-                }) {
+    fn pull_repository(&self, input_repo: Repository) -> Result<(), git2::Error> {
+        match input_repo
+            .find_remote("origin")?
+            .fetch(&["main"], None, None)
+            .map_err(|e| {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!("Failed git fetch to rules folder. {}", e),
+                )
+                .ok();
+            }) {
             Ok(it) => it,
             Err(_err) => return Err(git2::Error::from_str(&String::default())),
         };
