@@ -590,7 +590,7 @@ impl App {
         ) {
             Ok(_repo) => {
                 println!("Finished cloning the hayabusa-rules repository.");
-                return Ok(());
+                Ok(())
             }
             Err(e) => {
                 AlertMessage::alert(
@@ -601,9 +601,9 @@ impl App {
                     ),
                 )
                 .ok();
-                return Err(git2::Error::from_str(&String::default()));
+                Err(git2::Error::from_str(&String::default()))
             }
-        };
+        }
     }
 }
 
