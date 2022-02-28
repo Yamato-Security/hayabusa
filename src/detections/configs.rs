@@ -16,7 +16,7 @@ lazy_static! {
         levelmap.insert("MEDIUM".to_owned(), 3);
         levelmap.insert("HIGH".to_owned(), 4);
         levelmap.insert("CRITICAL".to_owned(), 5);
-        return levelmap;
+        levelmap
     };
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig =
         load_eventkey_alias("./rules/config/eventkey_alias.txt");

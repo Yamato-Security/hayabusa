@@ -57,10 +57,10 @@ pub struct App {
 
 impl App {
     pub fn new() -> App {
-        return App {
+        App {
             rt: utils::create_tokio_runtime(),
             rule_keys: Vec::new(),
-        };
+        }
     }
 
     fn exec(&mut self) {
@@ -210,14 +210,14 @@ impl App {
                 .ok();
                 return None;
             }
-            return Some(evtx_files);
+            Some(evtx_files)
         } else {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
                 &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
             )
             .ok();
-            return None;
+            None
         }
     }
 
@@ -248,7 +248,7 @@ impl App {
                 path.to_str().and_then(|path_str| {
                     let subdir_ret = self.collect_evtxfiles(path_str);
                     ret.extend(subdir_ret);
-                    return Option::Some(());
+                    Option::Some(())
                 });
             } else {
                 let path_str = path.to_str().unwrap_or("");
@@ -265,7 +265,7 @@ impl App {
             }
         }
 
-        return ret;
+        ret
     }
 
     fn print_contributors(&self) {
@@ -399,7 +399,7 @@ impl App {
 
         tl.tm_stats_dsp_msg();
 
-        return detection;
+        detection
     }
 
     async fn create_rec_infos(
@@ -411,23 +411,21 @@ impl App {
         let rule_keys = Arc::new(rule_keys);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = records_per_detect
             .into_iter()
-            .map(|rec| {
+            .map(|rec| -> JoinHandle<EvtxRecordInfo> {
                 let arc_rule_keys = Arc::clone(&rule_keys);
                 let arc_path = Arc::clone(&path);
-                return spawn(async move {
-                    let rec_info =
-                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys);
-                    return rec_info;
-                });
+                spawn(async move {
+                    utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                })
             })
-            .collect();
+            .collect::<_>();
 
         let mut ret = vec![];
         for thread in threads.into_iter() {
             ret.push(thread.await.unwrap());
         }
 
-        return ret;
+        ret
     }
 
     fn get_all_keys(&self, rules: &Vec<RuleNode>) -> Vec<String> {
@@ -438,7 +436,7 @@ impl App {
         }
 
         let ret: Vec<String> = key_set.into_iter().collect();
-        return ret;
+        ret
     }
 
     // target_eventids.txtの設定を元にフィルタする。
@@ -448,11 +446,11 @@ impl App {
             return true;
         }
 
-        return match eventid.unwrap() {
+        match eventid.unwrap() {
             Value::String(s) => utils::is_target_event_id(s),
             Value::Number(n) => utils::is_target_event_id(&n.to_string()),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
-        };
+        }
     }
 
     fn evtx_to_jsons(&self, evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {
@@ -464,11 +462,11 @@ impl App {
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
                 let evtx_parser = evtx_parser.with_configuration(parse_config);
-                return Option::Some(evtx_parser);
+                Option::Some(evtx_parser)
             }
             Err(e) => {
                 eprintln!("{}", e);
-                return Option::None;
+                Option::None
             }
         }
     }
@@ -527,7 +525,7 @@ impl App {
         for mut submodule in submodules {
             submodule.update(true, None)?;
         }
-        return Ok(());
+        Ok(())
     }
 
     /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
@@ -538,7 +536,7 @@ impl App {
         ) {
             Ok(_repo) => {
                 println!("Finished cloning the hayabusa-rules repository.");
-                return Ok(());
+                Ok(())
             }
             Err(e) => {
                 AlertMessage::alert(
@@ -549,9 +547,9 @@ impl App {
                     ),
                 )
                 .ok();
-                return Err(git2::Error::from_str(&String::default()));
+                Err(git2::Error::from_str(&String::default()))
             }
-        };
+        }
     }
 }
 

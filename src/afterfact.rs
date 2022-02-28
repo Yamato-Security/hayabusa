@@ -76,7 +76,7 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
         }
         color_map.insert(level.to_string(), color_code);
     });
-    return Some(color_map);
+    Some(color_map)
 }
 
 pub fn after_fact() {
@@ -303,7 +303,7 @@ fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &String) -> Ve
     if target_color.is_some() {
         output_color = target_color.unwrap().to_vec();
     }
-    return output_color;
+    output_color
 }
 
 fn format_time(time: &DateTime<Utc>) -> String {
@@ -319,11 +319,11 @@ where
     Tz::Offset: std::fmt::Display,
 {
     if configs::CONFIG.read().unwrap().args.is_present("rfc-2822") {
-        return time.to_rfc2822();
+        time.to_rfc2822()
     } else if configs::CONFIG.read().unwrap().args.is_present("rfc-3339") {
-        return time.to_rfc3339();
+        time.to_rfc3339()
     } else {
-        return time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string();
+        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string();
     }
 }
 
