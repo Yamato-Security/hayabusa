@@ -175,13 +175,13 @@ impl Detection {
     fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
         let agg_condition = rule.has_agg_condition();
         for record_info in records.as_ref() {
-            let result = rule.select(&record_info);
+            let result = rule.select(record_info);
             if !result {
                 continue;
             }
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
-                Detection::insert_message(&rule, &record_info);
+                Detection::insert_message(&rule, record_info);
             }
         }
 

@@ -121,7 +121,7 @@ fn load_target_ids(path: &str) -> TargetEventIds {
     if lines.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &lines.as_ref().unwrap_err(),
+            lines.as_ref().unwrap_err(),
         )
         .ok();
         return ret;
@@ -241,7 +241,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &read_result.as_ref().unwrap_err(),
+            read_result.as_ref().unwrap_err(),
         )
         .ok();
         return config;
@@ -313,7 +313,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &read_result.as_ref().unwrap_err(),
+            read_result.as_ref().unwrap_err(),
         )
         .ok();
         return config;

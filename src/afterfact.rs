@@ -49,7 +49,7 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
         // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
         AlertMessage::warn(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &read_result.as_ref().unwrap_err(),
+            read_result.as_ref().unwrap_err(),
         )
         .ok();
         return None;
@@ -142,7 +142,7 @@ fn emit_csv<W: std::io::Write>(
             if displayflag {
                 if color_map.is_some() {
                     let output_color =
-                        _get_output_color(&color_map.as_ref().unwrap(), &detect_info.level);
+                        _get_output_color(color_map.as_ref().unwrap(), &detect_info.level);
                     wtr.serialize(DisplayFormat {
                         timestamp: &format!(
                             "{} ",
@@ -285,7 +285,7 @@ fn _print_unique_results(
             output_str = output_raw_str;
         } else {
             let output_color =
-                _get_output_color(&color_map.as_ref().unwrap(), &level_name.to_string());
+                _get_output_color(color_map.as_ref().unwrap(), &level_name.to_string());
             output_str = output_raw_str
                 .truecolor(output_color[0], output_color[1], output_color[2])
                 .to_string();

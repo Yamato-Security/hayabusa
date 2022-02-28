@@ -18,7 +18,7 @@ use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
 pub fn count(rule: &mut RuleNode, record: &Value) {
-    let key = create_count_key(&rule, record);
+    let key = create_count_key(rule, record);
     let field_name: String = match rule.get_agg_condition() {
         None => String::default(),
         Some(aggcondition) => aggcondition
@@ -123,7 +123,7 @@ pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
     let value_map = &rule.countdata;
     let mut ret = Vec::new();
     for (key, value) in value_map {
-        ret.append(&mut judge_timeframe(&rule, &value, &key.to_string()));
+        ret.append(&mut judge_timeframe(rule, value, &key.to_string()));
     }
     ret
 }
@@ -1572,7 +1572,7 @@ mod tests {
     /// countで対象の数値確認を行うためのテスト用関数
     fn check_count(
         rule_str: &str,
-        records_str: &Vec<String>,
+        records_str: &[String],
         expected_counts: HashMap<String, i32>,
         expect_agg_results: Vec<AggResult>,
     ) {
@@ -1584,7 +1584,7 @@ mod tests {
             assert!(false, "Failed to init rulenode");
         }
         for record_str in records_str {
-            match serde_json::from_str(&record_str) {
+            match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
@@ -1608,7 +1608,7 @@ mod tests {
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
             //countupの関数が機能しているかを確認
             assert_eq!(
-                *&rule_node.countdata.get(&expect_agg.key).unwrap().len() as i32,
+                rule_node.countdata.get(&expect_agg.key).unwrap().len() as i32,
                 *expect_count
             );
             expect_data.push(expect_agg.data);
@@ -1629,7 +1629,7 @@ mod tests {
             for expect_field_value in &expect_field_values[index] {
                 // テストによってはtimeframeの値と各fieldの値で配列の順番が想定したものと変化してしまう可能性があるため配列の長さを確認したうえで期待した各要素が存在するかを確認する。
                 // field`要素の順番については以降の処理で関連しない
-                assert!(agg_result.field_values.contains(&expect_field_value));
+                assert!(agg_result.field_values.contains(expect_field_value));
             }
             assert_eq!(agg_result.condition_op_num, expect_condition_op_num[index]);
         }

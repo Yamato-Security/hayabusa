@@ -370,7 +370,7 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         let replaced_str =
-            utils::replace_target_character(self.get_event_value(&event_record), filter_rule);
+            utils::replace_target_character(self.get_event_value(event_record), filter_rule);
 
         return self
             .matcher

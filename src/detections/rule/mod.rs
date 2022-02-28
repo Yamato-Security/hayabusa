@@ -84,7 +84,7 @@ impl RuleNode {
         if !self.has_agg_condition() {
             return ret;
         }
-        ret.append(&mut count::aggregation_condition_select(&self));
+        ret.append(&mut count::aggregation_condition_select(self));
         ret
     }
     pub fn check_exist_countdata(&self) -> bool {

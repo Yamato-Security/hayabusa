@@ -155,7 +155,7 @@ impl App {
             }
             self.analysis_files(vec![PathBuf::from(filepath)]);
         } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
-            let evtx_files = self.collect_evtxfiles(&directory);
+            let evtx_files = self.collect_evtxfiles(directory);
             if evtx_files.is_empty() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),

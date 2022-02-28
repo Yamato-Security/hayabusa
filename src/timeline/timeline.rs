@@ -46,7 +46,7 @@ impl Timeline {
 
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
-        mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
+        mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
         // イベントID毎の出力メッセージ生成
         let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted);
