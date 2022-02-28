@@ -29,6 +29,12 @@ pub struct ConfigReader {
     pub target_eventids: TargetEventIds,
 }
 
+impl Default for ConfigReader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigReader {
     pub fn new() -> Self {
         ConfigReader {
@@ -99,6 +105,12 @@ pub struct TargetEventIds {
     ids: HashSet<String>,
 }
 
+impl Default for TargetEventIds {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TargetEventIds {
     pub fn new() -> TargetEventIds {
         TargetEventIds {
@@ -141,6 +153,12 @@ fn load_target_ids(path: &str) -> TargetEventIds {
 pub struct TargetEventTime {
     start_time: Option<DateTime<Utc>>,
     end_time: Option<DateTime<Utc>>,
+}
+
+impl Default for TargetEventTime {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TargetEventTime {
@@ -234,6 +252,12 @@ impl EventKeyAliasConfig {
     }
 }
 
+impl Default for EventKeyAliasConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
@@ -278,6 +302,12 @@ pub struct EventInfo {
     pub comment: String,
 }
 
+impl Default for EventInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EventInfo {
     pub fn new() -> EventInfo {
         let evttitle = "Unknown".to_string();
@@ -293,6 +323,12 @@ impl EventInfo {
 #[derive(Debug, Clone)]
 pub struct EventInfoConfig {
     eventinfo: HashMap<String, EventInfo>,
+}
+
+impl Default for EventInfoConfig {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl EventInfoConfig {

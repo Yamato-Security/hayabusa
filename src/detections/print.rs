@@ -57,6 +57,12 @@ lazy_static! {
         .is_present("statistics");
 }
 
+impl Default for Message {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Message {
     pub fn new() -> Self {
         let messages: BTreeMap<DateTime<Utc>, Vec<DetectInfo>> = BTreeMap::new();

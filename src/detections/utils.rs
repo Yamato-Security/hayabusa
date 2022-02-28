@@ -184,7 +184,7 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
 
             let val = &event_key[start_idx..(*key + start_idx)];
             ret = &ret[val];
-            start_idx = *key + start_idx;
+            start_idx += *key;
             start_idx += 1;
         }
 

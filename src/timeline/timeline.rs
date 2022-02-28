@@ -8,6 +8,12 @@ pub struct Timeline {
     pub stats: EventStatistics,
 }
 
+impl Default for Timeline {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Timeline {
     pub fn new() -> Timeline {
         let totalcnt = 0;

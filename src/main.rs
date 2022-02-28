@@ -55,6 +55,12 @@ pub struct App {
     rule_keys: Vec<String>,
 }
 
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl App {
     pub fn new() -> App {
         App {

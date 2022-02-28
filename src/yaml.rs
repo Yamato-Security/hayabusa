@@ -23,6 +23,12 @@ pub struct ParseYaml {
     pub errorrule_count: u128,
 }
 
+impl Default for ParseYaml {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ParseYaml {
     pub fn new() -> ParseYaml {
         ParseYaml {

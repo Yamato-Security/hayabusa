@@ -488,7 +488,7 @@ pub fn judge_timeframe(
         // timeframeの範囲にある限りrightをincrement
         while right < data_len && _is_in_timeframe(left, right, frame, &datas) {
             counter.add_data(right, &datas, rule);
-            right = right + 1;
+            right += 1;
         }
 
         let cnt = counter.count();
