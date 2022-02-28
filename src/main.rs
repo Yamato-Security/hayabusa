@@ -503,32 +503,51 @@ impl App {
 
     /// update rules(hayabusa-rules subrepository)
     fn update_rules(&self) -> Result<(), git2::Error> {
-        let open_result = Repository::open(Path::new("."));
-        if open_result.is_err() {
-            AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                &"Failed to open the git repository.".to_string(),
-            )
-            .ok();
+        let hayabusa_repo = Repository::open(Path::new("."));
+        let hayabusa_rule_repo = Repository::open(Path::new("./rules"));
+        if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
             println!(
                 "Attempting to git clone the hayabusa-rules repository into the rules folder."
             );
             // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
-            return self.clone_rules();
-        }
-        let rules_path = Path::new("./rules");
-        if !rules_path.exists() {
-            create_dir(rules_path).ok();
-        }
-        let hayabusa_repo = open_result.unwrap();
-        let submodules = hayabusa_repo.submodules()?;
-        for mut submodule in submodules {
-            submodule.update(true, None)?;
-            let submodule_repo = submodule.open()?;
-            let mut exit_flag = false;
+            self.clone_rules()
+        } else if hayabusa_rule_repo.is_ok() && hayabusa_repo.is_err() {
+            // rulesのrepositoryが確認できる場合
             // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
-            submodule_repo
-                .find_remote("origin")?
+            self.pull_repository( hayabusa_rule_repo.unwrap())
+        } else {
+            //hayabusa repositoryがあればsubmodule情報もあると思われるのでupdate
+            let rules_path = Path::new("./rules");
+            if !rules_path.exists() {
+                create_dir(rules_path).ok();
+            }
+            let hayabusa_repo = hayabusa_repo.unwrap();
+            let submodules = hayabusa_repo.submodules()?;
+            let mut is_success_submodule_update = true;
+            for mut submodule in submodules {
+                submodule.update(true, None)?;
+                let submodule_repo = submodule.open()?;
+                match self.pull_repository(submodule_repo) {
+                    Ok(it) => it,
+                    Err(e) => {AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("Failed submodule update. {}", e),
+                        ).ok();
+                        is_success_submodule_update =false;
+                    }
+                }
+            }
+            if is_success_submodule_update {
+                Ok(())
+            } else {
+                Err(git2::Error::from_str(&String::default()))
+            }
+        }
+    }
+
+    /// Pull(fetch and fast-forward merge) repositoryto input_repo.
+    fn pull_repository(&self,input_repo :Repository) -> Result<(),git2::Error>{
+        match input_repo.find_remote("origin")?
                 .fetch(&["main"], None, None)
                 .map_err(|e| {
                     AlertMessage::alert(
@@ -536,36 +555,31 @@ impl App {
                         &format!("Failed git fetch to rules folder. {}", e),
                     )
                     .ok();
-                    exit_flag = true;
-                })
-                .ok();
-            if exit_flag {
-                return Err(git2::Error::from_str(&String::default()));
-            }
-            let fetch_head = submodule_repo.find_reference("FETCH_HEAD")?;
-            let fetch_commit = submodule_repo.reference_to_annotated_commit(&fetch_head)?;
-            let analysis = submodule_repo.merge_analysis(&[&fetch_commit])?;
-            if analysis.0.is_up_to_date() {
-                continue;
-            } else if analysis.0.is_fast_forward() {
-                let refname = "refs/heads/main";
-                let mut reference = submodule_repo.find_reference(&refname)?;
-                reference.set_target(fetch_commit.id(), "Fast-Forward")?;
-                submodule_repo.set_head(&refname)?;
-                submodule_repo
-                    .checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
-                    .ok();
-            } else if analysis.0.is_normal() {
-                AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                &"update-rules option is git Fast-Forward merge only. please check your rules folder."
-                    .to_string(),
-            )
-            .ok();
-                return Err(git2::Error::from_str(&String::default()));
-            }
+                }) {
+            Ok(it) => it,
+            Err(_err) => return Err(git2::Error::from_str(&String::default())),
+        };
+        let fetch_head = input_repo.find_reference("FETCH_HEAD")?;
+        let fetch_commit = input_repo.reference_to_annotated_commit(&fetch_head)?;
+        let analysis = input_repo.merge_analysis(&[&fetch_commit])?;
+        if analysis.0.is_up_to_date() {
+            Ok(())
+        } else if analysis.0.is_fast_forward() {
+            let mut reference = input_repo.find_reference("refs/heads/main")?;
+            reference.set_target(fetch_commit.id(), "Fast-Forward")?;
+            input_repo.set_head("refs/heads/main")?;
+            input_repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
+            Ok(())
+        } else if analysis.0.is_normal() {
+            AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &"update-rules option is git Fast-Forward merge only. please check your rules folder."
+                .to_string(),
+            ).ok();
+            Err(git2::Error::from_str(&String::default()))
+        } else {
+            Err(git2::Error::from_str(&String::default()))
         }
-        return Ok(());
     }
 
     /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
