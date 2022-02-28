@@ -323,7 +323,7 @@ where
     } else if configs::CONFIG.read().unwrap().args.is_present("rfc-3339") {
         time.to_rfc3339()
     } else {
-        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string();
+        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
     }
 }
 
