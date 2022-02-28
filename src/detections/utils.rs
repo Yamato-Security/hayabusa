@@ -166,7 +166,7 @@ pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     }
 }
 
-pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a Value> {
+pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Value> {
     if key.is_empty() {
         return Option::None;
     }
