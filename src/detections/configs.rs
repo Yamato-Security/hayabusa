@@ -106,7 +106,7 @@ impl TargetEventIds {
         }
     }
 
-    pub fn is_target(&self, id: &String) -> bool {
+    pub fn is_target(&self, id: &str) -> bool {
         // 中身が空の場合は全EventIdを対象とする。
         if self.ids.is_empty() {
             return true;
@@ -225,11 +225,11 @@ impl EventKeyAliasConfig {
         }
     }
 
-    pub fn get_event_key(&self, alias: &String) -> Option<&String> {
+    pub fn get_event_key(&self, alias: &str) -> Option<&String> {
         self.key_to_eventkey.get(alias)
     }
 
-    pub fn get_event_key_split(&self, alias: &String) -> Option<&Vec<usize>> {
+    pub fn get_event_key_split(&self, alias: &str) -> Option<&Vec<usize>> {
         self.key_to_split_eventkey.get(alias)
     }
 }
@@ -301,7 +301,7 @@ impl EventInfoConfig {
             eventinfo: HashMap::new(),
         }
     }
-    pub fn get_event_id(&self, eventid: &String) -> Option<&EventInfo> {
+    pub fn get_event_id(&self, eventid: &str) -> Option<&EventInfo> {
         self.eventinfo.get(eventid)
     }
 }

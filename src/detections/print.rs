@@ -249,12 +249,12 @@ impl AlertMessage {
     }
 
     /// ERRORメッセージを表示する関数
-    pub fn alert<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
+    pub fn alert<W: Write>(w: &mut W, contents: &str) -> io::Result<()> {
         writeln!(w, "[ERROR] {}", contents)
     }
 
     /// WARNメッセージを表示する関数
-    pub fn warn<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
+    pub fn warn<W: Write>(w: &mut W, contents: &str) -> io::Result<()> {
         writeln!(w, "[WARN] {}", contents)
     }
 }

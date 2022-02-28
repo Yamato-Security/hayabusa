@@ -57,7 +57,7 @@ pub fn countup(
 /// is_by_aliasはこの関数を呼び出す際はcountのbyの値もしくはfieldの値のどちらかであるためboolとした
 fn get_alias_value_in_record(
     rule: &RuleNode,
-    alias: &String,
+    alias: &str,
     record: &Value,
     is_by_alias: bool,
 ) -> Option<String> {

@@ -31,7 +31,7 @@ pub struct EvtxRecordInfo {
 }
 
 impl EvtxRecordInfo {
-    pub fn get_value(&self, key: &String) -> Option<&String> {
+    pub fn get_value(&self, key: &str) -> Option<&String> {
         self.key_2_value.get(key)
     }
 }

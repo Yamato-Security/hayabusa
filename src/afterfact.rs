@@ -296,7 +296,7 @@ fn _print_unique_results(
 }
 
 /// levelに対応したtruecolorの値の配列を返す関数
-fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &String) -> Vec<u8> {
+fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &str) -> Vec<u8> {
     // カラーをつけない場合は255,255,255で出力する
     let mut output_color: Vec<u8> = vec![255, 255, 255];
     let target_color = color_map.get(level);
