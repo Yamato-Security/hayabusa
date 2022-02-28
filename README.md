@@ -56,6 +56,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [English](#english)
   - [Japanese](#japanese)
 - [Contribution](#contribution)
+- [Bug Submission](#bug-submission)
 - [License](#license)
 
 ## Main goals
@@ -359,7 +360,7 @@ It will display in real time the number and percent of evtx files that it has fi
 ## Color Output
 
 You can output the alerts in color based on the alert `level` by specifying `-c` or `--color`.
-You can change the default colors in the config file at `.\config\level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
+You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
 Note: Color can only be displayed in terminals that support [True Color](https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)).
 Example: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) or [iTerm2](https://iterm2.com/) for macOS.
 
@@ -367,7 +368,7 @@ Example: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/in
 
 Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder. In the future, we plan to host the rules at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
 
-Please read [AboutRuleCreation-English.md](./doc/AboutRuleCreation-English.md) to understand about the rule format how to create rules.
+Please read [the hayabusa-rules repository README](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md) to understand about the rule format and how to create rules.
 
 All of the rules from the hayabusa-rules repository should be placed in the `rules` folder.
 `informational` level rules are considered `events`, while anything with a `level` of `low` and higher are considered `alerts`.
@@ -407,13 +408,13 @@ Sigma rules need to first be converted to hayabusa rule format explained [here](
 
 Like firewalls and IDSes, any signature-based tool will require some tuning to fit your environment so you may need to permanently or temporarily exclude certain rules.
 
-You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `rules\config\exclude_rules.txt` in order to ignore any rule that you do not need or cannot be used.
+You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `rules/config/exclude_rules.txt` in order to ignore any rule that you do not need or cannot be used.
 
-You can also add a rule ID to `rules\config\noisy_rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
+You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
 
 ## Event ID filtering
 
-You can filter on event IDs by placing event ID numbers in `config\target_eventids.txt`.
+You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
 This will increase performance so it is recommended if you only need to search for certain IDs.
 
 We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
@@ -478,6 +479,11 @@ The following benchmarks were taken on a Lenovo P51 based on approximately 500 e
 We would love any form of contribution. Pull requests, rule creation and sample evtx logs are the best but feature requests, notifying us of bugs, etc... are also very welcome.
 
 At the least, if you like our tool then please give us a star on Github and show your support!
+
+# Bug Submission
+
+Please submit any bugs you find [here.](https://github.com/Yamato-Security/hayabusa/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5Bbug%5D)
+This project is currently actively maintained and we are happy to fix any bugs reported.
 
 # License
 
