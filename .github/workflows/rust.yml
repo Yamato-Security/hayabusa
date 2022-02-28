@@ -27,11 +27,13 @@ jobs:
       run: cargo fmt -- --check
     - name: Prepare Clippy
       run: rustup component add clippy
-    - name: rust-clippy-check
-      uses: actions-rs/clippy-check@v1.0.7
+    - name: Check workflow permissions
+        id: check_permissions
+        uses: scherermichael-oss/action-has-permission@1.0.6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+          required-permission: write
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Run clippy action to produce annotations
       uses: actions-rs/clippy-check@v1.0.7
       if: steps.check_permissions.outputs.has-permission
