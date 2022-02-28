@@ -6,6 +6,7 @@ use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
+use crate::detections::print::DetectInfo;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -196,19 +197,22 @@ impl Detection {
             .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
             .collect();
         MESSAGES.lock().unwrap().insert(
-            record_info.evtx_filepath.to_string(),
-            rule.rulepath.to_string(),
             &record_info.record,
-            rule.yaml["level"].as_str().unwrap_or("-").to_string(),
-            record_info.record["Event"]["System"]["Computer"]
+            rule.yaml["details"].as_str().unwrap_or("").to_string(),
+            DetectInfo {
+                filepath: record_info.evtx_filepath.to_string(),
+                rulepath: rule.rulepath.to_string(),
+                level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
+                computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace("\"", ""),
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+                eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
                 .unwrap_or_else(|| "-".to_owned())
                 ,
-            rule.yaml["title"].as_str().unwrap_or("").to_string(),
-            rule.yaml["details"].as_str().unwrap_or("").to_string(),
-            tag_info.join(" : "),
+                alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
+                detail: String::default(),
+                tag_info: tag_info.join(" : "),
+            }
         );
     }
 
@@ -222,15 +226,17 @@ impl Detection {
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);
         MESSAGES.lock().unwrap().insert_message(
-            "-".to_owned(),
-            rule.rulepath.to_owned(),
+            DetectInfo{
+                filepath: "-".to_owned(),
+                rulepath: rule.rulepath.to_owned(),
+                level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
+                computername: "-".to_owned(),
+                eventid: "-".to_owned(),
+                alert: rule.yaml["title"].as_str().unwrap_or("").to_owned(),
+                detail: output,
+                tag_info: tag_info.join(" : "),
+            },
             agg_result.start_timedate,
-            rule.yaml["level"].as_str().unwrap_or("").to_owned(),
-            "-".to_owned(),
-            "-".to_owned(),
-            rule.yaml["title"].as_str().unwrap_or("").to_owned(),
-            output,
-            tag_info.join(" : "),
         )
     }
 

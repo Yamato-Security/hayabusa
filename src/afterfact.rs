@@ -329,7 +329,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::afterfact::emit_csv;
+    use crate::detections::print::DetectInfo;
+use crate::afterfact::emit_csv;
     use crate::detections::print;
     use chrono::{Local, TimeZone, Utc};
     use serde_json::Value;
@@ -372,15 +373,18 @@ mod tests {
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
             messages.insert(
-                testfilepath.to_string(),
-                testrulepath.to_string(),
                 &event,
-                test_level.to_string(),
-                test_computername.to_string(),
-                test_eventid.to_string(),
-                test_title.to_string(),
                 output.to_string(),
-                test_attack.to_string(),
+                DetectInfo {
+                    filepath: testfilepath.to_string(),
+                    rulepath: testrulepath.to_string(),
+                    level: test_level.to_string(),
+                    computername: test_computername.to_string(),
+                    eventid: test_eventid.to_string(),
+                    alert: test_title.to_string(),
+                    detail: String::default(),
+                    tag_info: test_attack.to_string(),
+                }
             );
         }
         let expect_time = Utc
@@ -452,15 +456,18 @@ mod tests {
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
             messages.insert(
-                testfilepath.to_string(),
-                testrulepath.to_string(),
                 &event,
-                test_level.to_string(),
-                test_computername.to_string(),
-                test_eventid.to_string(),
-                test_title.to_string(),
                 output.to_string(),
-                test_attack.to_string(),
+                DetectInfo{
+                    filepath: testfilepath.to_string(),
+                    rulepath: testrulepath.to_string(),
+                    level: test_level.to_string(),
+                    computername: test_computername.to_string(),
+                    eventid: test_eventid.to_string(),
+                    alert: test_title.to_string(),
+                    detail: String::default(),
+                    tag_info: test_attack.to_string(),
+                }
             );
             messages.debug();
         }
