@@ -263,7 +263,7 @@ impl LeafSelectionNode {
         }
 
         let topkey = self.key_list[0].to_string();
-        let values: Vec<&str> = topkey.split("|").collect();
+        let values: Vec<&str> = topkey.split('|').collect();
         return values[0].to_string();
     }
 

@@ -194,7 +194,7 @@ pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a V
     } else {
         let mut ret: &Value = event_value;
         let event_key = key;
-        for key in event_key.split(".") {
+        for key in event_key.split('.') {
             if ret.is_object() == false {
                 return Option::None;
             }

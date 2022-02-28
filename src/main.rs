@@ -144,7 +144,7 @@ impl App {
                     .to_str()
                     .unwrap()
                     .trim()
-                    .starts_with(".")
+                    .starts_with('.')
             {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
@@ -258,7 +258,7 @@ impl App {
                         .unwrap_or(OsStr::new("."))
                         .to_str()
                         .unwrap()
-                        .starts_with(".")
+                        .starts_with('.')
                 {
                     ret.push(path);
                 }

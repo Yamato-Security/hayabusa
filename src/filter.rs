@@ -133,7 +133,7 @@ impl RuleExclude {
         }
         let reader = BufReader::new(f.unwrap());
         for v in reader.lines() {
-            let v = v.unwrap().split("#").collect::<Vec<&str>>()[0]
+            let v = v.unwrap().split('#').collect::<Vec<&str>>()[0]
                 .trim()
                 .to_string();
             if v.is_empty() || !IDS_REGEX.is_match(&v) {

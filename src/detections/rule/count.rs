@@ -177,16 +177,16 @@ impl TimeFrameInfo {
     pub fn parse_tframe(value: String) -> TimeFrameInfo {
         let mut ttype: String = "".to_string();
         let mut tnum = value.clone();
-        if value.contains("s") {
+        if value.contains('s') {
             ttype = "s".to_owned();
             tnum.retain(|c| c != 's');
-        } else if value.contains("m") {
+        } else if value.contains('m') {
             ttype = "m".to_owned();
             tnum.retain(|c| c != 'm');
-        } else if value.contains("h") {
+        } else if value.contains('h') {
             ttype = "h".to_owned();
             tnum.retain(|c| c != 'h');
-        } else if value.contains("d") {
+        } else if value.contains('d') {
             ttype = "d".to_owned();
             tnum.retain(|c| c != 'd');
         } else {

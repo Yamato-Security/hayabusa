@@ -242,7 +242,7 @@ impl Detection {
         let agg_condition_raw_str: Vec<&str> = rule.yaml["detection"]["condition"]
             .as_str()
             .unwrap()
-            .split("|")
+            .split('|')
             .collect();
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
         let agg_condition = rule.get_agg_condition().unwrap();

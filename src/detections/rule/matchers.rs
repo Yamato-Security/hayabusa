@@ -261,7 +261,7 @@ impl LeafMatcher for DefaultMatcher {
 
         // Pipeが指定されていればパースする
         let emp = String::default();
-        let mut keys: VecDeque<&str> = key_list.get(0).unwrap_or(&emp).split("|").collect(); // key_listが空はあり得ない
+        let mut keys: VecDeque<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
         keys.pop_front(); // 一つ目はただのキーで、2つめ以降がpipe
         while !keys.is_empty() {
             let key = keys.pop_front().unwrap();
@@ -359,7 +359,7 @@ impl PipeElement {
                 return patt;
             } else if patt.ends_with("/*") {
                 return patt + "*";
-            } else if patt.ends_with("*") {
+            } else if patt.ends_with('*') {
                 return patt;
             } else {
                 return patt + "*";
@@ -370,7 +370,7 @@ impl PipeElement {
                 return patt;
             } else if patt.starts_with("/*") {
                 return "*".to_string() + &patt;
-            } else if patt.starts_with("*") {
+            } else if patt.starts_with('*') {
                 return patt;
             } else {
                 return "*".to_string() + &patt;
