@@ -337,11 +337,11 @@ mod tests {
 
     pub fn parse_rule_from_str(rule_str: &str) -> RuleNode {
         let rule_yaml = YamlLoader::load_from_str(rule_str);
-        assert_eq!(rule_yaml.is_ok(), true);
+        assert!(rule_yaml.is_ok());
         let rule_yamls = rule_yaml.unwrap();
         let mut rule_yaml = rule_yamls.into_iter();
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
-        assert_eq!(rule_node.init().is_ok(), true);
+        assert!(rule_node.init().is_ok());
         rule_node
     }
 
@@ -367,7 +367,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -397,7 +397,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -427,7 +427,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -510,7 +510,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -569,7 +569,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -635,7 +635,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -679,7 +679,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -724,7 +724,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -788,7 +788,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -852,7 +852,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -898,7 +898,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -957,8 +957,8 @@ mod tests {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 let result = rule_node.select(&recinfo);
-                assert_eq!(rule_node.detection.aggregation_condition.is_some(), true);
-                assert_eq!(result, true);
+                assert!(rule_node.detection.aggregation_condition.is_some());
+                assert!(result);
                 assert_eq!(
                     *&rule_node.countdata.get(key).unwrap().len() as i32,
                     expect_count

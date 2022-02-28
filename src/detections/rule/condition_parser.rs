@@ -582,10 +582,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                assert!(false);
             }
         }
     }
@@ -626,10 +626,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                assert!(false);
             }
         }
     }

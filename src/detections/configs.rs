@@ -411,9 +411,9 @@ mod tests {
         let within_range = Some("2019-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
         let out_of_range2 = Some("2021-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
 
-        assert_eq!(time_filter.is_target(&out_of_range1), false);
-        assert_eq!(time_filter.is_target(&within_range), true);
-        assert_eq!(time_filter.is_target(&out_of_range2), false);
+        assert!(!time_filter.is_target(&out_of_range1));
+        assert!(time_filter.is_target(&within_range));
+        assert!(!time_filter.is_target(&out_of_range2));
     }
 
     #[test]
@@ -422,7 +422,7 @@ mod tests {
         let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let time_filter = configs::TargetEventTime::set(start_time, end_time);
 
-        assert_eq!(time_filter.is_target(&start_time), true);
-        assert_eq!(time_filter.is_target(&end_time), true);
+        assert!(time_filter.is_target(&start_time));
+        assert!(time_filter.is_target(&end_time));
     }
 }

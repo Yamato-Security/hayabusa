@@ -523,19 +523,19 @@ mod tests {
         {
             // LeafSelectionNodeが正しく読み込めることを確認
             let child_node = detection_childs[0].as_ref() as &dyn SelectionNode; //  TODO キャストしないとエラーでるけど、このキャストよく分からん。
-            assert_eq!(child_node.is::<LeafSelectionNode>(), true);
+            assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "Channel");
             assert_eq!(child_node.get_childs().len(), 0);
 
             // 比較する正規表現が正しいことを確認
             let matcher = &child_node.matcher;
-            assert_eq!(matcher.is_some(), true);
+            assert!(matcher.is_some());
             let matcher = child_node.matcher.as_ref().unwrap();
-            assert_eq!(matcher.is::<DefaultMatcher>(), true);
+            assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
 
-            assert_eq!(matcher.re.is_some(), true);
+            assert!(matcher.re.is_some());
             let re = matcher.re.as_ref();
             assert_eq!(
                 re.unwrap().as_str(),
@@ -547,19 +547,19 @@ mod tests {
         {
             // LeafSelectionNodeが正しく読み込めることを確認
             let child_node = detection_childs[1].as_ref() as &dyn SelectionNode;
-            assert_eq!(child_node.is::<LeafSelectionNode>(), true);
+            assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "EventID");
             assert_eq!(child_node.get_childs().len(), 0);
 
             // 比較する正規表現が正しいことを確認
             let matcher = &child_node.matcher;
-            assert_eq!(matcher.is_some(), true);
+            assert!(matcher.is_some());
             let matcher = child_node.matcher.as_ref().unwrap();
-            assert_eq!(matcher.is::<DefaultMatcher>(), true);
+            assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
 
-            assert_eq!(matcher.re.is_some(), true);
+            assert!(matcher.re.is_some());
             let re = matcher.re.as_ref();
             assert_eq!(re.unwrap().as_str(), "(?i)4103");
         }
@@ -568,7 +568,7 @@ mod tests {
         {
             // OrSelectionNodeを正しく読み込めることを確認
             let child_node = detection_childs[2].as_ref() as &dyn SelectionNode;
-            assert_eq!(child_node.is::<OrSelectionNode>(), true);
+            assert!(child_node.is::<OrSelectionNode>());
             let child_node = child_node.downcast_ref::<OrSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
             assert_eq!(ancestors.len(), 2);
@@ -576,29 +576,29 @@ mod tests {
             // OrSelectionNodeの下にLeafSelectionNodeがあるパターンをテスト
             // LeafSelectionNodeである、Host Applicationノードが正しいことを確認
             let hostapp_en_node = ancestors[0].as_ref() as &dyn SelectionNode;
-            assert_eq!(hostapp_en_node.is::<LeafSelectionNode>(), true);
+            assert!(hostapp_en_node.is::<LeafSelectionNode>());
             let hostapp_en_node = hostapp_en_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
             let hostapp_en_matcher = &hostapp_en_node.matcher;
-            assert_eq!(hostapp_en_matcher.is_some(), true);
+            assert!(hostapp_en_matcher.is_some());
             let hostapp_en_matcher = hostapp_en_matcher.as_ref().unwrap();
-            assert_eq!(hostapp_en_matcher.is::<DefaultMatcher>(), true);
+            assert!(hostapp_en_matcher.is::<DefaultMatcher>());
             let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert_eq!(hostapp_en_matcher.re.is_some(), true);
+            assert!(hostapp_en_matcher.re.is_some());
             let re = hostapp_en_matcher.re.as_ref();
             assert_eq!(re.unwrap().as_str(), "(?i)Host Application");
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
             let hostapp_jp_node = ancestors[1].as_ref() as &dyn SelectionNode;
-            assert_eq!(hostapp_jp_node.is::<LeafSelectionNode>(), true);
+            assert!(hostapp_jp_node.is::<LeafSelectionNode>());
             let hostapp_jp_node = hostapp_jp_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
             let hostapp_jp_matcher = &hostapp_jp_node.matcher;
-            assert_eq!(hostapp_jp_matcher.is_some(), true);
+            assert!(hostapp_jp_matcher.is_some());
             let hostapp_jp_matcher = hostapp_jp_matcher.as_ref().unwrap();
-            assert_eq!(hostapp_jp_matcher.is::<DefaultMatcher>(), true);
+            assert!(hostapp_jp_matcher.is::<DefaultMatcher>());
             let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert_eq!(hostapp_jp_matcher.re.is_some(), true);
+            assert!(hostapp_jp_matcher.re.is_some());
             let re = hostapp_jp_matcher.re.as_ref();
             assert_eq!(re.unwrap().as_str(), "(?i)ホスト アプリケーション");
         }
@@ -607,7 +607,7 @@ mod tests {
         {
             // AndSelectionNodeを正しく読み込めることを確認
             let child_node = detection_childs[3].as_ref() as &dyn SelectionNode;
-            assert_eq!(child_node.is::<AndSelectionNode>(), true);
+            assert!(child_node.is::<AndSelectionNode>());
             let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
             assert_eq!(ancestors.len(), 3);
@@ -615,13 +615,13 @@ mod tests {
             // min-lenが正しく読み込めることを確認
             {
                 let ancestor_node = ancestors[0].as_ref() as &dyn SelectionNode;
-                assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
+                assert!(ancestor_node.is::<LeafSelectionNode>());
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
                 let ancestor_node = &ancestor_node.matcher;
-                assert_eq!(ancestor_node.is_some(), true);
+                assert!(ancestor_node.is_some());
                 let ancestor_matcher = ancestor_node.as_ref().unwrap();
-                assert_eq!(ancestor_matcher.is::<MinlengthMatcher>(), true);
+                assert!(ancestor_matcher.is::<MinlengthMatcher>());
                 let ancestor_matcher = ancestor_matcher.downcast_ref::<MinlengthMatcher>().unwrap();
                 assert_eq!(ancestor_matcher.min_len, 1234321);
             }
@@ -629,13 +629,13 @@ mod tests {
             // regexesが正しく読み込めることを確認
             {
                 let ancestor_node = ancestors[1].as_ref() as &dyn SelectionNode;
-                assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
+                assert!(ancestor_node.is::<LeafSelectionNode>());
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
                 let ancestor_node = &ancestor_node.matcher;
-                assert_eq!(ancestor_node.is_some(), true);
+                assert!(ancestor_node.is_some());
                 let ancestor_matcher = ancestor_node.as_ref().unwrap();
-                assert_eq!(ancestor_matcher.is::<RegexesFileMatcher>(), true);
+                assert!(ancestor_matcher.is::<RegexesFileMatcher>());
                 let ancestor_matcher = ancestor_matcher
                     .downcast_ref::<RegexesFileMatcher>()
                     .unwrap();
@@ -657,13 +657,13 @@ mod tests {
             // allowlist.txtが読み込めることを確認
             {
                 let ancestor_node = ancestors[2].as_ref() as &dyn SelectionNode;
-                assert_eq!(ancestor_node.is::<LeafSelectionNode>(), true);
+                assert!(ancestor_node.is::<LeafSelectionNode>());
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
                 let ancestor_node = &ancestor_node.matcher;
-                assert_eq!(ancestor_node.is_some(), true);
+                assert!(ancestor_node.is_some());
                 let ancestor_matcher = ancestor_node.as_ref().unwrap();
-                assert_eq!(ancestor_matcher.is::<AllowlistFileMatcher>(), true);
+                assert!(ancestor_matcher.is::<AllowlistFileMatcher>());
                 let ancestor_matcher = ancestor_matcher
                     .downcast_ref::<AllowlistFileMatcher>()
                     .unwrap();
@@ -706,7 +706,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -736,7 +736,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -766,7 +766,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "failed to parse json record.");
@@ -797,7 +797,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -828,7 +828,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -858,7 +858,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -888,7 +888,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -919,7 +919,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -950,7 +950,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -981,7 +981,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1012,7 +1012,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1043,7 +1043,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1073,7 +1073,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1107,7 +1107,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1141,7 +1141,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1174,7 +1174,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1216,7 +1216,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -1258,7 +1258,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -1300,7 +1300,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -1342,7 +1342,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -1384,7 +1384,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -1426,7 +1426,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_rec) => {
                 assert!(false, "Failed to parse json record.");
@@ -1456,7 +1456,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1486,7 +1486,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1516,7 +1516,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1604,7 +1604,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1634,7 +1634,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1666,7 +1666,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
@@ -1698,7 +1698,7 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
                 assert!(false, "Failed to parse json record.");
