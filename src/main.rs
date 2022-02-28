@@ -104,6 +104,29 @@ impl App {
             println!();
             return;
         }
+
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args.is_present("level-tuning")
+        {
+            if let Some(level_tuning_path) = configs::CONFIG.read().unwrap().args.value_of("level-tuning") {
+                if Path::new(level_tuning_path).exists() {
+                    println!("level-tuning file exist: {}", level_tuning_path);
+                    println!("WIP: level-tuning....");
+                } else {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!(
+                            "Need rule_levels.txt file to use --level-tuning option"
+                        ),
+                    )
+                    .ok();
+                    return;
+                }
+            }
+        }
+
         if !Path::new("./config").exists() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),

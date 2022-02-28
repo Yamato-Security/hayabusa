@@ -1,7 +1,7 @@
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{App, AppSettings, ArgMatches};
+use clap::{App, Arg, AppSettings, ArgMatches};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
@@ -92,6 +92,10 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .version("1.1.0")
         .author("Yamato Security (https://github.com/Yamato-Security/hayabusa)")
         .setting(AppSettings::VersionlessSubcommands)
+        .arg( // TODO: When update claps to 3.x, these can write in usage texts...
+            Arg::from_usage("--level-tuning=[RULE_LEVEL_FILE] 'Fix rule file's level'")
+                .default_value("./config/rule_level.txt")
+        )
         .usage(usages)
         .args_from_usage(usages)
         .get_matches()
