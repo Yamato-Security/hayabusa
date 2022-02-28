@@ -120,14 +120,7 @@ impl AggegationConditionCompiler {
 
     /// 比較演算子かどうか判定します。
     fn is_cmp_op(&self, token: &AggregationConditionToken) -> bool {
-        match token {
-            AggregationConditionToken::EQ => true,
-            AggregationConditionToken::LE => true,
-            AggregationConditionToken::LT => true,
-            AggregationConditionToken::GE => true,
-            AggregationConditionToken::GT => true,
-            _ => false,
-        }
+        matches!(token, AggregationConditionToken::EQ | AggregationConditionToken::LE | AggregationConditionToken::LT | AggregationConditionToken::GE | AggregationConditionToken::GT)
     }
 
     /// 構文解析します。
@@ -203,11 +196,11 @@ impl AggegationConditionCompiler {
         let token = token_ite.next().unwrap_or(AggregationConditionToken::SPACE);
         let cmp_number = if let AggregationConditionToken::KEYWORD(number) = token {
             let number: Result<i64, _> = number.parse();
-            if number.is_err() {
+            if let Ok(num) = number {
+                num
+            } else {
                 // 比較演算子の後に数値が無い。
                 return Result::Err("The compare operator needs a number like '> 3'.".to_string());
-            } else {
-                number.unwrap()
             }
         } else {
             // 比較演算子の後に数値が無い。

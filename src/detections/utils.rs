@@ -147,11 +147,7 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
     let datetime = Utc
         .from_local_datetime(&rfc3339_time.unwrap().naive_utc())
         .single();
-    if datetime.is_none() {
-        Option::None
-    } else {
-        Option::Some(datetime.unwrap())
-    }
+    datetime
 }
 
 /// serde:Valueの型を確認し、文字列を返します。

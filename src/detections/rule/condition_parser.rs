@@ -119,8 +119,8 @@ impl ConditionCompiler {
     ) -> Result<Box<dyn SelectionNode>, String> {
         // パイプはここでは処理しない
         let captured = self::RE_PIPE.captures(&condition_str);
-        let condition_str = if captured.is_some() {
-            let captured = captured.unwrap().get(0).unwrap().as_str().to_string();
+        let condition_str = if let Some(cap) = captured {
+            let captured = cap.get(0).unwrap().as_str().to_string();
             condition_str.replacen(&captured, "", 1)
         } else {
             condition_str
@@ -241,10 +241,7 @@ impl ConditionCompiler {
         let mut token_ite = tokens.into_iter();
         while let Some(token) = token_ite.next() {
             // まず、左括弧を探す。
-            let is_left = match token {
-                ConditionToken::LeftParenthesis => true,
-                _ => false,
-            };
+            let is_left = matches!(token, ConditionToken::LeftParenthesis);
             if !is_left {
                 ret.push(token);
                 continue;
@@ -254,7 +251,7 @@ impl ConditionCompiler {
             let mut left_cnt = 1;
             let mut right_cnt = 0;
             let mut sub_tokens = vec![];
-            while let Some(token) = token_ite.next() {
+            for token in token_ite.by_ref() {
                 if let ConditionToken::LeftParenthesis = token {
                     left_cnt += 1;
                 } else if let ConditionToken::RightParenthesis = token {
@@ -276,10 +273,7 @@ impl ConditionCompiler {
 
         // この時点で右括弧が残っている場合は右括弧の数が左括弧よりも多いことを表している。
         let is_right_left = ret.iter().any(|token| {
-            match token {
-                ConditionToken::RightParenthesis => true,
-                _ => false,
-            }
+            matches!(token, ConditionToken::RightParenthesis)
         });
         if is_right_left {
             return Result::Err("'(' was expected but not found.".to_string());
@@ -416,14 +410,14 @@ impl ConditionCompiler {
         // RefSelectionNodeに変換
         if let ConditionToken::SelectionReference(selection_name) = token {
             let selection_node = name_2_node.get(&selection_name);
-            if selection_node.is_none() {
-                let err_msg = format!("{} is not defined.", selection_name);
-                return Result::Err(err_msg);
-            } else {
-                let selection_node = selection_node.unwrap();
+            if let Some(select_node) = selection_node {
+                let selection_node = select_node;
                 let selection_node = Arc::clone(selection_node);
                 let ref_node = RefSelectionNode::new(selection_node);
                 return Result::Ok(Box::new(ref_node));
+            } else {
+                let err_msg = format!("{} is not defined.", selection_name);
+                return Result::Err(err_msg);
             }
         }
 
@@ -464,11 +458,7 @@ impl ConditionCompiler {
 
     /// ConditionTokenがAndまたはOrTokenならばTrue
     fn is_logical(&self, token: &ConditionToken) -> bool {
-        match token {
-            ConditionToken::And => true,
-            ConditionToken::Or => true,
-            _ => false,
-        }
+        matches!(token, ConditionToken::And | ConditionToken::Or)
     }
 
     /// ConditionToken::OperandContainerに変換できる部分があれば変換する。
@@ -478,8 +468,7 @@ impl ConditionCompiler {
     ) -> Result<Vec<ConditionToken>, String> {
         let mut ret = vec![];
         let mut grouped_operands = vec![]; // ANDとORの間にあるトークンを表す。ANDとORをOperatorとしたときのOperand
-        let mut token_ite = tokens.into_iter();
-        while let Some(token) = token_ite.next() {
+        for token in tokens.into_iter() {
             if self.is_logical(&token) {
                 // ここに来るのはエラーのはずだが、後でエラー出力するので、ここではエラー出さない。
                 if grouped_operands.is_empty() {

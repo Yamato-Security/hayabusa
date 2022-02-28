@@ -291,10 +291,7 @@ impl LeafMatcher for DefaultMatcher {
             return Result::Err(vec![errmsg]);
         }
         let is_re = &self.pipes.iter().any(|pipe_element| {
-            match pipe_element {
-                PipeElement::Re => true,
-                _ => false,
-            }
+            matches!(pipe_element, PipeElement::Re)
         });
         // 正規表現ではない場合、ワイルドカードであることを表す。
         // ワイルドカードは正規表現でマッチングするので、ワイルドカードを正規表現に変換するPipeを内部的に追加することにする。

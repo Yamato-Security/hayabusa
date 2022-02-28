@@ -52,8 +52,8 @@ impl SelectionNode for AndSelectionNode {
             .iter_mut()
             .map(|child_node| {
                 let res = child_node.init();
-                if res.is_err() {
-                    res.unwrap_err()
+                if let Err(err) = res {
+                    err
                 } else {
                     vec![]
                 }
@@ -125,8 +125,8 @@ impl SelectionNode for OrSelectionNode {
             .iter_mut()
             .map(|child_node| {
                 let res = child_node.init();
-                if res.is_err() {
-                    res.unwrap_err()
+                if let Err(err) = res {
+                    err
                 } else {
                     vec![]
                 }

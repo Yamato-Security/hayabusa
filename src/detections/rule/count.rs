@@ -327,11 +327,11 @@ impl CountStrategy for FieldStrategy {
 
         let value = &datas[idx as usize].field_record_value;
         let key_val = self.value_2_cnt.get_key_value_mut(value);
-        if key_val.is_none() {
-            self.value_2_cnt.insert(value.to_string(), 1);
-        } else {
-            let (_, val) = key_val.unwrap();
+        if let Some(kv) = key_val {
+            let (_, val) = kv;
             *val += 1;
+        } else {
+            self.value_2_cnt.insert(value.to_string(), 1);
         }
     }
 
@@ -840,7 +840,7 @@ mod tests {
         }
         //countupの関数が機能しているかを確認
         assert_eq!(
-            *&rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
+            rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
             2
         );
         let judge_result = rule_node.judge_satisfy_aggcondition();

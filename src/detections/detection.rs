@@ -193,7 +193,7 @@ impl Detection {
         let tag_info: Vec<String> = rule.yaml["tags"]
             .as_vec()
             .unwrap_or(&Vec::default())
-            .into_iter()
+            .iter()
             .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
             .collect();
         MESSAGES.lock().unwrap().insert(
@@ -205,8 +205,8 @@ impl Detection {
                 .to_string()
                 .replace("\"", ""),
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-                .unwrap_or("-".to_owned())
-                .to_string(),
+                .unwrap_or_else(|| "-".to_owned())
+                ,
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["details"].as_str().unwrap_or("").to_string(),
             tag_info.join(" : "),
@@ -218,7 +218,7 @@ impl Detection {
         let tag_info: Vec<String> = rule.yaml["tags"]
             .as_vec()
             .unwrap_or(&Vec::default())
-            .into_iter()
+            .iter()
             .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);

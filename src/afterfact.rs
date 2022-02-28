@@ -300,8 +300,8 @@ fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &str) -> Vec<u
     // カラーをつけない場合は255,255,255で出力する
     let mut output_color: Vec<u8> = vec![255, 255, 255];
     let target_color = color_map.get(level);
-    if target_color.is_some() {
-        output_color = target_color.unwrap().to_vec();
+    if let Some(color) = target_color {
+        output_color = color.to_vec();
     }
     output_color
 }

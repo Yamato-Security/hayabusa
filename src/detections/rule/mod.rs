@@ -56,8 +56,8 @@ impl RuleNode {
 
         // detection node initialization
         let detection_result = self.detection.init(&self.yaml["detection"]);
-        if detection_result.is_err() {
-            errmsgs.extend(detection_result.unwrap_err());
+        if let Err(err_detail) = detection_result {
+            errmsgs.extend(err_detail);
         }
 
         if errmsgs.is_empty() {
@@ -227,11 +227,11 @@ impl DetectionNode {
 
             // パースして、エラーメッセージがあれば配列にためて、戻り値で返す。
             let selection_node = self.parse_selection(&detection_hash[key]);
-            if selection_node.is_some() {
-                let mut selection_node = selection_node.unwrap();
+            if let Some(node) = selection_node {
+                let mut selection_node = node;
                 let init_result = selection_node.init();
-                if init_result.is_err() {
-                    err_msgs.extend(init_result.unwrap_err());
+                if let Err(err_detail) = init_result {
+                    err_msgs.extend(err_detail);
                 } else {
                     let rc_selection = Arc::new(selection_node);
                     self.name_to_selection
@@ -960,7 +960,7 @@ mod tests {
                 assert!(rule_node.detection.aggregation_condition.is_some());
                 assert!(result);
                 assert_eq!(
-                    *&rule_node.countdata.get(key).unwrap().len() as i32,
+                    rule_node.countdata.get(key).unwrap().len() as i32,
                     expect_count
                 );
             }
