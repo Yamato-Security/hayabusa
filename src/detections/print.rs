@@ -81,7 +81,7 @@ impl Message {
 
     /// メッセージを設定
     pub fn insert(&mut self, event_record: &Value, output: String, mut detect_info: DetectInfo) {
-        detect_info.detail = self.parse_message(event_record, output).to_string();
+        detect_info.detail = self.parse_message(event_record, output);
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time = Message::get_event_time(event_record).unwrap_or(default_time);
         self.insert_message(detect_info, time)
