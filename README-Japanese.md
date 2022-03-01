@@ -37,6 +37,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [予定されている機能](#予定されている機能)
 - [ダウンロード](#ダウンロード)
 - [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
+  - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
   - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
   - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [使用方法](#使用方法)
@@ -56,6 +57,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [英語](#英語)
   - [日本語](#日本語)
 - [貢献](#貢献)
+- [バグの報告](#バグの報告)
 - [ライセンス](#ライセンス)
 
 ## 主な目的
@@ -155,6 +157,14 @@ rustがインストールされている場合、以下のコマンドでソー�
 ```bash
 cargo clean
 cargo build --release
+```
+
+## macOSでのコンパイルの注意点
+
+opensslについてのコンパイルエラーが表示される場合は、[Homebrew](https://brew.sh/)をインストールしてから、以下のパッケージをインストールする必要があります：
+```bash
+brew install pkg-config
+brew install openssl
 ```
 
 ## アドバンス: Rustパッケージの更新
@@ -363,7 +373,7 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 ## 標準出力へのカラー設定
 
 `-c`または`--color`を指定することで、Hayabusaの結果は`level`毎に文字色を変えることができます。
-`.\config\level_color.txt`の値を変更することで文字色を変えることができます。
+`./config/level_color.txt`の値を変更することで文字色を変えることができます。
 形式は`level名,(6桁のRGBのカラーhex)`です。
 注意: True Colorに対応しているターミナルが必要です。
 例: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) またはmacOSの[iTerm2](https://iterm2.com/)。
@@ -372,7 +382,7 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 
 Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
 
-ルールの作成方法については、[AboutRuleCreation-Japanese.md](./doc/AboutRuleCreation-Japanese.md) をお読みください。
+ルールの作成方法については、[hayabusa-rulesレポジトリのREADME](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md) をお読みください。
 
 [hayabusa-rulesレポジトリ](https://github.com/Yamato-Security/hayabusa-rules)にあるすべてのルールは、`rules`フォルダに配置する必要があります。
 
@@ -413,9 +423,9 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 ファイアウォールやIDSと同様に、シグネチャベースのツールは、環境に合わせて調整が必要になるため、特定のルールを永続的または一時的に除外する必要がある場合があります。
 
-ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `rules\config\exclude_rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
+ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `rules/config/exclude_rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
 
-ルールIDを `rules\config\noisy_rules.txt`に追加して、デフォルトでルールを無視することもできますが、` -n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
+ルールIDを `rules/config/noisy_rules.txt`に追加して、デフォルトでルールを無視することもできますが、` -n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
 
 ## イベントIDフィルタリング
 
@@ -484,6 +494,10 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 どのような形でも構いませんので、ご協力をお願いします。プルリクエスト、ルール作成、evtxログのサンプルなどがベストですが、機能リクエスト、バグの通知なども大歓迎です。
 
 少なくとも、私たちのツールを気に入っていただけたなら、Githubで星を付けて、あなたのサポートを表明してください。
+
+# バグの報告
+
+見つけたバグを[こちら](https://github.com/Yamato-Security/hayabusa/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5Bbug%5D)でご連絡ください。報告されたバグを喜んで修正します！
 
 # ライセンス
 
