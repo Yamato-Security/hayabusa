@@ -316,7 +316,7 @@ USAGE:
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
 
 ```bash
-.\hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
+.\hayabusa.exe -l -m low
 ```
 
 * イベントIDの統計情報を取得します:

@@ -318,7 +318,7 @@ USAGE:
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-.\hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
+.\hayabusa.exe -l -m low
 ```
 
 * Get event ID statistics:
