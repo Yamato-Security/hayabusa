@@ -171,6 +171,7 @@ rustup update
 ## 32ビットWindowsバイナリのクロスコンパイル
 
 以下のコマンドで64ビットのWindows端末で32ビットのバイナリをクロスコンパイルできます:
+
 ```bash
 rustup install stable-i686-pc-windows-msvc
 rustup target add i686-pc-windows-msvc
@@ -180,6 +181,7 @@ rustup run stable-i686-pc-windows-msvc cargo build --release
 ## macOSでのコンパイルの注意点
 
 opensslについてのコンパイルエラーが表示される場合は、[Homebrew](https://brew.sh/)をインストールしてから、以下のパッケージをインストールする必要があります：
+
 ```bash
 brew install pkg-config
 brew install openssl
@@ -190,11 +192,13 @@ brew install openssl
 opensslについてのコンパイルエラーが表示される場合は、以下のパッケージをインストールする必要があります。
 
 Ubuntu系のディストロ:
+
 ```bash
 sudo apt install libssl-dev
 ```
 
 Fedora系のディストロ:
+
 ```bash
 sudo yum install openssl-devel
 ```
@@ -435,7 +439,7 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
 
-最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、誤検出の可能性が若干あることにご注意ください。
+最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、検出漏れの可能性が若干あることにご注意ください。
 
 # その他のWindowsイベントログ解析ツールおよび関連プロジェクト
 
