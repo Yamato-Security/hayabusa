@@ -37,7 +37,9 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [予定されている機能](#予定されている機能)
 - [ダウンロード](#ダウンロード)
 - [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
+  - [32ビットWindowsバイナリのクロスコンパイル](#32ビットwindowsバイナリのクロスコンパイル)
   - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
+  - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
   - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
   - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [使用方法](#使用方法)
@@ -121,13 +123,13 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 * 現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルールにも対応しています。
 * イベントログの統計（どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。）
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
+* MITRE ATT&CKとのマッピング
 
 # 予定されている機能
 
 * すべてのエンドポイントでの企業全体のスレットハンティング
 * 日本語対応
-* MITRE ATT&CK とのマッピング
-* MITRE ATT&CK ヒートマップ生成機能
+* MITRE ATT&CKのヒートマップ生成機能
 * ユーザーログオンと失敗したログオンのサマリー
 * JSONログからの入力
 * JSONへの出力→Elastic Stack/Splunkへのインポート
@@ -152,11 +154,27 @@ rulesフォルダ配下でファイルを削除や更新をしていた場合は
 
 # ソースコードからのコンパイル（任意）
 
-rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
+Rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
 ```bash
 cargo clean
 cargo build --release
+```
+
+以下のコマンドで定期的にRustをアップデートしてください：
+```bash
+rustup update
+```
+
+コンパイルされたバイナリは`target/release`フォルダ配下で作成されます。
+
+## 32ビットWindowsバイナリのクロスコンパイル
+
+以下のコマンドで64ビットのWindows端末で32ビットのバイナリをクロスコンパイルできます:
+```bash
+rustup install stable-i686-pc-windows-msvc
+rustup target add i686-pc-windows-msvc
+rustup run stable-i686-pc-windows-msvc cargo build --release
 ```
 
 ## macOSでのコンパイルの注意点
@@ -165,6 +183,20 @@ opensslについてのコンパイルエラーが表示される場合は、[Hom
 ```bash
 brew install pkg-config
 brew install openssl
+```
+
+## Linuxでのコンパイルの注意点
+
+opensslについてのコンパイルエラーが表示される場合は、以下のパッケージをインストールする必要があります。
+
+Ubuntu系のディストロ:
+```bash
+sudo apt install libssl-dev
+```
+
+Fedora系のディストロ:
+```bash
+sudo yum install openssl-devel
 ```
 
 ## アドバンス: Rustパッケージの更新
@@ -202,63 +234,32 @@ Windows Terminalからhayabusaを標準出力で解析させたい場合は、 `
 
 ```bash
 USAGE:
-    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
-    -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
-    -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (example: results.csv)'
-    -v --verbose 'Output verbose information.'
-    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
-    -n --enable-noisy-rules 'Enable rules marked as noisy.'
-    -u --update-rules 'Clone latest hayabusa-rule'
-    -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
-    -l --live-analysis 'Analyze to WINDIR\System32\winevt\Logs (Windows Only. Need Administrator privileges.)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
-    --rfc-3339 'Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214 -06:00)'
-    -U --utc 'Output time in UTC format. (default: local time)'
-    -t --thread-number=[NUMBER] 'Thread number. (default: optimal number for performance.)'
-    -s --statistics 'Prints statistics of event IDs.'
-    -q --quiet 'Quiet mode. Do not display the launch banner.'
-    -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --contributors 'Prints the list of contributors.'
-
-FLAGS:
-    -c, --color                      Output with color. (Terminal needs to support True Color.)
-        --contributors               Prints the list of contributors.
-    -D, --enable-deprecated-rules    Enable sigma rules marked as deprecated.
-    -n, --enable-noisy-rules         Enable rules marked as noisy.
-    -h, --help                       Prints help information
-    -l, --live-analysis              Analyze to WINDIR\System32\winevt\Logs (Windows Only. Need Administrator
-                                     privileges.)
-    -q, --quiet                      Quiet mode. Do not display the launch banner.
-    -Q, --quiet-errors               Quiet errors mode. Do not save error logs.
-        --rfc-2822                   Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)
-        --rfc-3339                   Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214
-                                     -06:00)
-    -s, --statistics                 Prints statistics of event IDs.
-    -u, --update-rules               Clone latest hayabusa-rule
-    -U, --utc                        Output time in UTC format. (default: local time)
-    -V, --version                    Prints version information
-    -v, --verbose                    Output verbose information.
-
-OPTIONS:
-    -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
-        --end-timeline <ENDTIMELINE>        End time of the event to load from event file. (example: '2018/11/28
-                                            12:00:00 +09:00')
-    -f, --filepath <FILEPATH>               File path to one .evtx file.
-    -m, --min-level <LEVEL>                 Minimum level for rules. (default: informational)
-    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (example: results.csv)
-    -r, --rules <RULEDIRECTORY/RULEFILE>    Rule file or directory (default: ./rules)
-        --start-timeline <STARTTIMELINE>    Start time of the event to load from event file. (example: '2018/11/28
-                                            12:00:00 +09:00')
-    -t, --thread-number <NUMBER>            Thread number. (default: optimal number for performance.)
+    -d --directory=[DIRECTORY] '.evtxファイルを持つディレクトリのパス。'
+    -f --filepath=[FILEPATH] '1つの.evtxファイルのパス。'
+    -r --rules=[RULEFILE/RULEDIRECTORY] 'ルールファイルまたはルールファイルを持つディレクトリ。(デフォルト: ./rules)'
+    -c --color 'カラーで出力する。 (ターミナルはTrue Colorに対応する必要がある。)'
+    -o --output=[CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
+    -v --verbose '詳細な情報を出力する。'
+    -D --enable-deprecated-rules 'Deprecatedルールを有効にする。'
+    -n --enable-noisy-rules 'Noisyルールを有効にする。'
+    -u --update-rules 'rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する。'
+    -m --min-level=[LEVEL] '結果出力をするルールの最低レベル。(デフォルト: informational)'
+    -l --live-analysis 'ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する。(Windowsのみ。管理者権限が必要。)'
+    --start-timeline=[STARTTIMELINE] '解析対象とするイベントログの開始時刻。(例: '2018/11/28 12:00:00 +09:00')'
+    --end-timeline=[ENDTIMELINE] '解析対象とするイベントログの終了時刻。(例: '2018/11/28 12:00:00 +09:00')'
+    --rfc-2822 'RFC 2822形式で日付と時刻を出力する。(例: Mon, 07 Aug 2006 12:34:56 -0600)'
+    --rfc-3339 'RFC 3339形式で日付と時刻を出力する。 (例: 2006-08-07T12:34:56.485214 -06:00)'
+    -U --utc 'UTC形式で日付と時刻を出力する。(デフォルト: 現地時間)'
+    -t --thread-number=[NUMBER] 'スレッド数。(デフォルト: パフォーマンスに最適な数値)'
+    -s --statistics 'イベント ID の統計情報を表示する。'
+    -q --quiet 'Quietモード。起動バナーを表示しない。'
+    -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
+    --contributors 'コントリビュータの一覧表示。'
 ```
 
 ## 使用例
 
-* 1 つのWindowsイベントログファイルに対してHayabusaを実行します:
+* １つのWindowsイベントログファイルに対してHayabusaを実行します:
 
 ```bash
 .\hayabusa.exe -f eventlog.evtx
@@ -270,7 +271,7 @@ OPTIONS:
 .\hayabusa.exe -d .\hayabusa-sample-evtx
 ```
 
-* 1 つのCSVファイルにエクスポートして、EXCELやTimeline Explorerでさらに分析することができます:
+* １つのCSVファイルにエクスポートして、EXCELやTimeline Explorerでさらに分析することができます:
 
 ```bash
 .\hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
@@ -309,13 +310,13 @@ OPTIONS:
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
 
 ```bash
-.\hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -u -o results.csv
+.\hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
 
 ```bash
-.\hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
+.\hayabusa.exe -l -m low
 ```
 
 * イベントIDの統計情報を取得します:
