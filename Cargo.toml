@@ -7,7 +7,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" , features = ["fast-alloc"]}
 quick-xml = {version = "0.22.0", features = ["serialize"] }
 serde = { version = "1.0.*", features = ["derive"] }
 serde_json = { version = "1.0"}
@@ -32,11 +31,23 @@ hashbrown = "0.12.*"
 colored = "2.*"
 hex = "0.4.*"
 git2="0.13"
-openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
 static_vcruntime = "1.5.*"
+evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" , features = ["fast-alloc"]}
+
+[target.'cfg(macos)'.dependencies]
+is_elevated = "0.1.2"
+static_vcruntime = "1.5.*"
+evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" , features = ["fast-alloc"]}
+openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
+
+[target.'cfg(linux)'.dependencies]
+is_elevated = "0.1.2"
+static_vcruntime = "1.5.*"
+evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" } #fast-alloc is off by default to support static MUSL binaries. 
+openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
 [profile.release]
 lto = true
