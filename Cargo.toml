@@ -36,18 +36,12 @@ git2="0.13"
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
 static_vcruntime = "1.5.*"
-evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" , features = ["fast-alloc"]}
 
-[target.'cfg(apple)'.dependencies]
-is_elevated = "0.1.2"
-static_vcruntime = "1.5.*"
-evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" , features = ["fast-alloc"]}
+[target.'cfg(unix)'.dependencies] #Mac and Linux
 openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
-[target.'cfg(linux)'.dependencies]
-is_elevated = "0.1.2"
-static_vcruntime = "1.5.*"
-evtx = { git = "https://github.com/omerbenamram/evtx.git" , rev = "95a8ca6" } #fast-alloc is off by default to support static MUSL binaries. 
+[target.x86_64-unknown-linux-musl.dependencies]
+evtx = { git = "https://github.com/omerbenamram/evtx.git" } #fast-alloc is off by default to support static MUSL binaries. 
 openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
 [profile.release]
