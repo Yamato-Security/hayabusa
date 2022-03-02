@@ -120,13 +120,13 @@ You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here]
 * Sigma rule support to convert sigma rules to hayabusa rules
 * Currently it supports the most sigma rules compared to other similar tools and even supports count rules
 * Event log statistics (Useful for getting a picture of what types of events there are and for tuning your log settings)
-* Rule tuning configuration by excluding bad rules or noisy rules
+* Rule tuning configuration by excluding unneeded or noisy rules
+* MITRE ATT&CK mapping
 
 # Planned Features
 
 * Enterprise-wide hunting on all endpoints
 * Japanese language support
-* MITRE ATT&CK mapping
 * MITRE ATT&CK heatmap generation
 * User logon and failed logon summary
 * Input from JSON logs
@@ -238,51 +238,25 @@ This is known Windows Terminal bug which will eventually be fixed but for the me
 USAGE:
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
+    -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (example: results.csv)'
+    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
-    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
+    -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
-    -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
-    --rfc-3339 'Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214 -06:00)'
-    -u --utc 'Output time in UTC format. (default: local time)'
-    -t --thread-number=[NUMBER] 'Thread number. (default: optimal number for performance.)'
+    -u --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
+    -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
+    -l --live-analysis 'Analyze the local C:\Windows\System32\winevt\Logs folder (Windows Only. Administrator privileges required.)'
+    --start-timeline=[STARTTIMELINE] 'Start time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
+    --end-timeline=[ENDTIMELINE] 'End time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
+    --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
+    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
+    -U --utc 'Output time in UTC format. (Default: local time)'
+    -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --contributors 'Prints the list of contributors.'
-
-FLAGS:
-    -c, --color                      Output with color. (Terminal needs to support True Color.)
-        --contributors               Prints the list of contributors.
-    -D, --enable-deprecated-rules    Enable sigma rules marked as deprecated.
-    -n, --enable-noisy-rules         Enable rules marked as noisy.
-    -h, --help                       Prints help information
-    -q, --quiet                      Quiet mode. Do not display the launch banner.
-    -Q, --quiet-errors               Quiet errors mode. Do not save error logs.
-        --rfc-2822                   Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)
-        --rfc-3339                   Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214
-                                     -06:00)
-    -s, --statistics                 Prints statistics of event IDs.
-    -u, --utc                        Output time in UTC format. (default: local time)
-    -V, --version                    Prints version information
-    -v, --verbose                    Output verbose information.
-
-OPTIONS:
-    -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
-        --end-timeline <ENDTIMELINE>        End time of the event to load from event file. (example: '2018/11/28
-                                            12:00:00 +09:00')
-    -f, --filepath <FILEPATH>               File path to one .evtx file.
-    -m, --min-level <LEVEL>                 Minimum level for rules. (default: informational)
-    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (example: results.csv)
-    -r, --rules <RULEDIRECTORY/RULEFILE>    Rule file or directory (default: ./rules)
-        --start-timeline <STARTTIMELINE>    Start time of the event to load from event file. (example: '2018/11/28
-                                            12:00:00 +09:00')
-    -t, --thread-number <NUMBER>            Thread number. (default: optimal number for performance.)
 ```
 
 ## Usage examples
@@ -338,7 +312,7 @@ OPTIONS:
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-.\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -u -o results.csv
+.\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
