@@ -39,6 +39,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Compiling from source (Optional)](#compiling-from-source-optional)
   - [Cross-compiling 32-bit Windows binaries](#cross-compiling-32-bit-windows-binaries)
   - [Notes on compiling on macOS](#notes-on-compiling-on-macos)
+  - [Notes on compiling on Linux](#notes-on-compiling-on-linux)
   - [Advanced: Updating Rust packages](#advanced-updating-rust-packages)
   - [Testing hayabusa out on sample evtx files](#testing-hayabusa-out-on-sample-evtx-files)
 - [Usage](#usage)
@@ -183,6 +184,20 @@ If you receive compile errors about openssl, you will need to install [Homebrew]
 ```bash
 brew install pkg-config
 brew install openssl
+```
+
+## Notes on compiling on Linux
+
+If you receive compile errors about openssl, you will need to install the following package.
+
+Ubuntu-based distros:
+```bash
+sudo apt install libssl-dev
+```
+
+Fedora-based distros:
+```bash
+sudo yum install openssl-devel
 ```
 
 ## Advanced: Updating Rust packages

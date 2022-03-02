@@ -39,6 +39,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
   - [32ビットWindowsバイナリのクロスコンパイル](#32ビットwindowsバイナリのクロスコンパイル)
   - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
+  - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
   - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
   - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [使用方法](#使用方法)
@@ -182,6 +183,20 @@ opensslについてのコンパイルエラーが表示される場合は、[Hom
 ```bash
 brew install pkg-config
 brew install openssl
+```
+
+## Linuxでのコンパイルの注意点
+
+opensslについてのコンパイルエラーが表示される場合は、以下のパッケージをインストールする必要があります。
+
+Ubuntu系のディストロ:
+```bash
+sudo apt install libssl-dev
+```
+
+Fedora系のディストロ:
+```bash
+sudo yum install openssl-devel
 ```
 
 ## アドバンス: Rustパッケージの更新
