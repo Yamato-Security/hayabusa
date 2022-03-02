@@ -174,7 +174,7 @@ rustup update
 ```bash
 rustup install stable-i686-pc-windows-msvc
 rustup target add i686-pc-windows-msvc
-cargo build --release --target=stable-i686-pc-windows-msvc
+rustup run stable-i686-pc-windows-msvc cargo build --release
 ```
 
 ## macOSでのコンパイルの注意点
