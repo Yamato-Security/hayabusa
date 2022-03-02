@@ -37,6 +37,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Planned Features](#planned-features)
 - [Downloads](#downloads)
 - [Compiling from source (Optional)](#compiling-from-source-optional)
+  - [Cross-compiling 32-bit Windows binaries](#cross-compiling-32-bit-windows-binaries)
   - [Notes on compiling on macOS](#notes-on-compiling-on-macos)
   - [Advanced: Updating Rust packages](#advanced-updating-rust-packages)
   - [Testing hayabusa out on sample evtx files](#testing-hayabusa-out-on-sample-evtx-files)
@@ -152,11 +153,28 @@ In this case, you can get latest Hayabusa if you renamed rules folder and execut
 
 # Compiling from source (Optional)
 
-If you have rust installed, you can compile from source with the following command:
+If you have Rust installed, you can compile from source with the following command:
 
 ```bash
 cargo clean
 cargo build --release
+```
+
+Be sure to periodically update Rust with:
+
+```bash
+rustup update
+```
+
+The compiled binary will be outputted in the `target/release` folder.
+
+## Cross-compiling 32-bit Windows binaries
+
+You can create 32-bit binaries on 64-bit Windows systems with the following:
+```bash
+rustup install stable-i686-pc-windows-msvc
+rustup target add i686-pc-windows-msvc
+rustup run stable-i686-pc-windows-msvc cargo build --release
 ```
 
 ## Notes on compiling on macOS
@@ -169,7 +187,7 @@ brew install openssl
 
 ## Advanced: Updating Rust packages
 
-You can update to the latest rust crates before compiling to get the latest libraries:
+You can update to the latest Rust crates before compiling to get the latest libraries:
 
 ```bash
 cargo update

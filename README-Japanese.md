@@ -37,6 +37,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [予定されている機能](#予定されている機能)
 - [ダウンロード](#ダウンロード)
 - [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
+  - [32ビットWindowsバイナリのクロスコンパイル](#32ビットwindowsバイナリのクロスコンパイル)
   - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
   - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
   - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
@@ -152,11 +153,27 @@ rulesフォルダ配下でファイルを削除や更新をしていた場合は
 
 # ソースコードからのコンパイル（任意）
 
-rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
+Rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
 ```bash
 cargo clean
 cargo build --release
+```
+
+以下のコマンドで定期的にRustをアップデートしてください：
+```bash
+rustup update
+```
+
+コンパイルされたバイナリは`target/release`フォルダ配下で作成されます。
+
+## 32ビットWindowsバイナリのクロスコンパイル
+
+以下のコマンドで64ビットのWindows端末で32ビットのバイナリをクロスコンパイルできます:
+```bash
+rustup install stable-i686-pc-windows-msvc
+rustup target add i686-pc-windows-msvc
+rustup run stable-i686-pc-windows-msvc cargo build --release
 ```
 
 ## macOSでのコンパイルの注意点
