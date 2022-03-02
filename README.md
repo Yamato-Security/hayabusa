@@ -309,13 +309,13 @@ OPTIONS:
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-.\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -u -o results.csv
+.\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-.\hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
+.\hayabusa.exe -l -m low
 ```
 
 * Get event ID statistics:
