@@ -259,11 +259,12 @@ mod tests {
 
     #[test]
     fn test_check_regex() {
-        let regexes:Vec<Regex> = utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
-            .unwrap()
-            .into_iter()
-            .map(|regex_str| Regex::new(&regex_str).unwrap())
-            .collect();
+        let regexes: Vec<Regex> =
+            utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
+                .unwrap()
+                .into_iter()
+                .map(|regex_str| Regex::new(&regex_str).unwrap())
+                .collect();
         let regextext = utils::check_regex("\\cvtres.exe", &regexes);
         assert!(regextext);
 
@@ -274,11 +275,12 @@ mod tests {
     #[test]
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let allowlist:Vec<Regex> = utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
-            .unwrap()
-            .into_iter()
-            .map(|allow_str| Regex::new(&allow_str).unwrap())
-            .collect();
+        let allowlist: Vec<Regex> =
+            utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
+                .unwrap()
+                .into_iter()
+                .map(|allow_str| Regex::new(&allow_str).unwrap())
+                .collect();
         assert!(utils::check_allowlist(commandline, &allowlist));
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";
