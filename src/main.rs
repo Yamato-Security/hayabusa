@@ -16,7 +16,7 @@ use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
-use hayabusa::{detections::configs, timeline::timeline::Timeline};
+use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
