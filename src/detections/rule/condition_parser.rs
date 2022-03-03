@@ -77,7 +77,7 @@ impl ConditionToken {
         }
     }
 
-    pub fn sub_tokens<'a>(&'a self) -> Vec<ConditionToken> {
+    pub fn sub_tokens(&self) -> Vec<ConditionToken> {
         // TODO ここでcloneを使わずに実装できるようにしたい。
         match self {
             ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens.clone(),
@@ -95,7 +95,7 @@ impl ConditionToken {
         }
     }
 
-    pub fn sub_tokens_without_parenthesis<'a>(&'a self) -> Vec<ConditionToken> {
+    pub fn sub_tokens_without_parenthesis(&self) -> Vec<ConditionToken> {
         match self {
             ConditionToken::ParenthesisContainer(_) => vec![],
             _ => self.sub_tokens(),
