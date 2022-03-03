@@ -504,8 +504,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
-                    regexes: ./config/regex/detectlist_suspicous_services.txt
-                    allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    regexes: ./rules/config/regex/detectlist_suspicous_services.txt
+                    allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         falsepositives:
             - unknown
         level: medium
@@ -644,13 +644,13 @@ mod tests {
                 // regexes.txtの中身と一致していることを確認
                 let csvcontent = &ancestor_matcher.regexes;
 
-                assert_eq!(csvcontent.len(), 17);
+                assert_eq!(csvcontent.len(), 16);
                 assert_eq!(
                     csvcontent[0].as_str().to_string(),
                     r"^cmd.exe /c echo [a-z]{6} > \\\\.\\pipe\\[a-z]{6}$"
                 );
                 assert_eq!(
-                    csvcontent[14].as_str().to_string(),
+                    csvcontent[13].as_str().to_string(),
                     r"\\cvtres\.exe.*\\AppData\\Local\\Temp\\[A-Z0-9]{7}\.tmp"
                 );
             }
@@ -1092,7 +1092,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1126,7 +1126,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1160,7 +1160,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 

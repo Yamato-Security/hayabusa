@@ -1,15 +1,17 @@
 extern crate serde;
 extern crate serde_derive;
 
+#[cfg(target_os = "windows")]
+extern crate static_vcruntime;
+
 use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
+use git2::Repository;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::print::AlertMessage;
-use hayabusa::detections::print::ERROR_LOG_PATH;
-use hayabusa::detections::print::ERROR_LOG_STACK;
-use hayabusa::detections::print::QUIET_ERRORS_FLAG;
-use hayabusa::detections::print::STATISTICS_FLAG;
+use hayabusa::detections::print::{
+    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
@@ -19,7 +21,9 @@ use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::ffi::OsStr;
 use std::fmt::Display;
+use std::fs::create_dir;
 use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
@@ -31,6 +35,9 @@ use std::{
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
+
+#[cfg(target_os = "windows")]
+use {is_elevated::is_elevated, std::env};
 
 // 一度にtimelineやdetectionを実行する行数
 const MAX_DETECT_RECORDS: usize = 5000;
@@ -65,10 +72,28 @@ impl App {
                 &analysis_start_time.day().to_owned()
             ));
         }
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("update-rules")
+        {
+            match self.update_rules() {
+                Ok(_ok) => println!("Rules updated successfully."),
+                Err(e) => {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("Failed to update rules. {:?}  ", e),
+                    )
+                    .ok();
+                }
+            }
+            return;
+        }
         if !Path::new("./config").exists() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./bin/hayabusa-1.0.0-windows-x64.exe".to_string()
+                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe".to_string()
             )
             .ok();
             return;
@@ -98,11 +123,30 @@ impl App {
             println!("Generating Event ID Statistics");
             println!("");
         }
-        if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
-            if !filepath.ends_with(".evtx") {
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("live-analysis")
+        {
+            let live_analysis_list = self.collect_liveanalysis_files();
+            if live_analysis_list.is_none() {
+                return;
+            }
+            self.analysis_files(live_analysis_list.unwrap());
+        } else if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
+            if !filepath.ends_with(".evtx")
+                || Path::new(filepath)
+                    .file_stem()
+                    .unwrap_or(OsStr::new("."))
+                    .to_str()
+                    .unwrap()
+                    .trim()
+                    .starts_with(".")
+            {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    &"--filepath only accepts .evtx files.".to_string(),
+                    &"--filepath only accepts .evtx files. Hidden files are ignored.".to_string(),
                 )
                 .ok();
                 return;
@@ -140,6 +184,41 @@ impl App {
         }
     }
 
+    #[cfg(not(target_os = "windows"))]
+    fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
+        )
+        .ok();
+        return None;
+    }
+
+    #[cfg(target_os = "windows")]
+    fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
+        if is_elevated() {
+            let log_dir = env::var("windir").expect("windir is not found");
+            let evtx_files =
+                self.collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
+            if evtx_files.len() == 0 {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &"No .evtx files were found.".to_string(),
+                )
+                .ok();
+                return None;
+            }
+            return Some(evtx_files);
+        } else {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
+            )
+            .ok();
+            return None;
+        }
+    }
+
     fn collect_evtxfiles(&self, dirpath: &str) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
@@ -171,7 +250,14 @@ impl App {
                 });
             } else {
                 let path_str = path.to_str().unwrap_or("");
-                if path_str.ends_with(".evtx") {
+                if path_str.ends_with(".evtx")
+                    && !Path::new(path_str)
+                        .file_stem()
+                        .unwrap_or(OsStr::new("."))
+                        .to_str()
+                        .unwrap()
+                        .starts_with(".")
+                {
                     ret.push(path);
                 }
             }
@@ -208,6 +294,16 @@ impl App {
             configs::CONFIG.read().unwrap().args.value_of("rules"),
             &filter::exclude_ids(),
         );
+
+        if rule_files.len() == 0 {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &"No rules were loaded. Please download the latest rules with the --update-rules option.\r\n".to_string(),
+            )
+            .ok();
+            return;
+        }
+
         let mut pb = ProgressBar::new(evtx_files.len() as u64);
         pb.show_speed = false;
         self.rule_keys = self.get_all_keys(&rule_files);
@@ -401,6 +497,116 @@ impl App {
             Some(path) => {
                 let content = fs::read_to_string(path).unwrap_or("".to_owned());
                 println!("{}", content);
+            }
+        }
+    }
+
+    /// update rules(hayabusa-rules subrepository)
+    fn update_rules(&self) -> Result<(), git2::Error> {
+        let hayabusa_repo = Repository::open(Path::new("."));
+        let hayabusa_rule_repo = Repository::open(Path::new("./rules"));
+        if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
+            println!(
+                "Attempting to git clone the hayabusa-rules repository into the rules folder."
+            );
+            // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
+            self.clone_rules()
+        } else if hayabusa_rule_repo.is_ok() {
+            // rulesのrepositoryが確認できる場合
+            // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
+            self.pull_repository(hayabusa_rule_repo.unwrap())
+        } else {
+            //hayabusa repositoryがあればsubmodule情報もあると思われるのでupdate
+            let rules_path = Path::new("./rules");
+            if !rules_path.exists() {
+                create_dir(rules_path).ok();
+            }
+            let hayabusa_repo = hayabusa_repo.unwrap();
+            let submodules = hayabusa_repo.submodules()?;
+            let mut is_success_submodule_update = true;
+            // submoduleのname参照だと参照先を変えることで意図しないフォルダを削除する可能性があるためハードコーディングする
+            fs::remove_dir_all(".git/.submodule/rules").ok();
+            for mut submodule in submodules {
+                submodule.update(true, None)?;
+                let submodule_repo = submodule.open()?;
+                match self.pull_repository(submodule_repo) {
+                    Ok(it) => it,
+                    Err(e) => {
+                        AlertMessage::alert(
+                            &mut BufWriter::new(std::io::stderr().lock()),
+                            &format!("Failed submodule update. {}", e),
+                        )
+                        .ok();
+                        is_success_submodule_update = false;
+                    }
+                }
+            }
+            if is_success_submodule_update {
+                Ok(())
+            } else {
+                Err(git2::Error::from_str(&String::default()))
+            }
+        }
+    }
+
+    /// Pull(fetch and fast-forward merge) repositoryto input_repo.
+    fn pull_repository(&self, input_repo: Repository) -> Result<(), git2::Error> {
+        match input_repo
+            .find_remote("origin")?
+            .fetch(&["main"], None, None)
+            .map_err(|e| {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!("Failed git fetch to rules folder. {}", e),
+                )
+                .ok();
+            }) {
+            Ok(it) => it,
+            Err(_err) => return Err(git2::Error::from_str(&String::default())),
+        };
+        let fetch_head = input_repo.find_reference("FETCH_HEAD")?;
+        let fetch_commit = input_repo.reference_to_annotated_commit(&fetch_head)?;
+        let analysis = input_repo.merge_analysis(&[&fetch_commit])?;
+        if analysis.0.is_up_to_date() {
+            Ok(())
+        } else if analysis.0.is_fast_forward() {
+            let mut reference = input_repo.find_reference("refs/heads/main")?;
+            reference.set_target(fetch_commit.id(), "Fast-Forward")?;
+            input_repo.set_head("refs/heads/main")?;
+            input_repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
+            Ok(())
+        } else if analysis.0.is_normal() {
+            AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            &"update-rules option is git Fast-Forward merge only. please check your rules folder."
+                .to_string(),
+            ).ok();
+            Err(git2::Error::from_str(&String::default()))
+        } else {
+            Err(git2::Error::from_str(&String::default()))
+        }
+    }
+
+    /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
+    fn clone_rules(&self) -> Result<(), git2::Error> {
+        match Repository::clone(
+            "https://github.com/Yamato-Security/hayabusa-rules.git",
+            "rules",
+        ) {
+            Ok(_repo) => {
+                println!("Finished cloning the hayabusa-rules repository.");
+                Ok(())
+            }
+            Err(e) => {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    &format!(
+                        "Failed to git clone into the rules folder. Please rename your rules folder name. {}",
+                        e
+                    ),
+                )
+                .ok();
+                Err(git2::Error::from_str(&String::default()))
             }
         }
     }

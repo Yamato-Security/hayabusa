@@ -13,8 +13,8 @@ use crate::detections::utils::get_serde_number_to_string;
 use crate::filter;
 use crate::yaml::ParseYaml;
 use hashbrown;
+use hashbrown::HashMap;
 use serde_json::Value;
-use std::collections::HashMap;
 use std::io::BufWriter;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
@@ -190,6 +190,12 @@ impl Detection {
 
     /// 条件に合致したレコードを表示するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
+        let tag_info: Vec<String> = rule.yaml["tags"]
+            .as_vec()
+            .unwrap_or(&Vec::default())
+            .into_iter()
+            .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
+            .collect();
         MESSAGES.lock().unwrap().insert(
             record_info.evtx_filepath.to_string(),
             rule.rulepath.to_string(),
@@ -203,11 +209,18 @@ impl Detection {
                 .to_string(),
             rule.yaml["title"].as_str().unwrap_or("").to_string(),
             rule.yaml["details"].as_str().unwrap_or("").to_string(),
+            tag_info.join(" : "),
         );
     }
 
     /// insert aggregation condition detection message to output stack
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
+        let tag_info: Vec<String> = rule.yaml["tags"]
+            .as_vec()
+            .unwrap_or(&Vec::default())
+            .into_iter()
+            .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
+            .collect();
         let output = Detection::create_count_output(rule, &agg_result);
         MESSAGES.lock().unwrap().insert_message(
             "-".to_owned(),
@@ -218,6 +231,7 @@ impl Detection {
             "-".to_owned(),
             rule.yaml["title"].as_str().unwrap_or("").to_owned(),
             output.to_owned(),
+            tag_info.join(" : "),
         )
     }
 

@@ -1,0 +1,3 @@
+[submodule "rules"]
+	path = rules
+	url = https://github.com/Yamato-Security/hayabusa-rules.git
