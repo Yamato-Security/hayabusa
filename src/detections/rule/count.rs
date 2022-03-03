@@ -276,11 +276,11 @@ trait CountStrategy {
     /**
      * datas[idx]のデータをtimeframeに追加します
      */
-    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, rule: &RuleNode);
+    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
      * datas[idx]のデータをtimeframeから削除します。
      */
-    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, rule: &RuleNode);
+    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
      * count()の値を返します。
      */
@@ -291,9 +291,9 @@ trait CountStrategy {
     fn create_agg_result(
         &mut self,
         left: i64,
-        datas: &Vec<AggRecordTimeInfo>,
+        datas: &[AggRecordTimeInfo],
         cnt: i64,
-        key: &String,
+        key: &str,
         rule: &RuleNode,
     ) -> AggResult;
 }
@@ -306,7 +306,7 @@ struct FieldStrategy {
 }
 
 impl CountStrategy for FieldStrategy {
-    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
@@ -321,7 +321,7 @@ impl CountStrategy for FieldStrategy {
         }
     }
 
-    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
@@ -348,9 +348,9 @@ impl CountStrategy for FieldStrategy {
     fn create_agg_result(
         &mut self,
         left: i64,
-        datas: &Vec<AggRecordTimeInfo>,
+        datas: &[AggRecordTimeInfo],
         _cnt: i64,
-        key: &String,
+        key: &str,
         rule: &RuleNode,
     ) -> AggResult {
         let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect(); // drainで初期化
@@ -372,7 +372,7 @@ struct NoFieldStrategy {
 }
 
 impl CountStrategy for NoFieldStrategy {
-    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
@@ -380,7 +380,7 @@ impl CountStrategy for NoFieldStrategy {
         self.cnt += 1;
     }
 
-    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
@@ -395,9 +395,9 @@ impl CountStrategy for NoFieldStrategy {
     fn create_agg_result(
         &mut self,
         left: i64,
-        datas: &Vec<AggRecordTimeInfo>,
+        datas: &[AggRecordTimeInfo],
         cnt: i64,
-        key: &String,
+        key: &str,
         rule: &RuleNode,
     ) -> AggResult {
         let ret = AggResult::new(
@@ -447,8 +447,8 @@ fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &[AggRecordTimeInf
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
 pub fn judge_timeframe(
     rule: &RuleNode,
-    time_datas: &Vec<AggRecordTimeInfo>,
-    key: &String,
+    time_datas: &[AggRecordTimeInfo],
+    key: &str,
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
     if time_datas.is_empty() {
@@ -456,7 +456,7 @@ pub fn judge_timeframe(
     }
 
     // AggRecordTimeInfoを時間順がソートされている前提で処理を進める
-    let mut datas = time_datas.clone();
+    let mut datas = time_datas.to_owned();
     datas.sort_by(|a, b| a.record_time.cmp(&b.record_time));
 
     // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。

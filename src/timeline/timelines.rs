@@ -26,7 +26,7 @@ impl Timeline {
         Timeline { stats: statistic }
     }
 
-    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
+    pub fn start(&mut self, records: &[EvtxRecordInfo]) {
         self.stats.start(records);
     }
 

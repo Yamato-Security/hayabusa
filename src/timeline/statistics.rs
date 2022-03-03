@@ -29,7 +29,7 @@ impl EventStatistics {
         }
     }
 
-    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
+    pub fn start(&mut self, records: &[EvtxRecordInfo]) {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
@@ -49,7 +49,7 @@ impl EventStatistics {
         self.stats_eventid(records);
     }
 
-    fn stats_time_cnt(&mut self, records: &Vec<EvtxRecordInfo>) {
+    fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo]) {
         if records.is_empty() {
             return;
         }
@@ -79,7 +79,7 @@ impl EventStatistics {
     }
 
     // EventIDで集計
-    fn stats_eventid(&mut self, records: &Vec<EvtxRecordInfo>) {
+    fn stats_eventid(&mut self, records: &[EvtxRecordInfo]) {
         //        let mut evtstat_map = HashMap::new();
         for record in records.iter() {
             let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);

@@ -19,7 +19,7 @@ use std::string::String;
 
 use super::detection::EvtxRecordInfo;
 
-pub fn concat_selection_key(key_list: &Vec<String>) -> String {
+pub fn concat_selection_key(key_list: &[String]) -> String {
     return key_list
         .iter()
         .fold("detection -> selection".to_string(), |mut acc, cur| {
@@ -28,7 +28,7 @@ pub fn concat_selection_key(key_list: &Vec<String>) -> String {
         });
 }
 
-pub fn check_regex(string: &str, regex_list: &Vec<Regex>) -> bool {
+pub fn check_regex(string: &str, regex_list: &[Regex]) -> bool {
     for regex in regex_list {
         if !regex.is_match(string) {
             continue;
@@ -60,7 +60,7 @@ pub fn replace_target_character<'a>(
     )
 }
 
-pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
+pub fn check_allowlist(target: &str, regexes: &[Regex]) -> bool {
     for regex in regexes {
         if regex.is_match(target) {
             return true;
@@ -123,7 +123,7 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
     Result::Ok(ret)
 }
 
-pub fn is_target_event_id(s: &String) -> bool {
+pub fn is_target_event_id(s: &str) -> bool {
     configs::CONFIG.read().unwrap().target_eventids.is_target(s)
 }
 
@@ -216,7 +216,7 @@ pub fn create_tokio_runtime() -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRecordInfo {
+pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecordInfo {
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
     let mut rec = EvtxRecordInfo {
@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_check_regex() {
-        let regexes = utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
+        let regexes:Vec<Regex> = utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
             .unwrap()
             .into_iter()
             .map(|regex_str| Regex::new(&regex_str).unwrap())
@@ -274,7 +274,7 @@ mod tests {
     #[test]
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let allowlist = utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
+        let allowlist:Vec<Regex> = utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
             .unwrap()
             .into_iter()
             .map(|allow_str| Regex::new(&allow_str).unwrap())
