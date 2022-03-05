@@ -1,3 +1,0 @@
-pyyaml
-ruamel.yaml
-requests
