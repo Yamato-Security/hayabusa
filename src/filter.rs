@@ -52,17 +52,16 @@ fn load_record_filters() -> HashMap<String, DataFilterRule> {
         let key = line.get(0).unwrap_or(empty).trim();
         let regex_str = line.get(1).unwrap_or(empty).trim();
         let replaced_str = line.get(2).unwrap_or(empty).trim();
-        if key.len() == 0 || regex_str.len() == 0 {
+        if key.is_empty() || regex_str.is_empty() {
             return;
         }
 
         let regex_rule: Option<Regex> = match Regex::new(regex_str) {
             Ok(regex) => Some(regex),
             Err(_err) => {
-                let errmsg = format!("failed to read regex filter in record_data_filter.txt");
+                let errmsg = "failed to read regex filter in record_data_filter.txt";
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)
-                        .ok();
+                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), errmsg).ok();
                 }
                 if !*QUIET_ERRORS_FLAG {
                     ERROR_LOG_STACK
@@ -85,7 +84,7 @@ fn load_record_filters() -> HashMap<String, DataFilterRule> {
             },
         );
     });
-    return ret;
+    ret
 }
 
 #[derive(Clone, Debug)]
@@ -109,7 +108,7 @@ pub fn exclude_ids() -> RuleExclude {
 
     exclude_ids.insert_ids("./rules/config/exclude_rules.txt");
 
-    return exclude_ids;
+    exclude_ids
 }
 
 impl RuleExclude {
@@ -129,11 +128,10 @@ impl RuleExclude {
                     .unwrap()
                     .push(format!("{} does not exist", filename));
             }
-            return ();
         }
         let reader = BufReader::new(f.unwrap());
         for v in reader.lines() {
-            let v = v.unwrap().split("#").collect::<Vec<&str>>()[0]
+            let v = v.unwrap().split('#').collect::<Vec<&str>>()[0]
                 .trim()
                 .to_string();
             if v.is_empty() || !IDS_REGEX.is_match(&v) {

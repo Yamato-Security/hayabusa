@@ -16,7 +16,7 @@ use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::{afterfact::after_fact, detections::utils};
-use hayabusa::{detections::configs, timeline::timeline::Timeline};
+use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
@@ -53,19 +53,25 @@ pub struct App {
     rule_keys: Vec<String>,
 }
 
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl App {
     pub fn new() -> App {
-        return App {
+        App {
             rt: utils::create_tokio_runtime(),
             rule_keys: Vec::new(),
-        };
+        }
     }
 
     fn exec(&mut self) {
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
-            println!("");
+            println!();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
                 &analysis_start_time.month().to_owned(),
@@ -98,12 +104,12 @@ impl App {
             .ok();
             return;
         }
-        if configs::CONFIG.read().unwrap().args.args.len() == 0 {
+        if configs::CONFIG.read().unwrap().args.args.is_empty() {
             println!(
                 "{}",
                 configs::CONFIG.read().unwrap().args.usage().to_string()
             );
-            println!("");
+            println!();
             return;
         }
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
@@ -121,7 +127,7 @@ impl App {
         }
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
-            println!("");
+            println!();
         }
         if configs::CONFIG
             .read()
@@ -138,11 +144,11 @@ impl App {
             if !filepath.ends_with(".evtx")
                 || Path::new(filepath)
                     .file_stem()
-                    .unwrap_or(OsStr::new("."))
+                    .unwrap_or_else(|| OsStr::new("."))
                     .to_str()
                     .unwrap()
                     .trim()
-                    .starts_with(".")
+                    .starts_with('.')
             {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
@@ -153,8 +159,8 @@ impl App {
             }
             self.analysis_files(vec![PathBuf::from(filepath)]);
         } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
-            let evtx_files = self.collect_evtxfiles(&directory);
-            if evtx_files.len() == 0 {
+            let evtx_files = self.collect_evtxfiles(directory);
+            if evtx_files.is_empty() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
                     &"No .evtx files were found.".to_string(),
@@ -174,9 +180,9 @@ impl App {
         }
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        println!("");
+        println!();
         println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
-        println!("");
+        println!();
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
@@ -200,7 +206,7 @@ impl App {
             let log_dir = env::var("windir").expect("windir is not found");
             let evtx_files =
                 self.collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
-            if evtx_files.len() == 0 {
+            if evtx_files.is_empty() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
                     &"No .evtx files were found.".to_string(),
@@ -208,14 +214,14 @@ impl App {
                 .ok();
                 return None;
             }
-            return Some(evtx_files);
+            Some(evtx_files)
         } else {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
                 &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
             )
             .ok();
-            return None;
+            None
         }
     }
 
@@ -243,27 +249,27 @@ impl App {
 
             let path = e.unwrap().path();
             if path.is_dir() {
-                path.to_str().and_then(|path_str| {
+                path.to_str().map(|path_str| {
                     let subdir_ret = self.collect_evtxfiles(path_str);
                     ret.extend(subdir_ret);
-                    return Option::Some(());
+                    Option::Some(())
                 });
             } else {
                 let path_str = path.to_str().unwrap_or("");
                 if path_str.ends_with(".evtx")
                     && !Path::new(path_str)
                         .file_stem()
-                        .unwrap_or(OsStr::new("."))
+                        .unwrap_or_else(|| OsStr::new("."))
                         .to_str()
                         .unwrap()
-                        .starts_with(".")
+                        .starts_with('.')
                 {
                     ret.push(path);
                 }
             }
         }
 
-        return ret;
+        ret
     }
 
     fn print_contributors(&self) {
@@ -295,7 +301,7 @@ impl App {
             &filter::exclude_ids(),
         );
 
-        if rule_files.len() == 0 {
+        if rule_files.is_empty() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
                 &"No rules were loaded. Please download the latest rules with the --update-rules option.\r\n".to_string(),
@@ -369,14 +375,14 @@ impl App {
 
                 // target_eventids.txtでフィルタする。
                 let data = record_result.unwrap().data;
-                if self._is_target_event_id(&data) == false {
+                if !self._is_target_event_id(&data) {
                     continue;
                 }
 
                 // EvtxRecordInfo構造体に変更
                 records_per_detect.push(data);
             }
-            if records_per_detect.len() == 0 {
+            if records_per_detect.is_empty() {
                 break;
             }
 
@@ -397,7 +403,7 @@ impl App {
 
         tl.tm_stats_dsp_msg();
 
-        return detection;
+        detection
     }
 
     async fn create_rec_infos(
@@ -407,28 +413,28 @@ impl App {
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
-        let threads: Vec<JoinHandle<EvtxRecordInfo>> = records_per_detect
-            .into_iter()
-            .map(|rec| {
-                let arc_rule_keys = Arc::clone(&rule_keys);
-                let arc_path = Arc::clone(&path);
-                return spawn(async move {
-                    let rec_info =
-                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys);
-                    return rec_info;
+        let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
+            let this = records_per_detect
+                .into_iter()
+                .map(|rec| -> JoinHandle<EvtxRecordInfo> {
+                    let arc_rule_keys = Arc::clone(&rule_keys);
+                    let arc_path = Arc::clone(&path);
+                    spawn(async move {
+                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                    })
                 });
-            })
-            .collect();
+            FromIterator::from_iter(this)
+        };
 
         let mut ret = vec![];
         for thread in threads.into_iter() {
             ret.push(thread.await.unwrap());
         }
 
-        return ret;
+        ret
     }
 
-    fn get_all_keys(&self, rules: &Vec<RuleNode>) -> Vec<String> {
+    fn get_all_keys(&self, rules: &[RuleNode]) -> Vec<String> {
         let mut key_set = HashSet::new();
         for rule in rules {
             let keys = get_detection_keys(rule);
@@ -436,7 +442,7 @@ impl App {
         }
 
         let ret: Vec<String> = key_set.into_iter().collect();
-        return ret;
+        ret
     }
 
     // target_eventids.txtの設定を元にフィルタする。
@@ -446,11 +452,11 @@ impl App {
             return true;
         }
 
-        return match eventid.unwrap() {
+        match eventid.unwrap() {
             Value::String(s) => utils::is_target_event_id(s),
             Value::Number(n) => utils::is_target_event_id(&n.to_string()),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
-        };
+        }
     }
 
     fn evtx_to_jsons(&self, evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {
@@ -462,11 +468,11 @@ impl App {
                 parse_config = parse_config.num_threads(0); // 設定しないと遅かったので、設定しておく。
 
                 let evtx_parser = evtx_parser.with_configuration(parse_config);
-                return Option::Some(evtx_parser);
+                Option::Some(evtx_parser)
             }
             Err(e) => {
                 eprintln!("{}", e);
-                return Option::None;
+                Option::None
             }
         }
     }
@@ -479,8 +485,8 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = &format!("art/logo.txt");
-        let content = fs::read_to_string(fp).unwrap_or("".to_owned());
+        let fp = &"art/logo.txt".to_string();
+        let content = fs::read_to_string(fp).unwrap_or_default();
         println!("{}", content);
     }
 
@@ -495,7 +501,7 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let content = fs::read_to_string(path).unwrap_or("".to_owned());
+                let content = fs::read_to_string(path).unwrap_or_default();
                 println!("{}", content);
             }
         }

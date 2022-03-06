@@ -21,7 +21,7 @@ use self::count::{AggRecordTimeInfo, TimeFrameInfo};
 use super::detection::EvtxRecordInfo;
 
 pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
-    return RuleNode::new(rulepath, yaml);
+    RuleNode::new(rulepath, yaml)
 }
 
 /// Ruleファイルを表すノード
@@ -34,7 +34,7 @@ pub struct RuleNode {
 
 impl Debug for RuleNode {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return Result::Ok(());
+        Result::Ok(())
     }
 }
 
@@ -42,13 +42,13 @@ unsafe impl Sync for RuleNode {}
 unsafe impl Send for RuleNode {}
 
 impl RuleNode {
-    pub fn new(rulepath: String, yaml: Yaml) -> RuleNode {
-        return RuleNode {
-            rulepath: rulepath,
-            yaml: yaml,
+    pub fn new(rule_path: String, yaml_data: Yaml) -> RuleNode {
+        RuleNode {
+            rulepath: rule_path,
+            yaml: yaml_data,
             detection: DetectionNode::new(),
             countdata: HashMap::new(),
-        };
+        }
     }
 
     pub fn init(&mut self) -> Result<(), Vec<String>> {
@@ -56,14 +56,14 @@ impl RuleNode {
 
         // detection node initialization
         let detection_result = self.detection.init(&self.yaml["detection"]);
-        if detection_result.is_err() {
-            errmsgs.extend(detection_result.unwrap_err());
+        if let Err(err_detail) = detection_result {
+            errmsgs.extend(err_detail);
         }
 
         if errmsgs.is_empty() {
-            return Result::Ok(());
+            Result::Ok(())
         } else {
-            return Result::Err(errmsgs);
+            Result::Err(errmsgs)
         }
     }
 
@@ -72,11 +72,11 @@ impl RuleNode {
         if result && self.has_agg_condition() {
             count::count(self, &event_record.record);
         }
-        return result;
+        result
     }
     /// aggregation conditionが存在するかを返す関数
     pub fn has_agg_condition(&self) -> bool {
-        return self.detection.aggregation_condition.is_some();
+        self.detection.aggregation_condition.is_some()
     }
     /// Aggregation Conditionの結果を配列で返却する関数
     pub fn judge_satisfy_aggcondition(&self) -> Vec<AggResult> {
@@ -84,21 +84,17 @@ impl RuleNode {
         if !self.has_agg_condition() {
             return ret;
         }
-        ret.append(&mut count::aggregation_condition_select(&self));
-        return ret;
+        ret.append(&mut count::aggregation_condition_select(self));
+        ret
     }
     pub fn check_exist_countdata(&self) -> bool {
-        self.countdata.len() > 0
+        !self.countdata.is_empty()
     }
     /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
     pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
         match self.detection.aggregation_condition.as_ref() {
-            None => {
-                return None;
-            }
-            Some(agg_parse_info) => {
-                return Some(agg_parse_info);
-            }
+            None => None,
+            Some(agg_parse_info) => Some(agg_parse_info),
         }
     }
 }
@@ -120,12 +116,12 @@ pub fn get_detection_keys(node: &RuleNode) -> Vec<String> {
             if key.is_empty() {
                 return Option::None;
             }
-            return Option::Some(key.to_string());
+            Option::Some(key.to_string())
         });
         ret.extend(keys);
     }
 
-    return ret;
+    ret
 }
 
 /// Ruleファイルのdetectionを表すノード
@@ -138,12 +134,12 @@ struct DetectionNode {
 
 impl DetectionNode {
     fn new() -> DetectionNode {
-        return DetectionNode {
+        DetectionNode {
             name_to_selection: HashMap::new(),
             condition: Option::None,
             aggregation_condition: Option::None,
             timeframe: Option::None,
-        };
+        }
     }
 
     fn init(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
@@ -169,7 +165,7 @@ impl DetectionNode {
                 ]);
             }
 
-            keys.nth(0).unwrap().to_string()
+            keys.next().unwrap().to_string()
         };
 
         // conditionをパースして、SelectionNodeに変換する
@@ -193,9 +189,9 @@ impl DetectionNode {
         }
 
         if err_msgs.is_empty() {
-            return Result::Ok(());
+            Result::Ok(())
         } else {
-            return Result::Err(err_msgs);
+            Result::Err(err_msgs)
         }
     }
 
@@ -205,7 +201,7 @@ impl DetectionNode {
         }
 
         let condition = &self.condition.as_ref().unwrap();
-        return condition.select(event_record);
+        condition.select(event_record)
     }
 
     /// selectionノードをパースします。
@@ -221,7 +217,7 @@ impl DetectionNode {
         let mut err_msgs = vec![];
         for key in keys {
             let name = key.as_str().unwrap_or("");
-            if name.len() == 0 {
+            if name.is_empty() {
                 continue;
             }
             // condition等、特殊なキーワードを無視する。
@@ -231,11 +227,11 @@ impl DetectionNode {
 
             // パースして、エラーメッセージがあれば配列にためて、戻り値で返す。
             let selection_node = self.parse_selection(&detection_hash[key]);
-            if selection_node.is_some() {
-                let mut selection_node = selection_node.unwrap();
+            if let Some(node) = selection_node {
+                let mut selection_node = node;
                 let init_result = selection_node.init();
-                if init_result.is_err() {
-                    err_msgs.extend(init_result.unwrap_err());
+                if let Err(err_detail) = init_result {
+                    err_msgs.extend(err_detail);
                 } else {
                     let rc_selection = Arc::new(selection_node);
                     self.name_to_selection
@@ -248,18 +244,18 @@ impl DetectionNode {
         }
 
         // selectionノードが無いのはエラー
-        if self.name_to_selection.len() == 0 {
+        if self.name_to_selection.is_empty() {
             return Result::Err(vec![
                 "There is no selection node under detection.".to_string()
             ]);
         }
 
-        return Result::Ok(());
+        Result::Ok(())
     }
 
     /// selectionをパースします。
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
-        return Option::Some(self.parse_selection_recursively(vec![], selection_yaml));
+        Option::Some(self.parse_selection_recursively(vec![], selection_yaml))
     }
 
     /// selectionをパースします。
@@ -280,7 +276,7 @@ impl DetectionNode {
                 let child_node = self.parse_selection_recursively(child_key_list, child_yaml);
                 and_node.child_nodes.push(child_node);
             });
-            return Box::new(and_node);
+            Box::new(and_node)
         } else if yaml.as_vec().is_some() {
             // 配列はOR条件と解釈する。
             let mut or_node = selectionnodes::OrSelectionNode::new();
@@ -289,13 +285,13 @@ impl DetectionNode {
                 or_node.child_nodes.push(child_node);
             });
 
-            return Box::new(or_node);
+            Box::new(or_node)
         } else {
             // 連想配列と配列以外は末端ノード
-            return Box::new(selectionnodes::LeafSelectionNode::new(
+            Box::new(selectionnodes::LeafSelectionNode::new(
                 key_list,
                 yaml.clone(),
-            ));
+            ))
         }
     }
 }
@@ -317,19 +313,19 @@ pub struct AggResult {
 
 impl AggResult {
     pub fn new(
-        data: i64,
-        key: String,
-        field_values: Vec<String>,
-        start_timedate: DateTime<Utc>,
-        condition_op_num: String,
+        count_data: i64,
+        key_name: String,
+        field_value: Vec<String>,
+        event_start_timedate: DateTime<Utc>,
+        condition_op_number: String,
     ) -> AggResult {
-        return AggResult {
-            data: data,
-            key: key,
-            field_values: field_values,
-            start_timedate: start_timedate,
-            condition_op_num: condition_op_num,
-        };
+        AggResult {
+            data: count_data,
+            key: key_name,
+            field_values: field_value,
+            start_timedate: event_start_timedate,
+            condition_op_num: condition_op_number,
+        }
     }
 }
 
@@ -341,12 +337,12 @@ mod tests {
 
     pub fn parse_rule_from_str(rule_str: &str) -> RuleNode {
         let rule_yaml = YamlLoader::load_from_str(rule_str);
-        assert_eq!(rule_yaml.is_ok(), true);
+        assert!(rule_yaml.is_ok());
         let rule_yamls = rule_yaml.unwrap();
         let mut rule_yaml = rule_yamls.into_iter();
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
-        assert_eq!(rule_node.init().is_ok(), true);
-        return rule_node;
+        assert!(rule_node.init().is_ok());
+        rule_node
     }
 
     #[test]
@@ -371,10 +367,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -401,10 +397,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -431,10 +427,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -514,10 +510,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -573,10 +569,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -639,10 +635,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -683,10 +679,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -728,10 +724,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -792,10 +788,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -856,10 +852,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -902,10 +898,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -961,15 +957,15 @@ mod tests {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 let result = rule_node.select(&recinfo);
-                assert_eq!(rule_node.detection.aggregation_condition.is_some(), true);
-                assert_eq!(result, true);
+                assert!(rule_node.detection.aggregation_condition.is_some());
+                assert!(result);
                 assert_eq!(
-                    *&rule_node.countdata.get(key).unwrap().len() as i32,
+                    rule_node.countdata.get(key).unwrap().len() as i32,
                     expect_count
                 );
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }

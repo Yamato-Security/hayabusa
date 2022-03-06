@@ -19,10 +19,10 @@ pub trait SelectionNode: mopa::Any {
     fn init(&mut self) -> Result<(), Vec<String>>;
 
     // 子ノードを取得する(グラフ理論のchildと同じ意味)
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>>;
+    fn get_childs(&self) -> Vec<&dyn SelectionNode>;
 
     // 子孫ノードを取得する(グラフ理論のdescendantと同じ意味)
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>>;
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode>;
 }
 mopafy!(SelectionNode);
 
@@ -33,17 +33,17 @@ pub struct AndSelectionNode {
 
 impl AndSelectionNode {
     pub fn new() -> AndSelectionNode {
-        return AndSelectionNode {
+        AndSelectionNode {
             child_nodes: vec![],
-        };
+        }
     }
 }
 
 impl SelectionNode for AndSelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        return self.child_nodes.iter().all(|child_node| {
-            return child_node.select(event_record);
-        });
+        self.child_nodes
+            .iter()
+            .all(|child_node| child_node.select(event_record))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -52,50 +52,48 @@ impl SelectionNode for AndSelectionNode {
             .iter_mut()
             .map(|child_node| {
                 let res = child_node.init();
-                if res.is_err() {
-                    return res.unwrap_err();
+                if let Err(err) = res {
+                    err
                 } else {
-                    return vec![];
+                    vec![]
                 }
             })
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
                     acc.extend(cur.into_iter());
-                    return acc;
+                    acc
                 },
             );
 
         if err_msgs.is_empty() {
-            return Result::Ok(());
+            Result::Ok(())
         } else {
-            return Result::Err(err_msgs);
+            Result::Err(err_msgs)
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
-            ret.push(child_node);
+            ret.push(child_node.as_ref());
         });
 
-        return ret;
+        ret
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = self.get_childs();
 
         self.child_nodes
             .iter()
-            .map(|child_node| {
-                return child_node.get_descendants();
-            })
+            .map(|child_node| child_node.get_descendants())
             .flatten()
             .for_each(|descendant_node| {
                 ret.push(descendant_node);
             });
 
-        return ret;
+        ret
     }
 }
 
@@ -106,17 +104,17 @@ pub struct OrSelectionNode {
 
 impl OrSelectionNode {
     pub fn new() -> OrSelectionNode {
-        return OrSelectionNode {
+        OrSelectionNode {
             child_nodes: vec![],
-        };
+        }
     }
 }
 
 impl SelectionNode for OrSelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        return self.child_nodes.iter().any(|child_node| {
-            return child_node.select(event_record);
-        });
+        self.child_nodes
+            .iter()
+            .any(|child_node| child_node.select(event_record))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -125,50 +123,48 @@ impl SelectionNode for OrSelectionNode {
             .iter_mut()
             .map(|child_node| {
                 let res = child_node.init();
-                if res.is_err() {
-                    return res.unwrap_err();
+                if let Err(err) = res {
+                    err
                 } else {
-                    return vec![];
+                    vec![]
                 }
             })
             .fold(
                 vec![],
                 |mut acc: Vec<String>, cur: Vec<String>| -> Vec<String> {
                     acc.extend(cur.into_iter());
-                    return acc;
+                    acc
                 },
             );
 
         if err_msgs.is_empty() {
-            return Result::Ok(());
+            Result::Ok(())
         } else {
-            return Result::Err(err_msgs);
+            Result::Err(err_msgs)
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
-            ret.push(child_node);
+            ret.push(child_node.as_ref());
         });
 
-        return ret;
+        ret
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = self.get_childs();
 
         self.child_nodes
             .iter()
-            .map(|child_node| {
-                return child_node.get_descendants();
-            })
+            .map(|child_node| child_node.get_descendants())
             .flatten()
             .for_each(|descendant_node| {
                 ret.push(descendant_node);
             });
 
-        return ret;
+        ret
     }
 }
 
@@ -178,26 +174,26 @@ pub struct NotSelectionNode {
 }
 
 impl NotSelectionNode {
-    pub fn new(node: Box<dyn SelectionNode>) -> NotSelectionNode {
-        return NotSelectionNode { node: node };
+    pub fn new(select_node: Box<dyn SelectionNode>) -> NotSelectionNode {
+        NotSelectionNode { node: select_node }
     }
 }
 
 impl SelectionNode for NotSelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        return !self.node.select(event_record);
+        !self.node.select(event_record)
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        return Result::Ok(());
+        Result::Ok(())
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
-        return vec![];
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
+        vec![]
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
-        return self.get_childs();
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
+        self.get_childs()
     }
 }
 
@@ -210,28 +206,28 @@ pub struct RefSelectionNode {
 }
 
 impl RefSelectionNode {
-    pub fn new(selection_node: Arc<Box<dyn SelectionNode>>) -> RefSelectionNode {
-        return RefSelectionNode {
-            selection_node: selection_node,
-        };
+    pub fn new(select_node: Arc<Box<dyn SelectionNode>>) -> RefSelectionNode {
+        RefSelectionNode {
+            selection_node: select_node,
+        }
     }
 }
 
 impl SelectionNode for RefSelectionNode {
     fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        return self.selection_node.select(event_record);
+        self.selection_node.select(event_record)
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        return Result::Ok(());
+        Result::Ok(())
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
-        return vec![&self.selection_node];
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
+        vec![self.selection_node.as_ref().as_ref()]
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
-        return self.get_childs();
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
+        self.get_childs()
     }
 }
 
@@ -244,17 +240,17 @@ pub struct LeafSelectionNode {
 }
 
 impl LeafSelectionNode {
-    pub fn new(key_list: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
-        return LeafSelectionNode {
+    pub fn new(keys: Vec<String>, value_yaml: Yaml) -> LeafSelectionNode {
+        LeafSelectionNode {
             key: String::default(),
-            key_list: key_list,
+            key_list: keys,
             select_value: value_yaml,
             matcher: Option::None,
-        };
+        }
     }
 
     pub fn get_key(&self) -> &String {
-        return &self.key;
+        &self.key
     }
 
     fn _create_key(&self) -> String {
@@ -263,8 +259,8 @@ impl LeafSelectionNode {
         }
 
         let topkey = self.key_list[0].to_string();
-        let values: Vec<&str> = topkey.split("|").collect();
-        return values[0].to_string();
+        let values: Vec<&str> = topkey.split('|').collect();
+        values[0].to_string()
     }
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
@@ -274,18 +270,18 @@ impl LeafSelectionNode {
             return Option::Some(&record.data_string);
         }
 
-        return record.get_value(self.get_key());
+        record.get_value(self.get_key())
     }
 
     /// matchers::LeafMatcherの一覧を取得する。
     /// 上から順番に調べて、一番始めに一致したMatcherが適用される
     fn get_matchers(&self) -> Vec<Box<dyn matchers::LeafMatcher>> {
-        return vec![
+        vec![
             Box::new(matchers::MinlengthMatcher::new()),
             Box::new(matchers::RegexesFileMatcher::new()),
             Box::new(matchers::AllowlistFileMatcher::new()),
             Box::new(matchers::DefaultMatcher::new()),
-        ];
+        ]
     }
 }
 
@@ -370,7 +366,7 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         let replaced_str =
-            utils::replace_target_character(self.get_event_value(&event_record), filter_rule);
+            utils::replace_target_character(self.get_event_value(event_record), filter_rule);
 
         return self
             .matcher
@@ -409,12 +405,12 @@ impl SelectionNode for LeafSelectionNode {
             .init(&match_key_list, &self.select_value);
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
-        return vec![];
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
+        vec![]
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
-        return vec![];
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
+        vec![]
     }
 }
 
@@ -445,10 +441,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -478,10 +474,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -510,10 +506,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -542,10 +538,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -574,10 +570,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
             Err(_) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }

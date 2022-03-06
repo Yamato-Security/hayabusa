@@ -57,6 +57,12 @@ lazy_static! {
         .is_present("statistics");
 }
 
+impl Default for Message {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Message {
     pub fn new() -> Self {
         let messages: BTreeMap<DateTime<Utc>, Vec<DetectInfo>> = BTreeMap::new();
@@ -64,67 +70,21 @@ impl Message {
     }
 
     /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
-    pub fn insert_message(
-        &mut self,
-        target_file: String,
-        rule_path: String,
-        event_time: DateTime<Utc>,
-        level: String,
-        computername: String,
-        eventid: String,
-        event_title: String,
-        event_detail: String,
-        tag_info: String,
-    ) {
-        let detect_info = DetectInfo {
-            filepath: target_file,
-            rulepath: rule_path,
-            level: level,
-            computername: computername,
-            eventid: eventid,
-            alert: event_title,
-            detail: event_detail,
-            tag_info: tag_info,
-        };
-
-        match self.map.get_mut(&event_time) {
-            Some(v) => {
-                v.push(detect_info);
-            }
-            None => {
-                let m = vec![detect_info; 1];
-                self.map.insert(event_time, m);
-            }
+    pub fn insert_message(&mut self, detect_info: DetectInfo, event_time: DateTime<Utc>) {
+        if let Some(v) = self.map.get_mut(&event_time) {
+            v.push(detect_info);
+        } else {
+            let m = vec![detect_info; 1];
+            self.map.insert(event_time, m);
         }
     }
 
     /// メッセージを設定
-    pub fn insert(
-        &mut self,
-        target_file: String,
-        rule_path: String,
-        event_record: &Value,
-        level: String,
-        computername: String,
-        eventid: String,
-        event_title: String,
-        output: String,
-        tag_info: String,
-    ) {
-        let message = &self.parse_message(event_record, output);
+    pub fn insert(&mut self, event_record: &Value, output: String, mut detect_info: DetectInfo) {
+        detect_info.detail = self.parse_message(event_record, output);
         let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time = Message::get_event_time(event_record).unwrap_or(default_time);
-        self.insert_message(
-            target_file,
-            rule_path,
-            time,
-            level,
-            computername,
-            eventid,
-            event_title,
-            message.to_string(),
-            tag_info,
-        )
+        self.insert_message(detect_info, time)
     }
 
     fn parse_message(&mut self, event_record: &Value, output: String) -> String {
@@ -141,9 +101,9 @@ impl Message {
                 .collect::<String>();
 
             if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
-                let split: Vec<&str> = array_str.split(".").collect();
+                let split: Vec<&str> = array_str.split('.').collect();
                 let mut is_exist_event_key = false;
-                let mut tmp_event_record: &Value = event_record.into();
+                let mut tmp_event_record: &Value = event_record;
                 for s in &split {
                     if let Some(record) = tmp_event_record.get(s) {
                         is_exist_event_key = true;
@@ -193,7 +153,7 @@ impl Message {
             }
             detect_count += detect_infos.len();
         }
-        println!("");
+        println!();
         println!("Total events:{:?}", detect_count);
     }
 
@@ -224,20 +184,14 @@ impl AlertMessage {
         }
         let mut error_log_writer = BufWriter::new(File::create(path).unwrap());
         error_log_writer
-            .write(
+            .write_all(
                 format!(
                     "user input: {:?}\n",
-                    format_args!(
-                        "{}",
-                        env::args()
-                            .map(|arg| arg)
-                            .collect::<Vec<String>>()
-                            .join(" ")
-                    )
+                    format_args!("{}", env::args().collect::<Vec<String>>().join(" "))
                 )
                 .as_bytes(),
             )
-            .unwrap();
+            .ok();
         for error_log in ERROR_LOG_STACK.lock().unwrap().iter() {
             writeln!(error_log_writer, "{}", error_log).ok();
         }
@@ -245,22 +199,23 @@ impl AlertMessage {
             "Errors were generated. Please check {} for details.",
             ERROR_LOG_PATH.to_string()
         );
-        println!("");
+        println!();
     }
 
     /// ERRORメッセージを表示する関数
-    pub fn alert<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
+    pub fn alert<W: Write>(w: &mut W, contents: &str) -> io::Result<()> {
         writeln!(w, "[ERROR] {}", contents)
     }
 
     /// WARNメッセージを表示する関数
-    pub fn warn<W: Write>(w: &mut W, contents: &String) -> io::Result<()> {
+    pub fn warn<W: Write>(w: &mut W, contents: &str) -> io::Result<()> {
         writeln!(w, "[WARN] {}", contents)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::print::DetectInfo;
     use crate::detections::print::{AlertMessage, Message};
     use serde_json::Value;
     use std::io::BufWriter;
@@ -284,15 +239,18 @@ mod tests {
     "##;
         let event_record_1: Value = serde_json::from_str(json_str_1).unwrap();
         message.insert(
-            "a".to_string(),
-            "test_rule".to_string(),
             &event_record_1,
-            "high".to_string(),
-            "testcomputer1".to_string(),
-            "1".to_string(),
-            "test1".to_string(),
             "CommandLine1: %CommandLine%".to_string(),
-            "txxx.001".to_string(),
+            DetectInfo {
+                filepath: "a".to_string(),
+                rulepath: "test_rule".to_string(),
+                level: "high".to_string(),
+                computername: "testcomputer1".to_string(),
+                eventid: "1".to_string(),
+                alert: "test1".to_string(),
+                detail: String::default(),
+                tag_info: "txxx.001".to_string(),
+            },
         );
 
         let json_str_2 = r##"
@@ -311,15 +269,18 @@ mod tests {
     "##;
         let event_record_2: Value = serde_json::from_str(json_str_2).unwrap();
         message.insert(
-            "a".to_string(),
-            "test_rule2".to_string(),
             &event_record_2,
-            "high".to_string(),
-            "testcomputer2".to_string(),
-            "2".to_string(),
-            "test2".to_string(),
             "CommandLine2: %CommandLine%".to_string(),
-            "txxx.002".to_string(),
+            DetectInfo {
+                filepath: "a".to_string(),
+                rulepath: "test_rule2".to_string(),
+                level: "high".to_string(),
+                computername: "testcomputer2".to_string(),
+                eventid: "2".to_string(),
+                alert: "test2".to_string(),
+                detail: String::default(),
+                tag_info: "txxx.002".to_string(),
+            },
         );
 
         let json_str_3 = r##"
@@ -338,15 +299,18 @@ mod tests {
     "##;
         let event_record_3: Value = serde_json::from_str(json_str_3).unwrap();
         message.insert(
-            "a".to_string(),
-            "test_rule3".to_string(),
             &event_record_3,
-            "high".to_string(),
-            "testcomputer3".to_string(),
-            "3".to_string(),
-            "test3".to_string(),
             "CommandLine3: %CommandLine%".to_string(),
-            "txxx.003".to_string(),
+            DetectInfo {
+                filepath: "a".to_string(),
+                rulepath: "test_rule3".to_string(),
+                level: "high".to_string(),
+                computername: "testcomputer3".to_string(),
+                eventid: "3".to_string(),
+                alert: "test3".to_string(),
+                detail: String::default(),
+                tag_info: "txxx.003".to_string(),
+            },
         );
 
         let json_str_4 = r##"
@@ -360,15 +324,18 @@ mod tests {
     "##;
         let event_record_4: Value = serde_json::from_str(json_str_4).unwrap();
         message.insert(
-            "a".to_string(),
-            "test_rule4".to_string(),
             &event_record_4,
-            "medium".to_string(),
-            "testcomputer4".to_string(),
-            "4".to_string(),
-            "test4".to_string(),
             "CommandLine4: %CommandLine%".to_string(),
-            "txxx.004".to_string(),
+            DetectInfo {
+                filepath: "a".to_string(),
+                rulepath: "test_rule4".to_string(),
+                level: "medium".to_string(),
+                computername: "testcomputer4".to_string(),
+                eventid: "4".to_string(),
+                alert: "test4".to_string(),
+                detail: String::default(),
+                tag_info: "txxx.004".to_string(),
+            },
         );
 
         let display = format!("{}", format_args!("{:?}", message));
