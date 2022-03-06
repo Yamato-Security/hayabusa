@@ -511,7 +511,7 @@ mod tests {
         // Channel
         {
             // LeafSelectionNodeが正しく読み込めることを確認
-            let child_node = detection_childs[0].as_ref() as &dyn SelectionNode; //  TODO キャストしないとエラーでるけど、このキャストよく分からん。
+            let child_node = detection_childs[0] as &dyn SelectionNode; //  TODO キャストしないとエラーでるけど、このキャストよく分からん。
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "Channel");
@@ -535,7 +535,7 @@ mod tests {
         // EventID
         {
             // LeafSelectionNodeが正しく読み込めることを確認
-            let child_node = detection_childs[1].as_ref() as &dyn SelectionNode;
+            let child_node = detection_childs[1] as &dyn SelectionNode;
             assert!(child_node.is::<LeafSelectionNode>());
             let child_node = child_node.downcast_ref::<LeafSelectionNode>().unwrap();
             assert_eq!(child_node.get_key(), "EventID");
@@ -556,7 +556,7 @@ mod tests {
         // ContextInfo
         {
             // OrSelectionNodeを正しく読み込めることを確認
-            let child_node = detection_childs[2].as_ref() as &dyn SelectionNode;
+            let child_node = detection_childs[2] as &dyn SelectionNode;
             assert!(child_node.is::<OrSelectionNode>());
             let child_node = child_node.downcast_ref::<OrSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
@@ -564,7 +564,7 @@ mod tests {
 
             // OrSelectionNodeの下にLeafSelectionNodeがあるパターンをテスト
             // LeafSelectionNodeである、Host Applicationノードが正しいことを確認
-            let hostapp_en_node = ancestors[0].as_ref() as &dyn SelectionNode;
+            let hostapp_en_node = ancestors[0] as &dyn SelectionNode;
             assert!(hostapp_en_node.is::<LeafSelectionNode>());
             let hostapp_en_node = hostapp_en_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -578,7 +578,7 @@ mod tests {
             assert_eq!(re.unwrap().as_str(), "(?i)Host Application");
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
-            let hostapp_jp_node = ancestors[1].as_ref() as &dyn SelectionNode;
+            let hostapp_jp_node = ancestors[1] as &dyn SelectionNode;
             assert!(hostapp_jp_node.is::<LeafSelectionNode>());
             let hostapp_jp_node = hostapp_jp_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -595,7 +595,7 @@ mod tests {
         // ImagePath
         {
             // AndSelectionNodeを正しく読み込めることを確認
-            let child_node = detection_childs[3].as_ref() as &dyn SelectionNode;
+            let child_node = detection_childs[3] as &dyn SelectionNode;
             assert!(child_node.is::<AndSelectionNode>());
             let child_node = child_node.downcast_ref::<AndSelectionNode>().unwrap();
             let ancestors = child_node.get_childs();
@@ -603,7 +603,7 @@ mod tests {
 
             // min-lenが正しく読み込めることを確認
             {
-                let ancestor_node = ancestors[0].as_ref() as &dyn SelectionNode;
+                let ancestor_node = ancestors[0] as &dyn SelectionNode;
                 assert!(ancestor_node.is::<LeafSelectionNode>());
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -617,7 +617,7 @@ mod tests {
 
             // regexesが正しく読み込めることを確認
             {
-                let ancestor_node = ancestors[1].as_ref() as &dyn SelectionNode;
+                let ancestor_node = ancestors[1] as &dyn SelectionNode;
                 assert!(ancestor_node.is::<LeafSelectionNode>());
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 
@@ -645,7 +645,7 @@ mod tests {
 
             // allowlist.txtが読み込めることを確認
             {
-                let ancestor_node = ancestors[2].as_ref() as &dyn SelectionNode;
+                let ancestor_node = ancestors[2] as &dyn SelectionNode;
                 assert!(ancestor_node.is::<LeafSelectionNode>());
                 let ancestor_node = ancestor_node.downcast_ref::<LeafSelectionNode>().unwrap();
 

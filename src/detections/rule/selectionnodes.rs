@@ -19,10 +19,10 @@ pub trait SelectionNode: mopa::Any {
     fn init(&mut self) -> Result<(), Vec<String>>;
 
     // 子ノードを取得する(グラフ理論のchildと同じ意味)
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>>;
+    fn get_childs(&self) -> Vec<&dyn SelectionNode>;
 
     // 子孫ノードを取得する(グラフ理論のdescendantと同じ意味)
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>>;
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode>;
 }
 mopafy!(SelectionNode);
 
@@ -73,16 +73,16 @@ impl SelectionNode for AndSelectionNode {
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
-            ret.push(child_node);
+            ret.push(child_node.as_ref());
         });
 
         ret
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = self.get_childs();
 
         self.child_nodes
@@ -144,16 +144,16 @@ impl SelectionNode for OrSelectionNode {
         }
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = vec![];
         self.child_nodes.iter().for_each(|child_node| {
-            ret.push(child_node);
+            ret.push(child_node.as_ref());
         });
 
         ret
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
         let mut ret = self.get_childs();
 
         self.child_nodes
@@ -188,11 +188,11 @@ impl SelectionNode for NotSelectionNode {
         Result::Ok(())
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
         vec![]
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
         self.get_childs()
     }
 }
@@ -222,11 +222,11 @@ impl SelectionNode for RefSelectionNode {
         Result::Ok(())
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
-        vec![&self.selection_node]
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
+        vec![self.selection_node.as_ref().as_ref()]
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
         self.get_childs()
     }
 }
@@ -405,11 +405,11 @@ impl SelectionNode for LeafSelectionNode {
             .init(&match_key_list, &self.select_value);
     }
 
-    fn get_childs(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_childs(&self) -> Vec<&dyn SelectionNode> {
         vec![]
     }
 
-    fn get_descendants(&self) -> Vec<&Box<dyn SelectionNode>> {
+    fn get_descendants(&self) -> Vec<&dyn SelectionNode> {
         vec![]
     }
 }
