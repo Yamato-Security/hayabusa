@@ -103,17 +103,11 @@ impl PivotKeyword {
                     if is_exist_event_key {
                         let hash_value = get_serde_number_to_string(tmp_event_record);
 
-                        if hash_value.is_some() {
-                            if hash_value.as_ref().unwrap() == "-"
-                                || hash_value.as_ref().unwrap() == "127.0.0.1"
-                                || hash_value.as_ref().unwrap() == "::1"
-                            {
+                        if let Some(value) = hash_value {
+                            if value == "-" || value == "127.0.0.1" || value == "::1" {
                                 continue;
                             }
-                            self.keywords
-                                .get_mut(key)
-                                .unwrap()
-                                .insert(hash_value.unwrap_or_else(|| "".to_string()));
+                            self.keywords.get_mut(key).unwrap().insert(value);
                         };
                     }
                 }
