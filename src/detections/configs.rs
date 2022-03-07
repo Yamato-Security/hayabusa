@@ -319,12 +319,12 @@ pub fn load_pivot_keywords(path: &str) {
         for field in &line[1..] {
             let key = key.as_str();
             PIVOT_KEYWORD
-                    .write()
-                    .unwrap()
-                    .fields
-                    .get_mut(key)
-                    .unwrap()
-                    .insert(field.to_string());
+                .write()
+                .unwrap()
+                .fields
+                .get_mut(key)
+                .unwrap()
+                .insert(field.to_string());
         }
     });
 }
