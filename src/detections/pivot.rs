@@ -71,16 +71,14 @@ impl PivotKeyword {
         if is_exist_event_key {
             let hash_value = get_serde_number_to_string(tmp_event_record);
 
-            if hash_value.is_some() {
-                if hash_value.as_ref().unwrap() == "infomational"
-                    || hash_value.as_ref().unwrap() == "undefined"
-                    || hash_value.as_ref().unwrap() == "-"
-                {
-                    return ();
-                }
+            if hash_value.is_some() && hash_value.as_ref().unwrap() == "infomational"
+                || hash_value.as_ref().unwrap() == "undefined"
+                || hash_value.as_ref().unwrap() == "-"
+            {
+                return;
             }
         } else {
-            return ();
+            return;
         }
 
         for (key, fields) in self.fields.iter() {
