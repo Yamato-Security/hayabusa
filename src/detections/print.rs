@@ -100,26 +100,31 @@ impl Message {
                 .take(target_length)
                 .collect::<String>();
 
-            if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
-                let split: Vec<&str> = array_str.split('.').collect();
-                let mut is_exist_event_key = false;
-                let mut tmp_event_record: &Value = event_record;
-                for s in &split {
-                    if let Some(record) = tmp_event_record.get(s) {
-                        is_exist_event_key = true;
-                        tmp_event_record = record;
-                        output_filter = FILTER_REGEX.get(&s.to_string());
-                    }
+            let array_str;
+            if let Some(_array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
+                array_str = _array_str.to_string();
+            } else {
+                array_str = "Evnet.EventData.".to_owned() + &target_str;
+            }
+
+            let split: Vec<&str> = array_str.split('.').collect();
+            let mut is_exist_event_key = false;
+            let mut tmp_event_record: &Value = event_record;
+            for s in &split {
+                if let Some(record) = tmp_event_record.get(s) {
+                    is_exist_event_key = true;
+                    tmp_event_record = record;
+                    output_filter = FILTER_REGEX.get(&s.to_string());
                 }
-                if is_exist_event_key {
-                    let mut hash_value = get_serde_number_to_string(tmp_event_record);
-                    if hash_value.is_some() {
-                        if output_filter.is_some() {
-                            hash_value =
-                                utils::replace_target_character(hash_value.as_ref(), output_filter);
-                        }
-                        hash_map.insert(full_target_str.to_string(), hash_value.unwrap());
+            }
+            if is_exist_event_key {
+                let mut hash_value = get_serde_number_to_string(tmp_event_record);
+                if hash_value.is_some() {
+                    if output_filter.is_some() {
+                        hash_value =
+                            utils::replace_target_character(hash_value.as_ref(), output_filter);
                     }
+                    hash_map.insert(full_target_str.to_string(), hash_value.unwrap());
                 }
             }
         }
