@@ -17,6 +17,12 @@ lazy_static! {
     pub static ref PIVOT_KEYWORD: RwLock<PivotKeyword> = RwLock::new(PivotKeyword::new());
 }
 
+impl Default for PivotKeyword {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PivotKeyword {
     pub fn new() -> PivotKeyword {
         let mut pivot_keyword = PivotKeyword {
@@ -54,14 +60,14 @@ impl PivotKeyword {
         pivot_keyword
             .fields
             .insert("Processes".to_string(), HashSet::new());
-        return pivot_keyword;
+        pivot_keyword
     }
 
     ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
     ///それをPIVOT_KEYWORD.keywordsに入れる。
     pub fn insert_pivot_keyword(&mut self, event_record: &Value) {
         let mut is_exist_event_key = false;
-        let mut tmp_event_record: &Value = event_record.into();
+        let mut tmp_event_record: &Value = event_record;
         for s in ["Event", "System", "Level"] {
             if let Some(record) = tmp_event_record.get(s) {
                 is_exist_event_key = true;
@@ -85,9 +91,9 @@ impl PivotKeyword {
             for field in fields {
                 if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field))
                 {
-                    let split: Vec<&str> = array_str.split(".").collect();
+                    let split: Vec<&str> = array_str.split('.').collect();
                     let mut is_exist_event_key = false;
-                    let mut tmp_event_record: &Value = event_record.into();
+                    let mut tmp_event_record: &Value = event_record;
                     for s in split {
                         if let Some(record) = tmp_event_record.get(s) {
                             is_exist_event_key = true;
@@ -107,7 +113,7 @@ impl PivotKeyword {
                             self.keywords
                                 .get_mut(key)
                                 .unwrap()
-                                .insert(hash_value.unwrap());
+                                .insert(hash_value.unwrap_or_else(|| "".to_string()));
                         };
                     }
                 }

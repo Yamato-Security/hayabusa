@@ -199,7 +199,7 @@ impl App {
 
         if *PIVOT_KEYWORD_LIST_FLAG {
             //出力する文字列を準備
-            let mut output = format!("The following pivot keywords were found:\n",).to_string();
+            let mut output = "The following pivot keywords were found:\n".to_string();
             for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
                 output += &format!("{}: ", key).to_string();
                 for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
@@ -207,22 +207,22 @@ impl App {
                         output += &format!("{}, ", i).to_string();
                     }
                 }
-                output += &format!("\n").to_string();
+                output += &"\n".to_string();
 
-                output += &format!("field's list: (");
+                output += &"field's list: (".to_string();
                 for v in &PIVOT_KEYWORD.read().unwrap().fields.get(key) {
                     for i in v.iter() {
                         output += &format!("%{}%, ", i).to_string();
                     }
                 }
-                output += &format!(")");
-                output += &format!("\n\n");
+                output += &")".to_string();
+                output += &"\n\n".to_string();
             }
 
             //出力
             if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
                 let mut f = BufWriter::new(fs::File::create(pivot_file).unwrap());
-                f.write(output.as_bytes()).unwrap();
+                f.write_all(output.as_bytes()).unwrap();
             } else {
                 print!("\n {}", output);
             }

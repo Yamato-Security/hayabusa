@@ -317,15 +317,14 @@ pub fn load_pivot_keywords(path: &str) {
         let key = line[0].clone();
 
         for field in &line[1..] {
-            match key.as_str() {
-                key => PIVOT_KEYWORD
+            let key = key.as_str();
+            PIVOT_KEYWORD
                     .write()
                     .unwrap()
                     .fields
                     .get_mut(key)
                     .unwrap()
-                    .insert(field.to_string()),
-            };
+                    .insert(field.to_string());
         }
     });
 }
