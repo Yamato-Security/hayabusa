@@ -53,6 +53,11 @@ lazy_static! {
         .unwrap()
         .args
         .is_present("statistics");
+    pub static ref PIVOT_KEYWORD_LIST_FLAG: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("pivot-keywords-list");
 }
 
 impl Default for Message {

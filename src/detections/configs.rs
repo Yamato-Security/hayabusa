@@ -299,6 +299,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
+///keyとfieldsがマップされた設定のcsvをPIVOT_KEYWORD大域変数にロードする。
 pub fn load_pivot_keywords(path: &str) {
     let read_result = utils::read_csv(path, true);
     if read_result.is_err() {

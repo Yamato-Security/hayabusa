@@ -7,6 +7,7 @@ use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
 use crate::detections::print::QUIET_ERRORS_FLAG;
+use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
@@ -179,12 +180,7 @@ impl Detection {
                 continue;
             }
 
-            if configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .is_present("pivot-keywords-list")
-            {
+            if *PIVOT_KEYWORD_LIST_FLAG {
                 PIVOT_KEYWORD
                     .write()
                     .unwrap()

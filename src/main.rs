@@ -10,7 +10,7 @@ use git2::Repository;
 use hayabusa::detections::configs::load_pivot_keywords;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::{
-    AlertMessage, PIVOT_KEYWORD, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+    AlertMessage, PIVOT_KEYWORD, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, PIVOT_KEYWORD_LIST_FLAG, STATISTICS_FLAG,
 };
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
@@ -68,12 +68,7 @@ impl App {
     }
 
     fn exec(&mut self) {
-        if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("pivot-keywords-list")
-        {
+        if *PIVOT_KEYWORD_LIST_FLAG {
             load_pivot_keywords("config/pivot_keywords.txt");
         }
 
@@ -196,12 +191,7 @@ impl App {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
         }
 
-        if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("pivot-keywords-list")
-        {
+        if *PIVOT_KEYWORD_LIST_FLAG {
             //出力する文字列を準備
             let mut output = format!("The following pivot keywords were found:\n",).to_string();
             for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
@@ -365,13 +355,7 @@ impl App {
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
-        if !*STATISTICS_FLAG
-            && !configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .is_present("pivot-keywords-list")
-        {
+        if !*STATISTICS_FLAG && !*PIVOT_KEYWORD_LIST_FLAG {
             after_fact();
         }
     }

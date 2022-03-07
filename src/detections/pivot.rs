@@ -57,6 +57,8 @@ impl PivotKeyword {
         return pivot_keyword;
     }
 
+    ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
+    ///それをPIVOT_KEYWORD.keywordsに入れる。
     pub fn insert_pivot_keyword(&mut self, event_record: &Value) {
         let mut is_exist_event_key = false;
         let mut tmp_event_record: &Value = event_record.into();
@@ -77,6 +79,8 @@ impl PivotKeyword {
                     return ();
                 }
             }
+        } else {
+            return ();
         }
 
         for (key, fields) in self.fields.iter() {
@@ -120,7 +124,7 @@ mod tests {
     use crate::detections::pivot::PIVOT_KEYWORD;
     use serde_json;
 
-    //PIVOT_KEYWORDはグローバルなので注意が必要。
+    //PIVOT_KEYWORDはグローバルなので、他の関数の影響も考慮する必要がある。
     #[test]
     fn insert_pivot_keyword_local_ip4() {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
