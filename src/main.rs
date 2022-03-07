@@ -5,18 +5,18 @@ extern crate serde_derive;
 #[cfg(target_os = "windows")]
 extern crate static_vcruntime;
 
-use git2::Repository;
 use chrono::DateTime;
+use chrono::Datelike;
 use chrono::Local;
 use evtx::EvtxParser;
 use evtx::ParserSettings;
-use chrono::Datelike;
-use hayabusa::detections::pivot::PIVOT_KEYWORD;
+use git2::Repository;
 use hayabusa::detections::configs::load_pivot_keywords;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
+use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::print::{
-    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, PIVOT_KEYWORD_LIST_FLAG,
-    QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
+    STATISTICS_FLAG,
 };
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
