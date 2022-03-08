@@ -501,7 +501,6 @@ impl App {
             None => {}
             Some(path) => {
                 let content = fs::read_to_string(path).unwrap_or_default();
-                println!();
                 println!("{}", content);
             }
         }
