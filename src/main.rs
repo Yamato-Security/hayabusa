@@ -71,6 +71,7 @@ impl App {
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
+            println!();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
                 &analysis_start_time.month().to_owned(),
