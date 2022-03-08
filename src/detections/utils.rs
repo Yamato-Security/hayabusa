@@ -188,7 +188,7 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
         if !key.contains('.') {
             event_key = "Event.EventData.".to_string() + key;
         } else {
-                event_key = key.to_string();
+            event_key = key.to_string();
         }
         for key in event_key.split('.') {
             if !ret.is_object() {
