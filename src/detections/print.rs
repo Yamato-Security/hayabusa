@@ -104,7 +104,7 @@ impl Message {
             if let Some(_array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
                 array_str = _array_str.to_string();
             } else {
-                array_str = "Evnet.EventData.".to_owned() + &target_str;
+                array_str = "Event.EventData.".to_owned() + &target_str;
             }
 
             let split: Vec<&str> = array_str.split('.').collect();
@@ -398,6 +398,27 @@ mod tests {
             expected,
         );
     }
+
+    #[test]
+    fn test_parse_message_auto_search() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "NoAlias": "no_alias"
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "alias:no_alias";
+        assert_eq!(
+            message.parse_message(&event_record, "alias:%NoAlias%".to_owned()),
+            expected,
+        );
+    }
+
     #[test]
     /// outputで指定されているキーが、eventkey_alias.txt内で設定されていない場合の出力テスト
     fn test_parse_message_not_exist_key_in_output() {
@@ -417,9 +438,9 @@ mod tests {
         }
     "##;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
-        let expected = "NoExistKey:%TESTNoExistKey%";
+        let expected = "NoExistAlias:%NoAliasNoHit%";
         assert_eq!(
-            message.parse_message(&event_record, "NoExistKey:%TESTNoExistKey%".to_owned()),
+            message.parse_message(&event_record, "NoExistAlias:%NoAliasNoHit%".to_owned()),
             expected,
         );
     }
