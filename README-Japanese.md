@@ -108,7 +108,7 @@ Windowsのイベントログは、
 
 # タイムラインのサンプル結果
 
-CSVと手動で編集したXLSXのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
+CSVのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
 
 CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
 
@@ -144,13 +144,15 @@ Hayabusaの[Releases](https://github.com/Yamato-Security/hayabusa/releases)か�
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
---recursive をつけ忘れた場合、サブモジュールとして管理されている rules/ 内のファイルが取得できません。
-Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。
-rulesフォルダ配下でファイルを削除や更新をしていた場合は更新されないのでその場合はrulesフォルダを他の名前にリネームしたうえで以下のコマンドを打ってください。
+注意: `--recursive`をつけ忘れた場合、サブモジュールとして管理されている`rules`フォルダ内のファイルはダウンロードされません。
+
+`git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
 .\hayabusa.exe -u
 ```
+
+アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
 
 # ソースコードからのコンパイル（任意）
 
