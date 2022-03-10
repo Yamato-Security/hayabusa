@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
-use mopa::mopafy;
+use downcast_rs::Downcast;
 
 use lazy_static::lazy_static;
 lazy_static! {
@@ -15,7 +15,7 @@ lazy_static! {
 //
 // 新規にLeafMatcherを実装するクラスを作成した場合、
 // LeafSelectionNodeのget_matchersクラスの戻り値の配列に新規作成したクラスのインスタンスを追加する。
-pub trait LeafMatcher: mopa::Any {
+pub trait LeafMatcher: Downcast {
     /// 指定されたkey_listにマッチするLeafMatcherであるかどうか判定する。
     fn is_target_key(&self, key_list: &[String]) -> bool;
 
@@ -28,7 +28,7 @@ pub trait LeafMatcher: mopa::Any {
     /// ルールファイルの書き方が間違っている等の原因により、正しくルールファイルからパースできない場合、戻り値のResult型でエラーを返してください。
     fn init(&mut self, key_list: &[String], select_value: &Yaml) -> Result<(), Vec<String>>;
 }
-mopafy!(LeafMatcher);
+downcast_rs::impl_downcast!(LeafMatcher);
 
 /// 指定された文字数以上であることをチェックするクラス。
 pub struct MinlengthMatcher {

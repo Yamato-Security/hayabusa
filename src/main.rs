@@ -1,3 +1,4 @@
+extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
 
