@@ -128,6 +128,7 @@ impl RuleExclude {
                     .unwrap()
                     .push(format!("{} does not exist", filename));
             }
+            return;
         }
         let reader = BufReader::new(f.unwrap());
         for v in reader.lines() {
