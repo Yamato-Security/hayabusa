@@ -106,7 +106,7 @@ First inspired by the [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCL
 
 # Sample timeline results
 
-You can check out sample CSV and manually edited XLSX timeline results [here](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results).
+You can check out sample CSV timelines [here](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results).
 
 You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here](doc/CSV-AnalysisWithExcelAndTimelineExplorer-English.pdf).
 
@@ -142,15 +142,15 @@ You can also `git clone` the repository with the following command and compile b
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
-If you forget to use --recursive option, rules/ files which managed in submodule did not cloned.
-You can get latest Hayabusa rules with the execute following command.
+Note: If you forget to use --recursive option, the `rules` folder, which is managed as a git submodule, will not be cloned.
 
-When you modified or erased in rules/ , update is failed.
-In this case, you can get latest Hayabusa if you renamed rules folder and execute following command.
+You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
 .\hayabusa.exe -u
 ```
+
+If the update fails, you may need to rename the `rules` folder and try again.
 
 # Compiling from source (Optional)
 

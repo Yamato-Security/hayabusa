@@ -37,5 +37,8 @@ git2="0.13"
 is_elevated = "0.1.2"
 static_vcruntime = "1.5.*"
 
+[target.'cfg(unix)'.dependencies] #Mac and Linux
+openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
+
 [profile.release]
 lto = true
