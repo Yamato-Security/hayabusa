@@ -49,7 +49,7 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
         // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
         AlertMessage::warn(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &read_result.as_ref().unwrap_err(),
+            read_result.as_ref().unwrap_err(),
         )
         .ok();
         return None;
@@ -71,12 +71,12 @@ pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
             return;
         }
         let color_code = convert_color_result.unwrap();
-        if level.len() == 0 || color_code.len() < 3 {
+        if level.is_empty() || color_code.len() < 3 {
             return;
         }
         color_map.insert(level.to_string(), color_code);
     });
-    return Some(color_map);
+    Some(color_map)
 }
 
 pub fn after_fact() {
@@ -142,7 +142,7 @@ fn emit_csv<W: std::io::Write>(
             if displayflag {
                 if color_map.is_some() {
                     let output_color =
-                        _get_output_color(&color_map.as_ref().unwrap(), &detect_info.level);
+                        _get_output_color(color_map.as_ref().unwrap(), &detect_info.level);
                     wtr.serialize(DisplayFormat {
                         timestamp: &format!(
                             "{} ",
@@ -227,10 +227,10 @@ fn emit_csv<W: std::io::Write>(
             total_detect_counts_by_level[level_suffix] += 1;
         }
     }
-    println!("");
+    println!();
 
     wtr.flush()?;
-    println!("");
+    println!();
     _print_unique_results(
         total_detect_counts_by_level,
         "Total".to_string(),
@@ -240,7 +240,7 @@ fn emit_csv<W: std::io::Write>(
     _print_unique_results(
         unique_detect_counts_by_level,
         "Unique".to_string(),
-        "rules".to_string(),
+        "detections".to_string(),
         &color_map,
     );
     Ok(())
@@ -285,7 +285,7 @@ fn _print_unique_results(
             output_str = output_raw_str;
         } else {
             let output_color =
-                _get_output_color(&color_map.as_ref().unwrap(), &level_name.to_string());
+                _get_output_color(color_map.as_ref().unwrap(), &level_name.to_string());
             output_str = output_raw_str
                 .truecolor(output_color[0], output_color[1], output_color[2])
                 .to_string();
@@ -296,14 +296,14 @@ fn _print_unique_results(
 }
 
 /// levelに対応したtruecolorの値の配列を返す関数
-fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &String) -> Vec<u8> {
+fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &str) -> Vec<u8> {
     // カラーをつけない場合は255,255,255で出力する
     let mut output_color: Vec<u8> = vec![255, 255, 255];
     let target_color = color_map.get(level);
-    if target_color.is_some() {
-        output_color = target_color.unwrap().to_vec();
+    if let Some(color) = target_color {
+        output_color = color.to_vec();
     }
-    return output_color;
+    output_color
 }
 
 fn format_time(time: &DateTime<Utc>) -> String {
@@ -319,11 +319,11 @@ where
     Tz::Offset: std::fmt::Display,
 {
     if configs::CONFIG.read().unwrap().args.is_present("rfc-2822") {
-        return time.to_rfc2822();
+        time.to_rfc2822()
     } else if configs::CONFIG.read().unwrap().args.is_present("rfc-3339") {
-        return time.to_rfc3339();
+        time.to_rfc3339()
     } else {
-        return time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string();
+        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
     }
 }
 
@@ -331,6 +331,7 @@ where
 mod tests {
     use crate::afterfact::emit_csv;
     use crate::detections::print;
+    use crate::detections::print::DetectInfo;
     use chrono::{Local, TimeZone, Utc};
     use serde_json::Value;
     use std::fs::File;
@@ -372,15 +373,18 @@ mod tests {
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
             messages.insert(
-                testfilepath.to_string(),
-                testrulepath.to_string(),
                 &event,
-                test_level.to_string(),
-                test_computername.to_string(),
-                test_eventid.to_string(),
-                test_title.to_string(),
                 output.to_string(),
-                test_attack.to_string(),
+                DetectInfo {
+                    filepath: testfilepath.to_string(),
+                    rulepath: testrulepath.to_string(),
+                    level: test_level.to_string(),
+                    computername: test_computername.to_string(),
+                    eventid: test_eventid.to_string(),
+                    alert: test_title.to_string(),
+                    detail: String::default(),
+                    tag_info: test_attack.to_string(),
+                },
             );
         }
         let expect_time = Utc
@@ -452,15 +456,18 @@ mod tests {
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
             messages.insert(
-                testfilepath.to_string(),
-                testrulepath.to_string(),
                 &event,
-                test_level.to_string(),
-                test_computername.to_string(),
-                test_eventid.to_string(),
-                test_title.to_string(),
                 output.to_string(),
-                test_attack.to_string(),
+                DetectInfo {
+                    filepath: testfilepath.to_string(),
+                    rulepath: testrulepath.to_string(),
+                    level: test_level.to_string(),
+                    computername: test_computername.to_string(),
+                    eventid: test_eventid.to_string(),
+                    alert: test_title.to_string(),
+                    detail: String::default(),
+                    tag_info: test_attack.to_string(),
+                },
             );
             messages.debug();
         }
@@ -520,6 +527,6 @@ mod tests {
         let white_color_header = "\u{1b}[38;2;255;255;255m";
         let white_color_footer = "\u{1b}[0m";
 
-        return white_color_header.to_owned() + target + white_color_footer;
+        white_color_header.to_owned() + target + white_color_footer
     }
 }

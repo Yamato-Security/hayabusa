@@ -57,7 +57,7 @@ impl IntoIterator for ConditionToken {
 
 impl ConditionToken {
     fn replace_subtoken(&self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
-        return match self {
+        match self {
             ConditionToken::ParenthesisContainer(_) => {
                 ConditionToken::ParenthesisContainer(sub_tokens)
             }
@@ -74,12 +74,12 @@ impl ConditionToken {
             ConditionToken::SelectionReference(name) => {
                 ConditionToken::SelectionReference(name.clone())
             }
-        };
+        }
     }
 
-    pub fn sub_tokens<'a>(&'a self) -> Vec<ConditionToken> {
+    pub fn sub_tokens(&self) -> Vec<ConditionToken> {
         // TODO ここでcloneを使わずに実装できるようにしたい。
-        return match self {
+        match self {
             ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens.clone(),
             ConditionToken::AndContainer(sub_tokens) => sub_tokens.clone(),
             ConditionToken::OrContainer(sub_tokens) => sub_tokens.clone(),
@@ -92,14 +92,14 @@ impl ConditionToken {
             ConditionToken::And => vec![],
             ConditionToken::Or => vec![],
             ConditionToken::SelectionReference(_) => vec![],
-        };
+        }
     }
 
-    pub fn sub_tokens_without_parenthesis<'a>(&'a self) -> Vec<ConditionToken> {
-        return match self {
+    pub fn sub_tokens_without_parenthesis(&self) -> Vec<ConditionToken> {
+        match self {
             ConditionToken::ParenthesisContainer(_) => vec![],
             _ => self.sub_tokens(),
-        };
+        }
     }
 }
 
@@ -119,8 +119,8 @@ impl ConditionCompiler {
     ) -> Result<Box<dyn SelectionNode>, String> {
         // パイプはここでは処理しない
         let captured = self::RE_PIPE.captures(&condition_str);
-        let condition_str = if captured.is_some() {
-            let captured = captured.unwrap().get(0).unwrap().as_str().to_string();
+        let condition_str = if let Some(cap) = captured {
+            let captured = cap.get(0).unwrap().as_str().to_string();
             condition_str.replacen(&captured, "", 1)
         } else {
             condition_str
@@ -128,9 +128,9 @@ impl ConditionCompiler {
 
         let result = self.compile_condition_body(condition_str, name_2_node);
         if let Result::Err(msg) = result {
-            return Result::Err(format!("A condition parse error has occured. {}", msg));
+            Result::Err(format!("A condition parse error has occured. {}", msg))
         } else {
-            return result;
+            result
         }
     }
 
@@ -144,7 +144,7 @@ impl ConditionCompiler {
 
         let parsed = self.parse(tokens)?;
 
-        return self.to_selectnode(parsed, name_2_node);
+        self.to_selectnode(parsed, name_2_node)
     }
 
     /// 構文解析を実行する。
@@ -161,7 +161,7 @@ impl ConditionCompiler {
         let token = self.parse_operand_container(tokens)?;
 
         // 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
-        return self.parse_rest_parenthesis(token);
+        self.parse_rest_parenthesis(token)
     }
 
     /// 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
@@ -172,7 +172,7 @@ impl ConditionCompiler {
         }
 
         let sub_tokens = token.sub_tokens();
-        if sub_tokens.len() == 0 {
+        if sub_tokens.is_empty() {
             return Result::Ok(token);
         }
 
@@ -181,15 +181,15 @@ impl ConditionCompiler {
             let new_token = self.parse_rest_parenthesis(sub_token)?;
             new_sub_tokens.push(new_token);
         }
-        return Result::Ok(token.replace_subtoken(new_sub_tokens));
+        Result::Ok(token.replace_subtoken(new_sub_tokens))
     }
 
     /// 字句解析を行う
-    fn tokenize(&self, condition_str: &String) -> Result<Vec<ConditionToken>, String> {
-        let mut cur_condition_str = condition_str.clone();
+    fn tokenize(&self, condition_str: &str) -> Result<Vec<ConditionToken>, String> {
+        let mut cur_condition_str = condition_str.to_string();
 
         let mut tokens = Vec::new();
-        while cur_condition_str.len() != 0 {
+        while !cur_condition_str.is_empty() {
             let captured = self::CONDITION_REGEXMAP.iter().find_map(|regex| {
                 return regex.captures(cur_condition_str.as_str());
             });
@@ -210,25 +210,25 @@ impl ConditionCompiler {
             cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
         }
 
-        return Result::Ok(tokens);
+        Result::Ok(tokens)
     }
 
     /// 文字列をConditionTokenに変換する。
     fn to_enum(&self, token: String) -> ConditionToken {
         if token == "(" {
-            return ConditionToken::LeftParenthesis;
+            ConditionToken::LeftParenthesis
         } else if token == ")" {
-            return ConditionToken::RightParenthesis;
+            ConditionToken::RightParenthesis
         } else if token == " " {
-            return ConditionToken::Space;
+            ConditionToken::Space
         } else if token == "not" {
-            return ConditionToken::Not;
+            ConditionToken::Not
         } else if token == "and" {
-            return ConditionToken::And;
+            ConditionToken::And
         } else if token == "or" {
-            return ConditionToken::Or;
+            ConditionToken::Or
         } else {
-            return ConditionToken::SelectionReference(token.clone());
+            ConditionToken::SelectionReference(token)
         }
     }
 
@@ -241,10 +241,7 @@ impl ConditionCompiler {
         let mut token_ite = tokens.into_iter();
         while let Some(token) = token_ite.next() {
             // まず、左括弧を探す。
-            let is_left = match token {
-                ConditionToken::LeftParenthesis => true,
-                _ => false,
-            };
+            let is_left = matches!(token, ConditionToken::LeftParenthesis);
             if !is_left {
                 ret.push(token);
                 continue;
@@ -254,7 +251,7 @@ impl ConditionCompiler {
             let mut left_cnt = 1;
             let mut right_cnt = 0;
             let mut sub_tokens = vec![];
-            while let Some(token) = token_ite.next() {
+            for token in token_ite.by_ref() {
                 if let ConditionToken::LeftParenthesis = token {
                     left_cnt += 1;
                 } else if let ConditionToken::RightParenthesis = token {
@@ -275,22 +272,19 @@ impl ConditionCompiler {
         }
 
         // この時点で右括弧が残っている場合は右括弧の数が左括弧よりも多いことを表している。
-        let is_right_left = ret.iter().any(|token| {
-            return match token {
-                ConditionToken::RightParenthesis => true,
-                _ => false,
-            };
-        });
+        let is_right_left = ret
+            .iter()
+            .any(|token| matches!(token, ConditionToken::RightParenthesis));
         if is_right_left {
             return Result::Err("'(' was expected but not found.".to_string());
         }
 
-        return Result::Ok(ret);
+        Result::Ok(ret)
     }
 
     /// AND, ORをパースする。
     fn parse_and_or_operator(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
-        if tokens.len() == 0 {
+        if tokens.is_empty() {
             // 長さ0は呼び出してはいけない
             return Result::Err("Unknown error.".to_string());
         }
@@ -339,7 +333,7 @@ impl ConditionCompiler {
 
         // 次にOrでつながっている部分をまとめる
         let or_contaienr = ConditionToken::OrContainer(operands);
-        return Result::Ok(or_contaienr);
+        Result::Ok(or_contaienr)
     }
 
     /// OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
@@ -360,7 +354,7 @@ impl ConditionCompiler {
             }
 
             // 0はありえないはず
-            if sub_tokens.len() == 0 {
+            if sub_tokens.is_empty() {
                 return Result::Err("Unknown error.".to_string());
             }
 
@@ -380,20 +374,20 @@ impl ConditionCompiler {
             let second_token = sub_tokens_ite.next().unwrap();
             if let ConditionToken::Not = first_token {
                 if let ConditionToken::Not = second_token {
-                    return Result::Err("Not is continuous.".to_string());
+                    Result::Err("Not is continuous.".to_string())
                 } else {
                     let not_container = ConditionToken::NotContainer(vec![second_token]);
-                    return Result::Ok(not_container);
+                    Result::Ok(not_container)
                 }
             } else {
-                return Result::Err(
+                Result::Err(
                     "Unknown error. Maybe it is because there are multiple names of selection nodes."
                         .to_string(),
-                );
+                )
             }
         } else {
             let sub_tokens = parent_token.sub_tokens_without_parenthesis();
-            if sub_tokens.len() == 0 {
+            if sub_tokens.is_empty() {
                 return Result::Ok(parent_token);
             }
 
@@ -403,7 +397,7 @@ impl ConditionCompiler {
                 new_sub_tokens.push(new_sub_token);
             }
 
-            return Result::Ok(parent_token.replace_subtoken(new_sub_tokens));
+            Result::Ok(parent_token.replace_subtoken(new_sub_tokens))
         }
     }
 
@@ -416,14 +410,14 @@ impl ConditionCompiler {
         // RefSelectionNodeに変換
         if let ConditionToken::SelectionReference(selection_name) = token {
             let selection_node = name_2_node.get(&selection_name);
-            if selection_node.is_none() {
-                let err_msg = format!("{} is not defined.", selection_name);
-                return Result::Err(err_msg);
-            } else {
-                let selection_node = selection_node.unwrap();
+            if let Some(select_node) = selection_node {
+                let selection_node = select_node;
                 let selection_node = Arc::clone(selection_node);
                 let ref_node = RefSelectionNode::new(selection_node);
                 return Result::Ok(Box::new(ref_node));
+            } else {
+                let err_msg = format!("{} is not defined.", selection_name);
+                return Result::Err(err_msg);
             }
         }
 
@@ -459,16 +453,12 @@ impl ConditionCompiler {
             return Result::Ok(Box::new(select_not_node));
         }
 
-        return Result::Err("Unknown error".to_string());
+        Result::Err("Unknown error".to_string())
     }
 
     /// ConditionTokenがAndまたはOrTokenならばTrue
     fn is_logical(&self, token: &ConditionToken) -> bool {
-        return match token {
-            ConditionToken::And => true,
-            ConditionToken::Or => true,
-            _ => false,
-        };
+        matches!(token, ConditionToken::And | ConditionToken::Or)
     }
 
     /// ConditionToken::OperandContainerに変換できる部分があれば変換する。
@@ -478,8 +468,7 @@ impl ConditionCompiler {
     ) -> Result<Vec<ConditionToken>, String> {
         let mut ret = vec![];
         let mut grouped_operands = vec![]; // ANDとORの間にあるトークンを表す。ANDとORをOperatorとしたときのOperand
-        let mut token_ite = tokens.into_iter();
-        while let Some(token) = token_ite.next() {
+        for token in tokens.into_iter() {
             if self.is_logical(&token) {
                 // ここに来るのはエラーのはずだが、後でエラー出力するので、ここではエラー出さない。
                 if grouped_operands.is_empty() {
@@ -498,7 +487,7 @@ impl ConditionCompiler {
             ret.push(ConditionToken::OperandContainer(grouped_operands));
         }
 
-        return Result::Ok(ret);
+        Result::Ok(ret)
     }
 }
 
@@ -542,7 +531,7 @@ mod tests {
                 assert_eq!(rule_node.select(&recinfo), expect_select);
             }
             Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -582,10 +571,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), true);
+                assert!(rule_node.select(&recinfo));
             }
-            Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+            Err(_) => {
+                panic!("Failed to parse json record.");
             }
         }
     }
@@ -626,10 +615,10 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), false);
+                assert!(!rule_node.select(&recinfo));
             }
-            Err(_rec) => {
-                assert!(false, "Failed to parse json record.");
+            Err(_) => {
+                panic!("Failed to parse json record.");
             }
         }
     }

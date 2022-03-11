@@ -23,6 +23,12 @@ pub struct ParseYaml {
     pub errorrule_count: u128,
 }
 
+impl Default for ParseYaml {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ParseYaml {
     pub fn new() -> ParseYaml {
         ParseYaml {
@@ -37,7 +43,7 @@ impl ParseYaml {
         let mut file_content = String::new();
 
         let mut fr = fs::File::open(path)
-            .map(|f| BufReader::new(f))
+            .map(BufReader::new)
             .map_err(|e| e.to_string())?;
 
         fr.read_to_string(&mut file_content)
@@ -76,7 +82,7 @@ impl ParseYaml {
                 .as_ref()
                 .to_path_buf()
                 .extension()
-                .unwrap_or(OsStr::new(""))
+                .unwrap_or_else(|| OsStr::new(""))
                 != "yml"
             {
                 return io::Result::Ok(String::default());
@@ -126,7 +132,7 @@ impl ParseYaml {
 
             yaml_docs.extend(yaml_contents.unwrap().into_iter().map(|yaml_content| {
                 let filepath = format!("{}", path.as_ref().to_path_buf().display());
-                return (filepath, yaml_content);
+                (filepath, yaml_content)
             }));
         } else {
             let mut entries = fs::read_dir(path)?;
@@ -144,7 +150,7 @@ impl ParseYaml {
 
                 // 拡張子がymlでないファイルは無視
                 let path = entry.path();
-                if path.extension().unwrap_or(OsStr::new("")) != "yml" {
+                if path.extension().unwrap_or_else(|| OsStr::new("")) != "yml" {
                     return io::Result::Ok(ret);
                 }
 
@@ -192,10 +198,10 @@ impl ParseYaml {
 
                 let yaml_contents = yaml_contents.unwrap().into_iter().map(|yaml_content| {
                     let filepath = format!("{}", entry.path().display());
-                    return (filepath, yaml_content);
+                    (filepath, yaml_content)
                 });
                 ret.extend(yaml_contents);
-                return io::Result::Ok(ret);
+                io::Result::Ok(ret)
             })?;
         }
 
@@ -254,11 +260,11 @@ impl ParseYaml {
                     }
                 }
 
-                return Option::Some((filepath, yaml_doc));
+                Option::Some((filepath, yaml_doc))
             })
             .collect();
         self.files.extend(files);
-        return io::Result::Ok(String::default());
+        io::Result::Ok(String::default())
     }
 }
 
@@ -329,7 +335,7 @@ mod tests {
         let path = Path::new("test_files/rules/yaml/error.yml");
         let ret = yaml.read_file(path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret);
-        assert_eq!(rule.is_err(), true);
+        assert!(rule.is_err());
     }
 
     #[test]
@@ -337,7 +343,7 @@ mod tests {
     fn test_default_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), &"", &filter::exclude_ids())
+        yaml.read_dir(path.to_path_buf(), "", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
@@ -346,7 +352,7 @@ mod tests {
     fn test_info_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), &"informational", &filter::exclude_ids())
+        yaml.read_dir(path.to_path_buf(), "informational", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
@@ -354,7 +360,7 @@ mod tests {
     fn test_low_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), &"LOW", &filter::exclude_ids())
+        yaml.read_dir(path.to_path_buf(), "LOW", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 4);
     }
@@ -362,7 +368,7 @@ mod tests {
     fn test_medium_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), &"MEDIUM", &filter::exclude_ids())
+        yaml.read_dir(path.to_path_buf(), "MEDIUM", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 3);
     }
@@ -370,7 +376,7 @@ mod tests {
     fn test_high_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), &"HIGH", &filter::exclude_ids())
+        yaml.read_dir(path.to_path_buf(), "HIGH", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 2);
     }
@@ -378,7 +384,7 @@ mod tests {
     fn test_critical_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), &"CRITICAL", &filter::exclude_ids())
+        yaml.read_dir(path.to_path_buf(), "CRITICAL", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 1);
     }
@@ -388,7 +394,7 @@ mod tests {
 
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
-        yaml.read_dir(path.to_path_buf(), &"", &filter::exclude_ids())
+        yaml.read_dir(path.to_path_buf(), "", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.ignorerule_count, 10);
     }
@@ -401,8 +407,7 @@ mod tests {
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
         };
-        yaml.read_dir(path.to_path_buf(), &"", &exclude_ids)
-            .unwrap();
+        yaml.read_dir(path.to_path_buf(), "", &exclude_ids).unwrap();
         assert_eq!(yaml.ignorerule_count, 0);
     }
     #[test]
@@ -412,8 +417,7 @@ mod tests {
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
         };
-        yaml.read_dir(path.to_path_buf(), &"", &exclude_ids)
-            .unwrap();
+        yaml.read_dir(path.to_path_buf(), "", &exclude_ids).unwrap();
         assert_eq!(yaml.ignorerule_count, 1);
     }
 }
