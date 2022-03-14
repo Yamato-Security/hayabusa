@@ -76,9 +76,6 @@ impl PivotKeyword {
                             if value == "-" || value == "127.0.0.1" || value == "::1" {
                                 continue;
                             }
-                            println!("--------------------");
-                            println!("{:?}", key);
-                            println!("--------------------");
                             self.keywords.get_mut(key).unwrap().insert(value);
                         };
                     }

@@ -315,6 +315,7 @@ pub fn load_pivot_keywords(path: &str) {
             return;
         }
 
+        //pivotのfieldsのkeyを作成
         PIVOT_KEYWORD
             .write()
             .unwrap()
@@ -322,6 +323,7 @@ pub fn load_pivot_keywords(path: &str) {
             .entry(map[0].to_string())
             .or_insert(HashSet::new());
 
+        //pivotのkeywordsのkeyを作成
         PIVOT_KEYWORD
             .write()
             .unwrap()
