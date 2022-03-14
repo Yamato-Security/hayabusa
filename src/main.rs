@@ -100,16 +100,13 @@ impl App {
         if !Path::new("./config").exists() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe".to_string()
+                "Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe"
             )
             .ok();
             return;
         }
         if configs::CONFIG.read().unwrap().args.args.is_empty() {
-            println!(
-                "{}",
-                configs::CONFIG.read().unwrap().args.usage().to_string()
-            );
+            println!("{}", configs::CONFIG.read().unwrap().args.usage());
             println!();
             return;
         }
@@ -153,7 +150,7 @@ impl App {
             {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    &"--filepath only accepts .evtx files. Hidden files are ignored.".to_string(),
+                    "--filepath only accepts .evtx files. Hidden files are ignored.",
                 )
                 .ok();
                 return;
@@ -164,7 +161,7 @@ impl App {
             if evtx_files.is_empty() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    &"No .evtx files were found.".to_string(),
+                    "No .evtx files were found.",
                 )
                 .ok();
                 return;
@@ -210,7 +207,7 @@ impl App {
             if evtx_files.is_empty() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    &"No .evtx files were found.".to_string(),
+                    "No .evtx files were found.",
                 )
                 .ok();
                 return None;
@@ -219,7 +216,7 @@ impl App {
         } else {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
+                "-l / --liveanalysis needs to be run as Administrator on Windows.\r\n",
             )
             .ok();
             None
@@ -305,7 +302,7 @@ impl App {
         if rule_files.is_empty() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &"No rules were loaded. Please download the latest rules with the --update-rules option.\r\n".to_string(),
+                "No rules were loaded. Please download the latest rules with the --update-rules option.\r\n",
             )
             .ok();
             return;
@@ -585,8 +582,8 @@ impl App {
         } else if analysis.0.is_normal() {
             AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &"update-rules option is git Fast-Forward merge only. please check your rules folder."
-                .to_string(),
+            "update-rules option is git Fast-Forward merge only. please check your rules folder."
+                ,
             ).ok();
             Err(git2::Error::from_str(&String::default()))
         } else {
