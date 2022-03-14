@@ -298,9 +298,9 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
-///keyとfieldsがマップされた設定のcsvをPIVOT_KEYWORD大域変数にロードする。
+///設定ファイルを読み込み、keyとfieldsのマップをPIVOT_KEYWORD大域変数にロードする。
 pub fn load_pivot_keywords(path: &str) {
-    let read_result = utils::read_csv(path, true);
+    let read_result = utils::read_txt(path);
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
@@ -310,22 +310,32 @@ pub fn load_pivot_keywords(path: &str) {
     }
 
     read_result.unwrap().into_iter().for_each(|line| {
-        if line.len() == 1 {
+        let map: Vec<&str> = line.split('.').collect();
+        if map.len() != 2 {
             return;
         }
 
-        let key = line[0].clone();
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .fields
+            .entry(map[0].to_string())
+            .or_insert(HashSet::new());
 
-        for field in &line[1..] {
-            let key = key.as_str();
-            PIVOT_KEYWORD
-                .write()
-                .unwrap()
-                .fields
-                .get_mut(key)
-                .unwrap()
-                .insert(field.to_string());
-        }
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .keywords
+            .entry(map[0].to_string())
+            .or_insert(HashSet::new());
+
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .fields
+            .get_mut(&map[0].to_string())
+            .unwrap()
+            .insert(map[1].to_string());
     });
 }
 

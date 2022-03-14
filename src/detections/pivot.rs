@@ -25,42 +25,11 @@ impl Default for PivotKeyword {
 
 impl PivotKeyword {
     pub fn new() -> PivotKeyword {
-        let mut pivot_keyword = PivotKeyword {
+        let pivot_keyword = PivotKeyword {
             keywords: HashMap::new(),
             fields: HashMap::new(),
         };
-        pivot_keyword
-            .keywords
-            .insert("Users".to_string(), HashSet::new());
-        pivot_keyword
-            .keywords
-            .insert("Logon IDs".to_string(), HashSet::new());
-        pivot_keyword
-            .keywords
-            .insert("Workstation Names".to_string(), HashSet::new());
-        pivot_keyword
-            .keywords
-            .insert("Ip Addresses".to_string(), HashSet::new());
-        pivot_keyword
-            .keywords
-            .insert("Processes".to_string(), HashSet::new());
-
-        pivot_keyword
-            .fields
-            .insert("Users".to_string(), HashSet::new());
-        pivot_keyword
-            .fields
-            .insert("Logon IDs".to_string(), HashSet::new());
-        pivot_keyword
-            .fields
-            .insert("Workstation Names".to_string(), HashSet::new());
-        pivot_keyword
-            .fields
-            .insert("Ip Addresses".to_string(), HashSet::new());
-        pivot_keyword
-            .fields
-            .insert("Processes".to_string(), HashSet::new());
-        pivot_keyword
+        return pivot_keyword;
     }
 
     ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
@@ -107,6 +76,9 @@ impl PivotKeyword {
                             if value == "-" || value == "127.0.0.1" || value == "::1" {
                                 continue;
                             }
+                            println!("--------------------");
+                            println!("{:?}", key);
+                            println!("--------------------");
                             self.keywords.get_mut(key).unwrap().insert(value);
                         };
                     }
