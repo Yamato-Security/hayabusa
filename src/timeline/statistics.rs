@@ -20,16 +20,16 @@ impl EventStatistics {
         end_time: String,
         stats_list: HashMap<String, usize>,
     ) -> EventStatistics {
-        return EventStatistics {
+        EventStatistics {
             total,
             filepath,
             start_time,
             end_time,
             stats_list,
-        };
+        }
     }
 
-    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
+    pub fn start(&mut self, records: &[EvtxRecordInfo]) {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
@@ -49,8 +49,8 @@ impl EventStatistics {
         self.stats_eventid(records);
     }
 
-    fn stats_time_cnt(&mut self, records: &Vec<EvtxRecordInfo>) {
-        if records.len() == 0 {
+    fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo]) {
+        if records.is_empty() {
             return;
         }
         self.filepath = records[0].evtx_filepath.as_str().to_owned();
@@ -62,18 +62,16 @@ impl EventStatistics {
                 &"Event.System.TimeCreated_attributes.SystemTime".to_string(),
                 &record.record,
             )
-            .and_then(|evt_value| {
-                return Option::Some(evt_value.to_string());
-            });
+            .map(|evt_value| evt_value.to_string());
             if evttime.is_none() {
                 continue;
             }
 
             let evttime = evttime.unwrap();
-            if self.start_time.len() == 0 || evttime < self.start_time {
+            if self.start_time.is_empty() || evttime < self.start_time {
                 self.start_time = evttime.to_string();
             }
-            if self.end_time.len() == 0 || evttime > self.end_time {
+            if self.end_time.is_empty() || evttime > self.end_time {
                 self.end_time = evttime;
             }
         }
@@ -81,7 +79,7 @@ impl EventStatistics {
     }
 
     // EventIDで集計
-    fn stats_eventid(&mut self, records: &Vec<EvtxRecordInfo>) {
+    fn stats_eventid(&mut self, records: &[EvtxRecordInfo]) {
         //        let mut evtstat_map = HashMap::new();
         for record in records.iter() {
             let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);

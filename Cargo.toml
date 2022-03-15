@@ -23,7 +23,7 @@ yaml-rust = "0.4.*"
 linked-hash-map = "0.5.*"
 tokio = { version = "1", features = ["full"] }
 num_cpus = "1.13.*"
-mopa = "0.2.*"
+downcast-rs = "1.2.0"
 slack-hook = "0.8"
 dotenv = "0.15.*"
 hhmmss = "*"
@@ -35,6 +35,10 @@ git2="0.13"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
+static_vcruntime = "1.5.*"
+
+[target.'cfg(unix)'.dependencies] #Mac and Linux
+openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
 [profile.release]
 lto = true

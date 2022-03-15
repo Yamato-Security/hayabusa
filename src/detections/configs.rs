@@ -16,10 +16,10 @@ lazy_static! {
         levelmap.insert("MEDIUM".to_owned(), 3);
         levelmap.insert("HIGH".to_owned(), 4);
         levelmap.insert("CRITICAL".to_owned(), 5);
-        return levelmap;
+        levelmap
     };
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig =
-        load_eventkey_alias("config/eventkey_alias.txt");
+        load_eventkey_alias("./rules/config/eventkey_alias.txt");
 }
 
 #[derive(Clone)]
@@ -27,6 +27,12 @@ pub struct ConfigReader {
     pub args: ArgMatches<'static>,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
+}
+
+impl Default for ConfigReader {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ConfigReader {
@@ -41,7 +47,7 @@ impl ConfigReader {
 
 fn build_app<'a>() -> ArgMatches<'a> {
     let program = std::env::args()
-        .nth(0)
+        .next()
         .and_then(|s| {
             std::path::PathBuf::from(s)
                 .file_stem()
@@ -55,21 +61,21 @@ fn build_app<'a>() -> ArgMatches<'a> {
 
     let usages = "-d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
+    -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (example: results.csv)'
+    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
-    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
+    -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
-    -u --update-rules 'Clone latest hayabusa-rule'
-    -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
-    -l --live-analysis 'Analyze to WINDIR\\System32\\winevt\\Logs (Windows Only. Need Administrator privileges.)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
-    --rfc-3339 'Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214 -06:00)'
-    -U --utc 'Output time in UTC format. (default: local time)'
-    -t --thread-number=[NUMBER] 'Thread number. (default: optimal number for performance.)'
+    -u --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
+    -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
+    -l --live-analysis 'Analyze the local C:\\Windows\\System32\\winevt\\Logs folder (Windows Only. Administrator privileges required.)'
+    --start-timeline=[STARTTIMELINE] 'Start time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
+    --end-timeline=[ENDTIMELINE] 'End time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
+    --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
+    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
+    -U --utc 'Output time in UTC format. (Default: local time)'
+    -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
@@ -91,7 +97,7 @@ fn is_test_mode() -> bool {
         }
     }
 
-    return false;
+    false
 }
 
 #[derive(Debug, Clone)]
@@ -99,19 +105,25 @@ pub struct TargetEventIds {
     ids: HashSet<String>,
 }
 
+impl Default for TargetEventIds {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TargetEventIds {
     pub fn new() -> TargetEventIds {
-        return TargetEventIds {
+        TargetEventIds {
             ids: HashSet::new(),
-        };
+        }
     }
 
-    pub fn is_target(&self, id: &String) -> bool {
+    pub fn is_target(&self, id: &str) -> bool {
         // 中身が空の場合は全EventIdを対象とする。
         if self.ids.is_empty() {
             return true;
         }
-        return self.ids.contains(id);
+        self.ids.contains(id)
     }
 }
 
@@ -121,7 +133,7 @@ fn load_target_ids(path: &str) -> TargetEventIds {
     if lines.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &lines.as_ref().unwrap_err(),
+            lines.as_ref().unwrap_err(),
         )
         .ok();
         return ret;
@@ -134,13 +146,19 @@ fn load_target_ids(path: &str) -> TargetEventIds {
         ret.ids.insert(line);
     }
 
-    return ret;
+    ret
 }
 
 #[derive(Debug, Clone)]
 pub struct TargetEventTime {
     start_time: Option<DateTime<Utc>>,
     end_time: Option<DateTime<Utc>>,
+}
+
+impl Default for TargetEventTime {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TargetEventTime {
@@ -180,17 +198,17 @@ impl TargetEventTime {
         } else {
             None
         };
-        return Self::set(start_time, end_time);
+        Self::set(start_time, end_time)
     }
 
     pub fn set(
-        start_time: Option<chrono::DateTime<chrono::Utc>>,
-        end_time: Option<chrono::DateTime<chrono::Utc>>,
+        input_start_time: Option<chrono::DateTime<chrono::Utc>>,
+        input_end_time: Option<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
-        return Self {
-            start_time: start_time,
-            end_time: end_time,
-        };
+        Self {
+            start_time: input_start_time,
+            end_time: input_end_time,
+        }
     }
 
     pub fn is_target(&self, eventtime: &Option<DateTime<Utc>>) -> bool {
@@ -207,7 +225,7 @@ impl TargetEventTime {
                 return false;
             }
         }
-        return true;
+        true
     }
 }
 
@@ -219,18 +237,24 @@ pub struct EventKeyAliasConfig {
 
 impl EventKeyAliasConfig {
     pub fn new() -> EventKeyAliasConfig {
-        return EventKeyAliasConfig {
+        EventKeyAliasConfig {
             key_to_eventkey: HashMap::new(),
             key_to_split_eventkey: HashMap::new(),
-        };
+        }
     }
 
-    pub fn get_event_key(&self, alias: &String) -> Option<&String> {
-        return self.key_to_eventkey.get(alias);
+    pub fn get_event_key(&self, alias: &str) -> Option<&String> {
+        self.key_to_eventkey.get(alias)
     }
 
-    pub fn get_event_key_split(&self, alias: &String) -> Option<&Vec<usize>> {
-        return self.key_to_split_eventkey.get(alias);
+    pub fn get_event_key_split(&self, alias: &str) -> Option<&Vec<usize>> {
+        self.key_to_split_eventkey.get(alias)
+    }
+}
+
+impl Default for EventKeyAliasConfig {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -241,7 +265,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &read_result.as_ref().unwrap_err(),
+            read_result.as_ref().unwrap_err(),
         )
         .ok();
         return config;
@@ -255,20 +279,20 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         let empty = &"".to_string();
         let alias = line.get(0).unwrap_or(empty);
         let event_key = line.get(1).unwrap_or(empty);
-        if alias.len() == 0 || event_key.len() == 0 {
+        if alias.is_empty() || event_key.is_empty() {
             return;
         }
 
         config
             .key_to_eventkey
             .insert(alias.to_owned(), event_key.to_owned());
-        let splits = event_key.split(".").map(|s| s.len()).collect();
+        let splits = event_key.split('.').map(|s| s.len()).collect();
         config
             .key_to_split_eventkey
             .insert(alias.to_owned(), splits);
     });
     config.key_to_eventkey.shrink_to_fit();
-    return config;
+    config
 }
 
 #[derive(Debug, Clone)]
@@ -278,16 +302,22 @@ pub struct EventInfo {
     pub comment: String,
 }
 
+impl Default for EventInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EventInfo {
     pub fn new() -> EventInfo {
         let evttitle = "Unknown".to_string();
         let detectflg = "".to_string();
         let comment = "".to_string();
-        return EventInfo {
+        EventInfo {
             evttitle,
             detectflg,
             comment,
-        };
+        }
     }
 }
 #[derive(Debug, Clone)]
@@ -295,14 +325,20 @@ pub struct EventInfoConfig {
     eventinfo: HashMap<String, EventInfo>,
 }
 
+impl Default for EventInfoConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EventInfoConfig {
     pub fn new() -> EventInfoConfig {
-        return EventInfoConfig {
+        EventInfoConfig {
             eventinfo: HashMap::new(),
-        };
+        }
     }
-    pub fn get_event_id(&self, eventid: &String) -> Option<&EventInfo> {
-        return self.eventinfo.get(eventid);
+    pub fn get_event_id(&self, eventid: &str) -> Option<&EventInfo> {
+        self.eventinfo.get(eventid)
     }
 }
 
@@ -313,7 +349,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &read_result.as_ref().unwrap_err(),
+            read_result.as_ref().unwrap_err(),
         )
         .ok();
         return config;
@@ -339,7 +375,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
             .eventinfo
             .insert(eventcode.to_owned(), infodata.to_owned());
     });
-    return config;
+    config
 }
 
 #[cfg(test)]
@@ -375,9 +411,9 @@ mod tests {
         let within_range = Some("2019-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
         let out_of_range2 = Some("2021-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
 
-        assert_eq!(time_filter.is_target(&out_of_range1), false);
-        assert_eq!(time_filter.is_target(&within_range), true);
-        assert_eq!(time_filter.is_target(&out_of_range2), false);
+        assert!(!time_filter.is_target(&out_of_range1));
+        assert!(time_filter.is_target(&within_range));
+        assert!(!time_filter.is_target(&out_of_range2));
     }
 
     #[test]
@@ -386,7 +422,7 @@ mod tests {
         let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let time_filter = configs::TargetEventTime::set(start_time, end_time);
 
-        assert_eq!(time_filter.is_target(&start_time), true);
-        assert_eq!(time_filter.is_target(&end_time), true);
+        assert!(time_filter.is_target(&start_time));
+        assert!(time_filter.is_target(&end_time));
     }
 }

@@ -15,7 +15,52 @@
 
 # Hayabusa について
 
-Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa/tree/main/tools/Sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つのCSVタイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
+Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つのCSVタイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
+
+## 目次
+
+- [Hayabusa について](#hayabusa-について)
+  - [目次](#目次)
+  - [主な目的](#主な目的)
+    - [スレット(脅威)ハンティング](#スレット脅威ハンティング)
+    - [フォレンジックタイムラインの高速生成](#フォレンジックタイムラインの高速生成)
+- [開発について](#開発について)
+- [スクリーンショット](#スクリーンショット)
+  - [起動画面:](#起動画面)
+  - [ターミナル出力画面:](#ターミナル出力画面)
+  - [結果サマリ画面:](#結果サマリ画面)
+  - [Excelでの解析:](#excelでの解析)
+  - [Timeline Explorerでの解析:](#timeline-explorerでの解析)
+  - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング:](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
+- [タイムラインのサンプル結果](#タイムラインのサンプル結果)
+- [特徴](#特徴)
+- [予定されている機能](#予定されている機能)
+- [ダウンロード](#ダウンロード)
+- [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
+  - [32ビットWindowsバイナリのクロスコンパイル](#32ビットwindowsバイナリのクロスコンパイル)
+  - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
+  - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
+  - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
+  - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
+- [使用方法](#使用方法)
+  - [Windows Terminalで利用する際の注意事項](#windows-terminalで利用する際の注意事項)
+  - [コマンドラインオプション](#コマンドラインオプション)
+  - [使用例](#使用例)
+- [Hayabusaの出力](#hayabusaの出力)
+  - [プログレスバー](#プログレスバー)
+  - [標準出力へのカラー設定](#標準出力へのカラー設定)
+- [Hayabusa ルール](#hayabusa-ルール)
+  - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
+  - [検知ルールのチューニング](#検知ルールのチューニング)
+  - [イベントIDフィルタリング](#イベントidフィルタリング)
+- [その他のWindowsイベントログ解析ツールおよび関連プロジェクト](#その他のwindowsイベントログ解析ツールおよび関連プロジェクト)
+  - [Sigmaをサポートする他の類似ツールとの比較](#sigmaをサポートする他の類似ツールとの比較)
+- [コミュニティによるドキュメンテーション](#コミュニティによるドキュメンテーション)
+  - [英語](#英語)
+  - [日本語](#日本語)
+- [貢献](#貢献)
+- [バグの報告](#バグの報告)
+- [ライセンス](#ライセンス)
 
 ## 主な目的
 
@@ -63,7 +108,7 @@ Windowsのイベントログは、
 
 # タイムラインのサンプル結果
 
-CSVと手動で編集したXLSXのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
+CSVのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
 
 CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
 
@@ -78,13 +123,13 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 * 現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルールにも対応しています。
 * イベントログの統計（どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。）
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
+* MITRE ATT&CKとのマッピング
 
 # 予定されている機能
 
 * すべてのエンドポイントでの企業全体のスレットハンティング
 * 日本語対応
-* MITRE ATT&CK とのマッピング
-* MITRE ATT&CK ヒートマップ生成機能
+* MITRE ATT&CKのヒートマップ生成機能
 * ユーザーログオンと失敗したログオンのサマリー
 * JSONログからの入力
 * JSONへの出力→Elastic Stack/Splunkへのインポート
@@ -99,20 +144,65 @@ Hayabusaの[Releases](https://github.com/Yamato-Security/hayabusa/releases)か�
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
---recursive をつけ忘れた場合、サブモジュールとして管理されている rules/ 内のファイルが取得できません。
-Hayabusaでは検知ルールを`rules/`フォルダの取得はコンパイル後に以下のコマンドでルールの最新版を取得することができます。
+注意: `--recursive`をつけ忘れた場合、サブモジュールとして管理されている`rules`フォルダ内のファイルはダウンロードされません。
+
+`git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
 .\hayabusa.exe -u
 ```
 
+アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
+
 # ソースコードからのコンパイル（任意）
 
-rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
+Rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
 ```bash
 cargo clean
 cargo build --release
+```
+
+以下のコマンドで定期的にRustをアップデートしてください：
+```bash
+rustup update
+```
+
+コンパイルされたバイナリは`target/release`フォルダ配下で作成されます。
+
+## 32ビットWindowsバイナリのクロスコンパイル
+
+以下のコマンドで64ビットのWindows端末で32ビットのバイナリをクロスコンパイルできます:
+
+```bash
+rustup install stable-i686-pc-windows-msvc
+rustup target add i686-pc-windows-msvc
+rustup run stable-i686-pc-windows-msvc cargo build --release
+```
+
+## macOSでのコンパイルの注意点
+
+opensslについてのコンパイルエラーが表示される場合は、[Homebrew](https://brew.sh/)をインストールしてから、以下のパッケージをインストールする必要があります：
+
+```bash
+brew install pkg-config
+brew install openssl
+```
+
+## Linuxでのコンパイルの注意点
+
+opensslについてのコンパイルエラーが表示される場合は、以下のパッケージをインストールする必要があります。
+
+Ubuntu系のディストロ:
+
+```bash
+sudo apt install libssl-dev
+```
+
+Fedora系のディストロ:
+
+```bash
+sudo yum install openssl-devel
 ```
 
 ## アドバンス: Rustパッケージの更新
@@ -150,63 +240,32 @@ Windows Terminalからhayabusaを標準出力で解析させたい場合は、 `
 
 ```bash
 USAGE:
-    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
-    -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
-    -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (example: results.csv)'
-    -v --verbose 'Output verbose information.'
-    -D --enable-deprecated-rules 'Enable sigma rules marked as deprecated.'
-    -n --enable-noisy-rules 'Enable rules marked as noisy.'
-    -u --update-rules 'Clone latest hayabusa-rule'
-    -m --min-level=[LEVEL] 'Minimum level for rules. (default: informational)'
-    -l --live-analysis 'Analyze to WINDIR\System32\winevt\Logs (Windows Only. Need Administrator privileges.)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --end-timeline=[ENDTIMELINE] 'End time of the event to load from event file. (example: '2018/11/28 12:00:00 +09:00')'
-    --rfc-2822 'Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)'
-    --rfc-3339 'Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214 -06:00)'
-    -U --utc 'Output time in UTC format. (default: local time)'
-    -t --thread-number=[NUMBER] 'Thread number. (default: optimal number for performance.)'
-    -s --statistics 'Prints statistics of event IDs.'
-    -q --quiet 'Quiet mode. Do not display the launch banner.'
-    -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --contributors 'Prints the list of contributors.'
-
-FLAGS:
-    -c, --color                      Output with color. (Terminal needs to support True Color.)
-        --contributors               Prints the list of contributors.
-    -D, --enable-deprecated-rules    Enable sigma rules marked as deprecated.
-    -n, --enable-noisy-rules         Enable rules marked as noisy.
-    -h, --help                       Prints help information
-    -l, --live-analysis              Analyze to WINDIR\System32\winevt\Logs (Windows Only. Need Administrator
-                                     privileges.)
-    -q, --quiet                      Quiet mode. Do not display the launch banner.
-    -Q, --quiet-errors               Quiet errors mode. Do not save error logs.
-        --rfc-2822                   Output date and time in RFC 2822 format. (example: Mon, 07 Aug 2006 12:34:56 -0600)
-        --rfc-3339                   Output date and time in RFC 3339 format. (example: 2006-08-07T12:34:56.485214
-                                     -06:00)
-    -s, --statistics                 Prints statistics of event IDs.
-    -u, --update-rules               Clone latest hayabusa-rule
-    -U, --utc                        Output time in UTC format. (default: local time)
-    -V, --version                    Prints version information
-    -v, --verbose                    Output verbose information.
-
-OPTIONS:
-    -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
-        --end-timeline <ENDTIMELINE>        End time of the event to load from event file. (example: '2018/11/28
-                                            12:00:00 +09:00')
-    -f, --filepath <FILEPATH>               File path to one .evtx file.
-    -m, --min-level <LEVEL>                 Minimum level for rules. (default: informational)
-    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (example: results.csv)
-    -r, --rules <RULEDIRECTORY/RULEFILE>    Rule file or directory (default: ./rules)
-        --start-timeline <STARTTIMELINE>    Start time of the event to load from event file. (example: '2018/11/28
-                                            12:00:00 +09:00')
-    -t, --thread-number <NUMBER>            Thread number. (default: optimal number for performance.)
+    -d --directory=[DIRECTORY] '.evtxファイルを持つディレクトリのパス。'
+    -f --filepath=[FILEPATH] '1つの.evtxファイルのパス。'
+    -r --rules=[RULEFILE/RULEDIRECTORY] 'ルールファイルまたはルールファイルを持つディレクトリ。(デフォルト: ./rules)'
+    -c --color 'カラーで出力する。 (ターミナルはTrue Colorに対応する必要がある。)'
+    -o --output=[CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
+    -v --verbose '詳細な情報を出力する。'
+    -D --enable-deprecated-rules 'Deprecatedルールを有効にする。'
+    -n --enable-noisy-rules 'Noisyルールを有効にする。'
+    -u --update-rules 'rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する。'
+    -m --min-level=[LEVEL] '結果出力をするルールの最低レベル。(デフォルト: informational)'
+    -l --live-analysis 'ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する。(Windowsのみ。管理者権限が必要。)'
+    --start-timeline=[STARTTIMELINE] '解析対象とするイベントログの開始時刻。(例: '2018/11/28 12:00:00 +09:00')'
+    --end-timeline=[ENDTIMELINE] '解析対象とするイベントログの終了時刻。(例: '2018/11/28 12:00:00 +09:00')'
+    --rfc-2822 'RFC 2822形式で日付と時刻を出力する。(例: Mon, 07 Aug 2006 12:34:56 -0600)'
+    --rfc-3339 'RFC 3339形式で日付と時刻を出力する。 (例: 2006-08-07T12:34:56.485214 -06:00)'
+    -U --utc 'UTC形式で日付と時刻を出力する。(デフォルト: 現地時間)'
+    -t --thread-number=[NUMBER] 'スレッド数。(デフォルト: パフォーマンスに最適な数値)'
+    -s --statistics 'イベント ID の統計情報を表示する。'
+    -q --quiet 'Quietモード。起動バナーを表示しない。'
+    -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
+    --contributors 'コントリビュータの一覧表示。'
 ```
 
 ## 使用例
 
-* 1 つのWindowsイベントログファイルに対してHayabusaを実行します:
+* １つのWindowsイベントログファイルに対してHayabusaを実行します:
 
 ```bash
 .\hayabusa.exe -f eventlog.evtx
@@ -218,7 +277,7 @@ OPTIONS:
 .\hayabusa.exe -d .\hayabusa-sample-evtx
 ```
 
-* 1 つのCSVファイルにエクスポートして、EXCELやTimeline Explorerでさらに分析することができます:
+* １つのCSVファイルにエクスポートして、EXCELやTimeline Explorerでさらに分析することができます:
 
 ```bash
 .\hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
@@ -248,7 +307,7 @@ OPTIONS:
 .\hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
-* 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\config\noisy-rules.txt`にルールIDが書かれているルール)を有効にします:
+* 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にします:
 
 ```bash
 .\hayabusa.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
@@ -257,13 +316,13 @@ OPTIONS:
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
 
 ```bash
-.\hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -u -o results.csv
+.\hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
 
 ```bash
-.\hayabusa.exe -d C:\Windows\System32\winevt\Logs -m low
+.\hayabusa.exe -l -m low
 ```
 
 * イベントIDの統計情報を取得します:
@@ -321,7 +380,7 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 ## 標準出力へのカラー設定
 
 `-c`または`--color`を指定することで、Hayabusaの結果は`level`毎に文字色を変えることができます。
-`.\config\level_color.txt`の値を変更することで文字色を変えることができます。
+`./config/level_color.txt`の値を変更することで文字色を変えることができます。
 形式は`level名,(6桁のRGBのカラーhex)`です。
 注意: True Colorに対応しているターミナルが必要です。
 例: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) またはmacOSの[iTerm2](https://iterm2.com/)。
@@ -330,7 +389,7 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 
 Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
 
-ルールの作成方法については、[AboutRuleCreation-Japanese.md](./doc/AboutRuleCreation-Japanese.md) をお読みください。
+ルールの作成方法については、[hayabusa-rulesレポジトリのREADME](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md) をお読みください。
 
 [hayabusa-rulesレポジトリ](https://github.com/Yamato-Security/hayabusa-rules)にあるすべてのルールは、`rules`フォルダに配置する必要があります。
 
@@ -354,7 +413,7 @@ Hayabusaルールのディレクトリ構造は、3つのディレクトリに�
 
 ## Hayabusa v.s. 変換されたSigmaルール
 
-Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/Hayabusa/blob/main/tools/Sigmac/README-Japanese.md)で説明されています。Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
+Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 
 1. ログの有用なフィールドのみから抽出された追加情報を表示するための `details`フィールドを追加しています。
 2. Hayabusaルールはすべてサンプルログに対してテストされ、検知することが確認されています。
@@ -371,9 +430,9 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 ファイアウォールやIDSと同様に、シグネチャベースのツールは、環境に合わせて調整が必要になるため、特定のルールを永続的または一時的に除外する必要がある場合があります。
 
-ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `config/exclude-rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
+ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `rules/config/exclude_rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
 
-ルールIDを `config/noisy-rules.txt`に追加して、デフォルトでルールを無視することもできますが、` -n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
+ルールIDを `rules/config/noisy_rules.txt`に追加して、デフォルトでルールを無視することもできますが、` -n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
 
 ## イベントIDフィルタリング
 
@@ -382,7 +441,7 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
 
-最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、誤検出の可能性が若干あることにご注意ください。
+最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、検出漏れの可能性が若干あることにご注意ください。
 
 # その他のWindowsイベントログ解析ツールおよび関連プロジェクト
 
@@ -442,6 +501,10 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 どのような形でも構いませんので、ご協力をお願いします。プルリクエスト、ルール作成、evtxログのサンプルなどがベストですが、機能リクエスト、バグの通知なども大歓迎です。
 
 少なくとも、私たちのツールを気に入っていただけたなら、Githubで星を付けて、あなたのサポートを表明してください。
+
+# バグの報告
+
+見つけたバグを[こちら](https://github.com/Yamato-Security/hayabusa/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5Bbug%5D)でご連絡ください。報告されたバグを喜んで修正します！
 
 # ライセンス
 
