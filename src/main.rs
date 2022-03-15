@@ -195,7 +195,7 @@ impl App {
             &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
         )
         .ok();
-        return None;
+        None
     }
 
     #[cfg(target_os = "windows")]
