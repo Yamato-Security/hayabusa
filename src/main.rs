@@ -706,6 +706,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use crate::App;
+    use std::time::SystemTime;
 
     #[test]
     fn test_collect_evtxfiles() {
@@ -721,5 +722,21 @@ mod tests {
                 });
             assert_eq!(is_contains, &true);
         })
+    }
+
+    #[test]
+    fn test_get_updated_rules() {
+        let app = App::new();
+
+        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
+
+        let prev_modified_rules =
+            app.get_updated_rules("test_files/rules/level_yaml", &prev_modified_time);
+        assert_eq!(prev_modified_rules.len(), 5);
+
+        let target_time: SystemTime = SystemTime::now();
+        let prev_modified_rules2 =
+            app.get_updated_rules("test_files/rules/level_yaml", &target_time);
+        assert_eq!(prev_modified_rules2.len(), 0);
     }
 }
