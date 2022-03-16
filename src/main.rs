@@ -9,6 +9,7 @@ use chrono::Datelike;
 use chrono::{DateTime, Local};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
+use hashbrown::{HashMap, HashSet};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
@@ -16,18 +17,19 @@ use hayabusa::detections::print::{
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
+use hayabusa::yaml::ParseYaml;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::fs::create_dir;
 use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::SystemTime;
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -510,6 +512,9 @@ impl App {
 
     /// update rules(hayabusa-rules subrepository)
     fn update_rules(&self) -> Result<(), git2::Error> {
+        let result;
+        let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
+        let mut prev_modified_rules: HashSet<String> = HashSet::default();
         let hayabusa_repo = Repository::open(Path::new("."));
         let hayabusa_rule_repo = Repository::open(Path::new("./rules"));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
@@ -517,13 +522,17 @@ impl App {
                 "Attempting to git clone the hayabusa-rules repository into the rules folder."
             );
             // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
-            self.clone_rules()
+            result = self.clone_rules();
         } else if hayabusa_rule_repo.is_ok() {
             // rulesのrepositoryが確認できる場合
             // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
-            self.pull_repository(hayabusa_rule_repo.unwrap())
+            prev_modified_rules = self.get_updated_rules("./rules", &prev_modified_time);
+            prev_modified_time = fs::metadata("./rules").unwrap().modified().unwrap();
+            result = self.pull_repository(hayabusa_rule_repo.unwrap());
         } else {
-            //hayabusa repositoryがあればsubmodule情報もあると思われるのでupdate
+            // hayabusa-rulesのrepositoryがrulesに存在しない場合
+            // hayabusa repositoryがあればsubmodule情報もあると思われるのでupdate
+            prev_modified_time = fs::metadata("./rules").unwrap().modified().unwrap();
             let rules_path = Path::new("./rules");
             if !rules_path.exists() {
                 create_dir(rules_path).ok();
@@ -549,11 +558,16 @@ impl App {
                 }
             }
             if is_success_submodule_update {
-                Ok(())
+                result = Ok(());
             } else {
-                Err(git2::Error::from_str(&String::default()))
+                result = Err(git2::Error::from_str(&String::default()));
             }
         }
+        if result.is_ok() {
+            let updated_modified_rules = self.get_updated_rules("./rules", &prev_modified_time);
+            self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
+        }
+        result
     }
 
     /// Pull(fetch and fast-forward merge) repositoryto input_repo.
@@ -585,8 +599,7 @@ impl App {
         } else if analysis.0.is_normal() {
             AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &"update-rules option is git Fast-Forward merge only. please check your rules folder."
-                .to_string(),
+            "update-rules option is git Fast-Forward merge only. please check your rules folder.",
             ).ok();
             Err(git2::Error::from_str(&String::default()))
         } else {
@@ -616,6 +629,74 @@ impl App {
                 Err(git2::Error::from_str(&String::default()))
             }
         }
+    }
+
+    /// Create rules folder files Hashset. Format is "[rule title in yaml]|[filepath]|[filemodified date]|[rule type in yaml]"
+    fn get_updated_rules(
+        &self,
+        rule_folder_path: &str,
+        target_date: &SystemTime,
+    ) -> HashSet<String> {
+        let mut rulefile_loader = ParseYaml::new();
+        // level in read_dir is hard code to check all rules.
+        rulefile_loader
+            .read_dir(
+                rule_folder_path,
+                "INFORMATIONAL",
+                &filter::RuleExclude {
+                    no_use_rule: HashSet::new(),
+                },
+            )
+            .ok();
+
+        let hash_set_keys: HashSet<String> = rulefile_loader
+            .files
+            .into_iter()
+            .filter_map(|(filepath, yaml)| {
+                let file_modified_date = fs::metadata(&filepath).unwrap().modified().unwrap();
+                if file_modified_date.cmp(target_date).is_gt() {
+                    return Option::Some(format!(
+                        "{}|{}|{:?}|{}",
+                        yaml["title"].as_str().unwrap_or(&String::default()),
+                        &filepath,
+                        file_modified_date,
+                        yaml["ruletype"].as_str().unwrap_or("Other")
+                    ));
+                }
+                Option::None
+            })
+            .collect();
+        hash_set_keys
+    }
+
+    /// print updated rule files.
+    fn print_diff_modified_rule_dates(
+        &self,
+        prev_sets: HashSet<String>,
+        updated_sets: HashSet<String>,
+    ) {
+        let diff = updated_sets.difference(&prev_sets);
+        let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
+        for diff_key in diff {
+            let mut tmp = diff_key.split('|');
+            *update_count_by_rule_type
+                .entry(tmp.nth(4).unwrap().to_string())
+                .or_insert(0b1) += 1;
+            println!(
+                "[Update Files] {} (Modified date: {} | FilePath: {})",
+                tmp.nth(1).unwrap(),
+                tmp.nth(2).unwrap(),
+                tmp.nth(3).unwrap()
+            );
+        }
+        println!();
+        for (key, value) in update_count_by_rule_type {
+            println!("Updated {} rules count: {}", key, value);
+        }
+        println!(
+            "Current latest rule: {:?}",
+            fs::metadata("./rules").unwrap().modified().unwrap()
+        );
     }
 }
 
