@@ -192,7 +192,7 @@ impl App {
     fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
-            &"-l / --liveanalysis needs to be run as Administrator on Windows.\r\n".to_string(),
+            "-l / --liveanalysis needs to be run as Administrator on Windows.\r\n",
         )
         .ok();
         None
