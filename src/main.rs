@@ -654,12 +654,14 @@ impl App {
             .into_iter()
             .filter_map(|(filepath, yaml)| {
                 let file_modified_date = fs::metadata(&filepath).unwrap().modified().unwrap();
+
+                let dt_local: DateTime<Local> = file_modified_date.into();
                 if file_modified_date.cmp(target_date).is_gt() {
                     return Option::Some(format!(
-                        "{}|{}|{:?}|{}",
+                        "{}|{}|{}|{}",
                         yaml["title"].as_str().unwrap_or(&String::default()),
                         &filepath,
-                        file_modified_date,
+                        dt_local.format("%Y/%D %T"),
                         yaml["ruletype"].as_str().unwrap_or("Other")
                     ));
                 }
@@ -678,25 +680,26 @@ impl App {
         let diff = updated_sets.difference(&prev_sets);
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
         for diff_key in diff {
-            let mut tmp = diff_key.split('|');
+            let tmp: Vec<&str> = diff_key.split('|').collect();
+
             *update_count_by_rule_type
-                .entry(tmp.nth(4).unwrap().to_string())
+                .entry(tmp[3].to_string())
                 .or_insert(0b1) += 1;
             println!(
-                "[Update Files] {} (Modified date: {} | FilePath: {})",
-                tmp.nth(1).unwrap(),
-                tmp.nth(2).unwrap(),
-                tmp.nth(3).unwrap()
+                "[Update Files] Title: {} (Modified date: {} | FilePath: {})",
+                tmp[0], tmp[2], tmp[1]
             );
         }
         println!();
-        for (key, value) in update_count_by_rule_type {
+        for (key, value) in &update_count_by_rule_type {
             println!("Updated {} rules count: {}", key, value);
         }
-        println!(
-            "Current latest rule: {:?}",
-            fs::metadata("./rules").unwrap().modified().unwrap()
-        );
+        if !&update_count_by_rule_type.is_empty() {
+            let dt_local: DateTime<Local> =
+                fs::metadata("./rules").unwrap().modified().unwrap().into();
+
+            println!("Current latest rule: {}", dt_local.format("%Y/%D %T"));
+        }
     }
 }
 
