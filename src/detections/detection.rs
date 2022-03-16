@@ -203,7 +203,7 @@ impl Detection {
                 level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
                 computername: record_info.record["Event"]["System"]["Computer"]
                     .to_string()
-                    .replace("\"", ""),
+                    .replace('\"', ""),
                 eventid: get_serde_number_to_string(
                     &record_info.record["Event"]["System"]["EventID"],
                 )

@@ -87,8 +87,7 @@ impl SelectionNode for AndSelectionNode {
 
         self.child_nodes
             .iter()
-            .map(|child_node| child_node.get_descendants())
-            .flatten()
+            .flat_map(|child_node| child_node.get_descendants())
             .for_each(|descendant_node| {
                 ret.push(descendant_node);
             });
@@ -158,8 +157,7 @@ impl SelectionNode for OrSelectionNode {
 
         self.child_nodes
             .iter()
-            .map(|child_node| child_node.get_descendants())
-            .flatten()
+            .flat_map(|child_node| child_node.get_descendants())
             .for_each(|descendant_node| {
                 ret.push(descendant_node);
             });
@@ -315,8 +313,7 @@ impl SelectionNode for LeafSelectionNode {
         let filter_rule = FILTER_REGEX.get(self.get_key());
 
         if self.get_key() == "EventData" {
-            let values =
-                utils::get_event_value(&"Event.EventData.Data".to_string(), &event_record.record);
+            let values = utils::get_event_value("Event.EventData.Data", &event_record.record);
             if values.is_none() {
                 return self
                     .matcher

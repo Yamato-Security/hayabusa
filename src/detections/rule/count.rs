@@ -65,7 +65,7 @@ fn get_alias_value_in_record(
         return None;
     }
     match utils::get_event_value(alias, record) {
-        Some(value) => Some(value.to_string().replace("\"", "")),
+        Some(value) => Some(value.to_string().replace('\"', "")),
         None => {
             let errmsg = match is_by_alias {
                 true => format!(
@@ -121,7 +121,7 @@ pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
     let value_map = &rule.countdata;
     let mut ret = Vec::new();
     for (key, value) in value_map {
-        ret.append(&mut judge_timeframe(rule, value, &key.to_string()));
+        ret.append(&mut judge_timeframe(rule, value, key));
     }
     ret
 }
