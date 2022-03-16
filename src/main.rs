@@ -660,8 +660,8 @@ impl App {
                     return Option::Some(format!(
                         "{}|{}|{}|{}",
                         yaml["title"].as_str().unwrap_or(&String::default()),
-                        &filepath,
                         dt_local.format("%Y/%D %T"),
+                        &filepath,
                         yaml["ruletype"].as_str().unwrap_or("Other")
                     ));
                 }
@@ -686,8 +686,8 @@ impl App {
                 .entry(tmp[3].to_string())
                 .or_insert(0b1) += 1;
             println!(
-                "[Update Files] Title: {} (Modified date: {} | FilePath: {})",
-                tmp[0], tmp[2], tmp[1]
+                "[Update rule file] Title: {} (Modified date: {} | FilePath: {})",
+                tmp[0], tmp[1], tmp[2]
             );
         }
         println!();
