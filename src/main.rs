@@ -656,10 +656,11 @@ impl App {
                 let file_modified_date = fs::metadata(&filepath).unwrap().modified().unwrap();
 
                 if file_modified_date.cmp(target_date).is_gt() {
+                    let yaml_date = yaml["date"].as_str().unwrap_or(&String::default());
                     return Option::Some(format!(
                         "{}|{}|{}|{}",
                         yaml["title"].as_str().unwrap_or(&String::default()),
-                        yaml["modified"].as_str().unwrap_or(&String::default()),
+                        yaml["modified"].as_str().unwrap_or(yaml_date),
                         &filepath,
                         yaml["ruletype"].as_str().unwrap_or("Other")
                     ));
@@ -697,7 +698,7 @@ impl App {
             let dt_local: DateTime<Local> =
                 fs::metadata("rules").unwrap().modified().unwrap().into();
 
-            println!("Current latest rule: {}", dt_local.format("%Y/%D %T"));
+            println!("Latest rule update: {}", dt_local.format("%Y/%D %T"));
         }
     }
 }
