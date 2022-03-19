@@ -59,7 +59,7 @@ impl EventStatistics {
         // もうちょっと感じに書けるといえば書けます。
         for record in records.iter() {
             let evttime = utils::get_event_value(
-                &"Event.System.TimeCreated_attributes.SystemTime".to_string(),
+                "Event.System.TimeCreated_attributes.SystemTime",
                 &record.record,
             )
             .map(|evt_value| evt_value.to_string());
@@ -82,7 +82,7 @@ impl EventStatistics {
     fn stats_eventid(&mut self, records: &[EvtxRecordInfo]) {
         //        let mut evtstat_map = HashMap::new();
         for record in records.iter() {
-            let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
+            let evtid = utils::get_event_value("EventID", &record.record);
             if evtid.is_none() {
                 continue;
             }

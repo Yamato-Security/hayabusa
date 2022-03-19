@@ -94,8 +94,8 @@ impl Timeline {
                         event_cnt,
                         (rate * 1000.0).round() / 10.0,
                         event_id,
-                        "Unknown".to_string(),
-                        "".to_string()
+                        "Unknown",
+                        ""
                     ));
                 }
             }

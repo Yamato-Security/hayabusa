@@ -166,8 +166,8 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
     }
 
     let event_key = configs::EVENTKEY_ALIAS.get_event_key(key);
+    let mut ret: &Value = event_value;
     if let Some(event_key) = event_key {
-        let mut ret: &Value = event_value;
         // get_event_keyが取得できてget_event_key_splitが取得できないことはない
         let splits = configs::EVENTKEY_ALIAS.get_event_key_split(key);
         let mut start_idx = 0;
@@ -184,8 +184,11 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
 
         Option::Some(ret)
     } else {
-        let mut ret: &Value = event_value;
-        let event_key = key;
+        let event_key = if !key.contains('.') {
+            "Event.EventData.".to_string() + key
+        } else {
+            key.to_string()
+        };
         for key in event_key.split('.') {
             if !ret.is_object() {
                 return Option::None;
@@ -203,7 +206,7 @@ pub fn get_thread_num() -> usize {
     let threadnum = &conf
         .args
         .value_of("thread-number")
-        .unwrap_or_else(|| def_thread_num_str.as_str());
+        .unwrap_or(def_thread_num_str.as_str());
     threadnum.parse::<usize>().unwrap()
 }
 

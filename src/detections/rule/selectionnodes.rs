@@ -1,13 +1,13 @@
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use crate::filter::FILTER_REGEX;
-use mopa::mopafy;
+use downcast_rs::Downcast;
 use std::{sync::Arc, vec};
 use yaml_rust::Yaml;
 
 use super::matchers;
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
-pub trait SelectionNode: mopa::Any {
+pub trait SelectionNode: Downcast {
     // 引数で指定されるイベントログのレコードが、条件に一致するかどうかを判定する
     // このトレイトを実装する構造体毎に適切な判定処理を書く必要がある。
     fn select(&self, event_record: &EvtxRecordInfo) -> bool;
@@ -24,7 +24,7 @@ pub trait SelectionNode: mopa::Any {
     // 子孫ノードを取得する(グラフ理論のdescendantと同じ意味)
     fn get_descendants(&self) -> Vec<&dyn SelectionNode>;
 }
-mopafy!(SelectionNode);
+downcast_rs::impl_downcast!(SelectionNode);
 
 /// detection - selection配下でAND条件を表すノード
 pub struct AndSelectionNode {
@@ -87,8 +87,7 @@ impl SelectionNode for AndSelectionNode {
 
         self.child_nodes
             .iter()
-            .map(|child_node| child_node.get_descendants())
-            .flatten()
+            .flat_map(|child_node| child_node.get_descendants())
             .for_each(|descendant_node| {
                 ret.push(descendant_node);
             });
@@ -158,8 +157,7 @@ impl SelectionNode for OrSelectionNode {
 
         self.child_nodes
             .iter()
-            .map(|child_node| child_node.get_descendants())
-            .flatten()
+            .flat_map(|child_node| child_node.get_descendants())
             .for_each(|descendant_node| {
                 ret.push(descendant_node);
             });
@@ -315,8 +313,7 @@ impl SelectionNode for LeafSelectionNode {
         let filter_rule = FILTER_REGEX.get(self.get_key());
 
         if self.get_key() == "EventData" {
-            let values =
-                utils::get_event_value(&"Event.EventData.Data".to_string(), &event_record.record);
+            let values = utils::get_event_value("Event.EventData.Data", &event_record.record);
             if values.is_none() {
                 return self
                     .matcher

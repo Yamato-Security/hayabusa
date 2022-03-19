@@ -78,7 +78,7 @@ impl AggegationConditionCompiler {
             .unwrap()
             .as_str()
             .to_string()
-            .replacen("|", "", 1);
+            .replacen('|', "", 1);
 
         let tokens = self.tokenize(aggregation_str)?;
 
@@ -232,8 +232,8 @@ impl AggegationConditionCompiler {
         if token.starts_with("count(") {
             let count_field = token
                 .replacen("count(", "", 1)
-                .replacen(")", "", 1)
-                .replace(" ", "");
+                .replacen(')', "", 1)
+                .replace(' ', "");
             AggregationConditionToken::Count(count_field)
         } else if token == " " {
             AggregationConditionToken::Space

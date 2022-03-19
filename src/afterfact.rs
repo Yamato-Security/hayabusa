@@ -120,16 +120,15 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: Option<HashMap<String, Vec<u8>>>,
 ) -> io::Result<()> {
-    let mut wtr;
-    if displayflag {
-        wtr = csv::WriterBuilder::new()
+    let mut wtr = if displayflag {
+        csv::WriterBuilder::new()
             .double_quote(false)
             .quote_style(QuoteStyle::Never)
             .delimiter(b'|')
-            .from_writer(writer);
+            .from_writer(writer)
     } else {
-        wtr = csv::WriterBuilder::new().from_writer(writer);
-    }
+        csv::WriterBuilder::new().from_writer(writer)
+    };
 
     let messages = print::MESSAGES.lock().unwrap();
     // levelの区分が"Critical","High","Medium","Low","Informational","Undefined"の6つであるため
@@ -276,20 +275,18 @@ fn _print_unique_results(
     )
     .ok();
     for (i, level_name) in levels.iter().enumerate() {
-        let output_str;
         let output_raw_str = format!(
             "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
         );
-        if color_map.is_none() {
-            output_str = output_raw_str;
+        let output_str = if color_map.is_none() {
+            output_raw_str
         } else {
-            let output_color =
-                _get_output_color(color_map.as_ref().unwrap(), &level_name.to_string());
-            output_str = output_raw_str
+            let output_color = _get_output_color(color_map.as_ref().unwrap(), level_name);
+            output_raw_str
                 .truecolor(output_color[0], output_color[1], output_color[2])
-                .to_string();
-        }
+                .to_string()
+        };
         writeln!(wtr, "{}", output_str).ok();
     }
     wtr.flush().ok();
@@ -413,10 +410,9 @@ mod tests {
                 + ","
                 + testrulepath
                 + ","
-                + &testfilepath.to_string()
+                + testfilepath
                 + "\n";
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv.csv".to_string()).unwrap());
+        let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
         assert!(emit_csv(&mut file, false, None).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
@@ -512,7 +508,7 @@ mod tests {
             + "\n";
 
         let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv_display.txt".to_string()).unwrap());
+            Box::new(File::create("./test_emit_csv_display.txt").unwrap());
         assert!(emit_csv(&mut file, true, None).is_ok());
         match read_to_string("./test_emit_csv_display.txt") {
             Err(_) => panic!("Failed to open file."),
