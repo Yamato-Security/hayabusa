@@ -27,7 +27,6 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [主な目的](#主な目的)
     - [スレット(脅威)ハンティング](#スレット脅威ハンティング)
     - [フォレンジックタイムラインの高速生成](#フォレンジックタイムラインの高速生成)
-- [開発について](#開発について)
 - [スクリーンショット](#スクリーンショット)
   - [起動画面:](#起動画面)
   - [ターミナル出力画面:](#ターミナル出力画面)
@@ -45,7 +44,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
   - [アドバンス: Rustパッケージの更新](#アドバンス-rustパッケージの更新)
 - [Hayabusaの実行](#hayabusaの実行)
-  - [注意: Anti-Virus/EDR Warnings](#注意-anti-virusedr-warnings)
+  - [注意: アンチウィルス/EDRの誤検知](#注意-アンチウィルスedrの誤検知)
   - [Windows](#windows)
     - [Windows Terminalで利用する際の注意事項](#windows-terminalで利用する際の注意事項)
   - [Linux](#linux)
@@ -57,7 +56,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [Hayabusaの出力](#hayabusaの出力)
   - [プログレスバー](#プログレスバー)
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
-- [Hayabusa ルール](#hayabusa-ルール)
+- [Hayabusaルール](#hayabusaルール)
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
   - [検知ルールのチューニング](#検知ルールのチューニング)
   - [イベントIDフィルタリング](#イベントidフィルタリング)
@@ -83,10 +82,6 @@ Windowsのイベントログは、
   2）データの大半がノイズであり調査に有用でないこと
 から、従来は非常に長い時間と手間がかかる解析作業となっていました。 Hayabusa は、有用なデータのみを抽出し、専門的なトレーニングを受けた分析者だけでなく、Windowsのシステム管理者であれば誰でも利用できる読みやすい形式で提示することを主な目的としています。
 [Evtx Explorer](https://ericzimmerman.github.io/#!index.md)や[Event Log Explorer](https://eventlogxp.com/)のような深掘り分析を行うツールの代替ではなく、分析者が20%の時間で80%の作業を行えるようにすることを目的としています。
-
-# 開発について
-
-[DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI)というWindowsイベントログ解析ツールに触発されて、2020年に[RustyBlue](https://github.com/Yamato-Security/RustyBlue)プロジェクト用にRustに移植することから始めました。その後、YMLで書かれたSigmaのような柔軟な検知シグネチャを作り、SigmaルールをHayabusaルール形式へ変換するツールも作成しました。
 
 # スクリーンショット
 
@@ -225,9 +220,11 @@ cargo update
 
 # Hayabusaの実行
 
-## 注意: Anti-Virus/EDR Warnings
+## 注意: アンチウィルス/EDRの誤検知
 
-You may receive warning from anti-virus or EDR when trying to run Hayabusa. These are false positives so you may need to configure your security products to allow running Hayabusa. If you are worried about malware, please check the Hayabusa source code and compile the binaries yourself.
+Hayabusaを実行する際にアンチウィルスやEDRにブロックされる可能性があります。
+誤検知のため、セキュリティ対策の製品がHayabusaを許可するように設定する必要があります。
+マルウェア感染が心配のであれば、ソースコードを確認した上で、自分でバイナリをコンパイルして下さい。
 
 ## Windows
 
@@ -330,7 +327,7 @@ hayabusa.exe -f eventlog.evtx
 hayabusa.exe -d .\hayabusa-sample-evtx
 ```
 
-* １つのCSVファイルにエクスポートして、EXCELやTimeline Explorerでさらに分析することができます:
+* １つのCSVファイルにエクスポートして、ExcelやTimeline Explorerでさらに分析することができます:
 
 ```bash
 hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
@@ -369,7 +366,7 @@ hayabusa.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r ./rules/Hayabusa/default/events/Security/Logons -U -o results.csv
+hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
@@ -450,7 +447,7 @@ CSVファイルとして保存する場合、以下の2つのフィールドが�
 注意: True Colorに対応しているターミナルが必要です。
 例: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) またはmacOSの[iTerm2](https://iterm2.com/)。
 
-# Hayabusa ルール
+# Hayabusaルール
 
 Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
 
