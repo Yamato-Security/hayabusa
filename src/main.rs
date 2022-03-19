@@ -516,7 +516,7 @@ impl App {
         let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let mut prev_modified_rules: HashSet<String> = HashSet::default();
         let hayabusa_repo = Repository::open(Path::new("."));
-        let hayabusa_rule_repo = Repository::open(Path::new("./rules"));
+        let hayabusa_rule_repo = Repository::open(Path::new("rules"));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
             println!(
                 "Attempting to git clone the hayabusa-rules repository into the rules folder."
@@ -526,14 +526,14 @@ impl App {
         } else if hayabusa_rule_repo.is_ok() {
             // rulesのrepositoryが確認できる場合
             // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
-            prev_modified_rules = self.get_updated_rules("./rules", &prev_modified_time);
-            prev_modified_time = fs::metadata("./rules").unwrap().modified().unwrap();
+            prev_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
+            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
             result = self.pull_repository(hayabusa_rule_repo.unwrap());
         } else {
             // hayabusa-rulesのrepositoryがrulesに存在しない場合
             // hayabusa repositoryがあればsubmodule情報もあると思われるのでupdate
-            prev_modified_time = fs::metadata("./rules").unwrap().modified().unwrap();
-            let rules_path = Path::new("./rules");
+            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
+            let rules_path = Path::new("rules");
             if !rules_path.exists() {
                 create_dir(rules_path).ok();
             }
@@ -564,7 +564,7 @@ impl App {
             }
         }
         if result.is_ok() {
-            let updated_modified_rules = self.get_updated_rules("./rules", &prev_modified_time);
+            let updated_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
             self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
         result
@@ -655,12 +655,11 @@ impl App {
             .filter_map(|(filepath, yaml)| {
                 let file_modified_date = fs::metadata(&filepath).unwrap().modified().unwrap();
 
-                let dt_local: DateTime<Local> = file_modified_date.into();
                 if file_modified_date.cmp(target_date).is_gt() {
                     return Option::Some(format!(
                         "{}|{}|{}|{}",
                         yaml["title"].as_str().unwrap_or(&String::default()),
-                        dt_local.format("%Y/%D %T"),
+                        yaml["modified"].as_str().unwrap_or(&String::default()),
                         &filepath,
                         yaml["ruletype"].as_str().unwrap_or("Other")
                     ));
@@ -684,9 +683,9 @@ impl App {
 
             *update_count_by_rule_type
                 .entry(tmp[3].to_string())
-                .or_insert(0b1) += 1;
+                .or_insert(0b0) += 1;
             println!(
-                "[Update rule file] Title: {} (Modified date: {} | FilePath: {})",
+                "[Updated] {} (Modified: {} | Path: {})",
                 tmp[0], tmp[1], tmp[2]
             );
         }
@@ -696,7 +695,7 @@ impl App {
         }
         if !&update_count_by_rule_type.is_empty() {
             let dt_local: DateTime<Local> =
-                fs::metadata("./rules").unwrap().modified().unwrap().into();
+                fs::metadata("rules").unwrap().modified().unwrap().into();
 
             println!("Current latest rule: {}", dt_local.format("%Y/%D %T"));
         }
