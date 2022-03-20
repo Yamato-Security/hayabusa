@@ -1,3 +1,4 @@
+use crate::detections::pivot::PivotKeyword;
 use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
@@ -315,29 +316,21 @@ pub fn load_pivot_keywords(path: &str) {
             return;
         }
 
-        //pivotのfieldsのkeyを作成
+        //存在しなければ、keyを作成
         PIVOT_KEYWORD
             .write()
             .unwrap()
-            .fields
             .entry(map[0].to_string())
-            .or_insert(HashSet::new());
-
-        //pivotのkeywordsのkeyを作成
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .keywords
-            .entry(map[0].to_string())
-            .or_insert(HashSet::new());
+            .or_insert(PivotKeyword::new());
 
         PIVOT_KEYWORD
             .write()
             .unwrap()
-            .fields
             .get_mut(&map[0].to_string())
             .unwrap()
+            .fields
             .insert(map[1].to_string());
+        //.insert(&mut PivotKeyword::new());
     });
 }
 

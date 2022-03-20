@@ -1,7 +1,7 @@
 extern crate csv;
 
 use crate::detections::configs;
-use crate::detections::pivot::PIVOT_KEYWORD;
+use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
@@ -181,10 +181,7 @@ impl Detection {
             }
 
             if *PIVOT_KEYWORD_LIST_FLAG {
-                PIVOT_KEYWORD
-                    .write()
-                    .unwrap()
-                    .insert_pivot_keyword(&record_info.record);
+                insert_pivot_keyword(&record_info.record);
                 continue;
             }
 

@@ -9,12 +9,13 @@ use crate::detections::utils::get_serde_number_to_string;
 
 #[derive(Debug)]
 pub struct PivotKeyword {
-    pub keywords: HashMap<String, HashSet<String>>,
-    pub fields: HashMap<String, HashSet<String>>,
+    pub keywords: HashSet<String>,
+    pub fields: HashSet<String>,
 }
 
 lazy_static! {
-    pub static ref PIVOT_KEYWORD: RwLock<PivotKeyword> = RwLock::new(PivotKeyword::new());
+    pub static ref PIVOT_KEYWORD: RwLock<HashMap<String, PivotKeyword>> =
+        RwLock::new(HashMap::new());
 }
 
 impl Default for PivotKeyword {
@@ -26,59 +27,65 @@ impl Default for PivotKeyword {
 impl PivotKeyword {
     pub fn new() -> PivotKeyword {
         let pivot_keyword = PivotKeyword {
-            keywords: HashMap::new(),
-            fields: HashMap::new(),
+            keywords: HashSet::new(),
+            fields: HashSet::new(),
         };
         return pivot_keyword;
     }
+}
 
-    ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
-    ///それをPIVOT_KEYWORD.keywordsに入れる。
-    pub fn insert_pivot_keyword(&mut self, event_record: &Value) {
-        let mut is_exist_event_key = false;
-        let mut tmp_event_record: &Value = event_record;
-        for s in ["Event", "System", "Level"] {
-            if let Some(record) = tmp_event_record.get(s) {
-                is_exist_event_key = true;
-                tmp_event_record = record;
-            }
+///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
+///それをPIVOT_KEYWORD.keywordsに入れる。
+pub fn insert_pivot_keyword(event_record: &Value) {
+    //levelがlow異常なら続ける
+    let mut is_exist_event_key = false;
+    let mut tmp_event_record: &Value = event_record;
+    for s in ["Event", "System", "Level"] {
+        if let Some(record) = tmp_event_record.get(s) {
+            is_exist_event_key = true;
+            tmp_event_record = record;
         }
-        if is_exist_event_key {
-            let hash_value = get_serde_number_to_string(tmp_event_record);
+    }
+    if is_exist_event_key {
+        let hash_value = get_serde_number_to_string(tmp_event_record);
 
-            if hash_value.is_some() && hash_value.as_ref().unwrap() == "infomational"
-                || hash_value.as_ref().unwrap() == "undefined"
-                || hash_value.as_ref().unwrap() == "-"
-            {
-                return;
-            }
-        } else {
+        if hash_value.is_some() && hash_value.as_ref().unwrap() == "infomational"
+            || hash_value.as_ref().unwrap() == "undefined"
+            || hash_value.as_ref().unwrap() == "-"
+        {
             return;
         }
+    } else {
+        return;
+    }
 
-        for (key, fields) in self.fields.iter() {
-            for field in fields {
-                if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field))
-                {
-                    let split: Vec<&str> = array_str.split('.').collect();
-                    let mut is_exist_event_key = false;
-                    let mut tmp_event_record: &Value = event_record;
-                    for s in split {
-                        if let Some(record) = tmp_event_record.get(s) {
-                            is_exist_event_key = true;
-                            tmp_event_record = record;
+    for (key, value) in PIVOT_KEYWORD.write().unwrap().iter() {
+        for field in &value.fields {
+            if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field)) {
+                let split: Vec<&str> = array_str.split('.').collect();
+                let mut is_exist_event_key = false;
+                let mut tmp_event_record: &Value = event_record;
+                for s in split {
+                    if let Some(record) = tmp_event_record.get(s) {
+                        is_exist_event_key = true;
+                        tmp_event_record = record;
+                    }
+                }
+                if is_exist_event_key {
+                    let hash_value = get_serde_number_to_string(tmp_event_record);
+
+                    if let Some(value) = hash_value {
+                        if value == "-" || value == "127.0.0.1" || value == "::1" {
+                            continue;
                         }
-                    }
-                    if is_exist_event_key {
-                        let hash_value = get_serde_number_to_string(tmp_event_record);
-
-                        if let Some(value) = hash_value {
-                            if value == "-" || value == "127.0.0.1" || value == "::1" {
-                                continue;
-                            }
-                            self.keywords.get_mut(key).unwrap().insert(value);
-                        };
-                    }
+                        PIVOT_KEYWORD
+                            .write()
+                            .unwrap()
+                            .get_mut(key)
+                            .unwrap()
+                            .keywords
+                            .insert(value);
+                    };
                 }
             }
         }

@@ -200,25 +200,21 @@ impl App {
         if *PIVOT_KEYWORD_LIST_FLAG {
             //出力する文字列を準備
             let mut output = "The following pivot keywords were found:\n".to_string();
-            for (key, _) in &PIVOT_KEYWORD.read().unwrap().keywords {
-                    output += &format!("{}: ", key).to_string();
+            for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
+                output += &format!("{}: ", key).to_string();
 
-                    output += &"( ".to_string();
-                for v in &PIVOT_KEYWORD.read().unwrap().keywords.get(key) {
-                    for i in v.iter() {
-                        output += &format!("%{}% ", i).to_string();
-                    }
+                output += &"( ".to_string();
+                for i in pivot_keyword.keywords.iter() {
+                    output += &format!("%{}% ", i).to_string();
                 }
-                    output += &"):".to_string();
-                    output += &"\n".to_string();
+                output += &"):".to_string();
+                output += &"\n".to_string();
 
-                for v in &PIVOT_KEYWORD.read().unwrap().fields.get(key) {
-                    for i in v.iter() {
-                        output += &format!("{}\n", i).to_string();
-                    }
+                for i in pivot_keyword.fields.iter() {
+                    output += &format!("{}\n", i).to_string();
                 }
 
-                    output += &"\n\n".to_string();
+                output += &"\n\n".to_string();
             }
 
             //出力
