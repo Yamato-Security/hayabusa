@@ -59,8 +59,8 @@ pub fn insert_pivot_keyword(event_record: &Value) {
         return;
     }
 
-    for (key, value) in PIVOT_KEYWORD.write().unwrap().iter() {
-        for field in &value.fields {
+    for (_, pivot) in PIVOT_KEYWORD.write().unwrap().iter_mut() {
+        for field in &pivot.fields {
             if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field)) {
                 let split: Vec<&str> = array_str.split('.').collect();
                 let mut is_exist_event_key = false;
@@ -78,13 +78,7 @@ pub fn insert_pivot_keyword(event_record: &Value) {
                         if value == "-" || value == "127.0.0.1" || value == "::1" {
                             continue;
                         }
-                        PIVOT_KEYWORD
-                            .write()
-                            .unwrap()
-                            .get_mut(key)
-                            .unwrap()
-                            .keywords
-                            .insert(value);
+                        pivot.keywords.insert(value);
                     };
                 }
             }

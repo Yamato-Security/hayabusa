@@ -120,6 +120,20 @@ impl App {
             return;
         }
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+            for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
+                let keywords_file_name = csv_path.to_owned() + "-" + key + ".txt";
+                if Path::new(&keywords_file_name).exists() {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!(
+                            " The file {} already exists. Please specify a different filename.",
+                            &keywords_file_name
+                        ),
+                    )
+                    .ok();
+                    return;
+                }
+            }
             if Path::new(csv_path).exists() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
@@ -204,23 +218,42 @@ impl App {
                 output += &format!("{}: ", key).to_string();
 
                 output += &"( ".to_string();
-                for i in pivot_keyword.keywords.iter() {
+                for i in pivot_keyword.fields.iter() {
                     output += &format!("%{}% ", i).to_string();
                 }
                 output += &"):".to_string();
                 output += &"\n".to_string();
 
-                for i in pivot_keyword.fields.iter() {
+                for i in pivot_keyword.keywords.iter() {
                     output += &format!("{}\n", i).to_string();
                 }
 
-                output += &"\n\n".to_string();
+                output += &"\n".to_string();
             }
 
             //出力
             if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
-                let mut f = BufWriter::new(fs::File::create(pivot_file).unwrap());
-                f.write_all(output.as_bytes()).unwrap();
+                for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
+                    let mut f = BufWriter::new(
+                        fs::File::create(pivot_file.to_owned() + "-" + key + ".txt").unwrap(),
+                    );
+                    let mut output = "".to_string();
+                    output += &format!("{}: ", key).to_string();
+
+                    output += &"( ".to_string();
+                    for i in pivot_keyword.fields.iter() {
+                        output += &format!("%{}% ", i).to_string();
+                    }
+                    output += &"):".to_string();
+                    output += &"\n".to_string();
+
+                    for i in pivot_keyword.keywords.iter() {
+                        output += &format!("{}\n", i).to_string();
+                    }
+
+                    output += &"\n".to_string();
+                    f.write_all(output.as_bytes()).unwrap();
+                }
             } else {
                 print!("\n {}", output);
             }
