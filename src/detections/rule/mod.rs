@@ -92,10 +92,10 @@ impl RuleNode {
     }
     /// ルール内のAggregationParseInfo(Aggregation Condition)を取得する関数
     pub fn get_agg_condition(&self) -> Option<&AggregationParseInfo> {
-        match self.detection.aggregation_condition.as_ref() {
-            None => None,
-            Some(agg_parse_info) => Some(agg_parse_info),
+        if self.detection.aggregation_condition.as_ref().is_some() {
+            return self.detection.aggregation_condition.as_ref();
         }
+        None
     }
 }
 
