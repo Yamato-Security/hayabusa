@@ -656,7 +656,7 @@ impl App {
                 let file_modified_date = fs::metadata(&filepath).unwrap().modified().unwrap();
 
                 if file_modified_date.cmp(target_date).is_gt() {
-                    let yaml_date = yaml["date"].as_str().unwrap_or(&String::default());
+                    let yaml_date = yaml["date"].as_str().unwrap_or("-");
                     return Option::Some(format!(
                         "{}|{}|{}|{}",
                         yaml["title"].as_str().unwrap_or(&String::default()),
