@@ -23,6 +23,7 @@ use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
+use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::fs::create_dir;
@@ -680,12 +681,16 @@ impl App {
     ) {
         let diff = updated_sets.difference(&prev_sets);
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
-        if &diff.count() != 0 {
-            println!("No rule changes.");
-        }
+        let mut latest_update_date = Local.timestamp(0, 0);
         for diff_key in diff {
             let tmp: Vec<&str> = diff_key.split('|').collect();
+            let file_modified_date = fs::metadata(&tmp[2]).unwrap().modified().unwrap();
 
+            let dt_local: DateTime<Local> = file_modified_date.into();
+
+            if latest_update_date.cmp(&dt_local) == Ordering::Less {
+                latest_update_date = dt_local;
+            }
             *update_count_by_rule_type
                 .entry(tmp[3].to_string())
                 .or_insert(0b0) += 1;
@@ -699,10 +704,12 @@ impl App {
             println!("Updated {} rules count: {}", key, value);
         }
         if !&update_count_by_rule_type.is_empty() {
-            let dt_local: DateTime<Local> =
-                fs::metadata("rules").unwrap().modified().unwrap().into();
-
-            println!("Latest rules update: {}", dt_local.format("%Y/%m/%d %T"));
+            println!(
+                "Latest rules update: {}",
+                latest_update_date.format("%Y/%m/%d %T")
+            );
+        } else {
+            println!("No rule changed.");
         }
     }
 }
