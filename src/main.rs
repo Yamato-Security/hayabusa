@@ -5,8 +5,7 @@ extern crate serde_derive;
 #[cfg(target_os = "windows")]
 extern crate static_vcruntime;
 
-use chrono::Datelike;
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hashbrown::{HashMap, HashSet};
