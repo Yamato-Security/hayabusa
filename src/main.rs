@@ -680,7 +680,7 @@ impl App {
     ) {
         let diff = updated_sets.difference(&prev_sets);
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
-        if diff.count() != 0 {
+        if &diff.count() != 0 {
             println!("No rule changes.");
         }
         for diff_key in diff {
