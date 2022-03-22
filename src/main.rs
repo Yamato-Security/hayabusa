@@ -97,6 +97,7 @@ impl App {
                     .ok();
                 }
             }
+            println!();
             return;
         }
         if !Path::new("./config").exists() {
@@ -679,6 +680,9 @@ impl App {
     ) {
         let diff = updated_sets.difference(&prev_sets);
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
+        if diff.count() != 0 {
+            println!("No rule changes.");
+        }
         for diff_key in diff {
             let tmp: Vec<&str> = diff_key.split('|').collect();
 
@@ -698,7 +702,7 @@ impl App {
             let dt_local: DateTime<Local> =
                 fs::metadata("rules").unwrap().modified().unwrap().into();
 
-            println!("Latest rule update: {}", dt_local.format("%Y/%D %T"));
+            println!("Latest rules update: {}", dt_local.format("%Y/%m/%d %T"));
         }
     }
 }
