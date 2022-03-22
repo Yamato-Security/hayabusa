@@ -289,7 +289,7 @@ mod tests {
             no_use_rule: HashSet::new(),
         };
         let _ = &yaml.read_dir(
-            "test_files/rules/yaml/1.yml".to_string(),
+            "test_files/rules/yaml/1.yml",
             &String::default(),
             &exclude_ids,
         );
@@ -304,11 +304,7 @@ mod tests {
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
         };
-        let _ = &yaml.read_dir(
-            "test_files/rules/yaml/".to_string(),
-            &String::default(),
-            &exclude_ids,
-        );
+        let _ = &yaml.read_dir("test_files/rules/yaml/", &String::default(), &exclude_ids);
         assert_ne!(yaml.files.len(), 0);
     }
 
@@ -343,8 +339,7 @@ mod tests {
     fn test_default_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), "", &filter::exclude_ids())
-            .unwrap();
+        yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
 
@@ -352,7 +347,7 @@ mod tests {
     fn test_info_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), "informational", &filter::exclude_ids())
+        yaml.read_dir(path, "informational", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
@@ -360,15 +355,14 @@ mod tests {
     fn test_low_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), "LOW", &filter::exclude_ids())
-            .unwrap();
+        yaml.read_dir(path, "LOW", &filter::exclude_ids()).unwrap();
         assert_eq!(yaml.files.len(), 4);
     }
     #[test]
     fn test_medium_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), "MEDIUM", &filter::exclude_ids())
+        yaml.read_dir(path, "MEDIUM", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 3);
     }
@@ -376,15 +370,14 @@ mod tests {
     fn test_high_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), "HIGH", &filter::exclude_ids())
-            .unwrap();
+        yaml.read_dir(path, "HIGH", &filter::exclude_ids()).unwrap();
         assert_eq!(yaml.files.len(), 2);
     }
     #[test]
     fn test_critical_level_read_yaml() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path.to_path_buf(), "CRITICAL", &filter::exclude_ids())
+        yaml.read_dir(path, "CRITICAL", &filter::exclude_ids())
             .unwrap();
         assert_eq!(yaml.files.len(), 1);
     }
@@ -394,8 +387,7 @@ mod tests {
 
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
-        yaml.read_dir(path.to_path_buf(), "", &filter::exclude_ids())
-            .unwrap();
+        yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
         assert_eq!(yaml.ignorerule_count, 10);
     }
     #[test]
@@ -407,7 +399,7 @@ mod tests {
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
         };
-        yaml.read_dir(path.to_path_buf(), "", &exclude_ids).unwrap();
+        yaml.read_dir(path, "", &exclude_ids).unwrap();
         assert_eq!(yaml.ignorerule_count, 0);
     }
     #[test]
@@ -417,7 +409,7 @@ mod tests {
         let exclude_ids = RuleExclude {
             no_use_rule: HashSet::new(),
         };
-        yaml.read_dir(path.to_path_buf(), "", &exclude_ids).unwrap();
+        yaml.read_dir(path, "", &exclude_ids).unwrap();
         assert_eq!(yaml.ignorerule_count, 1);
     }
 }

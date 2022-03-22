@@ -100,12 +100,12 @@ impl Message {
                 .take(target_length)
                 .collect::<String>();
 
-            let array_str;
-            if let Some(_array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
-                array_str = _array_str.to_string();
-            } else {
-                array_str = "Event.EventData.".to_owned() + &target_str;
-            }
+            let array_str =
+                if let Some(_array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str) {
+                    _array_str.to_string()
+                } else {
+                    "Event.EventData.".to_owned() + &target_str
+                };
 
             let split: Vec<&str> = array_str.split('.').collect();
             let mut is_exist_event_key = false;
@@ -202,7 +202,7 @@ impl AlertMessage {
         }
         println!(
             "Errors were generated. Please check {} for details.",
-            ERROR_LOG_PATH.to_string()
+            *ERROR_LOG_PATH
         );
         println!();
     }
@@ -352,21 +352,15 @@ mod tests {
     #[test]
     fn test_error_message() {
         let input = "TEST!";
-        AlertMessage::alert(
-            &mut BufWriter::new(std::io::stdout().lock()),
-            &input.to_string(),
-        )
-        .expect("[ERROR] TEST!");
+        AlertMessage::alert(&mut BufWriter::new(std::io::stdout().lock()), input)
+            .expect("[ERROR] TEST!");
     }
 
     #[test]
     fn test_warn_message() {
         let input = "TESTWarn!";
-        AlertMessage::warn(
-            &mut BufWriter::new(std::io::stdout().lock()),
-            &input.to_string(),
-        )
-        .expect("[WARN] TESTWarn!");
+        AlertMessage::warn(&mut BufWriter::new(std::io::stdout().lock()), input)
+            .expect("[WARN] TESTWarn!");
     }
 
     #[test]
