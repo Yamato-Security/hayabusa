@@ -115,7 +115,6 @@ impl App {
                 if Path::new(level_tuning_path).exists() {
                     let read_result = utils::read_csv(level_tuning_path);
                     if read_result.is_err() {
-                        // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
                         AlertMessage::warn(
                             &mut BufWriter::new(std::io::stderr().lock()),
                             &read_result.as_ref().unwrap_err(),
@@ -132,27 +131,32 @@ impl App {
                         // TODO: id validation
                         let level = line.get(1).unwrap();
                         // TODO: level validation
+                        // Cut Comments
                         tuning_map.insert(id.to_string(), level.to_string());
-
-                        let mut rulefile_loader = ParseYaml::new();
-                        let result_readdir =
-                            rulefile_loader.read_dir(
-                                &level,
-                                configs::CONFIG.read().unwrap().args.value_of("rules").unwrap_or(&"rules"),
-                                &filter::exclude_ids(),
-                            );
-                        if result_readdir.is_err() {
-                            let errmsg = format!("{}", result_readdir.unwrap_err());
-                            AlertMessage::warn(
-                                &mut BufWriter::new(std::io::stderr().lock()),
-                                &errmsg,
-                            )
-                            .ok();
-                            return;
-                        }
                     });
-                    println!("level-tuning file exist: {}", level_tuning_path);
-                    println!("WIP: level-tuning....");
+                    let mut rulefile_loader = ParseYaml::new();
+                    let result_readdir =
+                        rulefile_loader.read_dir(
+                            configs::CONFIG.read().unwrap().args.value_of("rules").unwrap_or(&"rules"),
+                            &"informational",
+                            &filter::exclude_ids(),
+                        );
+                    if result_readdir.is_err() {
+                        let errmsg = format!("{}", result_readdir.unwrap_err());
+                        AlertMessage::warn(
+                            &mut BufWriter::new(std::io::stderr().lock()),
+                            &errmsg,
+                        )
+                        .ok();
+                        return;
+                    }
+                    for (path, rule) in rulefile_loader.files {
+                        if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
+                            println!("{}", rule["id"].as_str().unwrap());
+                            println!("path: {}", path);
+                            println!("level: {} -> {}", rule["level"].as_str().unwrap(), new_level);
+                        }
+                    }
                 } else {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
