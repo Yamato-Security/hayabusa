@@ -18,7 +18,8 @@ use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::yaml::ParseYaml;
 use hayabusa::{afterfact::after_fact, detections::utils};
-use hayabusa::{detections::configs, timeline::timelines::Timeline};
+use hayabusa::{detections::configs, timeline::timeline::Timeline};
+use hayabusa::yaml::ParseYaml;
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
@@ -112,6 +113,44 @@ impl App {
         {
             if let Some(level_tuning_path) = configs::CONFIG.read().unwrap().args.value_of("level-tuning") {
                 if Path::new(level_tuning_path).exists() {
+                    let read_result = utils::read_csv(level_tuning_path);
+                    if read_result.is_err() {
+                        // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
+                        AlertMessage::warn(
+                            &mut BufWriter::new(std::io::stderr().lock()),
+                            &read_result.as_ref().unwrap_err(),
+                        )
+                        .ok();
+                        return;
+                    }
+                    let mut tuning_map: HashMap<String, String> = HashMap::new();
+                    read_result.unwrap().into_iter().for_each(|line| {
+                        if line.len() != 2 {
+                            return;
+                        }
+                        let id = line.get(0).unwrap();
+                        // TODO: id validation
+                        let level = line.get(1).unwrap();
+                        // TODO: level validation
+                        tuning_map.insert(id.to_string(), level.to_string());
+
+                        let mut rulefile_loader = ParseYaml::new();
+                        let result_readdir =
+                            rulefile_loader.read_dir(
+                                &level,
+                                configs::CONFIG.read().unwrap().args.value_of("rules").unwrap_or(&"rules"),
+                                &filter::exclude_ids(),
+                            );
+                        if result_readdir.is_err() {
+                            let errmsg = format!("{}", result_readdir.unwrap_err());
+                            AlertMessage::warn(
+                                &mut BufWriter::new(std::io::stderr().lock()),
+                                &errmsg,
+                            )
+                            .ok();
+                            return;
+                        }
+                    });
                     println!("level-tuning file exist: {}", level_tuning_path);
                     println!("WIP: level-tuning....");
                 } else {
