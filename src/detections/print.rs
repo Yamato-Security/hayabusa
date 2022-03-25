@@ -2,8 +2,6 @@ extern crate lazy_static;
 use crate::detections::configs;
 use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
-use crate::filter::DataFilterRule;
-use crate::filter::FILTER_REGEX;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
@@ -90,7 +88,6 @@ impl Message {
     fn parse_message(&mut self, event_record: &Value, output: String) -> String {
         let mut return_message: String = output;
         let mut hash_map: HashMap<String, String> = HashMap::new();
-        let mut output_filter: Option<&DataFilterRule> = None;
         for caps in ALIASREGEX.captures_iter(&return_message) {
             let full_target_str = &caps[0];
             let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
@@ -114,17 +111,12 @@ impl Message {
                 if let Some(record) = tmp_event_record.get(s) {
                     is_exist_event_key = true;
                     tmp_event_record = record;
-                    output_filter = FILTER_REGEX.get(&s.to_string());
                 }
             }
             if is_exist_event_key {
-                let mut hash_value = get_serde_number_to_string(tmp_event_record);
-                if hash_value.is_some() {
-                    if output_filter.is_some() {
-                        hash_value =
-                            utils::replace_target_character(hash_value.as_ref(), output_filter);
-                    }
-                    hash_map.insert(full_target_str.to_string(), hash_value.unwrap());
+                let hash_value = get_serde_number_to_string(tmp_event_record);
+                if let Some(hash_value) = hash_value{
+                    hash_map.insert(full_target_str.to_string(), hash_value);
                 }
             }
         }
