@@ -88,7 +88,11 @@ impl App {
             .is_present("update-rules")
         {
             match self.update_rules() {
-                Ok(_ok) => println!("Rules updated successfully."),
+                Ok(output) => {
+                    if output != "No rule changed" {
+                        println!("Rules updated successfully.");
+                    }
+                }
                 Err(e) => {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
@@ -509,8 +513,8 @@ impl App {
     }
 
     /// update rules(hayabusa-rules subrepository)
-    fn update_rules(&self) -> Result<(), git2::Error> {
-        let result;
+    fn update_rules(&self) -> Result<String, git2::Error> {
+        let mut result;
         let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let mut prev_modified_rules: HashSet<String> = HashSet::default();
         let hayabusa_repo = Repository::open(Path::new("."));
@@ -543,33 +547,31 @@ impl App {
             for mut submodule in submodules {
                 submodule.update(true, None)?;
                 let submodule_repo = submodule.open()?;
-                match self.pull_repository(submodule_repo) {
-                    Ok(it) => it,
-                    Err(e) => {
-                        AlertMessage::alert(
-                            &mut BufWriter::new(std::io::stderr().lock()),
-                            &format!("Failed submodule update. {}", e),
-                        )
-                        .ok();
-                        is_success_submodule_update = false;
-                    }
+                if let Err(e) = self.pull_repository(submodule_repo) {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!("Failed submodule update. {}", e),
+                    )
+                    .ok();
+                    is_success_submodule_update = false;
                 }
             }
             if is_success_submodule_update {
-                result = Ok(());
+                result = Ok("Successed submodule update".to_string());
             } else {
                 result = Err(git2::Error::from_str(&String::default()));
             }
         }
         if result.is_ok() {
             let updated_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
-            self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
+            result =
+                self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
         result
     }
 
     /// Pull(fetch and fast-forward merge) repositoryto input_repo.
-    fn pull_repository(&self, input_repo: Repository) -> Result<(), git2::Error> {
+    fn pull_repository(&self, input_repo: Repository) -> Result<String, git2::Error> {
         match input_repo
             .find_remote("origin")?
             .fetch(&["main"], None, None)
@@ -587,13 +589,13 @@ impl App {
         let fetch_commit = input_repo.reference_to_annotated_commit(&fetch_head)?;
         let analysis = input_repo.merge_analysis(&[&fetch_commit])?;
         if analysis.0.is_up_to_date() {
-            Ok(())
+            Ok("Already up to date".to_string())
         } else if analysis.0.is_fast_forward() {
             let mut reference = input_repo.find_reference("refs/heads/main")?;
             reference.set_target(fetch_commit.id(), "Fast-Forward")?;
             input_repo.set_head("refs/heads/main")?;
             input_repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
-            Ok(())
+            Ok("Finished fast forward merge.".to_string())
         } else if analysis.0.is_normal() {
             AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
@@ -607,14 +609,14 @@ impl App {
     }
 
     /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
-    fn clone_rules(&self) -> Result<(), git2::Error> {
+    fn clone_rules(&self) -> Result<String, git2::Error> {
         match Repository::clone(
             "https://github.com/Yamato-Security/hayabusa-rules.git",
             "rules",
         ) {
             Ok(_repo) => {
                 println!("Finished cloning the hayabusa-rules repository.");
-                Ok(())
+                Ok("Finished clone".to_string())
             }
             Err(e) => {
                 AlertMessage::alert(
@@ -675,7 +677,7 @@ impl App {
         &self,
         prev_sets: HashSet<String>,
         updated_sets: HashSet<String>,
-    ) {
+    ) -> Result<String, git2::Error> {
         let diff = updated_sets.difference(&prev_sets);
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
         let mut latest_update_date = Local.timestamp(0, 0);
@@ -701,12 +703,10 @@ impl App {
             println!("Updated {} rules count: {}", key, value);
         }
         if !&update_count_by_rule_type.is_empty() {
-            println!(
-                "Latest rules update: {}",
-                latest_update_date.format("%Y/%m/%d %T")
-            );
+            Ok("Rule updated".to_string())
         } else {
             println!("No rule changed.");
+            Ok("No rule changed".to_string())
         }
     }
 }
