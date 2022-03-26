@@ -89,7 +89,7 @@ impl App {
         {
             match self.update_rules() {
                 Ok(output) => {
-                    if output != "No rule changed" {
+                    if output != "You currently have the latest rules." {
                         println!("Rules updated successfully.");
                     }
                 }
@@ -700,13 +700,13 @@ impl App {
         }
         println!();
         for (key, value) in &update_count_by_rule_type {
-            println!("Updated {} rules count: {}", key, value);
+            println!("Updated {} rules: {}", key, value);
         }
         if !&update_count_by_rule_type.is_empty() {
             Ok("Rule updated".to_string())
         } else {
-            println!("No rule changed.");
-            Ok("No rule changed".to_string())
+            println!("You currently have the latest rules.");
+            Ok("You currently have the latest rules.".to_string())
         }
     }
 }
