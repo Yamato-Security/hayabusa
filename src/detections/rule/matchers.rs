@@ -448,7 +448,11 @@ impl PipeElement {
                     regex::escape(pattern)
                 } else {
                     // wildcardの場合、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
-                    let wildcard_regex_value = if *pattern == "*" { ".*" } else { "." };
+                    let wildcard_regex_value = if *pattern == "*" {
+                        "(.|\\a|\\f|\\t|\\n|\\r|\\v)*"
+                    } else {
+                        "."
+                    };
                     wildcard_regex_value.to_string()
                 };
 
@@ -1516,7 +1520,7 @@ mod tests {
     #[test]
     fn test_pipe_pattern_wildcard_asterisk() {
         let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
-        assert_eq!("(?i).*ho.*ge.*", value);
+        assert_eq!("(?i)(.|\\a|\\f|\\t|\\n|\\r|\\v)*ho(.|\\a|\\f|\\t|\\n|\\r|\\v)*ge(.|\\a|\\f|\\t|\\n|\\r|\\v)*", value);
     }
 
     #[test]
@@ -1532,7 +1536,10 @@ mod tests {
         // wildcardの「\\*」は文字列としての「\」と正規表現の「.*」を表す。
         // 文字列としての「\」はエスケープされるので、「\\.*」が正解
         let value = PipeElement::pipe_pattern_wildcard(r"\\*ho\\*ge\\*".to_string());
-        assert_eq!(r"(?i)\\.*ho\\.*ge\\.*", value);
+        assert_eq!(
+            r"(?i)\\(.|\a|\f|\t|\n|\r|\v)*ho\\(.|\a|\f|\t|\n|\r|\v)*ge\\(.|\a|\f|\t|\n|\r|\v)*",
+            value
+        );
     }
 
     #[test]
@@ -1562,13 +1569,19 @@ mod tests {
     #[test]
     fn test_pipe_pattern_wildcard_mixed() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\*\****\*\\*".to_string());
-        assert_eq!(r"(?i)\\.*\*.*.*.*\*\\.*", value);
+        assert_eq!(
+            r"(?i)\\(.|\a|\f|\t|\n|\r|\v)*\*(.|\a|\f|\t|\n|\r|\v)*(.|\a|\f|\t|\n|\r|\v)*(.|\a|\f|\t|\n|\r|\v)*\*\\(.|\a|\f|\t|\n|\r|\v)*",
+            value
+        );
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_many_backshashs() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
-        assert_eq!(r"(?i)\\\\.*ho\\\\.*ge\\\\\\", value);
+        assert_eq!(
+            r"(?i)\\\\(.|\a|\f|\t|\n|\r|\v)*ho\\\\(.|\a|\f|\t|\n|\r|\v)*ge\\\\\\",
+            value
+        );
     }
 
     #[test]
