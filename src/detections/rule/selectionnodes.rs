@@ -3,7 +3,7 @@ use downcast_rs::Downcast;
 use std::{sync::Arc, vec};
 use yaml_rust::Yaml;
 
-use super::matchers;
+use super::matchers::{self, DefaultMatcher};
 
 // Ruleファイルの detection- selection配下のノードはこのtraitを実装する。
 pub trait SelectionNode: Downcast {
@@ -248,6 +248,24 @@ impl LeafSelectionNode {
 
     pub fn get_key(&self) -> &String {
         &self.key
+    }
+
+    pub fn get_keys(&self) -> Vec<&String> {
+        let mut keys = vec![];
+        if !self.key.is_empty() {
+            keys.push(&self.key);
+        }
+
+        if let Some(matcher) = &self.matcher {
+            let matcher = matcher.downcast_ref::<DefaultMatcher>();
+            if let Some(matcher) = matcher {
+                if let Some(eq_key) = matcher.get_eqfield_key() {
+                    keys.push(eq_key);
+                }
+            }
+        }
+
+        keys
     }
 
     fn _create_key(&self) -> String {
