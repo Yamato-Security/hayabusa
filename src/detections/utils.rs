@@ -207,7 +207,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
     // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
     // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。
-    let mut key_2_value=hashbrown::HashMap::new();
+    let mut key_2_values = hashbrown::HashMap::new();
     for key in keys {
         let val = get_event_value(key, &data);
         if val.is_none() {
@@ -219,7 +219,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
             continue;
         }
 
-        key_2_value.insert(key.to_string(), val.unwrap());
+        key_2_values.insert(key.to_string(), val.unwrap());
     }
 
     // EvtxRecordInfoを作る
@@ -229,7 +229,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
         evtx_filepath: path,
         record: data,
         data_string: data_str,
-        key_2_value: hashbrown::HashMap::new(),
+        key_2_value: key_2_values,
         record_information: rec_info,
     }
 }
@@ -239,7 +239,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
  */
 fn create_recordinfos(record: &Value) -> String {
     let mut output = HashMap::new();
-    _collect_recordinfo(&mut vec![], "", &record, &mut output);
+    _collect_recordinfo(&mut vec![], "", record, &mut output);
 
     let mut keys: Vec<&String> = output.keys().into_iter().collect();
     keys.sort();

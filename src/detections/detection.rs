@@ -20,8 +20,6 @@ use std::io::BufWriter;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::utils;
-
 const DIRPATH_RULES: &str = "rules";
 
 // イベントファイルの1レコード分の情報を保持する構造体
