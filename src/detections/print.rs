@@ -30,6 +30,7 @@ pub struct DetectInfo {
     pub eventid: String,
     pub alert: String,
     pub detail: String,
+    pub record_information: String,
     pub tag_info: String,
 }
 
@@ -116,7 +117,8 @@ impl Message {
             if is_exist_event_key {
                 let hash_value = get_serde_number_to_string(tmp_event_record);
                 if let Some(hash_value) = hash_value {
-                    let hash_value = hash_value.replace(r"(\\a|\\f|\\t|\\n|\\r|\\v)", " ");
+                    let hash_value: Vec<&str> = hash_value.trim().split_whitespace().collect();
+                    let hash_value = hash_value.join(" ");
                     hash_map.insert(full_target_str.to_string(), hash_value);
                 }
             }

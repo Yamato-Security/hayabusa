@@ -213,6 +213,7 @@ impl Detection {
                 alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
                 detail: String::default(),
                 tag_info: tag_info.join(" : "),
+                record_information: Detection::create_recordinfos(record_info),
             },
         );
     }
@@ -235,6 +236,7 @@ impl Detection {
                 eventid: "-".to_owned(),
                 alert: rule.yaml["title"].as_str().unwrap_or("").to_owned(),
                 detail: output,
+                record_information: String::default(),
                 tag_info: tag_info.join(" : "),
             },
             agg_result.start_timedate,
@@ -309,11 +311,11 @@ impl Detection {
     }
 
     /**
-     * CSVのfieldsカラムに出力する文字列を作る
+     * CSVのrecord infoカラムに出力する文字列を作る
      */
-    pub fn create_fields_value(rec: &EvtxRecordInfo) -> String {
+    pub fn create_recordinfos(rec: &EvtxRecordInfo) -> String {
         let mut output = HashMap::new();
-        Detection::_collect_fields(&mut vec![], "", &rec.record, &mut output);
+        Detection::_collect_recordinfo(&mut vec![], "", &rec.record, &mut output);
 
         let mut keys: Vec<&String> = output.keys().into_iter().collect();
         keys.sort();
@@ -322,16 +324,17 @@ impl Detection {
             .into_iter()
             .map(|key| {
                 let value = output.get(key).unwrap();
-                return format!("[{}]{}", key, value.join(" "));
+                let dispkey = key.split('.').last().unwrap_or(key);
+                return format!("{}: {}", dispkey, value.join(" "));
             })
             .collect();
-        summary.join(" ")
+        summary.join(" | ")
     }
 
     /**
      * CSVのfieldsカラムに出力する要素を全て収集する
      */
-    fn _collect_fields<'a>(
+    fn _collect_recordinfo<'a>(
         keys: &mut Vec<&'a str>,
         parent_key: &'a str,
         value: &'a Value,
@@ -340,7 +343,7 @@ impl Detection {
         match value {
             Value::Array(ary) => {
                 for sub_value in ary {
-                    Detection::_collect_fields(keys, parent_key, sub_value, output);
+                    Detection::_collect_recordinfo(keys, parent_key, sub_value, output);
                 }
             }
             Value::Object(obj) => {
@@ -358,7 +361,7 @@ impl Detection {
                         continue;
                     }
 
-                    Detection::_collect_fields(keys, key, value, output);
+                    Detection::_collect_recordinfo(keys, key, value, output);
                 }
                 if !parent_key.is_empty() {
                     keys.pop();
@@ -369,8 +372,12 @@ impl Detection {
                 // 一番子の要素の値しか収集しない
                 let strval = utils::value_to_string(value);
                 if let Some(strval) = strval {
-                    let key = keys.join(".");
+                    let mut key = keys.join(".");
+                    key.push('.');
+                    key.push_str(parent_key);
                     let values = output.entry(key).or_default();
+                    let strval: Vec<&str> = strval.trim().split_whitespace().collect();
+                    let strval = strval.join(" ");
                     values.push(strval);
                 }
             }

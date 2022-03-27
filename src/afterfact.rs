@@ -21,9 +21,10 @@ pub struct CsvFormat<'a> {
     computer: &'a str,
     event_i_d: &'a str,
     level: &'a str,
+    mitre_attack: &'a str,
     rule_title: &'a str,
     details: &'a str,
-    mitre_attack: &'a str,
+    record_information: &'a str,
     rule_path: &'a str,
     file_path: &'a str,
 }
@@ -162,6 +163,7 @@ fn emit_csv<W: std::io::Write>(
                     event_i_d: &detect_info.eventid,
                     rule_title: &detect_info.alert,
                     details: &detect_info.detail,
+                    record_information: &detect_info.record_information,
                     mitre_attack: &detect_info.tag_info,
                 })?;
             }
