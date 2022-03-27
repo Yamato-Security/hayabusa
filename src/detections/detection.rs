@@ -31,6 +31,7 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
     pub key_2_value: hashbrown::HashMap<String, String>,
+    pub record_information: String,
 }
 
 impl EvtxRecordInfo {
@@ -213,7 +214,7 @@ impl Detection {
                 alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
                 detail: String::default(),
                 tag_info: tag_info.join(" : "),
-                record_information: Detection::create_recordinfos(record_info),
+                record_information: record_info.record_information.to_string(),
             },
         );
     }
@@ -308,80 +309,6 @@ impl Detection {
             total - ignore_count - parseerror_count
         );
         println!();
-    }
-
-    /**
-     * CSVのrecord infoカラムに出力する文字列を作る
-     */
-    pub fn create_recordinfos(rec: &EvtxRecordInfo) -> String {
-        let mut output = HashMap::new();
-        Detection::_collect_recordinfo(&mut vec![], "", &rec.record, &mut output);
-
-        let mut keys: Vec<&String> = output.keys().into_iter().collect();
-        keys.sort();
-
-        let summary: Vec<String> = keys
-            .into_iter()
-            .map(|key| {
-                let value = output.get(key).unwrap();
-                let dispkey = key.split('.').last().unwrap_or(key);
-                return format!("{}: {}", dispkey, value.join(" "));
-            })
-            .collect();
-        summary.join(" | ")
-    }
-
-    /**
-     * CSVのfieldsカラムに出力する要素を全て収集する
-     */
-    fn _collect_recordinfo<'a>(
-        keys: &mut Vec<&'a str>,
-        parent_key: &'a str,
-        value: &'a Value,
-        output: &mut HashMap<String, Vec<String>>,
-    ) {
-        match value {
-            Value::Array(ary) => {
-                for sub_value in ary {
-                    Detection::_collect_recordinfo(keys, parent_key, sub_value, output);
-                }
-            }
-            Value::Object(obj) => {
-                // lifetimeの関係でちょっと変な実装になっている
-                if !parent_key.is_empty() {
-                    keys.push(parent_key);
-                }
-                for (key, value) in obj {
-                    // 属性は出力しない
-                    if key.ends_with("_attributes") {
-                        continue;
-                    }
-                    // Event.Systemは出力しない
-                    if key.eq("System") && keys.get(0).unwrap_or(&"").eq(&"Event") {
-                        continue;
-                    }
-
-                    Detection::_collect_recordinfo(keys, key, value, output);
-                }
-                if !parent_key.is_empty() {
-                    keys.pop();
-                }
-            }
-            Value::Null => (),
-            _ => {
-                // 一番子の要素の値しか収集しない
-                let strval = utils::value_to_string(value);
-                if let Some(strval) = strval {
-                    let mut key = keys.join(".");
-                    key.push('.');
-                    key.push_str(parent_key);
-                    let values = output.entry(key).or_default();
-                    let strval: Vec<&str> = strval.trim().split_whitespace().collect();
-                    let strval = strval.join(" ");
-                    values.push(strval);
-                }
-            }
-        }
     }
 }
 

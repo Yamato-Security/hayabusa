@@ -4,6 +4,7 @@ extern crate regex;
 
 use crate::detections::configs;
 
+use hashbrown::HashMap;
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
 
@@ -54,7 +55,7 @@ pub fn value_to_string(value: &Value) -> Option<String> {
         Value::Null => Option::None,
         Value::Bool(b) => Option::Some(b.to_string()),
         Value::Number(n) => Option::Some(n.to_string()),
-        Value::String(s) => Option::Some(s.to_string()),
+        Value::String(s) => Option::Some(s.trim().to_string()),
         Value::Array(_) => Option::None,
         Value::Object(_) => Option::None,
     }
@@ -199,15 +200,6 @@ pub fn create_tokio_runtime() -> Runtime {
 
 // EvtxRecordInfoを作成します。
 pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecordInfo {
-    // EvtxRecordInfoを作る
-    let data_str = data.to_string();
-    let mut rec = EvtxRecordInfo {
-        evtx_filepath: path,
-        record: data,
-        data_string: data_str,
-        key_2_value: hashbrown::HashMap::new(),
-    };
-
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -215,8 +207,9 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
     // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
     // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。
+    let mut key_2_value=hashbrown::HashMap::new();
     for key in keys {
-        let val = get_event_value(key, &rec.record);
+        let val = get_event_value(key, &data);
         if val.is_none() {
             continue;
         }
@@ -226,10 +219,93 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
             continue;
         }
 
-        rec.key_2_value.insert(key.trim().to_string(), val.unwrap());
+        key_2_value.insert(key.to_string(), val.unwrap());
     }
 
-    rec
+    // EvtxRecordInfoを作る
+    let data_str = data.to_string();
+    let rec_info = create_recordinfos(&data);
+    EvtxRecordInfo {
+        evtx_filepath: path,
+        record: data,
+        data_string: data_str,
+        key_2_value: hashbrown::HashMap::new(),
+        record_information: rec_info,
+    }
+}
+
+/**
+ * CSVのrecord infoカラムに出力する文字列を作る
+ */
+fn create_recordinfos(record: &Value) -> String {
+    let mut output = HashMap::new();
+    _collect_recordinfo(&mut vec![], "", &record, &mut output);
+
+    let mut keys: Vec<&String> = output.keys().into_iter().collect();
+    keys.sort();
+
+    let summary: Vec<String> = keys
+        .into_iter()
+        .map(|key| {
+            let value = output.get(key).unwrap();
+            let dispkey = key.split('.').last().unwrap_or(key);
+            return format!("{}: {}", dispkey, value.join(" "));
+        })
+        .collect();
+    summary.join(" | ")
+}
+
+/**
+ * CSVのfieldsカラムに出力する要素を全て収集する
+ */
+fn _collect_recordinfo<'a>(
+    keys: &mut Vec<&'a str>,
+    parent_key: &'a str,
+    value: &'a Value,
+    output: &mut HashMap<String, Vec<String>>,
+) {
+    match value {
+        Value::Array(ary) => {
+            for sub_value in ary {
+                _collect_recordinfo(keys, parent_key, sub_value, output);
+            }
+        }
+        Value::Object(obj) => {
+            // lifetimeの関係でちょっと変な実装になっている
+            if !parent_key.is_empty() {
+                keys.push(parent_key);
+            }
+            for (key, value) in obj {
+                // 属性は出力しない
+                if key.ends_with("_attributes") {
+                    continue;
+                }
+                // Event.Systemは出力しない
+                if key.eq("System") && keys.get(0).unwrap_or(&"").eq(&"Event") {
+                    continue;
+                }
+
+                _collect_recordinfo(keys, key, value, output);
+            }
+            if !parent_key.is_empty() {
+                keys.pop();
+            }
+        }
+        Value::Null => (),
+        _ => {
+            // 一番子の要素の値しか収集しない
+            let strval = value_to_string(value);
+            if let Some(strval) = strval {
+                let mut key = keys.join(".");
+                key.push('.');
+                key.push_str(parent_key);
+                let values = output.entry(key).or_default();
+                let strval: Vec<&str> = strval.trim().split_whitespace().collect();
+                let strval = strval.join(" ");
+                values.push(strval);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
