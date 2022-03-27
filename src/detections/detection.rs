@@ -20,6 +20,8 @@ use std::io::BufWriter;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
+use super::utils;
+
 const DIRPATH_RULES: &str = "rules";
 
 // イベントファイルの1レコード分の情報を保持する構造体
@@ -305,6 +307,75 @@ impl Detection {
         );
         println!();
     }
+
+    /**
+     * CSVのfieldsカラムに出力する文字列を作る
+     */
+    pub fn create_fields_value(rec: &EvtxRecordInfo) -> String {
+        let mut output = HashMap::new();
+        Detection::_collect_fields(&mut vec![], "", &rec.record, &mut output);
+
+        let mut keys: Vec<&String> = output.keys().into_iter().collect();
+        keys.sort();
+
+        let summary: Vec<String> = keys
+            .into_iter()
+            .map(|key| {
+                let value = output.get(key).unwrap();
+                return format!("[{}]{}", key, value.join(" "));
+            })
+            .collect();
+        summary.join(" ")
+    }
+
+    /**
+     * CSVのfieldsカラムに出力する要素を全て収集する
+     */
+    fn _collect_fields<'a>(
+        keys: &mut Vec<&'a str>,
+        parent_key: &'a str,
+        value: &'a Value,
+        output: &mut HashMap<String, Vec<String>>,
+    ) {
+        match value {
+            Value::Array(ary) => {
+                for sub_value in ary {
+                    Detection::_collect_fields(keys, parent_key, sub_value, output);
+                }
+            }
+            Value::Object(obj) => {
+                // lifetimeの関係でちょっと変な実装になっている
+                if !parent_key.is_empty() {
+                    keys.push(parent_key);
+                }
+                for (key, value) in obj {
+                    // 属性は出力しない
+                    if key.ends_with("_attributes") {
+                        continue;
+                    }
+                    // Event.Systemは出力しない
+                    if key.eq("System") && keys.get(0).unwrap_or(&"").eq(&"Event") {
+                        continue;
+                    }
+
+                    Detection::_collect_fields(keys, key, value, output);
+                }
+                if !parent_key.is_empty() {
+                    keys.pop();
+                }
+            }
+            Value::Null => (),
+            _ => {
+                // 一番子の要素の値しか収集しない
+                let strval = utils::value_to_string(value);
+                if let Some(strval) = strval {
+                    let key = keys.join(".");
+                    let values = output.entry(key).or_default();
+                    values.push(strval);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -499,4 +570,7 @@ mod tests {
             expected_output
         );
     }
+
+    #[test]
+    fn test_create_fields_value() {}
 }
