@@ -241,11 +241,14 @@ fn create_recordinfos(record: &Value) -> String {
     let mut output = vec![];
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
-    output.sort_by(|(left,_),(right,_)| left.cmp(right) );
+    output.sort_by(|(left, _), (right, _)| left.cmp(right));
 
-    let summary: Vec<String> = output.iter().map(|(key,value)|{
-        return format!("{}: {}", key, value);
-    }).collect();
+    let summary: Vec<String> = output
+        .iter()
+        .map(|(key, value)| {
+            return format!("{}: {}", key, value);
+        })
+        .collect();
     summary.join(" | ")
 }
 
@@ -256,7 +259,7 @@ fn _collect_recordinfo<'a>(
     keys: &mut Vec<&'a str>,
     parent_key: &'a str,
     value: &'a Value,
-    output: &mut Vec<(String,String)>,
+    output: &mut Vec<(String, String)>,
 ) {
     match value {
         Value::Array(ary) => {
@@ -292,7 +295,7 @@ fn _collect_recordinfo<'a>(
             if let Some(strval) = strval {
                 let strval: Vec<&str> = strval.trim().split_whitespace().collect();
                 let strval = strval.join(" ");
-                output.push((parent_key.to_string(),strval));
+                output.push((parent_key.to_string(), strval));
             }
         }
     }
@@ -316,13 +319,12 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "AccessMask: %%1369 | Process: lsass.exe | User: u1".to_string();
-                assert_eq!(ret,expected);
+                assert_eq!(ret, expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
@@ -351,13 +353,12 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        
         match serde_json::from_str(record_json_str) {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
                 let expected = "Binary: hogehoge | Data: Data1 | Data: DataData2 | Data:  | Data: DataDataData3".to_string();
-                assert_eq!(ret,expected);
+                assert_eq!(ret, expected);
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
