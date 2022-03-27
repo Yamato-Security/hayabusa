@@ -143,54 +143,12 @@ fn emit_csv<W: std::io::Write>(
                     let output_color =
                         _get_output_color(color_map.as_ref().unwrap(), &detect_info.level);
                     wtr.serialize(DisplayFormat {
-                        timestamp: &format!(
-                            "{} ",
-                            &format_time(time).truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        level: &format!(
-                            " {} ",
-                            &detect_info.level.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        computer: &format!(
-                            " {} ",
-                            &detect_info.computername.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        event_i_d: &format!(
-                            " {} ",
-                            &detect_info.eventid.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        rule_title: &format!(
-                            " {} ",
-                            &detect_info.alert.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        details: &format!(
-                            " {}",
-                            &detect_info.detail.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
+                        timestamp: &_format_color(&format_time(time), &output_color),
+                        level: &_format_color(&detect_info.level, &output_color),
+                        computer: &_format_color(&detect_info.computername, &output_color),
+                        event_i_d: &_format_color(&detect_info.eventid, &output_color),
+                        rule_title: &_format_color(&detect_info.alert, &output_color),
+                        details: &_format_color(&detect_info.detail, &output_color),
                     })?;
                 } else {
                     wtr.serialize(DisplayFormat {
@@ -243,6 +201,13 @@ fn emit_csv<W: std::io::Write>(
         &color_map,
     );
     Ok(())
+}
+
+fn _format_color(word: &str, output_color: &Vec<u8>) -> String {
+    format!(
+        " {}",
+        word.truecolor(output_color[0], output_color[1], output_color[2])
+    )
 }
 
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
