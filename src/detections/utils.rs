@@ -4,7 +4,6 @@ extern crate regex;
 
 use crate::detections::configs;
 
-use hashbrown::HashMap;
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
 
@@ -16,6 +15,7 @@ use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
+use std::vec;
 
 use super::detection::EvtxRecordInfo;
 
@@ -238,20 +238,14 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
  * CSVのrecord infoカラムに出力する文字列を作る
  */
 fn create_recordinfos(record: &Value) -> String {
-    let mut output = HashMap::new();
+    let mut output = vec![];
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
-    let mut keys: Vec<&String> = output.keys().into_iter().collect();
-    keys.sort();
+    output.sort_by(|(left,_),(right,_)| left.cmp(right) );
 
-    let summary: Vec<String> = keys
-        .into_iter()
-        .map(|key| {
-            let value = output.get(key).unwrap();
-            let dispkey = key.split('.').last().unwrap_or(key);
-            return format!("{}: {}", dispkey, value.join(" "));
-        })
-        .collect();
+    let summary: Vec<String> = output.iter().map(|(key,value)|{
+        return format!("{}: {}", key, value);
+    }).collect();
     summary.join(" | ")
 }
 
@@ -262,7 +256,7 @@ fn _collect_recordinfo<'a>(
     keys: &mut Vec<&'a str>,
     parent_key: &'a str,
     value: &'a Value,
-    output: &mut HashMap<String, Vec<String>>,
+    output: &mut Vec<(String,String)>,
 ) {
     match value {
         Value::Array(ary) => {
@@ -296,13 +290,9 @@ fn _collect_recordinfo<'a>(
             // 一番子の要素の値しか収集しない
             let strval = value_to_string(value);
             if let Some(strval) = strval {
-                let mut key = keys.join(".");
-                key.push('.');
-                key.push_str(parent_key);
-                let values = output.entry(key).or_default();
                 let strval: Vec<&str> = strval.trim().split_whitespace().collect();
                 let strval = strval.join(" ");
-                values.push(strval);
+                output.push((parent_key.to_string(),strval));
             }
         }
     }
@@ -313,6 +303,67 @@ mod tests {
     use crate::detections::utils;
     use regex::Regex;
     use serde_json::Value;
+
+    #[test]
+    fn test_create_recordinfos() {
+        let record_json_str = r#"
+        {
+            "Event": {
+                "System": {"EventID": 4103, "Channel": "PowerShell", "Computer":"DESKTOP-ICHIICHI"},
+                "UserData": {"User": "u1", "AccessMask": "%%1369", "Process":"lsass.exe"},
+                "UserData_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let ret = utils::create_recordinfos(&record);
+                // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
+                let expected = "AccessMask: %%1369 | Process: lsass.exe | User: u1".to_string();
+                assert_eq!(ret,expected);
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_create_recordinfos2() {
+        // EventDataの特殊ケース
+        let record_json_str = r#"
+        {
+            "Event": {
+                "System": {"EventID": 4103, "Channel": "PowerShell", "Computer":"DESKTOP-ICHIICHI"},
+                "EventData": {
+                    "Binary": "hogehoge",
+                    "Data":[
+                        "Data1",
+                        "DataData2",
+                        "",
+                        "DataDataData3"
+                    ]
+                },
+                "EventData_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let ret = utils::create_recordinfos(&record);
+                // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
+                let expected = "Binary: hogehoge | Data: Data1 | Data: DataData2 | Data:  | Data: DataDataData3".to_string();
+                assert_eq!(ret,expected);
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
 
     #[test]
     fn test_check_regex() {
