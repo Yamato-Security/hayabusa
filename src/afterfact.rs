@@ -139,27 +139,18 @@ fn emit_csv<W: std::io::Write>(
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
-                if color_map.is_some() {
-                    let output_color =
-                        _get_output_color(color_map.as_ref().unwrap(), &detect_info.level);
-                    wtr.serialize(DisplayFormat {
-                        timestamp: &_format_color(&format_time(time), &output_color),
-                        level: &_format_color(&detect_info.level, &output_color),
-                        computer: &_format_color(&detect_info.computername, &output_color),
-                        event_i_d: &_format_color(&detect_info.eventid, &output_color),
-                        rule_title: &_format_color(&detect_info.alert, &output_color),
-                        details: &_format_color(&detect_info.detail, &output_color),
-                    })?;
-                } else {
-                    wtr.serialize(DisplayFormat {
-                        timestamp: &format!("{} ", &format_time(time)),
-                        level: &format!(" {} ", &detect_info.level),
-                        computer: &format!(" {} ", &detect_info.computername),
-                        event_i_d: &format!(" {} ", &detect_info.eventid),
-                        rule_title: &format!(" {} ", &detect_info.alert),
-                        details: &format!(" {}", &detect_info.detail),
-                    })?;
-                }
+                let colors = color_map
+                    .as_ref()
+                    .map(|cl_mp| _get_output_color(cl_mp, &detect_info.level));
+                let colors = colors.as_ref();
+                wtr.serialize(DisplayFormat {
+                    timestamp: &_format_color(Col::First, &format_time(time), colors),
+                    level: &_format_color(Col::Other, &detect_info.level, colors),
+                    computer: &_format_color(Col::Other, &detect_info.computername, colors),
+                    event_i_d: &_format_color(Col::Other, &detect_info.eventid, colors),
+                    rule_title: &_format_color(Col::Other, &detect_info.alert, colors),
+                    details: &_format_color(Col::Last, &detect_info.detail, colors),
+                })?;
             } else {
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {
@@ -203,11 +194,27 @@ fn emit_csv<W: std::io::Write>(
     Ok(())
 }
 
-fn _format_color(word: &str, output_color: &Vec<u8>) -> String {
-    format!(
-        " {}",
-        word.truecolor(output_color[0], output_color[1], output_color[2])
-    )
+enum Col {
+    First, // 先頭
+    Last,  // 最後
+    Other, // それ以外
+}
+
+fn _format_color(column: Col, word: &str, output_color: Option<&Vec<u8>>) -> String {
+    let fm = |colval: &str| {
+        return match column {
+            Col::First => format!("{} ", colval),
+            Col::Last => format!(" {}", colval),
+            Col::Other => format!(" {} ", colval),
+        };
+    };
+
+    if let Some(color) = output_color {
+        let colval = format!("{}", word.truecolor(color[0], color[1], color[2]));
+        fm(&colval)
+    } else {
+        fm(word)
+    }
 }
 
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
