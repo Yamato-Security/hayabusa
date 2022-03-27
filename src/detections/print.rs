@@ -117,7 +117,8 @@ impl Message {
             if is_exist_event_key {
                 let hash_value = get_serde_number_to_string(tmp_event_record);
                 if let Some(hash_value) = hash_value {
-                    let hash_value: Vec<&str> = hash_value.trim().split_whitespace().collect();
+                    // UnicodeのWhitespace characterをそのままCSVに出力すると見難いので、スペースに変換する。なお、先頭と最後のWhitespace characterは単に削除される。
+                    let hash_value: Vec<&str> = hash_value.split_whitespace().collect();
                     let hash_value = hash_value.join(" ");
                     hash_map.insert(full_target_str.to_string(), hash_value);
                 }
