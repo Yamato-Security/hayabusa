@@ -325,6 +325,7 @@ mod tests {
         let test_eventid = "1111";
         let output = "pokepoke";
         let test_attack = "execution/txxxx.yyy";
+        let test_recinfo = "record_infoinfo11";
         {
             let mut messages = print::MESSAGES.lock().unwrap();
             messages.clear();
@@ -355,6 +356,7 @@ mod tests {
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
+                    record_information: test_recinfo.to_string(),
                 },
             );
         }
@@ -363,7 +365,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,EventID,Level,RuleTitle,Details,MitreAttack,RulePath,FilePath\n"
+            "Timestamp,Computer,EventID,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -376,11 +378,13 @@ mod tests {
                 + ","
                 + test_level
                 + ","
+                + test_attack
+                + ","
                 + test_title
                 + ","
                 + output
                 + ","
-                + test_attack
+                + test_recinfo
                 + ","
                 + testrulepath
                 + ","
@@ -437,6 +441,7 @@ mod tests {
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
+                    record_information: String::default(),
                 },
             );
             messages.debug();
