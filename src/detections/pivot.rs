@@ -90,6 +90,7 @@ pub fn insert_pivot_keyword(event_record: &Value) {
 mod tests {
     use crate::detections::configs::load_pivot_keywords;
     use crate::detections::pivot::PIVOT_KEYWORD;
+    use crate::detections::pivot::insert_pivot_keyword;
     use serde_json;
 
     //PIVOT_KEYWORDはグローバルなので、他の関数の影響も考慮する必要がある。
@@ -107,17 +108,14 @@ mod tests {
                 }
             }
         }"#;
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
         assert!(!PIVOT_KEYWORD
             .write()
             .unwrap()
-            .keywords
             .get_mut("Ip Addresses")
             .unwrap()
+            .keywords
             .contains("127.0.0.1"));
     }
 
@@ -135,17 +133,14 @@ mod tests {
                 }
             }
         }"#;
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
         assert!(PIVOT_KEYWORD
             .write()
             .unwrap()
-            .keywords
             .get_mut("Ip Addresses")
             .unwrap()
+            .keywords
             .contains("10.0.0.1"));
     }
 
@@ -163,17 +158,14 @@ mod tests {
                 }
             }
         }"#;
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
         assert!(!PIVOT_KEYWORD
             .write()
             .unwrap()
-            .keywords
             .get_mut("Ip Addresses")
             .unwrap()
+            .keywords
             .contains("-"));
     }
 
@@ -191,17 +183,14 @@ mod tests {
                 }
             }
         }"#;
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
         assert!(!PIVOT_KEYWORD
             .write()
             .unwrap()
-            .keywords
             .get_mut("Ip Addresses")
             .unwrap()
+            .keywords
             .contains("::1"));
     }
 
@@ -219,17 +208,14 @@ mod tests {
                 }
             }
         }"#;
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
         assert!(!PIVOT_KEYWORD
             .write()
             .unwrap()
-            .keywords
             .get_mut("Ip Addresses")
             .unwrap()
+            .keywords
             .contains("10.0.0.2"));
     }
 
@@ -247,17 +233,14 @@ mod tests {
                 }
             }
         }"#;
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
         assert!(PIVOT_KEYWORD
             .write()
             .unwrap()
-            .keywords
             .get_mut("Ip Addresses")
             .unwrap()
+            .keywords
             .contains("10.0.0.1"));
     }
 
@@ -275,17 +258,14 @@ mod tests {
                 }
             }
         }"#;
-        PIVOT_KEYWORD
-            .write()
-            .unwrap()
-            .insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
 
         assert!(!PIVOT_KEYWORD
             .write()
             .unwrap()
-            .keywords
             .get_mut("Ip Addresses")
             .unwrap()
+            .keywords
             .contains("10.0.0.3"));
     }
 }
