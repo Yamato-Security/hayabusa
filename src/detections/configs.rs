@@ -330,7 +330,6 @@ pub fn load_pivot_keywords(path: &str) {
             .unwrap()
             .fields
             .insert(map[1].to_string());
-        //.insert(&mut PivotKeyword::new());
     });
 }
 
