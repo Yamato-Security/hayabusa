@@ -255,7 +255,7 @@ impl App {
                     f.write_all(output.as_bytes()).unwrap();
                 }
             } else {
-                print!("\n {}", output);
+                print!("{}", output);
             }
         }
     }
