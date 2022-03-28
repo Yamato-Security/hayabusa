@@ -1,6 +1,8 @@
-key,field1,field2,field3
-Users,SubjectUserName,TargetUserName,User
-Logon IDs,SubjectLogonId,TargetLogonId
-Workstation Names,WorkstationName
-Ip Addresses,IpAddress
-Processes,Image
+Users.SubjectUserName
+Users.TargetUserName
+Users.User
+Logon IDs.SubjectLogonId
+Logon IDs.TargetLogonId
+Workstation Names.WorkstationName
+Ip Addresses.IpAddress
+Processes.Image
