@@ -2,8 +2,6 @@ use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::QUIET_ERRORS_FLAG;
-use crate::detections::utils;
-use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use regex::Regex;
