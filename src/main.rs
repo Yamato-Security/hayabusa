@@ -251,7 +251,7 @@ impl App {
                         output += &format!("{}\n", i).to_string();
                     }
 
-                    output += &"\n".to_string();
+                    output += "\n";
                     f.write_all(output.as_bytes()).unwrap();
                 }
             } else {
