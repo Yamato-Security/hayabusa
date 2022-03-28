@@ -75,7 +75,7 @@ pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     )
 }
 
-pub fn read_csv(filename: &str, is_flexible: bool) -> Result<Vec<Vec<String>>, String> {
+pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
     let f = File::open(filename);
     if f.is_err() {
         return Result::Err(format!("Cannot open file. [file:{}]", filename));
@@ -87,9 +87,7 @@ pub fn read_csv(filename: &str, is_flexible: bool) -> Result<Vec<Vec<String>>, S
         return Result::Err(e.to_string());
     }
 
-    let mut rdr = csv::ReaderBuilder::new()
-        .flexible(is_flexible)
-        .from_reader(contents.as_bytes());
+    let mut rdr = csv::ReaderBuilder::new().from_reader(contents.as_bytes());
     rdr.records().for_each(|r| {
         if r.is_err() {
             return;

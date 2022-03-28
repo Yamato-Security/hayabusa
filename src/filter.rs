@@ -2,6 +2,8 @@ use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::QUIET_ERRORS_FLAG;
+use crate::detections::utils;
+use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -12,6 +14,7 @@ use std::io::{BufRead, BufReader};
 lazy_static! {
     static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+    pub static ref FILTER_REGEX: HashMap<String, DataFilterRule> = load_record_filters();
 }
 
 #[derive(Debug)]
@@ -22,7 +25,7 @@ pub struct DataFilterRule {
 
 fn load_record_filters() -> HashMap<String, DataFilterRule> {
     let file_path = "./rules/config/regex/record_data_filter.txt";
-    let read_result = utils::read_csv(file_path, false);
+    let read_result = utils::read_csv(file_path);
     let mut ret = HashMap::new();
     if read_result.is_err() {
         if configs::CONFIG.read().unwrap().args.is_present("verbose") {
@@ -56,9 +59,10 @@ fn load_record_filters() -> HashMap<String, DataFilterRule> {
         let regex_rule: Option<Regex> = match Regex::new(regex_str) {
             Ok(regex) => Some(regex),
             Err(_err) => {
-                let errmsg = "failed to read regex filter in record_data_filter.txt";
+                let errmsg = "failed to read regex filter in record_data_filter.txt".to_string();
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), errmsg).ok();
+                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)
+                        .ok();
                 }
                 if !*QUIET_ERRORS_FLAG {
                     ERROR_LOG_STACK
@@ -123,7 +127,7 @@ impl RuleExclude {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[WARN] {} does not exist", filename));
+                    .push(format!("{} does not exist", filename));
             }
             return;
         }

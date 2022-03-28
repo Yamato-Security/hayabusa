@@ -26,11 +26,10 @@ impl Default for PivotKeyword {
 
 impl PivotKeyword {
     pub fn new() -> PivotKeyword {
-        let pivot_keyword = PivotKeyword {
+        PivotKeyword {
             keywords: HashSet::new(),
             fields: HashSet::new(),
-        };
-        return pivot_keyword;
+        }
     }
 }
 
@@ -89,8 +88,8 @@ pub fn insert_pivot_keyword(event_record: &Value) {
 #[cfg(test)]
 mod tests {
     use crate::detections::configs::load_pivot_keywords;
-    use crate::detections::pivot::PIVOT_KEYWORD;
     use crate::detections::pivot::insert_pivot_keyword;
+    use crate::detections::pivot::PIVOT_KEYWORD;
     use serde_json;
 
     //PIVOT_KEYWORDはグローバルなので、他の関数の影響も考慮する必要がある。

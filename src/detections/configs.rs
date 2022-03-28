@@ -265,7 +265,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
-    let read_result = utils::read_csv(path, false);
+    let read_result = utils::read_csv(path);
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
@@ -384,7 +384,7 @@ impl EventInfoConfig {
 fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut infodata = EventInfo::new();
     let mut config = EventInfoConfig::new();
-    let read_result = utils::read_csv(path, false);
+    let read_result = utils::read_csv(path);
     if read_result.is_err() {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),

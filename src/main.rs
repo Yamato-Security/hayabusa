@@ -217,18 +217,18 @@ impl App {
             for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
                 output += &format!("{}: ", key).to_string();
 
-                output += &"( ".to_string();
+                output += "( ";
                 for i in pivot_keyword.fields.iter() {
                     output += &format!("%{}% ", i).to_string();
                 }
-                output += &"):".to_string();
-                output += &"\n".to_string();
+                output += "):";
+                output += "\n";
 
                 for i in pivot_keyword.keywords.iter() {
                     output += &format!("{}\n", i).to_string();
                 }
 
-                output += &"\n".to_string();
+                output += "\n";
             }
 
             //出力
@@ -240,12 +240,12 @@ impl App {
                     let mut output = "".to_string();
                     output += &format!("{}: ", key).to_string();
 
-                    output += &"( ".to_string();
+                    output += "( ";
                     for i in pivot_keyword.fields.iter() {
                         output += &format!("%{}% ", i).to_string();
                     }
-                    output += &"):".to_string();
-                    output += &"\n".to_string();
+                    output += "):";
+                    output += "\n";
 
                     for i in pivot_keyword.keywords.iter() {
                         output += &format!("{}\n", i).to_string();
