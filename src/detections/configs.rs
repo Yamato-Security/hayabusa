@@ -298,8 +298,6 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
 #[derive(Debug, Clone)]
 pub struct EventInfo {
     pub evttitle: String,
-    //    pub detectflg: String,
-    //    pub comment: String,
 }
 
 impl Default for EventInfo {
@@ -311,13 +309,7 @@ impl Default for EventInfo {
 impl EventInfo {
     pub fn new() -> EventInfo {
         let evttitle = "Unknown".to_string();
-        //        let detectflg = "".to_string();
-        //        let comment = "".to_string();
-        EventInfo {
-            evttitle,
-            //            detectflg,
-            //            comment,
-        }
+        EventInfo { evttitle }
     }
 }
 #[derive(Debug, Clone)]
@@ -357,7 +349,6 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 
     // statistics_event_infoが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
-        //        if line.len() != 4 {
         if line.len() != 2 {
             return;
         }
@@ -365,12 +356,8 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         let empty = &"".to_string();
         let eventcode = line.get(0).unwrap_or(empty);
         let event_title = line.get(1).unwrap_or(empty);
-        //        let detect_flg = line.get(2).unwrap_or(empty);
-        //        let comment = line.get(3).unwrap_or(empty);
         infodata = EventInfo {
             evttitle: event_title.to_string(),
-            //            detectflg: detect_flg.to_string(),
-            //            comment: comment.to_string(),
         };
         config
             .eventinfo
