@@ -106,19 +106,21 @@ pub fn get_detection_keys(node: &RuleNode) -> Vec<String> {
     for key in detection.name_to_selection.keys() {
         let selection = &detection.name_to_selection[key];
         let desc = selection.get_descendants();
-        let keys = desc.iter().filter_map(|node| {
+        desc.iter().for_each(|node| {
             if !node.is::<LeafSelectionNode>() {
-                return Option::None;
+                return;
             }
 
             let node = node.downcast_ref::<LeafSelectionNode>().unwrap();
-            let key = node.get_key();
-            if key.is_empty() {
-                return Option::None;
-            }
-            Option::Some(key.to_string())
+            let keys = node.get_keys();
+            let keys = keys.iter().filter_map(|key| {
+                if key.is_empty() {
+                    return None;
+                }
+                Some(key.to_string())
+            });
+            ret.extend(keys);
         });
-        ret.extend(keys);
     }
 
     ret
