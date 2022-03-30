@@ -20,13 +20,16 @@ lazy_static! {
         levelmap.insert("CRITICAL".to_owned(), 5);
         levelmap
     };
-    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig =
-        load_eventkey_alias("./rules/config/eventkey_alias.txt");
+    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(&format!(
+        "{}/eventkey_alias.txt",
+        CONFIG.read().unwrap().folder_path
+    ));
 }
 
 #[derive(Clone)]
 pub struct ConfigReader {
     pub args: ArgMatches<'static>,
+    pub folder_path: String,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
@@ -39,8 +42,11 @@ impl Default for ConfigReader {
 
 impl ConfigReader {
     pub fn new() -> Self {
+        let arg = build_app();
+        let folder_path_str = arg.value_of("config").unwrap_or("rules/config").to_string();
         ConfigReader {
-            args: build_app(),
+            args: arg,
+            folder_path: folder_path_str,
             event_timeline_config: load_eventcode_info("config/statistics_event_info.txt"),
             target_eventids: load_target_ids("config/target_eventids.txt"),
         }
@@ -65,7 +71,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
     -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
-    -o --output=[OUTPUT_FILE] 'Save the output to a file. (Example: output.csv, pivot_keywords_list.txt)'
+    -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
+    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'

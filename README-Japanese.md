@@ -294,6 +294,7 @@ USAGE:
     -f --filepath=[FILEPATH] '1つの.evtxファイルのパス。'
     -r --rules=[RULEFILE/RULEDIRECTORY] 'ルールファイルまたはルールファイルを持つディレクトリ。(デフォルト: ./rules)'
     -c --color 'カラーで出力する。 (ターミナルはTrue Colorに対応する必要がある。)'
+    -C --config=[RULECONFIGDIRECTORY] 'ルールフォルダのコンフィグディレクトリ(デフォルト: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
     -v --verbose '詳細な情報を出力する。'
     -D --enable-deprecated-rules 'Deprecatedルールを有効にする。'
