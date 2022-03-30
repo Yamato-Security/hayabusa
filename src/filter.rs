@@ -36,10 +36,16 @@ pub fn exclude_ids() -> RuleExclude {
         .args
         .is_present("enable-noisy-rules")
     {
-        exclude_ids.insert_ids("./rules/config/noisy_rules.txt");
+        exclude_ids.insert_ids(&format!(
+            "{}/noisy_rules.txt",
+            configs::CONFIG.read().unwrap().folder_path
+        ));
     };
 
-    exclude_ids.insert_ids("./rules/config/exclude_rules.txt");
+    exclude_ids.insert_ids(&format!(
+        "{}/exclude_rules.txt",
+        configs::CONFIG.read().unwrap().folder_path
+    ));
 
     exclude_ids
 }
