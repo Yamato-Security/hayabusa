@@ -63,6 +63,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
     -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
+    -C --config=[CONFIG ROOT FOLDER] 'Config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
