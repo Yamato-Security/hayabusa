@@ -1,5 +1,23 @@
 # 変更点
 
+##v1.2.0 [2022/04/??]
+**新機能:**
+- Specify config directory (`-C / --config`): Can easily perform live analysis on Windows machines without specifying the Windows event log directory. (@hitenkoku) 
+- Added the `|equalsfield` aggregator in order to write rules that compare if two fields are equal or not. (@hach1yon)
+- Pivot keyword list generator feature (`-p / --pivot-keywords-list): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
+
+**改善:**
+- Updated detection rules and documentation. (@YamatoSecurity)
+- Mac and Linux binaries now statically compile the openssl libraries. (@YamatoSecurity)
+- Performance and accuracy improvement for fields with tabs, etc... in them. (@hach1yon)
+- Fields that are not defined in eventkey_alias.txt will automatically be searched in Event.EventData. (@kazuminn)
+- When updating rules, the names of new rules as well as the count will be displayed. (@hitenkoku)
+- Removed all clippy warnings from the source code. (@hitenkoku and @hac1yon)
+- Updated the event ID and title config file (`timeline_event_info.txt`) and changed name to `statistics_event_info.txt`. (@YamatoSecurity and @garigariganzy)
+
+**バグ修正:**
+- `.yml` files in the `.git` folder would cause parse errors so they are not ignored. (@hitenkoku)
+
 ##v1.1.0 [2022/03/03]
 **新機能:**
 - `-r / --rules`オプションで一つのルール指定が可能。(ルールをテストする際に便利！) (@kazuminn)
