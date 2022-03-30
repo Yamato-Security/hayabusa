@@ -10,7 +10,7 @@
 - Updated detection rules and documentation. (@YamatoSecurity)
 - Mac and Linux binaries now statically compile the openssl libraries. (@YamatoSecurity)
 - Performance and accuracy improvement for fields with tabs, etc... in them. (@hach1yon)
-- Fields that are not defined in eventkey_alias.txt will automatically be searched in Event.EventData. (@kazuminn)
+- Fields that are not defined in eventkey_alias.txt will automatically be searched in Event.EventData. (@kazuminn and @hitenkoku)
 - When updating rules, the names of new rules as well as the count will be displayed. (@hitenkoku)
 - Removed all clippy warnings from the source code. (@hitenkoku and @hac1yon)
 - Updated the event ID and title config file (`timeline_event_info.txt`) and changed name to `statistics_event_info.txt`. (@YamatoSecurity and @garigariganzy)
