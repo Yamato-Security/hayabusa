@@ -154,6 +154,11 @@ impl ParseYaml {
                     return io::Result::Ok(ret);
                 }
 
+                // ignore if yml file in .git folder.
+                if path.to_str().unwrap().contains("/.git/") {
+                    return io::Result::Ok(ret);
+                }
+
                 // 個別のファイルの読み込みは即終了としない。
                 let read_content = self.read_file(path);
                 if read_content.is_err() {
