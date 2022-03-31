@@ -4,7 +4,7 @@
 **New Features:**
 - Specify config directory (`-C / --config`): Can easily perform live analysis on Windows machines without specifying the Windows event log directory. (@hitenkoku) 
 - Added the `|equalsfield` aggregator in order to write rules that compare if two fields are equal or not. (@hach1yon)
-- Pivot keyword list generator feature (`-p / --pivot-keywords-list): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
+- Pivot keyword list generator feature (`-p / --pivot-keywords-list`): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
 
 **Enhancements:**
 - Updated detection rules and documentation. (@YamatoSecurity)
