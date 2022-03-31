@@ -217,26 +217,7 @@ impl App {
         }
 
         if *PIVOT_KEYWORD_LIST_FLAG {
-            //出力する文字列を準備
-            let mut output = "The following pivot keywords were found:\n".to_string();
-            for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
-                output += &format!("{}: ", key).to_string();
-
-                output += "( ";
-                for i in pivot_keyword.fields.iter() {
-                    output += &format!("%{}% ", i).to_string();
-                }
-                output += "):";
-                output += "\n";
-
-                for i in pivot_keyword.keywords.iter() {
-                    output += &format!("{}\n", i).to_string();
-                }
-
-                output += "\n";
-            }
-
-            //出力
+            //ファイル出力の場合
             if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
                 for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
                     let mut f = BufWriter::new(
@@ -258,7 +239,32 @@ impl App {
 
                     f.write_all(output.as_bytes()).unwrap();
                 }
+
+                //output to stdout
+                let mut output = "Outputted results to the following files:\n".to_string();
+                for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
+                    output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
+                }
+                print!("{}", output);
             } else {
+                //標準出力の場合
+                let mut output = "The following pivot keywords were found:\n".to_string();
+                for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
+                    output += &format!("{}: ", key).to_string();
+
+                    output += "( ";
+                    for i in pivot_keyword.fields.iter() {
+                        output += &format!("%{}% ", i).to_string();
+                    }
+                    output += "):";
+                    output += "\n";
+
+                    for i in pivot_keyword.keywords.iter() {
+                        output += &format!("{}\n", i).to_string();
+                    }
+
+                    output += "\n";
+                }
                 print!("{}", output);
             }
         }
