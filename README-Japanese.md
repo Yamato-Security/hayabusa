@@ -35,7 +35,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Timeline Explorerでの解析:](#timeline-explorerでの解析)
   - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング:](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
 - [タイムラインのサンプル結果](#タイムラインのサンプル結果)
-- [特徴](#特徴)
+- [特徴＆機能](#特徴機能)
 - [予定されている機能](#予定されている機能)
 - [ダウンロード](#ダウンロード)
 - [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
@@ -52,6 +52,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [使用方法](#使用方法)
   - [コマンドラインオプション](#コマンドラインオプション)
   - [使用例](#使用例)
+  - [Pivot Keyword Generator](#pivot-keyword-generator)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
   - [プログレスバー](#プログレスバー)
@@ -61,6 +62,8 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [検知ルールのチューニング](#検知ルールのチューニング)
   - [イベントIDフィルタリング](#イベントidフィルタリング)
 - [その他のWindowsイベントログ解析ツールおよび関連プロジェクト](#その他のwindowsイベントログ解析ツールおよび関連プロジェクト)
+- [Windows Logging Recommendations](#windows-logging-recommendations)
+- [Sysmon Related Projects](#sysmon-related-projects)
   - [Sigmaをサポートする他の類似ツールとの比較](#sigmaをサポートする他の類似ツールとの比較)
 - [コミュニティによるドキュメンテーション](#コミュニティによるドキュメンテーション)
   - [英語](#英語)
@@ -115,7 +118,7 @@ CSVのタイムライン結果のサンプルは[こちら](https://github.com/Y
 
 CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
 
-# 特徴
+# 特徴＆機能
 
 * クロスプラットフォーム対応: Windows, Linux, macOS。
 * Rustで開発され、メモリセーフでハヤブサよりも高速です！
@@ -127,6 +130,7 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 * イベントログの統計。(どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。)
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
+* Create a list of unique pivot keywords to quickly identify abnormal users, files, etc... as well as correlate events.
 
 # 予定されている機能
 
@@ -311,6 +315,7 @@ USAGE:
     -s --statistics 'イベント ID の統計情報を表示する。'
     -q --quiet 'Quietモード。起動バナーを表示しない。'
     -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
+    -p --pivot-keywords-list 'ピボットキーワードの一覧作成。'
     --contributors 'コントリビュータの一覧表示。'
 ```
 
@@ -376,6 +381,12 @@ hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Securi
 hayabusa.exe -l -m low
 ```
 
+* Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
+
+```bash
+hayabusa.exe -l -m critical -p -o keywords
+```
+
 * イベントIDの統計情報を取得します:
 
 ```bash
@@ -406,6 +417,24 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 * Quiet error mode:
 デフォルトでは、Hayabusaはエラーメッセージをエラーログに保存します。
 エラーメッセージを保存したくない場合は、`-Q`を追加してください。
+
+## Pivot Keyword Generator
+
+You can use the `-p` or `--pivot-keywords-list` option to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. You can customize what keywords you want to search for by editing `config/pivot_keywords.txt`.
+This is the default setting:
+
+```
+Users.SubjectUserName
+Users.TargetUserName
+Users.User
+Logon IDs.SubjectLogonId
+Logon IDs.TargetLogonId
+Workstation Names.WorkstationName
+Ip Addresses.IpAddress
+Processes.Image
+```
+
+The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields. By default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `--pivot-keyword-list` option with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be false positives, so after manually checking the results and combining the keywords you want to search for in a single file, you can then grep for the keywords in the timeline with a command like `grep -f keywords.txt timeline.csv`.
 
 # サンプルevtxファイルでHayabusaをテストする
 
@@ -531,6 +560,19 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 * [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - Forward DefenseのSteve AnsonによるWindowsイベントログ解析の参考資料。
 * [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/) - [Yamato Security](https://github.com/Yamato-Security/)によるWindowsイベントログ解析のマルチツール。
 * [Zircolite](https://github.com/wagga40/Zircolite) - Pythonで書かれたSigmaベースの攻撃検知ツール。
+
+# Windows Logging Recommendations
+
+In order to properly detect malicious activity on Windows machines, you will need to improve the default log settings. We recommend the following sites for guidance:
+* [JSCU-NL (Joint Sigint Cyber Unit Netherlands) Logging Essentials](https://github.com/JSCU-NL/logging-essentials)
+* [ACSC (Australian Cyber Security Centre) Logging and Fowarding Guide](https://www.cyber.gov.au/acsc/view-all-content/publications/windows-event-logging-and-forwarding)
+* [Malware Archaeology Cheat Sheets](https://www.malwarearchaeology.com/cheat-sheets)
+
+# Sysmon Related Projects
+
+To create the most forensic evidence and detect with the highest accuracy, you need to install sysmon. We recommend the following sites:
+* [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
+* [TrustedSec Sysmon Community Guide](https://github.com/trustedsec/SysmonCommunityGuide)
 
 ## Sigmaをサポートする他の類似ツールとの比較
 

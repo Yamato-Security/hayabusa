@@ -241,7 +241,7 @@ impl App {
                 }
 
                 //output to stdout
-                let mut output = "Results saved to the following files:\n".to_string();
+                let mut output = "Pivot keyword results saved to the following files:\n".to_string();
                 for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
                     output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
                 }
