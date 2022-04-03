@@ -13,10 +13,10 @@ use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
-use std::io::{Read, Write};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
+use hayabusa::options::level_tuning::LevelTuning;
 use hayabusa::yaml::ParseYaml;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
@@ -112,97 +112,18 @@ impl App {
             .args
             .is_present("level-tuning")
         {
-            if let Some(level_tuning_path) = configs::CONFIG
+            if let Some(level_tuning_config_path) = configs::CONFIG
                 .read()
                 .unwrap()
                 .args
                 .value_of("level-tuning")
             {
-                if Path::new(level_tuning_path).exists() {
-                    let read_result = utils::read_csv(level_tuning_path);
-                    if read_result.is_err() {
-                        AlertMessage::warn(
-                            &mut BufWriter::new(std::io::stderr().lock()),
-                            &read_result.as_ref().unwrap_err(),
-                        )
-                        .ok();
-                        return;
-                    }
-                    let mut tuning_map: HashMap<String, String> = HashMap::new();
-                    read_result.unwrap().into_iter().for_each(|line| {
-                        if line.len() != 2 {
-                            return;
-                        }
-                        let id = line.get(0).unwrap();
-                        // TODO: id validation
-                        let level = line.get(1).unwrap();
-                        // TODO: level validation
-                        // Cut Comments
-                        tuning_map.insert(id.to_string(), level.to_string());
-                    });
-                    let mut rulefile_loader = ParseYaml::new();
-                    let result_readdir = rulefile_loader.read_dir(
-                        configs::CONFIG
-                            .read()
-                            .unwrap()
-                            .args
-                            .value_of("rules")
-                            .unwrap_or(&"rules"),
-                        &"informational",
-                        &filter::exclude_ids(),
-                    );
-                    if result_readdir.is_err() {
-                        let errmsg = format!("{}", result_readdir.unwrap_err());
-                        AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)
-                            .ok();
-                        return;
-                    }
-
-                    for (path, rule) in rulefile_loader.files {
-                        if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
-                            println!("path: {}", path);
-                            let mut file = match fs::File::options()
-                                .create(true)
-                                .write(true)
-                                .read(true)
-                                .append(false)
-                                .open(&path)
-                            {
-                                Err(e) => panic!("Couldn't open {}: {}", path, e),
-                                Ok(file) => file,
-                            };
-
-                            let mut content = String::new();
-                            file.read_to_string(&mut content).unwrap();
-                            let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
-
-                            if new_level.starts_with("informational") {
-                                content = content.replace(&past_level, "level: informational");
-                            }
-                            if new_level.starts_with("low") {
-                                content = content.replace(&past_level, "level: informational");
-                            }
-                            if new_level.starts_with("medium") {
-                                content = content.replace(&past_level, "level: medium");
-                            }
-                            if new_level.starts_with("high") {
-                                content = content.replace(&past_level, "level: high");
-                            }
-                            if new_level.starts_with("critical") {
-                                content = content.replace(&past_level, "level: critical");
-                            }
-                            file.write_all(content.as_bytes()).unwrap(); // TODO: use result
-                            println!(
-                                "level: {} -> {}",
-                                rule["level"].as_str().unwrap(),
-                                new_level
-                            );
-                        }
-                    }
+                if Path::new(level_tuning_config_path).exists() {
+                    LevelTuning::run(level_tuning_config_path);
                 } else {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("Need rule_levels.txt file to use --level-tuning option"),
+                        "Need rule_levels.txt file to use --level-tuning option",
                     )
                     .ok();
                     return;
