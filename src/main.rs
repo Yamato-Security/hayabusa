@@ -18,8 +18,7 @@ use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::yaml::ParseYaml;
 use hayabusa::{afterfact::after_fact, detections::utils};
-use hayabusa::{detections::configs, timeline::timeline::Timeline};
-use hayabusa::yaml::ParseYaml;
+use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
@@ -109,9 +108,15 @@ impl App {
         if configs::CONFIG
             .read()
             .unwrap()
-            .args.is_present("level-tuning")
+            .args
+            .is_present("level-tuning")
         {
-            if let Some(level_tuning_path) = configs::CONFIG.read().unwrap().args.value_of("level-tuning") {
+            if let Some(level_tuning_path) = configs::CONFIG
+                .read()
+                .unwrap()
+                .args
+                .value_of("level-tuning")
+            {
                 if Path::new(level_tuning_path).exists() {
                     let read_result = utils::read_csv(level_tuning_path);
                     if read_result.is_err() {
@@ -135,34 +140,37 @@ impl App {
                         tuning_map.insert(id.to_string(), level.to_string());
                     });
                     let mut rulefile_loader = ParseYaml::new();
-                    let result_readdir =
-                        rulefile_loader.read_dir(
-                            configs::CONFIG.read().unwrap().args.value_of("rules").unwrap_or(&"rules"),
-                            &"informational",
-                            &filter::exclude_ids(),
-                        );
+                    let result_readdir = rulefile_loader.read_dir(
+                        configs::CONFIG
+                            .read()
+                            .unwrap()
+                            .args
+                            .value_of("rules")
+                            .unwrap_or(&"rules"),
+                        &"informational",
+                        &filter::exclude_ids(),
+                    );
                     if result_readdir.is_err() {
                         let errmsg = format!("{}", result_readdir.unwrap_err());
-                        AlertMessage::warn(
-                            &mut BufWriter::new(std::io::stderr().lock()),
-                            &errmsg,
-                        )
-                        .ok();
+                        AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)
+                            .ok();
                         return;
                     }
                     for (path, rule) in rulefile_loader.files {
                         if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
                             println!("{}", rule["id"].as_str().unwrap());
                             println!("path: {}", path);
-                            println!("level: {} -> {}", rule["level"].as_str().unwrap(), new_level);
+                            println!(
+                                "level: {} -> {}",
+                                rule["level"].as_str().unwrap(),
+                                new_level
+                            );
                         }
                     }
                 } else {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!(
-                            "Need rule_levels.txt file to use --level-tuning option"
-                        ),
+                        &format!("Need rule_levels.txt file to use --level-tuning option"),
                     )
                     .ok();
                     return;
