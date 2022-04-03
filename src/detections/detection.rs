@@ -7,6 +7,7 @@ use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
+use crate::detections::print::TAGS_CONFIG;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -192,7 +193,8 @@ impl Detection {
             .as_vec()
             .unwrap_or(&Vec::default())
             .iter()
-            .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
+            .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
+            .map(|str| str.to_owned())
             .collect();
         MESSAGES.lock().unwrap().insert(
             &record_info.record,
@@ -210,7 +212,7 @@ impl Detection {
                 .unwrap_or_else(|| "-".to_owned()),
                 alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
                 detail: String::default(),
-                tag_info: tag_info.join(" : "),
+                tag_info: tag_info.join(" | "),
             },
         );
     }
