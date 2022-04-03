@@ -241,12 +241,12 @@ impl App {
                 }
 
                 //output to stdout
-                let mut output = "Pivot keyword results saved to the following files:\n".to_string();
+                let mut output =
+                    "Pivot keyword results saved to the following files:\n".to_string();
                 for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
                     output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
                 }
-                print!("{}", output);
-                println!();
+                println!("{}", output);
             } else {
                 //標準出力の場合
                 let mut output = "The following pivot keywords were found:\n".to_string();
