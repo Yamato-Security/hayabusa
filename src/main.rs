@@ -71,6 +71,14 @@ impl App {
     }
 
     fn exec(&mut self) {
+        if !self.is_matched_architecture_and_file_name() {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                "Your PC architecture does not match the architecture of hayabusa.\n Please check it architecture (Example: archtecture is x86_64. Could Use ...-x64.exe)",
+            )
+            .ok();
+        }
+
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
@@ -708,6 +716,50 @@ impl App {
             println!("You currently have the latest rules.");
             Ok("You currently have the latest rules.".to_string())
         }
+    }
+
+    /// check architecture and hayabusa file name
+    /// - Windows
+    ///     - x86_x64 -> ...-x64.exe
+    ///     - x86 -> ...-x86.exe
+    /// - macos
+    ///     - aarch64 -> ...-arm
+    ///     - other -> ...-intel
+    /// - linux
+    ///     - x86_x64 -> ...-x64
+    fn is_matched_architecture_and_file_name(&self) -> bool {
+        let exe_file_name = std::env::args()
+            .next()
+            .and_then(|s| {
+                std::path::PathBuf::from(s)
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+            })
+            .unwrap();
+
+        let exe_arch = if cfg!(target_os = "windows") {
+            if cfg!(target_arch = "x86_64") {
+                "-x64"
+            } else {
+                "-x86"
+            }
+        } else if cfg!(target_os = "macos") {
+            if cfg!(target_arch = "aarch64") {
+                "-arm"
+            } else {
+                "-intel"
+            }
+        } else if cfg!(target_os = "linux") {
+            if cfg!(target_arch = "x86_64") {
+                "-x64"
+            } else {
+                "unsupported target"
+            }
+        } else {
+            "unsupported target"
+        };
+
+        exe_file_name.ends_with(exe_arch)
     }
 }
 
