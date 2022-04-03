@@ -13,6 +13,7 @@ use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::print::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
+use std::io::{Read, Write};
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
@@ -156,10 +157,41 @@ impl App {
                             .ok();
                         return;
                     }
+
                     for (path, rule) in rulefile_loader.files {
                         if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
-                            println!("{}", rule["id"].as_str().unwrap());
                             println!("path: {}", path);
+                            let mut file = match fs::File::options()
+                                .create(true)
+                                .write(true)
+                                .read(true)
+                                .append(false)
+                                .open(&path)
+                            {
+                                Err(e) => panic!("Couldn't open {}: {}", path, e),
+                                Ok(file) => file,
+                            };
+
+                            let mut content = String::new();
+                            file.read_to_string(&mut content).unwrap();
+                            let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
+
+                            if new_level.starts_with("informational") {
+                                content = content.replace(&past_level, "level: informational");
+                            }
+                            if new_level.starts_with("low") {
+                                content = content.replace(&past_level, "level: informational");
+                            }
+                            if new_level.starts_with("medium") {
+                                content = content.replace(&past_level, "level: medium");
+                            }
+                            if new_level.starts_with("high") {
+                                content = content.replace(&past_level, "level: high");
+                            }
+                            if new_level.starts_with("critical") {
+                                content = content.replace(&past_level, "level: critical");
+                            }
+                            file.write_all(content.as_bytes()).unwrap(); // TODO: use result
                             println!(
                                 "level: {} -> {}",
                                 rule["level"].as_str().unwrap(),
