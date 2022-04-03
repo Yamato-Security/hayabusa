@@ -2,7 +2,7 @@ use crate::detections::{configs, print::AlertMessage, utils};
 use crate::filter;
 use crate::yaml::ParseYaml;
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::BufWriter;
 use std::io::{Read, Write};
 
@@ -14,7 +14,7 @@ impl LevelTuning {
         if read_result.is_err() {
             AlertMessage::warn(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                &read_result.as_ref().unwrap_err(),
+                read_result.as_ref().unwrap_err(),
             )
             .ok();
             return;
@@ -38,8 +38,8 @@ impl LevelTuning {
                 .unwrap()
                 .args
                 .value_of("rules")
-                .unwrap_or(&"rules"),
-            &"informational",
+                .unwrap_or("rules"),
+            "informational",
             &filter::exclude_ids(),
         );
         if result_readdir.is_err() {
@@ -52,18 +52,16 @@ impl LevelTuning {
             if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
                 println!("path: {}", path);
                 let mut file = match File::options()
-                    .create(true)
-                    .write(true)
                     .read(true)
-                    .append(false)
+                    .write(true)
                     .open(&path)
                 {
                     Err(e) => panic!("Couldn't open {}: {}", path, e),
                     Ok(file) => file,
                 };
 
-                let mut content = String::new();
-                file.read_to_string(&mut content).unwrap();
+                let mut content = fs::read_to_string(&path).unwrap(); // TODO: Error Handling
+                // file.read_to_string(&mut content).unwrap();
                 let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
 
                 if new_level.starts_with("informational") {
@@ -81,6 +79,16 @@ impl LevelTuning {
                 if new_level.starts_with("critical") {
                     content = content.replace(&past_level, "level: critical");
                 }
+                println!("{:?}", &content);
+
+                let mut file = match File::options()
+                    .write(true)
+                    .open(&path)
+                {
+                    Err(e) => panic!("Couldn't open {}: {}", path, e),
+                    Ok(file) => file,
+                };
+
                 file.write_all(content.as_bytes()).unwrap(); // TODO: use result
                 println!(
                     "level: {} -> {}",
