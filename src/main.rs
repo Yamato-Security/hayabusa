@@ -71,14 +71,6 @@ impl App {
     }
 
     fn exec(&mut self) {
-        if !self.is_matched_architecture_and_file_name() {
-            AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                "Your PC architecture does not match the architecture of hayabusa.\n Please check it architecture (Example: archtecture is x86_64. Could Use ...-x64.exe)",
-            )
-            .ok();
-        }
-
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
@@ -89,6 +81,17 @@ impl App {
                 &analysis_start_time.day().to_owned()
             ));
         }
+
+        if !self.is_matched_architecture_and_file_name() {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                "Your PC architecture does not match the architecture of hayabusa.\n Please check it architecture (Example: archtecture is x86_64. Could Use ...-x64.exe)",
+            )
+            .ok();
+            println!();
+            return;
+        }
+
         if configs::CONFIG
             .read()
             .unwrap()
