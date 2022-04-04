@@ -10,7 +10,7 @@ use std::io::BufWriter;
 use std::io::{BufRead, BufReader};
 
 lazy_static! {
-    static ref IDS_REGEX: Regex =
+    pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
 }
 

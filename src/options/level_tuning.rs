@@ -4,7 +4,6 @@ use crate::yaml::ParseYaml;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
-
 pub struct LevelTuning {}
 
 impl LevelTuning {
@@ -18,11 +17,26 @@ impl LevelTuning {
         let mut tuning_map: HashMap<String, String> = HashMap::new();
         read_result.unwrap().into_iter().try_for_each(|line| -> Result<(), String> {
             let id = match line.get(0) {
-                Some(_id) => _id, // TODO: Validate id
+                Some(_id) => {
+                    if !filter::IDS_REGEX.is_match(_id) {
+                        return Result::Err(format!("Failed to read level tuning file. {} is not correct id format, fix it.", _id));
+                    }
+                    _id
+                }
                 _ => return Result::Err("Failed to read id...".to_string())
             };
             let level = match line.get(1) {
-                Some(_level) => _level, // TODO: Validate level
+                Some(_level) => {
+                    if _level.starts_with("informational")
+                        || _level.starts_with("low")
+                        || _level.starts_with("medium")
+                        || _level.starts_with("high")
+                        || _level.starts_with("critical") {
+                            _level
+                        } else {
+                            return Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string())
+                        }
+                    }
                 _ => return Result::Err("Failed to read level...".to_string())
             };
             tuning_map.insert(id.to_string(), level.to_string());
@@ -71,16 +85,12 @@ impl LevelTuning {
                     content = content.replace(&past_level, "level: critical");
                 }
 
-                let mut file = match File::options()
-                    .write(true)
-                    .truncate(true)
-                    .open(&path)
-                {
+                let mut file = match File::options().write(true).truncate(true).open(&path) {
                     Ok(file) => file,
                     Err(e) => return Result::Err(e.to_string()),
                 };
 
-                file.write_all(content.as_bytes()).unwrap(); // TODO: use result
+                file.write_all(content.as_bytes()).unwrap();
                 println!(
                     "level: {} -> {}",
                     rule["level"].as_str().unwrap(),

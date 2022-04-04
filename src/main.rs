@@ -120,10 +120,8 @@ impl App {
             {
                 if Path::new(level_tuning_config_path).exists() {
                     if let Err(err) = LevelTuning::run(level_tuning_config_path) {
-                        AlertMessage::alert(
-                            &mut BufWriter::new(std::io::stderr().lock()),
-                            &err,
-                        ).ok();
+                        AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &err)
+                            .ok();
                     }
                 } else {
                     AlertMessage::alert(
