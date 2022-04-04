@@ -5,9 +5,9 @@ use clap::{App, AppSettings, Arg, ArgMatches};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
+use regex::Regex;
 use std::io::BufWriter;
 use std::sync::RwLock;
-use regex::Regex;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
