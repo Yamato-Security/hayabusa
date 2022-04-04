@@ -1,36 +1,35 @@
-use crate::detections::{configs, print::AlertMessage, utils};
+use crate::detections::{configs, utils};
 use crate::filter;
 use crate::yaml::ParseYaml;
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::BufWriter;
-use std::io::{Read, Write};
+use std::io::Write;
 
 pub struct LevelTuning {}
 
 impl LevelTuning {
-    pub fn run(level_tuning_config_path: &str) {
+    pub fn run(level_tuning_config_path: &str) -> Result<(), String> {
         let read_result = utils::read_csv(level_tuning_config_path);
         if read_result.is_err() {
-            AlertMessage::warn(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                read_result.as_ref().unwrap_err(),
-            )
-            .ok();
-            return;
+            return Result::Err(read_result.as_ref().unwrap_err().to_string());
         }
+
+        // Read Tuning files
         let mut tuning_map: HashMap<String, String> = HashMap::new();
-        read_result.unwrap().into_iter().for_each(|line| {
-            if line.len() != 2 {
-                return;
-            }
-            let id = line.get(0).unwrap();
-            // TODO: id validation
-            let level = line.get(1).unwrap();
-            // TODO: level validation
-            // Cut Comments
+        read_result.unwrap().into_iter().try_for_each(|line| -> Result<(), String> {
+            let id = match line.get(0) {
+                Some(_id) => _id, // TODO: Validate id
+                _ => return Result::Err("Failed to read id...".to_string())
+            };
+            let level = match line.get(1) {
+                Some(_level) => _level, // TODO: Validate level
+                _ => return Result::Err("Failed to read level...".to_string())
+            };
             tuning_map.insert(id.to_string(), level.to_string());
-        });
+            Ok(())
+        })?;
+
+        // Read Rule files
         let mut rulefile_loader = ParseYaml::new();
         let result_readdir = rulefile_loader.read_dir(
             configs::CONFIG
@@ -43,15 +42,17 @@ impl LevelTuning {
             &filter::exclude_ids(),
         );
         if result_readdir.is_err() {
-            let errmsg = format!("{}", result_readdir.unwrap_err());
-            AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
-            return;
+            return Result::Err(format!("{}", result_readdir.unwrap_err()));
         }
 
+        // Convert rule files
         for (path, rule) in rulefile_loader.files {
             if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
                 println!("path: {}", path);
-                let mut content = fs::read_to_string(&path).unwrap(); // TODO: Error Handling
+                let mut content = match fs::read_to_string(&path) {
+                    Ok(_content) => _content,
+                    Err(e) => return Result::Err(e.to_string()),
+                };
                 let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
 
                 if new_level.starts_with("informational") {
@@ -75,8 +76,8 @@ impl LevelTuning {
                     .truncate(true)
                     .open(&path)
                 {
-                    Err(e) => panic!("Couldn't open {}: {}", path, e),
                     Ok(file) => file,
+                    Err(e) => return Result::Err(e.to_string()),
                 };
 
                 file.write_all(content.as_bytes()).unwrap(); // TODO: use result
@@ -87,5 +88,6 @@ impl LevelTuning {
                 );
             }
         }
+        Result::Ok(())
     }
 }

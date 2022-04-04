@@ -119,15 +119,20 @@ impl App {
                 .value_of("level-tuning")
             {
                 if Path::new(level_tuning_config_path).exists() {
-                    LevelTuning::run(level_tuning_config_path);
+                    if let Err(err) = LevelTuning::run(level_tuning_config_path) {
+                        AlertMessage::alert(
+                            &mut BufWriter::new(std::io::stderr().lock()),
+                            &err,
+                        ).ok();
+                    }
                 } else {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
                         "Need rule_levels.txt file to use --level-tuning option",
                     )
                     .ok();
-                    return;
                 }
+                return;
             }
         }
 
