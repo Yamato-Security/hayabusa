@@ -52,7 +52,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [使用方法](#使用方法)
   - [コマンドラインオプション](#コマンドラインオプション)
   - [使用例](#使用例)
-  - [Pivot Keyword Generator](#pivot-keyword-generator)
+  - [ピボットキーワードの作成](#ピボットキーワードの作成)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
   - [プログレスバー](#プログレスバー)
@@ -62,8 +62,8 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [検知ルールのチューニング](#検知ルールのチューニング)
   - [イベントIDフィルタリング](#イベントidフィルタリング)
 - [その他のWindowsイベントログ解析ツールおよび関連プロジェクト](#その他のwindowsイベントログ解析ツールおよび関連プロジェクト)
-- [Windows Logging Recommendations](#windows-logging-recommendations)
-- [Sysmon Related Projects](#sysmon-related-projects)
+- [Windowsイベントログ設定のススメ](#windowsイベントログ設定のススメ)
+- [Sysmon関係のプロジェクト](#sysmon関係のプロジェクト)
   - [Sigmaをサポートする他の類似ツールとの比較](#sigmaをサポートする他の類似ツールとの比較)
 - [コミュニティによるドキュメンテーション](#コミュニティによるドキュメンテーション)
   - [英語](#英語)
@@ -130,7 +130,7 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 * イベントログの統計。(どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。)
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
-* Create a list of unique pivot keywords to quickly identify abnormal users, files, etc... as well as correlate events.
+* イベントログから不審なユーザやファイルを素早く特定するのに有用な、ピボットキーワードの一覧を作成することが可能です。
 
 # 予定されている機能
 
@@ -381,7 +381,7 @@ hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Securi
 hayabusa.exe -l -m low
 ```
 
-* Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
+* criticalレベルのアラートからピボットキーワードの一覧を作成します(結果は結果毎に`keywords-Ip Address.txt`や`keyworss-Users.txt`等に出力されます):
 
 ```bash
 hayabusa.exe -l -m critical -p -o keywords
@@ -414,14 +414,14 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
 ```
 
-* Quiet error mode:
+* エラーログの出力をさせないようにする:
 デフォルトでは、Hayabusaはエラーメッセージをエラーログに保存します。
 エラーメッセージを保存したくない場合は、`-Q`を追加してください。
 
-## Pivot Keyword Generator
+## ピボットキーワードの作成
 
-You can use the `-p` or `--pivot-keywords-list` option to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. You can customize what keywords you want to search for by editing `config/pivot_keywords.txt`.
-This is the default setting:
+`-p`もしくは`--pivot-keywords-list`オプションを使うことで不審なユーザやホスト名、プロセスなどを一覧で出力することができ、イベントログから素早く特定することができます。
+ピボットキーワードのカスタマイズは`config/pivot_keywords.txt`を変更することで行うことができます。以下はデフォルトの設定になります。:
 
 ```
 Users.SubjectUserName
@@ -434,7 +434,7 @@ Ip Addresses.IpAddress
 Processes.Image
 ```
 
-The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields. By default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `--pivot-keyword-list` option with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be false positives, so after manually checking the results and combining the keywords you want to search for in a single file, you can then grep for the keywords in the timeline with a command like `grep -f keywords.txt timeline.csv`.
+形式は`KeywordName.FieldName`となっています。例えばデフォルトの設定では、`Users`というリストは検知したイベントから`SubjectUserName`、 `TargetUserName` 、 `User`のフィールドの値が一覧として出力されます。hayabusaのデフォルトでは検知したすべてのイベントから結果を出力するため、`--pivot-keyword-list`オプションを使うときには `-m` もしくは `--min-level` オプションを併せて使って検知するイベントのレベルを指定することをおすすめします。まず`-m critical`を指定して、最も高い`critical`レベルのアラートのみを対象として、レベルを必要に応じて下げていくとよいでしょう。誤検出が発生する可能性もあるため、手動で結果を確認した後に、さらに検索したいキーワードを別のファイルにして`grep -f keywords.txt timeline.csv`を行うことでタイムラインのキーワードをgrepすることもできます。
 
 # サンプルevtxファイルでHayabusaをテストする
 
@@ -561,16 +561,17 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 * [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/) - [Yamato Security](https://github.com/Yamato-Security/)によるWindowsイベントログ解析のマルチツール。
 * [Zircolite](https://github.com/wagga40/Zircolite) - Pythonで書かれたSigmaベースの攻撃検知ツール。
 
-# Windows Logging Recommendations
+# Windowsイベントログ設定のススメ
 
-In order to properly detect malicious activity on Windows machines, you will need to improve the default log settings. We recommend the following sites for guidance:
+Windows機での悪性な活動を検知する為には、デフォルトのログ設定を改善することが必要です。
+以下のサイトを閲覧することをおすすめします。:
 * [JSCU-NL (Joint Sigint Cyber Unit Netherlands) Logging Essentials](https://github.com/JSCU-NL/logging-essentials)
 * [ACSC (Australian Cyber Security Centre) Logging and Fowarding Guide](https://www.cyber.gov.au/acsc/view-all-content/publications/windows-event-logging-and-forwarding)
 * [Malware Archaeology Cheat Sheets](https://www.malwarearchaeology.com/cheat-sheets)
 
-# Sysmon Related Projects
+# Sysmon関係のプロジェクト
 
-To create the most forensic evidence and detect with the highest accuracy, you need to install sysmon. We recommend the following sites:
+フォレンジックに有用な証拠を作り、高い精度で検知をさせるためには、sysmonをインストールする必要があります。以下のサイトを参考に設定することをおすすめします。:
 * [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
 * [TrustedSec Sysmon Community Guide](https://github.com/trustedsec/SysmonCommunityGuide)
 
