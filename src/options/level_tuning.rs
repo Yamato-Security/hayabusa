@@ -18,7 +18,7 @@ impl LevelTuning {
         read_result.unwrap().into_iter().try_for_each(|line| -> Result<(), String> {
             let id = match line.get(0) {
                 Some(_id) => {
-                    if !filter::IDS_REGEX.is_match(_id) {
+                    if !configs::IDS_REGEX.is_match(_id) {
                         return Result::Err(format!("Failed to read level tuning file. {} is not correct id format, fix it.", _id));
                     }
                     _id

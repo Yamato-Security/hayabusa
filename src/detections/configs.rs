@@ -7,6 +7,7 @@ use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use std::io::BufWriter;
 use std::sync::RwLock;
+use regex::Regex;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
@@ -22,6 +23,8 @@ lazy_static! {
         "{}/eventkey_alias.txt",
         CONFIG.read().unwrap().folder_path
     ));
+    pub static ref IDS_REGEX: Regex =
+        Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
 }
 
 #[derive(Clone)]
