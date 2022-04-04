@@ -51,17 +51,7 @@ impl LevelTuning {
         for (path, rule) in rulefile_loader.files {
             if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
                 println!("path: {}", path);
-                let mut file = match File::options()
-                    .read(true)
-                    .write(true)
-                    .open(&path)
-                {
-                    Err(e) => panic!("Couldn't open {}: {}", path, e),
-                    Ok(file) => file,
-                };
-
                 let mut content = fs::read_to_string(&path).unwrap(); // TODO: Error Handling
-                // file.read_to_string(&mut content).unwrap();
                 let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
 
                 if new_level.starts_with("informational") {
@@ -79,10 +69,10 @@ impl LevelTuning {
                 if new_level.starts_with("critical") {
                     content = content.replace(&past_level, "level: critical");
                 }
-                println!("{:?}", &content);
 
                 let mut file = match File::options()
                     .write(true)
+                    .truncate(true)
                     .open(&path)
                 {
                     Err(e) => panic!("Couldn't open {}: {}", path, e),
