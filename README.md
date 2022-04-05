@@ -46,7 +46,6 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Running Hayabusa](#running-hayabusa)
   - [Caution: Anti-Virus/EDR Warnings](#caution-anti-virusedr-warnings)
   - [Windows](#windows)
-    - [Caution: Windows Terminal Bug](#caution-windows-terminal-bug)
   - [Linux](#linux)
   - [macOS](#macos)
 - [Usage](#usage)
@@ -227,12 +226,6 @@ You may receive warning from anti-virus or EDR when trying to run hayabusa. Thes
 
 In Command Prompt or Windows Terminal, just run 32-bit or 64-bit Windoows binary from the hayabusa root directory. 
 Example: `hayabusa-1.2.0-windows-x64.exe`
-
-### Caution: Windows Terminal Bug
-
-As of Feb 1, 2022, Windows Terminal will freeze midway when displaying results to the screen when run against the sample evtx files.
-This is because there is a control code (0x9D) in the output.
-This is known Windows Terminal bug which will eventually be fixed but for the meantime, you can avoid this bug by adding the `-c` (colored output) option when you run hayabusa.
 
 ## Linux
 
