@@ -434,7 +434,7 @@ Ip Addresses.IpAddress
 Processes.Image
 ```
 
-形式は`KeywordName.FieldName`となっています。例えばデフォルトの設定では、`Users`というリストは検知したイベントから`SubjectUserName`、 `TargetUserName` 、 `User`のフィールドの値が一覧として出力されます。hayabusaのデフォルトでは検知したすべてのイベントから結果を出力するため、`--pivot-keyword-list`オプションを使うときには `-m` もしくは `--min-level` オプションを併せて使って検知するイベントのレベルを指定することをおすすめします。まず`-m critical`を指定して、最も高い`critical`レベルのアラートのみを対象として、レベルを必要に応じて下げていくとよいでしょう。誤検出が発生する可能性もあるため、手動で結果を確認した後に、さらに検索したいキーワードを別のファイルにして`grep -f keywords.txt timeline.csv`を行うことでタイムラインのキーワードをgrepすることもできます。
+形式は`KeywordName.FieldName`となっています。例えばデフォルトの設定では、`Users`というリストは検知したイベントから`SubjectUserName`、 `TargetUserName` 、 `User`のフィールドの値が一覧として出力されます。hayabusaのデフォルトでは検知したすべてのイベントから結果を出力するため、`--pivot-keyword-list`オプションを使うときには `-m` もしくは `--min-level` オプションを併せて使って検知するイベントのレベルを指定することをおすすめします。まず`-m critical`を指定して、最も高い`critical`レベルのアラートのみを対象として、レベルを必要に応じて下げていくとよいでしょう。たくさんの正常のイベントにもよくある共通のキーワードが結果に入っている可能性が高いため、手動で結果を確認して、１つのファイルに検索したいユニークなキーワードのリストを作った後に、`grep -f keywords.txt timeline.csv`等のコマンドで不審なアクティビティに絞ったタイムラインを作成することができます。
 
 # サンプルevtxファイルでHayabusaをテストする
 
