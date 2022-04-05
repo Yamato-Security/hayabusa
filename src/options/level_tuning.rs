@@ -102,6 +102,7 @@ impl LevelTuning {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
