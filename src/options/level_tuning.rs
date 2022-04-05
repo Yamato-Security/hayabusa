@@ -101,3 +101,60 @@ impl LevelTuning {
         Result::Ok(())
     }
 }
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rule_level_failed_to_open_file() -> Result<(), String> {
+        let level_tuning_config_path = "./none.txt";
+        let res = LevelTuning::run(level_tuning_config_path);
+        let expected = Result::Err("Cannot open file. [file:./none.txt]".to_string());
+        assert_eq!(res, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn rule_level_id_error_file() -> Result<(), String> {
+        let level_tuning_config_path = "./test_files/config/level_tuning_error1.txt";
+        let res = LevelTuning::run(level_tuning_config_path);
+        let expected = Result::Err("Failed to read level tuning file. 12345678-1234-1234-1234-12 is not correct id format, fix it.".to_string());
+        assert_eq!(res, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn rule_level_level_error_file() -> Result<(), String> {
+        let level_tuning_config_path = "./test_files/config/level_tuning_error2.txt";
+        let res = LevelTuning::run(level_tuning_config_path);
+        let expected = Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string());
+        assert_eq!(res, expected);
+        Ok(())
+    }
+
+
+    // TODO: make test option for read ./test_files/rules/ dir.
+    // #[test]
+    // fn test_detect_mutiple_regex_and() {
+    //     let level_tuning_config_path = "./test_files/config/level_tuning.txt";
+    //     let rule_str = r#"
+    //     id: 12345678-1234-1234-1234-123456789012
+    //     level: informational
+    //     "#;
+
+    //     let expected_rule = r#"
+    //     level: high
+    //     "#;
+
+    //     let path = "test_files/rules/level_tuning_sample.yml";
+    //     let mut file = File::create(path).unwrap();
+    //     let buf = rule_str.as_bytes();
+    //     file.write_all(buf).unwrap();
+    //     file.flush().unwrap();
+
+    //     let res = LevelTuning::run(level_tuning_config_path);
+    //     assert_eq!(res, Ok(()));
+    //     assert_eq!(fs::read_to_string(path).unwrap(), expected_rule);
+    //     fs::remove_file(path).unwrap();
+    // }
+}
