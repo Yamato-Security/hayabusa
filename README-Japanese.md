@@ -46,7 +46,6 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [Hayabusaの実行](#hayabusaの実行)
   - [注意: アンチウィルス/EDRの誤検知](#注意-アンチウィルスedrの誤検知)
   - [Windows](#windows)
-    - [Windows Terminalで利用する際の注意事項](#windows-terminalで利用する際の注意事項)
   - [Linux](#linux)
   - [macOS](#macos)
 - [使用方法](#使用方法)
@@ -234,11 +233,6 @@ Hayabusaを実行する際にアンチウィルスやEDRにブロックされる
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 例: `hayabusa-1.2.0-windows-x64.exe`
-
-### Windows Terminalで利用する際の注意事項
-
-2021/02/01の時点で、Windows Terminalから標準出力でhayabusaを使ったときに、コントロールコード(0x9D等)が検知結果に入っていると出力が止まることが確認されています。
-Windows Terminalからhayabusaを標準出力で解析させたい場合は、 `-c` (カラー出力)のオプションをつければ出力が止まることを回避できます。
 
 ## Linux
 
