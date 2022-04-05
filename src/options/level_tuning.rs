@@ -127,11 +127,13 @@ mod tests {
     fn rule_level_level_error_file() -> Result<(), String> {
         let level_tuning_config_path = "./test_files/config/level_tuning_error2.txt";
         let res = LevelTuning::run(level_tuning_config_path);
-        let expected = Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string());
+        let expected = Result::Err(
+            "level tuning file's level must in informational, low, medium, high, critical"
+                .to_string(),
+        );
         assert_eq!(res, expected);
         Ok(())
     }
-
 
     // TODO: make test option for read ./test_files/rules/ dir.
     // #[test]
