@@ -52,6 +52,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Usage](#usage)
   - [Command Line Options](#command-line-options)
   - [Usage Examples](#usage-examples)
+  - [Pivot Keyword Generator](#pivot-keyword-generator)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
   - [Progress Bar](#progress-bar)
@@ -61,6 +62,8 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Detection Rule Tuning](#detection-rule-tuning)
   - [Event ID Filtering](#event-id-filtering)
 - [Other Windows Event Log Analyzers and Related Projects](#other-windows-event-log-analyzers-and-related-projects)
+- [Windows Logging Recommendations](#windows-logging-recommendations)
+- [Sysmon Related Projects](#sysmon-related-projects)
   - [Comparison To Other Similar Tools](#comparison-to-other-similar-tools)
 - [Community Documentation](#community-documentation)
   - [English](#english)
@@ -125,6 +128,7 @@ You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here]
 * Event log statistics. (Useful for getting a picture of what types of events there are and for tuning your log settings.)
 * Rule tuning configuration by excluding unneeded or noisy rules.
 * MITRE ATT&CK mapping of tactics (only in saved CSV files).
+* Create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 
 # Planned Features
 
@@ -305,6 +309,7 @@ USAGE:
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
+    -p --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'
 ```
 
@@ -370,7 +375,13 @@ hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Securi
 hayabusa.exe -l -m low
 ```
 
-* Get event ID statistics:
+* Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
+
+```bash
+hayabusa.exe -l -m critical -p -o keywords
+```
+
+* Print Event ID statistics:
 
 ```bash
 hayabusa.exe -f Security.evtx -s
@@ -400,6 +411,24 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 * Quiet error mode:
 By default, hayabusa will save error messages to error log files.
 If you do not want to save error messages, please add `-Q`.
+
+## Pivot Keyword Generator
+
+You can use the `-p` or `--pivot-keywords-list` option to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. You can customize what keywords you want to search for by editing `config/pivot_keywords.txt`.
+This is the default setting:
+
+```
+Users.SubjectUserName
+Users.TargetUserName
+Users.User
+Logon IDs.SubjectLogonId
+Logon IDs.TargetLogonId
+Workstation Names.WorkstationName
+Ip Addresses.IpAddress
+Processes.Image
+```
+
+The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields. By default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `--pivot-keyword-list` option with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
 
 # Testing Hayabusa on Sample Evtx Files
 
@@ -523,6 +552,19 @@ There is no "one tool to rule them all" and we have found that each has its own 
 * [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - by Forward Defense's Steve Anson.
 * [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA) - The swiff-army knife for Windows event logs by [Yamato Security](https://github.com/Yamato-Security/)
 * [Zircolite](https://github.com/wagga40/Zircolite) - Sigma-based attack detection tool written in Python.
+
+# Windows Logging Recommendations
+
+In order to properly detect malicious activity on Windows machines, you will need to improve the default log settings. We recommend the following sites for guidance:
+* [JSCU-NL (Joint Sigint Cyber Unit Netherlands) Logging Essentials](https://github.com/JSCU-NL/logging-essentials)
+* [ACSC (Australian Cyber Security Centre) Logging and Fowarding Guide](https://www.cyber.gov.au/acsc/view-all-content/publications/windows-event-logging-and-forwarding)
+* [Malware Archaeology Cheat Sheets](https://www.malwarearchaeology.com/cheat-sheets)
+
+# Sysmon Related Projects
+
+To create the most forensic evidence and detect with the highest accuracy, you need to install sysmon. We recommend the following sites:
+* [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
+* [TrustedSec Sysmon Community Guide](https://github.com/trustedsec/SysmonCommunityGuide)
 
 ## Comparison To Other Similar Tools
 

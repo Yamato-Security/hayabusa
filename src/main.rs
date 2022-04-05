@@ -9,9 +9,12 @@ use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hashbrown::{HashMap, HashSet};
+use hayabusa::detections::configs::load_pivot_keywords;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
+use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::print::{
-    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
+    STATISTICS_FLAG,
 };
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
@@ -26,7 +29,7 @@ use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::fs::create_dir;
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -71,6 +74,10 @@ impl App {
     }
 
     fn exec(&mut self) {
+        if *PIVOT_KEYWORD_LIST_FLAG {
+            load_pivot_keywords("config/pivot_keywords.txt");
+        }
+
         let analysis_start_time: DateTime<Local> = Local::now();
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
@@ -118,6 +125,20 @@ impl App {
             return;
         }
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+            for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
+                let keywords_file_name = csv_path.to_owned() + "-" + key + ".txt";
+                if Path::new(&keywords_file_name).exists() {
+                    AlertMessage::alert(
+                        &mut BufWriter::new(std::io::stderr().lock()),
+                        &format!(
+                            " The file {} already exists. Please specify a different filename.",
+                            &keywords_file_name
+                        ),
+                    )
+                    .ok();
+                    return;
+                }
+            }
             if Path::new(csv_path).exists() {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
@@ -130,6 +151,7 @@ impl App {
                 return;
             }
         }
+
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
             println!();
@@ -192,6 +214,60 @@ impl App {
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+        }
+
+        if *PIVOT_KEYWORD_LIST_FLAG {
+            //ファイル出力の場合
+            if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
+                for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
+                    let mut f = BufWriter::new(
+                        fs::File::create(pivot_file.to_owned() + "-" + key + ".txt").unwrap(),
+                    );
+                    let mut output = "".to_string();
+                    output += &format!("{}: ", key).to_string();
+
+                    output += "( ";
+                    for i in pivot_keyword.fields.iter() {
+                        output += &format!("%{}% ", i).to_string();
+                    }
+                    output += "):";
+                    output += "\n";
+
+                    for i in pivot_keyword.keywords.iter() {
+                        output += &format!("{}\n", i).to_string();
+                    }
+
+                    f.write_all(output.as_bytes()).unwrap();
+                }
+
+                //output to stdout
+                let mut output =
+                    "Pivot keyword results saved to the following files:\n".to_string();
+                for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
+                    output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
+                }
+                println!("{}", output);
+            } else {
+                //標準出力の場合
+                let mut output = "The following pivot keywords were found:\n".to_string();
+                for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
+                    output += &format!("{}: ", key).to_string();
+
+                    output += "( ";
+                    for i in pivot_keyword.fields.iter() {
+                        output += &format!("%{}% ", i).to_string();
+                    }
+                    output += "):";
+                    output += "\n";
+
+                    for i in pivot_keyword.keywords.iter() {
+                        output += &format!("{}\n", i).to_string();
+                    }
+
+                    output += "\n";
+                }
+                print!("{}", output);
+            }
         }
     }
 
@@ -327,7 +403,7 @@ impl App {
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
-        if !*STATISTICS_FLAG {
+        if !*STATISTICS_FLAG && !*PIVOT_KEYWORD_LIST_FLAG {
             after_fact();
         }
     }
