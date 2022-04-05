@@ -199,7 +199,14 @@ fn emit_csv<W: std::io::Write>(
                         computer: &format!(" {} ", &detect_info.computername),
                         event_i_d: &format!(" {} ", &detect_info.eventid),
                         rule_title: &format!(" {} ", &detect_info.alert),
-                        details: &format!(" {}", &detect_info.detail),
+                        details: &format!(
+                            " {}",
+                            &detect_info
+                                .detail
+                                .chars()
+                                .filter(|&c| !c.is_control())
+                                .collect::<String>()
+                        ),
                     })?;
                 }
             } else {
