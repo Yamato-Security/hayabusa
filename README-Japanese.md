@@ -60,6 +60,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
   - [検知ルールのチューニング](#検知ルールのチューニング)
   - [イベントIDフィルタリング](#イベントidフィルタリング)
+  - [検知レベルのチューニング](#検知レベルのチューニング)
 - [その他のWindowsイベントログ解析ツールおよび関連プロジェクト](#その他のwindowsイベントログ解析ツールおよび関連プロジェクト)
   - [Sigmaをサポートする他の類似ツールとの比較](#sigmaをサポートする他の類似ツールとの比較)
 - [コミュニティによるドキュメンテーション](#コミュニティによるドキュメンテーション)
@@ -505,6 +506,19 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
 
 最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、検出漏れの可能性が若干あることにご注意ください。
+
+## 検知レベルのチューニング
+
+Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際の脅威レベルを決めています。
+ユーザが独自の脅威レベルに設定するには `./config/level_tuning.txt` に変換情報を書き、`hayabusa --level-tuning` を実行することでルールファイルが書き換えられます。
+ルールファイルが直接書き換えられることに注意して使用してください。
+
+`./config/level_tuning.txt` の例
+```
+id,next_level
+00000000-0000-0000-0000-000000000000,informational # sample leveltunig line
+```
+ルールディレクトリ内の `00000000-0000-0000-0000-000000000000` に該当するルールの脅威レベルが `informational` に書き換えられます。
 
 # その他のWindowsイベントログ解析ツールおよび関連プロジェクト
 

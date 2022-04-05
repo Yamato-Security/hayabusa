@@ -60,6 +60,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
   - [Event ID Filtering](#event-id-filtering)
+  - [Detection Level Tuning](#detection-level-tuning)
 - [Other Windows Event Log Analyzers and Related Projects](#other-windows-event-log-analyzers-and-related-projects)
   - [Comparison To Other Similar Tools](#comparison-to-other-similar-tools)
 - [Community Documentation](#community-documentation)
@@ -497,6 +498,20 @@ This will increase performance so it is recommended if you only need to search f
 We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
 
 Please use this list if you want the best performance but be aware that there is a slight possibility for missing events (false negatives). 
+
+## Detection Level Tuning
+
+The Hayabusa rule and Sigma rule determine the threat level when each author detects it.
+To set the user to their own threat level, write the conversion information in `./config/level_tuning.txt` and execute` hayabusa --level-tuning` to rewrite the rule file.
+Please note that the rule file will be rewritten directly.
+
+`./config/level_tuning.txt` Sample
+```
+id,next_level
+00000000-0000-0000-0000-000000000000,informational # sample leveltunig line
+```
+
+The threat level of the rule corresponding to `00000000-0000-0000-0000-000000000000` in the rules directory is rewritten to` informational`.
 
 # Other Windows Event Log Analyzers and Related Projects
 
