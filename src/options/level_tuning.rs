@@ -164,8 +164,9 @@ mod tests {
                 },
             )
             .ok();
-
+        println!("{:?}", parser);
         for (_filepath, yaml) in parser.files {
+            println!();
             if yaml["id"].as_str().unwrap_or(&String::default())
                 == "12345678-1234-1234-1234-123456789012"
             {
