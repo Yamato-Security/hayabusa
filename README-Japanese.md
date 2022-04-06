@@ -515,8 +515,8 @@ Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際の�
 
 `./config/level_tuning.txt` の例
 ```
-id,next_level
-00000000-0000-0000-0000-000000000000,informational # sample leveltunig line
+id,new_level
+00000000-0000-0000-0000-000000000000,informational # sample level tuning line
 ```
 ルールディレクトリ内の `00000000-0000-0000-0000-000000000000` に該当するルールの脅威レベルが `informational` に書き換えられます。
 

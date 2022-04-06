@@ -1,2 +1,2 @@
-id,next_level
-00000000-0000-0000-0000-000000000000,informational # sample leveltunig line
+id,new_level
+00000000-0000-0000-0000-000000000000,informational # sample level tuning line

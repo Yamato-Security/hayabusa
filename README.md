@@ -507,8 +507,8 @@ Please note that the rule file will be rewritten directly.
 
 `./config/level_tuning.txt` Sample
 ```
-id,next_level
-00000000-0000-0000-0000-000000000000,informational # sample leveltunig line
+id,new_level
+00000000-0000-0000-0000-000000000000,informational # sample level tuning line
 ```
 
 The threat level of the rule corresponding to `00000000-0000-0000-0000-000000000000` in the rules directory is rewritten to` informational`.
