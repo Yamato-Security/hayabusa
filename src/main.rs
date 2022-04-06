@@ -741,7 +741,7 @@ impl App {
             .unwrap();
 
         let exe_arch = if cfg!(target_os = "windows") {
-            if cfg!(target_arch = "x86_64") {
+            if cfg!(target_pointer_width = "64") {
                 "-x64"
             } else {
                 "-x86"
@@ -753,7 +753,7 @@ impl App {
                 "-intel"
             }
         } else if cfg!(target_os = "linux") {
-            if cfg!(target_arch = "x86_64") {
+            if cfg!(target_pointer_width = "64") {
                 "-x64"
             } else {
                 "unsupported target"
