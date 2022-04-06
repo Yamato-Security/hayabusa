@@ -32,7 +32,7 @@ impl LevelTuning {
                         || _level.starts_with("medium")
                         || _level.starts_with("high")
                         || _level.starts_with("critical") {
-                            _level
+                            _level.split('#').collect::<Vec<&str>>()[0]
                         } else {
                             return Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string())
                         }
