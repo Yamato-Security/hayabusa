@@ -146,7 +146,7 @@ mod tests {
         level: high
         "#;
 
-        let path = "test_files/rules/level_tuning.txt";
+        let path = "test_files/rules/level_tuning_test.yml";
         let mut file = File::create(path).unwrap();
         let buf = rule_str.as_bytes();
         file.write_all(buf).unwrap();
@@ -165,13 +165,10 @@ mod tests {
                 },
             )
             .ok();
-        println!("{:?}", parser);
         for (_filepath, yaml) in parser.files {
-            println!();
             if yaml["id"].as_str().unwrap_or(&String::default())
                 == "12345678-1234-1234-1234-123456789012"
             {
-                println!("{}", _filepath);
                 assert_eq!("high", yaml["level"].as_str().unwrap());
             }
         }
