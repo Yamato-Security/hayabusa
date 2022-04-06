@@ -104,6 +104,10 @@ impl LevelTuning {
 
 #[cfg(test)]
 mod tests {
+
+    use crate::{filter::RuleExclude, yaml};
+    use hashbrown::HashSet;
+
     use super::*;
 
     #[test]
@@ -136,28 +140,47 @@ mod tests {
         Ok(())
     }
 
-    // TODO: make test option for read ./test_files/rules/ dir.
-    // #[test]
-    // fn test_detect_mutiple_regex_and() {
-    //     let level_tuning_config_path = "./test_files/config/level_tuning.txt";
-    //     let rule_str = r#"
-    //     id: 12345678-1234-1234-1234-123456789012
-    //     level: informational
-    //     "#;
+    #[test]
+    fn test_detect_mutiple_regex_and() {
+        let level_tuning_config_path = "./test_files/config/level_tuning.txt";
+        let rule_str = r#"
+        id: 12345678-1234-1234-1234-123456789012
+        level: informational
+        "#;
 
-    //     let expected_rule = r#"
-    //     level: high
-    //     "#;
+        let expected_rule = r#"
+        level: high
+        "#;
 
-    //     let path = "test_files/rules/level_tuning_sample.yml";
-    //     let mut file = File::create(path).unwrap();
-    //     let buf = rule_str.as_bytes();
-    //     file.write_all(buf).unwrap();
-    //     file.flush().unwrap();
+        let path = "test_files/rules/level_tuning_sample.yml";
+        let mut file = File::create(path).unwrap();
+        let buf = rule_str.as_bytes();
+        file.write_all(buf).unwrap();
+        file.flush().unwrap();
 
-    //     let res = LevelTuning::run(level_tuning_config_path);
-    //     assert_eq!(res, Ok(()));
-    //     assert_eq!(fs::read_to_string(path).unwrap(), expected_rule);
-    //     fs::remove_file(path).unwrap();
-    // }
+        let mut parser = yaml::ParseYaml::new();
+        parser
+            .read_dir(
+                "test_files/rules",
+                "informational",
+                &RuleExclude {
+                    no_use_rule: HashSet::new(),
+                },
+            )
+            .ok();
+
+        for (_filepath, yaml) in parser.files {
+            if yaml["id"].as_str().unwrap_or(&String::default())
+                == "12345678-1234-1234-1234-123456789012"
+            {
+                println!("{}", _filepath);
+                assert_eq!("high", yaml["level"].as_str().unwrap());
+            }
+        }
+
+        let res = LevelTuning::run(level_tuning_config_path);
+        assert_eq!(res, Ok(()));
+        assert_eq!(fs::read_to_string(path).unwrap(), expected_rule);
+        fs::remove_file(path).unwrap();
+    }
 }
