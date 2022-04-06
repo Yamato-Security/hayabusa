@@ -145,7 +145,7 @@ mod tests {
         level: high
         "#;
 
-        let path = "test_files/rules/level_tuning_sample.yml";
+        let path = "test_files/rules/level_tuning.txt";
         let mut file = File::create(path).unwrap();
         let buf = rule_str.as_bytes();
         file.write_all(buf).unwrap();
