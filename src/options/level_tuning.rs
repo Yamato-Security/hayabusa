@@ -7,7 +7,7 @@ use std::io::Write;
 pub struct LevelTuning {}
 
 impl LevelTuning {
-    pub fn run(level_tuning_config_path: &str) -> Result<(), String> {
+    pub fn run(level_tuning_config_path: &str, rules_path: &str) -> Result<(), String> {
         let read_result = utils::read_csv(level_tuning_config_path);
         if read_result.is_err() {
             return Result::Err(read_result.as_ref().unwrap_err().to_string());
@@ -45,16 +45,8 @@ impl LevelTuning {
 
         // Read Rule files
         let mut rulefile_loader = ParseYaml::new();
-        let result_readdir = rulefile_loader.read_dir(
-            configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .value_of("rules")
-                .unwrap_or("rules"),
-            "informational",
-            &filter::exclude_ids(),
-        );
+        let result_readdir =
+            rulefile_loader.read_dir(rules_path, "informational", &filter::exclude_ids());
         if result_readdir.is_err() {
             return Result::Err(format!("{}", result_readdir.unwrap_err()));
         }
@@ -113,7 +105,7 @@ mod tests {
     #[test]
     fn rule_level_failed_to_open_file() -> Result<(), String> {
         let level_tuning_config_path = "./none.txt";
-        let res = LevelTuning::run(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "");
         let expected = Result::Err("Cannot open file. [file:./none.txt]".to_string());
         assert_eq!(res, expected);
         Ok(())
@@ -122,7 +114,7 @@ mod tests {
     #[test]
     fn rule_level_id_error_file() -> Result<(), String> {
         let level_tuning_config_path = "./test_files/config/level_tuning_error1.txt";
-        let res = LevelTuning::run(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "");
         let expected = Result::Err("Failed to read level tuning file. 12345678-1234-1234-1234-12 is not correct id format, fix it.".to_string());
         assert_eq!(res, expected);
         Ok(())
@@ -131,7 +123,7 @@ mod tests {
     #[test]
     fn rule_level_level_error_file() -> Result<(), String> {
         let level_tuning_config_path = "./test_files/config/level_tuning_error2.txt";
-        let res = LevelTuning::run(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "");
         let expected = Result::Err(
             "level tuning file's level must in informational, low, medium, high, critical"
                 .to_string(),
@@ -149,6 +141,7 @@ mod tests {
         "#;
 
         let expected_rule = r#"
+        id: 12345678-1234-1234-1234-123456789012
         level: high
         "#;
 
@@ -157,6 +150,9 @@ mod tests {
         let buf = rule_str.as_bytes();
         file.write_all(buf).unwrap();
         file.flush().unwrap();
+
+        let res = LevelTuning::run(level_tuning_config_path, path);
+        assert_eq!(res, Ok(()));
 
         let mut parser = yaml::ParseYaml::new();
         parser
@@ -178,8 +174,6 @@ mod tests {
             }
         }
 
-        let res = LevelTuning::run(level_tuning_config_path);
-        assert_eq!(res, Ok(()));
         assert_eq!(fs::read_to_string(path).unwrap(), expected_rule);
         fs::remove_file(path).unwrap();
     }
