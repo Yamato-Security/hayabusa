@@ -87,7 +87,7 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
         return Result::Err(e.to_string());
     }
 
-    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
+    let mut rdr = csv::ReaderBuilder::new().from_reader(contents.as_bytes());
     rdr.records().for_each(|r| {
         if r.is_err() {
             return;

@@ -55,6 +55,12 @@ lazy_static! {
         .is_present("statistics");
     pub static ref TAGS_CONFIG: HashMap<String, String> =
         Message::create_tags_config("config/output_tag.txt");
+
+    pub static ref PIVOT_KEYWORD_LIST_FLAG: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("pivot-keywords-list");
 }
 
 impl Default for Message {

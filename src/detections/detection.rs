@@ -1,10 +1,12 @@
 extern crate csv;
 
 use crate::detections::configs;
+use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
+use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
 use crate::detections::print::TAGS_CONFIG;
@@ -178,6 +180,12 @@ impl Detection {
             if !result {
                 continue;
             }
+
+            if *PIVOT_KEYWORD_LIST_FLAG {
+                insert_pivot_keyword(&record_info.record);
+                continue;
+            }
+
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
                 Detection::insert_message(&rule, record_info);
