@@ -73,7 +73,7 @@ impl LevelTuning {
                     content = content.replace(&past_level, "level: informational");
                 }
                 if new_level.starts_with("low") {
-                    content = content.replace(&past_level, "level: informational");
+                    content = content.replace(&past_level, "level: low");
                 }
                 if new_level.starts_with("medium") {
                     content = content.replace(&past_level, "level: medium");
