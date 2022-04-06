@@ -83,6 +83,7 @@ impl LevelTuning {
                 };
 
                 file.write_all(content.as_bytes()).unwrap();
+                file.flush().unwrap();
                 println!(
                     "level: {} -> {}",
                     rule["level"].as_str().unwrap(),
