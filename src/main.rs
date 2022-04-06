@@ -112,31 +112,34 @@ impl App {
             .args
             .is_present("level-tuning")
         {
-            if let Some(level_tuning_config_path) = configs::CONFIG
+            let level_tuning_config_path = configs::CONFIG
                 .read()
                 .unwrap()
                 .args
                 .value_of("level-tuning")
-            {
-                if Path::new(level_tuning_config_path).exists() {
-                    if let Err(err) = LevelTuning::run(level_tuning_config_path, configs::CONFIG
+                .unwrap_or("./config/level_tuning.txt")
+                .to_string();
+
+            if Path::new(&level_tuning_config_path).exists() {
+                if let Err(err) = LevelTuning::run(
+                    &level_tuning_config_path,
+                    configs::CONFIG
                         .read()
                         .unwrap()
                         .args
                         .value_of("rules")
-                        .unwrap_or("rules")) {
-                        AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &err)
-                            .ok();
-                    }
-                } else {
-                    AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
-                        "Need rule_levels.txt file to use --level-tuning option",
-                    )
-                    .ok();
+                        .unwrap_or("rules"),
+                ) {
+                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &err).ok();
                 }
-                return;
+            } else {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    "Need rule_levels.txt file to use --level-tuning option",
+                )
+                .ok();
             }
+            return;
         }
 
         if !Path::new("./config").exists() {
