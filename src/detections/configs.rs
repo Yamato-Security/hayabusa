@@ -80,7 +80,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -u --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
     -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
     -l --live-analysis 'Analyze the local C:\\Windows\\System32\\winevt\\Logs folder (Windows Only. Administrator privileges required.)'
-    --level-tuning=<LEVEL_TUNING_FILE> 'Fix rule file's level [default: ./config/level_tuning.txt]'
+    --level-tuning=[LEVEL_TUNING_FILE] 'Fix rule file's level [default: ./config/level_tuning.txt]'
     --start-timeline=[STARTTIMELINE] 'Start time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
     --end-timeline=[ENDTIMELINE] 'End time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
