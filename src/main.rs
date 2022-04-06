@@ -85,7 +85,7 @@ impl App {
         if !self.is_matched_architecture_and_file_name() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                "Your PC architecture does not match the architecture of hayabusa.\n Please check it architecture (Example: archtecture is x86_64. Could Use ...-x64.exe)",
+                "The hayabusa version you ran does not match your PC architecture.\n Please use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
             )
             .ok();
             println!();
