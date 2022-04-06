@@ -1,7 +1,7 @@
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{App, AppSettings, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
@@ -80,7 +80,6 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -u --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
     -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
     -l --live-analysis 'Analyze the local C:\\Windows\\System32\\winevt\\Logs folder (Windows Only. Administrator privileges required.)'
-    --level-tuning=[LEVEL_TUNING_FILE] 'Fix rule file's level [default: ./config/level_tuning.txt]'
     --start-timeline=[STARTTIMELINE] 'Start time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
     --end-timeline=[ENDTIMELINE] 'End time of the event logs to load. (Example: '2018/11/28 12:00:00 +09:00')'
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
@@ -96,6 +95,11 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .version("1.1.0")
         .author("Yamato Security (https://github.com/Yamato-Security/hayabusa)")
         .setting(AppSettings::VersionlessSubcommands)
+        .arg(
+            // TODO: When update claps to 3.x, these can write in usage texts...
+            Arg::from_usage("--level-tuning=[LEVEL_TUNING_FILE] 'Fix rule file's level'")
+                .default_value("./config/level_tuning.txt"),
+        )
         .usage(usages)
         .args_from_usage(usages)
         .get_matches()
