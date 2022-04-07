@@ -35,7 +35,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Timeline Explorerでの解析:](#timeline-explorerでの解析)
   - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング:](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
 - [タイムラインのサンプル結果](#タイムラインのサンプル結果)
-- [特徴](#特徴)
+- [特徴＆機能](#特徴機能)
 - [予定されている機能](#予定されている機能)
 - [ダウンロード](#ダウンロード)
 - [ソースコードからのコンパイル（任意）](#ソースコードからのコンパイル任意)
@@ -46,12 +46,12 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [Hayabusaの実行](#hayabusaの実行)
   - [注意: アンチウィルス/EDRの誤検知](#注意-アンチウィルスedrの誤検知)
   - [Windows](#windows)
-    - [Windows Terminalで利用する際の注意事項](#windows-terminalで利用する際の注意事項)
   - [Linux](#linux)
   - [macOS](#macos)
 - [使用方法](#使用方法)
   - [コマンドラインオプション](#コマンドラインオプション)
   - [使用例](#使用例)
+  - [ピボットキーワードの作成](#ピボットキーワードの作成)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
   - [プログレスバー](#プログレスバー)
@@ -61,6 +61,8 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [検知ルールのチューニング](#検知ルールのチューニング)
   - [イベントIDフィルタリング](#イベントidフィルタリング)
 - [その他のWindowsイベントログ解析ツールおよび関連プロジェクト](#その他のwindowsイベントログ解析ツールおよび関連プロジェクト)
+- [Windowsイベントログ設定のススメ](#windowsイベントログ設定のススメ)
+- [Sysmon関係のプロジェクト](#sysmon関係のプロジェクト)
   - [Sigmaをサポートする他の類似ツールとの比較](#sigmaをサポートする他の類似ツールとの比較)
 - [コミュニティによるドキュメンテーション](#コミュニティによるドキュメンテーション)
   - [英語](#英語)
@@ -115,7 +117,7 @@ CSVのタイムライン結果のサンプルは[こちら](https://github.com/Y
 
 CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
 
-# 特徴
+# 特徴＆機能
 
 * クロスプラットフォーム対応: Windows, Linux, macOS。
 * Rustで開発され、メモリセーフでハヤブサよりも高速です！
@@ -127,6 +129,7 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 * イベントログの統計。(どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。)
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
+* イベントログから不審なユーザやファイルを素早く特定するのに有用な、ピボットキーワードの一覧を作成することが可能です。
 
 # 予定されている機能
 
@@ -231,11 +234,6 @@ Hayabusaを実行する際にアンチウィルスやEDRにブロックされる
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 例: `hayabusa-1.2.0-windows-x64.exe`
 
-### Windows Terminalで利用する際の注意事項
-
-2021/02/01の時点で、Windows Terminalから標準出力でhayabusaを使ったときに、コントロールコード(0x9D等)が検知結果に入っていると出力が止まることが確認されています。
-Windows Terminalからhayabusaを標準出力で解析させたい場合は、 `-c` (カラー出力)のオプションをつければ出力が止まることを回避できます。
-
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
@@ -294,6 +292,7 @@ USAGE:
     -f --filepath=[FILEPATH] '1つの.evtxファイルのパス。'
     -r --rules=[RULEFILE/RULEDIRECTORY] 'ルールファイルまたはルールファイルを持つディレクトリ。(デフォルト: ./rules)'
     -c --color 'カラーで出力する。 (ターミナルはTrue Colorに対応する必要がある。)'
+    -C --config=[RULECONFIGDIRECTORY] 'ルールフォルダのコンフィグディレクトリ(デフォルト: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
     -v --verbose '詳細な情報を出力する。'
     -D --enable-deprecated-rules 'Deprecatedルールを有効にする。'
@@ -310,6 +309,7 @@ USAGE:
     -s --statistics 'イベント ID の統計情報を表示する。'
     -q --quiet 'Quietモード。起動バナーを表示しない。'
     -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
+    -p --pivot-keywords-list 'ピボットキーワードの一覧作成。'
     --contributors 'コントリビュータの一覧表示。'
 ```
 
@@ -375,6 +375,12 @@ hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Securi
 hayabusa.exe -l -m low
 ```
 
+* criticalレベルのアラートからピボットキーワードの一覧を作成します(結果は結果毎に`keywords-Ip Address.txt`や`keyworss-Users.txt`等に出力されます):
+
+```bash
+hayabusa.exe -l -m critical -p -o keywords
+```
+
 * イベントIDの統計情報を取得します:
 
 ```bash
@@ -402,9 +408,27 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
 ```
 
-* Quiet error mode:
+* エラーログの出力をさせないようにする:
 デフォルトでは、Hayabusaはエラーメッセージをエラーログに保存します。
 エラーメッセージを保存したくない場合は、`-Q`を追加してください。
+
+## ピボットキーワードの作成
+
+`-p`もしくは`--pivot-keywords-list`オプションを使うことで不審なユーザやホスト名、プロセスなどを一覧で出力することができ、イベントログから素早く特定することができます。
+ピボットキーワードのカスタマイズは`config/pivot_keywords.txt`を変更することで行うことができます。以下はデフォルトの設定になります。:
+
+```
+Users.SubjectUserName
+Users.TargetUserName
+Users.User
+Logon IDs.SubjectLogonId
+Logon IDs.TargetLogonId
+Workstation Names.WorkstationName
+Ip Addresses.IpAddress
+Processes.Image
+```
+
+形式は`KeywordName.FieldName`となっています。例えばデフォルトの設定では、`Users`というリストは検知したイベントから`SubjectUserName`、 `TargetUserName` 、 `User`のフィールドの値が一覧として出力されます。hayabusaのデフォルトでは検知したすべてのイベントから結果を出力するため、`--pivot-keyword-list`オプションを使うときには `-m` もしくは `--min-level` オプションを併せて使って検知するイベントのレベルを指定することをおすすめします。まず`-m critical`を指定して、最も高い`critical`レベルのアラートのみを対象として、レベルを必要に応じて下げていくとよいでしょう。結果に正常なイベントにもある共通のキーワードが入っている可能性が高いため、手動で結果を確認してから、不審なイベントにありそうなキーワードリストを１つのファイルに保存し、`grep -f keywords.txt timeline.csv`等のコマンドで不審なアクティビティに絞ったタイムラインを作成することができます。
 
 # サンプルevtxファイルでHayabusaをテストする
 
@@ -530,6 +554,20 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 * [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - Forward DefenseのSteve AnsonによるWindowsイベントログ解析の参考資料。
 * [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA/) - [Yamato Security](https://github.com/Yamato-Security/)によるWindowsイベントログ解析のマルチツール。
 * [Zircolite](https://github.com/wagga40/Zircolite) - Pythonで書かれたSigmaベースの攻撃検知ツール。
+
+# Windowsイベントログ設定のススメ
+
+Windows機での悪性な活動を検知する為には、デフォルトのログ設定を改善することが必要です。
+以下のサイトを閲覧することをおすすめします。:
+* [JSCU-NL (Joint Sigint Cyber Unit Netherlands) Logging Essentials](https://github.com/JSCU-NL/logging-essentials)
+* [ACSC (Australian Cyber Security Centre) Logging and Fowarding Guide](https://www.cyber.gov.au/acsc/view-all-content/publications/windows-event-logging-and-forwarding)
+* [Malware Archaeology Cheat Sheets](https://www.malwarearchaeology.com/cheat-sheets)
+
+# Sysmon関係のプロジェクト
+
+フォレンジックに有用な証拠を作り、高い精度で検知をさせるためには、sysmonをインストールする必要があります。以下のサイトを参考に設定することをおすすめします。:
+* [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
+* [TrustedSec Sysmon Community Guide](https://github.com/trustedsec/SysmonCommunityGuide)
 
 ## Sigmaをサポートする他の類似ツールとの比較
 

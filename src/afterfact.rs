@@ -140,18 +140,76 @@ fn emit_csv<W: std::io::Write>(
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
-                let colors = color_map
-                    .as_ref()
-                    .map(|cl_mp| _get_output_color(cl_mp, &detect_info.level));
-                let colors = colors.as_ref();
-                wtr.serialize(DisplayFormat {
-                    timestamp: &_format_color(Col::First, &format_time(time), colors),
-                    level: &_format_color(Col::Other, &detect_info.level, colors),
-                    computer: &_format_color(Col::Other, &detect_info.computername, colors),
-                    event_i_d: &_format_color(Col::Other, &detect_info.eventid, colors),
-                    rule_title: &_format_color(Col::Other, &detect_info.alert, colors),
-                    details: &_format_color(Col::Last, &detect_info.detail, colors),
-                })?;
+                if color_map.is_some() {
+                    let output_color =
+                        _get_output_color(color_map.as_ref().unwrap(), &detect_info.level);
+                    wtr.serialize(DisplayFormat {
+                        timestamp: &format!(
+                            "{} ",
+                            &format_time(time).truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        level: &format!(
+                            " {} ",
+                            &detect_info.level.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        computer: &format!(
+                            " {} ",
+                            &detect_info.computername.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        event_i_d: &format!(
+                            " {} ",
+                            &detect_info.eventid.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        rule_title: &format!(
+                            " {} ",
+                            &detect_info.alert.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                        details: &format!(
+                            " {}",
+                            &detect_info.detail.truecolor(
+                                output_color[0],
+                                output_color[1],
+                                output_color[2]
+                            )
+                        ),
+                    })?;
+                } else {
+                    wtr.serialize(DisplayFormat {
+                        timestamp: &format!("{} ", &format_time(time)),
+                        level: &format!(" {} ", &detect_info.level),
+                        computer: &format!(" {} ", &detect_info.computername),
+                        event_i_d: &format!(" {} ", &detect_info.eventid),
+                        rule_title: &format!(" {} ", &detect_info.alert),
+                        details: &format!(
+                            " {}",
+                            &detect_info
+                                .detail
+                                .chars()
+                                .filter(|&c| !c.is_control())
+                                .collect::<String>()
+                        ),
+                    })?;
+                }
             } else {
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {

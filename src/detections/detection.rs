@@ -1,12 +1,15 @@
 extern crate csv;
 
 use crate::detections::configs;
+use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
+use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
+use crate::detections::print::TAGS_CONFIG;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -178,6 +181,12 @@ impl Detection {
             if !result {
                 continue;
             }
+
+            if *PIVOT_KEYWORD_LIST_FLAG {
+                insert_pivot_keyword(&record_info.record);
+                continue;
+            }
+
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
                 Detection::insert_message(&rule, record_info);
@@ -193,7 +202,8 @@ impl Detection {
             .as_vec()
             .unwrap_or(&Vec::default())
             .iter()
-            .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
+            .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
+            .map(|str| str.to_owned())
             .collect();
         MESSAGES.lock().unwrap().insert(
             &record_info.record,
@@ -211,7 +221,7 @@ impl Detection {
                 .unwrap_or_else(|| "-".to_owned()),
                 alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
                 detail: String::default(),
-                tag_info: tag_info.join(" : "),
+                tag_info: tag_info.join(" | "),
                 record_information: record_info.record_information.to_string(),
             },
         );

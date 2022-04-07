@@ -1,0 +1,3 @@
+tag_full_str,tag_output_str
+attack.impact,Impact
+xxx,yyy

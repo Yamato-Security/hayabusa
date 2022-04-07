@@ -1,3 +1,5 @@
+use crate::detections::pivot::PivotKeyword;
+use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
@@ -18,13 +20,16 @@ lazy_static! {
         levelmap.insert("CRITICAL".to_owned(), 5);
         levelmap
     };
-    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig =
-        load_eventkey_alias("./rules/config/eventkey_alias.txt");
+    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(&format!(
+        "{}/eventkey_alias.txt",
+        CONFIG.read().unwrap().folder_path
+    ));
 }
 
 #[derive(Clone)]
 pub struct ConfigReader {
     pub args: ArgMatches<'static>,
+    pub folder_path: String,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
@@ -37,9 +42,12 @@ impl Default for ConfigReader {
 
 impl ConfigReader {
     pub fn new() -> Self {
+        let arg = build_app();
+        let folder_path_str = arg.value_of("config").unwrap_or("rules/config").to_string();
         ConfigReader {
-            args: build_app(),
-            event_timeline_config: load_eventcode_info("config/timeline_event_info.txt"),
+            args: arg,
+            folder_path: folder_path_str,
+            event_timeline_config: load_eventcode_info("config/statistics_event_info.txt"),
             target_eventids: load_target_ids("config/target_eventids.txt"),
         }
     }
@@ -61,8 +69,9 @@ fn build_app<'a>() -> ArgMatches<'a> {
 
     let usages = "-d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
+    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
+    -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
@@ -79,6 +88,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
+    -p --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
@@ -261,6 +271,7 @@ impl Default for EventKeyAliasConfig {
 fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
+    // eventkey_aliasが読み込めなかったらエラーで終了とする。
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
         AlertMessage::alert(
@@ -270,7 +281,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         .ok();
         return config;
     }
-    // eventkey_aliasが読み込めなかったらエラーで終了とする。
+
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 2 {
             return;
@@ -295,11 +306,43 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     config
 }
 
+///設定ファイルを読み込み、keyとfieldsのマップをPIVOT_KEYWORD大域変数にロードする。
+pub fn load_pivot_keywords(path: &str) {
+    let read_result = utils::read_txt(path);
+    if read_result.is_err() {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            read_result.as_ref().unwrap_err(),
+        )
+        .ok();
+    }
+
+    read_result.unwrap().into_iter().for_each(|line| {
+        let map: Vec<&str> = line.split('.').collect();
+        if map.len() != 2 {
+            return;
+        }
+
+        //存在しなければ、keyを作成
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .entry(map[0].to_string())
+            .or_insert(PivotKeyword::new());
+
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .get_mut(&map[0].to_string())
+            .unwrap()
+            .fields
+            .insert(map[1].to_string());
+    });
+}
+
 #[derive(Debug, Clone)]
 pub struct EventInfo {
     pub evttitle: String,
-    pub detectflg: String,
-    pub comment: String,
 }
 
 impl Default for EventInfo {
@@ -311,13 +354,7 @@ impl Default for EventInfo {
 impl EventInfo {
     pub fn new() -> EventInfo {
         let evttitle = "Unknown".to_string();
-        let detectflg = "".to_string();
-        let comment = "".to_string();
-        EventInfo {
-            evttitle,
-            detectflg,
-            comment,
-        }
+        EventInfo { evttitle }
     }
 }
 #[derive(Debug, Clone)]
@@ -355,21 +392,17 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         return config;
     }
 
-    // timeline_event_infoが読み込めなかったらエラーで終了とする。
+    // statistics_event_infoが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
-        if line.len() != 4 {
+        if line.len() != 2 {
             return;
         }
 
         let empty = &"".to_string();
         let eventcode = line.get(0).unwrap_or(empty);
         let event_title = line.get(1).unwrap_or(empty);
-        let detect_flg = line.get(2).unwrap_or(empty);
-        let comment = line.get(3).unwrap_or(empty);
         infodata = EventInfo {
             evttitle: event_title.to_string(),
-            detectflg: detect_flg.to_string(),
-            comment: comment.to_string(),
         };
         config
             .eventinfo
