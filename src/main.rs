@@ -31,6 +31,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::SystemTime;
 use std::{
+    env,
     fs::{self, File},
     path::PathBuf,
     vec,
@@ -40,7 +41,7 @@ use tokio::spawn;
 use tokio::task::JoinHandle;
 
 #[cfg(target_os = "windows")]
-use {is_elevated::is_elevated, std::env};
+use is_elevated::is_elevated;
 
 // 一度にtimelineやdetectionを実行する行数
 const MAX_DETECT_RECORDS: usize = 5000;
