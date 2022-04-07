@@ -32,7 +32,7 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
     pub key_2_value: hashbrown::HashMap<String, String>,
-    pub record_information: String,
+    pub record_information: Option<String>,
 }
 
 impl EvtxRecordInfo {
@@ -205,25 +205,29 @@ impl Detection {
             .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
             .map(|str| str.to_owned())
             .collect();
+
+        let recinfo = record_info
+            .record_information
+            .as_ref()
+            .map(|recinfo| recinfo.to_string());
+        let detect_info = DetectInfo {
+            filepath: record_info.evtx_filepath.to_string(),
+            rulepath: rule.rulepath.to_string(),
+            level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
+            computername: record_info.record["Event"]["System"]["Computer"]
+                .to_string()
+                .replace('\"', ""),
+            eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+                .unwrap_or_else(|| "-".to_owned()),
+            alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
+            detail: String::default(),
+            tag_info: tag_info.join(" | "),
+            record_information: recinfo,
+        };
         MESSAGES.lock().unwrap().insert(
             &record_info.record,
             rule.yaml["details"].as_str().unwrap_or("").to_string(),
-            DetectInfo {
-                filepath: record_info.evtx_filepath.to_string(),
-                rulepath: rule.rulepath.to_string(),
-                level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
-                computername: record_info.record["Event"]["System"]["Computer"]
-                    .to_string()
-                    .replace('\"', ""),
-                eventid: get_serde_number_to_string(
-                    &record_info.record["Event"]["System"]["EventID"],
-                )
-                .unwrap_or_else(|| "-".to_owned()),
-                alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
-                detail: String::default(),
-                tag_info: tag_info.join(" | "),
-                record_information: record_info.record_information.to_string(),
-            },
+            detect_info,
         );
     }
 
@@ -236,20 +240,27 @@ impl Detection {
             .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);
-        MESSAGES.lock().unwrap().insert_message(
-            DetectInfo {
-                filepath: "-".to_owned(),
-                rulepath: rule.rulepath.to_owned(),
-                level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
-                computername: "-".to_owned(),
-                eventid: "-".to_owned(),
-                alert: rule.yaml["title"].as_str().unwrap_or("").to_owned(),
-                detail: output,
-                record_information: String::default(),
-                tag_info: tag_info.join(" : "),
-            },
-            agg_result.start_timedate,
-        )
+        let rec_info = if configs::CONFIG.read().unwrap().args.is_present("full-data") {
+            Option::Some(String::default())
+        } else {
+            Option::None
+        };
+        let detect_info = DetectInfo {
+            filepath: "-".to_owned(),
+            rulepath: rule.rulepath.to_owned(),
+            level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
+            computername: "-".to_owned(),
+            eventid: "-".to_owned(),
+            alert: rule.yaml["title"].as_str().unwrap_or("").to_owned(),
+            detail: output,
+            record_information: rec_info,
+            tag_info: tag_info.join(" : "),
+        };
+
+        MESSAGES
+            .lock()
+            .unwrap()
+            .insert_message(detect_info, agg_result.start_timedate)
     }
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
