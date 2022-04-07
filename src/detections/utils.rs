@@ -297,8 +297,14 @@ fn _collect_recordinfo<'a>(
             // 一番子の要素の値しか収集しない
             let strval = value_to_string(value);
             if let Some(strval) = strval {
-                let strval: Vec<&str> = strval.trim().split_whitespace().collect();
-                let strval = strval.join(" ");
+                let strval = strval.trim().chars().fold(String::default(), |mut acc, c| {
+                    if c.is_control() || c.is_ascii_whitespace() {
+                        acc.push(' ');
+                    } else {
+                        acc.push(c);
+                    };
+                    acc
+                });
                 output.push((parent_key.to_string(), strval));
             }
         }
