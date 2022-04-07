@@ -151,7 +151,7 @@ fn emit_csv<W: std::io::Write>(
                 let recinfo = detect_info
                     .record_information
                     .as_ref()
-                    .map(|recinfo| _format_cell(recinfo, Col::Last, colors));
+                    .map(|recinfo| _format_cell(recinfo, ColPos::Last, colors));
                 let details = detect_info
                     .detail
                     .chars()
@@ -159,12 +159,12 @@ fn emit_csv<W: std::io::Write>(
                     .collect::<String>();
 
                 let dispformat = DisplayFormat {
-                    timestamp: &_format_cell(&format_time(time), Col::First, colors),
-                    level: &_format_cell(&detect_info.level, Col::Normal, colors),
-                    computer: &_format_cell(&detect_info.computername, Col::Normal, colors),
-                    event_i_d: &_format_cell(&detect_info.eventid, Col::Normal, colors),
-                    rule_title: &_format_cell(&detect_info.alert, Col::Normal, colors),
-                    details: &_format_cell(&details, Col::Normal, colors),
+                    timestamp: &_format_cell(&format_time(time), ColPos::First, colors),
+                    level: &_format_cell(&detect_info.level, ColPos::Other, colors),
+                    computer: &_format_cell(&detect_info.computername, ColPos::Other, colors),
+                    event_i_d: &_format_cell(&detect_info.eventid, ColPos::Other, colors),
+                    rule_title: &_format_cell(&detect_info.alert, ColPos::Other, colors),
+                    details: &_format_cell(&details, ColPos::Other, colors),
                     record_information: recinfo.as_deref(),
                 };
                 wtr.serialize(dispformat)?;
@@ -212,26 +212,26 @@ fn emit_csv<W: std::io::Write>(
     Ok(())
 }
 
-enum Col {
-    First,  // 先頭
-    Last,   // 最後
-    Normal, // それ以外
+enum ColPos {
+    First, // 先頭
+    Last,  // 最後
+    Other, // それ以外
 }
 
-fn _format_csvcell(column: Col, colval: &str) -> String {
+fn _format_cellpos(column: ColPos, colval: &str) -> String {
     return match column {
-        Col::First => format!("{} ", colval),
-        Col::Last => format!(" {}", colval),
-        Col::Normal => format!(" {} ", colval),
+        ColPos::First => format!("{} ", colval),
+        ColPos::Last => format!(" {}", colval),
+        ColPos::Other => format!(" {} ", colval),
     };
 }
 
-fn _format_cell(word: &str, column: Col, output_color: Option<&Vec<u8>>) -> String {
+fn _format_cell(word: &str, column: ColPos, output_color: Option<&Vec<u8>>) -> String {
     if let Some(color) = output_color {
         let colval = format!("{}", word.truecolor(color[0], color[1], color[2]));
-        _format_csvcell(column, &colval)
+        _format_cellpos(column, &colval)
     } else {
-        _format_csvcell(column, word)
+        _format_cellpos(column, word)
     }
 }
 
