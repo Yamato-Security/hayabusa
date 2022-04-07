@@ -82,7 +82,7 @@ impl App {
             ));
         }
 
-        if !self.is_matched_architecture_and_file_name() {
+        if !self.is_matched_architecture_and_binary() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
                 "The hayabusa version you ran does not match your PC architecture.\n Please use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
@@ -721,48 +721,16 @@ impl App {
         }
     }
 
-    /// check architecture and hayabusa file name
-    /// - Windows
-    ///     - x86_x64 -> ...-x64.exe
-    ///     - x86 -> ...-x86.exe
-    /// - macos
-    ///     - aarch64 -> ...-arm
-    ///     - other -> ...-intel
-    /// - linux
-    ///     - x86_x64 -> ...-x64
-    fn is_matched_architecture_and_file_name(&self) -> bool {
-        let exe_file_name = std::env::args()
-            .next()
-            .and_then(|s| {
-                std::path::PathBuf::from(s)
-                    .file_stem()
-                    .map(|s| s.to_string_lossy().into_owned())
-            })
-            .unwrap();
-
-        let exe_arch = if cfg!(target_os = "windows") {
-            if cfg!(target_pointer_width = "64") {
-                "-x64"
-            } else {
-                "-x86"
-            }
-        } else if cfg!(target_os = "macos") {
-            if cfg!(target_arch = "aarch64") {
-                "-arm"
-            } else {
-                "-intel"
-            }
-        } else if cfg!(target_os = "linux") {
-            if cfg!(target_pointer_width = "64") {
-                "-x64"
-            } else {
-                "unsupported target"
-            }
-        } else {
-            "unsupported target"
-        };
-
-        exe_file_name.ends_with(exe_arch)
+    /// check architecture
+    fn is_matched_architecture_and_binary(&self) -> bool {
+        if cfg!(target_os = "windows") {
+            let is_pc_arch_32bit = env::var_os("PROCESSOR_ARCHITECTURE")
+                .unwrap_or_default()
+                .eq("x86");
+            return (cfg!(target_pointer_width = "64") && !is_pc_arch_32bit)
+                || (cfg!(target_pointer_width = "32") && is_pc_arch_32bit);
+        }
+        true
     }
 }
 
