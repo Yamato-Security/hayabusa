@@ -10,6 +10,7 @@ use tokio::runtime::Runtime;
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use serde_json::Value;
+use std::cmp::Ordering;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
@@ -245,15 +246,29 @@ fn create_recordinfos(record: &Value) -> String {
     let mut output = vec![];
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
-    output.sort_by(|(left, _), (right, _)| left.cmp(right));
+    // 同じレコードなら毎回同じ出力になるようにソートしておく
+    output.sort_by(|(left, left_data), (right, right_data)| {
+        let ord = left.cmp(right);
+        if ord == Ordering::Equal {
+            left_data.cmp(right_data)
+        } else {
+            ord
+        }
+    });
 
     let summary: Vec<String> = output
         .iter()
         .map(|(key, value)| {
-            return format!("{}: {}", key, value);
+            return format!("{}:{}", key, value);
         })
         .collect();
-    summary.join(" | ")
+
+    // 標準出力する時はセルがハイプ区切りになるので、パイプ区切りにしない
+    if configs::CONFIG.read().unwrap().args.is_present("output") {
+        summary.join(" | ")
+    } else {
+        summary.join(" ")
+    }
 }
 
 /**
