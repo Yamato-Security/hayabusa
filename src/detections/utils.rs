@@ -348,7 +348,7 @@ mod tests {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
-                let expected = "AccessMask: %%1369 | Process: lsass.exe | User: u1".to_string();
+                let expected = "AccessMask:%%1369 Process:lsass.exe User:u1".to_string();
                 assert_eq!(ret, expected);
             }
             Err(_) => {
@@ -382,7 +382,8 @@ mod tests {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
-                let expected = "Binary: hogehoge | Data: Data1 | Data: DataData2 | Data:  | Data: DataDataData3".to_string();
+                let expected = "Binary:hogehoge Data: Data:Data1 Data:DataData2 Data:DataDataData3"
+                    .to_string();
                 assert_eq!(ret, expected);
             }
             Err(_) => {
