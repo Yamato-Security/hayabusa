@@ -23,7 +23,7 @@ use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::cmp::Ordering;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fs::create_dir;
 use std::io::BufWriter;
@@ -725,11 +725,15 @@ impl App {
     /// check architecture
     fn is_matched_architecture_and_binary(&self) -> bool {
         if cfg!(target_os = "windows") {
-            let is_pc_arch_32bit = env::var_os("PROCESSOR_ARCHITECTURE")
+            let is_processor_arch_32bit = env::var_os("PROCESSOR_ARCHITECTURE")
                 .unwrap_or_default()
                 .eq("x86");
-            return (cfg!(target_pointer_width = "64") && !is_pc_arch_32bit)
-                || (cfg!(target_pointer_width = "32") && is_pc_arch_32bit);
+            // PROCESSOR_ARCHITEW6432は32bit環境には存在しないため、環境変数存在しなかった場合は32bit環境であると判断する
+            let not_wow_flag = env::var_os("PROCESSOR_ARCHITEW6432")
+                .unwrap_or_else(|| OsString::from("x86"))
+                .eq("x86");
+            return (cfg!(target_pointer_width = "64") && !is_processor_arch_32bit)
+                || (cfg!(target_pointer_width = "32") && is_processor_arch_32bit && not_wow_flag);
         }
         true
     }
