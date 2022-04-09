@@ -194,7 +194,6 @@ impl App {
             .args
             .is_present("level-tuning")
         {
-            println!("Level_tuning: {:?}", std::env::args().len());
             let level_tuning_config_path = configs::CONFIG
                 .read()
                 .unwrap()
