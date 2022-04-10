@@ -5,6 +5,8 @@
 - `-C / --config` オプションの追加。検知ルールのコンフィグを指定することが可能。(Windowsでのライブ調査に便利) (@hitenkoku) 
 - `|equalsfield` と記載することでルール内で二つのフィールドの値が一致するかを記載に対応。 (@hach1yon)
 - `-p / --pivot-keywords-list` オプションの追加。攻撃されたマシン名や疑わしいユーザ名などの情報をピボットキーワードリストとして出力する。 (@kazuminn)
+- `-F / --full-data`オプションの追加。検知したレコードのフィールド情報をcsvに出力することが可能。(@hach1yon)
+- `--level-tuning` オプションの追加。ルールの検知ファイルを設定したコンフィグファイルに従って検知レベルをチューニングすることが可能(@itib and @hitenkoku)
 
 **改善:**
 - 検知ルールとドキュメントの更新。 (@YamatoSecurity)
@@ -14,6 +16,8 @@
 - 検知ルールの更新時、更新されたルールのファイル名が表示される。 (@hitenkoku)
 - ソースコードにあるClippyの警告を修正。 (@hitenkoku and @hach1yon)
 - イベントIDとタイトルが記載されたコンフィグファイルの名前を `timeline_event_info.txt` から `statistics_event_info.txt`に変更。 (@YamatoSecurity and @garigariganzy)
+- 64bit Windowsで32bit版のバイナリを実行しないように修正(@hitenkoku)
+- MITRE ATT&CKのデータの出力を`output_tag.txt`で修正できるように修正(@hitenkoku)
 
 **バグ修正:**
 - `.git` フォルダ内にある `.yml` ファイルがパースエラーを引き起こしていた問題の修正。 (@hitenkoku)
