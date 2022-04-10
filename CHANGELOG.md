@@ -5,6 +5,8 @@
 - Specify config directory (`-C / --config`): Can easily perform live analysis on Windows machines without specifying the Windows event log directory. (@hitenkoku) 
 - Added the `|equalsfield` aggregator in order to write rules that compare if two fields are equal or not. (@hach1yon)
 - Pivot keyword list generator feature (`-p / --pivot-keywords-list`): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
+- Added the `-F / --full-data` option: Will output fields information in detected record to `--output` file. (@hach1yon)
+- Added the `--level-tuning` option: Will change level in rules by specified config file. (@itib and @hitenkoku)
 
 **Enhancements:**
 - Updated detection rules and documentation. (@YamatoSecurity)
@@ -14,6 +16,8 @@
 - When updating rules, the names of new rules as well as the count will be displayed. (@hitenkoku)
 - Removed all Clippy warnings from the source code. (@hitenkoku and @hach1yon)
 - Updated the event ID and title config file (`timeline_event_info.txt`) and changed the name to `statistics_event_info.txt`. (@YamatoSecurity and @garigariganzy)
+- Changed 32bit hayabusa Windows application can't be executed on 64bit Windows (@hitenkoku)
+- Updated can reduce MITRE ATT&CK tag output by `output_tag.txt` (@hitenkoku)
 
 **Bug Fixes:**
 - `.yml` files in the `.git` folder would cause parse errors so they are not ignored. (@hitenkoku)
