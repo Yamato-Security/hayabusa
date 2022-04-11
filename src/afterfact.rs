@@ -21,9 +21,11 @@ pub struct CsvFormat<'a> {
     computer: &'a str,
     event_i_d: &'a str,
     level: &'a str,
+    mitre_attack: &'a str,
     rule_title: &'a str,
     details: &'a str,
-    mitre_attack: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    record_information: Option<&'a str>,
     rule_path: &'a str,
     file_path: &'a str,
 }
@@ -37,6 +39,8 @@ pub struct DisplayFormat<'a> {
     pub level: &'a str,
     pub rule_title: &'a str,
     pub details: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub record_information: Option<&'a str>,
 }
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
@@ -139,81 +143,44 @@ fn emit_csv<W: std::io::Write>(
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             if displayflag {
-                if color_map.is_some() {
-                    let output_color =
-                        _get_output_color(color_map.as_ref().unwrap(), &detect_info.level);
-                    wtr.serialize(DisplayFormat {
-                        timestamp: &format!(
-                            "{} ",
-                            &format_time(time).truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        level: &format!(
-                            " {} ",
-                            &detect_info.level.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        computer: &format!(
-                            " {} ",
-                            &detect_info.computername.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        event_i_d: &format!(
-                            " {} ",
-                            &detect_info.eventid.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        rule_title: &format!(
-                            " {} ",
-                            &detect_info.alert.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                        details: &format!(
-                            " {}",
-                            &detect_info.detail.truecolor(
-                                output_color[0],
-                                output_color[1],
-                                output_color[2]
-                            )
-                        ),
-                    })?;
-                } else {
-                    wtr.serialize(DisplayFormat {
-                        timestamp: &format!("{} ", &format_time(time)),
-                        level: &format!(" {} ", &detect_info.level),
-                        computer: &format!(" {} ", &detect_info.computername),
-                        event_i_d: &format!(" {} ", &detect_info.eventid),
-                        rule_title: &format!(" {} ", &detect_info.alert),
-                        details: &format!(" {}", &detect_info.detail),
-                    })?;
-                }
+                let colors = color_map
+                    .as_ref()
+                    .map(|cl_mp| _get_output_color(cl_mp, &detect_info.level));
+                let colors = colors.as_ref();
+
+                let recinfo = detect_info
+                    .record_information
+                    .as_ref()
+                    .map(|recinfo| _format_cell(recinfo, ColPos::Last, colors));
+                let details = detect_info
+                    .detail
+                    .chars()
+                    .filter(|&c| !c.is_control())
+                    .collect::<String>();
+
+                let dispformat = DisplayFormat {
+                    timestamp: &_format_cell(&format_time(time), ColPos::First, colors),
+                    level: &_format_cell(&detect_info.level, ColPos::Other, colors),
+                    computer: &_format_cell(&detect_info.computername, ColPos::Other, colors),
+                    event_i_d: &_format_cell(&detect_info.eventid, ColPos::Other, colors),
+                    rule_title: &_format_cell(&detect_info.alert, ColPos::Other, colors),
+                    details: &_format_cell(&details, ColPos::Other, colors),
+                    record_information: recinfo.as_deref(),
+                };
+                wtr.serialize(dispformat)?;
             } else {
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {
                     timestamp: &format_time(time),
-                    file_path: &detect_info.filepath,
-                    rule_path: &detect_info.rulepath,
                     level: &detect_info.level,
                     computer: &detect_info.computername,
                     event_i_d: &detect_info.eventid,
+                    mitre_attack: &detect_info.tag_info,
                     rule_title: &detect_info.alert,
                     details: &detect_info.detail,
-                    mitre_attack: &detect_info.tag_info,
+                    record_information: detect_info.record_information.as_deref(),
+                    file_path: &detect_info.filepath,
+                    rule_path: &detect_info.rulepath,
                 })?;
             }
             let level_suffix = *configs::LEVELMAP
@@ -243,6 +210,29 @@ fn emit_csv<W: std::io::Write>(
         &color_map,
     );
     Ok(())
+}
+
+enum ColPos {
+    First, // 先頭
+    Last,  // 最後
+    Other, // それ以外
+}
+
+fn _format_cellpos(column: ColPos, colval: &str) -> String {
+    return match column {
+        ColPos::First => format!("{} ", colval),
+        ColPos::Last => format!(" {}", colval),
+        ColPos::Other => format!(" {} ", colval),
+    };
+}
+
+fn _format_cell(word: &str, column: ColPos, output_color: Option<&Vec<u8>>) -> String {
+    if let Some(color) = output_color {
+        let colval = format!("{}", word.truecolor(color[0], color[1], color[2]));
+        _format_cellpos(column, &colval)
+    } else {
+        _format_cellpos(column, word)
+    }
 }
 
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
@@ -351,6 +341,7 @@ mod tests {
         let test_eventid = "1111";
         let output = "pokepoke";
         let test_attack = "execution/txxxx.yyy";
+        let test_recinfo = "record_infoinfo11";
         {
             let mut messages = print::MESSAGES.lock().unwrap();
             messages.clear();
@@ -381,6 +372,7 @@ mod tests {
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
+                    record_information: Option::Some(test_recinfo.to_string()),
                 },
             );
         }
@@ -389,7 +381,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,EventID,Level,RuleTitle,Details,MitreAttack,RulePath,FilePath\n"
+            "Timestamp,Computer,EventID,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -402,11 +394,13 @@ mod tests {
                 + ","
                 + test_level
                 + ","
+                + test_attack
+                + ","
                 + test_title
                 + ","
                 + output
                 + ","
-                + test_attack
+                + test_recinfo
                 + ","
                 + testrulepath
                 + ","
@@ -463,6 +457,7 @@ mod tests {
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
+                    record_information: Option::Some(String::default()),
                 },
             );
             messages.debug();
@@ -471,7 +466,8 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let expect_header = "Timestamp|Computer|EventID|Level|RuleTitle|Details\n";
+        let expect_header =
+            "Timestamp|Computer|EventID|Level|RuleTitle|Details|RecordInformation\n";
         let expect_colored = expect_header.to_string()
             + &get_white_color_string(
                 &expect_tz
@@ -489,6 +485,8 @@ mod tests {
             + &get_white_color_string(test_title)
             + " | "
             + &get_white_color_string(output)
+            + " | "
+            + &get_white_color_string("")
             + "\n";
         let expect_nocoloed = expect_header.to_string()
             + &expect_tz
@@ -505,6 +503,8 @@ mod tests {
             + test_title
             + " | "
             + output
+            + " | "
+            + ""
             + "\n";
 
         let mut file: Box<dyn io::Write> =

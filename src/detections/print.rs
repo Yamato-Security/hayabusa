@@ -31,6 +31,7 @@ pub struct DetectInfo {
     pub alert: String,
     pub detail: String,
     pub tag_info: String,
+    pub record_information: Option<String>,
 }
 
 pub struct AlertMessage {}
@@ -53,6 +54,13 @@ lazy_static! {
         .unwrap()
         .args
         .is_present("statistics");
+    pub static ref TAGS_CONFIG: HashMap<String, String> =
+        Message::create_tags_config("config/output_tag.txt");
+    pub static ref PIVOT_KEYWORD_LIST_FLAG: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("pivot-keywords-list");
 }
 
 impl Default for Message {
@@ -65,6 +73,33 @@ impl Message {
     pub fn new() -> Self {
         let messages: BTreeMap<DateTime<Utc>, Vec<DetectInfo>> = BTreeMap::new();
         Message { map: messages }
+    }
+
+    /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。tagではこのHashMapのキーに対応しない出力は出力しないものとする
+    /// ex. attack.impact,Impact
+    pub fn create_tags_config(path: &str) -> HashMap<String, String> {
+        let read_result = utils::read_csv(path);
+        if read_result.is_err() {
+            AlertMessage::alert(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                read_result.as_ref().unwrap_err(),
+            )
+            .ok();
+            return HashMap::default();
+        }
+        let mut ret: HashMap<String, String> = HashMap::new();
+        read_result.unwrap().into_iter().for_each(|line| {
+            if line.len() != 2 {
+                return;
+            }
+
+            let empty = &"".to_string();
+            let tag_full_str = line.get(0).unwrap_or(empty).trim();
+            let tag_replace_str = line.get(1).unwrap_or(empty).trim();
+
+            ret.insert(tag_full_str.to_owned(), tag_replace_str.to_owned());
+        });
+        ret
     }
 
     /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
@@ -217,6 +252,7 @@ impl AlertMessage {
 mod tests {
     use crate::detections::print::DetectInfo;
     use crate::detections::print::{AlertMessage, Message};
+    use hashbrown::HashMap;
     use serde_json::Value;
     use std::io::BufWriter;
 
@@ -250,6 +286,7 @@ mod tests {
                 alert: "test1".to_string(),
                 detail: String::default(),
                 tag_info: "txxx.001".to_string(),
+                record_information: Option::Some("record_information1".to_string()),
             },
         );
 
@@ -280,6 +317,7 @@ mod tests {
                 alert: "test2".to_string(),
                 detail: String::default(),
                 tag_info: "txxx.002".to_string(),
+                record_information: Option::Some("record_information2".to_string()),
             },
         );
 
@@ -310,6 +348,7 @@ mod tests {
                 alert: "test3".to_string(),
                 detail: String::default(),
                 tag_info: "txxx.003".to_string(),
+                record_information: Option::Some("record_information3".to_string()),
             },
         );
 
@@ -335,12 +374,13 @@ mod tests {
                 alert: "test4".to_string(),
                 detail: String::default(),
                 tag_info: "txxx.004".to_string(),
+                record_information: Option::Some("record_information4".to_string()),
             },
         );
 
         let display = format!("{}", format_args!("{:?}", message));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\" }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\" }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\" }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\" }]} }";
+        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\", record_information: Some(\"record_information4\") }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\", record_information: Some(\"record_information1\") }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\", record_information: Some(\"record_information2\") }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\", record_information: Some(\"record_information3\") }]} }";
         assert_eq!(display, expect);
     }
 
@@ -460,5 +500,19 @@ mod tests {
             ),
             expected,
         );
+    }
+    #[test]
+    /// output_tag.txtの読み込みテスト
+    fn test_load_output_tag() {
+        let actual = Message::create_tags_config("test_files/config/output_tag.txt");
+        let expected: HashMap<String, String> = HashMap::from([
+            ("attack.impact".to_string(), "Impact".to_string()),
+            ("xxx".to_string(), "yyy".to_string()),
+        ]);
+
+        assert_eq!(actual.len(), expected.len());
+        for (k, v) in expected.iter() {
+            assert!(actual.get(k).unwrap_or(&String::default()) == v);
+        }
     }
 }

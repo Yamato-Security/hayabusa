@@ -1,3 +1,5 @@
+use crate::detections::pivot::PivotKeyword;
+use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
@@ -70,7 +72,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
 
     let usages = "-d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
+    -F --full-data 'Print all field information.'
+    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -c --color 'Output with color. (Terminal needs to support True Color.)'
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
@@ -89,6 +92,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
+    -p --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
@@ -276,6 +280,7 @@ impl Default for EventKeyAliasConfig {
 fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
+    // eventkey_aliasが読み込めなかったらエラーで終了とする。
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
         AlertMessage::alert(
@@ -285,7 +290,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         .ok();
         return config;
     }
-    // eventkey_aliasが読み込めなかったらエラーで終了とする。
+
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 2 {
             return;
@@ -308,6 +313,40 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     });
     config.key_to_eventkey.shrink_to_fit();
     config
+}
+
+///設定ファイルを読み込み、keyとfieldsのマップをPIVOT_KEYWORD大域変数にロードする。
+pub fn load_pivot_keywords(path: &str) {
+    let read_result = utils::read_txt(path);
+    if read_result.is_err() {
+        AlertMessage::alert(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            read_result.as_ref().unwrap_err(),
+        )
+        .ok();
+    }
+
+    read_result.unwrap().into_iter().for_each(|line| {
+        let map: Vec<&str> = line.split('.').collect();
+        if map.len() != 2 {
+            return;
+        }
+
+        //存在しなければ、keyを作成
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .entry(map[0].to_string())
+            .or_insert(PivotKeyword::new());
+
+        PIVOT_KEYWORD
+            .write()
+            .unwrap()
+            .get_mut(&map[0].to_string())
+            .unwrap()
+            .fields
+            .insert(map[1].to_string());
+    });
 }
 
 #[derive(Debug, Clone)]

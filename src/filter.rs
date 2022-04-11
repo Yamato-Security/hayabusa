@@ -59,7 +59,7 @@ impl RuleExclude {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[WARN] {} does not exist", filename));
+                    .push(format!("{} does not exist", filename));
             }
             return;
         }
