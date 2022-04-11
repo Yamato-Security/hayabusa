@@ -226,7 +226,7 @@ You may receive warning from anti-virus or EDR when trying to run hayabusa. Thes
 
 ## Windows
 
-In Command Prompt or Windows Terminal, just run 32-bit or 64-bit Windoows binary from the hayabusa root directory. 
+In Command Prompt or Windows Terminal, just run the 32-bit or 64-bit Windows binary from the hayabusa root directory. 
 Example: `hayabusa-1.2.0-windows-x64.exe`
 
 ## Linux
