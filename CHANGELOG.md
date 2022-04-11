@@ -2,11 +2,11 @@
 
 ##v1.2.0 [2022/04/??]
 **New Features:**
-- Specify config directory (`-C / --config`): Can easily perform live analysis on Windows machines without specifying the Windows event log directory. (@hitenkoku) 
-- Added the `|equalsfield` aggregator in order to write rules that compare if two fields are equal or not. (@hach1yon)
+- Specify config directory (`-C / --config`): When specifying a different rules directory, the rules config directory will still be the default `rules/config`, so this option is useful when you want to test rules and their config files in a different directory. (@hitenkoku) 
+- `|equalsfield` aggregator: In order to write rules that compare if two fields are equal or not. (@hach1yon)
 - Pivot keyword list generator feature (`-p / --pivot-keywords-list`): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
-- Added the `-F / --full-data` option: Will output fields information in detected record to `--output` file. (@hach1yon)
-- Added the `--level-tuning` option: Will change level in rules by specified config file. (@itib and @hitenkoku)
+- `-F / --full-data` option: Will output fields information in detected record to `--output` file. (@hach1yon)
+- `--level-tuning` option: You can tune the risk `level` in hayabusa and sigma rules to your environment. (@itib and @hitenkoku)
 
 **Enhancements:**
 - Updated detection rules and documentation. (@YamatoSecurity)
@@ -16,12 +16,13 @@
 - When updating rules, the names of new rules as well as the count will be displayed. (@hitenkoku)
 - Removed all Clippy warnings from the source code. (@hitenkoku and @hach1yon)
 - Updated the event ID and title config file (`timeline_event_info.txt`) and changed the name to `statistics_event_info.txt`. (@YamatoSecurity and @garigariganzy)
-- Changed 32bit hayabusa Windows application can't be executed on 64bit Windows (@hitenkoku)
-- Updated can reduce MITRE ATT&CK tag output by `output_tag.txt` (@hitenkoku)
+- 32-bit Hayabusa Windows binaries are now prevented from running on 64-bit Windows as it would cause unexpected results. (@hitenkoku)
+- MITRE ATT&CK tag output can be customized in `output_tag.txt`. (@hitenkoku)
 
 **Bug Fixes:**
-- `.yml` files in the `.git` folder would cause parse errors so they are not ignored. (@hitenkoku)
-- Removed unnecessary newline due to loading test file rules (@hitenkoku)
+- `.yml` files in the `.git` folder would cause parse errors so they are now ignored. (@hitenkoku)
+- Removed unnecessary newline due to loading test file rules. (@hitenkoku)
+- Fixed output stopping in Windows Terminal due a bug in Terminal itself. (@hitenkoku)
 
 ##v1.1.0 [2022/03/03]
 **New Features:**
