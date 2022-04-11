@@ -98,8 +98,8 @@ impl LevelTuning {
 #[cfg(test)]
 mod tests {
 
-    use crate::{filter::RuleExclude, yaml};
-    use hashbrown::HashSet;
+    // use crate::{filter::RuleExclude, yaml};
+    // use hashbrown::HashSet;
 
     use super::*;
 
@@ -134,7 +134,7 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_mutiple_regex_and() {
+    fn test_level_tuning_update_rule_files() {
         let level_tuning_config_path = "./test_files/config/level_tuning.txt";
         let rule_str = r#"
         id: 12345678-1234-1234-1234-123456789012
@@ -154,24 +154,6 @@ mod tests {
 
         let res = LevelTuning::run(level_tuning_config_path, path);
         assert_eq!(res, Ok(()));
-
-        let mut parser = yaml::ParseYaml::new();
-        parser
-            .read_dir(
-                "test_files/rules",
-                "informational",
-                &RuleExclude {
-                    no_use_rule: HashSet::new(),
-                },
-            )
-            .ok();
-        for (_filepath, yaml) in parser.files {
-            if yaml["id"].as_str().unwrap_or(&String::default())
-                == "12345678-1234-1234-1234-123456789012"
-            {
-                assert_eq!("high", yaml["level"].as_str().unwrap());
-            }
-        }
 
         assert_eq!(fs::read_to_string(path).unwrap(), expected_rule);
         fs::remove_file(path).unwrap();
