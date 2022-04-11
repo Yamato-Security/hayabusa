@@ -96,8 +96,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
-        .version("1.1.0")
-        .author("Yamato Security (https://github.com/Yamato-Security/hayabusa)")
+        .version("1.2.0")
+        .author("Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato")
         .setting(AppSettings::VersionlessSubcommands)
         .arg(
             // TODO: When update claps to 3.x, these can write in usage texts...

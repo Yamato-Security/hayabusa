@@ -70,6 +70,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Contribution](#contribution)
 - [Bug Submission](#bug-submission)
 - [License](#license)
+- [Twitter](#twitter)
 
 ## Main Goals
 
@@ -602,3 +603,7 @@ This project is currently actively maintained and we are happy to fix any bugs r
 # License
 
 Hayabusa is released under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) and all rules are released under the [Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md).
+
+# Twitter
+
+You can recieve the latest news about Hayaabusa, rule updates, other Yamato Security tools, etc... by following us on Twitter at [https://twitter.com/SecurityYamato](@SecurityYamato).

@@ -62,14 +62,15 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [検知レベルのlevelチューニング](#検知レベルのlevelチューニング)
   - [イベントIDフィルタリング](#イベントidフィルタリング)
 - [その他のWindowsイベントログ解析ツールおよび関連プロジェクト](#その他のwindowsイベントログ解析ツールおよび関連プロジェクト)
-- [Windowsイベントログ設定のススメ](#Windowsイベントログ設定のススメ)
-- [Sysmon関係のプロジェクト](#Sysmon関係のプロジェクト)
+- [Windowsイベントログ設定のススメ](#windowsイベントログ設定のススメ)
+- [Sysmon関係のプロジェクト](#sysmon関係のプロジェクト)
 - [コミュニティによるドキュメンテーション](#コミュニティによるドキュメンテーション)
   - [英語](#英語)
   - [日本語](#日本語)
 - [貢献](#貢献)
 - [バグの報告](#バグの報告)
 - [ライセンス](#ライセンス)
+- [Twitter](#twitter)
 
 ## 主な目的
 
@@ -609,3 +610,7 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 # ライセンス
 
 Hayabusaは[GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)で公開され、すべてのルールは[Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md)で公開されています。
+
+# Twitter
+
+[https://twitter.com/SecurityYamato](@SecurityYamato)でHayabusa、ルール更新、その他の大和セキュリティツール等々について情報を提供しています。
