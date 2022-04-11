@@ -84,6 +84,7 @@ impl App {
 
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
+            self.output_logo();
             println!("{}", configs::CONFIG.read().unwrap().args.usage());
             println!();
             return;
@@ -251,7 +252,7 @@ impl App {
             } else {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    "Need rule_levels.txt file to use --level-tuning option",
+                    "Need rule_levels.txt file to use --level-tuning option [default: ./config/level_tuning.txt]",
                 )
                 .ok();
             }
