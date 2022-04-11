@@ -59,17 +59,18 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [Hayabusaルール](#hayabusaルール)
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
   - [検知ルールのチューニング](#検知ルールのチューニング)
+  - [検知レベルのlevelチューニング](#検知レベルのlevelチューニング)
   - [イベントIDフィルタリング](#イベントidフィルタリング)
 - [その他のWindowsイベントログ解析ツールおよび関連プロジェクト](#その他のwindowsイベントログ解析ツールおよび関連プロジェクト)
 - [Windowsイベントログ設定のススメ](#windowsイベントログ設定のススメ)
 - [Sysmon関係のプロジェクト](#sysmon関係のプロジェクト)
-  - [Sigmaをサポートする他の類似ツールとの比較](#sigmaをサポートする他の類似ツールとの比較)
 - [コミュニティによるドキュメンテーション](#コミュニティによるドキュメンテーション)
   - [英語](#英語)
   - [日本語](#日本語)
 - [貢献](#貢献)
 - [バグの報告](#バグの報告)
 - [ライセンス](#ライセンス)
+- [Twitter](#twitter)
 
 ## 主な目的
 
@@ -129,7 +130,8 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 * イベントログの統計。(どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。)
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
-* イベントログから不審なユーザやファイルを素早く特定するのに有用な、ピボットキーワードの一覧を作成することが可能です。
+* ルールレベルのチューニング。
+* イベントログから不審なユーザやファイルを素早く特定するのに有用な、ピボットキーワードの一覧作成。
 
 # 予定されている機能
 
@@ -309,6 +311,7 @@ USAGE:
     -s --statistics 'イベント ID の統計情報を表示する。'
     -q --quiet 'Quietモード。起動バナーを表示しない。'
     -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
+    --level-tuning <LEVEL_TUNING_FILE> 'ルールlevelのチューニング [default: ./config/level_tuning.txt]'
     -p --pivot-keywords-list 'ピボットキーワードの一覧作成。'
     --contributors 'コントリビュータの一覧表示。'
 ```
@@ -490,9 +493,9 @@ Hayabusaルールのディレクトリ構造は、3つのディレクトリに�
 
 ルールはさらにログタイプ（例：Security、Systemなど）によってディレクトリに分けられ、次の形式で名前が付けられます。
 
-* アラート形式: `<イベントID>_<MITRE ATT&CKの攻撃手法名>_<詳細>.yml`
-* アラート例: `1102_IndicatorRemovalOnHost-ClearWindowsEventLogs_SecurityLogCleared.yml`
-* イベント形式: `<イベントID>_<詳細>.yml`
+* アラート形式: `<イベントID>_<イベントの説明>_<リスクの説明>.yml`
+* アラート例: `1102_SecurityLogCleared_PossibleAntiForensics.yml`
+* イベント形式: `<イベントID>_<イベントの説明>.yml`
 * イベント例: `4776_NTLM-LogonToLocalAccount.yml`
 
 現在のルールをご確認いただき、新規作成時のテンプレートとして、また検知ロジックの確認用としてご利用ください。
@@ -509,8 +512,7 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 
 1. [Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルール。
 2. [Sigmaルール仕様](https://github.com/SigmaHQ/Sigma/wiki/Specification)の`count`以外の集計式。
-
-> 注意：この制限はSigmaルールの変換ツールにあり、Hayabusa自身にあるわけではありません。
+3. `|near`を使用するルール。
 
 ## 検知ルールのチューニング
 
@@ -519,6 +521,20 @@ Sigmaルールは、最初にHayabusaルール形式に変換する必要があ�
 ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `rules/config/exclude_rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
 
 ルールIDを `rules/config/noisy_rules.txt`に追加して、デフォルトでルールを無視することもできますが、`-n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
+
+## 検知レベルのlevelチューニング
+
+Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
+ユーザが独自のリスクレベルに設定するには`./config/level_tuning.txt`に変換情報を書き、`hayabusa.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ルールファイルが直接書き換えられることに注意して使用してください。
+
+`./config/level_tuning.txt`の例:
+```
+id,new_level
+00000000-0000-0000-0000-000000000000,informational # sample level tuning line
+```
+
+ルールディレクトリ内で`id`が`00000000-0000-0000-0000-000000000000`のルールのリスクレベルが`informational`に書き換えられます。
 
 ## イベントIDフィルタリング
 
@@ -569,23 +585,6 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 * [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
 * [TrustedSec Sysmon Community Guide](https://github.com/trustedsec/SysmonCommunityGuide)
 
-## Sigmaをサポートする他の類似ツールとの比較
-
-対象となるサンプルデータ、コマンドラインオプション、ルールのチューニング等によって結果が異なるため、完全な比較はできませんが、ご了承ください。
-我々のテストでは、Hayabusaはすべてのツールの中で最も多くのSigmaルールをサポートしながらも、非常に高速な速度を維持し、大量のメモリを必要としないことが分かっています。
-
-以下のベンチマークは、2021/12/23に [sample-evtx repository](https://github.com/Yamato-Security/Hayabusa-sample-evtx) から約500個のevtxファイル（130MB）を基に、Lenovo P51で計測したものです。Hayabusa 1.0.0を使いました。
-
-|           |  経過時間   |                  メモリ使用量                  | 利用可能のSigmaルール数 |
-| :-------: | :---------: | :--------------------------------------------: | :---------------------: |
-| Chainsaw  | 7.5 seconds |                     70 MB                      |           170           |
-| Hayabusa  | 7.8 seconds |                     340 MB                     |           267           |
-| Zircolite | 34 seconds  | 380 MB (通常、ログファイルの3倍のサイズが必要) |           237           |
-
-* Hayabusaルールも有効にすると、約300のユニークなアラートとイベントを検知します。
-* 合計7.5GBの多数のイベントログファイルでテストしたところ、7分以内に終了し、1GB以上のメモリを使用しませんでした。消費されるメモリ量は、ターゲットのevtxファイルのサイズではなく、結果のサイズによって増えます。
-* [Timeline Explorer](https://ericzimmerman.github.io/#!index.md)などのツールで解析するために、結果を1つのCSVタイムラインにまとめる唯一のツールです。
-
 # コミュニティによるドキュメンテーション
 
 ## 英語
@@ -611,3 +610,7 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 # ライセンス
 
 Hayabusaは[GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)で公開され、すべてのルールは[Detection Rule License (DRL) 1.1](https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md)で公開されています。
+
+# Twitter
+
+[https://twitter.com/SecurityYamato](@SecurityYamato)でHayabusa、ルール更新、その他の大和セキュリティツール等々について情報を提供しています。

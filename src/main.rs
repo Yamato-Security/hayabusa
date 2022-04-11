@@ -19,6 +19,7 @@ use hayabusa::detections::print::{
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
+use hayabusa::options::level_tuning::LevelTuning;
 use hayabusa::yaml::ParseYaml;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
@@ -80,6 +81,16 @@ impl App {
         }
 
         let analysis_start_time: DateTime<Local> = Local::now();
+
+        // Show usage when no arguments.
+        if std::env::args().len() == 1 {
+            self.output_logo();
+            println!();
+            println!("{}", configs::CONFIG.read().unwrap().args.usage());
+            println!();
+            return;
+        }
+
         if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
             self.output_logo();
             println!();
@@ -93,7 +104,7 @@ impl App {
         if !self.is_matched_architecture_and_binary() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                "The hayabusa version you ran does not match your PC architecture.\n Please use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
+                "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
             )
             .ok();
             println!();
@@ -123,6 +134,7 @@ impl App {
             println!();
             return;
         }
+
         if !Path::new("./config").exists() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
@@ -131,11 +143,7 @@ impl App {
             .ok();
             return;
         }
-        if configs::CONFIG.read().unwrap().args.args.is_empty() {
-            println!("{}", configs::CONFIG.read().unwrap().args.usage());
-            println!();
-            return;
-        }
+
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
             for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
                 let keywords_file_name = csv_path.to_owned() + "-" + key + ".txt";
@@ -216,7 +224,42 @@ impl App {
         {
             self.print_contributors();
             return;
+        } else if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("level-tuning")
+        {
+            let level_tuning_config_path = configs::CONFIG
+                .read()
+                .unwrap()
+                .args
+                .value_of("level-tuning")
+                .unwrap_or("./config/level_tuning.txt")
+                .to_string();
+
+            if Path::new(&level_tuning_config_path).exists() {
+                if let Err(err) = LevelTuning::run(
+                    &level_tuning_config_path,
+                    configs::CONFIG
+                        .read()
+                        .unwrap()
+                        .args
+                        .value_of("rules")
+                        .unwrap_or("rules"),
+                ) {
+                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &err).ok();
+                }
+            } else {
+                AlertMessage::alert(
+                    &mut BufWriter::new(std::io::stderr().lock()),
+                    "Need rule_levels.txt file to use --level-tuning option [default: ./config/level_tuning.txt]",
+                )
+                .ok();
+            }
+            return;
         }
+
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         println!();

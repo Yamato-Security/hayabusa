@@ -3,10 +3,11 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{App, AppSettings, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
+use regex::Regex;
 use std::io::BufWriter;
 use std::sync::RwLock;
 lazy_static! {
@@ -24,6 +25,8 @@ lazy_static! {
         "{}/eventkey_alias.txt",
         CONFIG.read().unwrap().folder_path
     ));
+    pub static ref IDS_REGEX: Regex =
+        Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
 }
 
 #[derive(Clone)]
@@ -93,9 +96,14 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
-        .version("1.1.0")
-        .author("Yamato Security (https://github.com/Yamato-Security/hayabusa)")
+        .version("1.2.0")
+        .author("Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato")
         .setting(AppSettings::VersionlessSubcommands)
+        .arg(
+            // TODO: When update claps to 3.x, these can write in usage texts...
+            Arg::from_usage("--level-tuning=[LEVEL_TUNING_FILE] 'Adjust rule level.'")
+                .default_value("./config/level_tuning.txt"),
+        )
         .usage(usages)
         .args_from_usage(usages)
         .get_matches()
