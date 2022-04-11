@@ -59,10 +59,9 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
-  - [Event ID Filtering](#event-id-filtering)
   - [Detection Level Tuning](#detection-level-tuning)
+  - [Event ID Filtering](#event-id-filtering)
 - [Other Windows Event Log Analyzers and Related Projects](#other-windows-event-log-analyzers-and-related-projects)
-  - [Comparison To Other Similar Tools](#comparison-to-other-similar-tools)
 - [Community Documentation](#community-documentation)
   - [English](#english)
   - [Japanese](#japanese)
@@ -126,6 +125,7 @@ You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here]
 * Event log statistics. (Useful for getting a picture of what types of events there are and for tuning your log settings.)
 * Rule tuning configuration by excluding unneeded or noisy rules.
 * MITRE ATT&CK mapping of tactics (only in saved CSV files).
+* Rule level tuning.
 
 # Planned Features
 
@@ -306,6 +306,7 @@ USAGE:
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
+    --level-tuning <LEVEL_TUNING_FILE> 'Tune the rule level [default: ./config/level_tuning.txt]'
     --contributors 'Prints the list of contributors.'
 ```
 
@@ -460,9 +461,9 @@ The hayabusa rule directory structure is separated into 3 directories:
 
 Rules are further seperated into directories by log type (Example: Security, System, etc...) and are named in the following format: 
 
-* Alert format: `<EventID>_<MITRE ATT&CK Name>_<Description>.yml`
-* Alert example: `1102_IndicatorRemovalOnHost-ClearWindowsEventLogs_SecurityLogCleared.yml`
-* Event format: `<EventID>_<Description>.yml`
+* Alert format: `<EventID>_<EventDescription>_<AttackDescription>.yml`
+* Alert example: `1102_SecurityLogCleared_PossibleAntiForensics.yml`
+* Event format: `<EventID>_<EventDescription>.yml`
 * Event example: `4776_NTLM-LogonToLocalAccount.yml`
 
 Please check out the current rules to use as a template in creating new ones or for checking the detection logic.
@@ -479,8 +480,7 @@ Sigma rules need to first be converted to hayabusa rule format explained [here](
 
 1. Rules that use regular expressions that do not work with the [Rust regex crate](https://docs.rs/regex/1.5.4/regex/)
 2. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma/wiki/Specification).
-
-> Note: the limitation is in the sigma rule converter and not in hayabusa itself.
+3. Rules that use `|near`.
 
 ## Detection Rule Tuning
 
@@ -490,6 +490,22 @@ You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `rule
 
 You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
 
+## Detection Level Tuning
+
+Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
+However, the actual risk level will differ between environments.
+You can tune the risk level of the rules by adding them to `./config/level_tuning.txt` and executing `hayabusa.exe --level-tuning` which will update the `level` line in the rule file.
+Please note that the rule file will be updated directly.
+
+`./config/level_tuning.txt` sample line:
+
+```
+id,new_level
+00000000-0000-0000-0000-000000000000,informational # sample level tuning line
+```
+
+In this case, the risk level of the rule with an `id` of `00000000-0000-0000-0000-000000000000` in the rules directory will have its `level` rewritten to `informational`.
+
 ## Event ID Filtering
 
 You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
@@ -498,20 +514,6 @@ This will increase performance so it is recommended if you only need to search f
 We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
 
 Please use this list if you want the best performance but be aware that there is a slight possibility for missing events (false negatives). 
-
-## Detection Level Tuning
-
-The Hayabusa rule and Sigma rule determine the threat level when each author detects it.
-To set the user to their own threat level, write the conversion information in `./config/level_tuning.txt` and execute` hayabusa --level-tuning` to rewrite the rule file.
-Please note that the rule file will be rewritten directly.
-
-`./config/level_tuning.txt` Sample
-```
-id,new_level
-00000000-0000-0000-0000-000000000000,informational # sample level tuning line
-```
-
-The threat level of the rule corresponding to `00000000-0000-0000-0000-000000000000` in the rules directory is rewritten to` informational`.
 
 # Other Windows Event Log Analyzers and Related Projects
 
@@ -538,23 +540,6 @@ There is no "one tool to rule them all" and we have found that each has its own 
 * [Windows Event Log Analysis - Analyst Reference](https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf) - by Forward Defense's Steve Anson.
 * [WELA (Windows Event Log Analyzer)](https://github.com/Yamato-Security/WELA) - The swiff-army knife for Windows event logs by [Yamato Security](https://github.com/Yamato-Security/)
 * [Zircolite](https://github.com/wagga40/Zircolite) - Sigma-based attack detection tool written in Python.
-
-## Comparison To Other Similar Tools
-
-Please understand that it is not possible to do a perfect comparison as results will differ based on the target sample data, command-line options, rule tuning, etc...
-In our tests, we have found hayabusa to support the largest number of sigma rules compared to other similar tools while still maintaining very fast speeds and does not require a great amount of memory. 
-
-The following benchmarks were taken on a Lenovo P51 based on approximately 500 evtx files (130MB) from our [sample-evtx repository](https://github.com/Yamato-Security/hayabusa-sample-evtx) at 2021/12/23 with hayabusa version 1.0.0.
-
-|           | Elapsed Time |                         Memory Usage                         | Unique Sigma Rules With Detections |
-| :-------: | :----------: | :----------------------------------------------------------: | :--------------------------------: |
-| Chainsaw  | 7.5 seconds  |                            75 MB                             |                170                 |
-| Hayabusa  | 7.8 seconds  | 340 MB (memory usage depends on the amount of alerts)        |                267                 |
-| Zircolite |  34 seconds  | 380 MB (normally requires 3 times the size of the log files) |                237                 |
-
-* With hayabusa rules enabled, it will detect around 300 unique alerts and events. 
-* When tested on many event logs files totaling 7.5 GB, it finished in under 7 minutes and used around 1 GB of memory. The amount of memory consumed is based on the size of the results, not on the size of the target evtx files.
-* It is the only tool that provides a consolidated single CSV timeline to analysis in tools like [Timeline Explorer](https://ericzimmerman.github.io/#!index.md).
 
 # Community Documentation
 
