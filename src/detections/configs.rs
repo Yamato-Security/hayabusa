@@ -101,7 +101,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .setting(AppSettings::VersionlessSubcommands)
         .arg(
             // TODO: When update claps to 3.x, these can write in usage texts...
-            Arg::from_usage("--level-tuning=[LEVEL_TUNING_FILE] 'Fix rule file's level'")
+            Arg::from_usage("--level-tuning=[LEVEL_TUNING_FILE] 'Adjust rule level.'")
                 .default_value("./config/level_tuning.txt"),
         )
         .usage(usages)

@@ -85,6 +85,7 @@ impl App {
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
             self.output_logo();
+            println!();
             println!("{}", configs::CONFIG.read().unwrap().args.usage());
             println!();
             return;
@@ -103,7 +104,7 @@ impl App {
         if !self.is_matched_architecture_and_binary() {
             AlertMessage::alert(
                 &mut BufWriter::new(std::io::stderr().lock()),
-                "The hayabusa version you ran does not match your PC architecture.\n Please use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
+                "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
             )
             .ok();
             println!();
