@@ -613,4 +613,4 @@ Hayabusaは[GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)で公開され�
 
 # Twitter
 
-[https://twitter.com/SecurityYamato](@SecurityYamato)でHayabusa、ルール更新、その他の大和セキュリティツール等々について情報を提供しています。
+[@SecurityYamato](https://twitter.com/SecurityYamato)でHayabusa、ルール更新、その他の大和セキュリティツール等々について情報を提供しています。

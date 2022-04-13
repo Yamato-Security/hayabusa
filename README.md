@@ -606,4 +606,4 @@ Hayabusa is released under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 # Twitter
 
-You can recieve the latest news about Hayabusa, rule updates, other Yamato Security tools, etc... by following us on Twitter at [https://twitter.com/SecurityYamato](@SecurityYamato).
+You can recieve the latest news about Hayabusa, rule updates, other Yamato Security tools, etc... by following us on Twitter at [@SecurityYamato](https://twitter.com/SecurityYamato).
