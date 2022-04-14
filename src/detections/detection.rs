@@ -237,7 +237,8 @@ impl Detection {
             .as_vec()
             .unwrap_or(&Vec::default())
             .iter()
-            .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
+            .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
+            .map(|str| str.to_owned())
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);
         let rec_info = if configs::CONFIG.read().unwrap().args.is_present("full-data") {
