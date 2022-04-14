@@ -142,6 +142,10 @@ fn emit_csv<W: std::io::Write>(
 
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
+            let mut level = detect_info.level.to_string();
+            if level == "informational" {
+                level = "info".to_string();
+            }
             if displayflag {
                 let colors = color_map
                     .as_ref()
@@ -160,7 +164,7 @@ fn emit_csv<W: std::io::Write>(
 
                 let dispformat = DisplayFormat {
                     timestamp: &_format_cell(&format_time(time), ColPos::First, colors),
-                    level: &_format_cell(&detect_info.level, ColPos::Other, colors),
+                    level: &_format_cell(&level, ColPos::Other, colors),
                     computer: &_format_cell(&detect_info.computername, ColPos::Other, colors),
                     event_i_d: &_format_cell(&detect_info.eventid, ColPos::Other, colors),
                     rule_title: &_format_cell(&detect_info.alert, ColPos::Other, colors),
@@ -172,7 +176,7 @@ fn emit_csv<W: std::io::Write>(
                 // csv出力時フォーマット
                 wtr.serialize(CsvFormat {
                     timestamp: &format_time(time),
-                    level: &detect_info.level,
+                    level: &level,
                     computer: &detect_info.computername,
                     event_i_d: &detect_info.eventid,
                     mitre_attack: &detect_info.tag_info,
