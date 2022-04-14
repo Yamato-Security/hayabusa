@@ -27,7 +27,7 @@ Click the sidebar icon in top-lefthand corner and open `Integrations`.
 
 ![Integrations](03-Integrations.png)
 
-Type in `csv` in the search bar and click `Import a file`.
+Type in `csv` in the search bar and click `Upload a file`.
 
 ![CSV Upload](04-IntegrationsImportCSV.png)
 
