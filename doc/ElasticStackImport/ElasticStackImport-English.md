@@ -25,8 +25,10 @@ You should see a webpage as follows:
 
 Click the sidebar icon in top-lefthand corner and open `Integrations`.
 
-![Integrations](03-Integrations.png)
-
+ <p>
+    <img alt="Hayabusa Logo" src="03-Integrations.png" width="70%">
+ </p>
+ 
 Type in `csv` in the search bar and click `Upload a file`:
 
 ![CSV Upload](04-IntegrationsImportCSV.png)
