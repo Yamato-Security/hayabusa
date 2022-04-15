@@ -79,13 +79,7 @@ The default Discover view should look similar to this:
 
 ![Discover View](10-Discover.png)
 
-You can get an overview of when the events happened and frequency of events by looking at the histogram at top. You can filter with KQL to search for certain events and alerts. For example:
-  * `Level: "critical"`: Just show critical alerts.
-  * `Level: "critical" or Level: "high"`: Show high and critical alerts.
-  * `NOT Level:info`: Do not show informational events, only alerts.
-  * `*LatMov*`: Show events and alerts related to lateral movement.
-  * `"Password Spray"`: Only show specific attacks such as "Password Spray".
-  * `"LID: 0x8724ead"`: Display all activity associated with Logon ID 0x8724ead.
+You can get an overview of when the events happened and frequency of events by looking at the histogram at top. 
 
 On the left side sidebar, you can select with fields you want to display in columns:
 
@@ -99,6 +93,38 @@ Your Discover view should now look like this:
 
 ![Discover With Columns](14-DicoverWithColumns.png)
 
+You can filter with KQL to search for certain events and alerts. For example:
+  * `Level: "critical"`: Just show critical alerts.
+  * `Level: "critical" or Level: "high"`: Show high and critical alerts.
+  * `NOT Level:info`: Do not show informational events, only alerts.
+  * `*LatMov*`: Show events and alerts related to lateral movement.
+  * `"Password Spray"`: Only show specific attacks such as "Password Spray".
+  * `"LID: 0x8724ead"`: Display all activity associated with Logon ID 0x8724ead.
 
+## Hayabusa Dashboard
 
-https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749
+We have exported a simple Hayabusa Dashboard in JSON to download [here](https://github.com/Yamato-Security/hayabusa/blob/main/doc/ElasticStackImport/HayabusaDashboard.ndjson)
+
+To import the dashboard, open the left sidebar and click `Stack Management` under `Management`.
+
+![Stack Management](15-HayabusaDashboard-StackManagement.png)
+
+After clicking `Saved Objects`, please click `Import` in the upper right-hand corner and import the Hayabusa Dashboard JSON file you downloaded.
+
+![Import Dashboard](16-HayabusaDashboard-Import.png)
+
+You should now be able to use the dashboard shown below:
+
+![Hayabusa Dashboard-1](17-HayabusaDashboard-1.png)
+
+![Hayabussa Dashboard-2](18-HayabusaDashboard-2.png)
+
+## Future Plans
+
+We plan on creating Hayabusa logstash parsers and dashboard pre-built for SOF-ELK so that all you will need to do is copy the CSV results file to a directory in order to ingest the logs.
+
+## Acknowledgements
+
+Much of this documentation was taken from the blog write-up in Japanese from @kzzzzo2 [here](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749).
+
+Many thanks to @kzzzzo2!
