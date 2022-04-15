@@ -3,7 +3,6 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs;
-use crate::filter::DataFilterRule;
 
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
@@ -11,76 +10,56 @@ use tokio::runtime::Runtime;
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
 use serde_json::Value;
+use std::cmp::Ordering;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
+use std::vec;
 
 use super::detection::EvtxRecordInfo;
 
-pub fn concat_selection_key(key_list: &Vec<String>) -> String {
+pub fn concat_selection_key(key_list: &[String]) -> String {
     return key_list
         .iter()
         .fold("detection -> selection".to_string(), |mut acc, cur| {
             acc = acc + " -> " + cur;
-            return acc;
+            acc
         });
 }
 
-pub fn check_regex(string: &str, regex_list: &Vec<Regex>) -> bool {
+pub fn check_regex(string: &str, regex_list: &[Regex]) -> bool {
     for regex in regex_list {
-        if regex.is_match(string) == false {
+        if !regex.is_match(string) {
             continue;
         }
 
         return true;
     }
 
-    return false;
+    false
 }
 
-/// replace string from all defined regex in input to replace_str
-pub fn replace_target_character<'a>(
-    input_str: Option<&'a String>,
-    replace_rule: Option<&'a DataFilterRule>,
-) -> Option<String> {
-    if input_str.is_none() {
-        return None;
-    }
-    if replace_rule.is_none() {
-        return Some(input_str.unwrap().to_string());
-    }
-
-    let replace_regex_rule = &replace_rule.unwrap().regex_rule;
-    let replace_str = &replace_rule.unwrap().replace_str;
-
-    return Some(
-        replace_regex_rule
-            .replace_all(input_str.unwrap(), replace_str)
-            .to_string(),
-    );
-}
-
-pub fn check_allowlist(target: &str, regexes: &Vec<Regex>) -> bool {
+pub fn check_allowlist(target: &str, regexes: &[Regex]) -> bool {
     for regex in regexes {
         if regex.is_match(target) {
             return true;
         }
     }
 
-    return false;
+    false
 }
 
 pub fn value_to_string(value: &Value) -> Option<String> {
-    return match value {
+    match value {
         Value::Null => Option::None,
         Value::Bool(b) => Option::Some(b.to_string()),
         Value::Number(n) => Option::Some(n.to_string()),
-        Value::String(s) => Option::Some(s.to_string()),
+        Value::String(s) => Option::Some(s.trim().to_string()),
         Value::Array(_) => Option::None,
         Value::Object(_) => Option::None,
-    };
+    }
 }
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
@@ -90,12 +69,12 @@ pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
-    return Result::Ok(
+    Result::Ok(
         reader
             .lines()
-            .map(|line| line.unwrap_or(String::default()))
+            .map(|line| line.unwrap_or_default())
             .collect(),
-    );
+    )
 }
 
 pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
@@ -106,11 +85,11 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
     let mut contents: String = String::new();
     let mut ret = vec![];
     let read_res = f.unwrap().read_to_string(&mut contents);
-    if read_res.is_err() {
-        return Result::Err(read_res.unwrap_err().to_string());
+    if let Err(e) = read_res {
+        return Result::Err(e.to_string());
     }
 
-    let mut rdr = csv::Reader::from_reader(contents.as_bytes());
+    let mut rdr = csv::ReaderBuilder::new().from_reader(contents.as_bytes());
     rdr.records().for_each(|r| {
         if r.is_err() {
             return;
@@ -122,19 +101,19 @@ pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
         ret.push(v);
     });
 
-    return Result::Ok(ret);
+    Result::Ok(ret)
 }
 
-pub fn is_target_event_id(s: &String) -> bool {
-    return configs::CONFIG.read().unwrap().target_eventids.is_target(s);
+pub fn is_target_event_id(s: &str) -> bool {
+    configs::CONFIG.read().unwrap().target_eventids.is_target(s)
 }
 
 pub fn get_event_id_key() -> String {
-    return "Event.System.EventID".to_string();
+    "Event.System.EventID".to_string()
 }
 
 pub fn get_event_time() -> String {
-    return "Event.System.TimeCreated_attributes.SystemTime".to_string();
+    "Event.System.TimeCreated_attributes.SystemTime".to_string()
 }
 
 pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
@@ -146,62 +125,59 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
     if rfc3339_time.is_err() {
         return Option::None;
     }
-    let datetime = Utc
-        .from_local_datetime(&rfc3339_time.unwrap().naive_utc())
-        .single();
-    if datetime.is_none() {
-        return Option::None;
-    } else {
-        return Option::Some(datetime.unwrap());
-    }
+    Utc.from_local_datetime(&rfc3339_time.unwrap().naive_utc())
+        .single()
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
 pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     if value.is_string() {
-        return Option::Some(value.as_str().unwrap_or("").to_string());
+        Option::Some(value.as_str().unwrap_or("").to_string())
     } else if value.is_object() {
         // Object type is not specified record value.
-        return Option::None;
+        Option::None
     } else {
-        return Option::Some(value.to_string());
+        Option::Some(value.to_string())
     }
 }
 
-pub fn get_event_value<'a>(key: &String, event_value: &'a Value) -> Option<&'a Value> {
-    if key.len() == 0 {
+pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Value> {
+    if key.is_empty() {
         return Option::None;
     }
 
     let event_key = configs::EVENTKEY_ALIAS.get_event_key(key);
+    let mut ret: &Value = event_value;
     if let Some(event_key) = event_key {
-        let mut ret: &Value = event_value;
         // get_event_keyが取得できてget_event_key_splitが取得できないことはない
         let splits = configs::EVENTKEY_ALIAS.get_event_key_split(key);
         let mut start_idx = 0;
         for key in splits.unwrap() {
-            if ret.is_object() == false {
+            if !ret.is_object() {
                 return Option::None;
             }
 
             let val = &event_key[start_idx..(*key + start_idx)];
             ret = &ret[val];
-            start_idx = *key + start_idx;
+            start_idx += *key;
             start_idx += 1;
         }
 
-        return Option::Some(ret);
+        Option::Some(ret)
     } else {
-        let mut ret: &Value = event_value;
-        let event_key = key;
-        for key in event_key.split(".") {
-            if ret.is_object() == false {
+        let event_key = if !key.contains('.') {
+            "Event.EventData.".to_string() + key
+        } else {
+            key.to_string()
+        };
+        for key in event_key.split('.') {
+            if !ret.is_object() {
                 return Option::None;
             }
             ret = &ret[key];
         }
 
-        return Option::Some(ret);
+        Option::Some(ret)
     }
 }
 
@@ -212,28 +188,19 @@ pub fn get_thread_num() -> usize {
         .args
         .value_of("thread-number")
         .unwrap_or(def_thread_num_str.as_str());
-    return threadnum.parse::<usize>().unwrap().clone();
+    threadnum.parse::<usize>().unwrap()
 }
 
 pub fn create_tokio_runtime() -> Runtime {
-    return Builder::new_multi_thread()
+    Builder::new_multi_thread()
         .worker_threads(get_thread_num())
         .thread_name("yea-thread")
         .build()
-        .unwrap();
+        .unwrap()
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRecordInfo {
-    // EvtxRecordInfoを作る
-    let data_str = data.to_string();
-    let mut rec = EvtxRecordInfo {
-        evtx_filepath: path,
-        record: data,
-        data_string: data_str,
-        key_2_value: hashbrown::HashMap::new(),
-    };
-
+pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecordInfo {
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -241,8 +208,9 @@ pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRec
     // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
     // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。
+    let mut key_2_values = hashbrown::HashMap::new();
     for key in keys {
-        let val = get_event_value(key, &rec.record);
+        let val = get_event_value(key, &data);
         if val.is_none() {
             continue;
         }
@@ -252,45 +220,206 @@ pub fn create_rec_info(data: Value, path: String, keys: &Vec<String>) -> EvtxRec
             continue;
         }
 
-        rec.key_2_value.insert(key.to_string(), val.unwrap());
+        key_2_values.insert(key.to_string(), val.unwrap());
     }
 
-    return rec;
+    // EvtxRecordInfoを作る
+    let data_str = data.to_string();
+    let rec_info = if configs::CONFIG.read().unwrap().args.is_present("full-data") {
+        Option::Some(create_recordinfos(&data))
+    } else {
+        Option::None
+    };
+    EvtxRecordInfo {
+        evtx_filepath: path,
+        record: data,
+        data_string: data_str,
+        key_2_value: key_2_values,
+        record_information: rec_info,
+    }
+}
+
+/**
+ * CSVのrecord infoカラムに出力する文字列を作る
+ */
+fn create_recordinfos(record: &Value) -> String {
+    let mut output = vec![];
+    _collect_recordinfo(&mut vec![], "", record, &mut output);
+
+    // 同じレコードなら毎回同じ出力になるようにソートしておく
+    output.sort_by(|(left, left_data), (right, right_data)| {
+        let ord = left.cmp(right);
+        if ord == Ordering::Equal {
+            left_data.cmp(right_data)
+        } else {
+            ord
+        }
+    });
+
+    let summary: Vec<String> = output
+        .iter()
+        .map(|(key, value)| {
+            return format!("{}:{}", key, value);
+        })
+        .collect();
+
+    // 標準出力する時はセルがハイプ区切りになるので、パイプ区切りにしない
+    if configs::CONFIG.read().unwrap().args.is_present("output") {
+        summary.join(" | ")
+    } else {
+        summary.join(" ")
+    }
+}
+
+/**
+ * CSVのfieldsカラムに出力する要素を全て収集する
+ */
+fn _collect_recordinfo<'a>(
+    keys: &mut Vec<&'a str>,
+    parent_key: &'a str,
+    value: &'a Value,
+    output: &mut Vec<(String, String)>,
+) {
+    match value {
+        Value::Array(ary) => {
+            for sub_value in ary {
+                _collect_recordinfo(keys, parent_key, sub_value, output);
+            }
+        }
+        Value::Object(obj) => {
+            // lifetimeの関係でちょっと変な実装になっている
+            if !parent_key.is_empty() {
+                keys.push(parent_key);
+            }
+            for (key, value) in obj {
+                // 属性は出力しない
+                if key.ends_with("_attributes") {
+                    continue;
+                }
+                // Event.Systemは出力しない
+                if key.eq("System") && keys.get(0).unwrap_or(&"").eq(&"Event") {
+                    continue;
+                }
+
+                _collect_recordinfo(keys, key, value, output);
+            }
+            if !parent_key.is_empty() {
+                keys.pop();
+            }
+        }
+        Value::Null => (),
+        _ => {
+            // 一番子の要素の値しか収集しない
+            let strval = value_to_string(value);
+            if let Some(strval) = strval {
+                let strval = strval.trim().chars().fold(String::default(), |mut acc, c| {
+                    if c.is_control() || c.is_ascii_whitespace() {
+                        acc.push(' ');
+                    } else {
+                        acc.push(c);
+                    };
+                    acc
+                });
+                output.push((parent_key.to_string(), strval));
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::detections::utils;
-    use crate::filter::DataFilterRule;
     use regex::Regex;
     use serde_json::Value;
 
     #[test]
+    fn test_create_recordinfos() {
+        let record_json_str = r#"
+        {
+            "Event": {
+                "System": {"EventID": 4103, "Channel": "PowerShell", "Computer":"DESKTOP-ICHIICHI"},
+                "UserData": {"User": "u1", "AccessMask": "%%1369", "Process":"lsass.exe"},
+                "UserData_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let ret = utils::create_recordinfos(&record);
+                // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
+                let expected = "AccessMask:%%1369 Process:lsass.exe User:u1".to_string();
+                assert_eq!(ret, expected);
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_create_recordinfos2() {
+        // EventDataの特殊ケース
+        let record_json_str = r#"
+        {
+            "Event": {
+                "System": {"EventID": 4103, "Channel": "PowerShell", "Computer":"DESKTOP-ICHIICHI"},
+                "EventData": {
+                    "Binary": "hogehoge",
+                    "Data":[
+                        "Data1",
+                        "DataData2",
+                        "",
+                        "DataDataData3"
+                    ]
+                },
+                "EventData_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+            },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let ret = utils::create_recordinfos(&record);
+                // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
+                let expected = "Binary:hogehoge Data: Data:Data1 Data:DataData2 Data:DataDataData3"
+                    .to_string();
+                assert_eq!(ret, expected);
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
     fn test_check_regex() {
-        let regexes = utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
-            .unwrap()
-            .into_iter()
-            .map(|regex_str| Regex::new(&regex_str).unwrap())
-            .collect();
+        let regexes: Vec<Regex> =
+            utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
+                .unwrap()
+                .into_iter()
+                .map(|regex_str| Regex::new(&regex_str).unwrap())
+                .collect();
         let regextext = utils::check_regex("\\cvtres.exe", &regexes);
-        assert!(regextext == true);
+        assert!(regextext);
 
         let regextext = utils::check_regex("\\hogehoge.exe", &regexes);
-        assert!(regextext == false);
+        assert!(!regextext);
     }
 
     #[test]
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
-        let allowlist = utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
-            .unwrap()
-            .into_iter()
-            .map(|allow_str| Regex::new(&allow_str).unwrap())
-            .collect();
-        assert!(true == utils::check_allowlist(commandline, &allowlist));
+        let allowlist: Vec<Regex> =
+            utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
+                .unwrap()
+                .into_iter()
+                .map(|allow_str| Regex::new(&allow_str).unwrap())
+                .collect();
+        assert!(utils::check_allowlist(commandline, &allowlist));
 
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate2.exe\"";
-        assert!(false == utils::check_allowlist(commandline, &allowlist));
+        assert!(!utils::check_allowlist(commandline, &allowlist));
     }
 
     #[test]
@@ -349,32 +478,5 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"]).is_none());
-    }
-
-    #[test]
-    /// 指定された文字から指定されたregexぉ実行する関数が動作するかのテスト
-    fn test_remove_space_control() {
-        let test_filter_rule = DataFilterRule {
-            regex_rule: Regex::new(r"[\r\n\t]+").unwrap(),
-            replace_str: "".to_string(),
-        };
-        let none_test_str: Option<&String> = None;
-
-        assert_eq!(
-            utils::replace_target_character(none_test_str, None).is_none(),
-            true
-        );
-
-        assert_eq!(
-            utils::replace_target_character(none_test_str, Some(&test_filter_rule)).is_none(),
-            true
-        );
-
-        let tmp = "h\ra\ny\ta\tb\nu\r\nsa".to_string();
-        let test_str: Option<&String> = Some(&tmp);
-        assert_eq!(
-            utils::replace_target_character(test_str, Some(&test_filter_rule)).unwrap(),
-            "hayabusa"
-        );
     }
 }

@@ -8,6 +8,12 @@ pub struct Timeline {
     pub stats: EventStatistics,
 }
 
+impl Default for Timeline {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Timeline {
     pub fn new() -> Timeline {
         let totalcnt = 0;
@@ -17,10 +23,10 @@ impl Timeline {
         let statslst = HashMap::new();
 
         let statistic = EventStatistics::new(totalcnt, filepath, starttm, endtm, statslst);
-        return Timeline { stats: statistic };
+        Timeline { stats: statistic }
     }
 
-    pub fn start(&mut self, records: &Vec<EvtxRecordInfo>) {
+    pub fn start(&mut self, records: &[EvtxRecordInfo]) {
         self.stats.start(records);
     }
 
@@ -41,12 +47,12 @@ impl Timeline {
         sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
         sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
         sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        sammsges.push("Count (Percent)\tID\tEvent\t\tTimeline".to_string());
-        sammsges.push("--------------- ------- --------------- -------".to_string());
+        sammsges.push("Count (Percent)\tID\tEvent\t".to_string());
+        sammsges.push("--------------- ------- ---------------".to_string());
 
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
-        mapsorted.sort_by(|x, y| y.1.cmp(&x.1));
+        mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
         // イベントID毎の出力メッセージ生成
         let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted);
@@ -68,33 +74,31 @@ impl Timeline {
 
             // イベント情報取得(eventtitleなど)
             let conf = configs::CONFIG.read().unwrap();
-            // timeline_event_info.txtに登録あるものは情報設定
+            // statistics_event_info.txtに登録あるものは情報設定
             match conf.event_timeline_config.get_event_id(*event_id) {
                 Some(e) => {
                     // 出力メッセージ1行作成
                     msges.push(format!(
-                        "{0} ({1:.1}%)\t{2}\t{3}\t{4}",
+                        "{0} ({1:.1}%)\t{2}\t{3}",
                         event_cnt,
                         (rate * 1000.0).round() / 10.0,
                         event_id,
                         e.evttitle,
-                        e.detectflg
                     ));
                 }
                 None => {
                     // 出力メッセージ1行作成
                     msges.push(format!(
-                        "{0} ({1:.1}%)\t{2}\t{3}\t{4}",
+                        "{0} ({1:.1}%)\t{2}\t{3}",
                         event_cnt,
                         (rate * 1000.0).round() / 10.0,
                         event_id,
-                        "Unknown".to_string(),
-                        "".to_string()
+                        "Unknown",
                     ));
                 }
             }
         }
         msges.push("---------------------------------------".to_string());
-        return msges;
+        msges
     }
 }

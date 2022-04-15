@@ -1,11 +1,15 @@
 extern crate csv;
 
 use crate::detections::configs;
+use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::print::AlertMessage;
+use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
+use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
+use crate::detections::print::TAGS_CONFIG;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -28,11 +32,12 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
     pub key_2_value: hashbrown::HashMap<String, String>,
+    pub record_information: Option<String>,
 }
 
 impl EvtxRecordInfo {
-    pub fn get_value(&self, key: &String) -> Option<&String> {
-        return self.key_2_value.get(key);
+    pub fn get_value(&self, key: &str) -> Option<&String> {
+        self.key_2_value.get(key)
     }
 }
 
@@ -42,12 +47,12 @@ pub struct Detection {
 }
 
 impl Detection {
-    pub fn new(rules: Vec<RuleNode>) -> Detection {
-        return Detection { rules: rules };
+    pub fn new(rule_nodes: Vec<RuleNode>) -> Detection {
+        Detection { rules: rule_nodes }
     }
 
     pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> Self {
-        return rt.block_on(self.execute_rules(records));
+        rt.block_on(self.execute_rules(records))
     }
 
     // ルールファイルをパースします。
@@ -104,9 +109,9 @@ impl Detection {
                     });
                 }
                 parseerror_count += 1;
-                println!(""); // 一行開けるためのprintln
+                println!(); // 一行開けるためのprintln
             });
-            return Option::None;
+            Option::None
         };
         // parse rule files
         let ret = rulefile_loader
@@ -120,7 +125,7 @@ impl Detection {
             &parseerror_count,
             &rulefile_loader.ignorerule_count,
         );
-        return ret;
+        ret
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
@@ -132,10 +137,7 @@ impl Detection {
             .into_iter()
             .map(|rule| {
                 let records_cloned = Arc::clone(&records_arc);
-                return spawn(async move {
-                    let moved_rule = Detection::execute_rule(rule, records_cloned);
-                    return moved_rule;
-                });
+                spawn(async move { Detection::execute_rule(rule, records_cloned) })
             })
             .collect();
 
@@ -151,7 +153,7 @@ impl Detection {
         // self.rulesが再度所有権を取り戻せるように、Detection::execute_ruleで引数に渡したruleを戻り値として返すようにしている。
         self.rules = rules;
 
-        return self;
+        self
     }
 
     pub fn add_aggcondition_msges(self, rt: &Runtime) {
@@ -175,17 +177,23 @@ impl Detection {
     fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
         let agg_condition = rule.has_agg_condition();
         for record_info in records.as_ref() {
-            let result = rule.select(&record_info);
+            let result = rule.select(record_info);
             if !result {
                 continue;
             }
+
+            if *PIVOT_KEYWORD_LIST_FLAG {
+                insert_pivot_keyword(&record_info.record);
+                continue;
+            }
+
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
-                Detection::insert_message(&rule, &record_info);
+                Detection::insert_message(&rule, record_info);
             }
         }
 
-        return rule;
+        rule
     }
 
     /// 条件に合致したレコードを表示するための関数
@@ -193,23 +201,33 @@ impl Detection {
         let tag_info: Vec<String> = rule.yaml["tags"]
             .as_vec()
             .unwrap_or(&Vec::default())
-            .into_iter()
-            .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
+            .iter()
+            .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
+            .map(|str| str.to_owned())
             .collect();
-        MESSAGES.lock().unwrap().insert(
-            record_info.evtx_filepath.to_string(),
-            rule.rulepath.to_string(),
-            &record_info.record,
-            rule.yaml["level"].as_str().unwrap_or("-").to_string(),
-            record_info.record["Event"]["System"]["Computer"]
+
+        let recinfo = record_info
+            .record_information
+            .as_ref()
+            .map(|recinfo| recinfo.to_string());
+        let detect_info = DetectInfo {
+            filepath: record_info.evtx_filepath.to_string(),
+            rulepath: rule.rulepath.to_string(),
+            level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
+            computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
-                .replace("\"", ""),
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-                .unwrap_or("-".to_owned())
-                .to_string(),
-            rule.yaml["title"].as_str().unwrap_or("").to_string(),
+                .replace('\"', ""),
+            eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+                .unwrap_or_else(|| "-".to_owned()),
+            alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
+            detail: String::default(),
+            tag_info: tag_info.join(" | "),
+            record_information: recinfo,
+        };
+        MESSAGES.lock().unwrap().insert(
+            &record_info.record,
             rule.yaml["details"].as_str().unwrap_or("").to_string(),
-            tag_info.join(" : "),
+            detect_info,
         );
     }
 
@@ -218,21 +236,32 @@ impl Detection {
         let tag_info: Vec<String> = rule.yaml["tags"]
             .as_vec()
             .unwrap_or(&Vec::default())
-            .into_iter()
-            .map(|info| info.as_str().unwrap_or("").replace("attack.", ""))
+            .iter()
+            .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
+            .map(|str| str.to_owned())
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);
-        MESSAGES.lock().unwrap().insert_message(
-            "-".to_owned(),
-            rule.rulepath.to_owned(),
-            agg_result.start_timedate,
-            rule.yaml["level"].as_str().unwrap_or("").to_owned(),
-            "-".to_owned(),
-            "-".to_owned(),
-            rule.yaml["title"].as_str().unwrap_or("").to_owned(),
-            output.to_owned(),
-            tag_info.join(" : "),
-        )
+        let rec_info = if configs::CONFIG.read().unwrap().args.is_present("full-data") {
+            Option::Some(String::default())
+        } else {
+            Option::None
+        };
+        let detect_info = DetectInfo {
+            filepath: "-".to_owned(),
+            rulepath: rule.rulepath.to_owned(),
+            level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
+            computername: "-".to_owned(),
+            eventid: "-".to_owned(),
+            alert: rule.yaml["title"].as_str().unwrap_or("").to_owned(),
+            detail: output,
+            record_information: rec_info,
+            tag_info: tag_info.join(" : "),
+        };
+
+        MESSAGES
+            .lock()
+            .unwrap()
+            .insert_message(detect_info, agg_result.start_timedate)
     }
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
@@ -242,15 +271,11 @@ impl Detection {
         let agg_condition_raw_str: Vec<&str> = rule.yaml["detection"]["condition"]
             .as_str()
             .unwrap()
-            .split("|")
+            .split('|')
             .collect();
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
         let agg_condition = rule.get_agg_condition().unwrap();
-        let exist_timeframe = rule.yaml["detection"]["timeframe"]
-            .as_str()
-            .unwrap_or("")
-            .to_string()
-            != "";
+        let exist_timeframe = rule.yaml["detection"]["timeframe"].as_str().unwrap_or("") != "";
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
         ret.push_str(agg_condition_raw_str[1].trim());
         if exist_timeframe {
@@ -281,8 +306,9 @@ impl Detection {
             ));
         }
 
-        return ret;
+        ret
     }
+
     pub fn print_rule_load_info(
         rc: &HashMap<String, u128>,
         parseerror_count: &u128,
@@ -302,7 +328,7 @@ impl Detection {
             "Total enabled detection rules: {}",
             total - ignore_count - parseerror_count
         );
-        println!("");
+        println!();
     }
 }
 
@@ -498,4 +524,7 @@ mod tests {
             expected_output
         );
     }
+
+    #[test]
+    fn test_create_fields_value() {}
 }

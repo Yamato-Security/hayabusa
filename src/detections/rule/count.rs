@@ -18,7 +18,7 @@ use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
 pub fn count(rule: &mut RuleNode, record: &Value) {
-    let key = create_count_key(&rule, record);
+    let key = create_count_key(rule, record);
     let field_name: String = match rule.get_agg_condition() {
         None => String::default(),
         Some(aggcondition) => aggcondition
@@ -28,7 +28,7 @@ pub fn count(rule: &mut RuleNode, record: &Value) {
             .to_owned(),
     };
     let field_value =
-        get_alias_value_in_record(rule, &field_name, record, false).unwrap_or(String::default());
+        get_alias_value_in_record(rule, &field_name, record, false).unwrap_or_default();
     let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
     countup(
         rule,
@@ -57,17 +57,15 @@ pub fn countup(
 /// is_by_aliasはこの関数を呼び出す際はcountのbyの値もしくはfieldの値のどちらかであるためboolとした
 fn get_alias_value_in_record(
     rule: &RuleNode,
-    alias: &String,
+    alias: &str,
     record: &Value,
     is_by_alias: bool,
 ) -> Option<String> {
-    if alias == "" {
+    if alias.is_empty() {
         return None;
     }
     match utils::get_event_value(alias, record) {
-        Some(value) => {
-            return Some(value.to_string().replace("\"", ""));
-        }
+        Some(value) => Some(value.to_string().replace('\"', "")),
         None => {
             let errmsg = match is_by_alias {
                 true => format!(
@@ -98,9 +96,9 @@ fn get_alias_value_in_record(
                     .unwrap()
                     .push(format!("[ERROR] {}", errmsg));
             }
-            return None;
+            None
         }
-    };
+    }
 }
 
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
@@ -110,10 +108,10 @@ pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
     let agg_condition = rule.get_agg_condition().unwrap();
     if agg_condition._by_field_name.is_some() {
         let by_field_key = agg_condition._by_field_name.as_ref().unwrap();
-        return get_alias_value_in_record(rule, by_field_key, record, true)
-            .unwrap_or("_".to_string());
+        get_alias_value_in_record(rule, by_field_key, record, true)
+            .unwrap_or_else(|| "_".to_string())
     } else {
-        return "_".to_string();
+        "_".to_string()
     }
 }
 
@@ -123,9 +121,9 @@ pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
     let value_map = &rule.countdata;
     let mut ret = Vec::new();
     for (key, value) in value_map {
-        ret.append(&mut judge_timeframe(&rule, &value, &key.to_string()));
+        ret.append(&mut judge_timeframe(rule, value, key));
     }
-    return ret;
+    ret
 }
 
 /// aggregation condition内での条件式を文字として返す関数
@@ -155,7 +153,7 @@ pub fn get_str_agg_eq(rule: &RuleNode) -> String {
         }
     }
     ret.push_str(&agg_condition._cmp_num.to_string());
-    return ret;
+    ret
 }
 
 #[derive(Clone, Debug)]
@@ -177,16 +175,16 @@ impl TimeFrameInfo {
     pub fn parse_tframe(value: String) -> TimeFrameInfo {
         let mut ttype: String = "".to_string();
         let mut tnum = value.clone();
-        if value.contains("s") {
+        if value.contains('s') {
             ttype = "s".to_owned();
             tnum.retain(|c| c != 's');
-        } else if value.contains("m") {
+        } else if value.contains('m') {
             ttype = "m".to_owned();
             tnum.retain(|c| c != 'm');
-        } else if value.contains("h") {
+        } else if value.contains('h') {
             ttype = "h".to_owned();
             tnum.retain(|c| c != 'h');
-        } else if value.contains("d") {
+        } else if value.contains('d') {
             ttype = "d".to_owned();
             tnum.retain(|c| c != 'd');
         } else {
@@ -201,30 +199,28 @@ impl TimeFrameInfo {
                     .push(format!("[ERROR] {}", errmsg));
             }
         }
-        return TimeFrameInfo {
+        TimeFrameInfo {
             timetype: ttype,
             timenum: tnum.parse::<i64>(),
-        };
+        }
     }
 }
 
 /// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
 pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
     let timeframe = rule.detection.timeframe.as_ref();
-    if timeframe.is_none() {
-        return Option::None;
-    }
+    timeframe?;
     let tfi = timeframe.as_ref().unwrap();
     match &tfi.timenum {
         Ok(n) => {
             if tfi.timetype == "d" {
-                return Some(n * 86400);
+                Some(n * 86400)
             } else if tfi.timetype == "h" {
-                return Some(n * 3600);
+                Some(n * 3600)
             } else if tfi.timetype == "m" {
-                return Some(n * 60);
+                Some(n * 60)
             } else {
-                return Some(*n);
+                Some(*n)
             }
         }
         Err(err) => {
@@ -236,9 +232,9 @@ pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg.to_string()));
+                    .push(format!("[ERROR] {}", errmsg));
             }
-            return Option::None;
+            Option::None
         }
     }
 }
@@ -251,44 +247,12 @@ pub fn select_aggcon(cnt: i64, rule: &RuleNode) -> bool {
 
     let agg_condition = agg_condition.unwrap();
     match agg_condition._cmp_op {
-        AggregationConditionToken::EQ => {
-            if cnt == agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        AggregationConditionToken::GE => {
-            if cnt >= agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        AggregationConditionToken::GT => {
-            if cnt > agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        AggregationConditionToken::LE => {
-            if cnt <= agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        AggregationConditionToken::LT => {
-            if cnt < agg_condition._cmp_num {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        _ => {
-            return false;
-        }
+        AggregationConditionToken::EQ => cnt == agg_condition._cmp_num,
+        AggregationConditionToken::GE => cnt >= agg_condition._cmp_num,
+        AggregationConditionToken::GT => cnt > agg_condition._cmp_num,
+        AggregationConditionToken::LE => cnt <= agg_condition._cmp_num,
+        AggregationConditionToken::LT => cnt < agg_condition._cmp_num,
+        _ => false,
     }
 }
 
@@ -312,11 +276,11 @@ trait CountStrategy {
     /**
      * datas[idx]のデータをtimeframeに追加します
      */
-    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, rule: &RuleNode);
+    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
      * datas[idx]のデータをtimeframeから削除します。
      */
-    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, rule: &RuleNode);
+    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], rule: &RuleNode);
     /**
      * count()の値を返します。
      */
@@ -327,9 +291,9 @@ trait CountStrategy {
     fn create_agg_result(
         &mut self,
         left: i64,
-        datas: &Vec<AggRecordTimeInfo>,
+        datas: &[AggRecordTimeInfo],
         cnt: i64,
-        key: &String,
+        key: &str,
         rule: &RuleNode,
     ) -> AggResult;
 }
@@ -342,22 +306,22 @@ struct FieldStrategy {
 }
 
 impl CountStrategy for FieldStrategy {
-    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
 
         let value = &datas[idx as usize].field_record_value;
         let key_val = self.value_2_cnt.get_key_value_mut(value);
-        if key_val.is_none() {
-            self.value_2_cnt.insert(value.to_string(), 1);
-        } else {
-            let (_, val) = key_val.unwrap();
+        if let Some(kv) = key_val {
+            let (_, val) = kv;
             *val += 1;
+        } else {
+            self.value_2_cnt.insert(value.to_string(), 1);
         }
     }
 
-    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
@@ -384,19 +348,19 @@ impl CountStrategy for FieldStrategy {
     fn create_agg_result(
         &mut self,
         left: i64,
-        datas: &Vec<AggRecordTimeInfo>,
+        datas: &[AggRecordTimeInfo],
         _cnt: i64,
-        key: &String,
+        key: &str,
         rule: &RuleNode,
     ) -> AggResult {
         let values: Vec<String> = self.value_2_cnt.drain().map(|(key, _)| key).collect(); // drainで初期化
-        return AggResult::new(
+        AggResult::new(
             values.len() as i64,
             key.to_string(),
             values,
             datas[left as usize].record_time,
             get_str_agg_eq(rule),
-        );
+        )
     }
 }
 
@@ -408,7 +372,7 @@ struct NoFieldStrategy {
 }
 
 impl CountStrategy for NoFieldStrategy {
-    fn add_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn add_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
@@ -416,7 +380,7 @@ impl CountStrategy for NoFieldStrategy {
         self.cnt += 1;
     }
 
-    fn remove_data(&mut self, idx: i64, datas: &Vec<AggRecordTimeInfo>, _rule: &RuleNode) {
+    fn remove_data(&mut self, idx: i64, datas: &[AggRecordTimeInfo], _rule: &RuleNode) {
         if idx >= datas.len() as i64 || idx < 0 {
             return;
         }
@@ -425,15 +389,15 @@ impl CountStrategy for NoFieldStrategy {
     }
 
     fn count(&mut self) -> i64 {
-        return self.cnt;
+        self.cnt
     }
 
     fn create_agg_result(
         &mut self,
         left: i64,
-        datas: &Vec<AggRecordTimeInfo>,
+        datas: &[AggRecordTimeInfo],
         cnt: i64,
-        key: &String,
+        key: &str,
         rule: &RuleNode,
     ) -> AggResult {
         let ret = AggResult::new(
@@ -444,31 +408,31 @@ impl CountStrategy for NoFieldStrategy {
             get_str_agg_eq(rule),
         );
         self.cnt = 0; //cntを初期化
-        return ret;
+        ret
     }
 }
 
 fn _create_counter(rule: &RuleNode) -> Box<dyn CountStrategy> {
     let agg_cond = rule.get_agg_condition().unwrap();
     if agg_cond._field_name.is_some() {
-        return Box::new(FieldStrategy {
+        Box::new(FieldStrategy {
             value_2_cnt: HashMap::new(),
-        });
+        })
     } else {
-        return Box::new(NoFieldStrategy { cnt: 0 });
+        Box::new(NoFieldStrategy { cnt: 0 })
     }
 }
 
-fn _get_timestamp(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> i64 {
-    return datas[idx as usize].record_time.timestamp();
+fn _get_timestamp(idx: i64, datas: &[AggRecordTimeInfo]) -> i64 {
+    datas[idx as usize].record_time.timestamp()
 }
 
-fn _get_timestamp_subsec_nano(idx: i64, datas: &Vec<AggRecordTimeInfo>) -> u32 {
-    return datas[idx as usize].record_time.timestamp_subsec_nanos();
+fn _get_timestamp_subsec_nano(idx: i64, datas: &[AggRecordTimeInfo]) -> u32 {
+    datas[idx as usize].record_time.timestamp_subsec_nanos()
 }
 
 // data[left]からdata[right-1]までのデータがtimeframeに収まっているか判定する
-fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &Vec<AggRecordTimeInfo>) -> bool {
+fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &[AggRecordTimeInfo]) -> bool {
     let left_time = _get_timestamp(left, datas);
     let left_time_nano = _get_timestamp_subsec_nano(left, datas);
     // evtxのSystemTimeは小数点7桁秒まで記録されているので、それを考慮する
@@ -477,14 +441,14 @@ fn _is_in_timeframe(left: i64, right: i64, frame: i64, datas: &Vec<AggRecordTime
     if right_time_nano > left_time_nano {
         right_time += 1;
     }
-    return right_time - left_time <= frame;
+    right_time - left_time <= frame
 }
 
 /// count済みデータ内でタイムフレーム内に存在するselectの条件を満たすレコードが、timeframe単位でcountの条件を満たしているAggResultを配列として返却する関数
 pub fn judge_timeframe(
     rule: &RuleNode,
-    time_datas: &Vec<AggRecordTimeInfo>,
-    key: &String,
+    time_datas: &[AggRecordTimeInfo],
+    key: &str,
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
     if time_datas.is_empty() {
@@ -492,12 +456,12 @@ pub fn judge_timeframe(
     }
 
     // AggRecordTimeInfoを時間順がソートされている前提で処理を進める
-    let mut datas = time_datas.clone();
+    let mut datas = time_datas.to_owned();
     datas.sort_by(|a, b| a.record_time.cmp(&b.record_time));
 
     // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。
-    let def_frame = &datas.last().unwrap().record_time.timestamp()
-        - &datas.first().unwrap().record_time.timestamp();
+    let def_frame = datas.last().unwrap().record_time.timestamp()
+        - datas.first().unwrap().record_time.timestamp();
     let frame = get_sec_timeframe(rule).unwrap_or(def_frame);
 
     // left <= i < rightの範囲にあるdata[i]がtimeframe内にあるデータであると考える
@@ -510,7 +474,7 @@ pub fn judge_timeframe(
         // timeframeの範囲にある限りrightをincrement
         while right < data_len && _is_in_timeframe(left, right, frame, &datas) {
             counter.add_data(right, &datas, rule);
-            right = right + 1;
+            right += 1;
         }
 
         let cnt = counter.count();
@@ -527,7 +491,7 @@ pub fn judge_timeframe(
         }
     }
 
-    return ret;
+    ret
 }
 
 #[cfg(test)]
@@ -603,7 +567,7 @@ mod tests {
         )];
         check_count(
             rule_str,
-            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
+            &[SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -646,24 +610,25 @@ mod tests {
         "#;
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 2);
-        let mut expected_agg_result: Vec<AggResult> = Vec::new();
-        expected_agg_result.push(AggResult::new(
-            1,
-            "_".to_string(),
-            vec![],
-            Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
-            ">= 1".to_string(),
-        ));
-        expected_agg_result.push(AggResult::new(
-            1,
-            "_".to_string(),
-            vec![],
-            Utc.ymd(1996, 2, 27).and_hms(1, 5, 1),
-            ">= 1".to_string(),
-        ));
+        let expected_agg_result: Vec<AggResult> = vec![
+            AggResult::new(
+                1,
+                "_".to_string(),
+                vec![],
+                Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+                ">= 1".to_string(),
+            ),
+            AggResult::new(
+                1,
+                "_".to_string(),
+                vec![],
+                Utc.ymd(1996, 2, 27).and_hms(1, 5, 1),
+                ">= 1".to_string(),
+            ),
+        ];
         check_count(
             rule_str,
-            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
+            &[SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -695,7 +660,7 @@ mod tests {
         );
         check_count(
             rule_str,
-            &vec![SIMPLE_RECORD_STR.to_string()],
+            &[SIMPLE_RECORD_STR.to_string()],
             expected_count,
             vec![expected_agg_result],
         );
@@ -735,24 +700,25 @@ mod tests {
         let mut expected_count = HashMap::new();
         expected_count.insert("System".to_owned(), 1);
         expected_count.insert("Test".to_owned(), 1);
-        let mut expected_agg_result: Vec<AggResult> = Vec::new();
-        expected_agg_result.push(AggResult::new(
-            1,
-            "System".to_owned(),
-            vec!["7040".to_owned()],
-            Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
-            ">= 1".to_string(),
-        ));
-        expected_agg_result.push(AggResult::new(
-            1,
-            "Test".to_owned(),
-            vec!["9999".to_owned()],
-            Utc.ymd(1996, 2, 27).and_hms(1, 5, 1),
-            ">= 1".to_string(),
-        ));
+        let expected_agg_result: Vec<AggResult> = vec![
+            AggResult::new(
+                1,
+                "System".to_owned(),
+                vec!["7040".to_owned()],
+                Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+                ">= 1".to_string(),
+            ),
+            AggResult::new(
+                1,
+                "Test".to_owned(),
+                vec!["9999".to_owned()],
+                Utc.ymd(1996, 2, 27).and_hms(1, 5, 1),
+                ">= 1".to_string(),
+            ),
+        ];
         check_count(
             rule_str,
-            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
+            &[SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -792,24 +758,25 @@ mod tests {
         let mut expected_count = HashMap::new();
         expected_count.insert("Windows Event Log".to_owned(), 1);
         expected_count.insert("Test".to_owned(), 1);
-        let mut expected_agg_result: Vec<AggResult> = Vec::new();
-        expected_agg_result.push(AggResult::new(
-            1,
-            "Windows Event Log".to_owned(),
-            vec!["7040".to_owned()],
-            Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
-            ">= 1".to_string(),
-        ));
-        expected_agg_result.push(AggResult::new(
-            1,
-            "Test".to_owned(),
-            vec!["9999".to_owned()],
-            Utc.ymd(1977, 1, 1).and_hms(0, 5, 0),
-            ">= 1".to_string(),
-        ));
+        let expected_agg_result: Vec<AggResult> = vec![
+            AggResult::new(
+                1,
+                "Windows Event Log".to_owned(),
+                vec!["7040".to_owned()],
+                Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+                ">= 1".to_string(),
+            ),
+            AggResult::new(
+                1,
+                "Test".to_owned(),
+                vec!["9999".to_owned()],
+                Utc.ymd(1977, 1, 1).and_hms(0, 5, 0),
+                ">= 1".to_string(),
+            ),
+        ];
         check_count(
             rule_str,
-            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
+            &[SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -855,14 +822,14 @@ mod tests {
                     let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
                     let _result = rule_node.select(&recinfo);
                 }
-                Err(_rec) => {
-                    assert!(false, "failed to parse json record.");
+                Err(_) => {
+                    panic!("failed to parse json record.");
                 }
             }
         }
         //countupの関数が機能しているかを確認
         assert_eq!(
-            *&rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
+            rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
             2
         );
         let judge_result = rule_node.judge_satisfy_aggcondition();
@@ -902,17 +869,16 @@ mod tests {
 
         let mut expected_count = HashMap::new();
         expected_count.insert("System".to_owned(), 2);
-        let mut expected_agg_result: Vec<AggResult> = Vec::new();
-        expected_agg_result.push(AggResult::new(
+        let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
             2,
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
             Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
             ">= 2".to_string(),
-        ));
+        )];
         check_count(
             rule_str,
-            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
+            &[SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -953,17 +919,16 @@ mod tests {
         let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
         let mut expected_count = HashMap::new();
         expected_count.insert("System".to_owned(), 2);
-        let mut expected_agg_result: Vec<AggResult> = Vec::new();
-        expected_agg_result.push(AggResult::new(
+        let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
             2,
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
             default_time,
             ">= 1".to_string(),
-        ));
+        )];
         check_count(
             rule_str,
-            &vec![SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
+            &[SIMPLE_RECORD_STR.to_string(), record_str.to_string()],
             expected_count,
             expected_agg_result,
         );
@@ -984,14 +949,13 @@ mod tests {
             let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1019,14 +983,13 @@ mod tests {
             let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1054,14 +1017,13 @@ mod tests {
             let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1071,14 +1033,13 @@ mod tests {
             let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1096,14 +1057,13 @@ mod tests {
             let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1131,14 +1091,13 @@ mod tests {
             let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1166,14 +1125,13 @@ mod tests {
             let default_time = Utc.ymd(2021, 12, 21).and_hms(10, 40, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1201,14 +1159,13 @@ mod tests {
             let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 50);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1236,14 +1193,13 @@ mod tests {
             let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 50);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 default_time,
                 ">= 3".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1279,14 +1235,13 @@ mod tests {
             let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 1);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 1,
                 "_".to_owned(),
                 vec!["1".to_owned()],
                 default_time,
                 ">= 1".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
 
@@ -1296,14 +1251,13 @@ mod tests {
             let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 0);
             let mut expected_count = HashMap::new();
             expected_count.insert("Windows Event Log".to_owned(), 1);
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 1,
                 "Windows Event Log".to_owned(),
                 vec!["1".to_owned()],
                 default_time,
                 ">= 1".to_string(),
-            ));
+            )];
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
     }
@@ -1335,14 +1289,13 @@ mod tests {
 
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 7);
-        let mut expected_agg_result: Vec<AggResult> = Vec::new();
-        expected_agg_result.push(AggResult::new(
+        let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
             3,
             "_".to_owned(),
             vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
             Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
             ">= 3".to_string(),
-        ));
+        )];
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
     }
 
@@ -1382,8 +1335,7 @@ mod tests {
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 4);
 
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 4,
                 "_".to_owned(),
                 vec![
@@ -1394,7 +1346,7 @@ mod tests {
                 ],
                 Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
                 ">= 4".to_string(),
-            ));
+            )];
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1416,14 +1368,13 @@ mod tests {
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
 
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
+            let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
                 Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
                 ">= 3".to_string(),
-            ));
+            )];
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1461,43 +1412,44 @@ mod tests {
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), recs.len() as i32);
 
-            let mut expected_agg_result: Vec<AggResult> = Vec::new();
-            expected_agg_result.push(AggResult::new(
-                4,
-                "_".to_owned(),
-                vec![
-                    "1".to_owned(),
-                    "2".to_owned(),
-                    "3".to_owned(),
-                    "4".to_owned(),
-                ],
-                Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
-                ">= 4".to_string(),
-            ));
-            expected_agg_result.push(AggResult::new(
-                4,
-                "_".to_owned(),
-                vec![
-                    "1".to_owned(),
-                    "2".to_owned(),
-                    "3".to_owned(),
-                    "4".to_owned(),
-                ],
-                Utc.ymd(1977, 1, 9).and_hms(5, 30, 0),
-                ">= 4".to_string(),
-            ));
-            expected_agg_result.push(AggResult::new(
-                4,
-                "_".to_owned(),
-                vec![
-                    "1".to_owned(),
-                    "2".to_owned(),
-                    "3".to_owned(),
-                    "4".to_owned(),
-                ],
-                Utc.ymd(1977, 1, 9).and_hms(9, 30, 0),
-                ">= 4".to_string(),
-            ));
+            let expected_agg_result: Vec<AggResult> = vec![
+                AggResult::new(
+                    4,
+                    "_".to_owned(),
+                    vec![
+                        "1".to_owned(),
+                        "2".to_owned(),
+                        "3".to_owned(),
+                        "4".to_owned(),
+                    ],
+                    Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+                    ">= 4".to_string(),
+                ),
+                AggResult::new(
+                    4,
+                    "_".to_owned(),
+                    vec![
+                        "1".to_owned(),
+                        "2".to_owned(),
+                        "3".to_owned(),
+                        "4".to_owned(),
+                    ],
+                    Utc.ymd(1977, 1, 9).and_hms(5, 30, 0),
+                    ">= 4".to_string(),
+                ),
+                AggResult::new(
+                    4,
+                    "_".to_owned(),
+                    vec![
+                        "1".to_owned(),
+                        "2".to_owned(),
+                        "3".to_owned(),
+                        "4".to_owned(),
+                    ],
+                    Utc.ymd(1977, 1, 9).and_hms(9, 30, 0),
+                    ">= 4".to_string(),
+                ),
+            ];
 
             check_count(&rule_str, &recs, expected_count, expected_agg_result);
         }
@@ -1527,32 +1479,32 @@ mod tests {
 
         let mut expected_count = HashMap::new();
         expected_count.insert("_".to_owned(), 11);
-        let mut expected_agg_result: Vec<AggResult> = Vec::new();
-        expected_agg_result.push(AggResult::new(
-            3,
-            "_".to_owned(),
-            vec!["2".to_owned(), "3".to_owned(), "4".to_owned()],
-            Utc.ymd(1977, 1, 9).and_hms(3, 30, 0),
-            ">= 3".to_string(),
-        ));
-
-        expected_agg_result.push(AggResult::new(
-            4,
-            "_".to_owned(),
-            vec![
-                "1".to_owned(),
-                "3".to_owned(),
-                "4".to_owned(),
-                "5".to_owned(),
-            ],
-            Utc.ymd(1977, 1, 9).and_hms(20, 00, 0),
-            ">= 3".to_string(),
-        ));
+        let expected_agg_result: Vec<AggResult> = vec![
+            AggResult::new(
+                3,
+                "_".to_owned(),
+                vec!["2".to_owned(), "3".to_owned(), "4".to_owned()],
+                Utc.ymd(1977, 1, 9).and_hms(3, 30, 0),
+                ">= 3".to_string(),
+            ),
+            AggResult::new(
+                4,
+                "_".to_owned(),
+                vec![
+                    "1".to_owned(),
+                    "3".to_owned(),
+                    "4".to_owned(),
+                    "5".to_owned(),
+                ],
+                Utc.ymd(1977, 1, 9).and_hms(20, 00, 0),
+                ">= 3".to_string(),
+            ),
+        ];
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
     }
 
     fn test_create_recstr_std(event_id: &str, time: &str) -> String {
-        return test_create_recstr(event_id, time, "Windows Event Log");
+        test_create_recstr(event_id, time, "Windows Event Log")
     }
 
     fn test_create_recstr(event_id: &str, time: &str, param1: &str) -> String {
@@ -1570,10 +1522,10 @@ mod tests {
         }
       }
     }"#;
-        return template
+        template
             .replace("${EVENT_ID}", event_id)
             .replace("${TIME}", time)
-            .replace("${PARAM1}", param1);
+            .replace("${PARAM1}", param1)
     }
 
     fn create_std_rule(count: &str, timeframe: &str) -> String {
@@ -1586,15 +1538,15 @@ mod tests {
         timeframe: ${TIME_FRAME}
     details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
     "#;
-        return template
+        template
             .replace("${COUNT}", count)
-            .replace("${TIME_FRAME}", timeframe);
+            .replace("${TIME_FRAME}", timeframe)
     }
 
     /// countで対象の数値確認を行うためのテスト用関数
     fn check_count(
         rule_str: &str,
-        records_str: &Vec<String>,
+        records_str: &[String],
         expected_counts: HashMap<String, i32>,
         expect_agg_results: Vec<AggResult>,
     ) {
@@ -1603,10 +1555,10 @@ mod tests {
         let mut rule_node = create_rule("testpath".to_string(), test);
         let error_checker = rule_node.init();
         if error_checker.is_err() {
-            assert!(false, "Failed to init rulenode");
+            panic!("Failed to init rulenode");
         }
         for record_str in records_str {
-            match serde_json::from_str(&record_str) {
+            match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
@@ -1614,7 +1566,7 @@ mod tests {
                     assert_eq!(result, &true);
                 }
                 Err(_rec) => {
-                    assert!(false, "Failed to parse json record.");
+                    panic!("Failed to parse json record.");
                 }
             }
         }
@@ -1630,7 +1582,7 @@ mod tests {
             let expect_count = expected_counts.get(&expect_agg.key).unwrap_or(&-1);
             //countupの関数が機能しているかを確認
             assert_eq!(
-                *&rule_node.countdata.get(&expect_agg.key).unwrap().len() as i32,
+                rule_node.countdata.get(&expect_agg.key).unwrap().len() as i32,
                 *expect_count
             );
             expect_data.push(expect_agg.data);
@@ -1651,7 +1603,7 @@ mod tests {
             for expect_field_value in &expect_field_values[index] {
                 // テストによってはtimeframeの値と各fieldの値で配列の順番が想定したものと変化してしまう可能性があるため配列の長さを確認したうえで期待した各要素が存在するかを確認する。
                 // field`要素の順番については以降の処理で関連しない
-                assert!(agg_result.field_values.contains(&expect_field_value));
+                assert!(agg_result.field_values.contains(expect_field_value));
             }
             assert_eq!(agg_result.condition_op_num, expect_condition_op_num[index]);
         }
