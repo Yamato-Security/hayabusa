@@ -1,6 +1,7 @@
 # Changes
 
-##v1.2.0 [2022/04/??]
+## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 Preview Release
+
 **New Features:**
 - Specify config directory (`-C / --config`): When specifying a different rules directory, the rules config directory will still be the default `rules/config`, so this option is useful when you want to test rules and their config files in a different directory. (@hitenkoku) 
 - `|equalsfield` aggregator: In order to write rules that compare if two fields are equal or not. (@hach1yon)
@@ -24,7 +25,7 @@
 - Removed unnecessary newline due to loading test file rules. (@hitenkoku)
 - Fixed output stopping in Windows Terminal due a bug in Terminal itself. (@hitenkoku)
 
-##v1.1.0 [2022/03/03]
+## v1.1.0 [2022/03/03]
 **New Features:**
 - Can specify a single rule with the `-r / --rules` option. (Great for testing rules!) (@kazuminn)
 - Rule update option (`-u / --update-rules`): Update to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository. (@hitenkoku)
