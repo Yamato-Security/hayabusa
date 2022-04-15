@@ -35,7 +35,7 @@ After uploading the CSV file, click `Override settings` to specify the correct t
 
 ![Override Settings](05-OverrideSettings.png)
 
-Perform the following changes and then click `Apply`:
+As shown below, perform the following changes and then click `Apply`:
 
 1. Change `Timestamp format` to `custom`.
 2. Specify the format as `yyyy-MM-dd HH:mm:ss.SSS XXX`
@@ -47,7 +47,7 @@ Now click `Import` in the bottom left-hand corner.
 
 ![CSV Import](07-CSV-Import.png)
 
-Click on `Advanced` and perform the following settings before clicking `Import`:
+As shown below, click on `Advanced` and perform the following settings before clicking `Import`:
 
 1. Title the `Index name` as `evtxlogs-hayabusa`.
 2. Under `Index settings`, add `, "number_of_replicas": 0` so that the index health status does not turn yellow.
@@ -81,7 +81,7 @@ The default Discover view should look similar to this:
 
 You can get an overview of when the events happened and frequency of events by looking at the histogram at top. 
 
-On the left side sidebar, you can select with fields you want to display in columns:
+In the left-side sidebar, you can add fields you want to display in the columns by clicking the plus sign after hovering over a field:
 
 ![Adding Columns](12-AddingColumns.png)
 
@@ -121,7 +121,7 @@ You should now be able to use the dashboard shown below:
 
 ## Future Plans
 
-We plan on creating Hayabusa logstash parsers and dashboard pre-built for SOF-ELK so that all you will need to do is copy the CSV results file to a directory in order to ingest the logs.
+We plan on creating Hayabusa logstash parsers and a dashboard pre-built for SOF-ELK so that all you will need to do is copy the CSV results file to a directory in order to ingest the logs.
 
 ## Acknowledgements
 
