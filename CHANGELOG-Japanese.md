@@ -1,27 +1,28 @@
 # 変更点
 
-## v1.2.0 [2022/04/15]
+## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 Preview Release
 **新機能:**
 - `-C / --config` オプションの追加。検知ルールのコンフィグを指定することが可能。(Windowsでのライブ調査に便利) (@hitenkoku) 
 - `|equalsfield` と記載することでルール内で二つのフィールドの値が一致するかを記載に対応。 (@hach1yon)
 - `-p / --pivot-keywords-list` オプションの追加。攻撃されたマシン名や疑わしいユーザ名などの情報をピボットキーワードリストとして出力する。 (@kazuminn)
 - `-F / --full-data`オプションの追加。検知したレコードのフィールド情報をcsvに出力することが可能。(@hach1yon)
-- `--level-tuning` オプションの追加。ルールの検知ファイルを設定したコンフィグファイルに従って検知レベルをチューニングすることが可能(@itib and @hitenkoku)
+- `--level-tuning` オプションの追加。ルールの検知ファイルを設定したコンフィグファイルに従って検知レベルをチューニングすることが可能(@itib、@hitenkoku)
 
 **改善:**
 - 検知ルールとドキュメントの更新。 (@YamatoSecurity)
 - MacとLinuxのバイナリに必要なOpenSSLライブラリを静的コンパイルした。 (@YamatoSecurity)
-- タブ等の文字が含まれたフィールドに対しての検知性能の改善。 (@hach1yon and @hitenkoku)
-- eventkey_alias.txt内に定義されていないフィールドをEvent.EventData内を自動で検索することが可能。 (@kazuminn and @hitenkoku)
+- タブ等の文字が含まれたフィールドに対しての検知性能の改善。 (@hach1yon、@hitenkoku)
+- eventkey_alias.txt内に定義されていないフィールドをEvent.EventData内を自動で検索することが可能。 (@kazuminn、@hitenkoku)
 - 検知ルールの更新時、更新されたルールのファイル名が表示される。 (@hitenkoku)
-- ソースコードにあるClippyの警告を修正。 (@hitenkoku and @hach1yon)
-- イベントIDとタイトルが記載されたコンフィグファイルの名前を `timeline_event_info.txt` から `statistics_event_info.txt`に変更。 (@YamatoSecurity and @garigariganzy)
+- ソースコードにあるClippyの警告を修正。 (@hitenkoku、@hach1yon)
+- イベントIDとタイトルが記載されたコンフィグファイルの名前を `timeline_event_info.txt` から `statistics_event_info.txt`に変更。 (@YamatoSecurity、 @garigariganzy)
 - 64bit Windowsで32bit版のバイナリを実行しないように修正(@hitenkoku)
 - MITRE ATT&CKのデータの出力を`output_tag.txt`で修正できるように修正(@hitenkoku)
 
 **バグ修正:**
 - `.git` フォルダ内にある `.yml` ファイルがパースエラーを引き起こしていた問題の修正。 (@hitenkoku)
 - テスト用のルールファイルの読み込みエラーで不必要な改行が発生していた問題の修正。 (@hitenkoku)
+- Windows Terminalのバグで標準出力が途中で止まる場合がありましたが、Hayabusa側で解決しました。 (@hitenkoku)
 
 ## v1.1.0 [2022/03/03]
 **新機能:**
