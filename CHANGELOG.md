@@ -6,7 +6,7 @@
 - Specify config directory (`-C / --config`): When specifying a different rules directory, the rules config directory will still be the default `rules/config`, so this option is useful when you want to test rules and their config files in a different directory. (@hitenkoku) 
 - `|equalsfield` aggregator: In order to write rules that compare if two fields are equal or not. (@hach1yon)
 - Pivot keyword list generator feature (`-p / --pivot-keywords-list`): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
-- `-F / --full-data` option: Will output fields information in detected record to `--output` file. (@hach1yon)
+- `-F / --full-data` option: Will output all field information in addition to the fields defined in the rule’s `details`. (@hach1yon)
 - `--level-tuning` option: You can tune the risk `level` in hayabusa and sigma rules to your environment. (@itib and @hitenkoku)
 
 **Enhancements:**
