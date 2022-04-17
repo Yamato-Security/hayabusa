@@ -18,7 +18,7 @@
 
 # Hayabusa について
 
-Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つのCSVタイムラインにまとめられ、Excelや[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)で簡単に分析できるようになります。
+Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。(※現時点では、リアルタイムアラートや定期的なスキャンには対応していません。) 出力は一つのCSVタイムラインにまとめられ、Excel、[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)、[Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md)等で簡単に分析できるようになります。
 
 ## 目次
 
@@ -34,6 +34,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Excelでの解析:](#excelでの解析)
   - [Timeline Explorerでの解析:](#timeline-explorerでの解析)
   - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング:](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
+  - [Elastic Stackダッシュボード](#elastic-stackダッシュボード)
 - [タイムラインのサンプル結果](#タイムラインのサンプル結果)
 - [特徴＆機能](#特徴機能)
 - [予定されている機能](#予定されている機能)
@@ -54,6 +55,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ピボットキーワードの作成](#ピボットキーワードの作成)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
+  - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [プログレスバー](#プログレスバー)
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
 - [Hayabusaルール](#hayabusaルール)
@@ -76,7 +78,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 
 ### スレット(脅威)ハンティング
 
-Hayabusa には現在、1300以上のSigmaルールと約70のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントレスポンスや定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にインストールして、中央サーバーにアラートを返す仕組みを作ることです。
+Hayabusaには現在、2200以上のSigmaルールと約125のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントレスポンスや定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にインストールして、中央サーバーにアラートを返す仕組みを作ることです。
 
 ### フォレンジックタイムラインの高速生成
 
@@ -108,15 +110,23 @@ Windowsのイベントログは、
 
 ![Hayabusa Timeline Explorerでの解析](screenshots/TimelineExplorer-ColoredTimeline.png)
 
-## Criticalアラートのフィルタリングとコンピュータごとのグルーピング:
 
+## Criticalアラートのフィルタリングとコンピュータごとのグルーピング:
 ![Timeline ExplorerでCriticalアラートのフィルタリングとコンピュータグルーピング](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
+
+## Elastic Stackダッシュボード
+
+![Elastic Stack Dashboard 1](doc/ElasticStackImport/17-HayabusaDashboard-1.png)
+
+![Elastic Stack Dashboard 2](doc/ElasticStackImport/18-HayabusaDashboard-2.png)
 
 # タイムラインのサンプル結果
 
 CSVのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
 
 CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
+
+CSVのタイムラインをElastic Stackにインポートする方法は[こちら](doc/ElasticStackImport/ElasticStackImport-English.md)で紹介しています。(現在、英語のみ)
 
 # 特徴＆機能
 
@@ -132,15 +142,13 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
 * ルールレベルのチューニング。
 * イベントログから不審なユーザやファイルを素早く特定するのに有用な、ピボットキーワードの一覧作成。
+* 詳細な調査のために全フィールド情報の出力。
 
 # 予定されている機能
 
 * すべてのエンドポイントでの企業全体のスレットハンティング。
-* 日本語対応。
 * MITRE ATT&CKのヒートマップ生成機能。
 * ユーザーログオンと失敗したログオンのサマリー。
-* JSONログからの入力。
-* JSONへの出力→Elastic Stack/Splunkへのインポート。
 
 # ダウンロード
 
@@ -292,6 +300,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 USAGE:
     -d --directory=[DIRECTORY] '.evtxファイルを持つディレクトリのパス。'
     -f --filepath=[FILEPATH] '1つの.evtxファイルのパス。'
+    -F --full-data '全てのフィールド情報を出力する。'
     -r --rules=[RULEFILE/RULEDIRECTORY] 'ルールファイルまたはルールファイルを持つディレクトリ。(デフォルト: ./rules)'
     -c --color 'カラーで出力する。 (ターミナルはTrue Colorに対応する必要がある。)'
     -C --config=[RULECONFIGDIRECTORY] 'ルールフォルダのコンフィグディレクトリ(デフォルト: ./rules/config)'
@@ -330,10 +339,10 @@ hayabusa.exe -f eventlog.evtx
 hayabusa.exe -d .\hayabusa-sample-evtx
 ```
 
-* １つのCSVファイルにエクスポートして、ExcelやTimeline Explorerでさらに分析することができます:
+* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができます:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv
+hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Hayabusaルールのみを実行します（デフォルトでは `-r .\rules` にあるすべてのルールが利用されます）:
@@ -456,10 +465,33 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Title`: YML検知ルールの`title`フィールドから来ています。
 * `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログの`<Event><System><EventData>`部分から有用なデータを抽出することができます。
 
-CSVファイルとして保存する場合、以下の2つのフィールドが追加されます:
+CSVファイルとして保存する場合、以下の列が追加されます:
 
+* `MitreAttack`: MITRE ATT&CKの戦術。
 * `Rule Path`: アラートまたはイベントを生成した検知ルールへのパス。
 * `File Path`: アラートまたはイベントを起こしたevtxファイルへのパス。
+
+`-F`もしくは`--full-data`オプションを指定した場合、全てのフィールド情報が新しいカラムで出力されます。
+
+## MITRE ATT&CK戦術の省略
+
+簡潔に出力するためにMITRE ATT&CKの戦術を以下のように省略しています。
+`config/output_tag.txt`の設定ファイルで自由に編集できます。
+
+* `Recon` : Reconnaissance (偵察)
+* `ResDev` : Resource Development (リソース開発)
+* `InitAccess` : Initial Access (初期アクセス)
+* `Exec` : Execution (実行)
+* `Persis` : Persistence (永続化)
+* `PrivEsc` : Privilege Escalation (権限昇格)
+* `Evas` : Defense Evasion (防御回避)
+* `CredAccess` : Credential Access (認証情報アクセス)
+* `Disc` : Discovery (探索)
+* `LatMov` : Lateral Movement (横展開)
+* `Collect` : Collection (収集)
+* `C2` : Command and Control (遠隔操作)
+* `Exfil` : Exfiltration (持ち出し)
+* `Impact` : Impact (影響)
 
 ## プログレスバー
 
@@ -502,11 +534,14 @@ Hayabusaルールのディレクトリ構造は、3つのディレクトリに�
 
 ## Hayabusa v.s. 変換されたSigmaルール
 
-Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
+Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
+殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
+Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 
 1. ログの有用なフィールドのみから抽出された追加情報を表示するための `details`フィールドを追加しています。
 2. Hayabusaルールはすべてサンプルログに対してテストされ、検知することが確認されています。
    > 変換処理のバグ、サポートされていない機能、実装の違い(正規表現など)により、一部のSigmaルールは意図したとおりに動作しない可能性があります。
+3. Sigmaルール仕様にない集計式(例：`|equalsfield`)の利用。
 
 **制限事項**: 私たちの知る限り、Hayabusa はオープンソースの Windows イベントログ解析ツールの中でSigmaルールを最も多くサポートしていますが、まだサポートされていないルールもあります。
 
