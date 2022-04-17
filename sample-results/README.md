@@ -1,11 +1,6 @@
-`hayabusa-sample-evtx-ResultsDefaultSettings.csv` was created by running:
+`hayabusa-sample-results-2022-04-16.csv` was created by running:
 ```bash
-hayabusa.exe -d ./hayabusa-sample-evtx -o hayabusa-sample-evtx-ResultsDefaultSettings.csv
+hayabusa.exe -d ./hayabusa-sample-evtx -o hayabusa-sample-results-2022-04-16.csv -U
 ```
 
-`hayabusa-sample-evtx-ResultsDeprecatedAndNoisyRulesEnabled.csv` was created running:
-```bash
-hayabusa.exe -d ./hayabusa-sample-evtx -D -n -o hayabusa-sample-evtx-ResultsDeprecatedAndNoisyRulesEnabled.csv
-```
-
-The two .xlsx files were created in Excel after importing the CSV files and manually adding color to the different severity levels.
+The sample evtx files used came from [this](https://github.com/Yamato-Security/hayabusa-sample-evtx) repository.
