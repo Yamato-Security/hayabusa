@@ -327,6 +327,7 @@ mod tests {
     use crate::afterfact::emit_csv;
     use crate::detections::print;
     use crate::detections::print::DetectInfo;
+    use crate::detections::print::CH_CONFIG;
     use chrono::{Local, TimeZone, Utc};
     use serde_json::Value;
     use std::fs::File;
@@ -341,12 +342,13 @@ mod tests {
     }
 
     fn test_emit_csv_output() {
-        let testfilepath: &str = "test.evtx";
-        let testrulepath: &str = "test-rule.yml";
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
         let test_eventid = "1111";
+        let test_channel = "Sec";
         let output = "pokepoke";
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "record_infoinfo11";
@@ -372,11 +374,15 @@ mod tests {
                 &event,
                 output.to_string(),
                 DetectInfo {
-                    filepath: testfilepath.to_string(),
-                    rulepath: testrulepath.to_string(),
+                    filepath: test_filepath.to_string(),
+                    rulepath: test_rulepath.to_string(),
                     level: test_level.to_string(),
                     computername: test_computername.to_string(),
                     eventid: test_eventid.to_string(),
+                    channel: CH_CONFIG
+                        .get("Security")
+                        .unwrap_or(&String::default())
+                        .to_string(),
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
@@ -389,7 +395,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,EventID,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
+            "Timestamp,Computer,EventID,Channel,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -399,6 +405,8 @@ mod tests {
                 + test_computername
                 + ","
                 + test_eventid
+                + ","
+                + test_channel
                 + ","
                 + test_level
                 + ","
@@ -410,9 +418,9 @@ mod tests {
                 + ","
                 + test_recinfo
                 + ","
-                + testrulepath
+                + test_rulepath
                 + ","
-                + testfilepath
+                + test_filepath
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
         assert!(emit_csv(&mut file, false, None).is_ok());
@@ -427,12 +435,13 @@ mod tests {
     }
 
     fn check_emit_csv_display() {
-        let testfilepath: &str = "test2.evtx";
-        let testrulepath: &str = "test-rule2.yml";
+        let test_filepath: &str = "test2.evtx";
+        let test_rulepath: &str = "test-rule2.yml";
         let test_title = "test_title2";
         let test_level = "medium";
         let test_computername = "testcomputer2";
         let test_eventid = "2222";
+        let expect_channel = "Sysmon";
         let output = "displaytest";
         let test_attack = "execution/txxxx.zzz";
         {
@@ -457,11 +466,15 @@ mod tests {
                 &event,
                 output.to_string(),
                 DetectInfo {
-                    filepath: testfilepath.to_string(),
-                    rulepath: testrulepath.to_string(),
+                    filepath: test_filepath.to_string(),
+                    rulepath: test_rulepath.to_string(),
                     level: test_level.to_string(),
                     computername: test_computername.to_string(),
                     eventid: test_eventid.to_string(),
+                    channel: CH_CONFIG
+                        .get("Microsoft-Windows-Sysmon/Operational")
+                        .unwrap_or(&String::default())
+                        .to_string(),
                     alert: test_title.to_string(),
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
@@ -475,7 +488,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect_header =
-            "Timestamp|Computer|EventID|Level|RuleTitle|Details|RecordInformation\n";
+            "Timestamp|Computer|EventID|Channel|Level|RuleTitle|Details|RecordInformation\n";
         let expect_colored = expect_header.to_string()
             + &get_white_color_string(
                 &expect_tz
@@ -487,6 +500,8 @@ mod tests {
             + &get_white_color_string(test_computername)
             + " | "
             + &get_white_color_string(test_eventid)
+            + " | "
+            + &get_white_color_string(expect_channel)
             + " | "
             + &get_white_color_string(test_level)
             + " | "
@@ -505,6 +520,8 @@ mod tests {
             + test_computername
             + " | "
             + test_eventid
+            + " | "
+            + expect_channel
             + " | "
             + test_level
             + " | "
