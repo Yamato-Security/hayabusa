@@ -56,7 +56,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
-  - [Channel Abbrevation](#channel-abbrevation)
+  - [Channel Abbreviations](#channel-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
 - [Hayabusa Rules](#hayabusa-rules)
@@ -488,10 +488,10 @@ You can freely edit these abbreviations in the `config/output_tag.txt` configura
 * `Exfil` : Exfiltration
 * `Impact` : Impact
 
-## Channel Abbrevation
+## Channel Abbreviations
 
 In order to save space, we use the following abbreviations when displaying Channel.
-You can freely edit these abbreviations in the `config/config/channel_abbrevations.txt` configuration file.
+You can freely edit these abbreviations in the `config/config/channel_abbreviations.txt` configuration file.
 
 * `Application` : App
 * `DNS Server` : DNS-Svr

@@ -58,7 +58,7 @@ lazy_static! {
     pub static ref TAGS_CONFIG: HashMap<String, String> =
         Message::create_output_filter_config("config/output_tag.txt");
     pub static ref CH_CONFIG: HashMap<String, String> =
-        Message::create_output_filter_config("config/channel_abbrevations.txt");
+        Message::create_output_filter_config("config/channel_abbreviations.txt");
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool = configs::CONFIG
         .read()
         .unwrap()

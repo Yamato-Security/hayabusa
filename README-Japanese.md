@@ -498,7 +498,7 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 ## Channel情報の省略
 
 簡潔に出力するためにChannelの表示を以下のように省略しています。
-`config/channel_abbrevations.txt`の設定ファイルで自由に編集できます。
+`config/channel_abbreviations.txt`の設定ファイルで自由に編集できます。
 
 * `Application` : App
 * `DNS Server` : DNS-Svr
