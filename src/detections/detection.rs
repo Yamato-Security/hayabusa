@@ -220,7 +220,10 @@ impl Detection {
             eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
                 .unwrap_or_else(|| "-".to_owned()),
             channel: CH_CONFIG
-                .get(&record_info.record["Channel"].to_string())
+                .get(
+                    &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"])
+                        .unwrap_or_default(),
+                )
                 .unwrap_or(&String::default())
                 .to_string(),
             alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
