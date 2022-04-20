@@ -56,6 +56,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
+  - [Channel Abbreviations](#channel-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
 - [Hayabusa Rules](#hayabusa-rules)
@@ -453,6 +454,7 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 
 * `Timestamp`: Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. This comes from the `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--utc` option.
 * `Computer`: This comes from the `<Event><System><Computer>` field in the event log.
+* `Channel`: The name of log. This comes from the `<Event><System><Channel>` field in the event log.
 * `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
 * `Title`: This comes from the `title` field in the YML detection rule.
@@ -485,6 +487,38 @@ You can freely edit these abbreviations in the `config/output_tag.txt` configura
 * `C2` : Command and Control
 * `Exfil` : Exfiltration
 * `Impact` : Impact
+
+## Channel Abbreviations
+
+In order to save space, we use the following abbreviations when displaying Channel.
+You can freely edit these abbreviations in the `config/config/channel_abbreviations.txt` configuration file.
+
+* `Application` : App
+* `DNS Server` : DNS-Svr
+* `Microsoft-ServiceBus-Client` : SvcBusCli
+* `Microsoft-Windows-CodeIntegrity/Operational` : CodeInteg
+* `Microsoft-Windows-LDAP-Client/Debug` : LDAP-Cli
+* `Microsoft-Windows-AppLocker/MSI and Script` : AppLocker
+* `Microsoft-Windows-AppLocker/EXE and DLL` : AppLocker
+* `Microsoft-Windows-AppLocker/Packaged app-Deployment` : AppLocker
+* `Microsoft-Windows-AppLocker/Packaged app-Execution` : AppLocker
+* `Microsoft-Windows-Bits-Client/Operational` : BitsCli
+* `Microsoft-Windows-DHCP-Server/Operational` : DHCP-Svr
+* `Microsoft-Windows-DriverFrameworks-UserMode/Operational` : DvrFmwk
+* `Microsoft-Windows-NTLM/Operational` : NTLM
+* `Microsoft-Windows-SmbClient/Security` : SmbCliSec
+* `Microsoft-Windows-Sysmon/Operational` : Sysmon
+* `Microsoft-Windows-TaskScheduler/Operational` : TaskSch
+* `Microsoft-Windows-PrintService/Admin` : PrintAdm
+* `Microsoft-Windows-PrintService/Operational` : PrintOp
+* `Microsoft-Windows-PowerShell/Operational` : PwSh
+* `Microsoft-Windows-Windows Defender/Operational` : Defender
+* `Microsoft-Windows-Windows Firewall With Advanced Security/Firewall` : Firewall
+* `Microsoft-Windows-WMI-Activity/Operational` : WMI
+* `MSExchange Management` : Exchange
+* `Security` : Sec
+* `System` : Sys
+* `Windows PowerShell` : WinPwSh
 
 ## Progress Bar
 

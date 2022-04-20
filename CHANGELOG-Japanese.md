@@ -1,7 +1,9 @@
 # 変更点
 
 ## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 Preview Release
+
 **新機能:**
+
 - `-C / --config` オプションの追加。検知ルールのコンフィグを指定することが可能。(Windowsでのライブ調査に便利) (@hitenkoku) 
 - `|equalsfield` と記載することでルール内で二つのフィールドの値が一致するかを記載に対応。 (@hach1yon)
 - `-p / --pivot-keywords-list` オプションの追加。攻撃されたマシン名や疑わしいユーザ名などの情報をピボットキーワードリストとして出力する。 (@kazuminn)
@@ -9,6 +11,7 @@
 - `--level-tuning` オプションの追加。ルールの検知ファイルを設定したコンフィグファイルに従って検知レベルをチューニングすることが可能(@itib、@hitenkoku)
 
 **改善:**
+
 - 検知ルールとドキュメントの更新。 (@YamatoSecurity)
 - MacとLinuxのバイナリに必要なOpenSSLライブラリを静的コンパイルした。 (@YamatoSecurity)
 - タブ等の文字が含まれたフィールドに対しての検知性能の改善。 (@hach1yon、@hitenkoku)
@@ -18,19 +21,24 @@
 - イベントIDとタイトルが記載されたコンフィグファイルの名前を `timeline_event_info.txt` から `statistics_event_info.txt`に変更。 (@YamatoSecurity、 @garigariganzy)
 - 64bit Windowsで32bit版のバイナリを実行しないように修正(@hitenkoku)
 - MITRE ATT&CKのデータの出力を`output_tag.txt`で修正できるように修正(@hitenkoku)
+- 出力にChannel名のカラムを追加(@hitenkoku)
 
 **バグ修正:**
+
 - `.git` フォルダ内にある `.yml` ファイルがパースエラーを引き起こしていた問題の修正。 (@hitenkoku)
 - テスト用のルールファイルの読み込みエラーで不必要な改行が発生していた問題の修正。 (@hitenkoku)
 - Windows Terminalのバグで標準出力が途中で止まる場合がありましたが、Hayabusa側で解決しました。 (@hitenkoku)
 
 ## v1.1.0 [2022/03/03]
+
 **新機能:**
+
 - `-r / --rules`オプションで一つのルール指定が可能。(ルールをテストする際に便利！) (@kazuminn)
 - ルール更新オプション (`-u / --update-rules`): [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)レポジトリにある最新のルールに更新できる。 (@hitenkoku)
 - ライブ調査オプション (`-l / --live-analysis`): Windowsイベントログディレクトリを指定しないで、楽にWindows端末でライブ調査ができる。(@hitenkoku) 
 
 **改善:**
+
 - ドキュメンテーションの更新。 (@kazuminn、@itiB、@hitenkoku、@YamatoSecurity)
 - ルールの更新。(Hayabusaルール: 20個以上、Sigmaルール: 200個以上) (@YamatoSecurity)
 - Windowsバイナリは静的でコンパイルしているので、Visual C++ 再頒布可能パッケージをインストールする必要はない。(@hitenkoku)
@@ -42,12 +50,15 @@
 - Cargo crateの更新。 (@YamatoSecurity)
 
 **バグ修正:**
+
 - `cargo update`がより安定するために、clapのバージョンを固定した。(@hitenkoku)
 - フィールドのタブや改行がある場合に、ルールが検知しなかったので、修正した。(@hitenkoku)
 
 ## v1.0.0-Release 2 [2022/01/27]
+
 - アンチウィルスに誤検知されたExcelの結果ファイルの削除。(@YamatoSecurity)
 - Rustのevtxライブラリを0.7.2に更新。 (@YamatoSecurity)
 
 ## v1.0.0 [2021/12/25]
+
 - 最初のリリース
