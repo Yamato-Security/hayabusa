@@ -19,8 +19,8 @@ use std::process;
 pub struct CsvFormat<'a> {
     timestamp: &'a str,
     computer: &'a str,
-    event_i_d: &'a str,
     channel: &'a str,
+    event_i_d: &'a str,
     level: &'a str,
     mitre_attack: &'a str,
     rule_title: &'a str,
@@ -36,8 +36,8 @@ pub struct CsvFormat<'a> {
 pub struct DisplayFormat<'a> {
     timestamp: &'a str,
     pub computer: &'a str,
-    pub event_i_d: &'a str,
     pub channel: &'a str,
+    pub event_i_d: &'a str,
     pub level: &'a str,
     pub rule_title: &'a str,
     pub details: &'a str,
@@ -395,7 +395,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,EventID,Channel,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
+            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -404,9 +404,9 @@ mod tests {
                 + ","
                 + test_computername
                 + ","
-                + test_eventid
-                + ","
                 + test_channel
+                + ","
+                + test_eventid
                 + ","
                 + test_level
                 + ","
@@ -488,7 +488,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect_header =
-            "Timestamp|Computer|EventID|Channel|Level|RuleTitle|Details|RecordInformation\n";
+            "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordInformation\n";
         let expect_colored = expect_header.to_string()
             + &get_white_color_string(
                 &expect_tz
@@ -499,9 +499,9 @@ mod tests {
             + " | "
             + &get_white_color_string(test_computername)
             + " | "
-            + &get_white_color_string(test_eventid)
-            + " | "
             + &get_white_color_string(expect_channel)
+            + " | "
+            + &get_white_color_string(test_eventid)
             + " | "
             + &get_white_color_string(test_level)
             + " | "
@@ -519,9 +519,9 @@ mod tests {
             + " | "
             + test_computername
             + " | "
-            + test_eventid
-            + " | "
             + expect_channel
+            + " | "
+            + test_eventid
             + " | "
             + test_level
             + " | "
