@@ -99,9 +99,6 @@ impl LevelTuning {
 #[cfg(test)]
 mod tests {
 
-    // use crate::{filter::RuleExclude, yaml};
-    // use hashbrown::HashSet;
-
     use super::*;
 
     #[test]
