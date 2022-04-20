@@ -461,8 +461,8 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 
 * `Timestamp`: デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっています。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ています。デフォルトのタイムゾーンはローカルのタイムゾーンになりますが、`--utc` オプションで UTC に変更することができます。
 * `Computer`: イベントログの`<Event><System><Computer>`フィールドから来ています。
+* `Channel`: ログ名です。イベントログの`<Event><System><EventID>`フィールドから来ています。
 * `Event ID`: イベントログの`<Event><System><EventID>`フィールドから来ています。
-* `Channel`: イベントログの`<Event><System><EventID>`フィールドから来ています。
 * `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
 * `Title`: YML検知ルールの`title`フィールドから来ています。
 * `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログの`<Event><System><EventData>`部分から有用なデータを抽出することができます。

@@ -454,8 +454,8 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 
 * `Timestamp`: Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. This comes from the `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--utc` option.
 * `Computer`: This comes from the `<Event><System><Computer>` field in the event log.
+* `Channel`: The name of log. This comes from the `<Event><System><Channel>` field in the event log.
 * `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
-* `Channel`: This comes from the `<Event><System><Channel>` field in the event log.
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
 * `Title`: This comes from the `title` field in the YML detection rule.
 * `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc...
