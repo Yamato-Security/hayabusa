@@ -235,7 +235,7 @@ impl App {
                 .unwrap()
                 .args
                 .value_of("level-tuning")
-                .unwrap_or("./config/level_tuning.txt")
+                .unwrap_or("./rules/config/level_tuning.txt")
                 .to_string();
 
             if Path::new(&level_tuning_config_path).exists() {
@@ -253,7 +253,7 @@ impl App {
             } else {
                 AlertMessage::alert(
                     &mut BufWriter::new(std::io::stderr().lock()),
-                    "Need rule_levels.txt file to use --level-tuning option [default: ./config/level_tuning.txt]",
+                    "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
                 )
                 .ok();
             }
@@ -775,9 +775,7 @@ impl App {
             .read_dir(
                 rule_folder_path,
                 "INFORMATIONAL",
-                &filter::RuleExclude {
-                    no_use_rule: HashSet::new(),
-                },
+                &filter::RuleExclude::default(),
             )
             .ok();
 

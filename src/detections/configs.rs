@@ -102,7 +102,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .arg(
             // TODO: When update claps to 3.x, these can write in usage texts...
             Arg::from_usage("--level-tuning=[LEVEL_TUNING_FILE] 'Adjust rule level.'")
-                .default_value("./config/level_tuning.txt"),
+                .default_value("./rules/config/level_tuning.txt"),
         )
         .usage(usages)
         .args_from_usage(usages)

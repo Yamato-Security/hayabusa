@@ -19,10 +19,16 @@ pub struct RuleExclude {
     pub no_use_rule: HashSet<String>,
 }
 
+impl RuleExclude {
+    pub fn default() -> RuleExclude {
+        RuleExclude {
+            no_use_rule: HashSet::new(),
+        }
+    }
+}
+
 pub fn exclude_ids() -> RuleExclude {
-    let mut exclude_ids = RuleExclude {
-        no_use_rule: HashSet::new(),
-    };
+    let mut exclude_ids = RuleExclude::default();
 
     if !configs::CONFIG
         .read()

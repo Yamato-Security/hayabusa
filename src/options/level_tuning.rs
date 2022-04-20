@@ -1,5 +1,5 @@
 use crate::detections::{configs, utils};
-use crate::filter;
+use crate::filter::RuleExclude;
 use crate::yaml::ParseYaml;
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -45,8 +45,9 @@ impl LevelTuning {
 
         // Read Rule files
         let mut rulefile_loader = ParseYaml::new();
+        //noisy rules and exclude rules treats as update target
         let result_readdir =
-            rulefile_loader.read_dir(rules_path, "informational", &filter::exclude_ids());
+            rulefile_loader.read_dir(rules_path, "informational", &RuleExclude::default());
         if result_readdir.is_err() {
             return Result::Err(format!("{}", result_readdir.unwrap_err()));
         }
@@ -97,9 +98,6 @@ impl LevelTuning {
 
 #[cfg(test)]
 mod tests {
-
-    // use crate::{filter::RuleExclude, yaml};
-    // use hashbrown::HashSet;
 
     use super::*;
 

@@ -321,7 +321,7 @@ USAGE:
     -s --statistics 'イベント ID の統計情報を表示する。'
     -q --quiet 'Quietモード。起動バナーを表示しない。'
     -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
-    --level-tuning <LEVEL_TUNING_FILE> 'ルールlevelのチューニング [default: ./config/level_tuning.txt]'
+    --level-tuning <LEVEL_TUNING_FILE> 'ルールlevelのチューニング [default: ./rules/config/level_tuning.txt]'
     -p --pivot-keywords-list 'ピボットキーワードの一覧作成。'
     --contributors 'コントリビュータの一覧表示。'
 ```
@@ -594,10 +594,10 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./config/level_tuning.txt`に変換情報を書き、`hayabusa.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
-`./config/level_tuning.txt`の例:
+`./rules/config/level_tuning.txt`の例:
 ```
 id,new_level
 00000000-0000-0000-0000-000000000000,informational # sample level tuning line
