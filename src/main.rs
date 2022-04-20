@@ -775,9 +775,7 @@ impl App {
             .read_dir(
                 rule_folder_path,
                 "INFORMATIONAL",
-                &filter::RuleExclude {
-                    no_use_rule: HashSet::new(),
-                },
+                &filter::RuleExclude::default(),
             )
             .ok();
 
