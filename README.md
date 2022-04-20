@@ -313,7 +313,7 @@ USAGE:
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --level-tuning <LEVEL_TUNING_FILE> 'Tune the rule level [default: ./config/level_tuning.txt]'
+    --level-tuning <LEVEL_TUNING_FILE> 'Tune the rule level [default: ./rules/config/level_tuning.txt]'
     -p --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'
 ```
@@ -552,10 +552,10 @@ You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore 
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./config/level_tuning.txt` and executing `hayabusa.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
-`./config/level_tuning.txt` sample line:
+`./rules/config/level_tuning.txt` sample line:
 
 ```
 id,new_level
