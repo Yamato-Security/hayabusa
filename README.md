@@ -168,7 +168,10 @@ hayabusa.exe -u
 
 If the update fails, you may need to rename the `rules` folder and try again.
 
-Note: When the update is executed, repository in `rules` folder execute `git reset --hard HEAD`. If you change some fields other than level field in existing rules, We recommend backup to other than the `rules` folder.
+>> Caution: When updating, rules and config files in the `rules` folder are replaced with the latest rules and config files in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository. 
+>> Any changes you make to existing files will be overwritten, so we recommend that you make backups of any files that you edit before updating.
+>> If you are performing level tuning with `--level-tuning`, please re-tune your rule files after each update. 
+>> If you add new rules inside of the `rules` folder, they will **not** be overwritten or deleted when updating.
 
 # Compiling From Source (Optional)
 
