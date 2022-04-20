@@ -168,6 +168,8 @@ hayabusa.exe -u
 
 If the update fails, you may need to rename the `rules` folder and try again.
 
+Note: When the update is executed, repository in `rules` folder execute `git reset --hard HEAD`. If you change some fields other than level field in existing rules, We recommend backup to other than the `rules` folder.
+
 # Compiling From Source (Optional)
 
 If you have Rust installed, you can compile from source with the following command:
