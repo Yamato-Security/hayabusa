@@ -184,11 +184,11 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
 pub fn get_thread_num() -> usize {
     let def_thread_num_str = num_cpus::get().to_string();
     let conf = configs::CONFIG.read().unwrap();
-    let threadnum = &conf
-        .args
+    conf.args
         .value_of("thread-number")
-        .unwrap_or(def_thread_num_str.as_str());
-    threadnum.parse::<usize>().unwrap()
+        .unwrap_or(def_thread_num_str.as_str())
+        .parse::<usize>()
+        .unwrap()
 }
 
 pub fn create_tokio_runtime() -> Runtime {
