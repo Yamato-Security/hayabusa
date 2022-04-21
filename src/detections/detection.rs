@@ -9,7 +9,7 @@ use crate::detections::print::MESSAGES;
 use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
-use crate::detections::print::TAGS_CONFIG;
+use crate::detections::print::{CH_CONFIG, TAGS_CONFIG};
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -219,6 +219,13 @@ impl Detection {
                 .replace('\"', ""),
             eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
                 .unwrap_or_else(|| "-".to_owned()),
+            channel: CH_CONFIG
+                .get(
+                    &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"])
+                        .unwrap_or_default(),
+                )
+                .unwrap_or(&String::default())
+                .to_string(),
             alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
             detail: String::default(),
             tag_info: tag_info.join(" | "),
@@ -252,6 +259,7 @@ impl Detection {
             level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
+            channel: "-".to_owned(),
             alert: rule.yaml["title"].as_str().unwrap_or("").to_owned(),
             detail: output,
             record_information: rec_info,

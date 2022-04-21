@@ -1,0 +1,27 @@
+Channel,Abbreviation
+Application,App
+DNS Server,DNS-Svr
+Microsoft-ServiceBus-Client,SvcBusCli
+Microsoft-Windows-CodeIntegrity/Operational,CodeInteg
+Microsoft-Windows-LDAP-Client/Debug,LDAP-Cli
+Microsoft-Windows-AppLocker/MSI and Script,AppLocker
+Microsoft-Windows-AppLocker/EXE and DLL,AppLocker
+Microsoft-Windows-AppLocker/Packaged app-Deployment,AppLocker
+Microsoft-Windows-AppLocker/Packaged app-Execution,AppLocker
+Microsoft-Windows-Bits-Client/Operational,BitsCli
+Microsoft-Windows-DHCP-Server/Operational,DHCP-Svr
+Microsoft-Windows-DriverFrameworks-UserMode/Operational,DvrFmwk
+Microsoft-Windows-NTLM/Operational,NTLM
+Microsoft-Windows-SmbClient/Security,SmbCliSec
+Microsoft-Windows-Sysmon/Operational,Sysmon
+Microsoft-Windows-TaskScheduler/Operational,TaskSch
+Microsoft-Windows-PrintService/Admin,PrintAdm
+Microsoft-Windows-PrintService/Operational,PrintOp
+Microsoft-Windows-PowerShell/Operational,PwSh
+Microsoft-Windows-Windows Defender/Operational,Defender
+Microsoft-Windows-Windows Firewall With Advanced Security/Firewall,Firewall
+Microsoft-Windows-WMI-Activity/Operational,WMI
+MSExchange Management,Exchange
+Security,Sec
+System,Sys
+Windows PowerShell,WinPwSh

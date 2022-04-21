@@ -56,6 +56,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
+  - [Channel情報の省略](#channel情報の省略)
   - [プログレスバー](#プログレスバー)
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
 - [Hayabusaルール](#hayabusaルール)
@@ -323,7 +324,7 @@ USAGE:
     -s --statistics 'イベント ID の統計情報を表示する。'
     -q --quiet 'Quietモード。起動バナーを表示しない。'
     -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
-    --level-tuning <LEVEL_TUNING_FILE> 'ルールlevelのチューニング [default: ./config/level_tuning.txt]'
+    --level-tuning <LEVEL_TUNING_FILE> 'ルールlevelのチューニング [default: ./rules/config/level_tuning.txt]'
     -p --pivot-keywords-list 'ピボットキーワードの一覧作成。'
     --contributors 'コントリビュータの一覧表示。'
 ```
@@ -463,6 +464,7 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 
 * `Timestamp`: デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっています。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ています。デフォルトのタイムゾーンはローカルのタイムゾーンになりますが、`--utc` オプションで UTC に変更することができます。
 * `Computer`: イベントログの`<Event><System><Computer>`フィールドから来ています。
+* `Channel`: ログ名です。イベントログの`<Event><System><EventID>`フィールドから来ています。
 * `Event ID`: イベントログの`<Event><System><EventID>`フィールドから来ています。
 * `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
 * `Title`: YML検知ルールの`title`フィールドから来ています。
@@ -495,6 +497,38 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 * `C2` : Command and Control (遠隔操作)
 * `Exfil` : Exfiltration (持ち出し)
 * `Impact` : Impact (影響)
+
+## Channel情報の省略
+
+簡潔に出力するためにChannelの表示を以下のように省略しています。
+`config/channel_abbreviations.txt`の設定ファイルで自由に編集できます。
+
+* `Application` : App
+* `DNS Server` : DNS-Svr
+* `Microsoft-ServiceBus-Client` : SvcBusCli
+* `Microsoft-Windows-CodeIntegrity/Operational` : CodeInteg
+* `Microsoft-Windows-LDAP-Client/Debug` : LDAP-Cli
+* `Microsoft-Windows-AppLocker/MSI and Script` : AppLocker
+* `Microsoft-Windows-AppLocker/EXE and DLL` : AppLocker
+* `Microsoft-Windows-AppLocker/Packaged app-Deployment` : AppLocker
+* `Microsoft-Windows-AppLocker/Packaged app-Execution` : AppLocker
+* `Microsoft-Windows-Bits-Client/Operational` : BitsCli
+* `Microsoft-Windows-DHCP-Server/Operational` : DHCP-Svr
+* `Microsoft-Windows-DriverFrameworks-UserMode/Operational` : DvrFmwk
+* `Microsoft-Windows-NTLM/Operational` : NTLM
+* `Microsoft-Windows-SmbClient/Security` : SmbCliSec
+* `Microsoft-Windows-Sysmon/Operational` : Sysmon
+* `Microsoft-Windows-TaskScheduler/Operational` : TaskSch
+* `Microsoft-Windows-PrintService/Admin` : PrintAdm
+* `Microsoft-Windows-PrintService/Operational` : PrintOp
+* `Microsoft-Windows-PowerShell/Operational` : PwSh
+* `Microsoft-Windows-Windows Defender/Operational` : Defender
+* `Microsoft-Windows-Windows Firewall With Advanced Security/Firewall` : Firewall
+* `Microsoft-Windows-WMI-Activity/Operational` : WMI
+* `MSExchange Management` : Exchange
+* `Security` : Sec
+* `System` : Sys
+* `Windows PowerShell` : WinPwSh
 
 ## プログレスバー
 
@@ -563,10 +597,10 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./config/level_tuning.txt`に変換情報を書き、`hayabusa.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
-`./config/level_tuning.txt`の例:
+`./rules/config/level_tuning.txt`の例:
 ```
 id,new_level
 00000000-0000-0000-0000-000000000000,informational # sample level tuning line
