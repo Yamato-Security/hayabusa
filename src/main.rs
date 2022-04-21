@@ -654,17 +654,21 @@ impl App {
             println!(
                 "Attempting to git clone the hayabusa-rules repository into the rules folder."
             );
-            // レポジトリが開けなかった段階でhayabusa rulesのgit cloneを実施する
+            // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
             result = self.clone_rules();
         } else if hayabusa_rule_repo.is_ok() {
-            // rulesのrepositoryが確認できる場合
-            // origin/mainのfetchができなくなるケースはネットワークなどのケースが考えられるため、git cloneは実施しない
+            // case of exist hayabusa-rules repository
+            self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
+            // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
             prev_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
             prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
-            result = self.pull_repository(hayabusa_rule_repo.unwrap());
+            result = self.pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
-            // hayabusa-rulesのrepositoryがrulesに存在しない場合
-            // hayabusa repositoryがあればsubmodule情報もあると思われるのでupdate
+            // case of no exist hayabusa-rules repository in rules.
+            // execute update because submodule information exists if hayabusa repository exists submodule information.
+
+            self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
+
             prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
             let rules_path = Path::new("rules");
             if !rules_path.exists() {
@@ -673,12 +677,12 @@ impl App {
             let hayabusa_repo = hayabusa_repo.unwrap();
             let submodules = hayabusa_repo.submodules()?;
             let mut is_success_submodule_update = true;
-            // submoduleのname参照だと参照先を変えることで意図しないフォルダを削除する可能性があるためハードコーディングする
+            // submodule rules erase path is hard coding to avoid unintentional remove folder.
             fs::remove_dir_all(".git/.submodule/rules").ok();
             for mut submodule in submodules {
                 submodule.update(true, None)?;
                 let submodule_repo = submodule.open()?;
-                if let Err(e) = self.pull_repository(submodule_repo) {
+                if let Err(e) = self.pull_repository(&submodule_repo) {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
                         &format!("Failed submodule update. {}", e),
@@ -701,8 +705,21 @@ impl App {
         result
     }
 
+    /// hard reset in main branch
+    fn _repo_main_reset_hard(&self, input_repo: &Repository) -> Result<(), git2::Error> {
+        let branch = input_repo
+            .find_branch("main", git2::BranchType::Local)
+            .unwrap();
+        let local_head = branch.get().target().unwrap();
+        let object = input_repo.find_object(local_head, None).unwrap();
+        match input_repo.reset(&object, git2::ResetType::Hard, None) {
+            Ok(()) => Ok(()),
+            _ => Err(git2::Error::from_str("Failed reset main branch in rules")),
+        }
+    }
+
     /// Pull(fetch and fast-forward merge) repositoryto input_repo.
-    fn pull_repository(&self, input_repo: Repository) -> Result<String, git2::Error> {
+    fn pull_repository(&self, input_repo: &Repository) -> Result<String, git2::Error> {
         match input_repo
             .find_remote("origin")?
             .fetch(&["main"], None, None)

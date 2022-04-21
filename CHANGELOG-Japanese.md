@@ -1,5 +1,14 @@
 # 変更点
 
+## v1.2.1 [2022/04/20] Black Hat Asia Arsenal 2022 Preview Release
+
+**新機能:**
+- Added a `Channel` column to the output based on the `./config/channel_abbreviations` config file. (@hitenkoku)
+- Rule and rule config files are now forcefully updated. (@hitenkoku)
+
+**バグ修正:**
+- Rules marked as noisy or excluded would not have their `level` changed with `--level-tuning` but now all rules will be checked. (@hitenkoku)
+
 ## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 Preview Release
 
 **新機能:**

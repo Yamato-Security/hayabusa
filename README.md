@@ -169,6 +169,11 @@ hayabusa.exe -u
 
 If the update fails, you may need to rename the `rules` folder and try again.
 
+>> Caution: When updating, rules and config files in the `rules` folder are replaced with the latest rules and config files in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository. 
+>> Any changes you make to existing files will be overwritten, so we recommend that you make backups of any files that you edit before updating.
+>> If you are performing level tuning with `--level-tuning`, please re-tune your rule files after each update. 
+>> If you add new rules inside of the `rules` folder, they will **not** be overwritten or deleted when updating.
+
 # Compiling From Source (Optional)
 
 If you have Rust installed, you can compile from source with the following command:
