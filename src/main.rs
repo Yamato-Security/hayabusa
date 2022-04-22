@@ -667,8 +667,6 @@ impl App {
             // case of no exist hayabusa-rules repository in rules.
             // execute update because submodule information exists if hayabusa repository exists submodule information.
 
-            self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
-
             prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
             let rules_path = Path::new("rules");
             if !rules_path.exists() {
