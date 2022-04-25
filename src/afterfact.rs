@@ -103,15 +103,12 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                 level = "info".to_string();
             }
             if displayflag {
-                let colors = color_map
-                    .as_ref()
-                    .map(|cl_mp| _get_output_color(cl_mp, &detect_info.level));
-                let colors = colors.as_ref();
+                let color = _get_output_color(&detect_info.level);
 
                 let recinfo = detect_info
                     .record_information
                     .as_ref()
-                    .map(|recinfo| _format_cell(recinfo, ColPos::Last, colors));
+                    .map(|recinfo| _format_cellpos(ColPos::Last, recinfo));
                 let details = detect_info
                     .detail
                     .chars()
@@ -119,13 +116,13 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                     .collect::<String>();
 
                 let dispformat = DisplayFormat {
-                    timestamp: &_format_cell(&format_time(time), ColPos::First, colors),
-                    level: &_format_cell(&level, ColPos::Other, colors),
-                    computer: &_format_cell(&detect_info.computername, ColPos::Other, colors),
-                    event_i_d: &_format_cell(&detect_info.eventid, ColPos::Other, colors),
-                    channel: &_format_cell(&detect_info.channel, ColPos::Other, colors),
-                    rule_title: &_format_cell(&detect_info.alert, ColPos::Other, colors),
-                    details: &_format_cell(&details, ColPos::Other, colors),
+                    timestamp: &_format_cellpos(&format_time(time), ColPos::First),
+                    level: &_format_cellpos(&level, ColPos::Other),
+                    computer: &_format_cellpos(&detect_info.computername, ColPos::Other),
+                    event_i_d: &_format_cellpos(&detect_info.eventid, ColPos::Other),
+                    channel: &_format_cellpos(&detect_info.channel, ColPos::Other),
+                    rule_title: &_format_cellpos(&detect_info.alert, ColPos::Other),
+                    details: &_format_cellpos(&details, ColPos::Other),
                     record_information: recinfo.as_deref(),
                 };
                 wtr.serialize(dispformat)?;
@@ -174,27 +171,23 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
     Ok(())
 }
 
+/// columnt position. in cell
+/// First: |<str> |
+/// Last: | <str>|
+/// Othre: | <str> |
 enum ColPos {
     First, // 先頭
     Last,  // 最後
     Other, // それ以外
 }
 
-fn _format_cellpos(column: ColPos, colval: &str) -> String {
+/// return str position in output file
+fn _format_cellpos(colval: &str, column: ColPos) -> String {
     return match column {
         ColPos::First => format!("{} ", colval),
         ColPos::Last => format!(" {}", colval),
         ColPos::Other => format!(" {} ", colval),
     };
-}
-
-fn _format_cell(word: &str, column: ColPos, output_color: Option<&Vec<u8>>) -> String {
-    if let Some(color) = output_color {
-        let colval = format!("{}", word.truecolor(color[0], color[1], color[2]));
-        _format_cellpos(column, &colval)
-    } else {
-        _format_cellpos(column, word)
-    }
 }
 
 /// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
