@@ -3,16 +3,15 @@ use crate::detections::print;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Local, TimeZone, Utc};
-use colored::*;
 use csv::QuoteStyle;
 use hashbrown::HashMap;
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use std::io;
-use std::io::BufWriter;
 use std::io::Write;
 use std::process;
+use termcolor::{BufferWriter, Color, ColorChoice, WriteColor};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -45,46 +44,6 @@ pub struct DisplayFormat<'a> {
     pub record_information: Option<&'a str>,
 }
 
-/// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn set_output_color() -> Option<HashMap<String, Vec<u8>>> {
-    if !configs::CONFIG.read().unwrap().args.is_present("color") {
-        return None;
-    }
-    let read_result = utils::read_csv("config/level_color.txt");
-    if read_result.is_err() {
-        // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
-        AlertMessage::warn(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
-        return None;
-    }
-    let mut color_map: HashMap<String, Vec<u8>> = HashMap::new();
-    read_result.unwrap().into_iter().for_each(|line| {
-        if line.len() != 2 {
-            return;
-        }
-        let empty = &"".to_string();
-        let level = line.get(0).unwrap_or(empty);
-        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
-        if convert_color_result.is_err() {
-            AlertMessage::warn(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                &format!("Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",line.join(","))
-            )
-            .ok();
-            return;
-        }
-        let color_code = convert_color_result.unwrap();
-        if level.is_empty() || color_code.len() < 3 {
-            return;
-        }
-        color_map.insert(level.to_string(), color_code);
-    });
-    Some(color_map)
-}
-
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
@@ -115,17 +74,12 @@ pub fn after_fact() {
             // 標準出力に出力する場合
             Box::new(BufWriter::new(io::stdout()))
         };
-    let color_map = set_output_color();
-    if let Err(err) = emit_csv(&mut target, displayflag, color_map) {
+    if let Err(err) = emit_csv(&mut target, displayflag) {
         fn_emit_csv_err(Box::new(err));
     }
 }
 
-fn emit_csv<W: std::io::Write>(
-    writer: &mut W,
-    displayflag: bool,
-    color_map: Option<HashMap<String, Vec<u8>>>,
-) -> io::Result<()> {
+fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<()> {
     let mut wtr = if displayflag {
         csv::WriterBuilder::new()
             .double_quote(false)
@@ -280,7 +234,8 @@ fn _print_unique_results(
         let output_str = if color_map.is_none() {
             output_raw_str
         } else {
-            let output_color = _get_output_color(color_map.as_ref().unwrap(), level_name);
+            let output_color = _get_output_color(level_name);
+
             output_raw_str
                 .truecolor(output_color[0], output_color[1], output_color[2])
                 .to_string()
@@ -290,15 +245,16 @@ fn _print_unique_results(
     wtr.flush().ok();
 }
 
-/// levelに対応したtruecolorの値の配列を返す関数
-fn _get_output_color(color_map: &HashMap<String, Vec<u8>>, level: &str) -> Vec<u8> {
-    // カラーをつけない場合は255,255,255で出力する
-    let mut output_color: Vec<u8> = vec![255, 255, 255];
-    let target_color = color_map.get(level);
-    if let Some(color) = target_color {
-        output_color = color.to_vec();
-    }
-    output_color
+/// return termcolor by supported level
+fn _get_output_color(level: &str) -> Option<termcolor::Color> {
+    // return white no supported color
+    let support_color: HashMap<String, termcolor::Color> = HashMap::from([
+        ("CRITICAL".to_string(), termcolor::Color::Red),
+        ("HIGH".to_string(), termcolor::Color::Yellow),
+        ("MEDIUM".to_string(), termcolor::Color::Cyan),
+        ("LOW".to_string(), termcolor::Color::Green),
+    ]);
+    support_color.get(level.to_uppercase())
 }
 
 fn format_time(time: &DateTime<Utc>) -> String {
