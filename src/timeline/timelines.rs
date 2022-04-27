@@ -1,4 +1,5 @@
 use crate::detections::{configs, detection::EvtxRecordInfo};
+use prettytable::{Cell, Row, Table};
 
 use super::statistics::EventStatistics;
 use hashbrown::HashMap;
@@ -21,13 +22,16 @@ impl Timeline {
         let starttm = "".to_string();
         let endtm = "".to_string();
         let statslst = HashMap::new();
+        let statsloginlst = HashMap::new();
 
-        let statistic = EventStatistics::new(totalcnt, filepath, starttm, endtm, statslst);
-        Timeline { stats: statistic }
+        let statistic =
+            EventStatistics::new(totalcnt, filepath, starttm, endtm, statslst, statsloginlst);
+        return Timeline { stats: statistic };
     }
 
     pub fn start(&mut self, records: &[EvtxRecordInfo]) {
-        self.stats.start(records);
+        self.stats.evt_stats_start(records);
+        self.stats.logon_stats_start(records);
     }
 
     pub fn tm_stats_dsp_msg(&mut self) {
@@ -64,6 +68,32 @@ impl Timeline {
             println!("{}", msgprint);
         }
     }
+
+    pub fn tm_logon_stats_dsp_msg(&mut self) {
+        if !configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("logon-summary")
+        {
+            return;
+        }
+        // 出力メッセージ作成
+        //println!("map -> {:#?}", evtstat_map);
+        let mut sammsges: Vec<String> = Vec::new();
+        sammsges.push("---------------------------------------".to_string());
+        sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+        sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
+        sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+        sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+        sammsges.push("---------------------------------------".to_string());
+        for msgprint in sammsges.iter() {
+            println!("{}", msgprint);
+        }
+
+        self.tm_loginstats_tb_set_msg();
+    }
+
     // イベントID毎の出力メッセージ生成
     fn tm_stats_set_msg(&self, mapsorted: Vec<(&std::string::String, &usize)>) -> Vec<String> {
         let mut msges: Vec<String> = Vec::new();
@@ -100,5 +130,35 @@ impl Timeline {
         }
         msges.push("---------------------------------------".to_string());
         msges
+    }
+    // ユーザ毎のログイン統計情報出力メッセージ生成
+    fn tm_loginstats_tb_set_msg(&self) {
+        let mut loginmsges: Vec<String> = Vec::new();
+        let mut logins_stats_tb = Table::new();
+        logins_stats_tb.set_titles(row!["USER", "Failed", "Successful"]);
+
+        loginmsges.push(format!("          Number  of  logins         "));
+        if self.stats.stats_login_list.is_empty() {
+            loginmsges.push(format!("---------------------------------------"));
+            loginmsges.push(format!("|     No login event was detected.    |"));
+            loginmsges.push(format!("---------------------------------------\n"));
+            for msgprint in loginmsges.iter() {
+                println!("{}", msgprint);
+            }
+            return;
+        } else {
+            for (key, values) in &self.stats.stats_login_list {
+                logins_stats_tb.add_row(Row::new(vec![
+                    Cell::new(key),
+                    Cell::new(&values[1].to_string()),
+                    Cell::new(&values[0].to_string()),
+                ]));
+            }
+            for msgprint in loginmsges.iter() {
+                println!("{}", msgprint);
+            }
+            logins_stats_tb.printstd();
+            println!("{}", "\n");
+        }
     }
 }
