@@ -135,13 +135,13 @@ impl Timeline {
     fn tm_loginstats_tb_set_msg(&self) {
         let mut loginmsges: Vec<String> = Vec::new();
         let mut logins_stats_tb = Table::new();
-        logins_stats_tb.set_titles(row!["USER", "Failed", "Successful"]);
+        logins_stats_tb.set_titles(row!["User", "Failed", "Successful"]);
 
-        loginmsges.push("Number of logins".to_string());
+        loginmsges.push("Logon Summary".to_string());
         if self.stats.stats_login_list.is_empty() {
-            loginmsges.push("---------------------------------------".to_string());
-            loginmsges.push("|     No login event was detected.    |".to_string());
-            loginmsges.push("---------------------------------------\n".to_string());
+            loginmsges.push("-----------------------------------------".to_string());
+            loginmsges.push("|     No logon events were detected.    |".to_string());
+            loginmsges.push("-----------------------------------------\n".to_string());
             for msgprint in loginmsges.iter() {
                 println!("{}", msgprint);
             }
