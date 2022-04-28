@@ -22,14 +22,14 @@ impl EventStatistics {
         stats_list: HashMap<String, usize>,
         stats_login_list: HashMap<String, [usize; 2]>,
     ) -> EventStatistics {
-        return EventStatistics {
+        EventStatistics {
             total,
             filepath,
             start_time,
             end_time,
             stats_list,
             stats_login_list,
-        };
+        }
     }
 
     pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo]) {
@@ -115,20 +115,20 @@ impl EventStatistics {
     // Login event
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
         for record in records.iter() {
-            let evtid = utils::get_event_value(&"EventID".to_string(), &record.record);
-            let username = utils::get_event_value(&"TargetUserName".to_string(), &record.record);
+            let evtid = utils::get_event_value("EventID", &record.record);
+            let username = utils::get_event_value("TargetUserName", &record.record);
             if evtid.is_none() {
                 continue;
             }
             let idnum = evtid.unwrap();
             let countlist: [usize; 2] = [0, 0];
-            if idnum.to_string() == "4624".to_string() {
+            if idnum == 4624 {
                 let count: &mut [usize; 2] = self
                     .stats_login_list
                     .entry(username.unwrap().to_string())
                     .or_insert(countlist);
                 count[0] += 1;
-            } else if idnum.to_string() == "4634".to_string() {
+            } else if idnum == 4634 {
                 let count: &mut [usize; 2] = self
                     .stats_login_list
                     .entry(username.unwrap().to_string())

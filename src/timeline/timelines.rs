@@ -26,7 +26,7 @@ impl Timeline {
 
         let statistic =
             EventStatistics::new(totalcnt, filepath, starttm, endtm, statslst, statsloginlst);
-        return Timeline { stats: statistic };
+        Timeline { stats: statistic }
     }
 
     pub fn start(&mut self, records: &[EvtxRecordInfo]) {
@@ -137,15 +137,14 @@ impl Timeline {
         let mut logins_stats_tb = Table::new();
         logins_stats_tb.set_titles(row!["USER", "Failed", "Successful"]);
 
-        loginmsges.push(format!("          Number  of  logins         "));
+        loginmsges.push("Number of logins".to_string());
         if self.stats.stats_login_list.is_empty() {
-            loginmsges.push(format!("---------------------------------------"));
-            loginmsges.push(format!("|     No login event was detected.    |"));
-            loginmsges.push(format!("---------------------------------------\n"));
+            loginmsges.push("---------------------------------------".to_string());
+            loginmsges.push("|     No login event was detected.    |".to_string());
+            loginmsges.push("---------------------------------------\n".to_string());
             for msgprint in loginmsges.iter() {
                 println!("{}", msgprint);
             }
-            return;
         } else {
             for (key, values) in &self.stats.stats_login_list {
                 logins_stats_tb.add_row(Row::new(vec![
@@ -158,7 +157,7 @@ impl Timeline {
                 println!("{}", msgprint);
             }
             logins_stats_tb.printstd();
-            println!("{}", "\n");
+            println!();
         }
     }
 }
