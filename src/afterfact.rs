@@ -338,7 +338,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::afterfact::DisplayFormat;
+    use crate::afterfact::_get_serialized_disp_output;
     use crate::afterfact::emit_csv;
+    use crate::afterfact::format_time;
     use crate::detections::print;
     use crate::detections::print::DetectInfo;
     use crate::detections::print::CH_CONFIG;
@@ -450,118 +453,72 @@ mod tests {
     }
 
     fn check_emit_csv_display() {
-        let test_filepath: &str = "test2.evtx";
-        let test_rulepath: &str = "test-rule2.yml";
         let test_title = "test_title2";
         let test_level = "medium";
         let test_computername = "testcomputer2";
         let test_eventid = "2222";
-        let expect_channel = "Sysmon";
+        let test_channel = "Sysmon";
         let output = "displaytest";
-        let test_attack = "execution/txxxx.zzz";
-        {
-            let mut messages = print::MESSAGES.lock().unwrap();
-            messages.clear();
-            let val = r##"
-                {
-                    "Event": {
-                        "EventData": {
-                            "CommandRLine": "hoge"
-                        },
-                        "System": {
-                            "TimeCreated_attributes": {
-                                "SystemTime": "1996-02-27T01:05:01Z"
-                            }
-                        }
-                    }
-                }
-            "##;
-            let event: Value = serde_json::from_str(val).unwrap();
-            messages.insert(
-                &event,
-                output.to_string(),
-                DetectInfo {
-                    filepath: test_filepath.to_string(),
-                    rulepath: test_rulepath.to_string(),
-                    level: test_level.to_string(),
-                    computername: test_computername.to_string(),
-                    eventid: test_eventid.to_string(),
-                    channel: CH_CONFIG
-                        .get("Microsoft-Windows-Sysmon/Operational")
-                        .unwrap_or(&String::default())
-                        .to_string(),
-                    alert: test_title.to_string(),
-                    detail: String::default(),
-                    tag_info: test_attack.to_string(),
-                    record_information: Option::Some(String::default()),
-                },
-            );
-            messages.debug();
-        }
-        let expect_time = Utc
+        let test_recinfo = "testinfo";
+
+        let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_tz = expect_time.with_timezone(&Local);
         let expect_header =
             "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordInformation\n";
-        let expect_colored = expect_header.to_string()
-            + &get_white_color_string(
-                &expect_tz
-                    .clone()
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string(),
-            )
-            + " | "
-            + &get_white_color_string(test_computername)
-            + " | "
-            + &get_white_color_string(expect_channel)
-            + " | "
-            + &get_white_color_string(test_eventid)
-            + " | "
-            + &get_white_color_string(test_level)
-            + " | "
-            + &get_white_color_string(test_title)
-            + " | "
-            + &get_white_color_string(output)
-            + " | "
-            + &get_white_color_string("")
-            + "\n";
-        let expect_nocoloed = expect_header.to_string()
-            + &expect_tz
-                .clone()
-                .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                .to_string()
-            + " | "
+        let expect_tz = test_timestamp.with_timezone(&Local);
+
+        let expect_no_header = expect_tz
+            .clone()
+            .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+            .to_string()
+            + "|"
             + test_computername
-            + " | "
-            + expect_channel
-            + " | "
+            + "|"
+            + test_channel
+            + "|"
             + test_eventid
-            + " | "
+            + "|"
             + test_level
-            + " | "
+            + "|"
             + test_title
-            + " | "
+            + "|"
             + output
-            + " | "
-            + ""
+            + "|"
+            + test_recinfo
             + "\n";
-        let mut file: Box<dyn io::Write> =
-            Box::new(File::create("./test_emit_csv_display.txt").unwrap());
-        assert!(emit_csv(&mut file, true, HashMap::default()).is_ok());
-        match read_to_string("./test_emit_csv_display.txt") {
-            Err(_) => panic!("Failed to open file."),
-            Ok(s) => {
-                assert!(s == expect_colored || s == expect_nocoloed);
-            }
-        };
-        assert!(remove_file("./test_emit_csv_display.txt").is_ok());
-    }
-
-    fn get_white_color_string(target: &str) -> String {
-        let white_color_header = "\u{1b}[38;2;255;255;255m";
-        let white_color_footer = "\u{1b}[0m";
-
-        white_color_header.to_owned() + target + white_color_footer
+        let expect_with_header = expect_header.to_string() + &expect_no_header;
+        assert_eq!(
+            _get_serialized_disp_output(
+                DisplayFormat {
+                    timestamp: &format_time(&test_timestamp),
+                    level: test_level,
+                    computer: test_computername,
+                    event_i_d: test_eventid,
+                    channel: test_channel,
+                    rule_title: test_title,
+                    details: output,
+                    record_information: Some(test_recinfo),
+                },
+                true
+            ),
+            expect_with_header
+        );
+        assert_eq!(
+            _get_serialized_disp_output(
+                DisplayFormat {
+                    timestamp: &format_time(&test_timestamp),
+                    level: test_level,
+                    computer: test_computername,
+                    event_i_d: test_eventid,
+                    channel: test_channel,
+                    rule_title: test_title,
+                    details: output,
+                    record_information: Some(test_recinfo),
+                },
+                false
+            ),
+            expect_no_header
+        );
     }
 }
