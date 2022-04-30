@@ -301,7 +301,6 @@ USAGE:
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
     -F --full-data 'Print all field information.'
     -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
-    -c --color 'Output with color. (Terminal needs to support True Color.)'
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
@@ -532,10 +531,8 @@ It will display in real time the number and percent of evtx files that it has fi
 
 ## Color Output
 
-You can output the alerts in color based on the alert `level` by specifying `-c` or `--color`.
+You can output the alerts in color based on the alert `level`.
 You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
-Note: Color can only be displayed in terminals that support [True Color](https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)).
-Example: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) or [iTerm2](https://iterm2.com/) for macOS.
 
 # Hayabusa Rules
 

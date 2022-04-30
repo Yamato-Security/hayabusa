@@ -308,7 +308,6 @@ USAGE:
     -f --filepath=[FILEPATH] '1つの.evtxファイルのパス。'
     -F --full-data '全てのフィールド情報を出力する。'
     -r --rules=[RULEFILE/RULEDIRECTORY] 'ルールファイルまたはルールファイルを持つディレクトリ。(デフォルト: ./rules)'
-    -c --color 'カラーで出力する。 (ターミナルはTrue Colorに対応する必要がある。)'
     -C --config=[RULECONFIGDIRECTORY] 'ルールフォルダのコンフィグディレクトリ(デフォルト: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
     -v --verbose '詳細な情報を出力する。'
@@ -539,11 +538,9 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 
 ## 標準出力へのカラー設定
 
-`-c`または`--color`を指定することで、Hayabusaの結果は`level`毎に文字色を変えることができます。
+Hayabusaの結果は`level`毎に文字色が変わります。
 `./config/level_color.txt`の値を変更することで文字色を変えることができます。
 形式は`level名,(6桁のRGBのカラーhex)`です。
-注意: True Colorに対応しているターミナルが必要です。
-例: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) またはmacOSの[iTerm2](https://iterm2.com/)。
 
 # Hayabusaルール
 
