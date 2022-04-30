@@ -146,7 +146,11 @@ impl Timeline {
                 println!("{}", msgprint);
             }
         } else {
-            for (key, values) in &self.stats.stats_login_list {
+            // 集計件数でソート
+            let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
+            mapsorted.sort_by(|x, y| x.0.cmp(y.0));
+
+            for (key, values) in &mapsorted {
                 logins_stats_tb.add_row(Row::new(vec![
                     Cell::new(key),
                     Cell::new(&values[1].to_string()),

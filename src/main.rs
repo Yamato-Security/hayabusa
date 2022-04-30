@@ -178,7 +178,7 @@ impl App {
         }
         if *LOGONSUMMARY_FLAG {
             println!("Generating Logons Summary");
-            println!("");
+            println!();
         }
         if configs::CONFIG
             .read()
@@ -462,7 +462,7 @@ impl App {
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
-        if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG) && !*PIVOT_KEYWORD_LIST_FLAG {
+        if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
             after_fact();
         }
     }
