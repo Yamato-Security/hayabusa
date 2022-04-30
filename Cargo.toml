@@ -29,6 +29,7 @@ dotenv = "0.15.*"
 hhmmss = "*"
 pbr = "*"
 hashbrown = "0.12.*"
+hex = "0.4.*"
 git2="0.13"
 termcolor="*"
 
