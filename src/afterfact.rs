@@ -5,13 +5,15 @@ use crate::detections::utils;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
+use lazy_static::lazy_static;
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use std::io;
+use std::io::BufWriter;
 use std::io::Write;
 use std::process;
-use termcolor::{BufferWriter, Color, ColorChoice, WriteColor};
+use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -44,6 +46,55 @@ pub struct DisplayFormat<'a> {
     pub record_information: Option<&'a str>,
 }
 
+lazy_static! {
+    pub static ref OUTPUT_COLOR: HashMap<String, Color> = set_output_color();
+}
+
+/// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
+pub fn set_output_color() -> HashMap<String, Color> {
+    let read_result = utils::read_csv("config/level_color.txt");
+    let mut color_map: HashMap<String, Color> = HashMap::new();
+    if read_result.is_err() {
+        // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
+        AlertMessage::warn(
+            &mut BufWriter::new(std::io::stderr().lock()),
+            read_result.as_ref().unwrap_err(),
+        )
+        .ok();
+        return color_map;
+    }
+    read_result.unwrap().into_iter().for_each(|line| {
+        if line.len() != 2 {
+            return;
+        }
+        let empty = &"".to_string();
+        let level = line.get(0).unwrap_or(empty);
+        let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
+        if convert_color_result.is_err() {
+            AlertMessage::warn(
+                &mut BufWriter::new(std::io::stderr().lock()),
+                &format!("Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",line.join(","))
+            )
+            .ok();
+            return;
+        }
+        let color_code = convert_color_result.unwrap();
+        if level.is_empty() || color_code.len() < 3 {
+            return;
+        }
+        color_map.insert(level.to_lowercase(), Color::Rgb(color_code[0], color_code[1],color_code[2]));
+    });
+    color_map
+}
+
+fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<Color> {
+    let mut color = None;
+    if let Some(c) = color_map.get(&level.to_lowercase()) {
+        color = Some(c.to_owned());
+    }
+    color
+}
+
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
@@ -57,7 +108,7 @@ pub fn after_fact() {
     let mut displayflag = false;
     let mut target: Box<dyn io::Write> =
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
-            // ファイル出力する場合
+            // output to file
             match File::create(csv_path) {
                 Ok(file) => Box::new(BufWriter::new(file)),
                 Err(err) => {
@@ -71,31 +122,33 @@ pub fn after_fact() {
             }
         } else {
             displayflag = true;
-            // 標準出力に出力する場合
+            // stdoutput (termcolor crate color output is not csv writer)
             Box::new(BufWriter::new(io::stdout()))
         };
-    if let Err(err) = emit_csv(&mut target, displayflag) {
+    let color_map = set_output_color();
+    if let Err(err) = emit_csv(&mut target, displayflag, color_map) {
         fn_emit_csv_err(Box::new(err));
     }
 }
 
-fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<()> {
-    let mut wtr = if displayflag {
-        csv::WriterBuilder::new()
-            .double_quote(false)
-            .quote_style(QuoteStyle::Never)
-            .delimiter(b'|')
-            .from_writer(writer)
-    } else {
-        csv::WriterBuilder::new().from_writer(writer)
-    };
+fn emit_csv<W: std::io::Write>(
+    writer: &mut W,
+    displayflag: bool,
+    color_map: HashMap<String, Color>,
+) -> io::Result<()> {
+    let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut disp_wtr_buf = disp_wtr.buffer();
+
+    let mut wtr = csv::WriterBuilder::new().from_writer(writer);
 
     let messages = print::MESSAGES.lock().unwrap();
-    // levelの区分が"Critical","High","Medium","Low","Informational","Undefined"の6つであるため
+    // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: Vec<String> = Vec::new();
 
+    println!();
+    let mut plus_header = true;
     for (time, detect_infos) in messages.iter() {
         for detect_info in detect_infos {
             let mut level = detect_info.level.to_string();
@@ -103,12 +156,10 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                 level = "info".to_string();
             }
             if displayflag {
-                let color = _get_output_color(&detect_info.level);
-
                 let recinfo = detect_info
                     .record_information
                     .as_ref()
-                    .map(|recinfo| _format_cellpos(ColPos::Last, recinfo));
+                    .map(|recinfo| _format_cellpos(recinfo, ColPos::Last));
                 let details = detect_info
                     .detail
                     .chars()
@@ -125,9 +176,21 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
                     details: &_format_cellpos(&details, ColPos::Other),
                     record_information: recinfo.as_deref(),
                 };
-                wtr.serialize(dispformat)?;
+
+                disp_wtr_buf
+                    .set_color(
+                        ColorSpec::new().set_fg(_get_output_color(&color_map, &detect_info.level)),
+                    )
+                    .ok();
+                write!(
+                    disp_wtr_buf,
+                    "{}",
+                    _get_serialized_disp_output(dispformat, plus_header)
+                )
+                .ok();
+                plus_header = false;
             } else {
-                // csv出力時フォーマット
+                // csv output format
                 wtr.serialize(CsvFormat {
                     timestamp: &format_time(time),
                     level: &level,
@@ -152,9 +215,11 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
             total_detect_counts_by_level[level_suffix] += 1;
         }
     }
-    println!();
-
-    wtr.flush()?;
+    if displayflag {
+        disp_wtr.print(&disp_wtr_buf)?;
+    } else {
+        wtr.flush()?;
+    }
     println!();
     _print_unique_results(
         total_detect_counts_by_level,
@@ -176,9 +241,22 @@ fn emit_csv<W: std::io::Write>(writer: &mut W, displayflag: bool) -> io::Result<
 /// Last: | <str>|
 /// Othre: | <str> |
 enum ColPos {
-    First, // 先頭
-    Last,  // 最後
-    Other, // それ以外
+    First,
+    Last,
+    Other,
+}
+
+fn _get_serialized_disp_output(dispformat: DisplayFormat, plus_header: bool) -> String {
+    let mut disp_serializer = csv::WriterBuilder::new()
+        .double_quote(false)
+        .quote_style(QuoteStyle::Never)
+        .delimiter(b'|')
+        .has_headers(plus_header)
+        .from_writer(vec![]);
+
+    disp_serializer.serialize(dispformat).ok();
+
+    String::from_utf8(disp_serializer.into_inner().unwrap_or_default()).unwrap_or_default()
 }
 
 /// return str position in output file
@@ -190,14 +268,17 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
     };
 }
 
-/// 与えられたユニークな検知数と全体の検知数の情報(レベル別と総計)を元に結果文を標準出力に表示する関数
+/// output info which unique detection count and all detection count information(devided by level and total) to stdout.
 fn _print_unique_results(
     mut counts_by_level: Vec<u128>,
     head_word: String,
     tail_word: String,
-    color_map: &Option<HashMap<String, Vec<u8>>>,
+    color_map: &HashMap<String, Color>,
 ) {
-    let mut wtr = BufWriter::new(io::stdout());
+    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
     let levels = Vec::from([
         "critical",
         "high",
@@ -207,10 +288,10 @@ fn _print_unique_results(
         "undefined",
     ]);
 
-    // configsの登録順番と表示をさせたいlevelの順番が逆であるため
+    // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
 
-    // 全体の集計(levelの記載がないためformatの第二引数は空の文字列)
+    // output total results
     writeln!(
         wtr,
         "{} {}: {}",
@@ -219,35 +300,18 @@ fn _print_unique_results(
         counts_by_level.iter().sum::<u128>()
     )
     .ok();
+
     for (i, level_name) in levels.iter().enumerate() {
         let output_raw_str = format!(
             "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
         );
-        let output_str = if color_map.is_none() {
-            output_raw_str
-        } else {
-            let output_color = _get_output_color(level_name);
 
-            output_raw_str
-                .truecolor(output_color[0], output_color[1], output_color[2])
-                .to_string()
-        };
-        writeln!(wtr, "{}", output_str).ok();
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level_name)))
+            .ok();
+        writeln!(wtr, "{}", output_raw_str).ok();
     }
-    wtr.flush().ok();
-}
-
-/// return termcolor by supported level
-fn _get_output_color(level: &str) -> Option<termcolor::Color> {
-    // return white no supported color
-    let support_color: HashMap<String, termcolor::Color> = HashMap::from([
-        ("CRITICAL".to_string(), termcolor::Color::Red),
-        ("HIGH".to_string(), termcolor::Color::Yellow),
-        ("MEDIUM".to_string(), termcolor::Color::Cyan),
-        ("LOW".to_string(), termcolor::Color::Green),
-    ]);
-    support_color.get(level.to_uppercase())
+    buf_wtr.print(&wtr).ok();
 }
 
 fn format_time(time: &DateTime<Utc>) -> String {
@@ -258,6 +322,7 @@ fn format_time(time: &DateTime<Utc>) -> String {
     }
 }
 
+/// return rfc time format string by option
 fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>) -> String
 where
     Tz::Offset: std::fmt::Display,
@@ -278,6 +343,7 @@ mod tests {
     use crate::detections::print::DetectInfo;
     use crate::detections::print::CH_CONFIG;
     use chrono::{Local, TimeZone, Utc};
+    use hashbrown::HashMap;
     use serde_json::Value;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
@@ -372,7 +438,7 @@ mod tests {
                 + test_filepath
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, None).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::default()).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -480,10 +546,9 @@ mod tests {
             + " | "
             + ""
             + "\n";
-
         let mut file: Box<dyn io::Write> =
             Box::new(File::create("./test_emit_csv_display.txt").unwrap());
-        assert!(emit_csv(&mut file, true, None).is_ok());
+        assert!(emit_csv(&mut file, true, HashMap::default()).is_ok());
         match read_to_string("./test_emit_csv_display.txt") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
