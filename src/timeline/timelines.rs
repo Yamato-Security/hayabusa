@@ -79,7 +79,6 @@ impl Timeline {
             return;
         }
         // 出力メッセージ作成
-        //println!("map -> {:#?}", evtstat_map);
         let mut sammsges: Vec<String> = Vec::new();
         sammsges.push("---------------------------------------".to_string());
         sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
@@ -133,12 +132,9 @@ impl Timeline {
     }
     // ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self) {
-        let mut loginmsges: Vec<String> = Vec::new();
-        let mut logins_stats_tb = Table::new();
-        logins_stats_tb.set_titles(row!["User", "Failed", "Successful"]);
-
-        loginmsges.push("Logon Summary".to_string());
+        println!("Logon Summary");
         if self.stats.stats_login_list.is_empty() {
+            let mut loginmsges: Vec<String> = Vec::new();
             loginmsges.push("-----------------------------------------".to_string());
             loginmsges.push("|     No logon events were detected.    |".to_string());
             loginmsges.push("-----------------------------------------\n".to_string());
@@ -146,19 +142,23 @@ impl Timeline {
                 println!("{}", msgprint);
             }
         } else {
+            let mut logins_stats_tb = Table::new();
+            logins_stats_tb.set_titles(row!["User", "Failed", "Successful"]);
             // 集計件数でソート
             let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
             mapsorted.sort_by(|x, y| x.0.cmp(y.0));
 
             for (key, values) in &mapsorted {
+                let mut username: String = key.to_string();
+                //key.to_string().retain(|c| c != '\"');
+                //key.to_string().pop();
+                username.pop();
+                username.remove(0);
                 logins_stats_tb.add_row(Row::new(vec![
-                    Cell::new(key),
+                    Cell::new(&username),
                     Cell::new(&values[1].to_string()),
                     Cell::new(&values[0].to_string()),
                 ]));
-            }
-            for msgprint in loginmsges.iter() {
-                println!("{}", msgprint);
             }
             logins_stats_tb.printstd();
             println!();
