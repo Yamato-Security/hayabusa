@@ -116,10 +116,10 @@ impl EventStatistics {
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
         for record in records.iter() {
             let evtid = utils::get_event_value("EventID", &record.record);
-            let username = utils::get_event_value("TargetUserName", &record.record);
             if evtid.is_none() {
                 continue;
             }
+            let username = utils::get_event_value("TargetUserName", &record.record);
             let idnum = evtid.unwrap();
             let countlist: [usize; 2] = [0, 0];
             if idnum == 4624 {
