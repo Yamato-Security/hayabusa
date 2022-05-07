@@ -19,6 +19,7 @@ use crate::yaml::ParseYaml;
 use hashbrown;
 use hashbrown::HashMap;
 use serde_json::Value;
+use std::fmt::Write;
 use std::io::BufWriter;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
@@ -290,28 +291,31 @@ impl Detection {
             ret.push_str(" in timeframe");
         }
 
-        ret.push_str(&format!(" [result] count:{}", agg_result.data));
+        let _ = write!(ret, " [result] count:{}", agg_result.data);
         if agg_condition._field_name.is_some() {
-            ret.push_str(&format!(
+            let _ = write!(
+                ret,
                 " {}:{}",
                 agg_condition._field_name.as_ref().unwrap(),
                 agg_result.field_values.join("/")
-            ));
+            );
         }
 
         if agg_condition._by_field_name.is_some() {
-            ret.push_str(&format!(
+            let _ = write!(
+                ret,
                 " {}:{}",
                 agg_condition._by_field_name.as_ref().unwrap(),
                 agg_result.key
-            ));
+            );
         }
 
         if exist_timeframe {
-            ret.push_str(&format!(
+            let _ = write!(
+                ret,
                 " timeframe:{}",
                 rule.yaml["detection"]["timeframe"].as_str().unwrap()
-            ));
+            );
         }
 
         ret
