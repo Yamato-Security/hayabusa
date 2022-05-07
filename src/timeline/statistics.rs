@@ -128,7 +128,7 @@ impl EventStatistics {
                     .entry(username.unwrap().to_string())
                     .or_insert(countlist);
                 count[0] += 1;
-            } else if idnum == 4634 {
+            } else if idnum == 4625 {
                 let count: &mut [usize; 2] = self
                     .stats_login_list
                     .entry(username.unwrap().to_string())
