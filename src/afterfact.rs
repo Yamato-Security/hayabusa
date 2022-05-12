@@ -54,6 +54,9 @@ lazy_static! {
 pub fn set_output_color() -> HashMap<String, Color> {
     let read_result = utils::read_csv("config/level_color.txt");
     let mut color_map: HashMap<String, Color> = HashMap::new();
+    if configs::CONFIG.read().unwrap().args.is_present("no-color") {
+        return color_map;
+    }
     if read_result.is_err() {
         // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
         AlertMessage::warn(
@@ -82,7 +85,7 @@ pub fn set_output_color() -> HashMap<String, Color> {
         if level.is_empty() || color_code.len() < 3 {
             return;
         }
-        color_map.insert(level.to_lowercase(), Color::Rgb(color_code[0], color_code[1],color_code[2]));
+        color_map.insert(level.to_lowercase(), Color::Rgb(color_code[0], color_code[1], color_code[2]));
     });
     color_map
 }

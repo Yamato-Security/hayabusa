@@ -87,6 +87,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
     --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
     -U --utc 'Output time in UTC format. (Default: local time)'
+    --no-color 'disabled color output'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
