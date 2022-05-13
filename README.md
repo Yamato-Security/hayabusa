@@ -532,9 +532,9 @@ It will display in real time the number and percent of evtx files that it has fi
 
 ## Color Output
 
-You can output the alerts in color based on the alert `level`.
+The alerts will be outputted in color based on the alert `level`.
 You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
-If you will disable color output, you can use `--no-color` option.
+If you want to disable color output, you can use `--no-color` option.
 
 # Hayabusa Rules
 

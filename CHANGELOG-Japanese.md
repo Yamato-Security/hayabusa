@@ -1,15 +1,25 @@
 # 変更点
 
-## v1.2.1 [2022/04/20] Black Hat Asia Arsenal 2022 Preview Release
+## v1.2.2 [2022/05/14]
 
-**新機能:**
-- Added a `Channel` column to the output based on the `./config/channel_abbreviations` config file. (@hitenkoku)
-- Rule and rule config files are now forcefully updated. (@hitenkoku)
+**改善:**
+
+- カラー出力はデフォルトで有効になって、コマンドプロンプトとPowerShellプロンプトに対応している。 (@hitenkoku)
 
 **バグ修正:**
-- Rules marked as noisy or excluded would not have their `level` changed with `--level-tuning` but now all rules will be checked. (@hitenkoku)
 
-## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 Preview Release
+- `rules`フォルダが存在するが、レポジトリがダウンロードされていない場合は、ルール更新が失敗していたが、修正した。(#516) (@hitenkoku)
+
+## v1.2.1 [2022/04/20] Black Hat Asia Arsenal 2022 RC2
+
+**新機能:**
+- `./config/channel_abbreviations`の設定ファイルにより、`Channel`列も出力されるようになった。 (@hitenkoku)
+- ルールとルールの設定ファイルは強制的に上書きされる。 (@hitenkoku)
+
+**バグ修正:**
+- ルールがnoisyもしくはexcludedと設定された場合は、`--level-tuning`オプションで`level`が更新されなかったが、修正した。 (@hitenkoku)
+
+## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 RC1
 
 **新機能:**
 
