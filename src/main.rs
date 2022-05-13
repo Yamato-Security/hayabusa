@@ -233,6 +233,9 @@ impl App {
             .unwrap()
             .args
             .is_present("level-tuning")
+            && std::env::args()
+                .into_iter()
+                .any(|arg| arg.contains("level-tuning"))
         {
             let level_tuning_config_path = configs::CONFIG
                 .read()
