@@ -13,8 +13,11 @@
 [tag-4]: https://img.shields.io/badge/Black%20Hat%20Arsenal-Asia%202022-blue
 [tag-5]: https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa
 [tag-6]: https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg
+[tag-7]: https://img.shields.io/badge/Twitter-00acee?logo=twitter&logoColor=white
 
-![tag-1] ![tag-2] ![tag-3] ![tag-4] ![tag-5] ![tag-6]
+![tag-1] ![tag-2] <a href="https://github.com/Yamato-Security/hayabusa/releases">![tag-3]</a> ![tag-4]
+<a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa">![tag-5]</a> ![tag-6]  <a href="https://twitter.com/SecurityYamato">![tag-7]</a>
+
 
 # Hayabusa について
 
