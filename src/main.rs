@@ -13,8 +13,8 @@ use hayabusa::detections::configs::load_pivot_keywords;
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::print::{
-    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
-    STATISTICS_FLAG,
+    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG,
+    QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::filter;
@@ -176,6 +176,10 @@ impl App {
             println!("Generating Event ID Statistics");
             println!();
         }
+        if *LOGONSUMMARY_FLAG {
+            println!("Generating Logons Summary");
+            println!();
+        }
         if configs::CONFIG
             .read()
             .unwrap()
@@ -229,6 +233,9 @@ impl App {
             .unwrap()
             .args
             .is_present("level-tuning")
+            && std::env::args()
+                .into_iter()
+                .any(|arg| arg.contains("level-tuning"))
         {
             let level_tuning_config_path = configs::CONFIG
                 .read()
@@ -458,7 +465,7 @@ impl App {
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
-        if !*STATISTICS_FLAG && !*PIVOT_KEYWORD_LIST_FLAG {
+        if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
             after_fact();
         }
     }
@@ -531,13 +538,14 @@ impl App {
             // timeline機能の実行
             tl.start(&records_per_detect);
 
-            if !*STATISTICS_FLAG {
+            if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG) {
                 // ruleファイルの検知
                 detection = detection.start(&self.rt, records_per_detect);
             }
         }
 
         tl.tm_stats_dsp_msg();
+        tl.tm_logon_stats_dsp_msg();
 
         detection
     }

@@ -8,6 +8,7 @@ pub struct EventStatistics {
     pub start_time: String,
     pub end_time: String,
     pub stats_list: HashMap<String, usize>,
+    pub stats_login_list: HashMap<String, [usize; 2]>,
 }
 /**
 * Windows Event Logの統計情報を出力する
@@ -19,6 +20,7 @@ impl EventStatistics {
         start_time: String,
         end_time: String,
         stats_list: HashMap<String, usize>,
+        stats_login_list: HashMap<String, [usize; 2]>,
     ) -> EventStatistics {
         EventStatistics {
             total,
@@ -26,10 +28,11 @@ impl EventStatistics {
             start_time,
             end_time,
             stats_list,
+            stats_login_list,
         }
     }
 
-    pub fn start(&mut self, records: &[EvtxRecordInfo]) {
+    pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo]) {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
         if !configs::CONFIG
             .read()
@@ -47,6 +50,22 @@ impl EventStatistics {
         // EventIDで集計
         //let evtstat_map = HashMap::new();
         self.stats_eventid(records);
+    }
+
+    pub fn logon_stats_start(&mut self, records: &[EvtxRecordInfo]) {
+        // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
+        if !configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("logon-summary")
+        {
+            return;
+        }
+
+        self.stats_time_cnt(records);
+
+        self.stats_login_eventid(records);
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo]) {
@@ -92,5 +111,30 @@ impl EventStatistics {
             *count += 1;
         }
         //        return evtstat_map;
+    }
+    // Login event
+    fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
+        for record in records.iter() {
+            let evtid = utils::get_event_value("EventID", &record.record);
+            if evtid.is_none() {
+                continue;
+            }
+            let username = utils::get_event_value("TargetUserName", &record.record);
+            let idnum = evtid.unwrap();
+            let countlist: [usize; 2] = [0, 0];
+            if idnum == 4624 {
+                let count: &mut [usize; 2] = self
+                    .stats_login_list
+                    .entry(username.unwrap().to_string())
+                    .or_insert(countlist);
+                count[0] += 1;
+            } else if idnum == 4625 {
+                let count: &mut [usize; 2] = self
+                    .stats_login_list
+                    .entry(username.unwrap().to_string())
+                    .or_insert(countlist);
+                count[1] += 1;
+            }
+        }
     }
 }
