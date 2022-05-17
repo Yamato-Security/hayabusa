@@ -55,6 +55,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Command Line Options](#command-line-options)
   - [Usage Examples](#usage-examples)
   - [Pivot Keyword Generator](#pivot-keyword-generator)
+  - [Logon Summary Generator](#logon-summary-generator)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
@@ -319,6 +320,7 @@ USAGE:
     --no-color 'Disable color output'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
+    -L --logon-summary 'User logon and failed logon summary'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --level-tuning <LEVEL_TUNING_FILE> 'Adjust rule level. [default: ./rules/config/level_tuning.txt]'
@@ -442,6 +444,11 @@ Processes.Image
 ```
 
 The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields. By default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `--pivot-keyword-list` option with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
+
+## Logon Summary Generator
+
+You can use the `-L` or `--logon-summary` option to output logon information summary(logon username, logon success and logon failed count).
+You can get logon information each evtx file with `-d` option.
 
 # Testing Hayabusa on Sample Evtx Files
 

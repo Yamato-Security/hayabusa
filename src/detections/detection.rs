@@ -121,11 +121,18 @@ impl Detection {
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
-        Detection::print_rule_load_info(
-            &rulefile_loader.rulecounter,
-            &parseerror_count,
-            &rulefile_loader.ignorerule_count,
-        );
+        if !configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .is_present("logon-summary")
+        {
+            Detection::print_rule_load_info(
+                &rulefile_loader.rulecounter,
+                &parseerror_count,
+                &rulefile_loader.ignorerule_count,
+            );
+        }
         ret
     }
 

@@ -32,6 +32,7 @@ hashbrown = "0.12.*"
 hex = "0.4.*"
 git2="0.13"
 termcolor="*"
+prettytable-rs = "0.8"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
