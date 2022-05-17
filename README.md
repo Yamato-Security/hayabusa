@@ -448,7 +448,7 @@ The format is `KeywordName.FieldName`. For example, when creating the list of `U
 ## Logon Summary Generator
 
 You can use the `-L` or `--logon-summary` option to output logon information summary(logon username, logon success and logon failed count).
-You can diplay the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
+You can display the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
 
 # Testing Hayabusa on Sample Evtx Files
 
