@@ -3,6 +3,7 @@
 ## v1.2.2 [2022/05/17]
 
 **New Features:**
+
 - Added a logon summary feature. (`-L` / `--logon-summary`) (@garigariganzy)
 
 **Enhancements:**
@@ -17,15 +18,18 @@
 ## v1.2.1 [2022/04/20] Black Hat Asia Arsenal 2022 RC2
 
 **New Features:**
+
 - Added a `Channel` column to the output based on the `./config/channel_abbreviations.txt` config file. (@hitenkoku)
 - Rule and rule config files are now forcefully updated. (@hitenkoku)
 
 **Bug Fixes:**
+
 - Rules marked as noisy or excluded would not have their `level` changed with `--level-tuning` but now all rules will be checked. (@hitenkoku)
 
 ## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 RC1
 
 **New Features:**
+
 - Specify config directory (`-C / --config`): When specifying a different rules directory, the rules config directory will still be the default `rules/config`, so this option is useful when you want to test rules and their config files in a different directory. (@hitenkoku) 
 - `|equalsfield` aggregator: In order to write rules that compare if two fields are equal or not. (@hach1yon)
 - Pivot keyword list generator feature (`-p / --pivot-keywords-list`): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
