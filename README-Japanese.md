@@ -56,6 +56,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [コマンドラインオプション](#コマンドラインオプション)
   - [使用例](#使用例)
   - [ピボットキーワードの作成](#ピボットキーワードの作成)
+  - [ログオン情報の要約](#ログオン情報の要約)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
@@ -327,6 +328,7 @@ USAGE:
     -U --utc 'UTC形式で日付と時刻を出力する。(デフォルト: 現地時間)'
     -t --thread-number=[NUMBER] 'スレッド数。(デフォルト: パフォーマンスに最適な数値)'
     -s --statistics 'イベント ID の統計情報を表示する。'
+    -L --logon-summary 'ユーザのログオン情報の要約を出力'
     -q --quiet 'Quietモード。起動バナーを表示しない。'
     -Q --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
     --level-tuning <LEVEL_TUNING_FILE> 'ルールlevelのチューニング [default: ./rules/config/level_tuning.txt]'
@@ -450,6 +452,10 @@ Processes.Image
 ```
 
 形式は`KeywordName.FieldName`となっています。例えばデフォルトの設定では、`Users`というリストは検知したイベントから`SubjectUserName`、 `TargetUserName` 、 `User`のフィールドの値が一覧として出力されます。hayabusaのデフォルトでは検知したすべてのイベントから結果を出力するため、`--pivot-keyword-list`オプションを使うときには `-m` もしくは `--min-level` オプションを併せて使って検知するイベントのレベルを指定することをおすすめします。まず`-m critical`を指定して、最も高い`critical`レベルのアラートのみを対象として、レベルを必要に応じて下げていくとよいでしょう。結果に正常なイベントにもある共通のキーワードが入っている可能性が高いため、手動で結果を確認してから、不審なイベントにありそうなキーワードリストを１つのファイルに保存し、`grep -f keywords.txt timeline.csv`等のコマンドで不審なアクティビティに絞ったタイムラインを作成することができます。
+
+## ログオン情報の要約
+
+`-L` または `--logon-summary` オプションを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。`-d` オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。
 
 # サンプルevtxファイルでHayabusaをテストする
 
