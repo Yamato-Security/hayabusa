@@ -74,7 +74,6 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
     -F --full-data 'Print all field information.'
     -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
-    -c --color 'Output with color. (Terminal needs to support True Color.)'
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
@@ -88,6 +87,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
     --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
     -U --utc 'Output time in UTC format. (Default: local time)'
+    --no-color 'Disable color output'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -L --logon-summary 'User logon and failed logon summary'
@@ -97,7 +97,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
-        .version("1.2.1")
+        .version("1.2.2")
         .author("Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato")
         .setting(AppSettings::VersionlessSubcommands)
         .arg(

@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "1.2.1"
+version = "1.2.2"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 
@@ -29,9 +29,9 @@ dotenv = "0.15.*"
 hhmmss = "*"
 pbr = "*"
 hashbrown = "0.12.*"
-colored = "2.*"
 hex = "0.4.*"
 git2="0.13"
+termcolor="*"
 prettytable-rs = "0.8"
 
 [target.'cfg(windows)'.dependencies]

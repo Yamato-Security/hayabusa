@@ -145,12 +145,12 @@ You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStack
 * Rule level tuning.
 * Create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 * Output all fields for more thorough investigations.
+* Successful and failed user logon summary.
 
 # Planned Features
 
 * Enterprise-wide hunting on all endpoints.
 * MITRE ATT&CK heatmap generation.
-* User logon and failed logon summary.
 
 # Downloads
 
@@ -303,8 +303,7 @@ USAGE:
     -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
     -f --filepath=[FILEPATH] 'File path to one .evtx file.'
     -F --full-data 'Print all field information.'
-    -r --rules=[RULEFILE/RULEDIRECTORY] 'Rule file or directory. (Default: ./rules)'
-    -c --color 'Output with color. (Terminal needs to support True Color.)'
+    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     -v --verbose 'Output verbose information.'
@@ -318,12 +317,13 @@ USAGE:
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
     --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
     -U --utc 'Output time in UTC format. (Default: local time)'
+    --no-color 'Disable color output'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -L --logon-summary 'User logon and failed logon summary'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --level-tuning <LEVEL_TUNING_FILE> 'Tune the rule level [default: ./rules/config/level_tuning.txt]'
+    --level-tuning <LEVEL_TUNING_FILE> 'Adjust rule level. [default: ./rules/config/level_tuning.txt]'
     -p --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'
 ```
@@ -448,7 +448,7 @@ The format is `KeywordName.FieldName`. For example, when creating the list of `U
 ## Logon Summary Generator
 
 You can use the `-L` or `--logon-summary` option to output logon information summary(logon username, logon success and logon failed count).
-You can get logon information each evtx file with `-d` option.
+You can display the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
 
 # Testing Hayabusa on Sample Evtx Files
 
@@ -541,10 +541,9 @@ It will display in real time the number and percent of evtx files that it has fi
 
 ## Color Output
 
-You can output the alerts in color based on the alert `level` by specifying `-c` or `--color`.
+The alerts will be outputted in color based on the alert `level`.
 You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
-Note: Color can only be displayed in terminals that support [True Color](https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)).
-Example: [Windows Terminal](https://docs.microsoft.com/en-us/windows/terminal/install) or [iTerm2](https://iterm2.com/) for macOS.
+If you want to disable color output, you can use `--no-color` option.
 
 # Hayabusa Rules
 
