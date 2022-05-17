@@ -145,12 +145,12 @@ You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStack
 * Rule level tuning.
 * Create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 * Output all fields for more thorough investigations.
+* Successful and failed user logon summary.
 
 # Planned Features
 
 * Enterprise-wide hunting on all endpoints.
 * MITRE ATT&CK heatmap generation.
-* User logon and failed logon summary.
 
 # Downloads
 
@@ -448,7 +448,7 @@ The format is `KeywordName.FieldName`. For example, when creating the list of `U
 ## Logon Summary Generator
 
 You can use the `-L` or `--logon-summary` option to output logon information summary(logon username, logon success and logon failed count).
-You can get logon information each evtx file with `-d` option.
+You can diplay the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
 
 # Testing Hayabusa on Sample Evtx Files
 

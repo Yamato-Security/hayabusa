@@ -2,6 +2,9 @@
 
 ## v1.2.2 [2022/05/17]
 
+**New Features:**
+- Added a logon summary feature. (`-L` / `--logon-summary`) (@garigariganzy)
+
 **Enhancements:**
 
 - Colored output is now on by default and supports Command and Powershell prompts. (@hitenkoku)
