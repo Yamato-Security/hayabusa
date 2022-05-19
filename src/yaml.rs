@@ -155,7 +155,9 @@ impl ParseYaml {
                 }
 
                 // ignore if yml file in .git folder.
-                if path.to_str().unwrap().contains("/.git/") {
+                if path.to_str().unwrap().contains("/.git/")
+                    || path.to_str().unwrap().contains("\\.git\\")
+                {
                     return io::Result::Ok(ret);
                 }
 
