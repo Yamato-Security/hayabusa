@@ -1,6 +1,6 @@
 # Changes
 
-## v1.2.2 [2022/05/17]
+## v1.2.2 [2022/05/20]
 
 **New Features:**
 
@@ -13,7 +13,7 @@
 **Bug Fixes:**
 
 - Fixed a bug in the update feature when the rules repository does not exist but the rules folder exists. (#516) (@hitenkoku)
-- Fixed a bug in rule load feature to .git folder (#524)(@hitenkoku)
+- Fixed a rule parsing error bug when there were .yml files in a .git folder. (#524) (@hitenkoku)
 - Fixed wrong version number in the 1.2.1 binary.
 
 ## v1.2.1 [2022/04/20] Black Hat Asia Arsenal 2022 RC2
