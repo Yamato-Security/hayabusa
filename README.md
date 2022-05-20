@@ -36,16 +36,17 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Analysis in Excel](#analysis-in-excel)
   - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
-  - [Elastic Stack Dashboard](#elastic-stack-dashboard)
+  - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
 - [Analyzing Sample Timeline Results](#analyzing-sample-timeline-results)
 - [Features](#features)
 - [Planned Features](#planned-features)
 - [Downloads](#downloads)
+- [Git cloning](#git-cloning)
 - [Compiling From Source (Optional)](#compiling-from-source-optional)
+  - [Advanced: Updating Rust Packages](#advanced-updating-rust-packages)
   - [Cross-compiling 32-bit Windows Binaries](#cross-compiling-32-bit-windows-binaries)
   - [macOS Compiling Notes](#macos-compiling-notes)
   - [Linux Compiling Notes](#linux-compiling-notes)
-  - [Advanced: Updating Rust Packages](#advanced-updating-rust-packages)
 - [Running Hayabusa](#running-hayabusa)
   - [Caution: Anti-Virus/EDR Warnings](#caution-anti-virusedr-warnings)
   - [Windows](#windows)
@@ -67,7 +68,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Detection Rule Tuning](#detection-rule-tuning)
   - [Detection Level Tuning](#detection-level-tuning)
   - [Event ID Filtering](#event-id-filtering)
-- [Other Windows Event Log Analyzers and Related Projects](#other-windows-event-log-analyzers-and-related-projects)
+- [Other Windows Event Log Analyzers and Related Resources](#other-windows-event-log-analyzers-and-related-resources)
 - [Windows Logging Recommendations](#windows-logging-recommendations)
 - [Sysmon Related Projects](#sysmon-related-projects)
 - [Community Documentation](#community-documentation)
@@ -116,7 +117,7 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 
 ![Critical alert filtering and computer grouping in Timeline Explorer](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
 
-## Elastic Stack Dashboard
+## Analysis with the Elastic Stack Dashboard
 
 ![Elastic Stack Dashboard 1](doc/ElasticStackImport/17-HayabusaDashboard-1.png)
 
@@ -145,7 +146,7 @@ You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStack
 * Rule level tuning.
 * Create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 * Output all fields for more thorough investigations.
-* Successful and failed user logon summary.
+* Successful and failed logon summary.
 
 # Planned Features
 
@@ -154,9 +155,13 @@ You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStack
 
 # Downloads
 
-You can download the latest stable version of hayabusa with compiled binaries from the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page.
+Please download the latest stable version of hayabusa with compiled binaries or the source code from the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page.
 
-You can also `git clone` the repository with the following command and compile binary from source code:
+# Git cloning
+
+You can `git clone` the repository with the following command and compile binary from source code:
+
+** Warning:** The main branch of the repository is for development purposes so you may be able to access new features not yet officially released, however, there may be bugs so consider it unstable.
 
 ```bash
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
@@ -167,7 +172,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa.exe -u
+hayabusa-1.2.2-win-x64.exe -u
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -186,6 +191,8 @@ cargo clean
 cargo build --release
 ```
 
+You can download the latest unstable version from the main branch or the latest stable version from the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page.
+
 Be sure to periodically update Rust with:
 
 ```bash
@@ -193,6 +200,16 @@ rustup update stable
 ```
 
 The compiled binary will be outputted in the `target/release` folder.
+
+## Advanced: Updating Rust Packages
+
+You can update to the latest Rust crates before compiling:
+
+```bash
+cargo update
+```
+
+Please let us know if anything breaks after you update.
 
 ## Cross-compiling 32-bit Windows Binaries
 
@@ -225,16 +242,6 @@ Fedora-based distros:
 sudo yum install openssl-devel
 ```
 
-## Advanced: Updating Rust Packages
-
-You can update to the latest Rust crates before compiling:
-
-```bash
-cargo update
-```
-
-Please let us know if anything breaks after you update.
-
 # Running Hayabusa 
 
 ## Caution: Anti-Virus/EDR Warnings
@@ -244,20 +251,20 @@ You may receive warning from anti-virus or EDR when trying to run hayabusa. Thes
 ## Windows
 
 In Command Prompt or Windows Terminal, just run the 32-bit or 64-bit Windows binary from the hayabusa root directory. 
-Example: `hayabusa-1.2.0-windows-x64.exe`
+Example: `hayabusa-1.2.2-windows-x64.exe`
 
 ## Linux
 
 You first need to make the binary executable. 
 
 ```bash
-chmod +x ./hayabusa-1.2.0-linux-x64
+chmod +x ./hayabusa-1.2.2-linux-x64-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.2.0-linux-x64
+./hayabusa-1.2.2-linux-x64-gnu
 ```
 
 ## macOS
@@ -265,13 +272,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-1.2.0-mac-intel
+chmod +x ./hayabusa-1.2.2-mac-intel
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.2.0-mac-intel
+./hayabusa-1.2.2-mac-intel
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -285,7 +292,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-1.2.0-mac-intel
+./hayabusa-1.2.2-mac-intel
 ```
 
 The following warning will pop up, so please click "Open".
@@ -320,7 +327,7 @@ USAGE:
     --no-color 'Disable color output'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
-    -L --logon-summary 'User logon and failed logon summary'
+    -L --logon-summary 'Successful and failed logons summary.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     --level-tuning <LEVEL_TUNING_FILE> 'Adjust rule level. [default: ./rules/config/level_tuning.txt]'
@@ -333,79 +340,79 @@ USAGE:
 * Run hayabusa against one Windows event log file:
 
 ```bash
-hayabusa.exe -f eventlog.evtx
+hayabusa-1.2.2-win-x64.exe -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx
 ```
 
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-hayabusa.exe -l -m low
+hayabusa-1.2.2-win-x64.exe -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```bash
-hayabusa.exe -l -m critical -p -o keywords
+hayabusa-1.2.2-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * Print Event ID statistics:
 
 ```bash
-hayabusa.exe -f Security.evtx -s
+hayabusa-1.2.2-win-x64.exe -f Security.evtx -s
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
 ```bash
-hayabusa.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:
@@ -447,7 +454,7 @@ The format is `KeywordName.FieldName`. For example, when creating the list of `U
 
 ## Logon Summary Generator
 
-You can use the `-L` or `--logon-summary` option to output logon information summary(logon username, logon success and logon failed count).
+You can use the `-L` or `--logon-summary` option to output logon information summary (logon usernames and successful and failed logon count).
 You can display the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
 
 # Testing Hayabusa on Sample Evtx Files
@@ -599,7 +606,7 @@ You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore 
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.2.2-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:
@@ -620,7 +627,7 @@ We have provided a sample ID filter list at [`config/target_eventids_sample.txt`
 
 Please use this list if you want the best performance but be aware that there is a slight possibility for missing events (false negatives). 
 
-# Other Windows Event Log Analyzers and Related Projects
+# Other Windows Event Log Analyzers and Related Resources
 
 There is no "one tool to rule them all" and we have found that each has its own merits so we recommend checking out these other great tools and projects and seeing which ones you like.
 
@@ -630,12 +637,14 @@ There is no "one tool to rule them all" and we have found that each has its own 
 * [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI) - Attack detection tool written in Powershell by [Eric Conrad](https://twitter.com/eric_conrad).
 * [Epagneul](https://github.com/jurelou/epagneul) - Graph visualization for Windows event logs.
 * [EventList](https://github.com/miriamxyra/EventList/) - Map security baseline event IDs to MITRE ATT&CK by [Miriam Wiesner](https://github.com/miriamxyra).
+* [Mapping MITRE ATT&CK with Window Event Log IDs](https://www.socinvestigation.com/mapping-mitre-attck-with-window-event-log-ids/) - by [Michel de CREVOISIER](https://twitter.com/mdecrevoisier)
 * [EvtxECmd](https://github.com/EricZimmerman/evtx) - Evtx parser by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
 * [EVTXtract](https://github.com/williballenthin/EVTXtract) - Recover EVTX log files from unallocated space and memory images.
 * [EvtxToElk](https://www.dragos.com/blog/industry-news/evtxtoelk-a-python-module-to-load-windows-event-logs-into-elasticsearch/) - Python tool to send Evtx data to Elastic Stack.
 * [EVTX ATTACK Samples](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) - EVTX attack sample event log files by [SBousseaden](https://twitter.com/SBousseaden).
-* [EVTX-to-MITRE-Attack](https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack) - Another great repository of EVTX attack sample logs mapped to ATT&CK.
+* [EVTX-to-MITRE-Attack](https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack) - EVTX attack sample event log files mapped to ATT&CK by [Michel de CREVOISIER](https://twitter.com/mdecrevoisier)
 * [EVTX parser](https://github.com/omerbenamram/evtx) - the Rust library we used written by [@OBenamram](https://twitter.com/obenamram).
+* [Grafiki](https://github.com/lucky-luk3/Grafiki) - Sysmon and PowerShell log visualizer.
 * [LogonTracer](https://github.com/JPCERTCC/LogonTracer) - A graphical interface to visualize logons to detect lateral movement by [JPCERTCC](https://twitter.com/jpcert_en).
 * [RustyBlue](https://github.com/Yamato-Security/RustyBlue) - Rust port of DeepBlueCLI by Yamato Security.
 * [Sigma](https://github.com/SigmaHQ/sigma) - Community based generic SIEM rules.

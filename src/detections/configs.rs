@@ -90,7 +90,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --no-color 'Disable color output'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
-    -L --logon-summary 'User logon and failed logon summary'
+    -L --logon-summary 'Successful and failed logons summary.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
     -p --pivot-keywords-list 'Create a list of pivot keywords.'
