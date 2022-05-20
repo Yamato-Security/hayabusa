@@ -148,22 +148,22 @@ impl Message {
                 };
 
             let split: Vec<&str> = array_str.split('.').collect();
-            let mut is_exist_event_key = false;
             let mut tmp_event_record: &Value = event_record;
             for s in &split {
                 if let Some(record) = tmp_event_record.get(s) {
-                    is_exist_event_key = true;
                     tmp_event_record = record;
                 }
             }
-            if is_exist_event_key {
-                let hash_value = get_serde_number_to_string(tmp_event_record);
+            let hash_value = get_serde_number_to_string(tmp_event_record);
+            if hash_value.is_some() {
                 if let Some(hash_value) = hash_value {
                     // UnicodeのWhitespace characterをそのままCSVに出力すると見難いので、スペースに変換する。なお、先頭と最後のWhitespace characterは単に削除される。
                     let hash_value: Vec<&str> = hash_value.split_whitespace().collect();
                     let hash_value = hash_value.join(" ");
                     hash_map.insert(full_target_str.to_string(), hash_value);
                 }
+            } else {
+                hash_map.insert(full_target_str.to_string(), "n/a".to_string());
             }
         }
 
