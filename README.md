@@ -479,7 +479,7 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 * `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
 * `Title`: This comes from the `title` field in the YML detection rule.
-* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc...
+* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc... Location s where no extraction are outputed as `n/a`.
 
 The following additional columns will be added to the output when saving to a CSV file:
 
