@@ -33,10 +33,12 @@
 ## v1.2.1 [2022/04/20] Black Hat Asia Arsenal 2022 RC2
 
 **新機能:**
+
 - `./config/channel_abbreviations`の設定ファイルにより、`Channel`列も出力されるようになった。 (@hitenkoku)
 - ルールとルールの設定ファイルは強制的に上書きされる。 (@hitenkoku)
 
 **バグ修正:**
+
 - ルールがnoisyもしくはexcludedと設定された場合は、`--level-tuning`オプションで`level`が更新されなかったが、修正した。 (@hitenkoku)
 
 ## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 RC1
