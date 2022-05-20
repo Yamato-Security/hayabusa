@@ -1,5 +1,19 @@
 # Changes
 
+## v1.3.0 [2022/xx/xx]
+
+**New Features:**
+
+- xxx
+
+**Enhancements:**
+
+- In `details` of rules, locations where no extraction are outputed as `n/a`.(#528) (@hitenkoku)
+
+**Bug Fixes:**
+
+- xxx
+
 ## v1.2.2 [2022/05/20]
 
 **New Features:**
