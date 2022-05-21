@@ -5,6 +5,7 @@ use crate::detections::utils;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
+use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use serde::Serialize;
 use std::error::Error;
@@ -98,6 +99,22 @@ fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<
     color
 }
 
+/// print timeline histogram
+fn _print_timeline_hist(timestamps: Vec<i64>, marker_count: usize, length: usize) {
+    if timestamps.is_empty() {
+        return;
+    }
+
+    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr = buf_wtr.buffer();
+    let (header, footer) = build_time_markers(&timestamps, marker_count, length);
+    let sparkline = build_sparkline(&timestamps, length);
+    writeln!(wtr, "{}", header).ok();
+    writeln!(wtr, "{}", sparkline.unwrap_or_default()).ok();
+    writeln!(wtr, "{}", footer).ok();
+    buf_wtr.print(&wtr).ok();
+}
+
 pub fn after_fact() {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
@@ -151,8 +168,10 @@ fn emit_csv<W: std::io::Write>(
     let mut detected_rule_files: Vec<String> = Vec::new();
 
     println!();
+    let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     for (time, detect_infos) in messages.iter() {
+        timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
             let mut level = detect_info.level.to_string();
             if level == "informational" {
@@ -223,6 +242,8 @@ fn emit_csv<W: std::io::Write>(
     } else {
         wtr.flush()?;
     }
+    println!();
+    _print_timeline_hist(timestamps, 10, 100);
     println!();
     _print_unique_results(
         total_detect_counts_by_level,
@@ -322,6 +343,15 @@ fn format_time(time: &DateTime<Utc>) -> String {
         format_rfc(time)
     } else {
         format_rfc(&time.with_timezone(&Local))
+    }
+}
+
+/// get timestamp to input datetime.
+fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
+    if configs::CONFIG.read().unwrap().args.is_present("utc") {
+        time.timestamp()
+    } else {
+        time.with_timezone(&Local).timestamp()
     }
 }
 
