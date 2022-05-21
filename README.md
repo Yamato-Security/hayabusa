@@ -42,8 +42,8 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Planned Features](#planned-features)
 - [Downloads](#downloads)
 - [Git cloning](#git-cloning)
-- [Compiling From Source (Optional)](#compiling-from-source-optional)
-  - [Advanced: Updating Rust Packages](#advanced-updating-rust-packages)
+- [Advanced: Compiling From Source (Optional)](#advanced-compiling-from-source-optional)
+  - [Updating Rust Packages](#updating-rust-packages)
   - [Cross-compiling 32-bit Windows Binaries](#cross-compiling-32-bit-windows-binaries)
   - [macOS Compiling Notes](#macos-compiling-notes)
   - [Linux Compiling Notes](#linux-compiling-notes)
@@ -182,7 +182,7 @@ If the update fails, you may need to rename the `rules` folder and try again.
 >> If you are performing level tuning with `--level-tuning`, please re-tune your rule files after each update. 
 >> If you add new rules inside of the `rules` folder, they will **not** be overwritten or deleted when updating.
 
-# Compiling From Source (Optional)
+# Advanced: Compiling From Source (Optional)
 
 If you have Rust installed, you can compile from source with the following command:
 
@@ -201,7 +201,7 @@ rustup update stable
 
 The compiled binary will be outputted in the `target/release` folder.
 
-## Advanced: Updating Rust Packages
+## Updating Rust Packages
 
 You can update to the latest Rust crates before compiling:
 
@@ -246,7 +246,9 @@ sudo yum install openssl-devel
 
 ## Caution: Anti-Virus/EDR Warnings
 
-You may receive warning from anti-virus or EDR when trying to run hayabusa. These are false positives so you may need to configure your security products to allow running hayabusa. If you are worried about malware, please check the hayabusa source code and compile the binaries yourself.
+You may receive an alert from anti-virus or EDR products when trying to run hayabusa or even just when downloading the `.yml` rules as there will be keywords like `mimikatz` and suspicious PowerShell commands in the detection signature.
+These are false positives so will need to configure exclusions in your security products to allow hayabusa to run.
+If you are worried about malware or supply chain attacks, please check the hayabusa source code and compile the binaries yourself.
 
 ## Windows
 
