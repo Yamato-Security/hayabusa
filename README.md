@@ -496,6 +496,7 @@ If you add the `-F` or `--full-data` option, a new column with all field informa
 
 In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactics.
 You can freely edit these abbreviations in the `config/output_tag.txt` configuration file.
+If you will output all tactics data, you can use `--all-tags` option.
 
 * `Recon` : Reconnaissance
 * `ResDev` : Resource Development

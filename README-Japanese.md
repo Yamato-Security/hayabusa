@@ -499,6 +499,7 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 
 簡潔に出力するためにMITRE ATT&CKの戦術を以下のように省略しています。
 `config/output_tag.txt`の設定ファイルで自由に編集できます。
+検知したデータの戦術を全て出力したい場合は、`--all-tags`オプションをつけてください。
 
 * `Recon` : Reconnaissance (偵察)
 * `ResDev` : Resource Development (リソース開発)
