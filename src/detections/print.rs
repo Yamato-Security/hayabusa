@@ -529,13 +529,48 @@ mod tests {
     #[test]
     /// test of loading output filter config by output_tag.txt
     fn test_load_output_tag() {
-        let actual = Message::create_output_filter_config("test_files/config/output_tag.txt");
+        let actual =
+            Message::create_output_filter_config("test_files/config/output_tag.txt", true, false);
         let expected: HashMap<String, String> = HashMap::from([
             ("attack.impact".to_string(), "Impact".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
         ]);
+        _check_hashmap_element(&expected, actual);
+    }
 
-        assert_eq!(actual.len(), expected.len());
+    #[test]
+    /// test of loading pass by output_tag.txt
+    fn test_no_load_output_tag() {
+        let actual =
+            Message::create_output_filter_config("test_files/config/output_tag.txt", true, true);
+        let expected: HashMap<String, String> = HashMap::new();
+        _check_hashmap_element(&expected, actual);
+    }
+
+    #[test]
+    /// loading test to channel_abbrevations.txt
+    fn test_load_abbrevations() {
+        let actual = Message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            false,
+            true,
+        );
+        let actual2 = Message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            false,
+            false,
+        );
+        let expected: HashMap<String, String> = HashMap::from([
+            ("Security".to_string(), "Sec".to_string()),
+            ("xxx".to_string(), "yyy".to_string()),
+        ]);
+        _check_hashmap_element(&expected, actual);
+        _check_hashmap_element(&expected, actual2);
+    }
+
+    /// check two HashMap element length and value
+    fn _check_hashmap_element(expected: &HashMap<String, String>, actual: HashMap<String, String>) {
+        assert_eq!(expected.len(), actual.len());
         for (k, v) in expected.iter() {
             assert!(actual.get(k).unwrap_or(&String::default()) == v);
         }
