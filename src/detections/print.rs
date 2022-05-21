@@ -479,7 +479,7 @@ mod tests {
         }
     "##;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
-        let expected = "NoExistAlias:%NoAliasNoHit%";
+        let expected = "NoExistAlias:n/a";
         assert_eq!(
             message.parse_message(&event_record, "NoExistAlias:%NoAliasNoHit%".to_owned()),
             expected,
@@ -504,7 +504,7 @@ mod tests {
         }
     "##;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
-        let expected = "commandline:parsetest3 computername:%ComputerName%";
+        let expected = "commandline:parsetest3 computername:n/a";
         assert_eq!(
             message.parse_message(
                 &event_record,
