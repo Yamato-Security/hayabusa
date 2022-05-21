@@ -60,10 +60,16 @@ lazy_static! {
         .unwrap()
         .args
         .is_present("logon-summary");
-    pub static ref TAGS_CONFIG: HashMap<String, String> =
-        Message::create_output_filter_config("config/output_tag.txt");
-    pub static ref CH_CONFIG: HashMap<String, String> =
-        Message::create_output_filter_config("config/channel_abbreviations.txt");
+    pub static ref TAGS_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
+        "config/output_tag.txt",
+        true,
+        configs::CONFIG.read().unwrap().args.is_present("all-tags")
+    );
+    pub static ref CH_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
+        "config/channel_abbreviations.txt",
+        false,
+        configs::CONFIG.read().unwrap().args.is_present("all-tags")
+    );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool = configs::CONFIG
         .read()
         .unwrap()
@@ -85,7 +91,15 @@ impl Message {
 
     /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。tagではこのHashMapのキーに対応しない出力は出力しないものとする
     /// ex. attack.impact,Impact
-    pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
+    pub fn create_output_filter_config(
+        path: &str,
+        read_tags: bool,
+        pass_flag: bool,
+    ) -> HashMap<String, String> {
+        let mut ret: HashMap<String, String> = HashMap::new();
+        if read_tags && pass_flag {
+            return ret;
+        }
         let read_result = utils::read_csv(path);
         if read_result.is_err() {
             AlertMessage::alert(
@@ -95,7 +109,6 @@ impl Message {
             .ok();
             return HashMap::default();
         }
-        let mut ret: HashMap<String, String> = HashMap::new();
         read_result.unwrap().into_iter().for_each(|line| {
             if line.len() != 2 {
                 return;
