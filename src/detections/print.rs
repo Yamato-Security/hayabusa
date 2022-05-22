@@ -60,10 +60,16 @@ lazy_static! {
         .unwrap()
         .args
         .is_present("logon-summary");
-    pub static ref TAGS_CONFIG: HashMap<String, String> =
-        Message::create_output_filter_config("config/output_tag.txt");
-    pub static ref CH_CONFIG: HashMap<String, String> =
-        Message::create_output_filter_config("config/channel_abbreviations.txt");
+    pub static ref TAGS_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
+        "config/output_tag.txt",
+        true,
+        configs::CONFIG.read().unwrap().args.is_present("all-tags")
+    );
+    pub static ref CH_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
+        "config/channel_abbreviations.txt",
+        false,
+        configs::CONFIG.read().unwrap().args.is_present("all-tags")
+    );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool = configs::CONFIG
         .read()
         .unwrap()
@@ -85,7 +91,15 @@ impl Message {
 
     /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。tagではこのHashMapのキーに対応しない出力は出力しないものとする
     /// ex. attack.impact,Impact
-    pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
+    pub fn create_output_filter_config(
+        path: &str,
+        read_tags: bool,
+        pass_flag: bool,
+    ) -> HashMap<String, String> {
+        let mut ret: HashMap<String, String> = HashMap::new();
+        if read_tags && pass_flag {
+            return ret;
+        }
         let read_result = utils::read_csv(path);
         if read_result.is_err() {
             AlertMessage::alert(
@@ -95,7 +109,6 @@ impl Message {
             .ok();
             return HashMap::default();
         }
-        let mut ret: HashMap<String, String> = HashMap::new();
         read_result.unwrap().into_iter().for_each(|line| {
             if line.len() != 2 {
                 return;
@@ -516,13 +529,48 @@ mod tests {
     #[test]
     /// test of loading output filter config by output_tag.txt
     fn test_load_output_tag() {
-        let actual = Message::create_output_filter_config("test_files/config/output_tag.txt");
+        let actual =
+            Message::create_output_filter_config("test_files/config/output_tag.txt", true, false);
         let expected: HashMap<String, String> = HashMap::from([
             ("attack.impact".to_string(), "Impact".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
         ]);
+        _check_hashmap_element(&expected, actual);
+    }
 
-        assert_eq!(actual.len(), expected.len());
+    #[test]
+    /// test of loading pass by output_tag.txt
+    fn test_no_load_output_tag() {
+        let actual =
+            Message::create_output_filter_config("test_files/config/output_tag.txt", true, true);
+        let expected: HashMap<String, String> = HashMap::new();
+        _check_hashmap_element(&expected, actual);
+    }
+
+    #[test]
+    /// loading test to channel_abbrevations.txt
+    fn test_load_abbrevations() {
+        let actual = Message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            false,
+            true,
+        );
+        let actual2 = Message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            false,
+            false,
+        );
+        let expected: HashMap<String, String> = HashMap::from([
+            ("Security".to_string(), "Sec".to_string()),
+            ("xxx".to_string(), "yyy".to_string()),
+        ]);
+        _check_hashmap_element(&expected, actual);
+        _check_hashmap_element(&expected, actual2);
+    }
+
+    /// check two HashMap element length and value
+    fn _check_hashmap_element(expected: &HashMap<String, String>, actual: HashMap<String, String>) {
+        assert_eq!(expected.len(), actual.len());
         for (k, v) in expected.iter() {
             assert!(actual.get(k).unwrap_or(&String::default()) == v);
         }

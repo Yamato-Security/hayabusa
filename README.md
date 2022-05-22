@@ -315,6 +315,7 @@ USAGE:
     -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
+    --all-tags 'Output all tags when saving to a CSV file.'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
@@ -326,13 +327,13 @@ USAGE:
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
     --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
     -U --utc 'Output time in UTC format. (Default: local time)'
-    --no-color 'Disable color output'
+    --no-color 'Disable color output.'
     -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
     -s --statistics 'Prints statistics of event IDs.'
     -L --logon-summary 'Successful and failed logons summary.'
     -q --quiet 'Quiet mode. Do not display the launch banner.'
     -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --level-tuning <LEVEL_TUNING_FILE> 'Adjust rule level. [default: ./rules/config/level_tuning.txt]'
+    --level-tuning=[LEVEL_TUNING_FILE] 'Adjust rule level.(default: ./rules/config/level_tuning.txt) '
     -p --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'
 ```
@@ -493,8 +494,9 @@ If you add the `-F` or `--full-data` option, a new column with all field informa
 
 ## MITRE ATT&CK Tactics Abbreviations
 
-In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactics.
+In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactic tags.
 You can freely edit these abbreviations in the `config/output_tag.txt` configuration file.
+If you want to output all the tags defined in a rule, please specify the `--all-tags` option.
 
 * `Recon` : Reconnaissance
 * `ResDev` : Resource Development

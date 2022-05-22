@@ -206,13 +206,26 @@ impl Detection {
 
     /// 条件に合致したレコードを表示するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
-        let tag_info: Vec<String> = rule.yaml["tags"]
-            .as_vec()
-            .unwrap_or(&Vec::default())
-            .iter()
-            .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
-            .map(|str| str.to_owned())
-            .collect();
+        let tag_info: Vec<String> = match TAGS_CONFIG.is_empty() {
+            false => rule.yaml["tags"]
+                .as_vec()
+                .unwrap_or(&Vec::default())
+                .iter()
+                .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
+                .map(|str| str.to_owned())
+                .collect(),
+            true => rule.yaml["tags"]
+                .as_vec()
+                .unwrap_or(&Vec::default())
+                .iter()
+                .map(
+                    |info| match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
+                        Some(s) => s.to_owned(),
+                        _ => info.as_str().unwrap_or("").replace("attack.", ""),
+                    },
+                )
+                .collect(),
+        };
 
         let recinfo = record_info
             .record_information
