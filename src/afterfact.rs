@@ -15,6 +15,7 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
+use terminal_size::{terminal_size, Width};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -243,7 +244,12 @@ fn emit_csv<W: std::io::Write>(
         wtr.flush()?;
     }
     println!();
-    _print_timeline_hist(timestamps, 10, 100);
+    let size = terminal_size();
+    let terminal_width = match size {
+        Some((Width(w), _)) => w as usize,
+        None => 100,
+    };
+    _print_timeline_hist(timestamps, 10, terminal_width);
     println!();
     _print_unique_results(
         total_detect_counts_by_level,
