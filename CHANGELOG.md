@@ -1,5 +1,19 @@
 # Changes
 
+## v1.3.0 [2022/xx/xx]
+
+**New Features:**
+
+- xxx
+
+**Enhancements:**
+
+- In the `details` line in a rule, when a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). (#528) (@hitenkoku)
+
+**Bug Fixes:**
+
+- xxx
+
 ## v1.2.2 [2022/05/20]
 
 **New Features:**

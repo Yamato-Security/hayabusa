@@ -1,5 +1,19 @@
 # 変更点
 
+## v1.3.0 [2022/xx/xx]
+
+**新機能:**
+
+- xxx
+
+**改善:**
+
+- ルールの`details`でeventkey_alias.txtやEvent.EventData内に存在しない情報を`n/a` (not available)と表記するようにした。(#528) (@hitenkoku)
+
+**バグ修正:**
+
+- xxx
+
 ## v1.2.2 [2022/05/20]
 
 **新機能:**
@@ -19,10 +33,12 @@
 ## v1.2.1 [2022/04/20] Black Hat Asia Arsenal 2022 RC2
 
 **新機能:**
+
 - `./config/channel_abbreviations`の設定ファイルにより、`Channel`列も出力されるようになった。 (@hitenkoku)
 - ルールとルールの設定ファイルは強制的に上書きされる。 (@hitenkoku)
 
 **バグ修正:**
+
 - ルールがnoisyもしくはexcludedと設定された場合は、`--level-tuning`オプションで`level`が更新されなかったが、修正した。 (@hitenkoku)
 
 ## v1.2.0 [2022/04/15] Black Hat Asia Arsenal 2022 RC1
