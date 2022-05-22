@@ -8,7 +8,7 @@
 
 **改善:**
 
-- ルールの`details`でeventkey_alias.txtやEvent.EventData内に存在しない情報を`n/a`と表記するようにした。(#528) (@hitenkoku)
+- ルールの`details`でeventkey_alias.txtやEvent.EventData内に存在しない情報を`n/a` (not available)と表記するようにした。(#528) (@hitenkoku)
 
 **バグ修正:**
 
