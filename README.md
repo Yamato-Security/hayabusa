@@ -315,7 +315,7 @@ USAGE:
     -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
-    --all-tags 'Output all tags in rules to the CSV file.'
+    --all-tags 'Output all tags when saving to a CSV file.'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
@@ -494,9 +494,9 @@ If you add the `-F` or `--full-data` option, a new column with all field informa
 
 ## MITRE ATT&CK Tactics Abbreviations
 
-In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactics.
+In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactic tags.
 You can freely edit these abbreviations in the `config/output_tag.txt` configuration file.
-If you will output all tactics data, you can use `--all-tags` option.
+If you want to output all the tags defined in a rule, please specify the `--all-tags` option.
 
 * `Recon` : Reconnaissance
 * `ResDev` : Resource Development
