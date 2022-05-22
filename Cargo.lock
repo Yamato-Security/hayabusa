@@ -946,6 +946,7 @@ dependencies = [
  "slack-hook",
  "static_vcruntime",
  "termcolor",
+ "terminal_size",
  "tokio 1.18.2",
  "yaml-rust",
 ]
