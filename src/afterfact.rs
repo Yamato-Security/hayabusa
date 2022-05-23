@@ -108,6 +108,16 @@ fn _print_timeline_hist(timestamps: Vec<i64>, marker_count: usize, length: usize
 
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
+
+    writeln!(wtr).ok();
+    writeln!(
+        wtr,
+        "Event Frequency Timeline:
+    "
+    )
+    .ok();
+    writeln!(wtr).ok();
+
     let (header, footer) = build_time_markers(&timestamps, marker_count, length);
     let sparkline = build_sparkline(&timestamps, length);
     writeln!(wtr, "{}", header).ok();
