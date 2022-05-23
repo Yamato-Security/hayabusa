@@ -101,7 +101,12 @@ fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<
 }
 
 /// print timeline histogram
-fn _print_timeline_hist(timestamps: Vec<i64>, marker_count: usize, length: usize) {
+fn _print_timeline_hist(
+    timestamps: Vec<i64>,
+    marker_count: usize,
+    length: usize,
+    side_margin_size: usize,
+) {
     if timestamps.is_empty() {
         return;
     }
@@ -116,11 +121,23 @@ fn _print_timeline_hist(timestamps: Vec<i64>, marker_count: usize, length: usize
     writeln!(wtr, "{}", title).ok();
     writeln!(wtr).ok();
 
-    let (header, footer) = build_time_markers(&timestamps, marker_count, length);
-    let sparkline = build_sparkline(&timestamps, length);
-    writeln!(wtr, "{}", header).ok();
-    writeln!(wtr, "{}", sparkline.unwrap_or_default()).ok();
-    writeln!(wtr, "{}", footer).ok();
+    let (header_raw, footer_raw) =
+        build_time_markers(&timestamps, marker_count, length - (side_margin * 2));
+    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2));
+    for header_str in header_raw.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size), header_str).ok();
+    }
+    writeln!(
+        wtr,
+        "{}{}",
+        " ".repeat(side_margin_size),
+        sparkline.unwrap_or_default()
+    )
+    .ok();
+    for footer_str in footer_raw.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size), footer_str).ok();
+    }
+
     buf_wtr.print(&wtr).ok();
 }
 
@@ -259,7 +276,7 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    _print_timeline_hist(timestamps, 10, terminal_width);
+    _print_timeline_hist(timestamps, 10, terminal_width, 5);
     println!();
     let reducted_record_cnt: u128 =
         all_record_cnt - total_detect_counts_by_level.iter().sum::<u128>();
