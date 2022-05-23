@@ -98,7 +98,7 @@ fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<
     color
 }
 
-pub fn after_fact() {
+pub fn after_fact(all_record_cnt: usize) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
@@ -129,7 +129,7 @@ pub fn after_fact() {
             Box::new(BufWriter::new(io::stdout()))
         };
     let color_map = set_output_color();
-    if let Err(err) = emit_csv(&mut target, displayflag, color_map) {
+    if let Err(err) = emit_csv(&mut target, displayflag, color_map, all_record_cnt as u128) {
         fn_emit_csv_err(Box::new(err));
     }
 }
@@ -138,6 +138,7 @@ fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     color_map: HashMap<String, Color>,
+    all_record_cnt: u128,
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
@@ -224,6 +225,21 @@ fn emit_csv<W: std::io::Write>(
         wtr.flush()?;
     }
     println!();
+
+    let reducted_record_cnt: u128 =
+        all_record_cnt - total_detect_counts_by_level.iter().sum::<u128>();
+    let reducted_percent = if all_record_cnt == 0 {
+        0 as f64
+    } else {
+        (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
+    };
+    println!("Total events: {}", all_record_cnt);
+    println!(
+        "Data reduction: {}({:.2}%)",
+        reducted_record_cnt, reducted_percent
+    );
+    println!();
+
     _print_unique_results(
         total_detect_counts_by_level,
         "Total".to_string(),
@@ -444,7 +460,7 @@ mod tests {
                 + test_filepath
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::default()).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::default(), 1).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
