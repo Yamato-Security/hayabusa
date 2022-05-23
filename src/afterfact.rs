@@ -270,7 +270,7 @@ fn emit_csv<W: std::io::Write>(
     };
     println!("Total events: {}", all_record_cnt);
     println!(
-        "Data reduction: {}({:.2}%)",
+        "Data reduction: {} events ({:.2}%)",
         reducted_record_cnt, reducted_percent
     );
     println!();
