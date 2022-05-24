@@ -457,16 +457,19 @@ impl App {
         pb.show_speed = false;
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
+        let mut total_records: usize = 0;
         for evtx_file in evtx_files {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
-            detection = self.analysis_file(evtx_file, detection);
+            let cnt_tmp: usize;
+            (detection, cnt_tmp) = self.analysis_file(evtx_file, detection);
+            total_records += cnt_tmp;
             pb.inc();
         }
         detection.add_aggcondition_msges(&self.rt);
         if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
-            after_fact();
+            after_fact(total_records);
         }
     }
 
@@ -475,11 +478,12 @@ impl App {
         &self,
         evtx_filepath: PathBuf,
         mut detection: detection::Detection,
-    ) -> detection::Detection {
+    ) -> (detection::Detection, usize) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(evtx_filepath.clone());
+        let mut record_cnt = 0;
         if parser.is_none() {
-            return detection;
+            return (detection, record_cnt);
         }
 
         let mut tl = Timeline::new();
@@ -529,6 +533,8 @@ impl App {
                 break;
             }
 
+            record_cnt += records_per_detect.len();
+
             let records_per_detect = self.rt.block_on(App::create_rec_infos(
                 records_per_detect,
                 &path,
@@ -547,7 +553,7 @@ impl App {
         tl.tm_stats_dsp_msg();
         tl.tm_logon_stats_dsp_msg();
 
-        detection
+        (detection, record_cnt)
     }
 
     async fn create_rec_infos(

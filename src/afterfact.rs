@@ -101,7 +101,12 @@ fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<
 }
 
 /// print timeline histogram
-fn _print_timeline_hist(timestamps: Vec<i64>, marker_count: usize, length: usize) {
+fn _print_timeline_hist(
+    timestamps: Vec<i64>,
+    marker_count: usize,
+    length: usize,
+    side_margin_size: usize,
+) {
     if timestamps.is_empty() {
         return;
     }
@@ -116,15 +121,27 @@ fn _print_timeline_hist(timestamps: Vec<i64>, marker_count: usize, length: usize
     writeln!(wtr, "{}", title).ok();
     writeln!(wtr).ok();
 
-    let (header, footer) = build_time_markers(&timestamps, marker_count, length);
-    let sparkline = build_sparkline(&timestamps, length);
-    writeln!(wtr, "{}", header).ok();
-    writeln!(wtr, "{}", sparkline.unwrap_or_default()).ok();
-    writeln!(wtr, "{}", footer).ok();
+    let (header_raw, footer_raw) =
+        build_time_markers(&timestamps, marker_count, length - (side_margin_size * 2));
+    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2));
+    for header_str in header_raw.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
+    }
+    writeln!(
+        wtr,
+        "{}{}",
+        " ".repeat(side_margin_size - 1),
+        sparkline.unwrap_or_default()
+    )
+    .ok();
+    for footer_str in footer_raw.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), footer_str).ok();
+    }
+
     buf_wtr.print(&wtr).ok();
 }
 
-pub fn after_fact() {
+pub fn after_fact(all_record_cnt: usize) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(
             &mut BufWriter::new(std::io::stderr().lock()),
@@ -155,7 +172,7 @@ pub fn after_fact() {
             Box::new(BufWriter::new(io::stdout()))
         };
     let color_map = set_output_color();
-    if let Err(err) = emit_csv(&mut target, displayflag, color_map) {
+    if let Err(err) = emit_csv(&mut target, displayflag, color_map, all_record_cnt as u128) {
         fn_emit_csv_err(Box::new(err));
     }
 }
@@ -164,6 +181,7 @@ fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
     color_map: HashMap<String, Color>,
+    all_record_cnt: u128,
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
@@ -252,12 +270,26 @@ fn emit_csv<W: std::io::Write>(
         wtr.flush()?;
     }
     println!();
+
     let size = terminal_size();
     let terminal_width = match size {
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    _print_timeline_hist(timestamps, 10, terminal_width);
+    _print_timeline_hist(timestamps, 10, terminal_width, 3);
+    println!();
+    let reducted_record_cnt: u128 =
+        all_record_cnt - total_detect_counts_by_level.iter().sum::<u128>();
+    let reducted_percent = if all_record_cnt == 0 {
+        0 as f64
+    } else {
+        (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
+    };
+    println!("Total events: {}", all_record_cnt);
+    println!(
+        "Data reduction: {} events ({:.2}%)",
+        reducted_record_cnt, reducted_percent
+    );
     println!();
     _print_unique_results(
         total_detect_counts_by_level,
@@ -488,7 +520,7 @@ mod tests {
                 + test_filepath
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::default()).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::default(), 1).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
