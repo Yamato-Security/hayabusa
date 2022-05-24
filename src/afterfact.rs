@@ -276,7 +276,7 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    _print_timeline_hist(timestamps, 10, terminal_width, 5);
+    _print_timeline_hist(timestamps, 10, terminal_width, 3);
     println!();
     let reducted_record_cnt: u128 =
         all_record_cnt - total_detect_counts_by_level.iter().sum::<u128>();
