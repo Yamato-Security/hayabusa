@@ -113,6 +113,7 @@ fn _print_timeline_hist(
 
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
     let title = "Event Frequency Timeline";
     let header_row_space = (length - title.len()) / 2;
