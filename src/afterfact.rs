@@ -5,9 +5,11 @@ use crate::detections::utils;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
+use hashbrown::HashSet;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use serde::Serialize;
+use std::cmp::min;
 use std::error::Error;
 use std::fs::File;
 use std::io;
@@ -198,9 +200,11 @@ fn emit_csv<W: std::io::Write>(
     println!();
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
+    let mut detected_record_idset: HashSet<String> = HashSet::new();
     for (time, detect_infos) in messages.iter() {
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
+            detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
             let mut level = detect_info.level.to_string();
             if level == "informational" {
                 level = "info".to_string();
@@ -277,10 +281,10 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    _print_timeline_hist(timestamps, 10, terminal_width, 3);
+    let marker_count = min(timestamps.len() - 1, 10);
+    _print_timeline_hist(timestamps, marker_count, terminal_width, 3);
     println!();
-    let reducted_record_cnt: u128 =
-        all_record_cnt - total_detect_counts_by_level.iter().sum::<u128>();
+    let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
     let reducted_percent = if all_record_cnt == 0 {
         0 as f64
     } else {
