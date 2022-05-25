@@ -281,8 +281,11 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    let marker_count = min(timestamps.len() - 1, 10);
-    _print_timeline_hist(timestamps, marker_count, terminal_width, 3);
+    if timestamps.len() < 3 {
+        println!("Event Frequency Timeline output is more than 3 detections.");
+    } else {
+        _print_timeline_hist(timestamps, min(timestamps.len() -1,10), terminal_width, 3);
+    }
     println!();
     let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
     let reducted_percent = if all_record_cnt == 0 {
