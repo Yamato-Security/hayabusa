@@ -119,7 +119,7 @@ fn _print_timeline_hist(
     if timestamps.len() < 5 {
         write!(
             wtr,
-            "Event Frequency Timeline output is more than 5 detections record.",
+            "Event Frequency Timeline could not be displayed as there needs to be more than 5 events.",
         )
         .ok();
         writeln!(wtr).ok();
