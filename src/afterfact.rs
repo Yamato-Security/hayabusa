@@ -116,6 +116,16 @@ fn _print_timeline_hist(
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+    if timestamps.len() < 5 {
+        write!(
+            wtr,
+            "Event Frequency Timeline output is more than 5 detections record.",
+        )
+        .ok();
+        writeln!(wtr).ok();
+        buf_wtr.print(&wtr).ok();
+        return;
+    }
 
     let title = "Event Frequency Timeline";
     let header_row_space = (length - title.len()) / 2;
@@ -281,12 +291,8 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    if timestamps.len() < 3 {
-        println!("Event Frequency Timeline output is more than 3 detections.");
-    } else {
-        let marker_num = min(timestamps.len() - 1, 10);
-        _print_timeline_hist(timestamps, marker_num, terminal_width, 3);
-    }
+    let marker_num = min(timestamps.len() - 2, 10);
+    _print_timeline_hist(timestamps, marker_num, terminal_width, 3);
     println!();
     let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
     let reducted_percent = if all_record_cnt == 0 {
