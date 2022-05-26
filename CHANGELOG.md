@@ -4,11 +4,13 @@
 
 **New Features:**
 
-- xxx
+- Added Event Frequency Timeline feature. (need to be more than detected 5 events)(#533)(@hitenkoku)
 
 **Enhancements:**
 
 - In the `details` line in a rule, when a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). (#528) (@hitenkoku)
+- Displayed total events count and data reduction events count.(#538)(@hitenkoku)
+- Added `tags` in rule to a `MitreAttack` column in output (`--all-tags`) (#525)(@hitenkoku)
 
 **Bug Fixes:**
 
