@@ -4,13 +4,14 @@
 
 **New Features:**
 
-- Added Event Frequency Timeline feature. (need to be more than detected 5 events)(#533)(@hitenkoku)
+- Added Event Frequency Timeline feature to visualize the number of events. (Note: There needs to be more than 5 events.) (#533)(@hitenkoku)
+- Display all the `tags` defined in a rule to the `MitreAttack` column when saving to CSV file with the `--all-tags` option. (#525) (@hitenkoku)
 
 **Enhancements:**
 
 - In the `details` line in a rule, when a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). (#528) (@hitenkoku)
-- Displayed total events count and data reduction events count.(#538)(@hitenkoku)
-- Added `tags` in rule to a `MitreAttack` column in output (`--all-tags`) (#525)(@hitenkoku)
+- Display total event and data reduction count. (How many and what percent of events were ignored.) (#538) (@hitenkoku)
+- New logo. (@YamatoSecurity)
 
 **Bug Fixes:**
 
