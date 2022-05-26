@@ -1,6 +1,7 @@
 extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
+extern crate bytesize;
 
 #[cfg(target_os = "windows")]
 extern crate static_vcruntime;
@@ -43,6 +44,7 @@ use std::{
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
+use bytesize::ByteSize;
 
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
@@ -437,6 +439,13 @@ impl App {
             .unwrap_or("informational")
             .to_uppercase();
         println!("Analyzing event files: {:?}", evtx_files.len());
+
+        let mut total_file_size = ByteSize::b(0);
+        for file_path in &evtx_files {
+            let meta = fs::metadata(file_path).ok();
+            total_file_size += ByteSize::b(meta.unwrap().len());
+        }
+        println!("Total file size: {}", total_file_size.to_string_as(false));
 
         let rule_files = detection::Detection::parse_rule_files(
             level,
