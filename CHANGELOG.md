@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - In the `details` line in a rule, when a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). (#528) (@hitenkoku)
+- Display total evtx file size. (#540) (@hitenkoku)
 
 **Bug Fixes:**
 
