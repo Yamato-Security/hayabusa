@@ -105,7 +105,6 @@ fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<
 /// print timeline histogram
 fn _print_timeline_hist(
     timestamps: Vec<i64>,
-    marker_count: usize,
     length: usize,
     side_margin_size: usize,
 ) {
@@ -134,8 +133,15 @@ fn _print_timeline_hist(
     writeln!(wtr, "{}", title).ok();
     writeln!(wtr).ok();
 
+    let timestamp_marker_max = if timestamps.len() < 2 {
+        0
+    } else{
+        timestamps.len() -2
+    } ;
+    let marker_num = min(timestamp_marker_max, 10);
+
     let (header_raw, footer_raw) =
-        build_time_markers(&timestamps, marker_count, length - (side_margin_size * 2));
+        build_time_markers(&timestamps, marker_num, length - (side_margin_size * 2));
     let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2));
     for header_str in header_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
@@ -291,8 +297,8 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    let marker_num = min(timestamps.len() - 2, 10);
-    _print_timeline_hist(timestamps, marker_num, terminal_width, 3);
+
+    _print_timeline_hist(timestamps, terminal_width, 3);
     println!();
     let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
     let reducted_percent = if all_record_cnt == 0 {
