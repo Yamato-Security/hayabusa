@@ -1,11 +1,12 @@
+extern crate bytesize;
 extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
-extern crate bytesize;
 
 #[cfg(target_os = "windows")]
 extern crate static_vcruntime;
 
+use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
@@ -44,7 +45,6 @@ use std::{
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
-use bytesize::ByteSize;
 
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
