@@ -104,7 +104,7 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 
 ## Time Fequency Timeline
 
-![Hayabusa Event Frequency Timeline](/screenshots/Hayabusa-Timeline.png)
+![Hayabusa Event Frequency Timeline](/screenshots/HayabusaEventFrequencyTimeline.png)
 
 ## Results Summary
 
@@ -567,7 +567,7 @@ If you want to disable color output, you can use `--no-color` option.
 
 ## Event Fequency Timeline
 
-Event Frequency Timeline features display the sparkline frequency of detected events.
+The Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events.
 
 # Hayabusa Rules
