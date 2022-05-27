@@ -1,3 +1,4 @@
+extern crate bytesize;
 extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
@@ -5,6 +6,7 @@ extern crate serde_derive;
 #[cfg(target_os = "windows")]
 extern crate static_vcruntime;
 
+use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
@@ -437,6 +439,14 @@ impl App {
             .unwrap_or("informational")
             .to_uppercase();
         println!("Analyzing event files: {:?}", evtx_files.len());
+
+        let mut total_file_size = ByteSize::b(0);
+        for file_path in &evtx_files {
+            let meta = fs::metadata(file_path).ok();
+            total_file_size += ByteSize::b(meta.unwrap().len());
+        }
+        println!("Total file size: {}", total_file_size.to_string_as(false));
+        println!();
 
         let rule_files = detection::Detection::parse_rule_files(
             level,

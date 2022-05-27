@@ -12,6 +12,7 @@
 - In the `details` line in a rule, when a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). (#528) (@hitenkoku)
 - Display total event and data reduction count. (How many and what percent of events were ignored.) (#538) (@hitenkoku)
 - New logo. (@YamatoSecurity)
+- Display total evtx file size. (#540) (@hitenkoku)
 
 **Bug Fixes:**
 

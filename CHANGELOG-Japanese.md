@@ -9,9 +9,11 @@
 
 **改善:**
 
+- ルールの`details`でeventkey_alias.txtやEvent.EventData内に存在しない情報を`n/a` (not available)と表記するようにした。(#528) (@hitenkoku)
 - ルールの`details`でeventkey_alias.txtやEvent.EventData内に存在しない情報を`n/a` (not available)と表記するようにした。 (#528) (@hitenkoku)
 - 読み込んだイベント数と検知しなかったイベント数を表示するようにした。 (#538) (@hitenkoku)
 - 新しいロゴ。 (@YamatoSecurity)
+- evtxファイルのファイルサイズの合計を出力するようにした。(#540) (@hitenkoku)
 
 **バグ修正:**
 

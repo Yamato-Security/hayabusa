@@ -35,6 +35,7 @@ termcolor="*"
 prettytable-rs = "0.8"
 krapslog="*"
 terminal_size = "*"
+bytesize="1.1"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
