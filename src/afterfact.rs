@@ -5,9 +5,11 @@ use crate::detections::utils;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
+use hashbrown::HashSet;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use serde::Serialize;
+use std::cmp::min;
 use std::error::Error;
 use std::fs::File;
 use std::io;
@@ -101,18 +103,24 @@ fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<
 }
 
 /// print timeline histogram
-fn _print_timeline_hist(
-    timestamps: Vec<i64>,
-    marker_count: usize,
-    length: usize,
-    side_margin_size: usize,
-) {
+fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: usize) {
     if timestamps.is_empty() {
         return;
     }
 
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+    if timestamps.len() < 5 {
+        write!(
+            wtr,
+            "Event Frequency Timeline could not be displayed as there needs to be more than 5 events.",
+        )
+        .ok();
+        writeln!(wtr).ok();
+        buf_wtr.print(&wtr).ok();
+        return;
+    }
 
     let title = "Event Frequency Timeline";
     let header_row_space = (length - title.len()) / 2;
@@ -121,8 +129,15 @@ fn _print_timeline_hist(
     writeln!(wtr, "{}", title).ok();
     writeln!(wtr).ok();
 
+    let timestamp_marker_max = if timestamps.len() < 2 {
+        0
+    } else {
+        timestamps.len() - 2
+    };
+    let marker_num = min(timestamp_marker_max, 10);
+
     let (header_raw, footer_raw) =
-        build_time_markers(&timestamps, marker_count, length - (side_margin_size * 2));
+        build_time_markers(&timestamps, marker_num, length - (side_margin_size * 2));
     let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2));
     for header_str in header_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
@@ -197,9 +212,11 @@ fn emit_csv<W: std::io::Write>(
     println!();
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
+    let mut detected_record_idset: HashSet<String> = HashSet::new();
     for (time, detect_infos) in messages.iter() {
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
+            detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
             let mut level = detect_info.level.to_string();
             if level == "informational" {
                 level = "info".to_string();
@@ -276,10 +293,10 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-    _print_timeline_hist(timestamps, 10, terminal_width, 3);
+
+    _print_timeline_hist(timestamps, terminal_width, 3);
     println!();
-    let reducted_record_cnt: u128 =
-        all_record_cnt - total_detect_counts_by_level.iter().sum::<u128>();
+    let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
     let reducted_percent = if all_record_cnt == 0 {
         0 as f64
     } else {
