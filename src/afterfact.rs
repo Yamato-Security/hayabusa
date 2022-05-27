@@ -31,6 +31,8 @@ pub struct CsvFormat<'a> {
     rule_title: &'a str,
     details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
+    record_i_d: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     record_information: Option<&'a str>,
     rule_path: &'a str,
     file_path: &'a str,
@@ -47,7 +49,10 @@ pub struct DisplayFormat<'a> {
     pub rule_title: &'a str,
     pub details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
+    record_i_d: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub record_information: Option<&'a str>,
+
 }
 
 lazy_static! {
@@ -222,6 +227,8 @@ fn emit_csv<W: std::io::Write>(
                 level = "info".to_string();
             }
             if displayflag {
+                let record_id = detect_info.record_id.as_ref()
+                .map(|recinfo| _format_cellpos(recinfo, ColPos::Other));
                 let recinfo = detect_info
                     .record_information
                     .as_ref()
@@ -241,6 +248,7 @@ fn emit_csv<W: std::io::Write>(
                     rule_title: &_format_cellpos(&detect_info.alert, ColPos::Other),
                     details: &_format_cellpos(&details, ColPos::Other),
                     record_information: recinfo.as_deref(),
+                    record_i_d: record_id.as_deref(),
                 };
 
                 disp_wtr_buf
@@ -269,6 +277,7 @@ fn emit_csv<W: std::io::Write>(
                     record_information: detect_info.record_information.as_deref(),
                     file_path: &detect_info.filepath,
                     rule_path: &detect_info.rulepath,
+                    record_i_d: detect_info.record_id.as_deref(),
                 })?;
             }
             let level_suffix = *configs::LEVELMAP

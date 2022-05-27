@@ -9,7 +9,7 @@ use crate::detections::print::MESSAGES;
 use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
-use crate::detections::print::{CH_CONFIG, TAGS_CONFIG};
+use crate::detections::print::{CH_CONFIG, TAGS_CONFIG, IS_DISPLAY_RECORD_ID};
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -231,6 +231,12 @@ impl Detection {
             .record_information
             .as_ref()
             .map(|recinfo| recinfo.to_string());
+        let rec_id = if *IS_DISPLAY_RECORD_ID {
+            Some(get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
+            .unwrap_or_default())
+        } else {
+            None
+        };
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: rule.rulepath.to_string(),
@@ -251,6 +257,7 @@ impl Detection {
             detail: String::default(),
             tag_info: tag_info.join(" | "),
             record_information: recinfo,
+            record_id: rec_id,
         };
         MESSAGES.lock().unwrap().insert(
             &record_info.record,
@@ -274,6 +281,11 @@ impl Detection {
         } else {
             Option::None
         };
+        let rec_id = if *IS_DISPLAY_RECORD_ID {
+            Some(String::default())
+        } else {
+            None
+        };
         let detect_info = DetectInfo {
             filepath: "-".to_owned(),
             rulepath: rule.rulepath.to_owned(),
@@ -285,6 +297,7 @@ impl Detection {
             detail: output,
             record_information: rec_info,
             tag_info: tag_info.join(" : "),
+            record_id: rec_id,
         };
 
         MESSAGES

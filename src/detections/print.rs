@@ -33,6 +33,7 @@ pub struct DetectInfo {
     pub detail: String,
     pub tag_info: String,
     pub record_information: Option<String>,
+    pub record_id: Option<String>,
 }
 
 pub struct AlertMessage {}
@@ -75,6 +76,7 @@ lazy_static! {
         .unwrap()
         .args
         .is_present("pivot-keywords-list");
+    pub static ref IS_DISPLAY_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.is_present("display-record-id");
 }
 
 impl Default for Message {
@@ -309,6 +311,7 @@ mod tests {
                 detail: String::default(),
                 tag_info: "txxx.001".to_string(),
                 record_information: Option::Some("record_information1".to_string()),
+                record_id: Option::Some("11111".to_string()),
             },
         );
 

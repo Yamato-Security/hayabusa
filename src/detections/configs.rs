@@ -77,6 +77,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     --all-tags 'Output all tags when saving to a CSV file.'
+    -R --display-record-id 'Display EventRecordID.'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
