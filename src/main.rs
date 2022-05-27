@@ -446,6 +446,7 @@ impl App {
             total_file_size += ByteSize::b(meta.unwrap().len());
         }
         println!("Total file size: {}", total_file_size.to_string_as(false));
+        println!();
 
         let rule_files = detection::Detection::parse_rule_files(
             level,
