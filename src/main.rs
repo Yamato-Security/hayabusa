@@ -525,7 +525,7 @@ impl App {
                 let data = record_result.as_ref().unwrap().data.clone();
                 let timestamp = record_result.unwrap().timestamp;
 
-                if !self._is_target_event_id(&data) && !time_filter.is_target(&Some(timestamp)) {
+                if !self._is_target_event_id(&data) || !time_filter.is_target(&Some(timestamp)) {
                     continue;
                 }
 
