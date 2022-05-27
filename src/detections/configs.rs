@@ -172,6 +172,7 @@ fn load_target_ids(path: &str) -> TargetEventIds {
 
 #[derive(Debug, Clone)]
 pub struct TargetEventTime {
+    parse_success_flag: bool,
     start_time: Option<DateTime<Utc>>,
     end_time: Option<DateTime<Utc>>,
 }
@@ -184,6 +185,7 @@ impl Default for TargetEventTime {
 
 impl TargetEventTime {
     pub fn new() -> Self {
+        let mut parse_success_flag = true;
         let start_time =
             if let Some(s_time) = CONFIG.read().unwrap().args.value_of("start-timeline") {
                 match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
@@ -196,6 +198,7 @@ impl TargetEventTime {
                         &format!("start-timeline field: {}", err),
                     )
                     .ok();
+                    parse_success_flag = false;
                     None
                 }
             }
@@ -213,23 +216,30 @@ impl TargetEventTime {
                         &format!("end-timeline field: {}", err),
                     )
                     .ok();
+                    parse_success_flag = false;
                     None
                 }
             }
         } else {
             None
         };
-        Self::set(start_time, end_time)
+        Self::set(parse_success_flag, start_time, end_time)
     }
 
     pub fn set(
+        input_parse_success_flag: bool,
         input_start_time: Option<chrono::DateTime<chrono::Utc>>,
         input_end_time: Option<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
+            parse_success_flag: input_parse_success_flag,
             start_time: input_start_time,
             end_time: input_end_time,
         }
+    }
+
+    pub fn is_parse_success(&self) -> bool {
+        self.parse_success_flag
     }
 
     pub fn is_target(&self, eventtime: &Option<DateTime<Utc>>) -> bool {
@@ -449,7 +459,7 @@ mod tests {
     fn target_event_time_filter() {
         let start_time = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
-        let time_filter = configs::TargetEventTime::set(start_time, end_time);
+        let time_filter = configs::TargetEventTime::set(true, start_time, end_time);
 
         let out_of_range1 = Some("1999-01-01T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let within_range = Some("2019-02-27T01:05:01Z".parse::<DateTime<Utc>>().unwrap());
@@ -464,7 +474,7 @@ mod tests {
     fn target_event_time_filter_containes_on_time() {
         let start_time = Some("2018-02-20T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
         let end_time = Some("2020-03-30T12:00:09Z".parse::<DateTime<Utc>>().unwrap());
-        let time_filter = configs::TargetEventTime::set(start_time, end_time);
+        let time_filter = configs::TargetEventTime::set(true, start_time, end_time);
 
         assert!(time_filter.is_target(&start_time));
         assert!(time_filter.is_target(&end_time));
