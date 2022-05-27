@@ -344,6 +344,7 @@ mod tests {
                 detail: String::default(),
                 tag_info: "txxx.002".to_string(),
                 record_information: Option::Some("record_information2".to_string()),
+                record_id: Option::Some("22222".to_string()),
             },
         );
 
@@ -376,6 +377,7 @@ mod tests {
                 detail: String::default(),
                 tag_info: "txxx.003".to_string(),
                 record_information: Option::Some("record_information3".to_string()),
+                record_id: Option::Some("33333".to_string()),
             },
         );
 
@@ -403,12 +405,13 @@ mod tests {
                 detail: String::default(),
                 tag_info: "txxx.004".to_string(),
                 record_information: Option::Some("record_information4".to_string()),
+                record_id: Option::None,
             },
         );
 
         let display = format!("{}", format_args!("{:?}", message));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", channel: \"\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\", record_information: Some(\"record_information4\") }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", channel: \"\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\", record_information: Some(\"record_information1\") }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", channel: \"\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\", record_information: Some(\"record_information2\") }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", channel: \"\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\", record_information: Some(\"record_information3\") }]} }";
+        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", channel: \"\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\", record_information: Some(\"record_information4\"), record_id: None }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", channel: \"\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\", record_information: Some(\"record_information1\"), record_id: Some(\"11111\") }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", channel: \"\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\", record_information: Some(\"record_information2\"), record_id: Some(\"22222\") }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", channel: \"\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\", record_information: Some(\"record_information3\"), record_id: Some(\"33333\") }]} }";
         assert_eq!(display, expect);
     }
 

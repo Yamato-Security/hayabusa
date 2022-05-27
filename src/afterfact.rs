@@ -475,6 +475,7 @@ mod tests {
         let output = "pokepoke";
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "record_infoinfo11";
+        let test_record_id = "11111";
         {
             let mut messages = print::MESSAGES.lock().unwrap();
             messages.clear();
@@ -510,6 +511,7 @@ mod tests {
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
                     record_information: Option::Some(test_recinfo.to_string()),
+                    record_id: Option::Some(test_record_id.to_string())
                 },
             );
         }
@@ -518,7 +520,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
+            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RuleTitle,Details,RecordID,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -538,6 +540,8 @@ mod tests {
                 + test_title
                 + ","
                 + output
+                + ","
+                + test_record_id
                 + ","
                 + test_recinfo
                 + ","
@@ -565,12 +569,13 @@ mod tests {
         let test_channel = "Sysmon";
         let output = "displaytest";
         let test_recinfo = "testinfo";
+        let test_recid ="22222";
 
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_header =
-            "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordInformation\n";
+            "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordID|RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
@@ -590,6 +595,8 @@ mod tests {
             + "|"
             + output
             + "|"
+            + test_recid
+            + "|"
             + test_recinfo
             + "\n";
         let expect_with_header = expect_header.to_string() + &expect_no_header;
@@ -604,6 +611,7 @@ mod tests {
                     rule_title: test_title,
                     details: output,
                     record_information: Some(test_recinfo),
+                    record_i_d: Some(test_recid),
                 },
                 true
             ),
@@ -620,6 +628,7 @@ mod tests {
                     rule_title: test_title,
                     details: output,
                     record_information: Some(test_recinfo),
+                    record_i_d: Some(test_recid),
                 },
                 false
             ),
