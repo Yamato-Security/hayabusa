@@ -192,10 +192,10 @@ impl TargetEventTime {
                 .or_else(|_| DateTime::parse_from_str(s_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
             {
                 Ok(dt) => Some(dt.with_timezone(&Utc)),
-                Err(err) => {
+                Err(_) => {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("start-timeline field: {}", err),
+                        "start-timeline field: the timestamp format is not correct.",
                     )
                     .ok();
                     parse_success_flag = false;
@@ -210,10 +210,10 @@ impl TargetEventTime {
             .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
         {
             Ok(dt) => Some(dt.with_timezone(&Utc)),
-            Err(err) => {
+            Err(_) => {
                     AlertMessage::alert(
                         &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("end-timeline field: {}", err),
+                        "end-timeline field: the timestamp format is not correct.",
                     )
                     .ok();
                     parse_success_flag = false;
