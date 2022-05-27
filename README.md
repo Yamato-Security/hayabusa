@@ -32,6 +32,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Screenshots](#screenshots)
   - [Startup](#startup)
   - [Terminal Output](#terminal-output)
+  - [Time Fequency Timeline](#time-fequency-timeline)
   - [Results Summary](#results-summary)
   - [Analysis in Excel](#analysis-in-excel)
   - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
@@ -63,6 +64,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Channel Abbreviations](#channel-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
+  - [Event Fequency Timeline](#event-fequency-timeline)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -100,6 +102,9 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 
 ![Hayabusa terminal output](/screenshots/Hayabusa-Results.png)
 
+## Time Fequency Timeline
+
+![Hayabusa Event Frequency Timeline](/screenshots/HayabusaEventFrequencyTimeline.png)
 
 ## Results Summary
 
@@ -214,6 +219,7 @@ Please let us know if anything breaks after you update.
 ## Cross-compiling 32-bit Windows Binaries
 
 You can create 32-bit binaries on 64-bit Windows systems with the following:
+
 ```bash
 rustup install stable-i686-pc-windows-msvc
 rustup target add i686-pc-windows-msvc
@@ -223,6 +229,7 @@ rustup run stable-i686-pc-windows-msvc cargo build --release
 ## macOS Compiling Notes
 
 If you receive compile errors about openssl, you will need to install [Homebrew](https://brew.sh/) and then install the following packages:
+
 ```bash
 brew install pkg-config
 brew install openssl
@@ -233,16 +240,18 @@ brew install openssl
 If you receive compile errors about openssl, you will need to install the following package.
 
 Ubuntu-based distros:
+
 ```bash
 sudo apt install libssl-dev
 ```
 
 Fedora-based distros:
+
 ```bash
 sudo yum install openssl-devel
 ```
 
-# Running Hayabusa 
+# Running Hayabusa
 
 ## Caution: Anti-Virus/EDR Warnings
 
@@ -555,6 +564,11 @@ It will display in real time the number and percent of evtx files that it has fi
 The alerts will be outputted in color based on the alert `level`.
 You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
 If you want to disable color output, you can use `--no-color` option.
+
+## Event Fequency Timeline
+
+The Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
+Note: There needs to be more than 5 events.
 
 # Hayabusa Rules
 

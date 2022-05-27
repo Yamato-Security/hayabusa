@@ -467,6 +467,7 @@ impl App {
             total_records += cnt_tmp;
             pb.inc();
         }
+        println!();
         detection.add_aggcondition_msges(&self.rt);
         if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
             after_fact(total_records);
