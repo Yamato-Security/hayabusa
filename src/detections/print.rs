@@ -76,7 +76,11 @@ lazy_static! {
         .unwrap()
         .args
         .is_present("pivot-keywords-list");
-    pub static ref IS_DISPLAY_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.is_present("display-record-id");
+    pub static ref IS_DISPLAY_RECORD_ID: bool = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("display-record-id");
 }
 
 impl Default for Message {

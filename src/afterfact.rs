@@ -52,7 +52,6 @@ pub struct DisplayFormat<'a> {
     record_i_d: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub record_information: Option<&'a str>,
-
 }
 
 lazy_static! {
@@ -227,8 +226,10 @@ fn emit_csv<W: std::io::Write>(
                 level = "info".to_string();
             }
             if displayflag {
-                let record_id = detect_info.record_id.as_ref()
-                .map(|recinfo| _format_cellpos(recinfo, ColPos::Other));
+                let record_id = detect_info
+                    .record_id
+                    .as_ref()
+                    .map(|recinfo| _format_cellpos(recinfo, ColPos::Other));
                 let recinfo = detect_info
                     .record_information
                     .as_ref()
@@ -511,7 +512,7 @@ mod tests {
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
                     record_information: Option::Some(test_recinfo.to_string()),
-                    record_id: Option::Some(test_record_id.to_string())
+                    record_id: Option::Some(test_record_id.to_string()),
                 },
             );
         }
@@ -569,7 +570,7 @@ mod tests {
         let test_channel = "Sysmon";
         let output = "displaytest";
         let test_recinfo = "testinfo";
-        let test_recid ="22222";
+        let test_recid = "22222";
 
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
