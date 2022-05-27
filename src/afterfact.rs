@@ -31,6 +31,8 @@ pub struct CsvFormat<'a> {
     rule_title: &'a str,
     details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
+    record_i_d: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     record_information: Option<&'a str>,
     rule_path: &'a str,
     file_path: &'a str,
@@ -46,6 +48,8 @@ pub struct DisplayFormat<'a> {
     pub level: &'a str,
     pub rule_title: &'a str,
     pub details: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    record_i_d: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub record_information: Option<&'a str>,
 }
@@ -222,6 +226,10 @@ fn emit_csv<W: std::io::Write>(
                 level = "info".to_string();
             }
             if displayflag {
+                let record_id = detect_info
+                    .record_id
+                    .as_ref()
+                    .map(|recinfo| _format_cellpos(recinfo, ColPos::Other));
                 let recinfo = detect_info
                     .record_information
                     .as_ref()
@@ -241,6 +249,7 @@ fn emit_csv<W: std::io::Write>(
                     rule_title: &_format_cellpos(&detect_info.alert, ColPos::Other),
                     details: &_format_cellpos(&details, ColPos::Other),
                     record_information: recinfo.as_deref(),
+                    record_i_d: record_id.as_deref(),
                 };
 
                 disp_wtr_buf
@@ -269,6 +278,7 @@ fn emit_csv<W: std::io::Write>(
                     record_information: detect_info.record_information.as_deref(),
                     file_path: &detect_info.filepath,
                     rule_path: &detect_info.rulepath,
+                    record_i_d: detect_info.record_id.as_deref(),
                 })?;
             }
             let level_suffix = *configs::LEVELMAP
@@ -466,6 +476,7 @@ mod tests {
         let output = "pokepoke";
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "record_infoinfo11";
+        let test_record_id = "11111";
         {
             let mut messages = print::MESSAGES.lock().unwrap();
             messages.clear();
@@ -501,6 +512,7 @@ mod tests {
                     detail: String::default(),
                     tag_info: test_attack.to_string(),
                     record_information: Option::Some(test_recinfo.to_string()),
+                    record_id: Option::Some(test_record_id.to_string()),
                 },
             );
         }
@@ -509,7 +521,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
+            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RuleTitle,Details,RecordID,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -529,6 +541,8 @@ mod tests {
                 + test_title
                 + ","
                 + output
+                + ","
+                + test_record_id
                 + ","
                 + test_recinfo
                 + ","
@@ -556,12 +570,13 @@ mod tests {
         let test_channel = "Sysmon";
         let output = "displaytest";
         let test_recinfo = "testinfo";
+        let test_recid = "22222";
 
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_header =
-            "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordInformation\n";
+            "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordID|RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
@@ -581,6 +596,8 @@ mod tests {
             + "|"
             + output
             + "|"
+            + test_recid
+            + "|"
             + test_recinfo
             + "\n";
         let expect_with_header = expect_header.to_string() + &expect_no_header;
@@ -595,6 +612,7 @@ mod tests {
                     rule_title: test_title,
                     details: output,
                     record_information: Some(test_recinfo),
+                    record_i_d: Some(test_recid),
                 },
                 true
             ),
@@ -611,6 +629,7 @@ mod tests {
                     rule_title: test_title,
                     details: output,
                     record_information: Some(test_recinfo),
+                    record_i_d: Some(test_recid),
                 },
                 false
             ),
