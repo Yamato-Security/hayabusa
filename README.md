@@ -325,6 +325,7 @@ USAGE:
     -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     --all-tags 'Output all tags when saving to a CSV file.'
+    -R --display-record-id 'Display EventRecordID.'
     -v --verbose 'Output verbose information.'
     -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n --enable-noisy-rules 'Enable rules marked as noisy.'
@@ -499,7 +500,8 @@ The following additional columns will be added to the output when saving to a CS
 * `Rule Path`: The path to the detection rule that generated the alert or event.
 * `File Path`: The path to the evtx file that caused the alert or event.
 
-If you add the `-F` or `--full-data` option, a new column with all field information will also be added.
+If you add the `-R` or `--display-record-id` option, `RecordId` column with `<Event><System><EventRecordID>` will also be added.
+If you add the `-F` or `--full-data` option, `RecordInformation` column with all field information will also be added.
 
 ## MITRE ATT&CK Tactics Abbreviations
 

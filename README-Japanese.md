@@ -327,6 +327,7 @@ USAGE:
     -C --config=[RULECONFIGDIRECTORY] 'ルールフォルダのコンフィグディレクトリ(デフォルト: ./rules/config)'
     -o --output=[CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
     --all-tags '出力したCSVファイルにルール内のタグ情報を全て出力する。'
+    -R --display-record-id 'EventRecordIDを出力する。'
     -v --verbose '詳細な情報を出力する。'
     -D --enable-deprecated-rules 'Deprecatedルールを有効にする。'
     -n --enable-noisy-rules 'Noisyルールを有効にする。'
@@ -500,7 +501,8 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 * `Rule Path`: アラートまたはイベントを生成した検知ルールへのパス。
 * `File Path`: アラートまたはイベントを起こしたevtxファイルへのパス。
 
-`-F`もしくは`--full-data`オプションを指定した場合、全てのフィールド情報が新しいカラムで出力されます。
+`-R`もしくは`--display-record-id`オプションを指定した場合、`<Event><System><EventRecordID>`の情報が`RecordID`カラムに出力されます。
+`-F`もしくは`--full-data`オプションを指定した場合、全てのフィールド情報が`RecordInformation`カラムにで出力されます。
 
 ## MITRE ATT&CK戦術の省略
 
