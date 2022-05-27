@@ -15,7 +15,8 @@
 
 **Bug Fixes:**
 
-- xxx
+- fixed `--start-timeline`、`--end-timeline` options do not work. (#546) @hitenkoku)
+
 
 ## v1.2.2 [2022/05/20]
 
