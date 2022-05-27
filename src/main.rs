@@ -484,7 +484,7 @@ impl App {
         &self,
         evtx_filepath: PathBuf,
         mut detection: detection::Detection,
-        time_filter: &TargetEventTime
+        time_filter: &TargetEventTime,
     ) -> (detection::Detection, usize) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(evtx_filepath.clone());
