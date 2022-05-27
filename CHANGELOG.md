@@ -6,6 +6,7 @@
 
 - Added Event Frequency Timeline feature to visualize the number of events. (Note: There needs to be more than 5 events.) (#533)(@hitenkoku)
 - Display all the `tags` defined in a rule to the `MitreAttack` column when saving to CSV file with the `--all-tags` option. (#525) (@hitenkoku)
+- Added `-R / --display-record-id` option: display record id(`<Event><System><EventRecordID>`) in evtx file. (#548) (@hitenkoku)
 
 **Enhancements:**
 
