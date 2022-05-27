@@ -500,8 +500,8 @@ The following additional columns will be added to the output when saving to a CS
 * `Rule Path`: The path to the detection rule that generated the alert or event.
 * `File Path`: The path to the evtx file that caused the alert or event.
 
-If you add the `-R` or `--display-record-id` option, `RecordId` column with `<Event><System><EventRecordID>` will also be added.
-If you add the `-F` or `--full-data` option, `RecordInformation` column with all field information will also be added.
+If you add the `-R` or `--display-record-id` option, a `RecordId` column with event record ID values taken from `<Event><System><EventRecordID>` will also be added.
+If you add the `-F` or `--full-data` option, a `RecordInformation` column with all field information will also be added.
 
 ## MITRE ATT&CK Tactics Abbreviations
 
