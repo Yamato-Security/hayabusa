@@ -4,11 +4,15 @@
 
 **新機能:**
 
-- xxx
+- 検知されたイベントが5つ以上の時、イベント頻度のタイムラインを作成するようにした。 (#533) (@hitenkoku)
+- `--all-tags`オプションでルールにある全てのtagsを、outputで指定したcsvのMitreAttackの列に出力するようにした。 (#525) (@hitenkoku)
 
 **改善:**
 
 - ルールの`details`でeventkey_alias.txtやEvent.EventData内に存在しない情報を`n/a` (not available)と表記するようにした。(#528) (@hitenkoku)
+- ルールの`details`でeventkey_alias.txtやEvent.EventData内に存在しない情報を`n/a` (not available)と表記するようにした。 (#528) (@hitenkoku)
+- 読み込んだイベント数と検知しなかったイベント数を表示するようにした。 (#538) (@hitenkoku)
+- 新しいロゴ。 (@YamatoSecurity)
 - evtxファイルのファイルサイズの合計を出力するようにした。(#540) (@hitenkoku)
 
 **バグ修正:**

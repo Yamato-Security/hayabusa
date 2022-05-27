@@ -33,6 +33,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [スクリーンショット](#スクリーンショット)
   - [起動画面:](#起動画面)
   - [ターミナル出力画面:](#ターミナル出力画面)
+  - [イベント頻度タイムライン出力画面:](#イベント頻度タイムライン出力画面)
   - [結果サマリ画面:](#結果サマリ画面)
   - [Excelでの解析:](#excelでの解析)
   - [Timeline Explorerでの解析:](#timeline-explorerでの解析)
@@ -64,6 +65,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Channel情報の省略](#channel情報の省略)
   - [プログレスバー](#プログレスバー)
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
+  - [イベント頻度タイムライン](#イベント頻度タイムライン)
 - [Hayabusaルール](#hayabusaルール)
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
   - [検知ルールのチューニング](#検知ルールのチューニング)
@@ -104,6 +106,10 @@ Windowsのイベントログは、
 
 ![Hayabusa ターミナル出力画面](/screenshots/Hayabusa-Results.png)
 
+## イベント頻度タイムライン出力画面:
+
+![Hayabusa イベント頻度タイムライン出力画面](/screenshots/HayabusaEventFrequencyTimeline.png)
+
 ## 結果サマリ画面:
 
 ![Hayabusa 結果サマリ画面](/screenshots/HayabusaResultsSummary.png)
@@ -118,6 +124,7 @@ Windowsのイベントログは、
 
 
 ## Criticalアラートのフィルタリングとコンピュータごとのグルーピング:
+
 ![Timeline ExplorerでCriticalアラートのフィルタリングとコンピュータグルーピング](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
 
 ## Elastic Stackダッシュボードでの解析:
@@ -559,6 +566,11 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 `./config/level_color.txt`の値を変更することで文字色を変えることができます。
 形式は`level名,(6桁のRGBのカラーhex)`です。
 カラー出力をしないようにしたい場合は`--no-color`オプションをご利用ください。
+
+## イベント頻度タイムライン
+
+検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
+マーカーの数は最大10個です。
 
 # Hayabusaルール
 
