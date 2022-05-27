@@ -9,7 +9,7 @@ use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hashbrown::{HashMap, HashSet};
-use hayabusa::detections::configs::load_pivot_keywords;
+use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::print::{
@@ -489,7 +489,7 @@ impl App {
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
-
+        let time_filter = TargetEventTime::default();
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -521,12 +521,13 @@ impl App {
                 }
 
                 // target_eventids.txtでフィルタする。
-                let data = record_result.unwrap().data;
-                if !self._is_target_event_id(&data) {
+                let data = record_result.as_ref().unwrap().data.clone();
+                let timestamp = record_result.unwrap().timestamp;
+
+                if !self._is_target_event_id(&data) && !time_filter.is_target(&Some(timestamp)) {
                     continue;
                 }
 
-                // EvtxRecordInfo構造体に変更
                 records_per_detect.push(data);
             }
             if records_per_detect.is_empty() {
