@@ -11,7 +11,7 @@ use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hashbrown::{HashMap, HashSet};
-use hayabusa::detections::configs::load_pivot_keywords;
+use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::print::{
@@ -174,6 +174,11 @@ impl App {
             }
         }
 
+        let time_filter = TargetEventTime::default();
+        if !time_filter.is_parse_success() {
+            return;
+        }
+
         if *STATISTICS_FLAG {
             println!("Generating Event ID Statistics");
             println!();
@@ -192,7 +197,7 @@ impl App {
             if live_analysis_list.is_none() {
                 return;
             }
-            self.analysis_files(live_analysis_list.unwrap());
+            self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if !filepath.ends_with(".evtx")
                 || Path::new(filepath)
@@ -210,7 +215,7 @@ impl App {
                 .ok();
                 return;
             }
-            self.analysis_files(vec![PathBuf::from(filepath)]);
+            self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
         } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
             let evtx_files = self.collect_evtxfiles(directory);
             if evtx_files.is_empty() {
@@ -221,7 +226,7 @@ impl App {
                 .ok();
                 return;
             }
-            self.analysis_files(evtx_files);
+            self.analysis_files(evtx_files, &time_filter);
         } else if configs::CONFIG
             .read()
             .unwrap()
@@ -430,7 +435,7 @@ impl App {
         }
     }
 
-    fn analysis_files(&mut self, evtx_files: Vec<PathBuf>) {
+    fn analysis_files(&mut self, evtx_files: Vec<PathBuf>, time_filter: &TargetEventTime) {
         let level = configs::CONFIG
             .read()
             .unwrap()
@@ -473,7 +478,7 @@ impl App {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
-            (detection, cnt_tmp) = self.analysis_file(evtx_file, detection);
+            (detection, cnt_tmp) = self.analysis_file(evtx_file, detection, time_filter);
             total_records += cnt_tmp;
             pb.inc();
         }
@@ -489,6 +494,7 @@ impl App {
         &self,
         evtx_filepath: PathBuf,
         mut detection: detection::Detection,
+        time_filter: &TargetEventTime,
     ) -> (detection::Detection, usize) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(evtx_filepath.clone());
@@ -500,7 +506,6 @@ impl App {
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
-
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -532,12 +537,13 @@ impl App {
                 }
 
                 // target_eventids.txtでフィルタする。
-                let data = record_result.unwrap().data;
-                if !self._is_target_event_id(&data) {
+                let data = record_result.as_ref().unwrap().data.clone();
+                let timestamp = record_result.unwrap().timestamp;
+
+                if !self._is_target_event_id(&data) || !time_filter.is_target(&Some(timestamp)) {
                     continue;
                 }
 
-                // EvtxRecordInfo構造体に変更
                 records_per_detect.push(data);
             }
             if records_per_detect.is_empty() {

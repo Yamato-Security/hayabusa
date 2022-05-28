@@ -17,7 +17,7 @@
 
 **バグ修正:**
 
-- xxx
+- `--start-timeline`、`--end-timeline`オプションが動かなかったのを修正した。 (#546) (@hitenkoku)
 
 ## v1.2.2 [2022/05/20]
 
