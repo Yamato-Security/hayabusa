@@ -7,6 +7,7 @@
 - 検知されたイベントが5つ以上の時、イベント頻度のタイムラインを作成するようにした。 (#533) (@hitenkoku)
 - `--all-tags`オプションでルールにある全てのtagsを、outputで指定したcsvのMitreAttackの列に出力するようにした。 (#525) (@hitenkoku)
 - `-R` / `--display-record-id` オプションの追加。evtx file内のレコードを特定するレコードID`<Event><System><EventRecordID>`が出力できるようになった。 (#548) (@hitenkoku)
+- レベルごとの検知数が最も多い日を表示するようにした。 (#550) (@hitenkoku)
 
 **改善:**
 
