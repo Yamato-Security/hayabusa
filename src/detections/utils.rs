@@ -17,6 +17,7 @@ use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
 use std::vec;
+use termcolor::{Buffer, BufferWriter, ColorSpec,ColorChoice, WriteColor};
 
 use super::detection::EvtxRecordInfo;
 
@@ -237,6 +238,17 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
         key_2_value: key_2_values,
         record_information: rec_info,
     }
+}
+
+/**
+ * 標準出力のカラー出力設定をデフォルトにしたBufferWriterとBufferを返却する関数
+ */
+pub fn reset_color_buffer() -> (BufferWriter, Buffer) {
+    let wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr_buf = wtr.buffer();
+    wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
+    (wtr, wtr_buf)
+
 }
 
 /**
