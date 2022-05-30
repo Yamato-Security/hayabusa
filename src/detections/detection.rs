@@ -20,7 +20,6 @@ use hashbrown;
 use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
-use std::io::BufWriter;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
@@ -69,7 +68,7 @@ impl Detection {
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+                AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK
@@ -91,10 +90,10 @@ impl Detection {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    AlertMessage::warn(&mut std::io::stdout().lock(), &errmsg_body).ok();
+                    AlertMessage::warn(&errmsg_body).ok();
 
                     err_msgs.iter().for_each(|err_msg| {
-                        AlertMessage::warn(&mut std::io::stdout().lock(), err_msg).ok();
+                        AlertMessage::warn(err_msg).ok();
                     });
                 }
                 if !*QUIET_ERRORS_FLAG {
