@@ -152,10 +152,7 @@ fn load_target_ids(path: &str) -> TargetEventIds {
     let mut ret = TargetEventIds::new();
     let lines = utils::read_txt(path); // ファイルが存在しなければエラーとする
     if lines.is_err() {
-        AlertMessage::alert(
-            lines.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(lines.as_ref().unwrap_err()).ok();
         return ret;
     }
 
@@ -292,10 +289,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
-        AlertMessage::alert(
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
         return config;
     }
 
@@ -327,10 +321,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
 pub fn load_pivot_keywords(path: &str) {
     let read_result = utils::read_txt(path);
     if read_result.is_err() {
-        AlertMessage::alert(
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
     }
 
     read_result.unwrap().into_iter().for_each(|line| {
@@ -400,10 +391,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut config = EventInfoConfig::new();
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
-        AlertMessage::alert(
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
         return config;
     }
 

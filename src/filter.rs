@@ -54,10 +54,7 @@ impl RuleExclude {
         let f = File::open(filename);
         if f.is_err() {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::warn(
-                    &format!("{} does not exist", filename),
-                )
-                .ok();
+                AlertMessage::warn(&format!("{} does not exist", filename)).ok();
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK

@@ -190,7 +190,7 @@ impl ParseYaml {
                         yaml_contents.unwrap_err()
                     );
                     if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                        AlertMessage::warn( &errmsg)?;
+                        AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
                         ERROR_LOG_STACK

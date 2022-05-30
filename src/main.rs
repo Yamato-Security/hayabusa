@@ -19,16 +19,15 @@ use hayabusa::detections::print::{
     QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
-use hayabusa::{detections::utils::write_color_buffer, filter};
 use hayabusa::omikuji::Omikuji;
 use hayabusa::options::level_tuning::LevelTuning;
 use hayabusa::yaml::ParseYaml;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
+use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
-use termcolor::{BufferWriter, Color, ColorChoice};
 use std::cmp::Ordering;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
@@ -43,6 +42,7 @@ use std::{
     path::PathBuf,
     vec,
 };
+use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
@@ -87,9 +87,14 @@ impl App {
 
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
-            self.output_logo();    
+            self.output_logo();
             println!();
-            write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, configs::CONFIG.read().unwrap().args.usage()).ok();
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                configs::CONFIG.read().unwrap().args.usage(),
+            )
+            .ok();
             println!();
             return;
         }
@@ -122,14 +127,16 @@ impl App {
             match self.update_rules() {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
-                        write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, "Rules updated successfully.").ok();
+                        write_color_buffer(
+                            BufferWriter::stdout(ColorChoice::Always),
+                            None,
+                            "Rules updated successfully.",
+                        )
+                        .ok();
                     }
                 }
                 Err(e) => {
-                    AlertMessage::alert(
-                        &format!("Failed to update rules. {:?}  ", e),
-                    )
-                    .ok();
+                    AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
                 }
             }
             println!();
@@ -148,23 +155,19 @@ impl App {
             for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
                 let keywords_file_name = csv_path.to_owned() + "-" + key + ".txt";
                 if Path::new(&keywords_file_name).exists() {
-                    AlertMessage::alert(
-                        &format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            &keywords_file_name
-                        )
-                    )
+                    AlertMessage::alert(&format!(
+                        " The file {} already exists. Please specify a different filename.",
+                        &keywords_file_name
+                    ))
                     .ok();
                     return;
                 }
             }
             if Path::new(csv_path).exists() {
-                AlertMessage::alert(
-                    &format!(
-                        " The file {} already exists. Please specify a different filename.",
-                        csv_path
-                    )
-                )
+                AlertMessage::alert(&format!(
+                    " The file {} already exists. Please specify a different filename.",
+                    csv_path
+                ))
                 .ok();
                 return;
             }
@@ -176,11 +179,21 @@ impl App {
         }
 
         if *STATISTICS_FLAG {
-            write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, "Generating Event ID Statistics").ok();
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Generating Event ID Statistics",
+            )
+            .ok();
             println!();
         }
         if *LOGONSUMMARY_FLAG {
-            write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, "Generating Logons Summary").ok();
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Generating Logons Summary",
+            )
+            .ok();
             println!();
         }
         if configs::CONFIG
@@ -214,10 +227,7 @@ impl App {
         } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
             let evtx_files = self.collect_evtxfiles(directory);
             if evtx_files.is_empty() {
-                AlertMessage::alert(
-                    "No .evtx files were found.",
-                )
-                .ok();
+                AlertMessage::alert("No .evtx files were found.").ok();
                 return;
             }
             self.analysis_files(evtx_files, &time_filter);
@@ -270,7 +280,12 @@ impl App {
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         println!();
-        write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx())).ok();
+        write_color_buffer(
+            BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
+        )
+        .ok();
         println!();
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
@@ -308,7 +323,7 @@ impl App {
                 for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
                     output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
                 }
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, &output).ok();
+                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             } else {
                 //標準出力の場合
                 let mut output = "The following pivot keywords were found:\n".to_string();
@@ -328,17 +343,15 @@ impl App {
 
                     output += "\n";
                 }
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, &output).ok();
+                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             }
         }
     }
 
     #[cfg(not(target_os = "windows"))]
     fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
-        AlertMessage::alert(
-            "-l / --liveanalysis needs to be run as Administrator on Windows.",
-        )
-        .ok();
+        AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+            .ok();
         println!();
         None
     }
@@ -350,18 +363,13 @@ impl App {
             let evtx_files =
                 self.collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
             if evtx_files.is_empty() {
-                AlertMessage::alert(
-                    "No .evtx files were found.",
-                )
-                .ok();
+                AlertMessage::alert("No .evtx files were found.").ok();
                 return None;
             }
             Some(evtx_files)
         } else {
-            AlertMessage::alert(
-                "-l / --liveanalysis needs to be run as Administrator on Windows.",
-            )
-            .ok();
+            AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+                .ok();
             println!();
             None
         }
@@ -418,10 +426,7 @@ impl App {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => println!("{}", contents),
             Err(err) => {
-                AlertMessage::alert(
-                    &format!("{}", err),
-                )
-                .ok();
+                AlertMessage::alert(&format!("{}", err)).ok();
             }
         }
     }
@@ -434,7 +439,12 @@ impl App {
             .value_of("min-level")
             .unwrap_or("informational")
             .to_uppercase();
-        write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, &format!("Analyzing event files: {:?}", evtx_files.len())).ok();
+        write_color_buffer(
+            BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &format!("Analyzing event files: {:?}", evtx_files.len()),
+        )
+        .ok();
 
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
@@ -514,8 +524,7 @@ impl App {
                         record_result.unwrap_err()
                     );
                     if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                        AlertMessage::alert(&errmsg)
-                            .ok();
+                        AlertMessage::alert(&errmsg).ok();
                     }
                     if !*QUIET_ERRORS_FLAG {
                         ERROR_LOG_STACK
@@ -644,7 +653,12 @@ impl App {
     fn output_logo(&self) {
         let fp = &"art/logo.txt".to_string();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        write_color_buffer(BufferWriter::stdout(ColorChoice::Always),Some(Color::Green), &content).ok();
+        write_color_buffer(
+            BufferWriter::stdout(ColorChoice::Always),
+            Some(Color::Green),
+            &content,
+        )
+        .ok();
     }
 
     /// output easter egg arts
@@ -659,7 +673,7 @@ impl App {
             None => {}
             Some(path) => {
                 let content = fs::read_to_string(path).unwrap_or_default();
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always),None, &content).ok();
+                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
             }
         }
     }
@@ -702,10 +716,7 @@ impl App {
                 submodule.update(true, None)?;
                 let submodule_repo = submodule.open()?;
                 if let Err(e) = self.pull_repository(&submodule_repo) {
-                    AlertMessage::alert(
-                        &format!("Failed submodule update. {}", e),
-                    )
-                    .ok();
+                    AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
                     is_success_submodule_update = false;
                 }
             }
@@ -742,10 +753,7 @@ impl App {
             .find_remote("origin")?
             .fetch(&["main"], None, None)
             .map_err(|e| {
-                AlertMessage::alert(
-                    &format!("Failed git fetch to rules folder. {}", e),
-                )
-                .ok();
+                AlertMessage::alert(&format!("Failed git fetch to rules folder. {}", e)).ok();
             }) {
             Ok(it) => it,
             Err(_err) => return Err(git2::Error::from_str(&String::default())),
