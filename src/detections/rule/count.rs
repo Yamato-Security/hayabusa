@@ -8,7 +8,6 @@ use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
 use serde_json::Value;
-use std::io::BufWriter;
 use std::num::ParseIntError;
 use std::path::Path;
 

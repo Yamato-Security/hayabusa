@@ -423,14 +423,14 @@ mod tests {
     #[test]
     fn test_error_message() {
         let input = "TEST!";
-        AlertMessage::alert(&mut BufWriter::new(std::io::stdout().lock()), input)
+        AlertMessage::alert(input)
             .expect("[ERROR] TEST!");
     }
 
     #[test]
     fn test_warn_message() {
         let input = "TESTWarn!";
-        AlertMessage::warn(&mut BufWriter::new(std::io::stdout().lock()), input)
+        AlertMessage::warn(input)
             .expect("[WARN] TESTWarn!");
     }
 
