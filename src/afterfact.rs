@@ -212,7 +212,8 @@ fn emit_csv<W: std::io::Write>(
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: Vec<String> = Vec::new();
-    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, u128>> = HashMap::new();
+    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, u128>> =
+        HashMap::new();
 
     let levels = Vec::from([
         "critical",
@@ -312,7 +313,8 @@ fn emit_csv<W: std::io::Write>(
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
             total_detect_counts_by_level[level_suffix] += 1;
-            detect_counts_by_date_and_level.insert(detect_info.level.to_lowercase(), detect_counts_by_date);
+            detect_counts_by_date_and_level
+                .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
     }
     if displayflag {
@@ -448,17 +450,11 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let output_levels = Vec::from([
-        "critical",
-        "high",
-        "medium",
-        "low",
-        "informational",
-    ]);
+    let output_levels = Vec::from(["critical", "high", "medium", "low", "informational"]);
 
     for level in output_levels {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_day =  detect_counts_by_date.get(level).unwrap();
+        let detections_by_day = detect_counts_by_date.get(level).unwrap();
         let mut max_detect_str = String::default();
         let mut tmp_cnt: u128 = 0;
         let mut date_str = String::default();
@@ -469,7 +465,8 @@ fn _print_detection_summary_by_date(
                 tmp_cnt = *cnt;
             }
         }
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level))).ok();
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
+            .ok();
         if date_str == String::default() {
             max_detect_str = "-".to_string();
         }
@@ -477,9 +474,8 @@ fn _print_detection_summary_by_date(
             wtr,
             "Date with most {} detections: {}",
             level, &max_detect_str
-        ).ok();
-
-        
+        )
+        .ok();
     }
     buf_wtr.print(&wtr).ok();
 }
