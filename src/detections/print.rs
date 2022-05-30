@@ -287,7 +287,6 @@ mod tests {
     use crate::detections::print::{AlertMessage, Message};
     use hashbrown::HashMap;
     use serde_json::Value;
-    use std::io::BufWriter;
 
     #[test]
     fn test_create_and_append_message() {
