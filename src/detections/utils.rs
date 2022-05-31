@@ -3,6 +3,7 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs;
+use termcolor::Color;
 
 use tokio::runtime::Builder;
 use tokio::runtime::Runtime;
@@ -12,11 +13,13 @@ use regex::Regex;
 use serde_json::Value;
 use std::cmp::Ordering;
 use std::fs::File;
+use std::io;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
 use std::vec;
+use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
 use super::detection::EvtxRecordInfo;
 
@@ -237,6 +240,20 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
         key_2_value: key_2_values,
         record_information: rec_info,
     }
+}
+
+/**
+ * 標準出力のカラー出力設定を指定した値に変更し画面出力を行う関数
+ */
+pub fn write_color_buffer(
+    wtr: BufferWriter,
+    color: Option<Color>,
+    output_str: &str,
+) -> io::Result<()> {
+    let mut buf = wtr.buffer();
+    buf.set_color(ColorSpec::new().set_fg(color)).ok();
+    writeln!(buf, "{}", output_str).ok();
+    wtr.print(&buf)
 }
 
 /**

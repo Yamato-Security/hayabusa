@@ -8,7 +8,6 @@ use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
 use serde_json::Value;
-use std::io::BufWriter;
 use std::num::ParseIntError;
 use std::path::Path;
 
@@ -88,7 +87,7 @@ fn get_alias_value_in_record(
         ),
             };
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+                AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK
@@ -190,7 +189,7 @@ impl TimeFrameInfo {
         } else {
             let errmsg = format!("Timeframe is invalid. Input value:{}", value);
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+                AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK
@@ -226,7 +225,7 @@ pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
         Err(err) => {
             let errmsg = format!("Timeframe number is invalid. timeframe. {}", err);
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+                AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK

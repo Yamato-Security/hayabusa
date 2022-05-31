@@ -5,7 +5,6 @@ use crate::detections::print::QUIET_ERRORS_FLAG;
 use hashbrown::HashSet;
 use regex::Regex;
 use std::fs::File;
-use std::io::BufWriter;
 use std::io::{BufRead, BufReader};
 
 #[derive(Debug)]
@@ -55,11 +54,7 @@ impl RuleExclude {
         let f = File::open(filename);
         if f.is_err() {
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::warn(
-                    &mut BufWriter::new(std::io::stderr().lock()),
-                    &format!("{} does not exist", filename),
-                )
-                .ok();
+                AlertMessage::warn(&format!("{} does not exist", filename)).ok();
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK

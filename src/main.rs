@@ -19,12 +19,12 @@ use hayabusa::detections::print::{
     QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
-use hayabusa::filter;
 use hayabusa::omikuji::Omikuji;
 use hayabusa::options::level_tuning::LevelTuning;
 use hayabusa::yaml::ParseYaml;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
+use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
@@ -42,6 +42,7 @@ use std::{
     path::PathBuf,
     vec,
 };
+use termcolor::{BufferWriter, Color, ColorChoice};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::JoinHandle;
@@ -88,7 +89,12 @@ impl App {
         if std::env::args().len() == 1 {
             self.output_logo();
             println!();
-            println!("{}", configs::CONFIG.read().unwrap().args.usage());
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                configs::CONFIG.read().unwrap().args.usage(),
+            )
+            .ok();
             println!();
             return;
         }
@@ -105,7 +111,6 @@ impl App {
 
         if !self.is_matched_architecture_and_binary() {
             AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
                 "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
             )
             .ok();
@@ -122,15 +127,16 @@ impl App {
             match self.update_rules() {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
-                        println!("Rules updated successfully.");
+                        write_color_buffer(
+                            BufferWriter::stdout(ColorChoice::Always),
+                            None,
+                            "Rules updated successfully.",
+                        )
+                        .ok();
                     }
                 }
                 Err(e) => {
-                    AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("Failed to update rules. {:?}  ", e),
-                    )
-                    .ok();
+                    AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
                 }
             }
             println!();
@@ -139,7 +145,6 @@ impl App {
 
         if !Path::new("./config").exists() {
             AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
                 "Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe"
             )
             .ok();
@@ -150,25 +155,19 @@ impl App {
             for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
                 let keywords_file_name = csv_path.to_owned() + "-" + key + ".txt";
                 if Path::new(&keywords_file_name).exists() {
-                    AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!(
-                            " The file {} already exists. Please specify a different filename.",
-                            &keywords_file_name
-                        ),
-                    )
+                    AlertMessage::alert(&format!(
+                        " The file {} already exists. Please specify a different filename.",
+                        &keywords_file_name
+                    ))
                     .ok();
                     return;
                 }
             }
             if Path::new(csv_path).exists() {
-                AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
-                    &format!(
-                        " The file {} already exists. Please specify a different filename.",
-                        csv_path
-                    ),
-                )
+                AlertMessage::alert(&format!(
+                    " The file {} already exists. Please specify a different filename.",
+                    csv_path
+                ))
                 .ok();
                 return;
             }
@@ -180,11 +179,21 @@ impl App {
         }
 
         if *STATISTICS_FLAG {
-            println!("Generating Event ID Statistics");
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Generating Event ID Statistics",
+            )
+            .ok();
             println!();
         }
         if *LOGONSUMMARY_FLAG {
-            println!("Generating Logons Summary");
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Generating Logons Summary",
+            )
+            .ok();
             println!();
         }
         if configs::CONFIG
@@ -209,7 +218,6 @@ impl App {
                     .starts_with('.')
             {
                 AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
                     "--filepath only accepts .evtx files. Hidden files are ignored.",
                 )
                 .ok();
@@ -219,11 +227,7 @@ impl App {
         } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
             let evtx_files = self.collect_evtxfiles(directory);
             if evtx_files.is_empty() {
-                AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
-                    "No .evtx files were found.",
-                )
-                .ok();
+                AlertMessage::alert("No .evtx files were found.").ok();
                 return;
             }
             self.analysis_files(evtx_files, &time_filter);
@@ -262,11 +266,10 @@ impl App {
                         .value_of("rules")
                         .unwrap_or("rules"),
                 ) {
-                    AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &err).ok();
+                    AlertMessage::alert(&err).ok();
                 }
             } else {
                 AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
                     "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
                 )
                 .ok();
@@ -277,7 +280,12 @@ impl App {
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         println!();
-        println!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
+        write_color_buffer(
+            BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
+        )
+        .ok();
         println!();
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
@@ -315,7 +323,7 @@ impl App {
                 for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
                     output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
                 }
-                println!("{}", output);
+                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             } else {
                 //標準出力の場合
                 let mut output = "The following pivot keywords were found:\n".to_string();
@@ -335,18 +343,16 @@ impl App {
 
                     output += "\n";
                 }
-                print!("{}", output);
+                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             }
         }
     }
 
     #[cfg(not(target_os = "windows"))]
     fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
-        AlertMessage::alert(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            "-l / --liveanalysis needs to be run as Administrator on Windows.\r\n",
-        )
-        .ok();
+        AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+            .ok();
+        println!();
         None
     }
 
@@ -357,20 +363,14 @@ impl App {
             let evtx_files =
                 self.collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
             if evtx_files.is_empty() {
-                AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
-                    "No .evtx files were found.",
-                )
-                .ok();
+                AlertMessage::alert("No .evtx files were found.").ok();
                 return None;
             }
             Some(evtx_files)
         } else {
-            AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                "-l / --liveanalysis needs to be run as Administrator on Windows.\r\n",
-            )
-            .ok();
+            AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
+                .ok();
+            println!();
             None
         }
     }
@@ -380,7 +380,7 @@ impl App {
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg).ok();
+                AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK
@@ -426,11 +426,7 @@ impl App {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => println!("{}", contents),
             Err(err) => {
-                AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
-                    &format!("{}", err),
-                )
-                .ok();
+                AlertMessage::alert(&format!("{}", err)).ok();
             }
         }
     }
@@ -443,7 +439,12 @@ impl App {
             .value_of("min-level")
             .unwrap_or("informational")
             .to_uppercase();
-        println!("Analyzing event files: {:?}", evtx_files.len());
+        write_color_buffer(
+            BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &format!("Analyzing event files: {:?}", evtx_files.len()),
+        )
+        .ok();
 
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
@@ -461,7 +462,6 @@ impl App {
 
         if rule_files.is_empty() {
             AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
                 "No rules were loaded. Please download the latest rules with the --update-rules option.\r\n",
             )
             .ok();
@@ -524,8 +524,7 @@ impl App {
                         record_result.unwrap_err()
                     );
                     if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                        AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)
-                            .ok();
+                        AlertMessage::alert(&errmsg).ok();
                     }
                     if !*QUIET_ERRORS_FLAG {
                         ERROR_LOG_STACK
@@ -654,7 +653,17 @@ impl App {
     fn output_logo(&self) {
         let fp = &"art/logo.txt".to_string();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        println!("{}", content);
+        let output_color = if configs::CONFIG.read().unwrap().args.is_present("no-color") {
+            None
+        } else {
+            Some(Color::Green)
+        };
+        write_color_buffer(
+            BufferWriter::stdout(ColorChoice::Always),
+            output_color,
+            &content,
+        )
+        .ok();
     }
 
     /// output easter egg arts
@@ -669,7 +678,7 @@ impl App {
             None => {}
             Some(path) => {
                 let content = fs::read_to_string(path).unwrap_or_default();
-                println!("{}", content);
+                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
             }
         }
     }
@@ -682,9 +691,12 @@ impl App {
         let hayabusa_repo = Repository::open(Path::new("."));
         let hayabusa_rule_repo = Repository::open(Path::new("rules"));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
-            println!(
-                "Attempting to git clone the hayabusa-rules repository into the rules folder."
-            );
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Attempting to git clone the hayabusa-rules repository into the rules folder.",
+            )
+            .ok();
             // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
             result = self.clone_rules();
         } else if hayabusa_rule_repo.is_ok() {
@@ -712,11 +724,7 @@ impl App {
                 submodule.update(true, None)?;
                 let submodule_repo = submodule.open()?;
                 if let Err(e) = self.pull_repository(&submodule_repo) {
-                    AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("Failed submodule update. {}", e),
-                    )
-                    .ok();
+                    AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
                     is_success_submodule_update = false;
                 }
             }
@@ -753,11 +761,7 @@ impl App {
             .find_remote("origin")?
             .fetch(&["main"], None, None)
             .map_err(|e| {
-                AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
-                    &format!("Failed git fetch to rules folder. {}", e),
-                )
-                .ok();
+                AlertMessage::alert(&format!("Failed git fetch to rules folder. {}", e)).ok();
             }) {
             Ok(it) => it,
             Err(_err) => return Err(git2::Error::from_str(&String::default())),
@@ -775,7 +779,6 @@ impl App {
             Ok("Finished fast forward merge.".to_string())
         } else if analysis.0.is_normal() {
             AlertMessage::alert(
-            &mut BufWriter::new(std::io::stderr().lock()),
             "update-rules option is git Fast-Forward merge only. please check your rules folder."
                 ,
             ).ok();
@@ -797,7 +800,6 @@ impl App {
             }
             Err(e) => {
                 AlertMessage::alert(
-                    &mut BufWriter::new(std::io::stderr().lock()),
                     &format!(
                         "Failed to git clone into the rules folder. Please rename your rules folder name. {}",
                         e
@@ -868,10 +870,15 @@ impl App {
             *update_count_by_rule_type
                 .entry(tmp[3].to_string())
                 .or_insert(0b0) += 1;
-            println!(
-                "[Updated] {} (Modified: {} | Path: {})",
-                tmp[0], tmp[1], tmp[2]
-            );
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &format!(
+                    "[Updated] {} (Modified: {} | Path: {})",
+                    tmp[0], tmp[1], tmp[2]
+                ),
+            )
+            .ok();
         }
         println!();
         for (key, value) in &update_count_by_rule_type {
@@ -880,7 +887,12 @@ impl App {
         if !&update_count_by_rule_type.is_empty() {
             Ok("Rule updated".to_string())
         } else {
-            println!("You currently have the latest rules.");
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "You currently have the latest rules.",
+            )
+            .ok();
             Ok("You currently have the latest rules.".to_string())
         }
     }

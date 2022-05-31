@@ -2,6 +2,7 @@ extern crate lazy_static;
 use crate::detections::configs;
 use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
+use crate::detections::utils::write_color_buffer;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
@@ -15,6 +16,7 @@ use std::io::BufWriter;
 use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Mutex;
+use termcolor::{BufferWriter, ColorChoice};
 
 #[derive(Debug)]
 pub struct Message {
@@ -108,11 +110,7 @@ impl Message {
         }
         let read_result = utils::read_csv(path);
         if read_result.is_err() {
-            AlertMessage::alert(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                read_result.as_ref().unwrap_err(),
-            )
-            .ok();
+            AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
             return HashMap::default();
         }
         read_result.unwrap().into_iter().for_each(|line| {
@@ -265,13 +263,21 @@ impl AlertMessage {
     }
 
     /// ERRORメッセージを表示する関数
-    pub fn alert<W: Write>(w: &mut W, contents: &str) -> io::Result<()> {
-        writeln!(w, "[ERROR] {}", contents)
+    pub fn alert(contents: &str) -> io::Result<()> {
+        write_color_buffer(
+            BufferWriter::stderr(ColorChoice::Always),
+            None,
+            &format!("[ERROR] {}", contents),
+        )
     }
 
     /// WARNメッセージを表示する関数
-    pub fn warn<W: Write>(w: &mut W, contents: &str) -> io::Result<()> {
-        writeln!(w, "[WARN] {}", contents)
+    pub fn warn(contents: &str) -> io::Result<()> {
+        write_color_buffer(
+            BufferWriter::stderr(ColorChoice::Always),
+            None,
+            &format!("[WARN] {}", contents),
+        )
     }
 }
 
@@ -281,7 +287,6 @@ mod tests {
     use crate::detections::print::{AlertMessage, Message};
     use hashbrown::HashMap;
     use serde_json::Value;
-    use std::io::BufWriter;
 
     #[test]
     fn test_create_and_append_message() {
@@ -422,15 +427,13 @@ mod tests {
     #[test]
     fn test_error_message() {
         let input = "TEST!";
-        AlertMessage::alert(&mut BufWriter::new(std::io::stdout().lock()), input)
-            .expect("[ERROR] TEST!");
+        AlertMessage::alert(input).expect("[ERROR] TEST!");
     }
 
     #[test]
     fn test_warn_message() {
         let input = "TESTWarn!";
-        AlertMessage::warn(&mut BufWriter::new(std::io::stdout().lock()), input)
-            .expect("[WARN] TESTWarn!");
+        AlertMessage::warn(input).expect("[WARN] TESTWarn!");
     }
 
     #[test]

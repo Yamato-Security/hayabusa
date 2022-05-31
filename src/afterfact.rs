@@ -2,6 +2,7 @@ use crate::detections::configs;
 use crate::detections::print;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
+use crate::detections::utils::write_color_buffer;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
@@ -67,11 +68,7 @@ pub fn set_output_color() -> HashMap<String, Color> {
     }
     if read_result.is_err() {
         // color情報がない場合は通常の白色の出力が出てくるのみで動作への影響を与えない為warnとして処理する
-        AlertMessage::warn(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::warn(read_result.as_ref().unwrap_err()).ok();
         return color_map;
     }
     read_result.unwrap().into_iter().for_each(|line| {
@@ -82,10 +79,10 @@ pub fn set_output_color() -> HashMap<String, Color> {
         let level = line.get(0).unwrap_or(empty);
         let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
         if convert_color_result.is_err() {
-            AlertMessage::warn(
-                &mut BufWriter::new(std::io::stderr().lock()),
-                &format!("Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",line.join(","))
-            )
+            AlertMessage::warn(&format!(
+                "Failed hex convert in level_color.txt. Color output is disabled. Input Line: {}",
+                line.join(",")
+            ))
             .ok();
             return;
         }
@@ -93,7 +90,10 @@ pub fn set_output_color() -> HashMap<String, Color> {
         if level.is_empty() || color_code.len() < 3 {
             return;
         }
-        color_map.insert(level.to_lowercase(), Color::Rgb(color_code[0], color_code[1], color_code[2]));
+        color_map.insert(
+            level.to_lowercase(),
+            Color::Rgb(color_code[0], color_code[1], color_code[2]),
+        );
     });
     color_map
 }
@@ -115,23 +115,22 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
     if timestamps.len() < 5 {
-        write!(
+        writeln!(
             wtr,
             "Event Frequency Timeline could not be displayed as there needs to be more than 5 events.",
         )
         .ok();
-        writeln!(wtr).ok();
         buf_wtr.print(&wtr).ok();
         return;
     }
 
     let title = "Event Frequency Timeline";
     let header_row_space = (length - title.len()) / 2;
-    writeln!(wtr).ok();
-    write!(wtr, "{}", " ".repeat(header_row_space)).ok();
-    writeln!(wtr, "{}", title).ok();
-    writeln!(wtr).ok();
+    println!();
+    writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
+    println!();
 
     let timestamp_marker_max = if timestamps.len() < 2 {
         0
@@ -162,11 +161,7 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
 
 pub fn after_fact(all_record_cnt: usize) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
-        AlertMessage::alert(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            &format!("Failed to write CSV. {}", err),
-        )
-        .ok();
+        AlertMessage::alert(&format!("Failed to write CSV. {}", err)).ok();
         process::exit(1);
     };
 
@@ -177,11 +172,7 @@ pub fn after_fact(all_record_cnt: usize) {
             match File::create(csv_path) {
                 Ok(file) => Box::new(BufWriter::new(file)),
                 Err(err) => {
-                    AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
-                        &format!("Failed to open file. {}", err),
-                    )
-                    .ok();
+                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
                     process::exit(1);
                 }
             }
@@ -372,10 +363,6 @@ fn _print_unique_results(
     tail_word: String,
     color_map: &HashMap<String, Color>,
 ) {
-    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
-    let mut wtr = buf_wtr.buffer();
-    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-
     let levels = Vec::from([
         "critical",
         "high",
@@ -389,12 +376,15 @@ fn _print_unique_results(
     counts_by_level.reverse();
 
     // output total results
-    writeln!(
-        wtr,
-        "{} {}: {}",
-        head_word,
-        tail_word,
-        counts_by_level.iter().sum::<u128>()
+    write_color_buffer(
+        BufferWriter::stdout(ColorChoice::Always),
+        None,
+        &format!(
+            "{} {}: {}",
+            head_word,
+            tail_word,
+            counts_by_level.iter().sum::<u128>()
+        ),
     )
     .ok();
 
@@ -403,12 +393,13 @@ fn _print_unique_results(
             "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
         );
-
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level_name)))
-            .ok();
-        writeln!(wtr, "{}", output_raw_str).ok();
+        write_color_buffer(
+            BufferWriter::stdout(ColorChoice::Always),
+            _get_output_color(color_map, level_name),
+            &output_raw_str,
+        )
+        .ok();
     }
-    buf_wtr.print(&wtr).ok();
 }
 
 fn format_time(time: &DateTime<Utc>) -> String {

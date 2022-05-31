@@ -10,7 +10,6 @@ use hashbrown::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
-use std::io::BufWriter;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use yaml_rust::Yaml;
@@ -65,7 +64,7 @@ impl ParseYaml {
                 path.as_ref().to_path_buf().display(),
             );
             if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                AlertMessage::alert(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                AlertMessage::alert(&errmsg)?;
             }
             if !*QUIET_ERRORS_FLAG {
                 ERROR_LOG_STACK
@@ -97,7 +96,7 @@ impl ParseYaml {
                     read_content.unwrap_err()
                 );
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                    AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
                     ERROR_LOG_STACK
@@ -118,7 +117,7 @@ impl ParseYaml {
                     yaml_contents.unwrap_err()
                 );
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                    AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                    AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
                     ERROR_LOG_STACK
@@ -170,7 +169,7 @@ impl ParseYaml {
                         read_content.unwrap_err()
                     );
                     if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                        AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                        AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
                         ERROR_LOG_STACK
@@ -191,7 +190,7 @@ impl ParseYaml {
                         yaml_contents.unwrap_err()
                     );
                     if configs::CONFIG.read().unwrap().args.is_present("verbose") {
-                        AlertMessage::warn(&mut BufWriter::new(std::io::stderr().lock()), &errmsg)?;
+                        AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
                         ERROR_LOG_STACK

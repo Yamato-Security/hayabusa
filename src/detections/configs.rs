@@ -8,7 +8,6 @@ use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::io::BufWriter;
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
@@ -153,11 +152,7 @@ fn load_target_ids(path: &str) -> TargetEventIds {
     let mut ret = TargetEventIds::new();
     let lines = utils::read_txt(path); // ファイルが存在しなければエラーとする
     if lines.is_err() {
-        AlertMessage::alert(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            lines.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(lines.as_ref().unwrap_err()).ok();
         return ret;
     }
 
@@ -195,7 +190,6 @@ impl TargetEventTime {
                 Ok(dt) => Some(dt.with_timezone(&Utc)),
                 Err(_) => {
                     AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
                         "start-timeline field: the timestamp format is not correct.",
                     )
                     .ok();
@@ -213,7 +207,6 @@ impl TargetEventTime {
             Ok(dt) => Some(dt.with_timezone(&Utc)),
             Err(_) => {
                     AlertMessage::alert(
-                        &mut BufWriter::new(std::io::stderr().lock()),
                         "end-timeline field: the timestamp format is not correct.",
                     )
                     .ok();
@@ -296,11 +289,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
-        AlertMessage::alert(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
         return config;
     }
 
@@ -332,11 +321,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
 pub fn load_pivot_keywords(path: &str) {
     let read_result = utils::read_txt(path);
     if read_result.is_err() {
-        AlertMessage::alert(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
     }
 
     read_result.unwrap().into_iter().for_each(|line| {
@@ -406,11 +391,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     let mut config = EventInfoConfig::new();
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
-        AlertMessage::alert(
-            &mut BufWriter::new(std::io::stderr().lock()),
-            read_result.as_ref().unwrap_err(),
-        )
-        .ok();
+        AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
         return config;
     }
 
