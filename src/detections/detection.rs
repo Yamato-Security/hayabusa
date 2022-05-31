@@ -238,6 +238,8 @@ impl Detection {
         } else {
             None
         };
+        let ch_str = &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"])
+            .unwrap_or_default();
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: rule.rulepath.to_string(),
@@ -247,13 +249,7 @@ impl Detection {
                 .replace('\"', ""),
             eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
                 .unwrap_or_else(|| "-".to_owned()),
-            channel: CH_CONFIG
-                .get(
-                    &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"])
-                        .unwrap_or_default(),
-                )
-                .unwrap_or(&String::default())
-                .to_string(),
+            channel: CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
             alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
             detail: String::default(),
             tag_info: tag_info.join(" | "),
