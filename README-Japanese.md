@@ -544,6 +544,8 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 * `Microsoft-Windows-DHCP-Server/Operational` : DHCP-Svr
 * `Microsoft-Windows-DriverFrameworks-UserMode/Operational` : DvrFmwk
 * `Microsoft-Windows-NTLM/Operational` : NTLM
+* `Microsoft-Windows-Security-Mitigations/KernelMode` : SecMitigations
+* `Microsoft-Windows-Security-Mitigations/UserMode` : SecMitigations
 * `Microsoft-Windows-SmbClient/Security` : SmbCliSec
 * `Microsoft-Windows-Sysmon/Operational` : Sysmon
 * `Microsoft-Windows-TaskScheduler/Operational` : TaskSch

@@ -528,7 +528,7 @@ If you want to output all the tags defined in a rule, please specify the `--all-
 ## Channel Abbreviations
 
 In order to save space, we use the following abbreviations when displaying Channel.
-You can freely edit these abbreviations in the `config/config/channel_abbreviations.txt` configuration file.
+You can freely edit these abbreviations in the `config/channel_abbreviations.txt` configuration file.
 
 * `Application` : App
 * `DNS Server` : DNS-Svr
@@ -543,6 +543,8 @@ You can freely edit these abbreviations in the `config/config/channel_abbreviati
 * `Microsoft-Windows-DHCP-Server/Operational` : DHCP-Svr
 * `Microsoft-Windows-DriverFrameworks-UserMode/Operational` : DvrFmwk
 * `Microsoft-Windows-NTLM/Operational` : NTLM
+* `Microsoft-Windows-Security-Mitigations/KernelMode` : SecMitigations
+* `Microsoft-Windows-Security-Mitigations/UserMode` : SecMitigations
 * `Microsoft-Windows-SmbClient/Security` : SmbCliSec
 * `Microsoft-Windows-Sysmon/Operational` : Sysmon
 * `Microsoft-Windows-TaskScheduler/Operational` : TaskSch
