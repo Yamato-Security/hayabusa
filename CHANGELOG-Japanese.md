@@ -16,6 +16,7 @@
 - 新しいロゴに変更した。(#536) (@YamatoSecurity)
 - evtxファイルのファイルサイズの合計を出力するようにした。(#540) (@hitenkoku)
 - ロゴの色を変更した (#537) (@hitenkoku)
+- Channelの列にchannel_abbrevations.txtに記載されていないチャンネルも表示するようにした。(#553) (@hitenkoku)
 
 **バグ修正:**
 
