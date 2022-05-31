@@ -16,7 +16,7 @@
 - New logo. (#536) (@YamatoSecurity)
 - Display total evtx file size. (#540) (@hitenkoku)
 - Changed logo color. (#537) (@hitenkoku)
-- Display `channel` if `channel` in record  is not exist in `channel_abbrevations.txt`. (#553) (@hitenkoku)
+- Display `channel` data when `channel` in record  is not exist in `channel_abbrevations.txt`. (#553) (@hitenkoku)
 
 **Bug Fixes:**
 
