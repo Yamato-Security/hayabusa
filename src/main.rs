@@ -653,9 +653,14 @@ impl App {
     fn output_logo(&self) {
         let fp = &"art/logo.txt".to_string();
         let content = fs::read_to_string(fp).unwrap_or_default();
+        let output_color = if configs::CONFIG.read().unwrap().args.is_present("no-color") {
+            None
+        } else {
+            Some(Color::Green)
+        };
         write_color_buffer(
             BufferWriter::stdout(ColorChoice::Always),
-            Some(Color::Green),
+            output_color,
             &content,
         )
         .ok();
