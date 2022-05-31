@@ -354,6 +354,8 @@ fn emit_csv<W: std::io::Write>(
         "detections".to_string(),
         &color_map,
     );
+    println!();
+
     _print_unique_results(
         unique_detect_counts_by_level,
         "Unique".to_string(),
@@ -429,6 +431,9 @@ fn _print_unique_results(
     .ok();
 
     for (i, level_name) in levels.iter().enumerate() {
+        if "undefined" == *level_name {
+            continue;
+        }
         let output_raw_str = format!(
             "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
