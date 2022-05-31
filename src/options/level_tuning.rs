@@ -105,6 +105,7 @@ impl LevelTuning {
                 .ok();
             }
         }
+        println!();
         Result::Ok(())
     }
 }

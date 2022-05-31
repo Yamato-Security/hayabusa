@@ -203,6 +203,21 @@ fn emit_csv<W: std::io::Write>(
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: Vec<String> = Vec::new();
+    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, u128>> =
+        HashMap::new();
+
+    let levels = Vec::from([
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "informational",
+        "undefined",
+    ]);
+    // レベル別、日ごとの集計用変数の初期化
+    for level_init in levels {
+        detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
+    }
 
     println!();
     let mut timestamps: Vec<i64> = Vec::new();
@@ -216,6 +231,7 @@ fn emit_csv<W: std::io::Write>(
             if level == "informational" {
                 level = "info".to_string();
             }
+            let time_str = format_time(time);
             if displayflag {
                 let record_id = detect_info
                     .record_id
@@ -232,7 +248,7 @@ fn emit_csv<W: std::io::Write>(
                     .collect::<String>();
 
                 let dispformat = DisplayFormat {
-                    timestamp: &_format_cellpos(&format_time(time), ColPos::First),
+                    timestamp: &_format_cellpos(&time_str, ColPos::First),
                     level: &_format_cellpos(&level, ColPos::Other),
                     computer: &_format_cellpos(&detect_info.computername, ColPos::Other),
                     event_i_d: &_format_cellpos(&detect_info.eventid, ColPos::Other),
@@ -258,7 +274,7 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 wtr.serialize(CsvFormat {
-                    timestamp: &format_time(time),
+                    timestamp: &time_str,
                     level: &level,
                     computer: &detect_info.computername,
                     event_i_d: &detect_info.eventid,
@@ -275,11 +291,21 @@ fn emit_csv<W: std::io::Write>(
             let level_suffix = *configs::LEVELMAP
                 .get(&detect_info.level.to_uppercase())
                 .unwrap_or(&0) as usize;
+            let time_str_date = &time_str[0..10];
+            let mut detect_counts_by_date = detect_counts_by_date_and_level
+                .get(&detect_info.level.to_lowercase())
+                .unwrap()
+                .clone();
+            *detect_counts_by_date
+                .entry(time_str_date.to_string())
+                .or_insert(0) += 1;
             if !detected_rule_files.contains(&detect_info.rulepath) {
                 detected_rule_files.push(detect_info.rulepath.clone());
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
             total_detect_counts_by_level[level_suffix] += 1;
+            detect_counts_by_date_and_level
+                .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
     }
     if displayflag {
@@ -309,12 +335,18 @@ fn emit_csv<W: std::io::Write>(
         reducted_record_cnt, reducted_percent
     );
     println!();
+
+    _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
+
+    println!();
     _print_unique_results(
         total_detect_counts_by_level,
         "Total".to_string(),
         "detections".to_string(),
         &color_map,
     );
+    println!();
+
     _print_unique_results(
         unique_detect_counts_by_level,
         "Unique".to_string(),
@@ -389,6 +421,9 @@ fn _print_unique_results(
     .ok();
 
     for (i, level_name) in levels.iter().enumerate() {
+        if "undefined" == *level_name {
+            continue;
+        }
         let output_raw_str = format!(
             "{} {} {}: {}",
             head_word, level_name, tail_word, counts_by_level[i]
@@ -400,6 +435,45 @@ fn _print_unique_results(
         )
         .ok();
     }
+}
+
+/// 各レベル毎で最も高い検知数を出した日付を出力する
+fn _print_detection_summary_by_date(
+    detect_counts_by_date: HashMap<String, HashMap<String, u128>>,
+    color_map: &HashMap<String, Color>,
+) {
+    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
+    let output_levels = Vec::from(["critical", "high", "medium", "low", "informational"]);
+
+    for level in output_levels {
+        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
+        let detections_by_day = detect_counts_by_date.get(level).unwrap();
+        let mut max_detect_str = String::default();
+        let mut tmp_cnt: u128 = 0;
+        let mut date_str = String::default();
+        for (date, cnt) in detections_by_day {
+            if cnt > &tmp_cnt {
+                date_str = date.clone();
+                max_detect_str = format!("{} (Count: {})", date, cnt);
+                tmp_cnt = *cnt;
+            }
+        }
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
+            .ok();
+        if date_str == String::default() {
+            max_detect_str = "-".to_string();
+        }
+        writeln!(
+            wtr,
+            "Date with most {} detections: {}",
+            level, &max_detect_str
+        )
+        .ok();
+    }
+    buf_wtr.print(&wtr).ok();
 }
 
 fn format_time(time: &DateTime<Utc>) -> String {
