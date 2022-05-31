@@ -691,9 +691,12 @@ impl App {
         let hayabusa_repo = Repository::open(Path::new("."));
         let hayabusa_rule_repo = Repository::open(Path::new("rules"));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
-            println!(
-                "Attempting to git clone the hayabusa-rules repository into the rules folder."
-            );
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Attempting to git clone the hayabusa-rules repository into the rules folder.",
+            )
+            .ok();
             // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
             result = self.clone_rules();
         } else if hayabusa_rule_repo.is_ok() {
@@ -867,10 +870,15 @@ impl App {
             *update_count_by_rule_type
                 .entry(tmp[3].to_string())
                 .or_insert(0b0) += 1;
-            println!(
-                "[Updated] {} (Modified: {} | Path: {})",
-                tmp[0], tmp[1], tmp[2]
-            );
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &format!(
+                    "[Updated] {} (Modified: {} | Path: {})",
+                    tmp[0], tmp[1], tmp[2]
+                ),
+            )
+            .ok();
         }
         println!();
         for (key, value) in &update_count_by_rule_type {
@@ -879,7 +887,12 @@ impl App {
         if !&update_count_by_rule_type.is_empty() {
             Ok("Rule updated".to_string())
         } else {
-            println!("You currently have the latest rules.");
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "You currently have the latest rules.",
+            )
+            .ok();
             Ok("You currently have the latest rules.".to_string())
         }
     }
