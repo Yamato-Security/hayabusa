@@ -61,9 +61,7 @@ impl LevelTuning {
                 write_color_buffer(
                     BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &format!(
-                        "path: {}", path
-                    ),
+                    &format!("path: {}", path),
                 )
                 .ok();
                 let mut content = match fs::read_to_string(&path) {
