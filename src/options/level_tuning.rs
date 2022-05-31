@@ -92,8 +92,9 @@ impl LevelTuning {
                 );
             }
         }
+        println!();
         Result::Ok(())
-    }
+    } 
 }
 
 #[cfg(test)]
