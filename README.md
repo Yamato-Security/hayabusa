@@ -65,7 +65,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
   - [Event Fequency Timeline](#event-fequency-timeline)
-  - [Date with most detections by level](#date-with-most-detections-by-level)
+  - [Dates with most detections categorized by level](#dates-with-most-detections-categorized-by-level)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -573,9 +573,9 @@ If you want to disable color output, you can use `--no-color` option.
 The Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events.
 
-## Date with most detections by level
+## Dates with most detections categorized by level
 
-The date with most detections summary by level feature displays date and count with most detections summary by level.
+A summary of the dates with the most detections categorized by level (`critical`, `high`, etc...).
 
 # Hayabusa Rules
 
