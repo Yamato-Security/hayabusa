@@ -97,7 +97,7 @@ impl Message {
         Message { map: messages }
     }
 
-    /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。tagではこのHashMapのキーに対応しない出力は出力しないものとする
+    /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
     /// ex. attack.impact,Impact
     pub fn create_output_filter_config(
         path: &str,

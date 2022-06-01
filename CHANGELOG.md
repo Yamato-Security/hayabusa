@@ -16,6 +16,7 @@
 - New logo. (#536) (@YamatoSecurity)
 - Display total evtx file size. (#540) (@hitenkoku)
 - Changed logo color. (#537) (@hitenkoku)
+- Display the original `Channel` name when not specified in `channel_abbrevations.txt`. (#553) (@hitenkoku)
 
 **Bug Fixes:**
 
