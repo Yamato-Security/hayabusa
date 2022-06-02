@@ -202,11 +202,13 @@ fn emit_csv<W: std::io::Write>(
     // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut detected_rule_files: Vec<String> = Vec::new();
+    let mut detected_rule_files: HashSet<String> = HashSet::new();
+    let mut detected_computer_and_rule_names: HashSet<String> = HashSet::new();
     let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, u128>> =
         HashMap::new();
     let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
+
     let levels = Vec::from([
         "critical",
         "high",
@@ -302,23 +304,27 @@ fn emit_csv<W: std::io::Write>(
                 .entry(time_str_date.to_string())
                 .or_insert(0) += 1;
             if !detected_rule_files.contains(&detect_info.rulepath) {
-                detected_rule_files.push(detect_info.rulepath.clone());
+                detected_rule_files.insert(detect_info.rulepath.clone());
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
-            let mut detect_counts_by_computer = detect_counts_by_computer_and_level
-                .get(&detect_info.level.to_lowercase())
-                .unwrap()
-                .clone();
-            *detect_counts_by_computer
-                .entry(Clone::clone(&detect_info.computername))
-                .or_insert(0) += 1;
+            let computer_rule_check_key =  format!("{}|{}", &detect_info.computername ,&detect_info.rulepath);
+            if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
+                detected_computer_and_rule_names.insert(computer_rule_check_key);
+                let mut detect_counts_by_computer = detect_counts_by_computer_and_level
+                    .get(&detect_info.level.to_lowercase())
+                    .unwrap()
+                    .clone();
+                *detect_counts_by_computer
+                    .entry(Clone::clone(&detect_info.computername))
+                    .or_insert(0) += 1;
+                    detect_counts_by_computer_and_level
+                        .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
+            }
 
             total_detect_counts_by_level[level_suffix] += 1;
             detect_counts_by_date_and_level
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
 
-            detect_counts_by_computer_and_level
-                .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
         }
     }
     if displayflag {
