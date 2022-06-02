@@ -18,7 +18,9 @@ use yaml_rust::YamlLoader;
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
     pub rulecounter: HashMap<String, u128>,
-    pub ignorerule_count: u128,
+    pub exclude_rule_count: u128,
+    pub noisy_rule_count: u128,
+    pub deprecate_rule_count: u128,
     pub errorrule_count: u128,
 }
 
@@ -33,7 +35,9 @@ impl ParseYaml {
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
-            ignorerule_count: 0,
+            exclude_rule_count: 0,
+            noisy_rule_count: 0,
+            deprecate_rule_count: 0,
             errorrule_count: 0,
         }
     }
@@ -222,8 +226,12 @@ impl ParseYaml {
                         .get(&rule_id.unwrap_or("").to_string())
                     {
                         None => (),
-                        Some(_) => {
-                            self.ignorerule_count += 1;
+                        Some(v) => {
+                            if v.contains("exclude_rule") {
+                                self.exclude_rule_count += 1;
+                            } else {
+                                self.noisy_rule_count += 1;
+                            }
                             return Option::None;
                         }
                     }
@@ -259,9 +267,9 @@ impl ParseYaml {
                     .args
                     .is_present("enable-deprecated-rules")
                 {
-                    let rule_status = &yaml_doc["status"].as_str();
-                    if rule_status.is_some() && rule_status.unwrap() == "deprecated" {
-                        self.ignorerule_count += 1;
+                    let rule_status = &yaml_doc["status"].as_str().unwrap_or_default();
+                    if *rule_status == "deprecated" {
+                        self.deprecate_rule_count += 1;
                         return Option::None;
                     }
                 }
