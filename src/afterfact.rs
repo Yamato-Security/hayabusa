@@ -515,7 +515,7 @@ fn _print_detection_summary_by_computer(
 
             writeln!(
                 wtr,
-                "In {} levels, Computer Names with most detections categorized could not be displayed as there needs to be more than 2 computer names.", level,
+                "In {} levels, computers with most detections could not be displayed as there needs to be 2 or more computer names.", level,
             )
             .ok();
             buf_wtr.print(&wtr).ok();
@@ -535,7 +535,7 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
             .ok();
-        writeln!(wtr, "Date with most {} detections: {}", level, &result_str).ok();
+        writeln!(wtr, "Top 5 computers with most {} detections: {}", level, &result_str).ok();
     }
     buf_wtr.print(&wtr).ok();
 }
