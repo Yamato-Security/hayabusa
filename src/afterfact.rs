@@ -535,7 +535,12 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
             .ok();
-        writeln!(wtr, "Top 5 computers with most {} detections: {}", level, &result_str).ok();
+        writeln!(
+            wtr,
+            "Top 5 computers with most {} detections: {}",
+            level, &result_str
+        )
+        .ok();
     }
     buf_wtr.print(&wtr).ok();
 }
