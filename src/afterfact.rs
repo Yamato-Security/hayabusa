@@ -309,12 +309,14 @@ fn emit_csv<W: std::io::Write>(
                 .get(&detect_info.level.to_lowercase())
                 .unwrap()
                 .clone();
-            *detect_counts_by_computer.entry(Clone::clone(&detect_info.computername)).or_insert(0) += 1;
-            
+            *detect_counts_by_computer
+                .entry(Clone::clone(&detect_info.computername))
+                .or_insert(0) += 1;
+
             total_detect_counts_by_level[level_suffix] += 1;
             detect_counts_by_date_and_level
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
-            
+
             detect_counts_by_computer_and_level
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
         }
@@ -501,12 +503,11 @@ fn _print_detection_summary_by_computer(
 
     let output_levels = Vec::from(["critical", "high", "medium", "low", "informational"]);
 
-
     for level in output_levels {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
-        let mut result_vec:Vec<String> = Vec::new();
-        let mut sorted_detections:Vec<(&String, &i128)> =  detections_by_computer.iter().collect();
+        let mut result_vec: Vec<String> = Vec::new();
+        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         for x in sorted_detections.iter().take(3) {
@@ -517,15 +518,10 @@ fn _print_detection_summary_by_computer(
         } else {
             result_vec.join(", ")
         };
-        
+
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
             .ok();
-        writeln!(
-            wtr,
-            "Date with most {} detections: {}",
-            level, &result_str
-        )
-        .ok();
+        writeln!(wtr, "Date with most {} detections: {}", level, &result_str).ok();
     }
     buf_wtr.print(&wtr).ok();
 }
