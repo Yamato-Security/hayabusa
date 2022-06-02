@@ -307,7 +307,8 @@ fn emit_csv<W: std::io::Write>(
                 detected_rule_files.insert(detect_info.rulepath.clone());
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
-            let computer_rule_check_key =  format!("{}|{}", &detect_info.computername ,&detect_info.rulepath);
+            let computer_rule_check_key =
+                format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
             if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
                 detected_computer_and_rule_names.insert(computer_rule_check_key);
                 let mut detect_counts_by_computer = detect_counts_by_computer_and_level
@@ -317,14 +318,13 @@ fn emit_csv<W: std::io::Write>(
                 *detect_counts_by_computer
                     .entry(Clone::clone(&detect_info.computername))
                     .or_insert(0) += 1;
-                    detect_counts_by_computer_and_level
-                        .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
+                detect_counts_by_computer_and_level
+                    .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
             }
 
             total_detect_counts_by_level[level_suffix] += 1;
             detect_counts_by_date_and_level
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
-
         }
     }
     if displayflag {
