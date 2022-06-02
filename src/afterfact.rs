@@ -507,28 +507,16 @@ fn _print_detection_summary_by_computer(
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
         let mut result_vec: Vec<String> = Vec::new();
-        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
+        //computer nameで-となっているものは除外して集計する
+        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().filter(|a| a.0 != "-").collect();
 
-        // 検知したイベントがすべて同じ端末もしくは検知イベントがない場合は次のレベルを調査する
-        if sorted_detections.len() < 2 {
-            wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-
-            writeln!(
-                wtr,
-                "In {} levels, computers with most detections could not be displayed as there needs to be 2 or more computer names.", level,
-            )
-            .ok();
-            buf_wtr.print(&wtr).ok();
-
-            continue;
-        }
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         for x in sorted_detections.iter().take(5) {
             result_vec.push(format!("{} ({})", x.0, x.1));
         }
         let result_str = if result_vec.is_empty() {
-            "-".to_string()
+            "n/a".to_string()
         } else {
             result_vec.join(", ")
         };
