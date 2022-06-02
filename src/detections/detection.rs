@@ -363,9 +363,9 @@ impl Detection {
         if *STATISTICS_FLAG {
             return;
         }
+        println!("Deprecated rules: {}", deprecate_count);
         println!("Excluded rules: {}", exclude_count);
         println!("Noisy rules: {}", noisy_count);
-        println!("Deprecated rules: {}", deprecate_count);
         println!("Rule parsing errors: {}", parseerror_count);
         println!();
         let mut enable_total = 0;
