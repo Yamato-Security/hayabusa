@@ -290,7 +290,7 @@ mod tests {
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
-    use hashbrown::HashSet;
+    use hashbrown::HashMap;
     use std::path::Path;
     use yaml_rust::YamlLoader;
 
@@ -314,7 +314,7 @@ mod tests {
 
         let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude {
-            no_use_rule: HashSet::new(),
+            no_use_rule: HashMap::new(),
         };
         let _ = &yaml.read_dir("test_files/rules/yaml/", &String::default(), &exclude_ids);
         assert_ne!(yaml.files.len(), 0);
@@ -400,7 +400,16 @@ mod tests {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
-        assert_eq!(yaml.ignorerule_count, 10);
+        assert_eq!(yaml.exclude_rule_count, 5);
+    }
+    #[test]
+    fn test_all_noisy_rules_file() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/yaml");
+        yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
+        assert_eq!(yaml.noisy_rule_count, 5);
     }
     #[test]
     fn test_none_exclude_rules_file() {
@@ -410,7 +419,7 @@ mod tests {
         let path = Path::new("test_files/rules/yaml");
         let exclude_ids = RuleExclude::default();
         yaml.read_dir(path, "", &exclude_ids).unwrap();
-        assert_eq!(yaml.ignorerule_count, 0);
+        assert_eq!(yaml.exclude_rule_count, 0);
     }
     #[test]
     fn test_exclude_deprecated_rules_file() {
@@ -418,6 +427,6 @@ mod tests {
         let path = Path::new("test_files/rules/deprecated");
         let exclude_ids = RuleExclude::default();
         yaml.read_dir(path, "", &exclude_ids).unwrap();
-        assert_eq!(yaml.ignorerule_count, 1);
+        assert_eq!(yaml.deprecate_rule_count, 1);
     }
 }
