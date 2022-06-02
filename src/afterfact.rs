@@ -524,7 +524,7 @@ fn _print_detection_summary_by_computer(
         }
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
-        for x in sorted_detections.iter().take(3) {
+        for x in sorted_detections.iter().take(5) {
             result_vec.push(format!("{} ({})", x.0, x.1));
         }
         let result_str = if result_vec.is_empty() {
