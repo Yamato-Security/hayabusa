@@ -66,6 +66,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Color Output](#color-output)
   - [Event Fequency Timeline](#event-fequency-timeline)
   - [Dates with most detections categorized by level](#dates-with-most-detections-categorized-by-level)
+  - [Computer Names with most detections categorized by level](#computer-names-with-most-detections-categorized-by-level)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -578,6 +579,10 @@ Note: There needs to be more than 5 events.
 ## Dates with most detections categorized by level
 
 A summary of the dates with the most detections categorized by level (`critical`, `high`, etc...).
+
+## Computer Names with most detections categorized by level
+
+A summary of the computer names with the most detections categorized by level (`critical`, `high`, etc...).
 
 # Hayabusa Rules
 
