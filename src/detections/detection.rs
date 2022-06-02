@@ -131,7 +131,7 @@ impl Detection {
                 &parseerror_count,
                 &rulefile_loader.exclude_rule_count,
                 &rulefile_loader.noisy_rule_count,
-                &rulefile_loader.deprecate_rule_count
+                &rulefile_loader.deprecate_rule_count,
             );
         }
         ret
@@ -373,10 +373,7 @@ impl Detection {
             println!("{} rules: {}", key, value);
             enable_total += value;
         });
-        println!(
-            "Total enabled detection rules: {}",
-            enable_total
-        );
+        println!("Total enabled detection rules: {}", enable_total);
         println!();
     }
 }
