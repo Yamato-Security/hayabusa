@@ -508,6 +508,20 @@ fn _print_detection_summary_by_computer(
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
         let mut result_vec: Vec<String> = Vec::new();
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
+
+        // 検知したイベントがすべて同じ端末もしくは検知イベントがない場合は次のレベルを調査する
+        if sorted_detections.len() < 2 {
+            wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
+            writeln!(
+                wtr,
+                "In {} levels, Computer Names with most detections categorized could not be displayed as there needs to be more than 2 computer names.", level,
+            )
+            .ok();
+            buf_wtr.print(&wtr).ok();
+
+            continue;
+        }
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         for x in sorted_detections.iter().take(3) {
