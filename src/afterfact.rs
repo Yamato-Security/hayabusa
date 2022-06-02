@@ -508,7 +508,10 @@ fn _print_detection_summary_by_computer(
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
         let mut result_vec: Vec<String> = Vec::new();
         //computer nameで-となっているものは除外して集計する
-        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().filter(|a| a.0 != "-").collect();
+        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer
+            .iter()
+            .filter(|a| a.0 != "-")
+            .collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
