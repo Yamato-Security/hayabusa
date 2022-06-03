@@ -338,6 +338,11 @@ fn emit_csv<W: std::io::Write>(
     }
     println!();
 
+    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
+    writeln!(disp_wtr_buf, "Results Summary:");
+    disp_wtr.print(&disp_wtr_buf).ok();
+    println!();
+
     let size = terminal_size();
     let terminal_width = match size {
         Some((Width(w), _)) => w as usize,
