@@ -202,8 +202,11 @@ fn emit_csv<W: std::io::Write>(
     // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut detected_rule_files: Vec<String> = Vec::new();
+    let mut detected_rule_files: HashSet<String> = HashSet::new();
+    let mut detected_computer_and_rule_names: HashSet<String> = HashSet::new();
     let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, u128>> =
+        HashMap::new();
+    let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
 
     let levels = Vec::from([
@@ -217,6 +220,7 @@ fn emit_csv<W: std::io::Write>(
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
+        detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
     }
 
     println!();
@@ -300,9 +304,28 @@ fn emit_csv<W: std::io::Write>(
                 .entry(time_str_date.to_string())
                 .or_insert(0) += 1;
             if !detected_rule_files.contains(&detect_info.rulepath) {
-                detected_rule_files.push(detect_info.rulepath.clone());
+                detected_rule_files.insert(detect_info.rulepath.clone());
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
+            let computer_rule_check_key =
+                format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
+            if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
+                detected_computer_and_rule_names.insert(computer_rule_check_key);
+                let mut detect_counts_by_computer = detect_counts_by_computer_and_level
+                    .get(&detect_info.level.to_lowercase())
+                    .unwrap_or_else(|| {
+                        detect_counts_by_computer_and_level
+                            .get("undefined")
+                            .unwrap()
+                    })
+                    .clone();
+                *detect_counts_by_computer
+                    .entry(Clone::clone(&detect_info.computername))
+                    .or_insert(0) += 1;
+                detect_counts_by_computer_and_level
+                    .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
+            }
+
             total_detect_counts_by_level[level_suffix] += 1;
             detect_counts_by_date_and_level
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
@@ -336,9 +359,6 @@ fn emit_csv<W: std::io::Write>(
     );
     println!();
 
-    _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
-
-    println!();
     _print_unique_results(
         total_detect_counts_by_level,
         "Total".to_string(),
@@ -353,6 +373,13 @@ fn emit_csv<W: std::io::Write>(
         "detections".to_string(),
         &color_map,
     );
+    println!();
+
+    _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
+    println!();
+
+    _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
+
     Ok(())
 }
 
@@ -457,19 +484,63 @@ fn _print_detection_summary_by_date(
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
                 date_str = date.clone();
-                max_detect_str = format!("{} (Count: {})", date, cnt);
+                max_detect_str = format!("{} ({})", date, cnt);
                 tmp_cnt = *cnt;
             }
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
             .ok();
         if date_str == String::default() {
-            max_detect_str = "-".to_string();
+            max_detect_str = "n/a".to_string();
         }
         writeln!(
             wtr,
-            "Date with most {} detections: {}",
+            "Date with most total {} detections: {}",
             level, &max_detect_str
+        )
+        .ok();
+    }
+    buf_wtr.print(&wtr).ok();
+}
+
+/// 各レベル毎で最も高い検知数を出した日付を出力する
+fn _print_detection_summary_by_computer(
+    detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
+    color_map: &HashMap<String, Color>,
+) {
+    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
+    let output_levels = Vec::from(["critical", "high", "medium", "low", "informational"]);
+
+    for level in output_levels {
+        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
+        let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
+        let mut result_vec: Vec<String> = Vec::new();
+        //computer nameで-となっているものは除外して集計する
+        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer
+            .iter()
+            .filter(|a| a.0 != "-")
+            .collect();
+
+        sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+
+        for x in sorted_detections.iter().take(5) {
+            result_vec.push(format!("{} ({})", x.0, x.1));
+        }
+        let result_str = if result_vec.is_empty() {
+            "n/a".to_string()
+        } else {
+            result_vec.join(", ")
+        };
+
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
+            .ok();
+        writeln!(
+            wtr,
+            "Top 5 computers with most unique {} detections: {}",
+            level, &result_str
         )
         .ok();
     }

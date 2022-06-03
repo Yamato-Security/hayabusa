@@ -66,7 +66,8 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [プログレスバー](#プログレスバー)
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
   - [イベント頻度タイムライン](#イベント頻度タイムライン)
-  - [各レベルの最多検知日の出力](#各レベルの最多検知日の出力)
+  - [最多検知日の出力](#最多検知日の出力)
+  - [最多検知端末名の出力](#最多検知端末名の出力)
 - [Hayabusaルール](#hayabusaルール)
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
   - [検知ルールのチューニング](#検知ルールのチューニング)
@@ -87,7 +88,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 
 ### スレット(脅威)ハンティング
 
-Hayabusaには現在、2200以上のSigmaルールと約125のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントレスポンスや定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にインストールして、中央サーバーにアラートを返す仕組みを作ることです。
+Hayabusaには現在、2300以上のSigmaルールと130以上のHayabusa検知ルールがあり、定期的にルールが追加されています。 最終的な目標はインシデントレスポンスや定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にインストールして、中央サーバーにアラートを返す仕組みを作ることです。
 
 ### フォレンジックタイムラインの高速生成
 
@@ -155,7 +156,7 @@ CSVのタイムラインをElastic Stackにインポートする方法は[こち
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
 * ルールレベルのチューニング。
-* イベントログから不審なユーザやファイルを素早く特定するのに有用な、ピボットキーワードの一覧作成。
+* イベントログから不審なユーザやファイルを素早く特定するためのピボットキーワードの一覧作成。
 * 詳細な調査のために全フィールド情報の出力。
 * 成功と失敗したユーザログオンの要約。
 
@@ -453,7 +454,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 ## ピボットキーワードの作成
 
 `-p`もしくは`--pivot-keywords-list`オプションを使うことで不審なユーザやホスト名、プロセスなどを一覧で出力することができ、イベントログから素早く特定することができます。
-ピボットキーワードのカスタマイズは`config/pivot_keywords.txt`を変更することで行うことができます。以下はデフォルトの設定になります。:
+ピボットキーワードのカスタマイズは`config/pivot_keywords.txt`を変更することで行うことができます。以下はデフォルトの設定になります:
 
 ```
 Users.SubjectUserName
@@ -577,9 +578,13 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
 マーカーの数は最大10個です。
 
-## 各レベルの最多検知日の出力
+## 最多検知日の出力
 
 各レベルで最も検知された日付を画面に出力します。
+
+## 最多検知端末名の出力
+
+各レベルで多く検知されたユニークなイベントが多い端末名上位5つを画面に出力します。
 
 # Hayabusaルール
 
@@ -676,6 +681,7 @@ id,new_level
 * [LogonTracer](https://github.com/JPCERTCC/LogonTracer) - [JPCERTCC](https://twitter.com/jpcert) による、横方向の動きを検知するためにログオンを視覚化するグラフィカルなインターフェース。
 * [RustyBlue](https://github.com/Yamato-Security/RustyBlue) - 大和セキュリティによるDeepBlueCLIのRust版。
 * [Sigma](https://github.com/SigmaHQ/Sigma) - コミュニティベースの汎用SIEMルール。
+* [SOF-ELK](https://github.com/philhagen/sof-elk) - [Phil Hagen](https://twitter.com/philhagen) によるDFIR解析用のElastic Stack VM。
 * [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - evtxファイルをSecurityOnionにインポートするツール。
 * [SysmonTools](https://github.com/nshalabi/SysmonTools) - Sysmonの設定とオフライン可視化ツール。
 * [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - [Eric Zimmerman](https://twitter.com/ericrzimmerman) による最高のCSVタイムラインアナライザ。

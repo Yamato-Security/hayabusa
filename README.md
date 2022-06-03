@@ -65,7 +65,8 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
   - [Event Fequency Timeline](#event-fequency-timeline)
-  - [Dates with most detections categorized by level](#dates-with-most-detections-categorized-by-level)
+  - [Dates with most total detections](#dates-with-most-total-detections)
+  - [Top 5 computers with most unique detections](#top-5-computers-with-most-unique-detections)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -575,9 +576,13 @@ If you want to disable color output, you can use `--no-color` option.
 The Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events.
 
-## Dates with most detections categorized by level
+## Dates with most total detections
 
-A summary of the dates with the most detections categorized by level (`critical`, `high`, etc...).
+A summary of the dates with the most total detections categorized by level (`critical`, `high`, etc...).
+
+## Top 5 computers with most unique detections
+
+The top 5 computers with the most unique detections categorized by level (`critical`, `high`, etc...).
 
 # Hayabusa Rules
 
@@ -675,6 +680,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 * [LogonTracer](https://github.com/JPCERTCC/LogonTracer) - A graphical interface to visualize logons to detect lateral movement by [JPCERTCC](https://twitter.com/jpcert_en).
 * [RustyBlue](https://github.com/Yamato-Security/RustyBlue) - Rust port of DeepBlueCLI by Yamato Security.
 * [Sigma](https://github.com/SigmaHQ/sigma) - Community based generic SIEM rules.
+* [SOF-ELK](https://github.com/philhagen/sof-elk) - A pre-packaged VM with Elastic Stack to import data for DFIR analysis by [Phil Hagen](https://twitter.com/philhagen)
 * [so-import-evtx](https://docs.securityonion.net/en/2.3/so-import-evtx.html) - Import evtx files into Security Onion.
 * [SysmonTools](https://github.com/nshalabi/SysmonTools) - Configuration and off-line log visualization tool for Sysmon.
 * [Timeline Explorer](https://ericzimmerman.github.io/#!index.md) - The best CSV timeline analyzer by [Eric Zimmerman](https://twitter.com/ericrzimmerman).
