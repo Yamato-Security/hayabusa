@@ -7,8 +7,8 @@
 - Added Event Frequency Timeline feature to visualize the number of events. (Note: There needs to be more than 5 events.) (#533)(@hitenkoku)
 - Display all the `tags` defined in a rule to the `MitreAttack` column when saving to CSV file with the `--all-tags` option. (#525) (@hitenkoku)
 - Added the `-R / --display-record-id` option: Display the event record ID (`<Event><System><EventRecordID>`). (#548) (@hitenkoku)
-- Display date with most detections by level. (#550) (@hitenkoku)
-- Display computer name with most detections by level. (#557) (@hitenkoku)
+- Display dates with most detections. (#550) (@hitenkoku)
+- Display the top 5 computers with the most unique detections. (#557) (@hitenkoku)
 
 **Enhancements:**
 
