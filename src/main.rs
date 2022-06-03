@@ -484,6 +484,7 @@ impl App {
         }
         if configs::CONFIG.read().unwrap().args.is_present("output") {
             println!();
+            println!();
             println!("Analysis finished. Please wait while the results are being saved.");
         }
         println!();

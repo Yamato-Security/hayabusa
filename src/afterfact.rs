@@ -222,8 +222,9 @@ fn emit_csv<W: std::io::Write>(
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
         detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
     }
-
-    println!();
+    if displayflag {
+        println!();
+    }
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
@@ -333,13 +334,13 @@ fn emit_csv<W: std::io::Write>(
     }
     if displayflag {
         disp_wtr.print(&disp_wtr_buf)?;
+        println!();
     } else {
         wtr.flush()?;
     }
-    println!();
 
+    disp_wtr_buf.clear();
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
-    writeln!(disp_wtr_buf).ok();
     writeln!(disp_wtr_buf, "Results Summary:").ok();
     disp_wtr.print(&disp_wtr_buf).ok();
 
