@@ -87,7 +87,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting
 
-Hayabusa currently has over 2200 sigma rules and around 125 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
+Hayabusa currently has over 2300 sigma rules and over 130 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
 
 ### Fast Forensics Timeline Generation
 
