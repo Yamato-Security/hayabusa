@@ -338,8 +338,9 @@ fn emit_csv<W: std::io::Write>(
     }
     println!();
 
+    println!();
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
-    writeln!(disp_wtr_buf, "Results Summary:");
+    writeln!(disp_wtr_buf, "Results Summary:").ok();
     disp_wtr.print(&disp_wtr_buf).ok();
     println!();
 
