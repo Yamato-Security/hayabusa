@@ -935,9 +935,9 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "1.3.0-dev"
+version = "1.3.0"
 dependencies = [
- "base64 0.13.0",
+ "base64 0.10.1",
  "bytesize",
  "chrono",
  "clap 2.34.0",
