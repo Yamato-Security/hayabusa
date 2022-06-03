@@ -294,7 +294,7 @@ fn emit_csv<W: std::io::Write>(
             let time_str_date = &time_str[0..10];
             let mut detect_counts_by_date = detect_counts_by_date_and_level
                 .get(&detect_info.level.to_lowercase())
-                .unwrap()
+                .unwrap_or_else(|| detect_counts_by_date_and_level.get("undefined").unwrap())
                 .clone();
             *detect_counts_by_date
                 .entry(time_str_date.to_string())
