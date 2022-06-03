@@ -1,6 +1,6 @@
 # Changes
 
-## v1.3.0 [2022/xx/xx]
+## v1.3.0 [2022/06/04]
 
 **New Features:**
 
