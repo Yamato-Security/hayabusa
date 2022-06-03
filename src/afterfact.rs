@@ -313,7 +313,11 @@ fn emit_csv<W: std::io::Write>(
                 detected_computer_and_rule_names.insert(computer_rule_check_key);
                 let mut detect_counts_by_computer = detect_counts_by_computer_and_level
                     .get(&detect_info.level.to_lowercase())
-                    .unwrap()
+                    .unwrap_or_else(|| {
+                        detect_counts_by_computer_and_level
+                            .get("undefined")
+                            .unwrap()
+                    })
                     .clone();
                 *detect_counts_by_computer
                     .entry(Clone::clone(&detect_info.computername))
