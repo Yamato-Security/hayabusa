@@ -368,8 +368,10 @@ impl Detection {
         println!("Noisy rules: {}", noisy_count);
         println!("Rule parsing errors: {}", parseerror_count);
         println!();
+        let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
+        sorted_rc.sort_by(|a, b|a.0.cmp(b.0));
         let mut enable_total = 0;
-        rc.into_iter().for_each(|(key, value)| {
+        sorted_rc.into_iter().for_each(|(key, value)| {
             println!("{} rules: {}", key, value);
             enable_total += value;
         });
