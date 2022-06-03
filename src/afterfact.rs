@@ -195,8 +195,14 @@ fn emit_csv<W: std::io::Write>(
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
+
+    disp_wtr_buf
+    .set_color(
+        ColorSpec::new().set_fg(None)
+    )
+    .ok();
+
 
     let messages = print::MESSAGES.lock().unwrap();
     // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
@@ -264,6 +270,16 @@ fn emit_csv<W: std::io::Write>(
                     record_i_d: record_id.as_deref(),
                 };
 
+                //ヘッダーのみを出力
+                if plus_header {
+                    write!(
+                        disp_wtr_buf,
+                        "{}",
+                        _get_serialized_disp_output(None)
+                    )
+                    .ok();    
+                    plus_header = false;
+                }
                 disp_wtr_buf
                     .set_color(
                         ColorSpec::new().set_fg(_get_output_color(&color_map, &detect_info.level)),
@@ -272,10 +288,9 @@ fn emit_csv<W: std::io::Write>(
                 write!(
                     disp_wtr_buf,
                     "{}",
-                    _get_serialized_disp_output(dispformat, plus_header)
+                    _get_serialized_disp_output(Some(dispformat))
                 )
                 .ok();
-                plus_header = false;
             } else {
                 // csv output format
                 wtr.serialize(CsvFormat {
@@ -399,15 +414,18 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(dispformat: DisplayFormat, plus_header: bool) -> String {
+fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
+    if dispformat.is_none() {
+        return "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordID|RecordInformation\n".to_string();
+    }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
         .quote_style(QuoteStyle::Never)
         .delimiter(b'|')
-        .has_headers(plus_header)
+        .has_headers(false)
         .from_writer(vec![]);
 
-    disp_serializer.serialize(dispformat).ok();
+        disp_serializer.serialize(dispformat.unwrap()).ok();
 
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default()).unwrap_or_default()
 }
