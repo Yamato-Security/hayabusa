@@ -87,7 +87,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting
 
-Hayabusa currently has over 2200 sigma rules and around 125 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
+Hayabusa currently has over 2300 sigma rules and over 130 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
 
 ### Fast Forensics Timeline Generation
 
@@ -179,7 +179,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -u
+hayabusa-1.3.0-win-x64.exe -u
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -264,20 +264,20 @@ If you are worried about malware or supply chain attacks, please check the hayab
 ## Windows
 
 In Command Prompt or Windows Terminal, just run the 32-bit or 64-bit Windows binary from the hayabusa root directory. 
-Example: `hayabusa-1.2.2-windows-x64.exe`
+Example: `hayabusa-1.3.0-windows-x64.exe`
 
 ## Linux
 
 You first need to make the binary executable. 
 
 ```bash
-chmod +x ./hayabusa-1.2.2-linux-x64-gnu
+chmod +x ./hayabusa-1.3.0-linux-x64-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.2.2-linux-x64-gnu
+./hayabusa-1.3.0-linux-x64-gnu
 ```
 
 ## macOS
@@ -285,13 +285,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-1.2.2-mac-intel
+chmod +x ./hayabusa-1.3.0-mac-intel
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.2.2-mac-intel
+./hayabusa-1.3.0-mac-intel
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -305,7 +305,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-1.2.2-mac-intel
+./hayabusa-1.3.0-mac-intel
 ```
 
 The following warning will pop up, so please click "Open".
@@ -320,33 +320,33 @@ You should now be able to run hayabusa.
 
 ```bash
 USAGE:
-    -d --directory=[DIRECTORY] 'Directory of multiple .evtx files.'
-    -f --filepath=[FILEPATH] 'File path to one .evtx file.'
-    -F --full-data 'Print all field information.'
-    -r --rules=[RULEDIRECTORY/RULEFILE] 'Rule file or directory (default: ./rules)'
-    -C --config=[RULECONFIGDIRECTORY] 'Rule config folder. (Default: ./rules/config)'
-    -o --output=[CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
+    -d, --directory [DIRECTORY] 'Directory of multiple .evtx files.'
+    -f, --filepath [FILE_PATH] 'File path to one .evtx file.'
+    -F, --full-data 'Print all field information.'
+    -r, --rules [RULE_DIRECTORY/RULE_FILE] 'Rule file or directory (default: ./rules)'
+    -C, --config [RULE_CONFIG_DIRECTORY] 'Rule config folder. (Default: ./rules/config)'
+    -o, --output [CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
     --all-tags 'Output all tags when saving to a CSV file.'
-    -R --display-record-id 'Display EventRecordID.'
-    -v --verbose 'Output verbose information.'
-    -D --enable-deprecated-rules 'Enable rules marked as deprecated.'
-    -n --enable-noisy-rules 'Enable rules marked as noisy.'
-    -u --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
-    -m --min-level=[LEVEL] 'Minimum level for rules. (Default: informational)'
-    -l --live-analysis 'Analyze the local C:\Windows\System32\winevt\Logs folder (Windows Only. Administrator privileges required.)'
-    --start-timeline=[STARTTIMELINE] 'Start time of the event logs to load. (Example: "2018-11-28 12:00:00 +09:00")'
-    --end-timeline=[ENDTIMELINE] 'End time of the event logs to load. (Example: "2021-11-28 12:00:00 +09:00")'
+    -R, --display-record-id 'Display EventRecordID.'
+    -v, --verbose 'Output verbose information.'
+    -D, --enable-deprecated-rules 'Enable rules marked as deprecated.'
+    -n, --enable-noisy-rules 'Enable rules marked as noisy.'
+    -u, --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
+    -m, --min-level [LEVEL] 'Minimum level for rules. (Default: informational)'
+    -l, --live-analysis 'Analyze the local C:\Windows\System32\winevt\Logs folder (Windows Only. Administrator privileges required.)'
+    --start-timeline [START_TIMELINE] 'Start time of the event logs to load. (Example: "2018-11-28 12:00:00 +09:00")'
+    --end-timeline [END_TIMELINE] 'End time of the event logs to load. (Example: "2021-11-28 12:00:00 +09:00")'
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
     --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
-    -U --utc 'Output time in UTC format. (Default: local time)'
+    -U, --utc 'Output time in UTC format. (Default: local time)'
     --no-color 'Disable color output.'
-    -t --thread-number=[NUMBER] 'Thread number. (Default: Optimal number for performance.)'
-    -s --statistics 'Prints statistics of event IDs.'
-    -L --logon-summary 'Successful and failed logons summary.'
-    -q --quiet 'Quiet mode. Do not display the launch banner.'
-    -Q --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --level-tuning=[LEVEL_TUNING_FILE] 'Adjust rule level.(default: ./rules/config/level_tuning.txt) '
-    -p --pivot-keywords-list 'Create a list of pivot keywords.'
+    -t, --thread-number [NUMBER] 'Thread number. (Default: Optimal number for performance.)'
+    -s, --statistics 'Prints statistics of event IDs.'
+    -L, --logon-summary 'Successful and failed logons summary.'
+    -q, --quiet 'Quiet mode. Do not display the launch banner.'
+    -Q, --quiet-errors 'Quiet errors mode. Do not save error logs.'
+    --level-tuning [LEVEL_TUNING_FILE] 'Adjust rule level.(default: ./rules/config/level_tuning.txt) '
+    -p, --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'
 ```
 
@@ -355,79 +355,79 @@ USAGE:
 * Run hayabusa against one Windows event log file:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -f eventlog.evtx
+hayabusa-1.3.0-win-x64.exe -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx
 ```
 
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -l -m low
+hayabusa-1.3.0-win-x64.exe -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.3.0-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * Print Event ID statistics:
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -f Security.evtx -s
+hayabusa-1.3.0-win-x64.exe -f Security.evtx -s
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
 ```bash
-hayabusa-1.2.2-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.3.0-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:
@@ -638,7 +638,7 @@ You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore 
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.2.2-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.3.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:
