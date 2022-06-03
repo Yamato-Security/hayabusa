@@ -195,8 +195,9 @@ fn emit_csv<W: std::io::Write>(
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-
     let mut wtr = csv::WriterBuilder::new().from_writer(writer);
+
+    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
     let messages = print::MESSAGES.lock().unwrap();
     // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
@@ -222,8 +223,9 @@ fn emit_csv<W: std::io::Write>(
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
         detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
     }
-
-    println!();
+    if displayflag {
+        println!();
+    }
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
@@ -263,6 +265,11 @@ fn emit_csv<W: std::io::Write>(
                     record_i_d: record_id.as_deref(),
                 };
 
+                //ヘッダーのみを出力
+                if plus_header {
+                    write!(disp_wtr_buf, "{}", _get_serialized_disp_output(None)).ok();
+                    plus_header = false;
+                }
                 disp_wtr_buf
                     .set_color(
                         ColorSpec::new().set_fg(_get_output_color(&color_map, &detect_info.level)),
@@ -271,10 +278,9 @@ fn emit_csv<W: std::io::Write>(
                 write!(
                     disp_wtr_buf,
                     "{}",
-                    _get_serialized_disp_output(dispformat, plus_header)
+                    _get_serialized_disp_output(Some(dispformat))
                 )
                 .ok();
-                plus_header = false;
             } else {
                 // csv output format
                 wtr.serialize(CsvFormat {
@@ -333,10 +339,15 @@ fn emit_csv<W: std::io::Write>(
     }
     if displayflag {
         disp_wtr.print(&disp_wtr_buf)?;
+        println!();
     } else {
         wtr.flush()?;
     }
-    println!();
+
+    disp_wtr_buf.clear();
+    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
+    writeln!(disp_wtr_buf, "Results Summary:").ok();
+    disp_wtr.print(&disp_wtr_buf).ok();
 
     let size = terminal_size();
     let terminal_width = match size {
@@ -393,15 +404,18 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(dispformat: DisplayFormat, plus_header: bool) -> String {
+fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
+    if dispformat.is_none() {
+        return "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordID|RecordInformation\n".to_string();
+    }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
         .quote_style(QuoteStyle::Never)
         .delimiter(b'|')
-        .has_headers(plus_header)
+        .has_headers(false)
         .from_writer(vec![]);
 
-    disp_serializer.serialize(dispformat).ok();
+    disp_serializer.serialize(dispformat.unwrap()).ok();
 
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default()).unwrap_or_default()
 }
@@ -737,39 +751,19 @@ mod tests {
             + "|"
             + test_recinfo
             + "\n";
-        let expect_with_header = expect_header.to_string() + &expect_no_header;
+        assert_eq!(_get_serialized_disp_output(None,), expect_header);
         assert_eq!(
-            _get_serialized_disp_output(
-                DisplayFormat {
-                    timestamp: &format_time(&test_timestamp),
-                    level: test_level,
-                    computer: test_computername,
-                    event_i_d: test_eventid,
-                    channel: test_channel,
-                    rule_title: test_title,
-                    details: output,
-                    record_information: Some(test_recinfo),
-                    record_i_d: Some(test_recid),
-                },
-                true
-            ),
-            expect_with_header
-        );
-        assert_eq!(
-            _get_serialized_disp_output(
-                DisplayFormat {
-                    timestamp: &format_time(&test_timestamp),
-                    level: test_level,
-                    computer: test_computername,
-                    event_i_d: test_eventid,
-                    channel: test_channel,
-                    rule_title: test_title,
-                    details: output,
-                    record_information: Some(test_recinfo),
-                    record_i_d: Some(test_recid),
-                },
-                false
-            ),
+            _get_serialized_disp_output(Some(DisplayFormat {
+                timestamp: &format_time(&test_timestamp),
+                level: test_level,
+                computer: test_computername,
+                event_i_d: test_eventid,
+                channel: test_channel,
+                rule_title: test_title,
+                details: output,
+                record_information: Some(test_recinfo),
+                record_i_d: Some(test_recid),
+            })),
             expect_no_header
         );
     }

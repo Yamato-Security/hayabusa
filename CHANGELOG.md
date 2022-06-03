@@ -19,6 +19,7 @@
 - Changed logo color. (#537) (@hitenkoku)
 - Display the original `Channel` name when not specified in `channel_abbrevations.txt`. (#553) (@hitenkoku)
 - Display separately `Ignored rules` to `Exclude rules`, `Noisy rules`, and `Deprecated rules`. (#556) (@hitenkoku)
+- Display results messge when `output` option is set. (#561) (@hitenkoku)
 
 **Bug Fixes:**
 

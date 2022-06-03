@@ -482,6 +482,11 @@ impl App {
             total_records += cnt_tmp;
             pb.inc();
         }
+        if configs::CONFIG.read().unwrap().args.is_present("output") {
+            println!();
+            println!();
+            println!("Analysis finished. Please wait while the results are being saved.");
+        }
         println!();
         detection.add_aggcondition_msges(&self.rt);
         if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
