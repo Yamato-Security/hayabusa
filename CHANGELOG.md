@@ -21,7 +21,7 @@
 **Bug Fixes:**
 
 - Fixed the `--start-timeline` and `--end-timeline` options as they were not working. (#546) @hitenkoku)
-
+- Fixed crash bug when level in rule is not valid. (#560) (@hitenkoku)
 
 ## v1.2.2 [2022/05/20]
 
