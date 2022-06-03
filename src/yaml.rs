@@ -18,7 +18,9 @@ use yaml_rust::YamlLoader;
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
     pub rulecounter: HashMap<String, u128>,
-    pub ignorerule_count: u128,
+    pub exclude_rule_count: u128,
+    pub noisy_rule_count: u128,
+    pub deprecate_rule_count: u128,
     pub errorrule_count: u128,
 }
 
@@ -33,7 +35,9 @@ impl ParseYaml {
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
-            ignorerule_count: 0,
+            exclude_rule_count: 0,
+            noisy_rule_count: 0,
+            deprecate_rule_count: 0,
             errorrule_count: 0,
         }
     }
@@ -222,8 +226,12 @@ impl ParseYaml {
                         .get(&rule_id.unwrap_or("").to_string())
                     {
                         None => (),
-                        Some(_) => {
-                            self.ignorerule_count += 1;
+                        Some(v) => {
+                            if v.contains("exclude_rule") {
+                                self.exclude_rule_count += 1;
+                            } else {
+                                self.noisy_rule_count += 1;
+                            }
                             return Option::None;
                         }
                     }
@@ -259,9 +267,9 @@ impl ParseYaml {
                     .args
                     .is_present("enable-deprecated-rules")
                 {
-                    let rule_status = &yaml_doc["status"].as_str();
-                    if rule_status.is_some() && rule_status.unwrap() == "deprecated" {
-                        self.ignorerule_count += 1;
+                    let rule_status = &yaml_doc["status"].as_str().unwrap_or_default();
+                    if *rule_status == "deprecated" {
+                        self.deprecate_rule_count += 1;
                         return Option::None;
                     }
                 }
@@ -282,7 +290,7 @@ mod tests {
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
-    use hashbrown::HashSet;
+    use hashbrown::HashMap;
     use std::path::Path;
     use yaml_rust::YamlLoader;
 
@@ -306,7 +314,7 @@ mod tests {
 
         let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude {
-            no_use_rule: HashSet::new(),
+            no_use_rule: HashMap::new(),
         };
         let _ = &yaml.read_dir("test_files/rules/yaml/", &String::default(), &exclude_ids);
         assert_ne!(yaml.files.len(), 0);
@@ -392,7 +400,16 @@ mod tests {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
-        assert_eq!(yaml.ignorerule_count, 10);
+        assert_eq!(yaml.exclude_rule_count, 5);
+    }
+    #[test]
+    fn test_all_noisy_rules_file() {
+        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+
+        let mut yaml = yaml::ParseYaml::new();
+        let path = Path::new("test_files/rules/yaml");
+        yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
+        assert_eq!(yaml.noisy_rule_count, 5);
     }
     #[test]
     fn test_none_exclude_rules_file() {
@@ -402,7 +419,7 @@ mod tests {
         let path = Path::new("test_files/rules/yaml");
         let exclude_ids = RuleExclude::default();
         yaml.read_dir(path, "", &exclude_ids).unwrap();
-        assert_eq!(yaml.ignorerule_count, 0);
+        assert_eq!(yaml.exclude_rule_count, 0);
     }
     #[test]
     fn test_exclude_deprecated_rules_file() {
@@ -410,6 +427,6 @@ mod tests {
         let path = Path::new("test_files/rules/deprecated");
         let exclude_ids = RuleExclude::default();
         yaml.read_dir(path, "", &exclude_ids).unwrap();
-        assert_eq!(yaml.ignorerule_count, 1);
+        assert_eq!(yaml.deprecate_rule_count, 1);
     }
 }

@@ -129,7 +129,9 @@ impl Detection {
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
                 &parseerror_count,
-                &rulefile_loader.ignorerule_count,
+                &rulefile_loader.exclude_rule_count,
+                &rulefile_loader.noisy_rule_count,
+                &rulefile_loader.deprecate_rule_count,
             );
         }
         ret
@@ -354,22 +356,26 @@ impl Detection {
     pub fn print_rule_load_info(
         rc: &HashMap<String, u128>,
         parseerror_count: &u128,
-        ignore_count: &u128,
+        exclude_count: &u128,
+        noisy_count: &u128,
+        deprecate_count: &u128,
     ) {
         if *STATISTICS_FLAG {
             return;
         }
-        let mut total = parseerror_count + ignore_count;
-        rc.into_iter().for_each(|(key, value)| {
-            println!("{} rules: {}", key, value);
-            total += value;
-        });
-        println!("Ignored rules: {}", ignore_count);
+        println!("Deprecated rules: {}", deprecate_count);
+        println!("Excluded rules: {}", exclude_count);
+        println!("Noisy rules: {}", noisy_count);
         println!("Rule parsing errors: {}", parseerror_count);
-        println!(
-            "Total enabled detection rules: {}",
-            total - ignore_count - parseerror_count
-        );
+        println!();
+        let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
+        sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
+        let mut enable_total = 0;
+        sorted_rc.into_iter().for_each(|(key, value)| {
+            println!("{} rules: {}", key, value);
+            enable_total += value;
+        });
+        println!("Total enabled detection rules: {}", enable_total);
         println!();
     }
 }

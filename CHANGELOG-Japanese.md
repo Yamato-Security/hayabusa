@@ -17,6 +17,7 @@
 - evtxファイルのファイルサイズの合計を出力するようにした。(#540) (@hitenkoku)
 - ロゴの色を変更した (#537) (@hitenkoku)
 - Channelの列にchannel_abbrevations.txtに記載されていないチャンネルも表示するようにした。(#553) (@hitenkoku)
+- `Ignored rules`として集計されていた`Exclude rules`、`Noisy rules`、`Deprecated rules`に分けて表示するようにした。 (#556) (@hitenkoku)
 
 **バグ修正:**
 

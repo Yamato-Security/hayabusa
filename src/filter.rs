@@ -2,7 +2,7 @@ use crate::detections::configs;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::QUIET_ERRORS_FLAG;
-use hashbrown::HashSet;
+use hashbrown::HashMap;
 use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -15,13 +15,13 @@ pub struct DataFilterRule {
 
 #[derive(Clone, Debug)]
 pub struct RuleExclude {
-    pub no_use_rule: HashSet<String>,
+    pub no_use_rule: HashMap<String, String>,
 }
 
 impl RuleExclude {
     pub fn default() -> RuleExclude {
         RuleExclude {
-            no_use_rule: HashSet::new(),
+            no_use_rule: HashMap::new(),
         }
     }
 }
@@ -73,7 +73,7 @@ impl RuleExclude {
                 // 空行は無視する。IDの検証
                 continue;
             }
-            self.no_use_rule.insert(v);
+            self.no_use_rule.insert(v, filename.to_owned());
         }
     }
 }
