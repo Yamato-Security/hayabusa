@@ -355,12 +355,6 @@ fn emit_csv<W: std::io::Write>(
     );
     println!();
 
-    _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
-    println!();
-
-    _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
-    println!();
-
     _print_unique_results(
         total_detect_counts_by_level,
         "Total".to_string(),
@@ -375,6 +369,13 @@ fn emit_csv<W: std::io::Write>(
         "detections".to_string(),
         &color_map,
     );
+    println!();
+
+    _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
+    println!();
+
+    _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
+
     Ok(())
 }
 
@@ -479,18 +480,18 @@ fn _print_detection_summary_by_date(
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
                 date_str = date.clone();
-                max_detect_str = format!("{} (Count: {})", date, cnt);
+                max_detect_str = format!("{} ({})", date, cnt);
                 tmp_cnt = *cnt;
             }
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
             .ok();
         if date_str == String::default() {
-            max_detect_str = "-".to_string();
+            max_detect_str = "n/a".to_string();
         }
         writeln!(
             wtr,
-            "Date with most {} detections: {}",
+            "Date with most total {} detections: {}",
             level, &max_detect_str
         )
         .ok();
@@ -534,7 +535,7 @@ fn _print_detection_summary_by_computer(
             .ok();
         writeln!(
             wtr,
-            "Top 5 computers with most {} detections: {}",
+            "Top 5 computers with most unique {} detections: {}",
             level, &result_str
         )
         .ok();
