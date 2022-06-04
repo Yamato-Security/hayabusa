@@ -712,7 +712,7 @@ dependencies = [
  "indoc",
  "jemallocator",
  "log",
- "quick-xml",
+ "quick-xml 0.22.0",
  "rayon",
  "rpmalloc",
  "serde",
@@ -956,7 +956,7 @@ dependencies = [
  "openssl",
  "pbr",
  "prettytable-rs",
- "quick-xml",
+ "quick-xml 0.23.0",
  "regex",
  "serde",
  "serde_derive",
@@ -965,7 +965,7 @@ dependencies = [
  "static_vcruntime",
  "termcolor",
  "terminal_size",
- "tokio 1.18.2",
+ "tokio 1.19.0",
  "yaml-rust",
 ]
 
@@ -1735,6 +1735,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8533f14c8382aaad0d592c812ac3b826162128b65662331e1127b45c3d18536b"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9279fbdacaad3baf559d8cabe0acc3d06e30ea14931af31af79578ac0946decc"
+dependencies = [
+ "memchr",
  "serde",
 ]
 
@@ -2254,9 +2263,9 @@ dependencies = [
 
 [[package]]
 name = "static_vcruntime"
-version = "1.5.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a88c15d6fe7210ea80c578b53855615fdea0188e1630b6d9c377e1b2f2c098fa"
+checksum = "954e3e877803def9dc46075bf4060147c55cd70db97873077232eae0269dc89b"
 
 [[package]]
 name = "stdweb"
@@ -2515,9 +2524,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.18.2"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4903bf0427cf68dddd5aa6a93220756f8be0c34fcfa9f5e6191e103e15a31395"
+checksum = "0f392c8f16bda3456c0b00c6de39cb100449b98de55ac41c6cdd2bfcf53a1245"
 dependencies = [
  "bytes 1.1.0",
  "libc",
