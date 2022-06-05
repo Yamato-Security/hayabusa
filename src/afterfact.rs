@@ -355,7 +355,12 @@ fn emit_csv<W: std::io::Write>(
     };
     println!();
 
-    if configs::CONFIG.read().unwrap().args.is_present("visual-timeline") {
+    if configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("visual-timeline")
+    {
         _print_timeline_hist(timestamps, terminal_width, 3);
         println!();
     }
