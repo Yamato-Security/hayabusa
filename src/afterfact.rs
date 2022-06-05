@@ -128,7 +128,6 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
 
     let title = "Event Frequency Timeline";
     let header_row_space = (length - title.len()) / 2;
-    println!();
     writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
     println!();
 
@@ -354,9 +353,12 @@ fn emit_csv<W: std::io::Write>(
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
-
-    _print_timeline_hist(timestamps, terminal_width, 3);
     println!();
+
+    if configs::CONFIG.read().unwrap().args.is_present("visual-timeline") {
+        _print_timeline_hist(timestamps, terminal_width, 3);
+        println!();
+    }
     let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
     let reducted_percent = if all_record_cnt == 0 {
         0 as f64

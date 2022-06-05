@@ -78,6 +78,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --all-tags 'Output all tags when saving to a CSV file.'
     -R, --display-record-id 'Display EventRecordID.'
     -v, --verbose 'Output verbose information.'
+    -V, --visual-timeline 'Output event frequency timeline.'
     -D, --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n, --enable-noisy-rules 'Enable rules marked as noisy.'
     -u, --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
