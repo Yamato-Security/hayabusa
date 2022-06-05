@@ -359,7 +359,7 @@ fn emit_csv<W: std::io::Write>(
         .read()
         .unwrap()
         .args
-        .is_present("visual-timeline")
+        .is_present("visualize-timeline")
     {
         _print_timeline_hist(timestamps, terminal_width, 3);
         println!();

@@ -31,14 +31,14 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
     - [スレット(脅威)ハンティング](#スレット脅威ハンティング)
     - [フォレンジックタイムラインの高速生成](#フォレンジックタイムラインの高速生成)
 - [スクリーンショット](#スクリーンショット)
-  - [起動画面:](#起動画面)
-  - [ターミナル出力画面:](#ターミナル出力画面)
-  - [イベント頻度タイムライン出力画面:](#イベント頻度タイムライン出力画面)
-  - [結果サマリ画面:](#結果サマリ画面)
-  - [Excelでの解析:](#excelでの解析)
-  - [Timeline Explorerでの解析:](#timeline-explorerでの解析)
-  - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング:](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
-  - [Elastic Stackダッシュボードでの解析:](#elastic-stackダッシュボードでの解析)
+  - [起動画面](#起動画面)
+  - [ターミナル出力画面](#ターミナル出力画面)
+  - [イベント頻度タイムライン出力画面 (`-V`オプション)](#イベント頻度タイムライン出力画面--vオプション)
+  - [結果サマリ画面](#結果サマリ画面)
+  - [Excelでの解析](#excelでの解析)
+  - [Timeline Explorerでの解析](#timeline-explorerでの解析)
+  - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
+  - [Elastic Stackダッシュボードでの解析](#elastic-stackダッシュボードでの解析)
 - [タイムラインのサンプル結果](#タイムラインのサンプル結果)
 - [特徴＆機能](#特徴機能)
 - [予定されている機能](#予定されている機能)
@@ -100,36 +100,36 @@ Windowsのイベントログは、
 
 # スクリーンショット
 
-## 起動画面:
+## 起動画面
 
 ![Hayabusa 起動画面](/screenshots/Hayabusa-Startup.png)
 
-## ターミナル出力画面:
+## ターミナル出力画面
 
 ![Hayabusa ターミナル出力画面](/screenshots/Hayabusa-Results.png)
 
-## イベント頻度タイムライン出力画面:
+## イベント頻度タイムライン出力画面 (`-V`オプション)
 
 ![Hayabusa イベント頻度タイムライン出力画面](/screenshots/HayabusaEventFrequencyTimeline.png)
 
-## 結果サマリ画面:
+## 結果サマリ画面
 
 ![Hayabusa 結果サマリ画面](/screenshots/HayabusaResultsSummary.png)
 
-## Excelでの解析:
+## Excelでの解析
 
 ![Hayabusa Excelでの解析](/screenshots/ExcelScreenshot.png)
 
-## Timeline Explorerでの解析:
+## Timeline Explorerでの解析
 
 ![Hayabusa Timeline Explorerでの解析](screenshots/TimelineExplorer-ColoredTimeline.png)
 
 
-## Criticalアラートのフィルタリングとコンピュータごとのグルーピング:
+## Criticalアラートのフィルタリングとコンピュータごとのグルーピング
 
 ![Timeline ExplorerでCriticalアラートのフィルタリングとコンピュータグルーピング](screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png)
 
-## Elastic Stackダッシュボードでの解析:
+## Elastic Stackダッシュボードでの解析
 
 ![Elastic Stack Dashboard 1](doc/ElasticStackImport/17-HayabusaDashboard-1.png)
 
@@ -331,7 +331,7 @@ USAGE:
     --all-tags '出力したCSVファイルにルール内のタグ情報を全て出力する。'
     -R, --display-record-id 'EventRecordIDを出力する。'
     -v, --verbose '詳細な情報を出力する。'
-    -V, --visual-timeline 'イベント頻度タイムラインを出力する。'
+    -V, --visualize-timeline 'イベント頻度タイムラインを出力する。'
     -D, --enable-deprecated-rules 'Deprecatedルールを有効にする。'
     -n, --enable-noisy-rules 'Noisyルールを有効にする。'
     -u, --update-rules 'rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する。'
@@ -576,8 +576,8 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 
 ## イベント頻度タイムライン
 
-`--visual-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
-マーカーの数は最大10個です。
+`--visualize-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
+マーカーの数は最大10個です。デフォルトのCommand PromptとPowerShell Promptでは文字化けされるので、Windows TerminalやiTerm2等のターミナルをご利用ください。
 
 ## 最多検知日の出力
 

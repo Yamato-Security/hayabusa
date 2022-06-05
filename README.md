@@ -32,7 +32,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Screenshots](#screenshots)
   - [Startup](#startup)
   - [Terminal Output](#terminal-output)
-  - [Time Fequency Timeline](#time-fequency-timeline)
+  - [Event Fequency Timeline (`-V` option)](#event-fequency-timeline--v-option)
   - [Results Summary](#results-summary)
   - [Analysis in Excel](#analysis-in-excel)
   - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
@@ -104,7 +104,7 @@ Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](http
 
 ![Hayabusa terminal output](/screenshots/Hayabusa-Results.png)
 
-## Time Fequency Timeline
+## Event Fequency Timeline (`-V` option)
 
 ![Hayabusa Event Frequency Timeline](/screenshots/HayabusaEventFrequencyTimeline.png)
 
@@ -329,7 +329,7 @@ USAGE:
     --all-tags 'Output all tags when saving to a CSV file.'
     -R, --display-record-id 'Display EventRecordID.'
     -v, --verbose 'Output verbose information.'
-    -V, --visual-timeline 'Output event frequency timeline.'
+    -V, --visualize-timeline 'Output event frequency timeline.'
     -D, --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n, --enable-noisy-rules 'Enable rules marked as noisy.'
     -u, --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
@@ -574,8 +574,8 @@ If you want to disable color output, you can use `--no-color` option.
 
 ## Event Fequency Timeline
 
-If you add `-V` or `--visual-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
-Note: There needs to be more than 5 events.
+If you add `-V` or `--visualize-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
+Note: There needs to be more than 5 events. Also, the characters will not render correctly on the default Command Prompt or PowerShell Prompt, so please use a terminal like Windows Terminal, iTerm2, etc...
 
 ## Dates with most total detections
 
