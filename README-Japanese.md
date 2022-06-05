@@ -331,6 +331,7 @@ USAGE:
     --all-tags '出力したCSVファイルにルール内のタグ情報を全て出力する。'
     -R, --display-record-id 'EventRecordIDを出力する。'
     -v, --verbose '詳細な情報を出力する。'
+    -V, --visual-timeline 'イベント頻度タイムラインを出力する。'
     -D, --enable-deprecated-rules 'Deprecatedルールを有効にする。'
     -n, --enable-noisy-rules 'Noisyルールを有効にする。'
     -u, --update-rules 'rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する。'
@@ -575,7 +576,7 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 
 ## イベント頻度タイムライン
 
-検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
+`--visual-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
 マーカーの数は最大10個です。
 
 ## 最多検知日の出力

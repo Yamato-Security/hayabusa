@@ -329,6 +329,7 @@ USAGE:
     --all-tags 'Output all tags when saving to a CSV file.'
     -R, --display-record-id 'Display EventRecordID.'
     -v, --verbose 'Output verbose information.'
+    -V, --visual-timeline 'Output event frequency timeline.'
     -D, --enable-deprecated-rules 'Enable rules marked as deprecated.'
     -n, --enable-noisy-rules 'Enable rules marked as noisy.'
     -u, --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
@@ -573,7 +574,7 @@ If you want to disable color output, you can use `--no-color` option.
 
 ## Event Fequency Timeline
 
-The Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
+If you add `-V` or `--visual-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events.
 
 ## Dates with most total detections
