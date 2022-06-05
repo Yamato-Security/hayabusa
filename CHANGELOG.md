@@ -1,10 +1,10 @@
 # Changes
 
-## v1.3.0 [2022/06/04]
+## v1.3.0 [2022/06/06]
 
 **New Features:**
 
-- Added Event Frequency Timeline feature to visualize the number of events. (Note: There needs to be more than 5 events.) (#533)(@hitenkoku)
+- Added `-V / --visualize-timeline` option: Event Frequency Timeline feature to visualize the number of events. (Note: There needs to be more than 5 events and you need to use a terminal like Windows Terminal, iTerm2, etc... for it to properly render.) (#533, #566) (@hitenkoku)
 - Display all the `tags` defined in a rule to the `MitreAttack` column when saving to CSV file with the `--all-tags` option. (#525) (@hitenkoku)
 - Added the `-R / --display-record-id` option: Display the event record ID (`<Event><System><EventRecordID>`). (#548) (@hitenkoku)
 - Display dates with most detections. (#550) (@hitenkoku)
