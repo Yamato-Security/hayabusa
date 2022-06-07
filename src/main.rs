@@ -152,7 +152,8 @@ impl App {
         }
 
         if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
-            for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
+            let pivot_key_unions = PIVOT_KEYWORD.read().unwrap().clone();
+            for (key, _) in pivot_key_unions.iter() {
                 let keywords_file_name = csv_path.to_owned() + "-" + key + ".txt";
                 if Path::new(&keywords_file_name).exists() {
                     AlertMessage::alert(&format!(
@@ -320,14 +321,17 @@ impl App {
                 //output to stdout
                 let mut output =
                     "Pivot keyword results saved to the following files:\n".to_string();
-                for (key, _) in PIVOT_KEYWORD.read().unwrap().iter() {
+                let pivot_key_unions = PIVOT_KEYWORD.read().unwrap().clone();
+
+                for (key, _) in pivot_key_unions.iter() {
                     output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
                 }
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             } else {
                 //標準出力の場合
                 let mut output = "The following pivot keywords were found:\n".to_string();
-                for (key, pivot_keyword) in PIVOT_KEYWORD.read().unwrap().iter() {
+                let pivot_key_unions = PIVOT_KEYWORD.read().unwrap().clone();
+                for (key, pivot_keyword) in pivot_key_unions.iter() {
                     output += &format!("{}: ", key).to_string();
 
                     output += "( ";
