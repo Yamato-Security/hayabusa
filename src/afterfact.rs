@@ -434,7 +434,7 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
         ColPos::First => format!("{} ", colval),
         ColPos::Last => format!(" {}", colval),
         ColPos::Other => format!(" {} ", colval),
-    };
+    }
 }
 
 /// output info which unique detection count and all detection count information(devided by level and total) to stdout.
