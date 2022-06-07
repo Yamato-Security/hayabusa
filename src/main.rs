@@ -161,7 +161,6 @@ impl App {
                         &keywords_file_name
                     ))
                     .ok();
-                    return;
                 }
             });
             if Path::new(csv_path).exists() {
@@ -302,18 +301,18 @@ impl App {
                     let mut f = BufWriter::new(
                         fs::File::create(pivot_file.to_owned() + "-" + key + ".txt").unwrap(),
                     );
-                    let mut output = "".to_string();
-                    output += &format!("{}: ", key).to_string();
+                    let mut output = String::default();
+                    output += &format!("{}: ", key);
 
                     output += "( ";
                     for i in pivot_keyword.fields.iter() {
-                        output += &format!("%{}% ", i).to_string();
+                        output += &format!("%{}% ", i);
                     }
                     output += "):";
                     output += "\n";
 
                     for i in pivot_keyword.keywords.iter() {
-                        output += &format!("{}\n", i).to_string();
+                        output += &format!("{}\n", i);
                     }
 
                     f.write_all(output.as_bytes()).unwrap();
@@ -323,16 +322,16 @@ impl App {
                 let mut output =
                     "Pivot keyword results saved to the following files:\n".to_string();
 
-                for (key, _) in pivot_key_unions.iter() {
+                pivot_key_unions.iter().for_each(|(key, _)|{
                     output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
-                }
+                });
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             } else {
                 //標準出力の場合
                 let mut output = "The following pivot keywords were found:\n".to_string();
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                    output += &format!("{}: ", key).to_string();
+                    output += &format!("{}: ", key);
 
                     output += "( ";
                     for i in pivot_keyword.fields.iter() {
