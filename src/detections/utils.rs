@@ -275,9 +275,7 @@ fn create_recordinfos(record: &Value) -> String {
 
     let summary: Vec<String> = output
         .iter()
-        .map(|(key, value)| {
-            format!("{}:{}", key, value)
-        })
+        .map(|(key, value)| format!("{}:{}", key, value))
         .collect();
 
     // 標準出力する時はセルがハイプ区切りになるので、パイプ区切りにしない
