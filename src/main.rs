@@ -13,6 +13,7 @@ use git2::Repository;
 use hashbrown::{HashMap, HashSet};
 use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
+use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::print::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG,
@@ -295,57 +296,54 @@ impl App {
         }
 
         if *PIVOT_KEYWORD_LIST_FLAG {
+            let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+            let create_output = |mut output: String, key: &String, pivot_keyword: &PivotKeyword| {
+                write!(output, "{}: ", key).ok();
+
+                write!(output, "( ").ok();
+                for i in pivot_keyword.fields.iter() {
+                    write!(output, "%{}% ", i).ok();
+                }
+                writeln!(output, "):").ok();
+
+                for i in pivot_keyword.keywords.iter() {
+                    writeln!(output, "{}", i).ok();
+                }
+                writeln!(output).ok();
+
+                output
+            };
+
             //ファイル出力の場合
             if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
-                let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                     let mut f = BufWriter::new(
                         fs::File::create(pivot_file.to_owned() + "-" + key + ".txt").unwrap(),
                     );
-                    let mut output = String::default();
-                    output += &format!("{}: ", key);
-
-                    output += "( ";
-                    for i in pivot_keyword.fields.iter() {
-                        output += &format!("%{}% ", i);
-                    }
-                    output += "):";
-                    output += "\n";
-
-                    for i in pivot_keyword.keywords.iter() {
-                        output += &format!("{}\n", i);
-                    }
-
-                    f.write_all(output.as_bytes()).unwrap();
+                    f.write_all(create_output(String::default(), key, pivot_keyword).as_bytes())
+                        .unwrap();
                 });
-
                 //output to stdout
                 let mut output =
                     "Pivot keyword results saved to the following files:\n".to_string();
 
                 pivot_key_unions.iter().for_each(|(key, _)| {
-                    output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
+                    writeln!(output, "{}", &(pivot_file.to_owned() + "-" + key + ".txt")).ok();
                 });
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             } else {
                 //標準出力の場合
-                let mut output = "The following pivot keywords were found:\n".to_string();
-                let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-                pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                    write!(output, "{}: ", key).ok();
-
-                    write!(output, "( ").ok();
-                    for i in pivot_keyword.fields.iter() {
-                        write!(output, "%{}% ", i).ok();
-                    }
-                    writeln!(output, "):").ok();
-
-                    for i in pivot_keyword.keywords.iter() {
-                        writeln!(output, "{}", i).ok();
-                    }
-                    writeln!(output).ok();
-                });
+                let output = "The following pivot keywords were found:".to_string();
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+
+                pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                    write_color_buffer(
+                        BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &create_output(String::default(), key, pivot_keyword),
+                    )
+                    .ok();
+                });
             }
         }
     }
