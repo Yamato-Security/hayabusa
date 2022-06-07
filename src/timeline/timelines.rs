@@ -1,4 +1,4 @@
-use crate::detections::{configs, detection::EvtxRecordInfo};
+use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use prettytable::{Cell, Row, Table};
 
 use super::statistics::EventStatistics;
@@ -35,12 +35,8 @@ impl Timeline {
     }
 
     pub fn tm_stats_dsp_msg(&mut self) {
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("statistics")
-        {
+        let statics_flag = CONFIG.read().unwrap().args.is_present("statistics");
+        if !statics_flag {
             return;
         }
         // 出力メッセージ作成
@@ -70,12 +66,8 @@ impl Timeline {
     }
 
     pub fn tm_logon_stats_dsp_msg(&mut self) {
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("logon-summary")
-        {
+        let logon_summary_flag = CONFIG.read().unwrap().args.is_present("logon-summary");
+        if !logon_summary_flag {
             return;
         }
         // 出力メッセージ作成
@@ -102,31 +94,40 @@ impl Timeline {
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
 
             // イベント情報取得(eventtitleなど)
-            let conf = configs::CONFIG.read().unwrap();
+            let conf = CONFIG
+                .read()
+                .unwrap()
+                .event_timeline_config
+                .get_event_id(*event_id)
+                .is_some();
             // statistics_event_info.txtに登録あるものは情報設定
-            match conf.event_timeline_config.get_event_id(*event_id) {
-                Some(e) => {
-                    // 出力メッセージ1行作成
-                    msges.push(format!(
-                        "{0} ({1:.1}%)\t{2}\t{3}",
-                        event_cnt,
-                        (rate * 1000.0).round() / 10.0,
-                        event_id,
-                        e.evttitle,
-                    ));
-                }
-                None => {
-                    // 出力メッセージ1行作成
-                    msges.push(format!(
-                        "{0} ({1:.1}%)\t{2}\t{3}",
-                        event_cnt,
-                        (rate * 1000.0).round() / 10.0,
-                        event_id,
-                        "Unknown",
-                    ));
-                }
+            if conf {
+                // 出力メッセージ1行作成
+                msges.push(format!(
+                    "{0} ({1:.1}%)\t{2}\t{3}",
+                    event_cnt,
+                    (rate * 1000.0).round() / 10.0,
+                    event_id,
+                    &CONFIG
+                        .read()
+                        .unwrap()
+                        .event_timeline_config
+                        .get_event_id(*event_id)
+                        .unwrap()
+                        .evttitle,
+                ));
+            } else {
+                // 出力メッセージ1行作成
+                msges.push(format!(
+                    "{0} ({1:.1}%)\t{2}\t{3}",
+                    event_cnt,
+                    (rate * 1000.0).round() / 10.0,
+                    event_id,
+                    "Unknown",
+                ));
             }
         }
+
         msges.push("---------------------------------------".to_string());
         msges
     }

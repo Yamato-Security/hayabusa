@@ -1,5 +1,11 @@
 # Changes
 
+## v1.3.1 [2022/xx/xx]
+
+**Enhancements:**
+
+- Strip debug symbols by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
+
 ## v1.3.0 [2022/06/06]
 
 **New Features:**

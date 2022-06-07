@@ -228,7 +228,8 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    for (time, detect_infos) in messages.iter() {
+    let detect_union = messages.iter();
+    for (time, detect_infos) in detect_union {
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
             detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
@@ -429,11 +430,11 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
 
 /// return str position in output file
 fn _format_cellpos(colval: &str, column: ColPos) -> String {
-    return match column {
+    match column {
         ColPos::First => format!("{} ", colval),
         ColPos::Last => format!(" {}", colval),
         ColPos::Other => format!(" {} ", colval),
-    };
+    }
 }
 
 /// output info which unique detection count and all detection count information(devided by level and total) to stdout.

@@ -7,7 +7,7 @@ use std::sync::RwLock;
 use crate::detections::configs;
 use crate::detections::utils::get_serde_number_to_string;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PivotKeyword {
     pub keywords: HashSet<String>,
     pub fields: HashSet<String>,
@@ -57,8 +57,8 @@ pub fn insert_pivot_keyword(event_record: &Value) {
     } else {
         return;
     }
-
-    for (_, pivot) in PIVOT_KEYWORD.write().unwrap().iter_mut() {
+    let mut pivots = PIVOT_KEYWORD.write().unwrap();
+    pivots.iter_mut().into_iter().for_each(|(_, pivot)| {
         for field in &pivot.fields {
             if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field)) {
                 let split: Vec<&str> = array_str.split('.').collect();
@@ -82,7 +82,7 @@ pub fn insert_pivot_keyword(event_record: &Value) {
                 }
             }
         }
-    }
+    });
 }
 
 #[cfg(test)]

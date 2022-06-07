@@ -275,9 +275,7 @@ fn create_recordinfos(record: &Value) -> String {
 
     let summary: Vec<String> = output
         .iter()
-        .map(|(key, value)| {
-            return format!("{}:{}", key, value);
-        })
+        .map(|(key, value)| format!("{}:{}", key, value))
         .collect();
 
     // 標準出力する時はセルがハイプ区切りになるので、パイプ区切りにしない
@@ -314,7 +312,7 @@ fn _collect_recordinfo<'a>(
                     continue;
                 }
                 // Event.Systemは出力しない
-                if key.eq("System") && keys.get(0).unwrap_or(&"").eq(&"Event") {
+                if key.eq("System") && keys.first().unwrap_or(&"").eq(&"Event") {
                     continue;
                 }
 
