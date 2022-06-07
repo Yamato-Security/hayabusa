@@ -57,7 +57,7 @@ pub fn insert_pivot_keyword(event_record: &Value) {
     } else {
         return;
     }
-    let mut pivots = PIVOT_KEYWORD.write().unwrap();
+    let mut pivots = PIVOT_KEYWORD.write().unwrap().clone();
     for (_, pivot) in pivots.iter_mut() {
         for field in &pivot.fields {
             if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field)) {
