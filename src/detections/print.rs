@@ -252,10 +252,10 @@ impl AlertMessage {
                 .as_bytes(),
             )
             .ok();
-        let error_logs = ERROR_LOG_STACK.lock().unwrap().clone();
-        for error_log in error_logs.iter() {
+        let error_logs = ERROR_LOG_STACK.lock().unwrap();
+        error_logs.iter().for_each(|error_log| {
             writeln!(error_log_writer, "{}", error_log).ok();
-        }
+        });
         println!(
             "Errors were generated. Please check {} for details.",
             *ERROR_LOG_PATH
