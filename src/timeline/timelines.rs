@@ -35,11 +35,12 @@ impl Timeline {
     }
 
     pub fn tm_stats_dsp_msg(&mut self) {
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("statistics")
+        let statics_flag = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("statistics");
+        if ! statics_flag
         {
             return;
         }
@@ -70,11 +71,12 @@ impl Timeline {
     }
 
     pub fn tm_logon_stats_dsp_msg(&mut self) {
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("logon-summary")
+        let logon_summary_flag = configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .is_present("logon-summary");
+        if !logon_summary_flag
         {
             return;
         }

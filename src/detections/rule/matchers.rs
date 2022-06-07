@@ -483,7 +483,7 @@ impl PipeElement {
                     wildcard_regex_value.to_string()
                 };
 
-                return format!("{}{}", acc, regex_value);
+                format!("{}{}", acc, regex_value)
             },
         );
 
