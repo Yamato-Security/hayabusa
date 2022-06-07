@@ -31,6 +31,7 @@ use serde_json::Value;
 use std::cmp::Ordering;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
+use std::fmt::Write as _;
 use std::fs::create_dir;
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -331,20 +332,18 @@ impl App {
                 let mut output = "The following pivot keywords were found:\n".to_string();
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                    output += &format!("{}: ", key);
+                    write!(output, "{}: ", key).ok();
 
-                    output += "( ";
+                    write!(output, "( ").ok();
                     for i in pivot_keyword.fields.iter() {
-                        output += &format!("%{}% ", i).to_string();
+                        write!(output, "%{}% ", i).ok();
                     }
-                    output += "):";
-                    output += "\n";
+                    writeln!(output, "):").ok();
 
                     for i in pivot_keyword.keywords.iter() {
-                        output += &format!("{}\n", i).to_string();
+                        writeln!(output, "{}", i).ok();
                     }
-
-                    output += "\n";
+                    writeln!(output).ok();
                 });
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             }
