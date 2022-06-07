@@ -252,8 +252,8 @@ impl AlertMessage {
                 .as_bytes(),
             )
             .ok();
-        let error_logs = ERROR_LOG_STACK.lock().unwrap().iter();
-        for error_log in error_logs {
+        let error_logs = ERROR_LOG_STACK.lock().unwrap();
+        for error_log in error_logs.iter() {
             writeln!(error_log_writer, "{}", error_log).ok();
         }
         println!(
