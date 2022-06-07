@@ -322,7 +322,7 @@ impl App {
                 let mut output =
                     "Pivot keyword results saved to the following files:\n".to_string();
 
-                pivot_key_unions.iter().for_each(|(key, _)|{
+                pivot_key_unions.iter().for_each(|(key, _)| {
                     output += &(pivot_file.to_owned() + "-" + key + ".txt" + "\n");
                 });
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
