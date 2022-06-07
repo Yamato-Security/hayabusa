@@ -57,8 +57,8 @@ pub fn insert_pivot_keyword(event_record: &Value) {
     } else {
         return;
     }
-    let mut pivots = PIVOT_KEYWORD.write().unwrap().clone();
-    for (_, pivot) in pivots.iter_mut() {
+    let mut pivots = PIVOT_KEYWORD.write().unwrap();
+    pivots.iter_mut().into_iter().for_each(|(_, pivot)| {
         for field in &pivot.fields {
             if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field)) {
                 let split: Vec<&str> = array_str.split('.').collect();
@@ -82,7 +82,7 @@ pub fn insert_pivot_keyword(event_record: &Value) {
                 }
             }
         }
-    }
+    });
 }
 
 #[cfg(test)]
