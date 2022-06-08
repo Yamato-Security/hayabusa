@@ -24,8 +24,6 @@ linked-hash-map = "0.5.*"
 tokio = { version = "1", features = ["full"] }
 num_cpus = "1.13.*"
 downcast-rs = "1.2.0"
-slack-hook = "0.8"
-dotenv = "0.15.*"
 hhmmss = "*"
 pbr = "*"
 hashbrown = "0.12.*"
