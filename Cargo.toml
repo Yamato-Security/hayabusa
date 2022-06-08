@@ -24,8 +24,6 @@ linked-hash-map = "0.5.*"
 tokio = { version = "1", features = ["full"] }
 num_cpus = "1.13.*"
 downcast-rs = "1.2.0"
-slack-hook = "0.8"
-dotenv = "0.15.*"
 hhmmss = "*"
 pbr = "*"
 hashbrown = "0.12.*"
@@ -37,16 +35,12 @@ krapslog = "*"
 terminal_size = "*"
 bytesize = "1.1"
 hyper = "0.14.19"
-miow = "0.4.0"
 lock_api = "0.4.7"
 crossbeam-utils = "0.8.8"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
 static_vcruntime = "2.0"
-
-[target.'cfg(unix)'.dependencies] #Mac and Linux
-openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
 [profile.release]
 lto = true

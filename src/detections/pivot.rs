@@ -7,7 +7,7 @@ use std::sync::RwLock;
 use crate::detections::configs;
 use crate::detections::utils::get_serde_number_to_string;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PivotKeyword {
     pub keywords: HashSet<String>,
     pub fields: HashSet<String>,
