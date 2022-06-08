@@ -592,10 +592,17 @@ fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
-    if configs::CONFIG.read().unwrap().args.is_present("rfc-2822") {
+    let time_args = &configs::CONFIG.read().unwrap().args;
+    if time_args.is_present("rfc-2822") {
         time.to_rfc2822()
-    } else if configs::CONFIG.read().unwrap().args.is_present("rfc-3339") {
-        time.to_rfc3339()
+    } else if time_args.is_present("rfc-3339") {
+        time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
+    } else if time_args.is_present("US-time") {
+        time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
+    } else if time_args.is_present("US-military-time") {
+        time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
+    } else if time_args.is_present("European-time") {
+        time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
     } else {
         time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
     }
