@@ -498,7 +498,7 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 * `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available).
 
 You can specify field data from multi `Data` record in details specified. (ex. `%Data[1]%`)
-Note: If you want to output `a` in following eventdata, you would specify `%Data[1]%` in details.
+Note: If you want to output `....exe` in following eventdata, you would specify `%Data[1]%` in details.
 
 ```xml
 <EventData>
