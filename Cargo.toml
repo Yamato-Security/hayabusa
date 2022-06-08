@@ -37,16 +37,12 @@ krapslog = "*"
 terminal_size = "*"
 bytesize = "1.1"
 hyper = "0.14.19"
-miow = "0.4.0"
 lock_api = "0.4.7"
 crossbeam-utils = "0.8.8"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.2"
 static_vcruntime = "2.0"
-
-[target.'cfg(unix)'.dependencies] #Mac and Linux
-openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
 
 [profile.release]
 lto = true
