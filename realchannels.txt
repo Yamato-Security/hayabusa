@@ -1,0 +1,22 @@
+1217171 Microsoft-Windows-Sysmon/Operational
+753254 Security
+82725 Microsoft-Windows-TaskScheduler/Operational
+69345 Microsoft-Windows-PowerShell/Operational
+48425 Microsoft-Windows-WMI-Activity/Operational
+11491 System
+9932 Microsoft-Windows-Windows Firewall With Advanced Security/Firewall
+8245 Microsoft-Windows-DriverFrameworks-UserMode/Operational
+5344 Microsoft-Windows-Bits-Client/Operational
+ 515 Microsoft-Windows-TerminalServices-RDPClient/Operational
+ 194 App
+  64 -
+  43 Microsoft-Windows-Windows Defender/Operational
+  15 Microsoft-Windows-WinRM/Operational
+   1 Channel
+
+
+Sigma rules: 2338
+Hayabusa rules: 131
+Ignored rules: 72
+Rule parsing errors: 0
+Total enabled detection rules: 2469

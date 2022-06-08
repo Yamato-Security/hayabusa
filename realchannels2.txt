@@ -1,0 +1,24 @@
+1217171 Sysmon
+753254 Sec
+82725 TaskSch
+69345 PwSh
+48425 WMI
+11491 Sys
+9932 Firewall
+8245 DvrFmwk
+5344 BitsCli
+ 515 RDP-Client
+ 194 App
+  64 -
+  43 Defender
+  15 WinRM
+   1 Channel
+
+
+sof-elk_clear.py
+sof-elk_update.sh
+
+hyper = "0.14.19"
+miow = "0.4.0"
+lock_api = "0.4.7"
+crossbeam-utils = "0.8.8"
