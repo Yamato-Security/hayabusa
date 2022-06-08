@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- xxx
+- fixed bug that RecordID and RecordInformation column is showed when options is not enabled. (#577) (@hitenkoku)
 
 ## v1.3.0 [2022/06/06]
 
