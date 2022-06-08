@@ -2,9 +2,19 @@
 
 ## v1.3.1 [2022/xx/xx]
 
+**New Features:**
+
+- xxx
+
 **Enhancements:**
 
 - Strip debug symbols by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
+- Added new output time format option (`--US-time`, `--US-military-time`, `--European-time`) (#574) (@hitenkoku)
+- Changed output time format when `--rfc-3339` option is enabled. (#574) (@hitenkoku)
+
+**Bug Fixes:**
+
+- xxx
 
 ## v1.3.0 [2022/06/06]
 
