@@ -585,8 +585,8 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 
 ## イベント頻度タイムライン
 
-`--visualize-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
-マーカーの数は最大10個です。デフォルトのCommand PromptとPowerShell Promptでは文字化けされるので、Windows TerminalやiTerm2等のターミナルをご利用ください。
+`-V`または`--visualize-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
+マーカーの数は最大10個です。デフォルトのCommand PromptとPowerShell Promptでは文字化けがでるので、Windows TerminalやiTerm2等のターミナルをご利用ください。
 
 ## 最多検知日の出力
 
