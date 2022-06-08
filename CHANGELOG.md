@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- Specified field data from multi data in `details` of rules. (#487) (@hitenkoku)
+- Specified field data from multi `Data` record in `details` of rules. (#487) (@hitenkoku)
 
 **Enhancements:**
 
