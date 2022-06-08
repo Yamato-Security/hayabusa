@@ -42,7 +42,8 @@ pub struct AlertMessage {}
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
-    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
+    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
+    pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref ERROR_LOG_PATH: String = format!(
         "./logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
@@ -170,6 +171,14 @@ impl Message {
                 if let Some(record) = tmp_event_record.get(s) {
                     tmp_event_record = record;
                 }
+            }
+            let suffix_match = SUFFIXREGEX.captures(&target_str);
+            let suffix:i64 = match suffix_match{
+                Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
+                None => -1
+            };
+            if suffix >= 0 {
+                tmp_event_record = tmp_event_record.get("Data").unwrap().get(suffix as usize).unwrap_or(tmp_event_record);
             }
             let hash_value = get_serde_number_to_string(tmp_event_record);
             if hash_value.is_some() {
