@@ -338,7 +338,7 @@ USAGE:
     --start-timeline [START_TIMELINE] 'Start time of the event logs to load. (Example: "2018-11-28 12:00:00 +09:00")'
     --end-timeline [END_TIMELINE] 'End time of the event logs to load. (Example: "2021-11-28 12:00:00 +09:00")'
     --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
-    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
+    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07 12:34:56.485214-06:00)'
     --US-time 'Output date time in US time format. (Example: 08-07-2006 00:34:56.485 PM -6:00)'
     --US-military-time 'Output date time in US military time format. (Example: 08-07-2006 12:34:56.485 -6:00)'
     --European-time 'Output date time in European time format. (Example: 07-08-2006 12:34:56.485 +2:00)'
