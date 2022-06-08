@@ -42,6 +42,9 @@ crossbeam-utils = "0.8.8"
 is_elevated = "0.1.2"
 static_vcruntime = "2.0"
 
+[target.'cfg(unix)'.dependencies] #Mac and Linux
+openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
+
 [profile.release]
 lto = true
 strip = "symbols"
