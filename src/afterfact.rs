@@ -414,7 +414,15 @@ enum ColPos {
 
 fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
     if dispformat.is_none() {
-        return "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordID|RecordInformation\n".to_string();
+        let mut titles = vec!["Timestamp","Computer","Channel","EventID","Level","RuleTitle","Details"];
+        let arg_match = &configs::CONFIG.read().unwrap().args;
+        if arg_match.is_present("display-record-id") {
+            titles.push("RecordID");
+        }
+        if arg_match.is_present("full-data") {
+            titles.push("RecordInformation");
+        }
+        return format!("{}\n", titles.join("|"));
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
