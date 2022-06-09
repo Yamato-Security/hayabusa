@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- Specified field data from multi `Data` record in `details` of rules. (#487) (@hitenkoku)
+- You can now specify specific fields when there are multiple fields with the same name (Ex: `Data`). In the `details` line in a rule, specify a placeholder like `%Data[1]%` to display the first `Data` field. (#487) (@hitenkoku)
 
 **Enhancements:**
 
