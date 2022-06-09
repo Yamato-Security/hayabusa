@@ -72,8 +72,8 @@ fn build_app<'a>() -> ArgMatches<'a> {
     let usages = "-d, --directory [DIRECTORY] 'Directory of multiple .evtx files.'
     -f, --filepath [FILE_PATH] 'File path to one .evtx file.'
     -F, --full-data 'Print all field information.'
-    -r, --rules [RULE_DIRECTORY/RULE_FILE] 'Rule directory or file (Default: .\rules)'
-    -C, --config [RULE_CONFIG_DIRECTORY] 'Rule config folder. (Default: .\rules\config)'
+    -r, --rules [RULE_DIRECTORY/RULE_FILE] 'Rule directory or file (Default: .\\rules)'
+    -C, --config [RULE_CONFIG_DIRECTORY] 'Rule config folder. (Default: .\\rules\\config)'
     -o, --output [CSV_TIMELINE] 'Save the timeline in CSV format. (Ex: results.csv)'
     --all-tags 'Output all tags when saving to a CSV file.'
     -R, --display-record-id 'Display event record ID.'
@@ -98,7 +98,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -L, --logon-summary 'Successful and failed logons summary.'
     -q, --quiet 'Quiet mode. Do not display the launch banner.'
     -Q, --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --level-tuning [LEVEL_TUNING_FILE] 'Tune alert levels. (Default: .\rules\config\level_tuning.txt)'
+    --level-tuning [LEVEL_TUNING_FILE] 'Tune alert levels. (Default: .\\rules\\config\\level_tuning.txt)'
     -p, --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
