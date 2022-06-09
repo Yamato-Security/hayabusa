@@ -414,7 +414,23 @@ enum ColPos {
 
 fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
     if dispformat.is_none() {
-        return "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordID|RecordInformation\n".to_string();
+        let mut titles = vec![
+            "Timestamp",
+            "Computer",
+            "Channel",
+            "EventID",
+            "Level",
+            "RuleTitle",
+            "Details",
+        ];
+        let arg_match = &configs::CONFIG.read().unwrap().args;
+        if arg_match.is_present("display-record-id") {
+            titles.push("RecordID");
+        }
+        if arg_match.is_present("full-data") {
+            titles.push("RecordInformation");
+        }
+        return format!("{}\n", titles.join("|"));
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
@@ -734,8 +750,7 @@ mod tests {
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_header =
-            "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details|RecordID|RecordInformation\n";
+        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
