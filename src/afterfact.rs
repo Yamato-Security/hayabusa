@@ -414,7 +414,15 @@ enum ColPos {
 
 fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
     if dispformat.is_none() {
-        let mut titles = vec!["Timestamp","Computer","Channel","EventID","Level","RuleTitle","Details"];
+        let mut titles = vec![
+            "Timestamp",
+            "Computer",
+            "Channel",
+            "EventID",
+            "Level",
+            "RuleTitle",
+            "Details",
+        ];
         let arg_match = &configs::CONFIG.read().unwrap().args;
         if arg_match.is_present("display-record-id") {
             titles.push("RecordID");
