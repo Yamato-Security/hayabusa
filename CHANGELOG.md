@@ -9,7 +9,7 @@
 **Enhancements:**
 
 - Strip debug symbols by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
-- Added new output time format option (`--US-time`, `--US-military-time`, `--European-time`) (#574) (@hitenkoku)
+- Added new output time format options. (`--US-time`, `--US-military-time`, `--European-time`) (#574) (@hitenkoku)
 - Changed output time format when `--rfc-3339` option is enabled. (#574) (@hitenkoku)
 
 **Bug Fixes:**
