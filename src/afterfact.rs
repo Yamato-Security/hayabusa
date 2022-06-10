@@ -1,6 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
-use crate::detections::print::AlertMessage;
+use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
 use crate::detections::utils::write_color_buffer;
 use chrono::{DateTime, Local, TimeZone, Utc};
@@ -423,11 +423,10 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
             "RuleTitle",
             "Details",
         ];
-        let arg_match = &configs::CONFIG.read().unwrap().args;
-        if arg_match.is_present("display-record-id") {
-            titles.push("RecordID");
+        if !*IS_HIDE_RECORD_ID {
+            titles.insert(5, "RecordID");
         }
-        if arg_match.is_present("full-data") {
+        if configs::CONFIG.read().unwrap().args.is_present("full-data") {
             titles.push("RecordInformation");
         }
         return format!("{}\n", titles.join("|"));
