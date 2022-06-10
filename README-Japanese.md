@@ -61,6 +61,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ログオン情報の要約](#ログオン情報の要約)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
+  - [Levelの省略](#levelの省略)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
   - [プログレスバー](#プログレスバー)
@@ -509,6 +510,16 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 * `File Path`: アラートまたはイベントを起こしたevtxファイルへのパス。
 
 `-F`もしくは`--full-data`オプションを指定した場合、全てのフィールド情報が`RecordInformation`カラムにで出力されます。
+
+## Levelの省略
+
+簡潔に出力するためにLevelを以下のように省略し出力しています。
+
+* `crit`: `critical`
+* `high`: `high`
+* `med `: `med`
+* `low `: `low`
+* `info`: `informational`
 
 ## MITRE ATT&CK戦術の省略
 

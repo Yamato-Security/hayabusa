@@ -60,6 +60,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Logon Summary Generator](#logon-summary-generator)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
+  - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
   - [Progress Bar](#progress-bar)
@@ -508,6 +509,16 @@ The following additional columns will be added to the output when saving to a CS
 * `File Path`: The path to the evtx file that caused the alert or event.
 
 If you add the `-F` or `--full-data` option, a `RecordInformation` column with all field information will also be added.
+
+## Level Abbrevations
+
+In order to save space, we use the following abbrevations to `Level` display.
+
+* `crit`: `critical`
+* `high`: `high`
+* `med `: `med`
+* `low `: `low`
+* `info`: `informational`
 
 ## MITRE ATT&CK Tactics Abbreviations
 
