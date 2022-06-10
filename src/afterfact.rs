@@ -265,7 +265,10 @@ fn emit_csv<W: std::io::Write>(
 
                 let dispformat: _ = DisplayFormat {
                     timestamp: &_format_cellpos(&time_str, ColPos::First),
-                    level: &_format_cellpos(level_abbr.get(&level).unwrap_or(&level), ColPos::Other),
+                    level: &_format_cellpos(
+                        level_abbr.get(&level).unwrap_or(&level),
+                        ColPos::Other,
+                    ),
                     computer: &_format_cellpos(&detect_info.computername, ColPos::Other),
                     event_i_d: &_format_cellpos(&detect_info.eventid, ColPos::Other),
                     channel: &_format_cellpos(&detect_info.channel, ColPos::Other),
