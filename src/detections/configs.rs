@@ -98,7 +98,6 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -L, --logon-summary 'Successful and failed logons summary.'
     -q, --quiet 'Quiet mode. Do not display the launch banner.'
     -Q, --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    --level-tuning [LEVEL_TUNING_FILE] 'Tune alert levels. (Default: .\\rules\\config\\level_tuning.txt)'
     -p, --pivot-keywords-list 'Create a list of pivot keywords.'
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
@@ -108,7 +107,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
         .setting(AppSettings::VersionlessSubcommands)
         .arg(
             // TODO: When update claps to 3.x, these can write in usage texts...
-            Arg::from_usage("--level-tuning=[LEVEL_TUNING_FILE] 'Adjust rule level.'")
+            Arg::from_usage("--level-tuning [LEVEL_TUNING_FILE] 'Tune alert levels. (Default: .\\rules\\config\\level_tuning.txt)'")
                 .default_value("./rules/config/level_tuning.txt"),
         )
         .usage(usages)
