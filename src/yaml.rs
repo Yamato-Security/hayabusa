@@ -226,12 +226,11 @@ impl ParseYaml {
                         .no_use_rule
                         .get(&rule_id.unwrap_or(&String::default()).to_string())
                     {
-                        let entry_key;
-                        if v.contains("exclude_rule") {
-                            entry_key = "excluded";
+                        let entry_key = if v.contains("exclude_rule") {
+                            "excluded"
                         } else {
-                            entry_key = "noisy";
-                        }
+                            "noisy"
+                        };
                         let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
                         *entry += 1;
                         return Option::None;
