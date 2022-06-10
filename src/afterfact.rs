@@ -251,11 +251,17 @@ fn emit_csv<W: std::io::Write>(
                     .record_information
                     .as_ref()
                     .map(|recinfo| _format_cellpos(recinfo, ColPos::Last));
-                let details = detect_info
+                let ctr_char_exclude_details = detect_info
                     .detail
                     .chars()
                     .filter(|&c| !c.is_control())
                     .collect::<String>();
+
+                let details = if ctr_char_exclude_details.is_empty() {
+                    "-".to_string()
+                } else {
+                    ctr_char_exclude_details
+                };
 
                 let dispformat: _ = DisplayFormat {
                     timestamp: &_format_cellpos(&time_str, ColPos::First),
