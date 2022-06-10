@@ -217,6 +217,13 @@ fn emit_csv<W: std::io::Write>(
         "informational",
         "undefined",
     ]);
+    let level_abbr: HashMap<String, String> = HashMap::from([
+        (String::from("cruitical"), String::from("crit")),
+        (String::from("high"), String::from("high")),
+        (String::from("medium"), String::from("med ")),
+        (String::from("low"), String::from("low ")),
+        (String::from("informational"), String::from("info")),
+    ]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
@@ -233,10 +240,7 @@ fn emit_csv<W: std::io::Write>(
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
             detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
-            let mut level = detect_info.level.to_string();
-            if level == "informational" {
-                level = "info".to_string();
-            }
+            let level = detect_info.level.to_string();
             let time_str = format_time(time, false);
             if displayflag {
                 let record_id = detect_info
@@ -253,9 +257,9 @@ fn emit_csv<W: std::io::Write>(
                     .filter(|&c| !c.is_control())
                     .collect::<String>();
 
-                let dispformat = DisplayFormat {
+                let dispformat: _ = DisplayFormat {
                     timestamp: &_format_cellpos(&time_str, ColPos::First),
-                    level: &_format_cellpos(&level, ColPos::Other),
+                    level: &_format_cellpos(level_abbr.get(&level).unwrap_or(&level), ColPos::Other),
                     computer: &_format_cellpos(&detect_info.computername, ColPos::Other),
                     event_i_d: &_format_cellpos(&detect_info.eventid, ColPos::Other),
                     channel: &_format_cellpos(&detect_info.channel, ColPos::Other),
