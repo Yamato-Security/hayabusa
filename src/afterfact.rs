@@ -725,7 +725,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RuleTitle,Details,RecordID,RecordInformation,RulePath,FilePath\n"
+            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -742,11 +742,11 @@ mod tests {
                 + ","
                 + test_attack
                 + ","
+                + test_record_id
+                + ","
                 + test_title
                 + ","
                 + output
-                + ","
-                + test_record_id
                 + ","
                 + test_recinfo
                 + ","
@@ -795,11 +795,11 @@ mod tests {
             + "|"
             + test_level
             + "|"
+            + test_recid
+            + "|"
             + test_title
             + "|"
             + output
-            + "|"
-            + test_recid
             + "|"
             + test_recinfo
             + "\n";
