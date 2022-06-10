@@ -5,12 +5,14 @@
 **New Features:**
 
 - You can now specify specific fields when there are multiple fields with the same name (Ex: `Data`). In the `details` line in a rule, specify a placeholder like `%Data[1]%` to display the first `Data` field. (#487) (@hitenkoku)
+- Added loaded rules status summary. (#583) (@hitenkoku)
 
 **Enhancements:**
 
 - Strip debug symbols by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
 - Added new output time format options. (`--US-time`, `--US-military-time`, `--European-time`) (#574) (@hitenkoku)
 - Changed output time format when `--rfc-3339` option is enabled. (#574) (@hitenkoku)
+- Added rule loading message. (#583) (@hitenkoku)
 
 **Bug Fixes:**
 
