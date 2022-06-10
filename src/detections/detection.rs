@@ -13,7 +13,7 @@ use crate::detections::print::{CH_CONFIG, IS_DISPLAY_RECORD_ID, TAGS_CONFIG};
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
-use crate::detections::utils::get_serde_number_to_string;
+use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
 use crate::yaml::ParseYaml;
 use hashbrown;
@@ -126,12 +126,12 @@ impl Detection {
             .args
             .is_present("logon-summary")
         {
+            let _ = &rulefile_loader
+                .rule_load_status_cnt
+                .insert(String::from("rule parsing error"), parseerror_count);
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
-                &parseerror_count,
-                &rulefile_loader.exclude_rule_count,
-                &rulefile_loader.noisy_rule_count,
-                &rulefile_loader.deprecate_rule_count,
+                &rulefile_loader.rule_load_status_cnt,
             );
         }
         ret
@@ -353,21 +353,22 @@ impl Detection {
         ret
     }
 
-    pub fn print_rule_load_info(
-        rc: &HashMap<String, u128>,
-        parseerror_count: &u128,
-        exclude_count: &u128,
-        noisy_count: &u128,
-        deprecate_count: &u128,
-    ) {
+    pub fn print_rule_load_info(rc: &HashMap<String, u128>, st_rc: &HashMap<String, u128>) {
         if *STATISTICS_FLAG {
             return;
         }
-        println!("Deprecated rules: {}", deprecate_count);
-        println!("Excluded rules: {}", exclude_count);
-        println!("Noisy rules: {}", noisy_count);
-        println!("Rule parsing errors: {}", parseerror_count);
+        let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
+        sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
+        sorted_st_rc.into_iter().for_each(|(key, value)| {
+            //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+            println!(
+                "{} rules: {}",
+                make_ascii_titlecase(key.clone().as_mut()),
+                value
+            );
+        });
         println!();
+
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         let mut enable_total = 0;

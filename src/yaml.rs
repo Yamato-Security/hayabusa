@@ -18,9 +18,7 @@ use yaml_rust::YamlLoader;
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
     pub rulecounter: HashMap<String, u128>,
-    pub exclude_rule_count: u128,
-    pub noisy_rule_count: u128,
-    pub deprecate_rule_count: u128,
+    pub rule_load_status_cnt: HashMap<String, u128>,
     pub errorrule_count: u128,
 }
 
@@ -35,9 +33,11 @@ impl ParseYaml {
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
-            exclude_rule_count: 0,
-            noisy_rule_count: 0,
-            deprecate_rule_count: 0,
+            rule_load_status_cnt: HashMap::from([
+                ("excluded".to_string(), 0_u128),
+                ("noisy".to_string(), 0_u128),
+                ("deprecate".to_string(), 0_u128),
+            ]),
             errorrule_count: 0,
         }
     }
@@ -221,19 +221,22 @@ impl ParseYaml {
                 //除外されたルールは無視する
                 let rule_id = &yaml_doc["id"].as_str();
                 if rule_id.is_some() {
-                    match exclude_ids
+                    if let Some(v) = exclude_ids
                         .no_use_rule
-                        .get(&rule_id.unwrap_or("").to_string())
+                        .get(&rule_id.unwrap_or(&String::default()).to_string())
                     {
-                        None => (),
-                        Some(v) => {
-                            if v.contains("exclude_rule") {
-                                self.exclude_rule_count += 1;
-                            } else {
-                                self.noisy_rule_count += 1;
-                            }
-                            return Option::None;
+                        let entry_key;
+                        if v.contains("exclude_rule") {
+                            entry_key = "excluded";
+                        } else {
+                            entry_key = "noisy";
                         }
+                        let entry = self
+                            .rule_load_status_cnt
+                            .entry(entry_key.to_string())
+                            .or_insert(0);
+                        *entry += 1;
+                        return Option::None;
                     }
                 }
 
@@ -244,6 +247,17 @@ impl ParseYaml {
                         .unwrap_or(&0)
                         + 1,
                 );
+
+                let status_cnt = self
+                    .rule_load_status_cnt
+                    .entry(
+                        yaml_doc["status"]
+                            .as_str()
+                            .unwrap_or("Undefined")
+                            .to_string(),
+                    )
+                    .or_insert(0);
+                *status_cnt += 1;
 
                 if configs::CONFIG.read().unwrap().args.is_present("verbose") {
                     println!("Loaded yml file path: {}", filepath);
@@ -269,7 +283,11 @@ impl ParseYaml {
                 {
                     let rule_status = &yaml_doc["status"].as_str().unwrap_or_default();
                     if *rule_status == "deprecated" {
-                        self.deprecate_rule_count += 1;
+                        let entry = self
+                            .rule_load_status_cnt
+                            .entry(rule_status.to_string())
+                            .or_insert(0);
+                        *entry += 1;
                         return Option::None;
                     }
                 }
