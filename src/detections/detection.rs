@@ -109,7 +109,7 @@ impl Detection {
                     });
                 }
                 parseerror_count += 1;
-                println!(); // 一行開けるためのprintln
+                println!();
             });
             Option::None
         };
