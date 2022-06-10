@@ -42,7 +42,8 @@ pub struct AlertMessage {}
 
 lazy_static! {
     pub static ref MESSAGES: Mutex<Message> = Mutex::new(Message::new());
-    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_]+%").unwrap();
+    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
+    pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref ERROR_LOG_PATH: String = format!(
         "./logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
@@ -170,6 +171,18 @@ impl Message {
                 if let Some(record) = tmp_event_record.get(s) {
                     tmp_event_record = record;
                 }
+            }
+            let suffix_match = SUFFIXREGEX.captures(&target_str);
+            let suffix: i64 = match suffix_match {
+                Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
+                None => -1,
+            };
+            if suffix >= 1 {
+                tmp_event_record = tmp_event_record
+                    .get("Data")
+                    .unwrap()
+                    .get((suffix - 1) as usize)
+                    .unwrap_or(tmp_event_record);
             }
             let hash_value = get_serde_number_to_string(tmp_event_record);
             if hash_value.is_some() {
@@ -536,6 +549,105 @@ mod tests {
             message.parse_message(
                 &event_record,
                 "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+            ),
+            expected,
+        );
+    }
+    #[test]
+    /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
+    fn test_parse_message_multiple_no_suffix_in_record() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest3",
+                    "Data": [
+                        "data1", 
+                        "data2", 
+                        "data3"
+                    ]
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "commandline:parsetest3 data:[\"data1\",\"data2\",\"data3\"]";
+        assert_eq!(
+            message.parse_message(
+                &event_record,
+                "commandline:%CommandLine% data:%Data%".to_owned()
+            ),
+            expected,
+        );
+    }
+    #[test]
+    /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
+    fn test_parse_message_multiple_with_suffix_in_record() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest3",
+                    "Data": [
+                        "data1", 
+                        "data2", 
+                        "data3"
+                    ]
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "commandline:parsetest3 data:data2";
+        assert_eq!(
+            message.parse_message(
+                &event_record,
+                "commandline:%CommandLine% data:%Data[2]%".to_owned()
+            ),
+            expected,
+        );
+    }
+    #[test]
+    /// output test when no exist info in target record output and described key-value data in eventkey_alias.txt
+    fn test_parse_message_multiple_no_exist_in_record() {
+        let mut message = Message::new();
+        let json_str = r##"
+        {
+            "Event": {
+                "EventData": {
+                    "CommandLine": "parsetest3",
+                    "Data": [
+                        "data1", 
+                        "data2",
+                        "data3"
+                    ]
+                },
+                "System": {
+                    "TimeCreated_attributes": {
+                        "SystemTime": "1996-02-27T01:05:01Z"
+                    }
+                }
+            }
+        }
+    "##;
+        let event_record: Value = serde_json::from_str(json_str).unwrap();
+        let expected = "commandline:parsetest3 data:n/a";
+        assert_eq!(
+            message.parse_message(
+                &event_record,
+                "commandline:%CommandLine% data:%Data[0]%".to_owned()
             ),
             expected,
         );

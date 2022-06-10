@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- xxx
+- You can now specify specific fields when there are multiple fields with the same name (Ex: `Data`). In the `details` line in a rule, specify a placeholder like `%Data[1]%` to display the first `Data` field. (#487) (@hitenkoku)
 
 **Enhancements:**
 
@@ -15,6 +15,10 @@
 **Bug Fixes:**
 
 - xxx
+
+**Bug Fixes:**
+
+- fixed bug that RecordID and RecordInformation column is showed when options is not enabled. (#577) (@hitenkoku)
 
 ## v1.3.0 [2022/06/06]
 
