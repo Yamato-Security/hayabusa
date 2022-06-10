@@ -237,7 +237,7 @@ fn emit_csv<W: std::io::Write>(
             if level == "informational" {
                 level = "info".to_string();
             }
-            let time_str = format_time(time);
+            let time_str = format_time(time, false);
             if displayflag {
                 let record_id = detect_info
                     .record_id
@@ -301,7 +301,7 @@ fn emit_csv<W: std::io::Write>(
             let level_suffix = *configs::LEVELMAP
                 .get(&detect_info.level.to_uppercase())
                 .unwrap_or(&0) as usize;
-            let time_str_date = &time_str[0..10];
+            let time_str_date = format_time(time, true);
             let mut detect_counts_by_date = detect_counts_by_date_and_level
                 .get(&detect_info.level.to_lowercase())
                 .unwrap_or_else(|| detect_counts_by_date_and_level.get("undefined").unwrap())
@@ -585,11 +585,11 @@ fn _print_detection_summary_by_computer(
     buf_wtr.print(&wtr).ok();
 }
 
-fn format_time(time: &DateTime<Utc>) -> String {
+fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
     if configs::CONFIG.read().unwrap().args.is_present("utc") {
-        format_rfc(time)
+        format_rfc(time, date_only)
     } else {
-        format_rfc(&time.with_timezone(&Local))
+        format_rfc(&time.with_timezone(&Local), date_only)
     }
 }
 
@@ -604,21 +604,43 @@ fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
 }
 
 /// return rfc time format string by option
-fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>) -> String
+fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>, date_only: bool) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
     let time_args = &configs::CONFIG.read().unwrap().args;
     if time_args.is_present("rfc-2822") {
-        time.to_rfc2822()
+        if date_only {
+            time.format("%a, %e %b %Y").to_string()
+        } else {
+            time.format("%a, %e %b %Y %H:%M:%S %:z").to_string()
+        }
     } else if time_args.is_present("rfc-3339") {
-        time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
+        if date_only {
+            time.format("%Y-%m-%d").to_string()
+        } else {
+            time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
+        }
     } else if time_args.is_present("US-time") {
-        time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
+        if date_only {
+            time.format("%m-%d-%Y").to_string()
+        } else {
+            time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
+        }
     } else if time_args.is_present("US-military-time") {
-        time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
+        if date_only {
+            time.format("%m-%d-%Y").to_string()
+        } else {
+            time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
+        }
     } else if time_args.is_present("European-time") {
-        time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
+        if date_only {
+            time.format("%d-%m-%Y").to_string()
+        } else {
+            time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
+        }
+    } else if date_only {
+        time.format("%Y-%m-%d").to_string()
     } else {
         time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
     }
@@ -784,7 +806,7 @@ mod tests {
         assert_eq!(_get_serialized_disp_output(None,), expect_header);
         assert_eq!(
             _get_serialized_disp_output(Some(DisplayFormat {
-                timestamp: &format_time(&test_timestamp),
+                timestamp: &format_time(&test_timestamp, false),
                 level: test_level,
                 computer: test_computername,
                 event_i_d: test_eventid,
