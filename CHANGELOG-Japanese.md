@@ -9,6 +9,12 @@
 **改善:**
 
 - LinuxとmacOSのバイナリサイズをより小さくするために、デバッグシンボルをストリップします。(#568) (@YamatoSecurity)
+- 新たな時刻表示のオプションとして`--US-time`、`--US-military-time`、`--European-time`の3つを追加した (#574) (@hitenkoku)
+- `--rfc-3339` オプションの時刻表示形式を変更した。 (#574) (@hitenkoku)
+
+**バグ修正:**
+
+- xxx
 
 **バグ修正:**
 

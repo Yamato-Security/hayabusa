@@ -9,6 +9,12 @@
 **Enhancements:**
 
 - Strip debug symbols by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
+- Added new output time format options. (`--US-time`, `--US-military-time`, `--European-time`) (#574) (@hitenkoku)
+- Changed output time format when `--rfc-3339` option is enabled. (#574) (@hitenkoku)
+
+**Bug Fixes:**
+
+- xxx
 
 **Bug Fixes:**
 
@@ -37,7 +43,7 @@
 
 **Bug Fixes:**
 
-- Fixed the `--start-timeline` and `--end-timeline` options as they were not working. (#546) @hitenkoku)
+- Fixed the `--start-timeline` and `--end-timeline` options as they were not working. (#546) (@hitenkoku)
 - Fixed crash bug when level in rule is not valid. (#560) (@hitenkoku)
 
 ## v1.2.2 [2022/05/20]

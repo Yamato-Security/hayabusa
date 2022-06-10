@@ -72,11 +72,11 @@ fn build_app<'a>() -> ArgMatches<'a> {
     let usages = "-d, --directory [DIRECTORY] 'Directory of multiple .evtx files.'
     -f, --filepath [FILE_PATH] 'File path to one .evtx file.'
     -F, --full-data 'Print all field information.'
-    -r, --rules [RULE_DIRECTORY/RULE_FILE] 'Rule directory or file (default: ./rules)'
-    -C, --config [RULE_CONFIG_DIRECTORY] 'Rule config folder. (Default: ./rules/config)'
-    -o, --output [CSV_TIMELINE] 'Save the timeline in CSV format. (Example: results.csv)'
+    -r, --rules [RULE_DIRECTORY/RULE_FILE] 'Rule directory or file (Default: .\\rules)'
+    -C, --config [RULE_CONFIG_DIRECTORY] 'Rule config folder. (Default: .\\rules\\config)'
+    -o, --output [CSV_TIMELINE] 'Save the timeline in CSV format. (Ex: results.csv)'
     --all-tags 'Output all tags when saving to a CSV file.'
-    -R, --display-record-id 'Display EventRecordID.'
+    -R, --display-record-id 'Display event record ID.'
     -v, --verbose 'Output verbose information.'
     -V, --visualize-timeline 'Output event frequency timeline.'
     -D, --enable-deprecated-rules 'Enable rules marked as deprecated.'
@@ -84,10 +84,13 @@ fn build_app<'a>() -> ArgMatches<'a> {
     -u, --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
     -m, --min-level [LEVEL] 'Minimum level for rules. (Default: informational)'
     -l, --live-analysis 'Analyze the local C:\\Windows\\System32\\winevt\\Logs folder (Windows Only. Administrator privileges required.)'
-    --start-timeline [START_TIMELINE] 'Start time of the event logs to load. (Example: \"2018-11-28 12:00:00 +09:00\")'
-    --end-timeline [END_TIMELINE] 'End time of the event logs to load. (Example: \"2021-11-28 12:00:00 +09:00\")'
-    --rfc-2822 'Output date and time in RFC 2822 format. (Example: Mon, 07 Aug 2006 12:34:56 -0600)'
-    --rfc-3339 'Output date and time in RFC 3339 format. (Example: 2006-08-07T12:34:56.485214 -06:00)'
+    --start-timeline [START_TIMELINE] 'Start time of the event logs to load. (Ex: \"2020-02-22 00:00:00 +09:00\")'
+    --end-timeline [END_TIMELINE] 'End time of the event logs to load. (Ex: \"2022-02-22 23:59:59 +09:00\")'
+    --rfc-2822 'Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)'
+    --rfc-3339 'Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)'
+    --US-time 'Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)'
+    --US-military-time 'Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)'
+    --European-time 'Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)'
     -U, --utc 'Output time in UTC format. (Default: local time)'
     --no-color 'Disable color output.'
     -t, --thread-number [NUMBER] 'Thread number. (Default: Optimal number for performance.)'
@@ -99,12 +102,12 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
-        .version("1.3.0")
+        .version("1.3.1-dev")
         .author("Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato")
         .setting(AppSettings::VersionlessSubcommands)
         .arg(
             // TODO: When update claps to 3.x, these can write in usage texts...
-            Arg::from_usage("--level-tuning=[LEVEL_TUNING_FILE] 'Adjust rule level.'")
+            Arg::from_usage("--level-tuning [LEVEL_TUNING_FILE] 'Tune alert levels. (Default: .\\rules\\config\\level_tuning.txt)'")
                 .default_value("./rules/config/level_tuning.txt"),
         )
         .usage(usages)
