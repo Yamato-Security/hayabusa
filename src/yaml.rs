@@ -18,7 +18,8 @@ use yaml_rust::YamlLoader;
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
     pub rulecounter: HashMap<String, u128>,
-    pub rule_load_status_cnt: HashMap<String, u128>,
+    pub rule_load_cnt: HashMap<String, u128>,
+    pub rule_status_cnt: HashMap<String, u128>,
     pub errorrule_count: u128,
 }
 
@@ -33,11 +34,11 @@ impl ParseYaml {
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
-            rule_load_status_cnt: HashMap::from([
+            rule_load_cnt: HashMap::from([
                 ("excluded".to_string(), 0_u128),
                 ("noisy".to_string(), 0_u128),
-                ("deprecate".to_string(), 0_u128),
             ]),
+            rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
             errorrule_count: 0,
         }
     }
@@ -231,10 +232,7 @@ impl ParseYaml {
                         } else {
                             entry_key = "noisy";
                         }
-                        let entry = self
-                            .rule_load_status_cnt
-                            .entry(entry_key.to_string())
-                            .or_insert(0);
+                        let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
                         *entry += 1;
                         return Option::None;
                     }
@@ -249,11 +247,11 @@ impl ParseYaml {
                 );
 
                 let status_cnt = self
-                    .rule_load_status_cnt
+                    .rule_status_cnt
                     .entry(
                         yaml_doc["status"]
                             .as_str()
-                            .unwrap_or("Undefined")
+                            .unwrap_or("undefined")
                             .to_string(),
                     )
                     .or_insert(0);
@@ -284,7 +282,7 @@ impl ParseYaml {
                     let rule_status = &yaml_doc["status"].as_str().unwrap_or_default();
                     if *rule_status == "deprecated" {
                         let entry = self
-                            .rule_load_status_cnt
+                            .rule_status_cnt
                             .entry(rule_status.to_string())
                             .or_insert(0);
                         *entry += 1;

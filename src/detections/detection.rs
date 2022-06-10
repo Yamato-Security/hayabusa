@@ -127,11 +127,12 @@ impl Detection {
             .is_present("logon-summary")
         {
             let _ = &rulefile_loader
-                .rule_load_status_cnt
+                .rule_load_cnt
                 .insert(String::from("rule parsing error"), parseerror_count);
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
-                &rulefile_loader.rule_load_status_cnt,
+                &rulefile_loader.rule_load_cnt,
+                &rulefile_loader.rule_status_cnt,
             );
         }
         ret
@@ -353,30 +354,46 @@ impl Detection {
         ret
     }
 
-    pub fn print_rule_load_info(rc: &HashMap<String, u128>, st_rc: &HashMap<String, u128>) {
+    pub fn print_rule_load_info(
+        rc: &HashMap<String, u128>,
+        ld_rc: &HashMap<String, u128>,
+        st_rc: &HashMap<String, u128>,
+    ) {
         if *STATISTICS_FLAG {
             return;
         }
-        let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
-        sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
-        sorted_st_rc.into_iter().for_each(|(key, value)| {
+        let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
+        sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
+        sorted_ld_rc.into_iter().for_each(|(key, value)| {
             //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
             println!(
                 "{} rules: {}",
                 make_ascii_titlecase(key.clone().as_mut()),
-                value
+                value,
+            );
+        });
+        println!();
+
+        let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
+        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| v.to_owned()).sum();
+        sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
+        sorted_st_rc.into_iter().for_each(|(key, value)| {
+            //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+            println!(
+                "{} rules: {} ({:.2}%)",
+                make_ascii_titlecase(key.clone().as_mut()),
+                value,
+                value / total_loaded_rule_cnt
             );
         });
         println!();
 
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
-        let mut enable_total = 0;
         sorted_rc.into_iter().for_each(|(key, value)| {
             println!("{} rules: {}", key, value);
-            enable_total += value;
         });
-        println!("Total enabled detection rules: {}", enable_total);
+        println!("Total enabled detection rules: {}", total_loaded_rule_cnt);
         println!();
     }
 }
