@@ -378,12 +378,17 @@ impl Detection {
         let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| v.to_owned()).sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
+            let rate = if value == &0_u128 {
+                0 as f64
+            } else {
+                (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0
+            };
             //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
             println!(
                 "{} rules: {} ({:.2}%)",
                 make_ascii_titlecase(key.clone().as_mut()),
                 value,
-                value / total_loaded_rule_cnt
+                rate
             );
         });
         println!();
