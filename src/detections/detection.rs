@@ -9,7 +9,7 @@ use crate::detections::print::MESSAGES;
 use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
 use crate::detections::print::QUIET_ERRORS_FLAG;
 use crate::detections::print::STATISTICS_FLAG;
-use crate::detections::print::{CH_CONFIG, IS_DISPLAY_RECORD_ID, TAGS_CONFIG};
+use crate::detections::print::{CH_CONFIG, IS_HIDE_RECORD_ID, TAGS_CONFIG};
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -232,7 +232,7 @@ impl Detection {
             .record_information
             .as_ref()
             .map(|recinfo| recinfo.to_string());
-        let rec_id = if *IS_DISPLAY_RECORD_ID {
+        let rec_id = if !*IS_HIDE_RECORD_ID {
             Some(
                 get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
                     .unwrap_or_default(),
@@ -280,7 +280,7 @@ impl Detection {
         } else {
             Option::None
         };
-        let rec_id = if *IS_DISPLAY_RECORD_ID {
+        let rec_id = if !*IS_HIDE_RECORD_ID {
             Some(String::default())
         } else {
             None

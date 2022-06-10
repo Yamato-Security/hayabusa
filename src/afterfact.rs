@@ -29,10 +29,10 @@ pub struct CsvFormat<'a> {
     event_i_d: &'a str,
     level: &'a str,
     mitre_attack: &'a str,
-    rule_title: &'a str,
-    details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     record_i_d: Option<&'a str>,
+    rule_title: &'a str,
+    details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     record_information: Option<&'a str>,
     rule_path: &'a str,
@@ -47,10 +47,10 @@ pub struct DisplayFormat<'a> {
     pub channel: &'a str,
     pub event_i_d: &'a str,
     pub level: &'a str,
-    pub rule_title: &'a str,
-    pub details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     record_i_d: Option<&'a str>,
+    pub rule_title: &'a str,
+    pub details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub record_information: Option<&'a str>,
 }
