@@ -295,7 +295,7 @@ fn emit_csv<W: std::io::Write>(
                 // csv output format
                 wtr.serialize(CsvFormat {
                     timestamp: &time_str,
-                    level: &level,
+                    level: level_abbr.get(&level).unwrap_or(&level).trim(),
                     computer: &detect_info.computername,
                     event_i_d: &detect_info.eventid,
                     channel: &detect_info.channel,
