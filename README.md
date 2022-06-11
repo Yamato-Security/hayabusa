@@ -328,7 +328,7 @@ USAGE:
     -C, --config [RULE_CONFIG_DIRECTORY] 'Rule config folder. (Default: .\rules\config)'
     -o, --output [CSV_TIMELINE] 'Save the timeline in CSV format. (Ex: results.csv)'
     --all-tags 'Output all tags when saving to a CSV file.'
-    -R, --hide-record-id 'Do not display EventRecordID number.'
+    -R, --hide-record-id 'Do not display the EventRecordID number.'
     -v, --verbose 'Output verbose information.'
     -V, --visualize-timeline 'Output event frequency timeline.'
     -D, --enable-deprecated-rules 'Enable rules marked as deprecated.'
@@ -498,7 +498,7 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 * `Channel`: The name of log. This comes from the `<Event><System><Channel>` field in the event log.
 * `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
-* `RecordID`: This comes from `<Event><System><EventRecordID>` field in the event log. No display this output if `-R` or `--hide-record-id` is enabled.
+* `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log. You can hidde this output with the `-R` or `--hide-record-id` option.
 * `Title`: This comes from the `title` field in the YML detection rule.
 * `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the `<Event><System><EventData>` portion of the log. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available).
 
@@ -512,7 +512,7 @@ If you add the `-F` or `--full-data` option, a `RecordInformation` column with a
 
 ## Level Abbrevations
 
-In order to save space, we use the following abbrevations to `Level` display.
+In order to save space, we use the following abbrevations when displaying the alert `level`.
 
 * `crit`: `critical`
 * `high`: `high`
