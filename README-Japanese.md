@@ -61,6 +61,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ログオン情報の要約](#ログオン情報の要約)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
+  - [Levelの省略](#levelの省略)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
   - [プログレスバー](#プログレスバー)
@@ -329,7 +330,7 @@ USAGE:
     -C, --config [RULE_CONFIG_DIRECTORY] 'ルールフォルダのコンフィグディレクトリ(デフォルト: .\rules\config)'
     -o, --output [CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
     --all-tags '出力したCSVファイルにルール内のタグ情報を全て出力する。'
-    -R, --display-record-id 'イベントレコードIDを出力する。'
+    -R, --hide-record-id 'イベントレコードIDを表示しない。'
     -v, --verbose '詳細な情報を出力する。'
     -V, --visualize-timeline 'イベント頻度タイムラインを出力する。'
     -D, --enable-deprecated-rules 'Deprecatedルールを有効にする。'
@@ -499,6 +500,7 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Event ID`: イベントログの`<Event><System><EventID>`フィールドから来ています。
 * `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
 * `Title`: YML検知ルールの`title`フィールドから来ています。
+* `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。`-R`もしくは`--hide-record-id`オプションを付けると表示されません。
 * `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログの`<Event><System><EventData>`部分から有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。
 
 CSVファイルとして保存する場合、以下の列が追加されます:
@@ -507,8 +509,17 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 * `Rule Path`: アラートまたはイベントを生成した検知ルールへのパス。
 * `File Path`: アラートまたはイベントを起こしたevtxファイルへのパス。
 
-`-R`もしくは`--display-record-id`オプションを指定した場合、`<Event><System><EventRecordID>`の情報が`RecordID`カラムに出力されます。
 `-F`もしくは`--full-data`オプションを指定した場合、全てのフィールド情報が`RecordInformation`カラムにで出力されます。
+
+## Levelの省略
+
+簡潔に出力するためにLevelを以下のように省略し出力しています。
+
+* `crit`: `critical`
+* `high`: `high`
+* `med `: `med`
+* `low `: `low`
+* `info`: `informational`
 
 ## MITRE ATT&CK戦術の省略
 
