@@ -1,6 +1,6 @@
 use crate::detections::configs;
 use crate::detections::print;
-use crate::detections::print::AlertMessage;
+use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
 use crate::detections::utils::write_color_buffer;
 use chrono::{DateTime, Local, TimeZone, Utc};
@@ -29,10 +29,10 @@ pub struct CsvFormat<'a> {
     event_i_d: &'a str,
     level: &'a str,
     mitre_attack: &'a str,
-    rule_title: &'a str,
-    details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     record_i_d: Option<&'a str>,
+    rule_title: &'a str,
+    details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     record_information: Option<&'a str>,
     rule_path: &'a str,
@@ -47,10 +47,10 @@ pub struct DisplayFormat<'a> {
     pub channel: &'a str,
     pub event_i_d: &'a str,
     pub level: &'a str,
-    pub rule_title: &'a str,
-    pub details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     record_i_d: Option<&'a str>,
+    pub rule_title: &'a str,
+    pub details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub record_information: Option<&'a str>,
 }
@@ -217,6 +217,13 @@ fn emit_csv<W: std::io::Write>(
         "informational",
         "undefined",
     ]);
+    let level_abbr: HashMap<String, String> = HashMap::from([
+        (String::from("cruitical"), String::from("crit")),
+        (String::from("high"), String::from("high")),
+        (String::from("medium"), String::from("med ")),
+        (String::from("low"), String::from("low ")),
+        (String::from("informational"), String::from("info")),
+    ]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
@@ -233,10 +240,7 @@ fn emit_csv<W: std::io::Write>(
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
             detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
-            let mut level = detect_info.level.to_string();
-            if level == "informational" {
-                level = "info".to_string();
-            }
+            let level = detect_info.level.to_string();
             let time_str = format_time(time, false);
             if displayflag {
                 let record_id = detect_info
@@ -247,15 +251,24 @@ fn emit_csv<W: std::io::Write>(
                     .record_information
                     .as_ref()
                     .map(|recinfo| _format_cellpos(recinfo, ColPos::Last));
-                let details = detect_info
+                let ctr_char_exclude_details = detect_info
                     .detail
                     .chars()
                     .filter(|&c| !c.is_control())
                     .collect::<String>();
 
-                let dispformat = DisplayFormat {
+                let details = if ctr_char_exclude_details.is_empty() {
+                    "-".to_string()
+                } else {
+                    ctr_char_exclude_details
+                };
+
+                let dispformat: _ = DisplayFormat {
                     timestamp: &_format_cellpos(&time_str, ColPos::First),
-                    level: &_format_cellpos(&level, ColPos::Other),
+                    level: &_format_cellpos(
+                        level_abbr.get(&level).unwrap_or(&level),
+                        ColPos::Other,
+                    ),
                     computer: &_format_cellpos(&detect_info.computername, ColPos::Other),
                     event_i_d: &_format_cellpos(&detect_info.eventid, ColPos::Other),
                     channel: &_format_cellpos(&detect_info.channel, ColPos::Other),
@@ -285,7 +298,7 @@ fn emit_csv<W: std::io::Write>(
                 // csv output format
                 wtr.serialize(CsvFormat {
                     timestamp: &time_str,
-                    level: &level,
+                    level: level_abbr.get(&level).unwrap_or(&level).trim(),
                     computer: &detect_info.computername,
                     event_i_d: &detect_info.eventid,
                     channel: &detect_info.channel,
@@ -423,11 +436,10 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
             "RuleTitle",
             "Details",
         ];
-        let arg_match = &configs::CONFIG.read().unwrap().args;
-        if arg_match.is_present("display-record-id") {
-            titles.push("RecordID");
+        if !*IS_HIDE_RECORD_ID {
+            titles.insert(5, "RecordID");
         }
-        if arg_match.is_present("full-data") {
+        if configs::CONFIG.read().unwrap().args.is_present("full-data") {
             titles.push("RecordInformation");
         }
         return format!("{}\n", titles.join("|"));
@@ -725,7 +737,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RuleTitle,Details,RecordID,RecordInformation,RulePath,FilePath\n"
+            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -742,11 +754,11 @@ mod tests {
                 + ","
                 + test_attack
                 + ","
+                + test_record_id
+                + ","
                 + test_title
                 + ","
                 + output
-                + ","
-                + test_record_id
                 + ","
                 + test_recinfo
                 + ","
@@ -779,7 +791,7 @@ mod tests {
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RuleTitle|Details\n";
+        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
@@ -795,11 +807,11 @@ mod tests {
             + "|"
             + test_level
             + "|"
+            + test_recid
+            + "|"
             + test_title
             + "|"
             + output
-            + "|"
-            + test_recid
             + "|"
             + test_recinfo
             + "\n";
