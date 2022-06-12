@@ -86,17 +86,11 @@ impl App {
         }
 
         let analysis_start_time: DateTime<Local> = Local::now();
-
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
             self.output_logo();
             println!();
-            write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
-                None,
-                configs::CONFIG.read().unwrap().args.usage(),
-            )
-            .ok();
+            configs::CONFIG.write().unwrap().cmd.print_long_help().ok();
             println!();
             return;
         }
