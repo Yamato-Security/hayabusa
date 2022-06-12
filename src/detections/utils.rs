@@ -341,9 +341,26 @@ fn _collect_recordinfo<'a>(
     }
 }
 
+/**
+ * 最初の文字を大文字にする関数
+ */
+pub fn make_ascii_titlecase(s: &mut str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        None => String::new(),
+        Some(f) => {
+            if !f.is_ascii() {
+                s.to_string()
+            } else {
+                f.to_uppercase().collect::<String>() + c.as_str()
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::detections::utils;
+    use crate::detections::utils::{self, make_ascii_titlecase};
     use regex::Regex;
     use serde_json::Value;
 
@@ -493,5 +510,16 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"]).is_none());
+    }
+
+    #[test]
+    /// 文字列を与えてascii文字を大文字にするように対応する関数のテスト
+    fn test_make_ascii_titlecase() {
+        assert_eq!(make_ascii_titlecase("aaaa".to_string().as_mut()), "Aaaa");
+        assert_eq!(
+            make_ascii_titlecase("i am Test".to_string().as_mut()),
+            "I am Test"
+        );
+        assert_eq!(make_ascii_titlecase("β".to_string().as_mut()), "β");
     }
 }
