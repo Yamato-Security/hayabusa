@@ -63,7 +63,7 @@ struct Config {
     #[clap(short = 'F', long = "full-data")]
     full_data: bool,
 
-    /// Rule directory or file (Default: .\\rules)
+    /// Rule directory or file.
     #[clap(
         short = 'r',
         long,
@@ -72,7 +72,7 @@ struct Config {
     )]
     rules: PathBuf,
 
-    /// Rule config folder. (Default: .\\rules\\config)
+    /// Rule config folder.
     #[clap(
         short = 'C',
         long,
@@ -113,7 +113,7 @@ struct Config {
     #[clap(short = 'u', long = "update-rules")]
     update: bool,
 
-    /// Minimum level for rules. (Default: informational)
+    /// Minimum level for rules.
     #[clap(
         short = 'm',
         long = "min-level",
@@ -154,7 +154,7 @@ struct Config {
     #[clap(long = "European-time")]
     european_time: bool,
 
-    /// Output time in UTC format. (Default: local time)
+    /// Output time in UTC format. [default: local time]
     #[clap(short = 'U', long = "utc")]
     utc: bool,
 
@@ -162,7 +162,7 @@ struct Config {
     #[clap(long = "no_color")]
     no_color: bool,
 
-    /// Thread number. (Default: Optimal number for performance.)
+    /// Thread number. [default: Optimal number for performance.]
     #[clap(short, long = "thread-number", value_name = "NUMBER")]
     thread_number: Option<usize>,
 
@@ -174,7 +174,7 @@ struct Config {
     #[clap(short = 'L', long = "logon-summary")]
     logon_summary: bool,
 
-    /// Tune alert levels. (Default: .\\rules\\config\\level_tuning.txt)
+    /// Tune alert levels.
     #[clap(
         long = "level-tuning",
         default_value = "./rules/config/level_tuning.txt",
