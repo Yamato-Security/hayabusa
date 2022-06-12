@@ -424,7 +424,9 @@ impl App {
 
     fn print_contributors(&self) {
         match fs::read_to_string("./contributors.txt") {
-            Ok(contents) => println!("{}", contents),
+            Ok(contents) => {
+                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &contents).ok();
+            }
             Err(err) => {
                 AlertMessage::alert(&format!("{}", err)).ok();
             }
