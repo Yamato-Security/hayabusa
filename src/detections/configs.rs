@@ -102,7 +102,7 @@ fn build_app<'a>() -> ArgMatches<'a> {
     --contributors 'Prints the list of contributors.'";
     App::new(&program)
         .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
-        .version("1.3.1-dev")
+        .version("1.3.1")
         .author("Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato")
         .setting(AppSettings::VersionlessSubcommands)
         .arg(
