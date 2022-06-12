@@ -3,12 +3,12 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{Command, ArgMatches, CommandFactory, Parser};
+use clap::{ArgMatches, Command, CommandFactory, Parser};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
-use std::path::PathBuf;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::path::PathBuf;
 use std::sync::RwLock;
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
