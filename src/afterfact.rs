@@ -633,19 +633,19 @@ where
         } else {
             time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
         }
-    } else if time_args.is_present("US-time") {
+    } else if time_args.is_present("us-time") {
         if date_only {
             time.format("%m-%d-%Y").to_string()
         } else {
             time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
         }
-    } else if time_args.is_present("US-military-time") {
+    } else if time_args.is_present("us-military-time") {
         if date_only {
             time.format("%m-%d-%Y").to_string()
         } else {
             time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
         }
-    } else if time_args.is_present("European-time") {
+    } else if time_args.is_present("european-time") {
         if date_only {
             time.format("%d-%m-%Y").to_string()
         } else {
