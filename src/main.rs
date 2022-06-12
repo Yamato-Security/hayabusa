@@ -249,7 +249,7 @@ impl App {
                 .unwrap()
                 .args
                 .value_of("level-tuning")
-                .unwrap_or("./rules/config/level_tuning.txt")
+                .unwrap()
                 .to_string();
 
             if Path::new(&level_tuning_config_path).exists() {
@@ -260,7 +260,7 @@ impl App {
                         .unwrap()
                         .args
                         .value_of("rules")
-                        .unwrap_or("rules"),
+                        .unwrap(),
                 ) {
                     AlertMessage::alert(&err).ok();
                 }
@@ -433,7 +433,7 @@ impl App {
             .unwrap()
             .args
             .value_of("min-level")
-            .unwrap_or("informational")
+            .unwrap()
             .to_uppercase();
         write_color_buffer(
             BufferWriter::stdout(ColorChoice::Always),

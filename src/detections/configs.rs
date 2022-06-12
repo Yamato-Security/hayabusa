@@ -203,7 +203,7 @@ impl ConfigReader<'_> {
     pub fn new() -> Self {
         let build_cmd = Config::command();
         let arg = build_cmd.clone().get_matches();
-        let folder_path_str = arg.value_of("config").unwrap_or("rules/config").to_string();
+        let folder_path_str = arg.value_of("config").unwrap().to_string();
         ConfigReader {
             cmd: build_cmd,
             args: arg,
