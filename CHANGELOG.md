@@ -1,5 +1,20 @@
 # Changes
 
+## v1.4 [2022/XX/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Updated clap crate packages. (#413) (@hitnekoku)
+- Display output when `--help` option is used at no option is used. (#387) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.3.1 [2022/06/13]
 
 **New Features:**
