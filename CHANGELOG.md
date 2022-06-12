@@ -1,6 +1,6 @@
 # Changes
 
-## v1.3.1 [2022/xx/xx]
+## v1.3.1 [2022/06/13]
 
 **New Features:**
 
@@ -9,19 +9,16 @@
 
 **Enhancements:**
 
-- Strip debug symbols by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
+- Debug symbols are stripped by default for smaller Linux and macOS binaries. (#568) (@YamatoSecurity)
+- Updated crate packages (@YamatoSecurity)
 - Added new output time format options. (`--US-time`, `--US-military-time`, `--European-time`) (#574) (@hitenkoku)
-- Changed output time format when `--rfc-3339` option is enabled. (#574) (@hitenkoku)
+- Changed the output time format when `--rfc-3339` option is enabled. (#574) (@hitenkoku)
 - Changed the `-R / --display-record-id` option to `-R / --hide-record-id` and now by default the event record ID is displayed. You can hide the record ID with `-R / --hide-record-id`. (#579) (@hitenkoku)
 - Added rule loading message. (#583) (@hitenkoku)
 
 **Bug Fixes:**
 
-- xxx
-
-**Bug Fixes:**
-
-- fixed bug that RecordID and RecordInformation column is showed when options is not enabled. (#577) (@hitenkoku)
+- The RecordID and RecordInformation column headers would be shown even if those options were not enabled. (#577) (@hitenkoku)
 
 ## v1.3.0 [2022/06/06]
 
