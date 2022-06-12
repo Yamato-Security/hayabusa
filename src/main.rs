@@ -455,6 +455,8 @@ impl App {
         }
         println!("Total file size: {}", total_file_size.to_string_as(false));
         println!();
+        println!("Loading detections rules. Please wait.");
+        println!();
 
         let rule_files = detection::Detection::parse_rule_files(
             level,
