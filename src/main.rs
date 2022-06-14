@@ -276,6 +276,14 @@ impl App {
                 .ok();
             }
             return;
+        } else {
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &configs::CONFIG.read().unwrap().headless_help,
+            )
+            .ok();
+            return;
         }
 
         let analysis_end_time: DateTime<Local> = Local::now();
