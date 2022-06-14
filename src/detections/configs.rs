@@ -3,7 +3,7 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{ArgMatches, Command, CommandFactory, Parser};
+use clap::{ArgMatches, CommandFactory, Parser};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
@@ -11,7 +11,7 @@ use regex::Regex;
 use std::path::PathBuf;
 use std::sync::RwLock;
 lazy_static! {
-    pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
+    pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
         levelmap.insert("INFORMATIONAL".to_owned(), 1);
@@ -30,7 +30,7 @@ lazy_static! {
 }
 
 #[derive(Clone)]
-pub struct ConfigReader<'a> {
+pub struct ConfigReader {
     pub args: ArgMatches,
     pub headless_help: String,
     pub folder_path: String,
@@ -38,7 +38,7 @@ pub struct ConfigReader<'a> {
     pub target_eventids: TargetEventIds,
 }
 
-impl Default for ConfigReader<'_> {
+impl Default for ConfigReader {
     fn default() -> Self {
         Self::new()
     }
@@ -199,7 +199,7 @@ struct Config {
     contributors: bool,
 }
 
-impl ConfigReader<'_> {
+impl ConfigReader {
     pub fn new() -> Self {
         let app_str = "hayabusa 1.3.1";
         let custom_usage_and_opt = r#"
