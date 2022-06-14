@@ -112,7 +112,7 @@ struct Config {
 
     /// Update to the latest rules in the hayabusa-rules github repository.
     #[clap(short = 'u', long = "update-rules")]
-    update: bool,
+    update_rules: bool,
 
     /// Minimum level for rules.
     #[clap(
