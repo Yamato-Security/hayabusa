@@ -244,8 +244,8 @@ OPTIONS:
     -V, --visualize-timeline                Output event frequency timeline
         --version                           Print version information"#;
         let build_cmd = Config::command().override_help(r#"hayabusa 1.3.1
-Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)\n
-Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!\n
+Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)
+Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!
 USAGE:
     hayabusa.exe -f file.evtx [OPTIONS]
     hayabusa.exe -d evtx-directory [OPTIONS]
