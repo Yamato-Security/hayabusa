@@ -297,7 +297,7 @@ impl App {
         .ok();
         println!();
 
-        // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが9となるのでエラーログファイル自体が生成されない。
+        // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
         }
