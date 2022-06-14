@@ -15,6 +15,12 @@
 
 - XXX
 
+## v1.3.2 [2022/06/13]
+
+**Enhancements:**
+
+- Changed the evtx Rust crate from 0.7.2 to 0.7.3 with updated packages. (@YamatoSecurity)
+
 ## v1.3.1 [2022/06/13]
 
 **New Features:**

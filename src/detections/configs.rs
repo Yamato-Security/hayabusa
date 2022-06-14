@@ -298,6 +298,7 @@ OPTIONS:
         }
     }
 }
+
 #[derive(Debug, Clone)]
 pub struct TargetEventIds {
     ids: HashSet<String>,
