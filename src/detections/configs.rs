@@ -126,11 +126,11 @@ struct Config {
     #[clap(short = 'l', long = "live-analysis")]
     live_analysis: bool,
 
-    /// Start time of the event logs to load. (Ex: \"2020-02-22 00:00:00 +09:00\")
+    /// Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
     #[clap(long = "start-timeline", value_name = "START_TIMELINE")]
     start_timeline: Option<String>,
 
-    /// End time of the event logs to load. (Ex: \"2022-02-22 23:59:59 +09:00\")
+    /// End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
     #[clap(long = "end-timeline", value_name = "END_TIMELINE")]
     end_timeline: Option<String>,
 
