@@ -31,7 +31,6 @@ lazy_static! {
 
 #[derive(Clone)]
 pub struct ConfigReader<'a> {
-    pub cmd: Command<'a>,
     pub args: ArgMatches,
     pub headless_help: String,
     pub folder_path: String,
@@ -289,7 +288,6 @@ OPTIONS:
         let headless_help = format!("{}{}", app_str, custom_usage_and_opt);
         let folder_path = arg.value_of("config").unwrap().to_string();
         ConfigReader {
-            cmd: build_cmd,
             args: arg,
             headless_help,
             folder_path,
