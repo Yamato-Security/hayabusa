@@ -90,7 +90,12 @@ impl App {
         if std::env::args().len() == 1 {
             self.output_logo();
             println!();
-            configs::CONFIG.write().unwrap().cmd.print_long_help().ok();
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &configs::CONFIG.read().unwrap().headless_help,
+            )
+            .ok();
             println!();
             return;
         }

@@ -33,6 +33,7 @@ lazy_static! {
 pub struct ConfigReader<'a> {
     pub cmd: Command<'a>,
     pub args: ArgMatches,
+    pub headless_help: String,
     pub folder_path: String,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
@@ -201,13 +202,97 @@ struct Config {
 
 impl ConfigReader<'_> {
     pub fn new() -> Self {
-        let build_cmd = Config::command();
+        let app_str = "hayabusa 1.3.1";
+        let custom_usage_and_opt = r#"
+USAGE:
+    hayabusa.exe -f file.evtx [OPTIONS]
+    hayabusa.exe -d evtx-directory [OPTIONS]
+
+OPTIONS:
+        --European-time                     Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)
+        --US-military-time                  Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
+        --US-time                           Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
+        --all-tags                          Output all tags when saving to a CSV file        
+    -C, --config <RULE_CONFIG_DIRECTORY>    Rule config folder [default: .\rules\config]
+        --contributors                      Prints the list of contributors
+    -d, --directory <DIRECTORY>             Directory of multiple .evtx files
+    -D, --enable-deprecated-rules           Enable rules marked as deprecated
+        --end-timeline <END_TIMELINE>       End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
+    -f, --filepath <FILE_PATH>              File path to one .evtx file
+    -F, --full-data                         Print all field information
+    -h, --help                              Print help information
+    -l, --live-analysis                     Analyze the local C:\Windows\System32\winevt\Logs folder (Windows Only. Administrator privileges required.)        
+    -L, --logon-summary                     Successful and failed logons summary
+        --level-tuning <LEVEL_TUNING_FILE>  Tune alert levels [default: .\rules\config\level_tuning.txt]
+    -m, --min-level <LEVEL>                 Minimum level for rules [default: informational]
+    -n, --enable-noisy-rules                Enable rules marked as noisy
+        --no_color                          Disable color output
+    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (Ex: results.csv)
+    -p, --pivot-keywords-list               Create a list of pivot keywords
+    -q, --quiet                             Quiet mode. Do not display the launch banner
+    -Q, --quiet-errors                      Quiet errors mode. Do not save error logs
+    -r, --rules <RULE_DIRECTORY/RULE_FILE>  Rule directory or file [default: .\rules]
+    -R, --hide-record-id                    Do not display EventRecordID number
+        --rfc-2822                          Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)
+        --rfc-3339                          Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)
+    -s, --statistics                        Prints statistics of event IDs
+        --start-timeline <START_TIMELINE>   Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
+    -t, --thread-number <NUMBER>            Thread number. [default: Optimal number for performance.]
+    -u, --update-rules                      Update to the latest rules in the hayabusa-rules github repository
+    -U, --utc                               Output time in UTC format. [default: local time]
+    -v, --verbose                           Output verbose information
+    -V, --visualize-timeline                Output event frequency timeline
+        --version                           Print version information"#;
+        let build_cmd = Config::command().override_help(r#"hayabusa 1.3.1
+Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)\n
+Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!\n
+USAGE:
+    hayabusa.exe -f file.evtx [OPTIONS]
+    hayabusa.exe -d evtx-directory [OPTIONS]
+OPTIONS:
+        --European-time                     Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)
+        --US-military-time                  Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
+        --US-time                           Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
+        --all-tags                          Output all tags when saving to a CSV file        
+    -C, --config <RULE_CONFIG_DIRECTORY>    Rule config folder [default: .\rules\config]
+        --contributors                      Prints the list of contributors
+    -d, --directory <DIRECTORY>             Directory of multiple .evtx files
+    -D, --enable-deprecated-rules           Enable rules marked as deprecated
+        --end-timeline <END_TIMELINE>       End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
+    -f, --filepath <FILE_PATH>              File path to one .evtx file
+    -F, --full-data                         Print all field information
+    -h, --help                              Print help information
+    -l, --live-analysis                     Analyze the local C:\Windows\System32\winevt\Logs folder (Windows Only. Administrator privileges required.)        
+    -L, --logon-summary                     Successful and failed logons summary
+        --level-tuning <LEVEL_TUNING_FILE>  Tune alert levels [default: .\rules\config\level_tuning.txt]
+    -m, --min-level <LEVEL>                 Minimum level for rules [default: informational]
+    -n, --enable-noisy-rules                Enable rules marked as noisy
+        --no_color                          Disable color output
+    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (Ex: results.csv)
+    -p, --pivot-keywords-list               Create a list of pivot keywords
+    -q, --quiet                             Quiet mode. Do not display the launch banner
+    -Q, --quiet-errors                      Quiet errors mode. Do not save error logs
+    -r, --rules <RULE_DIRECTORY/RULE_FILE>  Rule directory or file [default: .\rules]
+    -R, --hide-record-id                    Do not display EventRecordID number
+    --rfc-2822                          Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)
+    --rfc-3339                          Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)
+    -s, --statistics                        Prints statistics of event IDs
+    --start-timeline <START_TIMELINE>   Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
+    -t, --thread-number <NUMBER>            Thread number. [default: Optimal number for performance.]
+    -u, --update-rules                      Update to the latest rules in the hayabusa-rules github repository
+    -U, --utc                               Output time in UTC format. [default: local time]
+    -v, --verbose                           Output verbose information
+    -V, --visualize-timeline                Output event frequency timeline
+        --version                           Print version information
+    "#);
         let arg = build_cmd.clone().get_matches();
-        let folder_path_str = arg.value_of("config").unwrap().to_string();
+        let headless_help = format!("{}{}", app_str, custom_usage_and_opt);
+        let folder_path = arg.value_of("config").unwrap().to_string();
         ConfigReader {
             cmd: build_cmd,
             args: arg,
-            folder_path: folder_path_str,
+            headless_help,
+            folder_path,
             event_timeline_config: load_eventcode_info("config/statistics_event_info.txt"),
             target_eventids: load_target_ids("config/target_eventids.txt"),
         }
