@@ -74,7 +74,7 @@ struct Config {
 
     /// Rule config folder.
     #[clap(
-        short = 'C',
+        short = 'c',
         long,
         default_value = "./rules/config",
         value_name = "RULE_CONFIG_DIRECTORY"
@@ -155,7 +155,7 @@ struct Config {
     european_time: bool,
 
     /// Output time in UTC format. [default: local time]
-    #[clap(short = 'U', long = "utc")]
+    #[clap(short = 'U', long = "UTC")]
     utc: bool,
 
     /// Disable color output.
@@ -212,7 +212,7 @@ OPTIONS:
         --US-military-time                  Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
         --US-time                           Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
         --all-tags                          Output all tags when saving to a CSV file.        
-    -C, --config <RULE_CONFIG_DIRECTORY>    Specify rule config folder. (Default: .\rules\config)
+    -c, --config <RULE_CONFIG_DIRECTORY>    Specify rule config folder. (Default: .\rules\config)
         --contributors                      Prints the list of contributors.
     -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
     -D, --enable-deprecated-rules           Enable rules marked as deprecated.
@@ -238,7 +238,7 @@ OPTIONS:
         --start-timeline <START_TIMELINE>   Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
     -t, --thread-number <NUMBER>            Thread number. (Default: Optimal number for performance.)
     -u, --update-rules                      Update to the latest rules in the hayabusa-rules github repository.
-    -U, --utc                               Output time in UTC format. (Default: local time)
+    -U, --UTC                               Output time in UTC format. (Default: local time)
     -v, --verbose                           Output verbose information.
     -V, --visualize-timeline                Output event frequency timeline.
         --version                           Print version information."#;
@@ -255,7 +255,7 @@ OPTIONS:
         --US-military-time                  Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
         --US-time                           Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
         --all-tags                          Output all tags when saving to a CSV file.        
-    -C, --config <RULE_CONFIG_DIRECTORY>    Specify rule config folder. (Default: .\rules\config)
+    -c, --config <RULE_CONFIG_DIRECTORY>    Specify rule config folder. (Default: .\rules\config)
         --contributors                      Prints the list of contributors.
     -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
     -D, --enable-deprecated-rules           Enable rules marked as deprecated.
@@ -281,7 +281,7 @@ OPTIONS:
         --start-timeline <START_TIMELINE>   Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
     -t, --thread-number <NUMBER>            Thread number. (Default: Optimal number for performance.)
     -u, --update-rules                      Update to the latest rules in the hayabusa-rules github repository.
-    -U, --utc                               Output time in UTC format. (Default: local time)
+    -U, --UTC                               Output time in UTC format. (Default: local time)
     -v, --verbose                           Output verbose information.
     -V, --visualize-timeline                Output event frequency timeline.
         --version                           Print version information.
