@@ -1,5 +1,5 @@
 use crate::detections::print::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
-use crate::detections::{configs, detection::EvtxRecordInfo, utils};
+use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 
 #[derive(Debug)]
