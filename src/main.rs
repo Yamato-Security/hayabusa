@@ -89,18 +89,11 @@ impl App {
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
             self.output_logo();
-            println!();
-            write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
-                None,
-                &configs::CONFIG.read().unwrap().headless_help,
-            )
-            .ok();
+            configs::CONFIG.write().unwrap().app.print_help().ok();
             println!();
             return;
         }
-
-        if !configs::CONFIG.read().unwrap().args.is_present("quiet") {
+        if !configs::CONFIG.read().unwrap().args.quiet {
             self.output_logo();
             println!();
             self.output_eggs(&format!(
@@ -119,12 +112,7 @@ impl App {
             return;
         }
 
-        if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("update-rules")
-        {
+        if configs::CONFIG.read().unwrap().args.update_rules {
             match self.update_rules() {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
@@ -152,10 +140,11 @@ impl App {
             return;
         }
 
-        if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+        if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
             let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
             pivot_key_unions.iter().for_each(|(key, _)| {
-                let keywords_file_name = csv_path.to_owned() + "-" + key + ".txt";
+                let keywords_file_name =
+                    csv_path.as_path().display().to_string() + "-" + key + ".txt";
                 if Path::new(&keywords_file_name).exists() {
                     AlertMessage::alert(&format!(
                         " The file {} already exists. Please specify a different filename.",
@@ -164,10 +153,10 @@ impl App {
                     .ok();
                 }
             });
-            if Path::new(csv_path).exists() {
+            if csv_path.exists() {
                 AlertMessage::alert(&format!(
                     " The file {} already exists. Please specify a different filename.",
-                    csv_path
+                    csv_path.as_os_str().to_str().unwrap()
                 ))
                 .ok();
                 return;
@@ -197,20 +186,16 @@ impl App {
             .ok();
             println!();
         }
-        if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("live-analysis")
-        {
+        if configs::CONFIG.read().unwrap().args.live_analysis {
             let live_analysis_list = self.collect_liveanalysis_files();
             if live_analysis_list.is_none() {
                 return;
             }
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
-        } else if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
+        } else if let Some(filepath) = &configs::CONFIG.read().unwrap().args.filepath {
             if !filepath.ends_with(".evtx")
-                || Path::new(filepath)
+                || filepath
+                    .as_path()
                     .file_stem()
                     .unwrap_or_else(|| OsStr::new("."))
                     .to_str()
@@ -225,36 +210,27 @@ impl App {
                 return;
             }
             self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
-        } else if let Some(directory) = configs::CONFIG.read().unwrap().args.value_of("directory") {
-            let evtx_files = self.collect_evtxfiles(directory);
+        } else if let Some(directory) = &configs::CONFIG.read().unwrap().args.directory {
+            let evtx_files = self.collect_evtxfiles(directory.as_os_str().to_str().unwrap());
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
             }
             self.analysis_files(evtx_files, &time_filter);
-        } else if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("contributors")
-        {
+        } else if configs::CONFIG.read().unwrap().args.contributors {
             self.print_contributors();
             return;
-        } else if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("level-tuning")
-            && std::env::args()
-                .into_iter()
-                .any(|arg| arg.contains("level-tuning"))
+        } else if std::env::args()
+            .into_iter()
+            .any(|arg| arg.contains("level-tuning"))
         {
             let level_tuning_config_path = configs::CONFIG
                 .read()
                 .unwrap()
                 .args
-                .value_of("level-tuning")
-                .unwrap()
+                .level_tuning
+                .as_path()
+                .display()
                 .to_string();
 
             if Path::new(&level_tuning_config_path).exists() {
@@ -264,7 +240,9 @@ impl App {
                         .read()
                         .unwrap()
                         .args
-                        .value_of("rules")
+                        .rules
+                        .as_os_str()
+                        .to_str()
                         .unwrap(),
                 ) {
                     AlertMessage::alert(&err).ok();
@@ -322,10 +300,13 @@ impl App {
             };
 
             //ファイル出力の場合
-            if let Some(pivot_file) = configs::CONFIG.read().unwrap().args.value_of("output") {
+            if let Some(pivot_file) = &configs::CONFIG.read().unwrap().args.output {
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                     let mut f = BufWriter::new(
-                        fs::File::create(pivot_file.to_owned() + "-" + key + ".txt").unwrap(),
+                        fs::File::create(
+                            pivot_file.as_path().display().to_string() + "-" + key + ".txt",
+                        )
+                        .unwrap(),
                     );
                     f.write_all(create_output(String::default(), key, pivot_keyword).as_bytes())
                         .unwrap();
@@ -335,7 +316,12 @@ impl App {
                     "Pivot keyword results saved to the following files:\n".to_string();
 
                 pivot_key_unions.iter().for_each(|(key, _)| {
-                    writeln!(output, "{}", &(pivot_file.to_owned() + "-" + key + ".txt")).ok();
+                    writeln!(
+                        output,
+                        "{}",
+                        &(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                    )
+                    .ok();
                 });
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             } else {
@@ -386,7 +372,7 @@ impl App {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
-            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+            if configs::CONFIG.read().unwrap().args.verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
@@ -445,8 +431,7 @@ impl App {
             .read()
             .unwrap()
             .args
-            .value_of("min-level")
-            .unwrap()
+            .min_level
             .to_uppercase();
         write_color_buffer(
             BufferWriter::stdout(ColorChoice::Always),
@@ -467,7 +452,7 @@ impl App {
 
         let rule_files = detection::Detection::parse_rule_files(
             level,
-            configs::CONFIG.read().unwrap().args.value_of("rules"),
+            &configs::CONFIG.read().unwrap().args.rules,
             &filter::exclude_ids(),
         );
 
@@ -485,7 +470,7 @@ impl App {
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
         for evtx_file in evtx_files {
-            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+            if configs::CONFIG.read().unwrap().args.verbose {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
@@ -493,7 +478,7 @@ impl App {
             total_records += cnt_tmp;
             pb.inc();
         }
-        if configs::CONFIG.read().unwrap().args.is_present("output") {
+        if configs::CONFIG.read().unwrap().args.output.is_some() {
             println!();
             println!();
             println!("Analysis finished. Please wait while the results are being saved.");
@@ -539,7 +524,7 @@ impl App {
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    if configs::CONFIG.read().unwrap().args.verbose {
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -669,7 +654,7 @@ impl App {
     fn output_logo(&self) {
         let fp = &"art/logo.txt".to_string();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        let output_color = if configs::CONFIG.read().unwrap().args.is_present("no-color") {
+        let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
         } else {
             Some(Color::Green)

@@ -48,42 +48,23 @@ lazy_static! {
         "./logs/errorlog-{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
     );
-    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("quiet-errors");
+    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().args.quiet_errors;
     pub static ref ERROR_LOG_STACK: Mutex<Vec<String>> = Mutex::new(Vec::new());
-    pub static ref STATISTICS_FLAG: bool = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("statistics");
-    pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("logon-summary");
+    pub static ref STATISTICS_FLAG: bool = configs::CONFIG.read().unwrap().args.statistics;
+    pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
         "config/output_tag.txt",
         true,
-        configs::CONFIG.read().unwrap().args.is_present("all-tags")
+        configs::CONFIG.read().unwrap().args.all_tags
     );
     pub static ref CH_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
         "config/channel_abbreviations.txt",
         false,
-        configs::CONFIG.read().unwrap().args.is_present("all-tags")
+        configs::CONFIG.read().unwrap().args.all_tags
     );
-    pub static ref PIVOT_KEYWORD_LIST_FLAG: bool = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("pivot-keywords-list");
-    pub static ref IS_HIDE_RECORD_ID: bool = configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("hide-record-id");
+    pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
+        configs::CONFIG.read().unwrap().args.pivot_keywords_list;
+    pub static ref IS_HIDE_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.hide_record_id;
 }
 
 impl Default for Message {

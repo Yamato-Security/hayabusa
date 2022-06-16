@@ -6,10 +6,10 @@ use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
-use crate::detections::print::PIVOT_KEYWORD_LIST_FLAG;
-use crate::detections::print::QUIET_ERRORS_FLAG;
-use crate::detections::print::STATISTICS_FLAG;
 use crate::detections::print::{CH_CONFIG, IS_HIDE_RECORD_ID, TAGS_CONFIG};
+use crate::detections::print::{
+    LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+};
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -20,10 +20,9 @@ use hashbrown;
 use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
-
-const DIRPATH_RULES: &str = "rules";
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -58,16 +57,15 @@ impl Detection {
     // ルールファイルをパースします。
     pub fn parse_rule_files(
         level: String,
-        rulespath: Option<&str>,
+        rulespath: &PathBuf,
         exclude_ids: &filter::RuleExclude,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
-        let result_readdir =
-            rulefile_loader.read_dir(rulespath.unwrap_or(DIRPATH_RULES), &level, exclude_ids);
+        let result_readdir = rulefile_loader.read_dir(rulespath.as_path(), &level, exclude_ids);
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
-            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+            if configs::CONFIG.read().unwrap().args.verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
@@ -89,7 +87,7 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                if configs::CONFIG.read().unwrap().args.verbose {
                     AlertMessage::warn(&errmsg_body).ok();
 
                     err_msgs.iter().for_each(|err_msg| {
@@ -120,12 +118,7 @@ impl Detection {
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("logon-summary")
-        {
+        if !*LOGONSUMMARY_FLAG {
             let _ = &rulefile_loader
                 .rule_load_cnt
                 .insert(String::from("rule parsing error"), parseerror_count);
@@ -276,7 +269,7 @@ impl Detection {
             .map(|str| str.to_owned())
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);
-        let rec_info = if configs::CONFIG.read().unwrap().args.is_present("full-data") {
+        let rec_info = if configs::CONFIG.read().unwrap().args.full_data {
             Option::Some(String::default())
         } else {
             Option::None

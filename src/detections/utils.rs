@@ -185,13 +185,8 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
 }
 
 pub fn get_thread_num() -> usize {
-    let def_thread_num_str = num_cpus::get().to_string();
     let conf = configs::CONFIG.read().unwrap();
-    conf.args
-        .value_of("thread-number")
-        .unwrap_or(def_thread_num_str.as_str())
-        .parse::<usize>()
-        .unwrap()
+    conf.args.thread_number.unwrap_or(num_cpus::get())
 }
 
 pub fn create_tokio_runtime() -> Runtime {
@@ -228,7 +223,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
 
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
-    let rec_info = if configs::CONFIG.read().unwrap().args.is_present("full-data") {
+    let rec_info = if configs::CONFIG.read().unwrap().args.full_data {
         Option::Some(create_recordinfos(&data))
     } else {
         Option::None
@@ -279,7 +274,7 @@ fn create_recordinfos(record: &Value) -> String {
         .collect();
 
     // 標準出力する時はセルがハイプ区切りになるので、パイプ区切りにしない
-    if configs::CONFIG.read().unwrap().args.is_present("output") {
+    if configs::CONFIG.read().unwrap().args.output.is_some() {
         summary.join(" | ")
     } else {
         summary.join(" ")
