@@ -1,4 +1,5 @@
 use crate::detections::configs;
+use crate::detections::configs::TERM_SIZE;
 use crate::detections::print;
 use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
@@ -18,7 +19,7 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
-use terminal_size::{terminal_size, Width};
+use terminal_size::Width;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -362,8 +363,7 @@ fn emit_csv<W: std::io::Write>(
     writeln!(disp_wtr_buf, "Results Summary:").ok();
     disp_wtr.print(&disp_wtr_buf).ok();
 
-    let size = terminal_size();
-    let terminal_width = match size {
+    let terminal_width = match *TERM_SIZE {
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
