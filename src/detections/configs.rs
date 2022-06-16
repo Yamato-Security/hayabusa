@@ -216,14 +216,9 @@ impl ConfigReader<'_> {
         } else {
             400
         };
-        let build_cmd = Config::command().term_width(help_term_width).help_template(
-            r#"
-    USAGE:
-        {usage}
-
-    OPTIONS:
-{options}"#,
-        );
+        let build_cmd = Config::command()
+            .term_width(help_term_width)
+            .help_template("\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}");
         ConfigReader {
             app: build_cmd,
             args: parse,
