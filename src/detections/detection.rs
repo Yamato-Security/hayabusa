@@ -20,7 +20,7 @@ use hashbrown;
 use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 

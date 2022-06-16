@@ -185,8 +185,9 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
 }
 
 pub fn get_thread_num() -> usize {
+    let cpu_num = num_cpus::get();
     let conf = configs::CONFIG.read().unwrap();
-    conf.args.thread_number.unwrap_or_else(num_cpus::get())
+    conf.args.thread_number.unwrap_or(cpu_num)
 }
 
 pub fn create_tokio_runtime() -> Runtime {
