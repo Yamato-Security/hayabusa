@@ -402,9 +402,9 @@ mod tests {
     use crate::detections::detection::Detection;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
-    use std::path::Path;
     use crate::filter;
     use chrono::{TimeZone, Utc};
+    use std::path::Path;
     use yaml_rust::YamlLoader;
 
     #[test]
