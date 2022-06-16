@@ -3,15 +3,17 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{ArgMatches, CommandFactory, Parser};
+use clap::{App, CommandFactory, Parser};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::PathBuf;
 use std::sync::RwLock;
+use terminal_size::{terminal_size, Width, Height};
+
 lazy_static! {
-    pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
+    pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
         levelmap.insert("INFORMATIONAL".to_owned(), 1);
@@ -23,276 +25,207 @@ lazy_static! {
     };
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(&format!(
         "{}/eventkey_alias.txt",
-        CONFIG.read().unwrap().folder_path
+        CONFIG.read().unwrap().args.config.as_path().display()
     ));
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+    pub static ref TERM_SIZE:Option<(Width, Height)> = terminal_size();
 }
 
-#[derive(Clone)]
-pub struct ConfigReader {
-    pub args: ArgMatches,
+pub struct ConfigReader<'a> {
+    pub app: App<'a>,
+    pub args: Config,
     pub headless_help: String,
-    pub folder_path: String,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
 
-impl Default for ConfigReader {
+impl Default for ConfigReader<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!
 #[derive(Parser)]
 #[clap(
+    name  = "Hayabusa",
+    about,
+    usage = "hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    version
+    version,
+    term_width = 400,
 )]
-struct Config {
+pub struct Config {
     /// Directory of multiple .evtx files.
     #[clap(short = 'd', long, value_name = "DIRECTORY")]
-    directory: Option<PathBuf>,
+    pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file.
     #[clap(short = 'f', long, value_name = "FILE_PATH")]
-    filepath: Option<PathBuf>,
+    pub filepath: Option<PathBuf>,
 
     /// Print all field information.
     #[clap(short = 'F', long = "full-data")]
-    full_data: bool,
+    pub full_data: bool,
 
-    /// Rule directory or file.
+    /// Specify rule directory or file. (Default: .\rules)
     #[clap(
         short = 'r',
         long,
         default_value = "./rules",
+        hide_default_value = true,
         value_name = "RULE_DIRECTORY/RULE_FILE"
     )]
-    rules: PathBuf,
+    pub rules: PathBuf,
 
-    /// Rule config folder.
+    /// Rule config folder. [Default: .\rules\config]
     #[clap(
         short = 'c',
         long,
         default_value = "./rules/config",
+        hide_default_value = true,
         value_name = "RULE_CONFIG_DIRECTORY"
     )]
-    config: PathBuf,
+    pub config: PathBuf,
 
     /// Save the timeline in CSV format. (Ex: results.csv)
     #[clap(short = 'o', long, value_name = "CSV_TIMELINE")]
-    output: Option<PathBuf>,
+    pub output: Option<PathBuf>,
 
     /// Output all tags when saving to a CSV file.
     #[clap(long = "all-tags")]
-    all_tags: bool,
+    pub all_tags: bool,
 
-    /// Do not display EventRecordID number.
+    /// Do not display EventRecordID numbers.
     #[clap(short = 'R', long = "hide-record-id")]
-    hide_record_id: bool,
+    pub hide_record_id: bool,
 
     /// Output verbose information.
     #[clap(short = 'v', long)]
-    verbose: bool,
+    pub verbose: bool,
 
     /// Output event frequency timeline.
     #[clap(short = 'V', long = "visualize-timeline")]
-    visualize_timeline: bool,
+    pub visualize_timeline: bool,
 
     /// Enable rules marked as deprecated.
     #[clap(short = 'D', long = "enable-deprecated-rules")]
-    enable_deprecated_rules: bool,
+    pub enable_deprecated_rules: bool,
 
     /// Enable rules marked as noisy.
     #[clap(short = 'n', long = "enable-noisy-rules")]
-    enable_noisy_rules: bool,
+    pub enable_noisy_rules: bool,
 
     /// Update to the latest rules in the hayabusa-rules github repository.
     #[clap(short = 'u', long = "update-rules")]
-    update_rules: bool,
+    pub update_rules: bool,
 
-    /// Minimum level for rules.
+    /// Minimum level for rules. (Default: informational)
     #[clap(
         short = 'm',
         long = "min-level",
         default_value = "informational",
+        hide_default_value = true,
         value_name = "LEVEL"
     )]
-    min_level: String,
+    pub min_level: String,
 
     /// Analyze the local C:\\Windows\\System32\\winevt\\Logs folder (Windows Only. Administrator privileges required.)
     #[clap(short = 'l', long = "live-analysis")]
-    live_analysis: bool,
+    pub live_analysis: bool,
 
     /// Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
     #[clap(long = "start-timeline", value_name = "START_TIMELINE")]
-    start_timeline: Option<String>,
+    pub start_timeline: Option<String>,
 
     /// End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
     #[clap(long = "end-timeline", value_name = "END_TIMELINE")]
-    end_timeline: Option<String>,
+    pub end_timeline: Option<String>,
 
     /// Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)
     #[clap(long = "rfc-2822")]
-    rfc_2822: bool,
+    pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)
     #[clap(long = "rfc-3339")]
-    rfc_3339: bool,
+    pub rfc_3339: bool,
 
     /// Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
     #[clap(long = "US-time")]
-    us_time: bool,
+    pub us_time: bool,
 
     /// Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
     #[clap(long = "US-military-time")]
-    us_military_time: bool,
+    pub us_military_time: bool,
 
     /// Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)
     #[clap(long = "European-time")]
-    european_time: bool,
+    pub european_time: bool,
 
-    /// Output time in UTC format. [default: local time]
+    /// Output time in UTC format. [Default: local time]
     #[clap(short = 'U', long = "UTC")]
-    utc: bool,
+    pub utc: bool,
 
     /// Disable color output.
     #[clap(long = "no_color")]
-    no_color: bool,
+    pub no_color: bool,
 
-    /// Thread number. [default: Optimal number for performance.]
+    /// Thread number. [Default: Optimal number for performance.]
     #[clap(short, long = "thread-number", value_name = "NUMBER")]
-    thread_number: Option<usize>,
+    pub thread_number: Option<usize>,
 
     /// Prints statistics of event IDs.
     #[clap(short, long)]
-    statistics: bool,
+    pub statistics: bool,
 
     /// Successful and failed logons summary.
     #[clap(short = 'L', long = "logon-summary")]
-    logon_summary: bool,
+    pub logon_summary: bool,
 
-    /// Tune alert levels.
+    /// Tune alert levels. (Default: .\rules\config\level_tuning.txt)
     #[clap(
         long = "level-tuning",
         default_value = "./rules/config/level_tuning.txt",
+        hide_default_value = true,
         value_name = "LEVEL_TUNING_FILE"
     )]
-    level_tuning: PathBuf,
+    pub level_tuning: PathBuf,
 
     /// Quiet mode. Do not display the launch banner.
     #[clap(short, long)]
-    quiet: bool,
+    pub quiet: bool,
 
     /// Quiet errors mode. Do not save error logs.
     #[clap(short = 'Q', long = "quiet-errors")]
-    quiet_errors: bool,
+    pub quiet_errors: bool,
 
     /// Create a list of pivot keywords.
     #[clap(short = 'p', long = "pivot-keywords-list")]
-    pivot_keywords_list: bool,
+    pub pivot_keywords_list: bool,
 
     /// Prints the list of contributors.
     #[clap(long)]
-    contributors: bool,
+    pub contributors: bool,
 }
 
-impl ConfigReader {
+impl ConfigReader<'_> {
     pub fn new() -> Self {
-        let app_str = "Hayabusa 1.4";
-        let custom_usage_and_opt = r#"
+        let parse = Config::parse();
+        let help_term_width = if let Some((Width(w), _)) = *TERM_SIZE {
+            w as usize
+        } else {
+            400
+        };
+        let build_cmd = Config::command().term_width(help_term_width).help_template(r#"
+    USAGE:
+        {usage}
 
-USAGE:
-    hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
-
-OPTIONS:
-        --European-time                     Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)
-        --US-military-time                  Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
-        --US-time                           Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
-        --all-tags                          Output all tags when saving to a CSV file.        
-    -c, --config <RULE_CONFIG_DIRECTORY>    Specify rule config folder. (Default: .\rules\config)
-        --contributors                      Prints the list of contributors.
-    -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
-    -D, --enable-deprecated-rules           Enable rules marked as deprecated.
-        --end-timeline <END_TIMELINE>       End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
-    -f, --filepath <FILE_PATH>              File path to one .evtx file.
-    -F, --full-data                         Print all field information.
-    -h, --help                              Print help information.
-    -l, --live-analysis                     Analyze the local C:\Windows\System32\winevt\Logs folder. (Windows Only. Administrator privileges required.)        
-    -L, --logon-summary                     Successful and failed logons summary.
-        --level-tuning <LEVEL_TUNING_FILE>  Tune alert levels. (Default: .\rules\config\level_tuning.txt)
-    -m, --min-level <LEVEL>                 Minimum level for rules. (Default: informational)
-    -n, --enable-noisy-rules                Enable rules marked as noisy.
-        --no_color                          Disable color output.
-    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (Ex: results.csv)
-    -p, --pivot-keywords-list               Create a list of pivot keywords.
-    -q, --quiet                             Quiet mode. Do not display the launch banner.
-    -Q, --quiet-errors                      Quiet errors mode. Do not save error logs.
-    -r, --rules <RULE_DIRECTORY/RULE_FILE>  Specify rule directory or file. (Default: .\rules)
-    -R, --hide-record-id                    Do not display EventRecordID numbers.
-        --rfc-2822                          Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)
-        --rfc-3339                          Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)
-    -s, --statistics                        Prints statistics of event IDs.
-        --start-timeline <START_TIMELINE>   Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
-    -t, --thread-number <NUMBER>            Thread number. (Default: Optimal number for performance.)
-    -u, --update-rules                      Update to the latest rules in the hayabusa-rules github repository.
-    -U, --UTC                               Output time in UTC format. (Default: local time)
-    -v, --verbose                           Output verbose information.
-    -V, --visualize-timeline                Output event frequency timeline.
-        --version                           Print version information."#;
-        let build_cmd = Config::command().override_help(r#"Hayabusa 1.4 Help Menu:
-
-Hayabusa: A sigma-based threat hunting and fast forensics timeline generator for Windows event logs.
-Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)
-
-USAGE:
-    hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
-
-OPTIONS:
-        --European-time                     Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)
-        --US-military-time                  Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
-        --US-time                           Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
-        --all-tags                          Output all tags when saving to a CSV file.        
-    -c, --config <RULE_CONFIG_DIRECTORY>    Specify rule config folder. (Default: .\rules\config)
-        --contributors                      Prints the list of contributors.
-    -d, --directory <DIRECTORY>             Directory of multiple .evtx files.
-    -D, --enable-deprecated-rules           Enable rules marked as deprecated.
-        --end-timeline <END_TIMELINE>       End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
-    -f, --filepath <FILE_PATH>              File path to one .evtx file.
-    -F, --full-data                         Print all field information.
-    -h, --help                              Print help information.
-    -l, --live-analysis                     Analyze the local C:\Windows\System32\winevt\Logs folder. (Windows Only. Administrator privileges required.)        
-    -L, --logon-summary                     Successful and failed logons summary.
-        --level-tuning <LEVEL_TUNING_FILE>  Tune alert levels. (Default: .\rules\config\level_tuning.txt)
-    -m, --min-level <LEVEL>                 Minimum level for rules. (Default: informational)
-    -n, --enable-noisy-rules                Enable rules marked as noisy.
-        --no_color                          Disable color output.
-    -o, --output <CSV_TIMELINE>             Save the timeline in CSV format. (Ex: results.csv)
-    -p, --pivot-keywords-list               Create a list of pivot keywords.
-    -q, --quiet                             Quiet mode. Do not display the launch banner.
-    -Q, --quiet-errors                      Quiet errors mode. Do not save error logs.
-    -r, --rules <RULE_DIRECTORY/RULE_FILE>  Specify rule directory or file. (Default: .\rules)
-    -R, --hide-record-id                    Do not display EventRecordID numbers.
-        --rfc-2822                          Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)
-        --rfc-3339                          Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)
-    -s, --statistics                        Prints statistics of event IDs.
-        --start-timeline <START_TIMELINE>   Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
-    -t, --thread-number <NUMBER>            Thread number. (Default: Optimal number for performance.)
-    -u, --update-rules                      Update to the latest rules in the hayabusa-rules github repository.
-    -U, --UTC                               Output time in UTC format. (Default: local time)
-    -v, --verbose                           Output verbose information.
-    -V, --visualize-timeline                Output event frequency timeline.
-        --version                           Print version information.
-    "#);
-        let arg = build_cmd.clone().get_matches();
-        let headless_help = format!("{}{}", app_str, custom_usage_and_opt);
-        let folder_path = arg.value_of("config").unwrap().to_string();
+    OPTIONS:
+{options}"#);
         ConfigReader {
-            args: arg,
-            headless_help,
-            folder_path,
+            app: build_cmd,
+            args: parse,
+            headless_help: String::default(),
             event_timeline_config: load_eventcode_info("config/statistics_event_info.txt"),
             target_eventids: load_target_ids("config/target_eventids.txt"),
         }
