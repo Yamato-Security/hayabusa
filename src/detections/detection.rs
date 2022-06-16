@@ -62,7 +62,7 @@ impl Detection {
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
-        let result_readdir = rulefile_loader.read_dir(rulespath.as_path(), &level, exclude_ids);
+        let result_readdir = rulefile_loader.read_dir(rulespath, &level, exclude_ids);
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
             if configs::CONFIG.read().unwrap().args.verbose {
@@ -402,6 +402,7 @@ mod tests {
     use crate::detections::detection::Detection;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
+    use std::path::Path;
     use crate::filter;
     use chrono::{TimeZone, Utc};
     use yaml_rust::YamlLoader;
