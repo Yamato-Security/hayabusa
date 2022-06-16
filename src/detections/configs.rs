@@ -10,7 +10,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::PathBuf;
 use std::sync::RwLock;
-use terminal_size::{terminal_size, Width, Height};
+use terminal_size::{terminal_size, Height, Width};
 
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
@@ -29,7 +29,7 @@ lazy_static! {
     ));
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
-    pub static ref TERM_SIZE:Option<(Width, Height)> = terminal_size();
+    pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
 }
 
 pub struct ConfigReader<'a> {
@@ -48,12 +48,12 @@ impl Default for ConfigReader<'_> {
 
 #[derive(Parser)]
 #[clap(
-    name  = "Hayabusa",
+    name = "Hayabusa",
     about,
     usage = "hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     version,
-    term_width = 400,
+    term_width = 400
 )]
 pub struct Config {
     /// Directory of multiple .evtx files.
@@ -216,12 +216,14 @@ impl ConfigReader<'_> {
         } else {
             400
         };
-        let build_cmd = Config::command().term_width(help_term_width).help_template(r#"
+        let build_cmd = Config::command().term_width(help_term_width).help_template(
+            r#"
     USAGE:
         {usage}
 
     OPTIONS:
-{options}"#);
+{options}"#,
+        );
         ConfigReader {
             app: build_cmd,
             args: parse,
