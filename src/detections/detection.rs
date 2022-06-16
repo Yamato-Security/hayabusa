@@ -57,7 +57,7 @@ impl Detection {
     // ルールファイルをパースします。
     pub fn parse_rule_files(
         level: String,
-        rulespath: &PathBuf,
+        rulespath: &Path,
         exclude_ids: &filter::RuleExclude,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
@@ -409,7 +409,7 @@ mod tests {
     #[test]
     fn test_parse_rule_files() {
         let level = "informational";
-        let opt_rule_path = Some("./test_files/rules/level_yaml");
+        let opt_rule_path = Path::new("./test_files/rules/level_yaml");
         let cole =
             Detection::parse_rule_files(level.to_owned(), opt_rule_path, &filter::exclude_ids());
         assert_eq!(5, cole.len());
