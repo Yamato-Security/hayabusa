@@ -49,7 +49,6 @@ impl Default for ConfigReader<'_> {
 #[derive(Parser)]
 #[clap(
     name = "Hayabusa",
-    about,
     usage = "hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     version,
