@@ -77,7 +77,7 @@ pub struct Config {
     )]
     pub rules: PathBuf,
 
-    /// Rule config folder. [Default: .\rules\config]
+    /// Rule config folder. (Default: .\rules\config)
     #[clap(
         short = 'c',
         long,
@@ -129,7 +129,7 @@ pub struct Config {
     )]
     pub min_level: String,
 
-    /// Analyze the local C:\\Windows\\System32\\winevt\\Logs folder (Windows Only. Administrator privileges required.)
+    /// Analyze the local C:\\Windows\\System32\\winevt\\Logs folder. (Windows Only. Administrator privileges required.)
     #[clap(short = 'l', long = "live-analysis")]
     pub live_analysis: bool,
 
@@ -161,7 +161,7 @@ pub struct Config {
     #[clap(long = "European-time")]
     pub european_time: bool,
 
-    /// Output time in UTC format. [Default: local time]
+    /// Output time in UTC format. (Default: local time)
     #[clap(short = 'U', long = "UTC")]
     pub utc: bool,
 
@@ -169,7 +169,7 @@ pub struct Config {
     #[clap(long = "no_color")]
     pub no_color: bool,
 
-    /// Thread number. [Default: Optimal number for performance.]
+    /// Thread number. (Default: Optimal number for performance.)
     #[clap(short, long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
