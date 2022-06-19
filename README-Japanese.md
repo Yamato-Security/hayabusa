@@ -321,40 +321,45 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 ## コマンドラインオプション
 
-```bash
+```
 USAGE:
-    -d, --directory [DIRECTORY] '.evtxファイルを持つディレクトリのパス。'
-    -f, --filepath [FILE_PATH] '1つの.evtxファイルのパス。'
-    -F, --full-data '全てのフィールド情報を出力する。'
-    -r, --rules [RULE_DIRECTORY/RULE_FILE] 'ルールファイルまたはルールファイルを持つディレクトリ。(デフォルト: .\rules)'
-    -C, --config [RULE_CONFIG_DIRECTORY] 'ルールフォルダのコンフィグディレクトリ(デフォルト: .\rules\config)'
-    -o, --output [CSV_TIMELINE] 'タイムラインをCSV形式で保存する。(例: results.csv)'
-    --all-tags '出力したCSVファイルにルール内のタグ情報を全て出力する。'
-    -R, --hide-record-id 'イベントレコードIDを表示しない。'
-    -v, --verbose '詳細な情報を出力する。'
-    -V, --visualize-timeline 'イベント頻度タイムラインを出力する。'
-    -D, --enable-deprecated-rules 'Deprecatedルールを有効にする。'
-    -n, --enable-noisy-rules 'Noisyルールを有効にする。'
-    -u, --update-rules 'rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する。'
-    -m, --min-level [LEVEL] '結果出力をするルールの最低レベル。(デフォルト: informational)'
-    -l, --live-analysis 'ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する。(Windowsのみ。管理者権限が必要。)'
-    --start-timeline [START_TIMELINE] '解析対象とするイベントログの開始時刻。(例: "2020-02-22 00:00:00 +09:00")'
-    --end-timeline [END_TIMELINE] '解析対象とするイベントログの終了時刻。(例: "2022-02-22 23:59:59 +09:00")'
-    --rfc-2822 'RFC 2822形式で日付と時刻を出力する。(例: Fri, 22 Feb 2022 22:00:00 -0600)'
-    --rfc-3339 'RFC 3339形式で日付と時刻を出力する。 (例: 2022-02-22 22:00:00.123456-06:00)'
-    --US-time 'アメリカ形式で日付と時刻を出力する。 (例: 02-22-2022 10:00:00.123 PM -06:00)'
-    --US-military-time '24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する。 (例: 02-22-2022 22:00:00.123 -06:00)'
-    --European-time 'ヨーロッパ形式で日付と時刻を出力する。 (例: 22-02-2022 22:00:00.123 +02:00)'
-    -U, --utc 'UTC形式で日付と時刻を出力する。(デフォルト: 現地時間)'
-    --no-color 'カラー出力を無効にする。'
-    -t, --thread-number [NUMBER] 'スレッド数。(デフォルト: パフォーマンスに最適な数値)'
-    -s, --statistics 'イベントIDの統計情報を表示する。'
-    -L, --logon-summary '成功と失敗したログオン情報の要約を出力する。'
-    -q, --quiet 'Quietモード。起動バナーを表示しない。'
-    -Q, --quiet-errors 'Quiet errorsモード。エラーログを保存しない。'
-    --level-tuning [LEVEL_TUNING_FILE] 'ルールlevelのチューニング (デフォルト: .\rules\config\level_tuning.txt)'
-    -p, --pivot-keywords-list 'ピボットキーワードの一覧作成。'
-    --contributors 'コントリビュータの一覧表示。'
+    hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
+
+OPTIONS:
+        --European-time                       ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+        --RFC-2822                            RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+        --RFC-3339                            RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+        --US-military-time                    24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+        --US-time                             アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+        --all-tags                            出力したCSVファイルにルール内のタグ情報を全て出力する
+    -c, --config <RULE_CONFIG_DIRECTORY>      ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+        --contributors                        コントリビュータの一覧表示
+    -d, --directory <DIRECTORY>               .evtxファイルを持つディレクトリのパス
+    -D, --enable-deprecated-rules             Deprecatedルールを有効にする
+        --end-timeline <END_TIMELINE>         解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+    -f, --filepath <FILE_PATH>                1つの.evtxファイルに対して解析を行う
+    -F, --full-data                           全てのフィールド情報を出力する
+    -h, --help                                ヘルプ情報を表示する
+    -l, --live-analysis                       ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+    -L, --logon-summary                       成功と失敗したログオン情報の要約を出力する
+        --level-tuning <LEVEL_TUNING_FILE>    ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+    -m, --min-level <LEVEL>                   結果出力をするルールの最低レベル (デフォルト: informational)
+    -n, --enable-noisy-rules                  Noisyルールを有効にする
+        --no_color                            カラー出力を無効にする
+    -o, --output <CSV_TIMELINE>               タイムラインをCSV形式で保存する (例: results.csv)
+    -p, --pivot-keywords-list                 ピボットキーワードの一覧作成
+    -q, --quiet                               Quietモード: 起動バナーを表示しない
+    -Q, --quiet-errors                        Quiet errorsモード: エラーログを保存しない
+    -r, --rules <RULE_DIRECTORY/RULE_FILE>    ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+    -R, --hide-record-id                      イベントレコードIDを表示しない
+    -s, --statistics                          イベントIDの統計情報を表示する
+        --start-timeline <START_TIMELINE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+    -t, --thread-number <NUMBER>              スレッド数 (デフォルト: パフォーマンスに最適な数値)
+    -u, --update-rules                        rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
+    -U, --UTC                                 UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+    -v, --verbose                             詳細な情報を出力する
+    -V, --visualize-timeline                  イベント頻度タイムラインを出力する
+        --version                             バージョン情報を表示する
 ```
 
 ## 使用例

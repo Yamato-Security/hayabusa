@@ -1,3 +1,4 @@
+use crate::detections::print::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use prettytable::{Cell, Row, Table};
 
@@ -19,8 +20,8 @@ impl Timeline {
     pub fn new() -> Timeline {
         let totalcnt = 0;
         let filepath = String::default();
-        let starttm = "".to_string();
-        let endtm = "".to_string();
+        let starttm = String::default();
+        let endtm = String::default();
         let statslst = HashMap::new();
         let statsloginlst = HashMap::new();
 
@@ -35,12 +36,10 @@ impl Timeline {
     }
 
     pub fn tm_stats_dsp_msg(&mut self) {
-        let statics_flag = CONFIG.read().unwrap().args.is_present("statistics");
-        if !statics_flag {
+        if !*STATISTICS_FLAG {
             return;
         }
         // 出力メッセージ作成
-        //println!("map -> {:#?}", evtstat_map);
         let mut sammsges: Vec<String> = Vec::new();
         sammsges.push("---------------------------------------".to_string());
         sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
@@ -66,8 +65,7 @@ impl Timeline {
     }
 
     pub fn tm_logon_stats_dsp_msg(&mut self) {
-        let logon_summary_flag = CONFIG.read().unwrap().args.is_present("logon-summary");
-        if !logon_summary_flag {
+        if !*LOGONSUMMARY_FLAG {
             return;
         }
         // 出力メッセージ作成

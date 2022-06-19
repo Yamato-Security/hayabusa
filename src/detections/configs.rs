@@ -3,14 +3,17 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{App, CommandFactory, Parser};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::path::PathBuf;
 use std::sync::RwLock;
+use terminal_size::{terminal_size, Height, Width};
+
 lazy_static! {
-    pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
+    pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
         levelmap.insert("INFORMATIONAL".to_owned(), 1);
@@ -22,107 +25,207 @@ lazy_static! {
     };
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(&format!(
         "{}/eventkey_alias.txt",
-        CONFIG.read().unwrap().folder_path
+        CONFIG.read().unwrap().args.config.as_path().display()
     ));
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+    pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
 }
 
-#[derive(Clone)]
-pub struct ConfigReader {
-    pub args: ArgMatches<'static>,
-    pub folder_path: String,
+pub struct ConfigReader<'a> {
+    pub app: App<'a>,
+    pub args: Config,
+    pub headless_help: String,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
 
-impl Default for ConfigReader {
+impl Default for ConfigReader<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ConfigReader {
+#[derive(Parser)]
+#[clap(
+    name = "Hayabusa",
+    usage = "hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]",
+    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+    version,
+    term_width = 400
+)]
+pub struct Config {
+    /// Directory of multiple .evtx files
+    #[clap(short = 'd', long, value_name = "DIRECTORY")]
+    pub directory: Option<PathBuf>,
+
+    /// File path to one .evtx file
+    #[clap(short = 'f', long, value_name = "FILE_PATH")]
+    pub filepath: Option<PathBuf>,
+
+    /// Print all field information
+    #[clap(short = 'F', long = "full-data")]
+    pub full_data: bool,
+
+    /// Specify a rule directory or file (default: ./rules)
+    #[clap(
+        short = 'r',
+        long,
+        default_value = "./rules",
+        hide_default_value = true,
+        value_name = "RULE_DIRECTORY/RULE_FILE"
+    )]
+    pub rules: PathBuf,
+
+    /// Specify custom rule config folder (default: ./rules/config)
+    #[clap(
+        short = 'c',
+        long,
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "RULE_CONFIG_DIRECTORY"
+    )]
+    pub config: PathBuf,
+
+    /// Save the timeline in CSV format (ex: results.csv)
+    #[clap(short = 'o', long, value_name = "CSV_TIMELINE")]
+    pub output: Option<PathBuf>,
+
+    /// Output all tags when saving to a CSV file
+    #[clap(long = "all-tags")]
+    pub all_tags: bool,
+
+    /// Do not display EventRecordID numbers
+    #[clap(short = 'R', long = "hide-record-id")]
+    pub hide_record_id: bool,
+
+    /// Output verbose information
+    #[clap(short = 'v', long)]
+    pub verbose: bool,
+
+    /// Output event frequency timeline
+    #[clap(short = 'V', long = "visualize-timeline")]
+    pub visualize_timeline: bool,
+
+    /// Enable rules marked as deprecated
+    #[clap(short = 'D', long = "enable-deprecated-rules")]
+    pub enable_deprecated_rules: bool,
+
+    /// Enable rules marked as noisy
+    #[clap(short = 'n', long = "enable-noisy-rules")]
+    pub enable_noisy_rules: bool,
+
+    /// Update to the latest rules in the hayabusa-rules github repository
+    #[clap(short = 'u', long = "update-rules")]
+    pub update_rules: bool,
+
+    /// Minimum level for rules (default: informational)
+    #[clap(
+        short = 'm',
+        long = "min-level",
+        default_value = "informational",
+        hide_default_value = true,
+        value_name = "LEVEL"
+    )]
+    pub min_level: String,
+
+    /// Analyze the local C:\Windows\System32\winevt\Logs folder
+    #[clap(short = 'l', long = "live-analysis")]
+    pub live_analysis: bool,
+
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    #[clap(long = "start-timeline", value_name = "START_TIMELINE")]
+    pub start_timeline: Option<String>,
+
+    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+    #[clap(long = "end-timeline", value_name = "END_TIMELINE")]
+    pub end_timeline: Option<String>,
+
+    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+    #[clap(long = "RFC-2822")]
+    pub rfc_2822: bool,
+
+    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+    #[clap(long = "RFC-3339")]
+    pub rfc_3339: bool,
+
+    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+    #[clap(long = "US-time")]
+    pub us_time: bool,
+
+    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+    #[clap(long = "US-military-time")]
+    pub us_military_time: bool,
+
+    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+    #[clap(long = "European-time")]
+    pub european_time: bool,
+
+    /// Output time in UTC format (default: local time)
+    #[clap(short = 'U', long = "UTC")]
+    pub utc: bool,
+
+    /// Disable color output
+    #[clap(long = "no-color")]
+    pub no_color: bool,
+
+    /// Thread number (default: optimal number for performance)
+    #[clap(short, long = "thread-number", value_name = "NUMBER")]
+    pub thread_number: Option<usize>,
+
+    /// Print statistics of event IDs
+    #[clap(short, long)]
+    pub statistics: bool,
+
+    /// Print a summary of successful and failed logons
+    #[clap(short = 'L', long = "logon-summary")]
+    pub logon_summary: bool,
+
+    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
+    #[clap(
+        long = "level-tuning",
+        default_value = "./rules/config/level_tuning.txt",
+        hide_default_value = true,
+        value_name = "LEVEL_TUNING_FILE"
+    )]
+    pub level_tuning: PathBuf,
+
+    /// Quiet mode: do not display the launch banner
+    #[clap(short, long)]
+    pub quiet: bool,
+
+    /// Quiet errors mode: do not save error logs
+    #[clap(short = 'Q', long = "quiet-errors")]
+    pub quiet_errors: bool,
+
+    /// Create a list of pivot keywords
+    #[clap(short = 'p', long = "pivot-keywords-list")]
+    pub pivot_keywords_list: bool,
+
+    /// Print the list of contributors
+    #[clap(long)]
+    pub contributors: bool,
+}
+
+impl ConfigReader<'_> {
     pub fn new() -> Self {
-        let arg = build_app();
-        let folder_path_str = arg.value_of("config").unwrap_or("rules/config").to_string();
+        let parse = Config::parse();
+        let help_term_width = if let Some((Width(w), _)) = *TERM_SIZE {
+            w as usize
+        } else {
+            400
+        };
+        let build_cmd = Config::command()
+            .term_width(help_term_width)
+            .help_template("\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}");
         ConfigReader {
-            args: arg,
-            folder_path: folder_path_str,
+            app: build_cmd,
+            args: parse,
+            headless_help: String::default(),
             event_timeline_config: load_eventcode_info("config/statistics_event_info.txt"),
             target_eventids: load_target_ids("config/target_eventids.txt"),
         }
     }
-}
-
-fn build_app<'a>() -> ArgMatches<'a> {
-    let program = std::env::args()
-        .next()
-        .and_then(|s| {
-            std::path::PathBuf::from(s)
-                .file_stem()
-                .map(|s| s.to_string_lossy().into_owned())
-        })
-        .unwrap();
-
-    if is_test_mode() {
-        return ArgMatches::default();
-    }
-
-    let usages = "-d, --directory [DIRECTORY] 'Directory of multiple .evtx files.'
-    -f, --filepath [FILE_PATH] 'File path to one .evtx file.'
-    -F, --full-data 'Print all field information.'
-    -r, --rules [RULE_DIRECTORY/RULE_FILE] 'Rule directory or file (Default: .\\rules)'
-    -C, --config [RULE_CONFIG_DIRECTORY] 'Rule config folder. (Default: .\\rules\\config)'
-    -o, --output [CSV_TIMELINE] 'Save the timeline in CSV format. (Ex: results.csv)'
-    --all-tags 'Output all tags when saving to a CSV file.'
-    -R, --hide-record-id 'Do not display EventRecordID number.'
-    -v, --verbose 'Output verbose information.'
-    -V, --visualize-timeline 'Output event frequency timeline.'
-    -D, --enable-deprecated-rules 'Enable rules marked as deprecated.'
-    -n, --enable-noisy-rules 'Enable rules marked as noisy.'
-    -u, --update-rules 'Update to the latest rules in the hayabusa-rules github repository.'
-    -m, --min-level [LEVEL] 'Minimum level for rules. (Default: informational)'
-    -l, --live-analysis 'Analyze the local C:\\Windows\\System32\\winevt\\Logs folder (Windows Only. Administrator privileges required.)'
-    --start-timeline [START_TIMELINE] 'Start time of the event logs to load. (Ex: \"2020-02-22 00:00:00 +09:00\")'
-    --end-timeline [END_TIMELINE] 'End time of the event logs to load. (Ex: \"2022-02-22 23:59:59 +09:00\")'
-    --rfc-2822 'Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)'
-    --rfc-3339 'Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)'
-    --US-time 'Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)'
-    --US-military-time 'Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)'
-    --European-time 'Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)'
-    -U, --utc 'Output time in UTC format. (Default: local time)'
-    --no-color 'Disable color output.'
-    -t, --thread-number [NUMBER] 'Thread number. (Default: Optimal number for performance.)'
-    -s, --statistics 'Prints statistics of event IDs.'
-    -L, --logon-summary 'Successful and failed logons summary.'
-    -q, --quiet 'Quiet mode. Do not display the launch banner.'
-    -Q, --quiet-errors 'Quiet errors mode. Do not save error logs.'
-    -p, --pivot-keywords-list 'Create a list of pivot keywords.'
-    --contributors 'Prints the list of contributors.'";
-    App::new(&program)
-        .about("Hayabusa: Aiming to be the world's greatest Windows event log analysis tool!")
-        .version("1.3.2")
-        .author("Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato")
-        .setting(AppSettings::VersionlessSubcommands)
-        .arg(
-            // TODO: When update claps to 3.x, these can write in usage texts...
-            Arg::from_usage("--level-tuning [LEVEL_TUNING_FILE] 'Tune alert levels. (Default: .\\rules\\config\\level_tuning.txt)'")
-                .default_value("./rules/config/level_tuning.txt"),
-        )
-        .usage(usages)
-        .args_from_usage(usages)
-        .get_matches()
-}
-
-fn is_test_mode() -> bool {
-    for i in std::env::args() {
-        if i == "--test" {
-            return true;
-        }
-    }
-
-    false
 }
 
 #[derive(Debug, Clone)]
@@ -186,9 +289,8 @@ impl Default for TargetEventTime {
 impl TargetEventTime {
     pub fn new() -> Self {
         let mut parse_success_flag = true;
-        let start_time =
-            if let Some(s_time) = CONFIG.read().unwrap().args.value_of("start-timeline") {
-                match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+        let start_time = if let Some(s_time) = &CONFIG.read().unwrap().args.start_timeline {
+            match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
                 .or_else(|_| DateTime::parse_from_str(s_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
             {
                 Ok(dt) => Some(dt.with_timezone(&Utc)),
@@ -201,10 +303,10 @@ impl TargetEventTime {
                     None
                 }
             }
-            } else {
-                None
-            };
-        let end_time = if let Some(e_time) = CONFIG.read().unwrap().args.value_of("end-timeline") {
+        } else {
+            None
+        };
+        let end_time = if let Some(e_time) = &CONFIG.read().unwrap().args.end_timeline {
             match DateTime::parse_from_str(e_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
             .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
         {
