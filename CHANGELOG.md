@@ -8,8 +8,8 @@
 
 **Enhancements:**
 
-- Updated clap crate packages. (#413) (@hitnekoku)
-- Display output when `--help` option is used at no option is used. (#387) (@hitenkoku)
+- Updated clap crate package to version 3. (#413) (@hitnekoku)
+- Updated the default usage and help menu. (#387) (@hitenkoku)
 
 **Bug Fixes:**
 
