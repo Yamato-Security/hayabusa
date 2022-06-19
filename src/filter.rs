@@ -29,21 +29,28 @@ impl RuleExclude {
 pub fn exclude_ids() -> RuleExclude {
     let mut exclude_ids = RuleExclude::default();
 
-    if !configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("enable-noisy-rules")
-    {
+    if !configs::CONFIG.read().unwrap().args.enable_noisy_rules {
         exclude_ids.insert_ids(&format!(
             "{}/noisy_rules.txt",
-            configs::CONFIG.read().unwrap().folder_path
+            configs::CONFIG
+                .read()
+                .unwrap()
+                .args
+                .config
+                .as_path()
+                .display()
         ));
     };
 
     exclude_ids.insert_ids(&format!(
         "{}/exclude_rules.txt",
-        configs::CONFIG.read().unwrap().folder_path
+        configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .config
+            .as_path()
+            .display()
     ));
 
     exclude_ids
@@ -53,7 +60,7 @@ impl RuleExclude {
     fn insert_ids(&mut self, filename: &str) {
         let f = File::open(filename);
         if f.is_err() {
-            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+            if configs::CONFIG.read().unwrap().args.verbose {
                 AlertMessage::warn(&format!("{} does not exist", filename)).ok();
             }
             if !*QUIET_ERRORS_FLAG {

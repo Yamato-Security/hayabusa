@@ -1,4 +1,5 @@
-use crate::detections::{configs, detection::EvtxRecordInfo, utils};
+use crate::detections::print::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
+use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 
 #[derive(Debug)]
@@ -34,12 +35,7 @@ impl EventStatistics {
 
     pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo]) {
         // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("statistics")
-        {
+        if !*STATISTICS_FLAG {
             return;
         }
 
@@ -53,13 +49,8 @@ impl EventStatistics {
     }
 
     pub fn logon_stats_start(&mut self, records: &[EvtxRecordInfo]) {
-        // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
-        if !configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .is_present("logon-summary")
-        {
+        // 引数でlogon-summaryオプションが指定されている時だけ、統計情報を出力する。
+        if !*LOGONSUMMARY_FLAG {
             return;
         }
 

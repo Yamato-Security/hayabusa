@@ -1,5 +1,20 @@
 # Changes
 
+## v1.4 [2022/XX/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Updated clap crate package to version 3. (#413) (@hitnekoku)
+- Updated the default usage and help menu. (#387) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.3.2 [2022/06/13]
 
 **Enhancements:**

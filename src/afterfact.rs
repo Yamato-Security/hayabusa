@@ -1,4 +1,5 @@
 use crate::detections::configs;
+use crate::detections::configs::TERM_SIZE;
 use crate::detections::print;
 use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
@@ -18,7 +19,7 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
-use terminal_size::{terminal_size, Width};
+use terminal_size::Width;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -63,7 +64,7 @@ lazy_static! {
 pub fn set_output_color() -> HashMap<String, Color> {
     let read_result = utils::read_csv("config/level_color.txt");
     let mut color_map: HashMap<String, Color> = HashMap::new();
-    if configs::CONFIG.read().unwrap().args.is_present("no-color") {
+    if configs::CONFIG.read().unwrap().args.no_color {
         return color_map;
     }
     if read_result.is_err() {
@@ -166,7 +167,7 @@ pub fn after_fact(all_record_cnt: usize) {
 
     let mut displayflag = false;
     let mut target: Box<dyn io::Write> =
-        if let Some(csv_path) = configs::CONFIG.read().unwrap().args.value_of("output") {
+        if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => Box::new(BufWriter::new(file)),
@@ -362,19 +363,13 @@ fn emit_csv<W: std::io::Write>(
     writeln!(disp_wtr_buf, "Results Summary:").ok();
     disp_wtr.print(&disp_wtr_buf).ok();
 
-    let size = terminal_size();
-    let terminal_width = match size {
+    let terminal_width = match *TERM_SIZE {
         Some((Width(w), _)) => w as usize,
         None => 100,
     };
     println!();
 
-    if configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .is_present("visualize-timeline")
-    {
+    if configs::CONFIG.read().unwrap().args.visualize_timeline {
         _print_timeline_hist(timestamps, terminal_width, 3);
         println!();
     }
@@ -439,7 +434,7 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
         if !*IS_HIDE_RECORD_ID {
             titles.insert(5, "RecordID");
         }
-        if configs::CONFIG.read().unwrap().args.is_present("full-data") {
+        if configs::CONFIG.read().unwrap().args.full_data {
             titles.push("RecordInformation");
         }
         return format!("{}\n", titles.join("|"));
@@ -598,7 +593,7 @@ fn _print_detection_summary_by_computer(
 }
 
 fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
-    if configs::CONFIG.read().unwrap().args.is_present("utc") {
+    if configs::CONFIG.read().unwrap().args.utc {
         format_rfc(time, date_only)
     } else {
         format_rfc(&time.with_timezone(&Local), date_only)
@@ -607,7 +602,7 @@ fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
 
 /// get timestamp to input datetime.
 fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
-    if configs::CONFIG.read().unwrap().args.is_present("utc") {
+    if configs::CONFIG.read().unwrap().args.utc {
         time.timestamp()
     } else {
         let offset_sec = Local.timestamp(0, 0).offset().local_minus_utc();
@@ -621,31 +616,31 @@ where
     Tz::Offset: std::fmt::Display,
 {
     let time_args = &configs::CONFIG.read().unwrap().args;
-    if time_args.is_present("rfc-2822") {
+    if time_args.rfc_2822 {
         if date_only {
             time.format("%a, %e %b %Y").to_string()
         } else {
             time.format("%a, %e %b %Y %H:%M:%S %:z").to_string()
         }
-    } else if time_args.is_present("rfc-3339") {
+    } else if time_args.rfc_3339 {
         if date_only {
             time.format("%Y-%m-%d").to_string()
         } else {
             time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
         }
-    } else if time_args.is_present("US-time") {
+    } else if time_args.us_time {
         if date_only {
             time.format("%m-%d-%Y").to_string()
         } else {
             time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
         }
-    } else if time_args.is_present("US-military-time") {
+    } else if time_args.us_military_time {
         if date_only {
             time.format("%m-%d-%Y").to_string()
         } else {
             time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
         }
-    } else if time_args.is_present("European-time") {
+    } else if time_args.european_time {
         if date_only {
             time.format("%d-%m-%Y").to_string()
         } else {

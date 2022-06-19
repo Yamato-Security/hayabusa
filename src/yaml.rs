@@ -68,7 +68,7 @@ impl ParseYaml {
                 "fail to read metadata of file: {}",
                 path.as_ref().to_path_buf().display(),
             );
-            if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+            if configs::CONFIG.read().unwrap().args.verbose {
                 AlertMessage::alert(&errmsg)?;
             }
             if !*QUIET_ERRORS_FLAG {
@@ -100,7 +100,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     read_content.unwrap_err()
                 );
-                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                if configs::CONFIG.read().unwrap().args.verbose {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
@@ -121,7 +121,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     yaml_contents.unwrap_err()
                 );
-                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                if configs::CONFIG.read().unwrap().args.verbose {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
@@ -173,7 +173,7 @@ impl ParseYaml {
                         entry.path().display(),
                         read_content.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    if configs::CONFIG.read().unwrap().args.verbose {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -194,7 +194,7 @@ impl ParseYaml {
                         entry.path().display(),
                         yaml_contents.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                    if configs::CONFIG.read().unwrap().args.verbose {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -256,7 +256,7 @@ impl ParseYaml {
                     .or_insert(0);
                 *status_cnt += 1;
 
-                if configs::CONFIG.read().unwrap().args.is_present("verbose") {
+                if configs::CONFIG.read().unwrap().args.verbose {
                     println!("Loaded yml file path: {}", filepath);
                 }
 
@@ -272,12 +272,7 @@ impl ParseYaml {
                     return Option::None;
                 }
 
-                if !configs::CONFIG
-                    .read()
-                    .unwrap()
-                    .args
-                    .is_present("enable-deprecated-rules")
-                {
+                if !configs::CONFIG.read().unwrap().args.enable_deprecated_rules {
                     let rule_status = &yaml_doc["status"].as_str().unwrap_or_default();
                     if *rule_status == "deprecated" {
                         let entry = self
