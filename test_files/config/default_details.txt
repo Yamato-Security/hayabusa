@@ -1,0 +1,5 @@
+Provider, EID, Details
+Microsoft-Windows-PowerShell/Operational, 4104, '%ScriptBlockText%'
+Microsoft-Windows-Security-Auditing, 4624, 'User: %TargetUserName% | Comp: %WorkstationName% | IP Addr: %IpAddress% | LID: %TargetLogonId% | Process: %ProcessName%'
+Microsoft-Windows-Sysmon/Operational, 1, 'Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%'
+Service Control Manager, 7031, 'Svc: %param1% | Crash Count: %param2% | Action: %param5%'
