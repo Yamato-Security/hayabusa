@@ -65,15 +65,17 @@ lazy_static! {
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
     pub static ref IS_HIDE_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.hide_record_id;
-    pub static ref DEFAULT_DETAILS: HashMap<String, String> = Message::get_default_details(&format!(
-        "{}/default_details.txt",
-        configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .config
-            .as_path()
-            .display()));
+    pub static ref DEFAULT_DETAILS: HashMap<String, String> =
+        Message::get_default_details(&format!(
+            "{}/default_details.txt",
+            configs::CONFIG
+                .read()
+                .unwrap()
+                .args
+                .config
+                .as_path()
+                .display()
+        ));
 }
 
 impl Default for Message {
