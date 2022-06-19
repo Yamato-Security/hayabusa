@@ -160,7 +160,6 @@ You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStack
 
 * Enterprise-wide hunting on all endpoints.
 * MITRE ATT&CK heatmap generation.
-* Support for [Sigma Correlations](https://github.com/SigmaHQ/sigma/wiki/Specification:-Sigma-Correlations).
 
 # Downloads
 

@@ -165,7 +165,6 @@ CSVのタイムラインをElastic Stackにインポートする方法は[こち
 
 * すべてのエンドポイントでの企業全体のスレットハンティング。
 * MITRE ATT&CKのヒートマップ生成機能。
-* [Sigma Correlations](https://github.com/SigmaHQ/sigma/wiki/Specification:-Sigma-Correlations)の対応。
 
 # ダウンロード
 
