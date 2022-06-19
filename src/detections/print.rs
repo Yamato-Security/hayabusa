@@ -65,7 +65,15 @@ lazy_static! {
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
     pub static ref IS_HIDE_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.hide_record_id;
-    pub static ref DEFAULT_DETAILS: HashMap<String, String> = Message::get_default_details();
+    pub static ref DEFAULT_DETAILS: HashMap<String, String> = Message::get_default_details(&format!(
+        "{}/default_details.txt",
+        configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .config
+            .as_path()
+            .display()));
 }
 
 impl Default for Message {
@@ -227,17 +235,8 @@ impl Message {
     }
 
     /// detailsのdefault値をファイルから読み取る関数
-    pub fn get_default_details() -> HashMap<String, String> {
-        let read_result = utils::read_csv(&format!(
-            "{}/default_details.txt",
-            configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .config
-                .as_path()
-                .display()
-        ));
+    pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
+        let read_result = utils::read_csv(filepath);
         match read_result {
             Err(_e) => {
                 AlertMessage::alert(&_e).ok();
@@ -736,6 +735,17 @@ mod tests {
         ]);
         _check_hashmap_element(&expected, actual);
         _check_hashmap_element(&expected, actual2);
+    }
+
+    #[test]
+    fn _get_default_defails() {
+        let expected: HashMap<String, String> = HashMap::from([
+            ("Microsoft-Windows-PowerShell/Operational_4104".to_string(),"'%ScriptBlockText%'".to_string()),("Microsoft-Windows-Security-Auditing_4624".to_string(), "'User: %TargetUserName% | Comp: %WorkstationName% | IP Addr: %IpAddress% | LID: %TargetLogonId% | Process: %ProcessName%'".to_string()),
+            ("Microsoft-Windows-Sysmon/Operational_1".to_string(), "'Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%'".to_string()),
+            ("Service Control Manager_7031".to_string(), "'Svc: %param1% | Crash Count: %param2% | Action: %param5%'".to_string()),
+        ]);
+        let actual = Message::get_default_details("test_files/config/default_details.txt");
+        _check_hashmap_element(&expected, actual);
     }
 
     /// check two HashMap element length and value
