@@ -10,6 +10,7 @@
 
 - Clap Crateパッケージの更新 (#413) (@hitenkoku)
 - オプションの指定がないときに、`--help`と同じ画面出力を行うように変更した。(#387) (@hitenkoku)
+- ルール内に`output`フィールドがないときに、`rules/config/default_details.txt`に設定されたデフォルトの出力を行えるようにした。 (#359) (@hitenkoku)
 
 **バグ修正:**
 
