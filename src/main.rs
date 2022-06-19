@@ -193,7 +193,7 @@ impl App {
             }
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = &configs::CONFIG.read().unwrap().args.filepath {
-            if !filepath.ends_with(".evtx")
+            if filepath.extension().unwrap_or_else(|| OsStr::new(".")) != "evtx"
                 || filepath
                     .as_path()
                     .file_stem()
