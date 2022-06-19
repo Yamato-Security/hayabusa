@@ -925,7 +925,7 @@ mod tests {
     fn test_collect_evtxfiles() {
         let app = App::new();
         let files = app.collect_evtxfiles("test_files/evtx");
-        assert_eq!(3, files.len());
+        assert_eq!(5, files.len());
 
         files.iter().for_each(|file| {
             let is_contains = &vec!["test1.evtx", "test2.evtx", "testtest4.evtx"]
