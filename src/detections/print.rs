@@ -228,35 +228,61 @@ impl Message {
 
     /// detailsのdefault値をファイルから読み取る関数
     pub fn get_default_details() -> HashMap<String, String> {
-        let read_result = utils::read_csv(&format!("{}/default_details.txt", configs::CONFIG.read().unwrap().args.config.as_path().display()));
+        let read_result = utils::read_csv(&format!(
+            "{}/default_details.txt",
+            configs::CONFIG
+                .read()
+                .unwrap()
+                .args
+                .config
+                .as_path()
+                .display()
+        ));
         match read_result {
             Err(_e) => {
                 AlertMessage::alert(&_e).ok();
                 HashMap::new()
-            },
+            }
             Ok(lines) => {
-                let mut ret:HashMap<String, String> = HashMap::new();
-                lines.into_iter().try_for_each(|line| -> Result<(), String> {
-                    let provider = match line.get(0) {
-                        Some(_provider) => _provider.trim(),
-                        _ => return Result::Err("Failed to read provider in default_details.txt.".to_string())
-                    };
-                    let eid = match line.get(1) {
-                        Some(eid_str)  => {
-                            match eid_str.trim().parse::<i64>() {
-                                Ok(_eid) => _eid,
-                                _ => return Result::Err("Parse Error EventID in default_details.txt.".to_string())
+                let mut ret: HashMap<String, String> = HashMap::new();
+                lines
+                    .into_iter()
+                    .try_for_each(|line| -> Result<(), String> {
+                        let provider = match line.get(0) {
+                            Some(_provider) => _provider.trim(),
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read provider in default_details.txt.".to_string(),
+                                )
                             }
-                        },
-                        _ => return Result::Err("Failed to read EventID in default_details.txt.".to_string())                        
-                    };
-                    let details = match line.get(2) {
-                        Some(detail) => detail.trim(),
-                        _ => return Result::Err("Failed to read details in default_details.txt.".to_string())                        
-                    };
-                    ret.insert(format!("{}_{}", provider, eid), details.to_string());
-                    Ok(())
-                }).ok();
+                        };
+                        let eid = match line.get(1) {
+                            Some(eid_str) => match eid_str.trim().parse::<i64>() {
+                                Ok(_eid) => _eid,
+                                _ => {
+                                    return Result::Err(
+                                        "Parse Error EventID in default_details.txt.".to_string(),
+                                    )
+                                }
+                            },
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read EventID in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        let details = match line.get(2) {
+                            Some(detail) => detail.trim(),
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read details in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        ret.insert(format!("{}_{}", provider, eid), details.to_string());
+                        Ok(())
+                    })
+                    .ok();
                 ret
             }
         }
