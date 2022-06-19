@@ -922,7 +922,7 @@ mod tests {
         assert_eq!(5, files.len());
 
         files.iter().for_each(|file| {
-            let is_contains = &vec!["test1.evtx", "test2.evtx", "testtest4.evtx"]
+            let is_contains = &vec!["test1.evtx", "test2.evtx", "testtest4.evtx", "test.txt"]
                 .into_iter()
                 .any(|filepath_str| {
                     return file.file_name().unwrap().to_str().unwrap_or("") == filepath_str;
