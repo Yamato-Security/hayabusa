@@ -211,17 +211,14 @@ impl App {
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
             if Path::new(filepath)
-                    .file_stem()
-                    .unwrap_or_else(|| OsStr::new("."))
-                    .to_str()
-                    .unwrap()
-                    .trim()
-                    .starts_with('.')
+                .file_stem()
+                .unwrap_or_else(|| OsStr::new("."))
+                .to_str()
+                .unwrap()
+                .trim()
+                .starts_with('.')
             {
-                AlertMessage::alert(
-                    "--filepath ignore hidden files.",
-                )
-                .ok();
+                AlertMessage::alert("--filepath ignore hidden files.").ok();
                 return;
             }
             self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
@@ -406,11 +403,11 @@ impl App {
             } else {
                 let path_str = path.to_str().unwrap_or("");
                 if !Path::new(path_str)
-                        .file_stem()
-                        .unwrap_or_else(|| OsStr::new("."))
-                        .to_str()
-                        .unwrap()
-                        .starts_with('.')
+                    .file_stem()
+                    .unwrap_or_else(|| OsStr::new("."))
+                    .to_str()
+                    .unwrap()
+                    .starts_with('.')
                 {
                     ret.push(path);
                 }
