@@ -210,8 +210,7 @@ impl App {
             }
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = configs::CONFIG.read().unwrap().args.value_of("filepath") {
-            if !filepath.ends_with(".evtx")
-                || Path::new(filepath)
+            if Path::new(filepath)
                     .file_stem()
                     .unwrap_or_else(|| OsStr::new("."))
                     .to_str()
@@ -220,7 +219,7 @@ impl App {
                     .starts_with('.')
             {
                 AlertMessage::alert(
-                    "--filepath only accepts .evtx files. Hidden files are ignored.",
+                    "--filepath ignore hidden files.",
                 )
                 .ok();
                 return;
@@ -406,8 +405,7 @@ impl App {
                 });
             } else {
                 let path_str = path.to_str().unwrap_or("");
-                if path_str.ends_with(".evtx")
-                    && !Path::new(path_str)
+                if !Path::new(path_str)
                         .file_stem()
                         .unwrap_or_else(|| OsStr::new("."))
                         .to_str()
