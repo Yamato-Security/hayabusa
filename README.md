@@ -160,6 +160,7 @@ You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStack
 
 * Enterprise-wide hunting on all endpoints.
 * MITRE ATT&CK heatmap generation.
+* Support for [Sigma Correlations](https://github.com/SigmaHQ/sigma/wiki/Specification:-Sigma-Correlations).
 
 # Downloads
 
@@ -319,42 +320,42 @@ You should now be able to run hayabusa.
 
 ## Command Line Options
 
-```bash
+```
 USAGE:
     hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
 
 OPTIONS:
-        --European-time                       Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)
-        --US-military-time                    Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
-        --US-time                             Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
+        --European-time                       Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+        --RFC-2822                            Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+        --RFC-3339                            Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+        --US-military-time                    Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+        --US-time                             Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
         --all-tags                            Output all tags when saving to a CSV file
-    -c, --config <RULE_CONFIG_DIRECTORY>      Rule config folder. (Default: .\rules\config)
-        --contributors                        Prints the list of contributors
+    -c, --config <RULE_CONFIG_DIRECTORY>      Specify custom rule config folder (default: ./rules/config)
+        --contributors                        Print the list of contributors
     -d, --directory <DIRECTORY>               Directory of multiple .evtx files
     -D, --enable-deprecated-rules             Enable rules marked as deprecated
-        --end-timeline <END_TIMELINE>         End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
+        --end-timeline <END_TIMELINE>         End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
     -f, --filepath <FILE_PATH>                File path to one .evtx file
     -F, --full-data                           Print all field information
     -h, --help                                Print help information
-    -l, --live-analysis                       Analyze the local C:\\Windows\\System32\\winevt\\Logs folder. (Windows Only. Administrator privileges required.)
-    -L, --logon-summary                       Successful and failed logons summary
-        --level-tuning <LEVEL_TUNING_FILE>    Tune alert levels. (Default: .\rules\config\level_tuning.txt)
-    -m, --min-level <LEVEL>                   Minimum level for rules. (Default: informational)
+    -l, --live-analysis                       Analyze the local C:\Windows\System32\winevt\Logs folder
+    -L, --logon-summary                       Print a summary of successful and failed logons
+        --level-tuning <LEVEL_TUNING_FILE>    Tune alert levels (default: ./rules/config/level_tuning.txt)
+    -m, --min-level <LEVEL>                   Minimum level for rules (default: informational)
     -n, --enable-noisy-rules                  Enable rules marked as noisy
-        --no_color                            Disable color output
-    -o, --output <CSV_TIMELINE>               Save the timeline in CSV format. (Ex: results.csv)
+        --no-color                            Disable color output
+    -o, --output <CSV_TIMELINE>               Save the timeline in CSV format (ex: results.csv)
     -p, --pivot-keywords-list                 Create a list of pivot keywords
-    -q, --quiet                               Quiet mode. Do not display the launch banner
-    -Q, --quiet-errors                        Quiet errors mode. Do not save error logs
-    -r, --rules <RULE_DIRECTORY/RULE_FILE>    Specify rule directory or file. (Default: .\rules)
-    -R, --hide-record-id                      Do not display EventRecordID numbers
-        --rfc-2822                            Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)
-        --rfc-3339                            Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)
-    -s, --statistics                          Prints statistics of event IDs
-        --start-timeline <START_TIMELINE>     Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
-    -t, --thread-number <NUMBER>              Thread number. (Default: Optimal number for performance.)
+    -q, --quiet                               Quiet mode: do not display the launch banner
+    -Q, --quiet-errors                        Quiet errors mode: do not save error logs
+    -r, --rules <RULE_DIRECTORY/RULE_FILE>    Specify a rule directory or file (default: ./rules)
+    -R, --hide-record-ID                      Do not display EventRecordID numbers
+    -s, --statistics                          Print statistics of event IDs
+        --start-timeline <START_TIMELINE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    -t, --thread-number <NUMBER>              Thread number (default: optimal number for performance)
     -u, --update-rules                        Update to the latest rules in the hayabusa-rules github repository
-    -U, --UTC                                 Output time in UTC format. (Default: local time)
+    -U, --UTC                                 Output time in UTC format (default: local time)
     -v, --verbose                             Output verbose information
     -V, --visualize-timeline                  Output event frequency timeline
         --version                             Print version information
@@ -632,7 +633,7 @@ Please check out the current rules to use as a template in creating new ones or 
 ## Hayabusa v.s. Converted Sigma Rules
 
 Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md). 
-Most rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
+Almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
 Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
 
 1. An extra `details` field to display additional information taken from only the useful fields in the log.

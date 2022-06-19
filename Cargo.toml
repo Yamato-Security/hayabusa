@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "1.4.0"
+version = "1.4.0-dev"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 
@@ -9,38 +9,38 @@ edition = "2021"
 [dependencies]
 clap = { version = "3.*", features = ["derive", "cargo"]}
 evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , rev = "158d496" , features = ["fast-alloc"]}
-quick-xml = {version = "0.23.0", features = ["serialize"] }
-serde = { version = "1.0.*", features = ["derive"] }
+quick-xml = {version = "0.*", features = ["serialize"] }
+serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
-serde_derive = "1.0.*"
+serde_derive = "1.*"
 regex = "1.5.*"
 csv = "1.1.*"
 base64 = "*"
-flate2 = "1.0.*"
-lazy_static = "1.4.0"
-chrono = "0.4.19"
+flate2 = "1.*"
+lazy_static = "1.4.*"
+chrono = "0.4.*"
 yaml-rust = "0.4.*"
 linked-hash-map = "0.5.*"
 tokio = { version = "1", features = ["full"] }
-num_cpus = "1.13.*"
-downcast-rs = "1.2.0"
+num_cpus = "1.*"
+downcast-rs = "1.*"
 hhmmss = "*"
 pbr = "*"
 hashbrown = "0.12.*"
 hex = "0.4.*"
-git2 = "0.13"
+git2 = "0.*"
 termcolor = "*"
-prettytable-rs = "0.8"
+prettytable-rs = "0.*"
 krapslog = "*"
 terminal_size = "*"
-bytesize = "1.1"
-hyper = "0.14.19"
-lock_api = "0.4.7"
-crossbeam-utils = "0.8.8"
+bytesize = "1.*"
+hyper = "0.14.*"
+lock_api = "0.4.*"
+crossbeam-utils = "0.8.*"
 
 [target.'cfg(windows)'.dependencies]
-is_elevated = "0.1.2"
-static_vcruntime = "2.0"
+is_elevated = "0.1.*"
+static_vcruntime = "2.*"
 
 [target.'cfg(unix)'.dependencies] #Mac and Linux
 openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.

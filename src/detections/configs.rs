@@ -55,19 +55,19 @@ impl Default for ConfigReader<'_> {
     term_width = 400
 )]
 pub struct Config {
-    /// Directory of multiple .evtx files.
+    /// Directory of multiple .evtx files
     #[clap(short = 'd', long, value_name = "DIRECTORY")]
     pub directory: Option<PathBuf>,
 
-    /// File path to one .evtx file.
+    /// File path to one .evtx file
     #[clap(short = 'f', long, value_name = "FILE_PATH")]
     pub filepath: Option<PathBuf>,
 
-    /// Print all field information.
+    /// Print all field information
     #[clap(short = 'F', long = "full-data")]
     pub full_data: bool,
 
-    /// Specify rule directory or file. (Default: .\rules)
+    /// Specify a rule directory or file (default: ./rules)
     #[clap(
         short = 'r',
         long,
@@ -77,7 +77,7 @@ pub struct Config {
     )]
     pub rules: PathBuf,
 
-    /// Rule config folder. (Default: .\rules\config)
+    /// Specify custom rule config folder (default: ./rules/config)
     #[clap(
         short = 'c',
         long,
@@ -87,39 +87,39 @@ pub struct Config {
     )]
     pub config: PathBuf,
 
-    /// Save the timeline in CSV format. (Ex: results.csv)
+    /// Save the timeline in CSV format (ex: results.csv)
     #[clap(short = 'o', long, value_name = "CSV_TIMELINE")]
     pub output: Option<PathBuf>,
 
-    /// Output all tags when saving to a CSV file.
+    /// Output all tags when saving to a CSV file
     #[clap(long = "all-tags")]
     pub all_tags: bool,
 
-    /// Do not display EventRecordID numbers.
+    /// Do not display EventRecordID numbers
     #[clap(short = 'R', long = "hide-record-id")]
     pub hide_record_id: bool,
 
-    /// Output verbose information.
+    /// Output verbose information
     #[clap(short = 'v', long)]
     pub verbose: bool,
 
-    /// Output event frequency timeline.
+    /// Output event frequency timeline
     #[clap(short = 'V', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
-    /// Enable rules marked as deprecated.
+    /// Enable rules marked as deprecated
     #[clap(short = 'D', long = "enable-deprecated-rules")]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules marked as noisy.
+    /// Enable rules marked as noisy
     #[clap(short = 'n', long = "enable-noisy-rules")]
     pub enable_noisy_rules: bool,
 
-    /// Update to the latest rules in the hayabusa-rules github repository.
+    /// Update to the latest rules in the hayabusa-rules github repository
     #[clap(short = 'u', long = "update-rules")]
     pub update_rules: bool,
 
-    /// Minimum level for rules. (Default: informational)
+    /// Minimum level for rules (default: informational)
     #[clap(
         short = 'm',
         long = "min-level",
@@ -129,59 +129,59 @@ pub struct Config {
     )]
     pub min_level: String,
 
-    /// Analyze the local C:\\Windows\\System32\\winevt\\Logs folder. (Windows Only. Administrator privileges required.)
+    /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[clap(short = 'l', long = "live-analysis")]
     pub live_analysis: bool,
 
-    /// Start time of the event logs to load. (Ex: "2020-02-22 00:00:00 +09:00")
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
     #[clap(long = "start-timeline", value_name = "START_TIMELINE")]
     pub start_timeline: Option<String>,
 
-    /// End time of the event logs to load. (Ex: "2022-02-22 23:59:59 +09:00")
+    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
     #[clap(long = "end-timeline", value_name = "END_TIMELINE")]
     pub end_timeline: Option<String>,
 
-    /// Output timestamp in RFC 2822 format. (Ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[clap(long = "rfc-2822")]
+    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+    #[clap(long = "RFC-2822")]
     pub rfc_2822: bool,
 
-    /// Output timestamp in RFC 3339 format. (Ex: 2022-02-22 22:00:00.123456-06:00)
-    #[clap(long = "rfc-3339")]
+    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+    #[clap(long = "RFC-3339")]
     pub rfc_3339: bool,
 
-    /// Output timestamp in US time format. (Ex: 02-22-2022 10:00:00.123 PM -06:00)
+    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
     #[clap(long = "US-time")]
     pub us_time: bool,
 
-    /// Output timestamp in US military time format. (Ex: 02-22-2022 22:00:00.123 -06:00)
+    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
     #[clap(long = "US-military-time")]
     pub us_military_time: bool,
 
-    /// Output timestamp in European time format. (Ex: 22-02-2022 22:00:00.123 +02:00)
+    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
     #[clap(long = "European-time")]
     pub european_time: bool,
 
-    /// Output time in UTC format. (Default: local time)
+    /// Output time in UTC format (default: local time)
     #[clap(short = 'U', long = "UTC")]
     pub utc: bool,
 
-    /// Disable color output.
-    #[clap(long = "no_color")]
+    /// Disable color output
+    #[clap(long = "no-color")]
     pub no_color: bool,
 
-    /// Thread number. (Default: Optimal number for performance.)
+    /// Thread number (default: optimal number for performance)
     #[clap(short, long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
-    /// Prints statistics of event IDs.
+    /// Print statistics of event IDs
     #[clap(short, long)]
     pub statistics: bool,
 
-    /// Successful and failed logons summary.
+    /// Print a summary of successful and failed logons
     #[clap(short = 'L', long = "logon-summary")]
     pub logon_summary: bool,
 
-    /// Tune alert levels. (Default: .\rules\config\level_tuning.txt)
+    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[clap(
         long = "level-tuning",
         default_value = "./rules/config/level_tuning.txt",
@@ -190,19 +190,19 @@ pub struct Config {
     )]
     pub level_tuning: PathBuf,
 
-    /// Quiet mode. Do not display the launch banner.
+    /// Quiet mode: do not display the launch banner
     #[clap(short, long)]
     pub quiet: bool,
 
-    /// Quiet errors mode. Do not save error logs.
+    /// Quiet errors mode: do not save error logs
     #[clap(short = 'Q', long = "quiet-errors")]
     pub quiet_errors: bool,
 
-    /// Create a list of pivot keywords.
+    /// Create a list of pivot keywords
     #[clap(short = 'p', long = "pivot-keywords-list")]
     pub pivot_keywords_list: bool,
 
-    /// Prints the list of contributors.
+    /// Print the list of contributors
     #[clap(long)]
     pub contributors: bool,
 }
