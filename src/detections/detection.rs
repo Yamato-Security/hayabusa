@@ -6,7 +6,7 @@ use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
 use crate::detections::print::MESSAGES;
-use crate::detections::print::{CH_CONFIG, IS_HIDE_RECORD_ID, TAGS_CONFIG};
+use crate::detections::print::{CH_CONFIG, DEFAULT_DETAILS, IS_HIDE_RECORD_ID, TAGS_CONFIG};
 use crate::detections::print::{
     LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
@@ -236,6 +236,16 @@ impl Detection {
         };
         let ch_str = &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"])
             .unwrap_or_default();
+        let provider = &get_serde_number_to_string(
+            &record_info.record["Event"]["System"]["Provider_attributes"]["Name"],
+        )
+        .unwrap_or_default();
+        let eid = get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+            .unwrap_or_else(|| "-".to_owned());
+        let default_output = DEFAULT_DETAILS
+            .get(&format!("{}_{}", provider, &eid))
+            .unwrap_or(&"-".to_string())
+            .to_string();
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: rule.rulepath.to_string(),
@@ -243,8 +253,7 @@ impl Detection {
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace('\"', ""),
-            eventid: get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-                .unwrap_or_else(|| "-".to_owned()),
+            eventid: eid,
             channel: CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
             alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
             detail: String::default(),
@@ -254,7 +263,10 @@ impl Detection {
         };
         MESSAGES.lock().unwrap().insert(
             &record_info.record,
-            rule.yaml["details"].as_str().unwrap_or("").to_string(),
+            rule.yaml["details"]
+                .as_str()
+                .unwrap_or(&default_output)
+                .to_string(),
             detect_info,
         );
     }
