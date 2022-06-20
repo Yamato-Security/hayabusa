@@ -742,8 +742,8 @@ mod tests {
     #[test]
     fn _get_default_defails() {
         let expected: HashMap<String, String> = HashMap::from([
-            ("Microsoft-Windows-PowerShell/Operational_4104".to_string(),"%ScriptBlockText%".to_string()),("Microsoft-Windows-Security-Auditing_4624".to_string(), "User: %TargetUserName% | Comp: %WorkstationName% | IP Addr: %IpAddress% | LID: %TargetLogonId% | Process: %ProcessName%".to_string()),
-            ("Microsoft-Windows-Sysmon/Operational_1".to_string(), "Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%".to_string()),
+            ("Microsoft-Windows-PowerShell_4104".to_string(),"%ScriptBlockText%".to_string()),("Microsoft-Windows-Security-Auditing_4624".to_string(), "User: %TargetUserName% | Comp: %WorkstationName% | IP Addr: %IpAddress% | LID: %TargetLogonId% | Process: %ProcessName%".to_string()),
+            ("Microsoft-Windows-Sysmon_1".to_string(), "Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%".to_string()),
             ("Service Control Manager_7031".to_string(), "Svc: %param1% | Crash Count: %param2% | Action: %param5%".to_string()),
         ]);
         let actual = Message::get_default_details("test_files/config/default_details.txt");
