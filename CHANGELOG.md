@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- XXX
+- Added `--add-file-extensions` option. You can specify other extension exclude evtx extension. but file contents must be evtx format. (#586) (@hitenkoku)
 
 **Enhancements:**
 
