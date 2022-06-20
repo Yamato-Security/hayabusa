@@ -588,7 +588,7 @@ mod tests {
         let data = vec!["evtx_data".to_string(), "evtx_stars".to_string()];
         let arg = Some(&data);
         let ret = configs::get_target_extensions(arg);
-        let expect:HashSet<&str> = HashSet::from(["evtx", "evtx_data", "evtx_stars"]);
+        let expect: HashSet<&str> = HashSet::from(["evtx", "evtx_data", "evtx_stars"]);
         assert_eq!(ret.len(), expect.len());
         for contents in expect.iter() {
             assert!(ret.contains(&contents.to_string()));
@@ -598,7 +598,7 @@ mod tests {
     #[test]
     fn no_target_extensions() {
         let ret = configs::get_target_extensions(None);
-        let expect:HashSet<&str> = HashSet::from(["evtx"]);
+        let expect: HashSet<&str> = HashSet::from(["evtx"]);
         assert_eq!(ret.len(), expect.len());
         for contents in expect.iter() {
             assert!(ret.contains(&contents.to_string()));
