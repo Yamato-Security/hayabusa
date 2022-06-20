@@ -236,9 +236,10 @@ impl Detection {
         };
         let ch_str = &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"])
             .unwrap_or_default();
-        let provider =
-            &get_serde_number_to_string(&record_info.record["Event"]["System"]["ProviderName"])
-                .unwrap_or_default();
+        let provider = &get_serde_number_to_string(
+            &record_info.record["Event"]["System"]["Provider_attributes"]["Name"],
+        )
+        .unwrap_or_default();
         let eid = get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
             .unwrap_or_else(|| "-".to_owned());
         let default_output = DEFAULT_DETAILS
