@@ -331,6 +331,7 @@ OPTIONS:
         --RFC-3339                            RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
         --US-military-time                    24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
         --US-time                             アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+        --add-file-extensions <ADD_FILE_EXTENTIONS>...    evtx以外の拡張子を解析対象に追加する。 (例: evtx_data)
         --all-tags                            出力したCSVファイルにルール内のタグ情報を全て出力する
     -c, --config <RULE_CONFIG_DIRECTORY>      ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
         --contributors                        コントリビュータの一覧表示

@@ -329,6 +329,7 @@ OPTIONS:
         --RFC-3339                            Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
         --US-military-time                    Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
         --US-time                             Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+        --add-file-extensions <ADD_FILE_EXTENTIONS>...    Specify target file extension expclude evtx (ex: evtx_data)
         --all-tags                            Output all tags when saving to a CSV file
     -c, --config <RULE_CONFIG_DIRECTORY>      Specify custom rule config folder (default: ./rules/config)
         --contributors                        Print the list of contributors
