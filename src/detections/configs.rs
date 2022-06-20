@@ -538,6 +538,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
+    use hashbrown::HashSet;
 
     //     #[test]
     //     #[ignore]
@@ -580,5 +581,27 @@ mod tests {
 
         assert!(time_filter.is_target(&start_time));
         assert!(time_filter.is_target(&end_time));
+    }
+
+    #[test]
+    fn test_get_target_extensions() {
+        let data = vec!["evtx_data".to_string(), "evtx_stars".to_string()];
+        let arg = Some(&data);
+        let ret = configs::get_target_extensions(arg);
+        let expect:HashSet<&str> = HashSet::from(["evtx", "evtx_data", "evtx_stars"]);
+        assert_eq!(ret.len(), expect.len());
+        for contents in expect.iter() {
+            assert!(ret.contains(&contents.to_string()));
+        }
+    }
+
+    #[test]
+    fn no_target_extensions() {
+        let ret = configs::get_target_extensions(None);
+        let expect:HashSet<&str> = HashSet::from(["evtx"]);
+        assert_eq!(ret.len(), expect.len());
+        for contents in expect.iter() {
+            assert!(ret.contains(&contents.to_string()));
+        }
     }
 }
