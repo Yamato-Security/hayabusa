@@ -30,6 +30,8 @@ lazy_static! {
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
     pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
+    pub static ref TARGET_EXTENSIONS: HashSet<String> =
+        get_target_extensions(CONFIG.read().unwrap().args.add_file_extentions.as_ref());
 }
 
 pub struct ConfigReader<'a> {
@@ -205,6 +207,10 @@ pub struct Config {
     /// Print the list of contributors
     #[clap(long)]
     pub contributors: bool,
+
+    /// Specify target file extension expclude evtx (ex: evtx_data)
+    #[clap(long = "add-file-extensions", multiple_values = true)]
+    pub add_file_extentions: Option<Vec<String>>,
 }
 
 impl ConfigReader<'_> {
@@ -451,6 +457,14 @@ pub fn load_pivot_keywords(path: &str) {
             .fields
             .insert(map[1].to_string());
     });
+}
+
+/// --add-file-extensionsで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
+pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
+    let mut target_file_extensions: HashSet<String> =
+        arg.unwrap_or(&Vec::new()).iter().cloned().collect();
+    target_file_extensions.insert(String::from("evtx"));
+    target_file_extensions
 }
 
 #[derive(Debug, Clone)]
