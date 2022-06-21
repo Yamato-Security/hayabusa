@@ -2,9 +2,9 @@ extern crate serde_derive;
 extern crate yaml_rust;
 
 use crate::detections::configs;
+use crate::detections::configs::EXCLUDE_STATUS;
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_STACK;
-use crate::detections::print::QUIET_ERRORS_FLAG;
+use crate::detections::print::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use crate::filter::RuleExclude;
 use hashbrown::HashMap;
 use std::ffi::OsStr;
@@ -232,6 +232,18 @@ impl ParseYaml {
                             "noisy"
                         };
                         let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
+                        *entry += 1;
+                        return Option::None;
+                    }
+                }
+
+                let status = &yaml_doc["status"].as_str();
+                if let Some(s) = status {
+                    if EXCLUDE_STATUS.contains(&s.to_string()) {
+                        let entry = self
+                            .rule_load_cnt
+                            .entry("excluded".to_string())
+                            .or_insert(0);
                         *entry += 1;
                         return Option::None;
                     }

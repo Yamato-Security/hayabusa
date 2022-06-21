@@ -32,6 +32,8 @@ lazy_static! {
     pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
     pub static ref TARGET_EXTENSIONS: HashSet<String> =
         get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
+    pub static ref EXCLUDE_STATUS: HashSet<String> =
+        convert_option_vecs_to_hs(CONFIG.read().unwrap().args.exclude_status.as_ref());
 }
 
 pub struct ConfigReader<'a> {
@@ -211,6 +213,10 @@ pub struct Config {
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
     #[clap(long = "target-file-ext", multiple_values = true)]
     pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Exclude by status level (ex: expreimental test)
+    #[clap(long = "exclude-status", multiple_values = true)]
+    pub exclude_status: Option<Vec<String>>,
 }
 
 impl ConfigReader<'_> {
@@ -461,10 +467,15 @@ pub fn load_pivot_keywords(path: &str) {
 
 /// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
 pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
-    let mut target_file_extensions: HashSet<String> =
-        arg.unwrap_or(&Vec::new()).iter().cloned().collect();
+    let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     target_file_extensions.insert(String::from("evtx"));
     target_file_extensions
+}
+
+/// Option<Vec<String>>の内容をHashSetに変換する関数
+pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
+    let ret: HashSet<String> = arg.unwrap_or(&Vec::new()).iter().cloned().collect();
+    ret
 }
 
 #[derive(Debug, Clone)]
