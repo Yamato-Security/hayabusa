@@ -31,7 +31,7 @@ lazy_static! {
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
     pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
     pub static ref TARGET_EXTENSIONS: HashSet<String> =
-        get_target_extensions(CONFIG.read().unwrap().args.add_file_extentions.as_ref());
+        get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
 }
 
 pub struct ConfigReader<'a> {
@@ -208,9 +208,9 @@ pub struct Config {
     #[clap(long)]
     pub contributors: bool,
 
-    /// Specify target file extension expclude evtx (ex: evtx_data)
-    #[clap(long = "add-file-extensions", multiple_values = true)]
-    pub add_file_extentions: Option<Vec<String>>,
+    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
+    #[clap(long = "target-file-ext", multiple_values = true)]
+    pub evtx_file_ext: Option<Vec<String>>,
 }
 
 impl ConfigReader<'_> {
@@ -459,7 +459,7 @@ pub fn load_pivot_keywords(path: &str) {
     });
 }
 
-/// --add-file-extensionsで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
+/// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
 pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> =
         arg.unwrap_or(&Vec::new()).iter().cloned().collect();
