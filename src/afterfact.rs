@@ -14,11 +14,11 @@ use lazy_static::lazy_static;
 use serde::Serialize;
 use std::cmp::min;
 use std::error::Error;
+use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::BufWriter;
 use std::io::Write;
-use std::fs;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
@@ -364,12 +364,20 @@ fn emit_csv<W: std::io::Write>(
     if let Some(path) = output_path {
         if let Ok(metadata) = fs::metadata(path) {
             println!(
-                "Saved file: {} ({})", configs::CONFIG.read().unwrap().args.output.as_ref().unwrap().display(), ByteSize::b(metadata.len()).to_string_as(false)
+                "Saved file: {} ({})",
+                configs::CONFIG
+                    .read()
+                    .unwrap()
+                    .args
+                    .output
+                    .as_ref()
+                    .unwrap()
+                    .display(),
+                ByteSize::b(metadata.len()).to_string_as(false)
             );
             println!();
         }
     };
-
 
     disp_wtr_buf.clear();
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
