@@ -194,7 +194,7 @@ impl App {
             }
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = &configs::CONFIG.read().unwrap().args.filepath {
-            if TARGET_EXTENSIONS.contains(
+            if !TARGET_EXTENSIONS.contains(
                 filepath
                     .extension()
                     .unwrap_or_else(|| OsStr::new("."))
