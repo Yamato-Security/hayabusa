@@ -214,7 +214,7 @@ pub struct Config {
     #[clap(long = "target-file-ext", multiple_values = true)]
     pub evtx_file_ext: Option<Vec<String>>,
 
-    /// Exclude by status level (ex: expreimental test)
+    /// Exclude by status in rule (ex: experimental) (ex: stable test)
     #[clap(long = "exclude-status", multiple_values = true)]
     pub exclude_status: Option<Vec<String>>,
 }

@@ -338,6 +338,7 @@ OPTIONS:
     -d, --directory <DIRECTORY>               .evtxファイルを持つディレクトリのパス
     -D, --enable-deprecated-rules             Deprecatedルールを有効にする
         --end-timeline <END_TIMELINE>         解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+        --exclude-status <EXCLUDE_STATUS>...  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
     -f, --filepath <FILE_PATH>                1つの.evtxファイルに対して解析を行う
     -F, --full-data                           全てのフィールド情報を出力する
     -h, --help                                ヘルプ情報を表示する
