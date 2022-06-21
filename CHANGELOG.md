@@ -1,11 +1,11 @@
 # Changes
 
-## v1.4 [2022/XX/XX]
+## v1.4.0 [2022/XX/XX]
 
 **New Features:**
 
 - Added `--target-file-ext` option. You can specify additional file extensions to scan in addtition to the default `.evtx` files. For example, `--target-file-ext evtx_data` or multiple extensions with `--target-file-ext evtx1 evtx2`. (#586) (@hitenkoku)
-- Added `--exclude-status` option: Exclude filter by `status` in a rule. (#596) (@hitenkoku)
+- Added `--exclude-status` option: You can ignore rules based on their `status`. (#596) (@hitenkoku)
 
 **Enhancements:**
 
