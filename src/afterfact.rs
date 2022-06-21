@@ -4,6 +4,7 @@ use crate::detections::print;
 use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
 use crate::detections::utils::write_color_buffer;
+use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
@@ -17,6 +18,7 @@ use std::fs::File;
 use std::io;
 use std::io::BufWriter;
 use std::io::Write;
+use std::fs;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
@@ -357,6 +359,17 @@ fn emit_csv<W: std::io::Write>(
     } else {
         wtr.flush()?;
     }
+
+    let output_path = configs::CONFIG.read().unwrap().args.output.clone();
+    if let Some(path) = output_path {
+        if let Ok(metadata) = fs::metadata(path) {
+            println!(
+                "Saved file: {} ({})", configs::CONFIG.read().unwrap().args.output.as_ref().unwrap().display(), ByteSize::b(metadata.len()).to_string_as(false)
+            );
+            println!();
+        }
+    };
+
 
     disp_wtr_buf.clear();
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
