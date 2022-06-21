@@ -706,7 +706,6 @@ impl App {
 #[cfg(test)]
 mod tests {
     use crate::App;
-    use std::time::SystemTime;
 
     #[test]
     fn test_collect_evtxfiles() {
