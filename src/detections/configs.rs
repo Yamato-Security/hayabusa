@@ -30,6 +30,8 @@ lazy_static! {
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
     pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
+    pub static ref TARGET_EXTENSIONS: HashSet<String> =
+        get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
 }
 
 pub struct ConfigReader<'a> {
@@ -205,6 +207,10 @@ pub struct Config {
     /// Print the list of contributors
     #[clap(long)]
     pub contributors: bool,
+
+    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
+    #[clap(long = "target-file-ext", multiple_values = true)]
+    pub evtx_file_ext: Option<Vec<String>>,
 }
 
 impl ConfigReader<'_> {
@@ -453,6 +459,14 @@ pub fn load_pivot_keywords(path: &str) {
     });
 }
 
+/// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
+pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
+    let mut target_file_extensions: HashSet<String> =
+        arg.unwrap_or(&Vec::new()).iter().cloned().collect();
+    target_file_extensions.insert(String::from("evtx"));
+    target_file_extensions
+}
+
 #[derive(Debug, Clone)]
 pub struct EventInfo {
     pub evttitle: String,
@@ -524,6 +538,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
+    use hashbrown::HashSet;
 
     //     #[test]
     //     #[ignore]
@@ -566,5 +581,27 @@ mod tests {
 
         assert!(time_filter.is_target(&start_time));
         assert!(time_filter.is_target(&end_time));
+    }
+
+    #[test]
+    fn test_get_target_extensions() {
+        let data = vec!["evtx_data".to_string(), "evtx_stars".to_string()];
+        let arg = Some(&data);
+        let ret = configs::get_target_extensions(arg);
+        let expect: HashSet<&str> = HashSet::from(["evtx", "evtx_data", "evtx_stars"]);
+        assert_eq!(ret.len(), expect.len());
+        for contents in expect.iter() {
+            assert!(ret.contains(&contents.to_string()));
+        }
+    }
+
+    #[test]
+    fn no_target_extensions() {
+        let ret = configs::get_target_extensions(None);
+        let expect: HashSet<&str> = HashSet::from(["evtx"]);
+        assert_eq!(ret.len(), expect.len());
+        for contents in expect.iter() {
+            assert!(ret.contains(&contents.to_string()));
+        }
     }
 }

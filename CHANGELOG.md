@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- XXX
+- Added `--target-file-ext` option. You can specify additional file extensions to scan in addtition to the default `.evtx` files. For example, `--target-file-ext evtx_data` or multiple extensions with `--target-file-ext evtx1 evtx2`. (#586) (@hitenkoku)
 
 **Enhancements:**
 

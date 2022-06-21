@@ -11,7 +11,7 @@ use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hashbrown::{HashMap, HashSet};
-use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime};
+use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
@@ -186,6 +186,7 @@ impl App {
             .ok();
             println!();
         }
+
         if configs::CONFIG.read().unwrap().args.live_analysis {
             let live_analysis_list = self.collect_liveanalysis_files();
             if live_analysis_list.is_none() {
@@ -193,15 +194,20 @@ impl App {
             }
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = &configs::CONFIG.read().unwrap().args.filepath {
-            if filepath.extension().unwrap_or_else(|| OsStr::new(".")) != "evtx"
-                || filepath
-                    .as_path()
-                    .file_stem()
+            if !TARGET_EXTENSIONS.contains(
+                filepath
+                    .extension()
                     .unwrap_or_else(|| OsStr::new("."))
                     .to_str()
-                    .unwrap()
-                    .trim()
-                    .starts_with('.')
+                    .unwrap(),
+            ) || filepath
+                .as_path()
+                .file_stem()
+                .unwrap_or_else(|| OsStr::new("."))
+                .to_str()
+                .unwrap()
+                .trim()
+                .starts_with('.')
             {
                 AlertMessage::alert(
                     "--filepath only accepts .evtx files. Hidden files are ignored.",
@@ -397,18 +403,19 @@ impl App {
                     ret.extend(subdir_ret);
                     Option::Some(())
                 });
-            } else {
-                let path_str = path.to_str().unwrap_or("");
-                if path_str.ends_with(".evtx")
-                    && !Path::new(path_str)
-                        .file_stem()
-                        .unwrap_or_else(|| OsStr::new("."))
-                        .to_str()
-                        .unwrap()
-                        .starts_with('.')
-                {
-                    ret.push(path);
-                }
+            } else if TARGET_EXTENSIONS.contains(
+                path.extension()
+                    .unwrap_or_else(|| OsStr::new(""))
+                    .to_str()
+                    .unwrap(),
+            ) && !path
+                .file_stem()
+                .unwrap_or_else(|| OsStr::new("."))
+                .to_str()
+                .unwrap()
+                .starts_with('.')
+            {
+                ret.push(path);
             }
         }
 
