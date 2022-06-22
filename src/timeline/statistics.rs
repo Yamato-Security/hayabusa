@@ -3,6 +3,18 @@ use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 
 #[derive(Debug)]
+pub struct LogEventInfo {
+    pub channel: String,
+    pub eventid: String,
+}
+
+impl LogEventInfo {
+    pub fn new(channel: String, eventid: String) -> LogEventInfo {
+        LogEventInfo { channel, eventid }
+    }
+}
+
+#[derive(Debug)]
 pub struct EventStatistics {
     pub total: usize,
     pub filepath: String,
@@ -92,13 +104,20 @@ impl EventStatistics {
     fn stats_eventid(&mut self, records: &[EvtxRecordInfo]) {
         //        let mut evtstat_map = HashMap::new();
         for record in records.iter() {
+            let channel = utils::get_event_value("Channel", &record.record);
             let evtid = utils::get_event_value("EventID", &record.record);
+            if channel.is_none() {
+                continue;
+            }
             if evtid.is_none() {
                 continue;
             }
-
-            let idnum = evtid.unwrap();
-            let count: &mut usize = self.stats_list.entry(idnum.to_string()).or_insert(0);
+            let ch = channel.unwrap().to_string();
+            let id = evtid.unwrap().to_string();
+            let chandid = ch + "," + &id;
+            //let logdata = LogEventInfo::new(ch , id);
+            //println!("{:?},{:?}", logdata.channel, logdata.eventid);
+            let count: &mut usize = self.stats_list.entry(chandid).or_insert(0);
             *count += 1;
         }
         //        return evtstat_map;
