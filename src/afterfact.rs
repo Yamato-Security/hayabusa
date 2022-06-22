@@ -381,8 +381,8 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
     write_color_buffer(
-        disp_wtr,
-        get_writable_color(Color::Green),
+        &disp_wtr,
+        get_writable_color(Some(Color::Green)),
         "Results Summary:",
     )
     .ok();
@@ -403,10 +403,21 @@ fn emit_csv<W: std::io::Write>(
     } else {
         (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
     };
-    println!("Total events: {}", all_record_cnt);
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(None),
+        &format!("Total events: {}", all_record_cnt),
+    )
+    .ok();
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(None),
+        &format!("Data reduction: {} events ({:.2}%)",
+        reducted_record_cnt, reducted_percent),
+    )
+    .ok();
     println!(
-        "Data reduction: {} events ({:.2}%)",
-        reducted_record_cnt, reducted_percent
+        
     );
     println!();
 
@@ -505,7 +516,7 @@ fn _print_unique_results(
 
     // output total results
     write_color_buffer(
-        BufferWriter::stdout(ColorChoice::Always),
+        &BufferWriter::stdout(ColorChoice::Always),
         None,
         &format!(
             "{} {}: {}",
@@ -525,7 +536,7 @@ fn _print_unique_results(
             head_word, level_name, tail_word, counts_by_level[i]
         );
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             _get_output_color(color_map, level_name),
             &output_raw_str,
         )
