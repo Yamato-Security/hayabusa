@@ -412,13 +412,13 @@ fn emit_csv<W: std::io::Write>(
     write_color_buffer(
         &disp_wtr,
         get_writable_color(None),
-        &format!("Data reduction: {} events ({:.2}%)",
-        reducted_record_cnt, reducted_percent),
+        &format!(
+            "Data reduction: {} events ({:.2}%)",
+            reducted_record_cnt, reducted_percent
+        ),
     )
     .ok();
-    println!(
-        
-    );
+    println!();
     println!();
 
     _print_unique_results(
