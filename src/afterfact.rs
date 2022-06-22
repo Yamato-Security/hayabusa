@@ -3,7 +3,7 @@ use crate::detections::configs::TERM_SIZE;
 use crate::detections::print;
 use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
-use crate::detections::utils::{write_color_buffer, get_writable_color};
+use crate::detections::utils::{get_writable_color, write_color_buffer};
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
@@ -379,9 +379,14 @@ fn emit_csv<W: std::io::Write>(
         }
     };
 
-    disp_wtr_buf.clear(); 
-    write_color_buffer(disp_wtr, get_writable_color(Color::Green), "Results Summary:").ok();
-    
+    disp_wtr_buf.clear();
+    write_color_buffer(
+        disp_wtr,
+        get_writable_color(Color::Green),
+        "Results Summary:",
+    )
+    .ok();
+
     let terminal_width = match *TERM_SIZE {
         Some((Width(w), _)) => w as usize,
         None => 100,
