@@ -82,7 +82,7 @@ pub struct Config {
     /// Specify custom rule config folder (default: ./rules/config)
     #[clap(
         short = 'c',
-        long,
+        long = "rules-config",
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "RULE_CONFIG_DIRECTORY"
