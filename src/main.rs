@@ -23,6 +23,7 @@ use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
 use hayabusa::options::level_tuning::LevelTuning;
 use hayabusa::yaml::ParseYaml;
+use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -82,7 +83,7 @@ impl App {
 
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
-            load_pivot_keywords("config/pivot_keywords.txt");
+            load_pivot_keywords(CURRENT_EXE_PATH.join("config/pivot_keywords.txt").to_str().unwrap());
         }
 
         let analysis_start_time: DateTime<Local> = Local::now();
