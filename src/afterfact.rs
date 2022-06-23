@@ -1,5 +1,5 @@
 use crate::detections::configs;
-use crate::detections::configs::TERM_SIZE;
+use crate::detections::configs::{TERM_SIZE, CURRENT_EXE_PATH};
 use crate::detections::print;
 use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
@@ -62,7 +62,7 @@ lazy_static! {
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn set_output_color() -> HashMap<String, Color> {
-    let read_result = utils::read_csv("config/level_color.txt");
+    let read_result = utils::read_csv(CURRENT_EXE_PATH.join("config/level_color.txt").to_str().unwrap());
     let mut color_map: HashMap<String, Color> = HashMap::new();
     if configs::CONFIG.read().unwrap().args.no_color {
         return color_map;
