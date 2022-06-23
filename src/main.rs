@@ -11,6 +11,7 @@ use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hashbrown::{HashMap, HashSet};
+use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::pivot::PivotKeyword;
@@ -23,7 +24,6 @@ use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
 use hayabusa::options::level_tuning::LevelTuning;
 use hayabusa::yaml::ParseYaml;
-use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -83,7 +83,12 @@ impl App {
 
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
-            load_pivot_keywords(CURRENT_EXE_PATH.join("config/pivot_keywords.txt").to_str().unwrap());
+            load_pivot_keywords(
+                CURRENT_EXE_PATH
+                    .join("config/pivot_keywords.txt")
+                    .to_str()
+                    .unwrap(),
+            );
         }
 
         let analysis_start_time: DateTime<Local> = Local::now();
