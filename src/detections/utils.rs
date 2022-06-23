@@ -242,7 +242,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
  * 標準出力のカラー出力設定を指定した値に変更し画面出力を行う関数
  */
 pub fn write_color_buffer(
-    wtr: BufferWriter,
+    wtr: &BufferWriter,
     color: Option<Color>,
     output_str: &str,
 ) -> io::Result<()> {
@@ -250,6 +250,15 @@ pub fn write_color_buffer(
     buf.set_color(ColorSpec::new().set_fg(color)).ok();
     writeln!(buf, "{}", output_str).ok();
     wtr.print(&buf)
+}
+
+/// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
+pub fn get_writable_color(color: Option<Color>) -> Option<Color> {
+    if configs::CONFIG.read().unwrap().args.no_color {
+        None
+    } else {
+        color
+    }
 }
 
 /**

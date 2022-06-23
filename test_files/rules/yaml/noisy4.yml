@@ -1,8 +1,5 @@
-title: Failed Logins with Different Accounts from Single Source System
-author: Florian Roth
+title: Noisy Rule Test 4
 date: 2017/01/10
-description: Detects suspicious failed logins with different user accounts from a
-  single source system
 detection:
   SELECTION_1:
     EventID: 529
@@ -14,20 +11,11 @@ detection:
     WorkstationName: '*'
   condition: ((SELECTION_1 or SELECTION_2) and SELECTION_3 and SELECTION_4) | count(TargetUserName)
     by WorkstationName > 3
-falsepositives:
-- Terminal servers
-- Jump servers
-- Other multiuser systems like Citrix server farms
-- Workstations with frequently changing users
-id: e98374a6-e2d9-4076-9b5c-11bdb2569995
+id: 9f5663ce-6205-4753-b486-fb8498d1fae5
 level: medium
 logsource:
   product: windows
   service: security
 modified: 2021/09/21
 status: experimental
-tags:
-- attack.persistence
-- attack.privilege_escalation
-- attack.t1078
 ruletype: SIGMA

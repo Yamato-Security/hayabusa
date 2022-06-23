@@ -3,7 +3,8 @@ use crate::detections::configs::TERM_SIZE;
 use crate::detections::print;
 use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
-use crate::detections::utils::write_color_buffer;
+use crate::detections::utils::{get_writable_color, write_color_buffer};
+use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
@@ -13,6 +14,7 @@ use lazy_static::lazy_static;
 use serde::Serialize;
 use std::cmp::min;
 use std::error::Error;
+use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::BufWriter;
@@ -358,10 +360,32 @@ fn emit_csv<W: std::io::Write>(
         wtr.flush()?;
     }
 
+    let output_path = configs::CONFIG.read().unwrap().args.output.clone();
+    if let Some(path) = output_path {
+        if let Ok(metadata) = fs::metadata(path) {
+            println!(
+                "Saved file: {} ({})",
+                configs::CONFIG
+                    .read()
+                    .unwrap()
+                    .args
+                    .output
+                    .as_ref()
+                    .unwrap()
+                    .display(),
+                ByteSize::b(metadata.len()).to_string_as(false)
+            );
+            println!();
+        }
+    };
+
     disp_wtr_buf.clear();
-    disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
-    writeln!(disp_wtr_buf, "Results Summary:").ok();
-    disp_wtr.print(&disp_wtr_buf).ok();
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(Some(Color::Green)),
+        "Results Summary:",
+    )
+    .ok();
 
     let terminal_width = match *TERM_SIZE {
         Some((Width(w), _)) => w as usize,
@@ -379,11 +403,22 @@ fn emit_csv<W: std::io::Write>(
     } else {
         (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
     };
-    println!("Total events: {}", all_record_cnt);
-    println!(
-        "Data reduction: {} events ({:.2}%)",
-        reducted_record_cnt, reducted_percent
-    );
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(None),
+        &format!("Total events: {}", all_record_cnt),
+    )
+    .ok();
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(None),
+        &format!(
+            "Data reduction: {} events ({:.2}%)",
+            reducted_record_cnt, reducted_percent
+        ),
+    )
+    .ok();
+    println!();
     println!();
 
     _print_unique_results(
@@ -481,7 +516,7 @@ fn _print_unique_results(
 
     // output total results
     write_color_buffer(
-        BufferWriter::stdout(ColorChoice::Always),
+        &BufferWriter::stdout(ColorChoice::Always),
         None,
         &format!(
             "{} {}: {}",
@@ -501,7 +536,7 @@ fn _print_unique_results(
             head_word, level_name, tail_word, counts_by_level[i]
         );
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             _get_output_color(color_map, level_name),
             &output_raw_str,
         )

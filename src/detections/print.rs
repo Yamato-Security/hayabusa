@@ -324,7 +324,7 @@ impl AlertMessage {
     /// ERRORメッセージを表示する関数
     pub fn alert(contents: &str) -> io::Result<()> {
         write_color_buffer(
-            BufferWriter::stderr(ColorChoice::Always),
+            &BufferWriter::stderr(ColorChoice::Always),
             None,
             &format!("[ERROR] {}", contents),
         )
@@ -333,7 +333,7 @@ impl AlertMessage {
     /// WARNメッセージを表示する関数
     pub fn warn(contents: &str) -> io::Result<()> {
         write_color_buffer(
-            BufferWriter::stderr(ColorChoice::Always),
+            &BufferWriter::stderr(ColorChoice::Always),
             None,
             &format!("[WARN] {}", contents),
         )
