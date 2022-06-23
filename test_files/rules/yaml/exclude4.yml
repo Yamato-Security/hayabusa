@@ -1,8 +1,5 @@
-title: User Added to Local Administrators
-author: Florian Roth
+title: Excluded Rule 4
 date: 2017/03/14
-description: This rule triggers on user accounts that are added to the local Administrators
-  group, which could be legitimate activity or a sign of privilege escalation activity
 detection:
   SELECTION_1:
     EventID: 4732
@@ -13,18 +10,11 @@ detection:
   SELECTION_4:
     SubjectUserName: '*$'
   condition: ((SELECTION_1 and (SELECTION_2 or SELECTION_3)) and  not (SELECTION_4))
-falsepositives:
-- Legitimate administrative activity
-id: c265cf08-3f99-46c1-8d59-328247057d57
+id: 00000000-0000-0000-0000-000000000000
 level: medium
 logsource:
   product: windows
   service: security
 modified: 2021/07/07
 status: stable
-tags:
-- attack.privilege_escalation
-- attack.t1078
-- attack.persistence
-- attack.t1098
 ruletype: SIGMA
