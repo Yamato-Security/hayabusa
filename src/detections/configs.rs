@@ -3,6 +3,7 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
+use std::env::current_exe;
 use clap::{App, CommandFactory, Parser};
 use hashbrown::HashMap;
 use hashbrown::HashSet;
@@ -32,6 +33,7 @@ lazy_static! {
     pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
     pub static ref TARGET_EXTENSIONS: HashSet<String> =
         get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
+    pub static ref CURRENT_EXE_PATH: PathBuf = current_exe().unwrap().parent().unwrap().to_path_buf();
 }
 
 pub struct ConfigReader<'a> {
@@ -228,8 +230,8 @@ impl ConfigReader<'_> {
             app: build_cmd,
             args: parse,
             headless_help: String::default(),
-            event_timeline_config: load_eventcode_info("config/statistics_event_info.txt"),
-            target_eventids: load_target_ids("config/target_eventids.txt"),
+            event_timeline_config: load_eventcode_info(CURRENT_EXE_PATH.join("config/statistics_event_info.txt").to_str().unwrap()),
+            target_eventids: load_target_ids(CURRENT_EXE_PATH.join("config/target_eventids.txt").to_str().unwrap()),
         }
     }
 }
