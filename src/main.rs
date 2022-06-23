@@ -668,7 +668,7 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = &"art/logo.txt".to_string();
+        let fp = CURRENT_EXE_PATH.join("art/logo.txt");
         let content = fs::read_to_string(fp).unwrap_or_default();
         let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
@@ -694,7 +694,8 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let content = fs::read_to_string(path).unwrap_or_default();
+                let egg_path = CURRENT_EXE_PATH.join(path);
+                let content = fs::read_to_string(egg_path).unwrap_or_default();
                 write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
             }
         }
