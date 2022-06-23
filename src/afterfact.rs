@@ -700,7 +700,7 @@ mod tests {
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
     use crate::detections::print;
-    use crate::detections::print::{DetectInfo ,Message};
+    use crate::detections::print::{DetectInfo, Message};
     use chrono::{Local, TimeZone, Utc};
     use hashbrown::HashMap;
     use serde_json::Value;
@@ -716,11 +716,8 @@ mod tests {
     }
 
     fn test_emit_csv_output() {
-        let mock_ch_filter = Message::create_output_filter_config(
-            "config/channel_abbreviations.txt",
-            true,
-            false,
-        );
+        let mock_ch_filter =
+            Message::create_output_filter_config("config/channel_abbreviations.txt", true, false);
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
         let test_title = "test_title";
