@@ -146,7 +146,15 @@ impl App {
             return;
         }
         // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG.read().unwrap().args.config.to_str().unwrap() == "./rules/config" {
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .config
+            .to_str()
+            .unwrap()
+            == "./rules/config"
+        {
             configs::CONFIG.write().unwrap().args.config = CURRENT_EXE_PATH.join("rules/config");
         }
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
