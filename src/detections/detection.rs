@@ -391,7 +391,7 @@ impl Detection {
         });
         if err_rc != &0_u128 {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 Some(Color::Red),
                 &format!("Rule parsing errors: {}", err_rc),
             )
@@ -412,7 +412,7 @@ impl Detection {
                 };
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 write_color_buffer(
-                    BufferWriter::stdout(ColorChoice::Always),
+                    &BufferWriter::stdout(ColorChoice::Always),
                     None,
                     &format!(
                         "{} rules: {} ({:.2}%){}",
@@ -431,7 +431,7 @@ impl Detection {
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &format!("{} rules: {}", key, value),
             )
