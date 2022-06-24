@@ -371,39 +371,21 @@ impl Detection {
         }
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
+        let args = &configs::CONFIG.read().unwrap().args;
+
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
+            let disable_flag = if key == "noisy" && !args.enable_noisy_rules {
+                " (Disabled)"
+            } else {
+                ""
+            };
             //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
             println!(
-                "{} rules: {}",
+                "{} rules: {}{}",
                 make_ascii_titlecase(key.clone().as_mut()),
                 value,
+                disable_flag,
             );
-        });
-        println!();
-
-        let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
-        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| v.to_owned()).sum();
-        sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
-        let args = &configs::CONFIG.read().unwrap().args;
-        sorted_st_rc.into_iter().for_each(|(key, value)| {
-            if value != &0_u128 {
-                let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
-                let deprecated_flag = if (key == "deprecated" && !args.enable_deprecated_rules)
-                    || (key == "noisy" && !args.enable_noisy_rules)
-                {
-                    " (Disabled)"
-                } else {
-                    ""
-                };
-                //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
-                println!(
-                    "{} rules: {} ({:.2}%){}",
-                    make_ascii_titlecase(key.clone().as_mut()),
-                    value,
-                    rate,
-                    deprecated_flag,
-                );
-            }
         });
         write_color_buffer(
             BufferWriter::stdout(ColorChoice::Always),
@@ -411,6 +393,34 @@ impl Detection {
             &format!("Rule parsing errors: {}", err_rc),
         )
         .ok();
+        println!();
+
+        let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
+        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| v.to_owned()).sum();
+        sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
+        sorted_st_rc.into_iter().for_each(|(key, value)| {
+            if value != &0_u128 {
+                let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
+                let deprecated_flag = if key == "deprecated" && !args.enable_deprecated_rules {
+                    " (Disabled)"
+                } else {
+                    ""
+                };
+                //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+                write_color_buffer(
+                    BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &format!(
+                        "{} rules: {} ({:.2}%){}",
+                        make_ascii_titlecase(key.clone().as_mut()),
+                        value,
+                        rate,
+                        deprecated_flag
+                    ),
+                )
+                .ok();
+            }
+        });
         println!();
 
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
