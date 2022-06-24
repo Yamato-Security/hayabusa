@@ -3,6 +3,8 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs;
+use crate::detections::configs::CURRENT_EXE_PATH;
+
 use termcolor::Color;
 
 use tokio::runtime::Builder;
@@ -66,7 +68,12 @@ pub fn value_to_string(value: &Value) -> Option<String> {
 }
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
-    let f = File::open(filename);
+    let filepath = if filename.starts_with("./") {
+        CURRENT_EXE_PATH.join(filename).to_str().unwrap().to_string()
+    } else {
+        filename.to_string()
+    };
+    let f = File::open(filepath);
     if f.is_err() {
         let errmsg = format!("Cannot open file. [file:{}]", filename);
         return Result::Err(errmsg);
