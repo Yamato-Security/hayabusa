@@ -374,25 +374,29 @@ impl Detection {
         let args = &configs::CONFIG.read().unwrap().args;
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
-            let disable_flag = if key == "noisy" && !args.enable_noisy_rules {
-                " (Disabled)"
-            } else {
-                ""
-            };
-            //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
-            println!(
-                "{} rules: {}{}",
-                make_ascii_titlecase(key.clone().as_mut()),
-                value,
-                disable_flag,
-            );
+            if value != &0_u128 {
+                let disable_flag = if key == "noisy" && !args.enable_noisy_rules {
+                    " (Disabled)"
+                } else {
+                    ""
+                };
+                //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+                println!(
+                    "{} rules: {}{}",
+                    make_ascii_titlecase(key.clone().as_mut()),
+                    value,
+                    disable_flag,
+                );
+            }
         });
-        write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
-            Some(Color::Red),
-            &format!("Rule parsing errors: {}", err_rc),
-        )
-        .ok();
+        if err_rc != &0_u128 {
+            write_color_buffer(
+                BufferWriter::stdout(ColorChoice::Always),
+                Some(Color::Red),
+                &format!("Rule parsing errors: {}", err_rc),
+            )
+            .ok();
+        }
         println!();
 
         let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
