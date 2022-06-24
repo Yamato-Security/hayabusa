@@ -37,6 +37,7 @@
 - `--rfc-3339` オプションの時刻表示形式を変更した。 (#574) (@hitenkoku)
 - `-R/ --display-record-id`オプションを`-R/ --hide-record-id`に変更。レコードIDはデフォルトで出力するようにして`-R`オプションを付けた際に表示しないように変更した。(#579) (@hitenkoku)
 - ルール読み込み時のメッセージを追加した。 (#583) (@hitenkoku)
+- `rules/tools/sigmac/testfiles`内のテスト用のymlファイルを読み込まないようにした. (#602) (@hitenkoku)
 
 **バグ修正:**
 
