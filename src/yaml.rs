@@ -165,6 +165,19 @@ impl ParseYaml {
                     return io::Result::Ok(ret);
                 }
 
+                // ignore if tool test yml file in hayabusa-rules.
+                if path
+                    .to_str()
+                    .unwrap()
+                    .contains("rules/tools/sigmac/test_files")
+                    || path
+                        .to_str()
+                        .unwrap()
+                        .contains("rules\\tools\\sigmac\\test_files")
+                {
+                    return io::Result::Ok(ret);
+                }
+
                 // 個別のファイルの読み込みは即終了としない。
                 let read_content = self.read_file(path);
                 if read_content.is_err() {
