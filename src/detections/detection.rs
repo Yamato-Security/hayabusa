@@ -388,9 +388,13 @@ impl Detection {
         sorted_st_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
                 let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
-                let deprecated_flag = if (key == "deprecated" && !args.enable_deprecated_rules)|| (key == "noisy" && !args.enable_noisy_rules) {
+                let deprecated_flag = if (key == "deprecated" && !args.enable_deprecated_rules)
+                    || (key == "noisy" && !args.enable_noisy_rules)
+                {
                     " (Disabled)"
-                }  else { "" };
+                } else {
+                    ""
+                };
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 println!(
                     "{} rules: {} ({:.2}%){}",
@@ -404,8 +408,9 @@ impl Detection {
         write_color_buffer(
             BufferWriter::stdout(ColorChoice::Always),
             Some(Color::Red),
-            &format!("Rule parsing errors: {}", err_rc)
-        ).ok();
+            &format!("Rule parsing errors: {}", err_rc),
+        )
+        .ok();
         println!();
 
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
@@ -414,8 +419,9 @@ impl Detection {
             write_color_buffer(
                 BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &format!("{} rules: {}", key, value)
-            ).ok();
+                &format!("{} rules: {}", key, value),
+            )
+            .ok();
         });
 
         println!("Total enabled detection rules: {}", total_loaded_rule_cnt);
