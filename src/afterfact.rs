@@ -481,7 +481,7 @@ fn _print_unique_results(
 
     // output total results
     write_color_buffer(
-        BufferWriter::stdout(ColorChoice::Always),
+        &BufferWriter::stdout(ColorChoice::Always),
         None,
         &format!(
             "{} {}: {}",
@@ -501,7 +501,7 @@ fn _print_unique_results(
             head_word, level_name, tail_word, counts_by_level[i]
         );
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             _get_output_color(color_map, level_name),
             &output_raw_str,
         )

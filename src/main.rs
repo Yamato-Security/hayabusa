@@ -117,7 +117,7 @@ impl App {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
                         write_color_buffer(
-                            BufferWriter::stdout(ColorChoice::Always),
+                            &BufferWriter::stdout(ColorChoice::Always),
                             None,
                             "Rules updated successfully.",
                         )
@@ -170,7 +170,7 @@ impl App {
 
         if *STATISTICS_FLAG {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Event ID Statistics",
             )
@@ -179,7 +179,7 @@ impl App {
         }
         if *LOGONSUMMARY_FLAG {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Logons Summary",
             )
@@ -262,7 +262,7 @@ impl App {
             return;
         } else {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &configs::CONFIG.read().unwrap().headless_help,
             )
@@ -274,7 +274,7 @@ impl App {
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         println!();
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
         )
@@ -329,15 +329,15 @@ impl App {
                     )
                     .ok();
                 });
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
             } else {
                 //標準出力の場合
                 let output = "The following pivot keywords were found:".to_string();
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
 
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                     write_color_buffer(
-                        BufferWriter::stdout(ColorChoice::Always),
+                        &BufferWriter::stdout(ColorChoice::Always),
                         None,
                         &create_output(String::default(), key, pivot_keyword),
                     )
@@ -425,7 +425,7 @@ impl App {
     fn print_contributors(&self) {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => {
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &contents).ok();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &contents).ok();
             }
             Err(err) => {
                 AlertMessage::alert(&format!("{}", err)).ok();
@@ -441,7 +441,7 @@ impl App {
             .min_level
             .to_uppercase();
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Analyzing event files: {:?}", evtx_files.len()),
         )
@@ -667,7 +667,7 @@ impl App {
             Some(Color::Green)
         };
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             output_color,
             &content,
         )
@@ -686,7 +686,7 @@ impl App {
             None => {}
             Some(path) => {
                 let content = fs::read_to_string(path).unwrap_or_default();
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
             }
         }
     }
@@ -700,7 +700,7 @@ impl App {
         let hayabusa_rule_repo = Repository::open(Path::new("rules"));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Attempting to git clone the hayabusa-rules repository into the rules folder.",
             )
@@ -879,7 +879,7 @@ impl App {
                 .entry(tmp[3].to_string())
                 .or_insert(0b0) += 1;
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &format!(
                     "[Updated] {} (Modified: {} | Path: {})",
@@ -896,7 +896,7 @@ impl App {
             Ok("Rule updated".to_string())
         } else {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "You currently have the latest rules.",
             )

@@ -242,7 +242,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
  * 標準出力のカラー出力設定を指定した値に変更し画面出力を行う関数
  */
 pub fn write_color_buffer(
-    wtr: BufferWriter,
+    wtr: &BufferWriter,
     color: Option<Color>,
     output_str: &str,
 ) -> io::Result<()> {
