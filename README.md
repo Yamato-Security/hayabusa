@@ -20,14 +20,14 @@
 
 # About Hayabusa
 
-Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon") in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac) to convert [sigma](https://github.com/SigmaHQ/sigma) rules into hayabusa rule format. The hayabusa detection rules are based on sigma rules, written in YML in order to be as easily customizable and extensible as possible. It can be run either on running systems for live analysis or by gathering logs from multiple systems for offline analysis. (At the moment, it does not support real-time alerting or periodic scans.) The output will be consolidated into a single CSV timeline for easy analysis in Excel, [Timeline Explorer](https://ericzimmerman.github.io/#!index.md), or [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md).
+Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon") in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac) to convert [Sigma](https://github.com/SigmaHQ/sigma) rules into Hayabusa rule format. The Sigma-compatible Hayabusa detection rules are written in YML in order to be as easily customizable and extensible as possible. Hayabusa can be run either on single running systems for live analysis, by gathering logs from single or multiple systems for offline analysis, or by running the [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) with [Velociraptor](https://docs.velociraptor.app/) for enterprise-wide threat hunting and incident response. The output will be consolidated into a single CSV timeline for easy analysis in Excel, [Timeline Explorer](https://ericzimmerman.github.io/#!index.md), or [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md).
 
 ## Table of Contents
 
 - [About Hayabusa](#about-hayabusa)
   - [Table of Contents](#table-of-contents)
   - [Main Goals](#main-goals)
-    - [Threat Hunting](#threat-hunting)
+    - [Threat Hunting and Enterprise-wide DFIR](#threat-hunting-and-enterprise-wide-dfir)
     - [Fast Forensics Timeline Generation](#fast-forensics-timeline-generation)
 - [Screenshots](#screenshots)
   - [Startup](#startup)
@@ -40,7 +40,6 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
 - [Analyzing Sample Timeline Results](#analyzing-sample-timeline-results)
 - [Features](#features)
-- [Planned Features](#planned-features)
 - [Downloads](#downloads)
 - [Git cloning](#git-cloning)
 - [Advanced: Compiling From Source (Optional)](#advanced-compiling-from-source-optional)
@@ -86,14 +85,14 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ## Main Goals
 
-### Threat Hunting
+### Threat Hunting and Enterprise-wide DFIR
 
-Hayabusa currently has over 2300 sigma rules and over 130 hayabusa rules with more rules being added regularly. The ultimate goal is to be able to push out hayabusa agents to all Windows endpoints after an incident or for periodic threat hunting and have them alert back to a central server.
+Hayabusa currently has over 2400 Sigma rules and over 130 Hayabusa built-in detection rules with more rules being added regularly. It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/). By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment. You can learn about how to do this by watching [Eric Cupuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
 
 ### Fast Forensics Timeline Generation
 
-Windows event log analysis has traditionally been a very long and tedious process because Windows event logs are 1) in a data format that is hard to analyze and 2) the majority of data is noise and not useful for investigations. Hayabusa's main goal is to extract out only useful data and present it in an easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
-Hayabusa is not intended to be a replacement for tools like [Evtx Explorer](https://ericzimmerman.github.io/#!index.md) or [Event Log Explorer](https://eventlogxp.com/) for more deep-dive analysis but is intended for letting analysts get 80% of their work done in 20% of the time. 
+Windows event log analysis has traditionally been a very long and tedious process because Windows event logs are 1) in a data format that is hard to analyze and 2) the majority of data is noise and not useful for investigations. Hayabusa's goal is to extract out only useful data and present it in a concise as possible easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
+Hayabusa hopes to let analysts get 80% of their work done in 20% of the time when compared to traditional Windows event log analysis.
 
 # Screenshots
 
@@ -155,15 +154,11 @@ You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStack
 * Create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 * Output all fields for more thorough investigations.
 * Successful and failed logon summary.
-
-# Planned Features
-
-* Enterprise-wide hunting on all endpoints.
-* MITRE ATT&CK heatmap generation.
+* Enterprise-wide threat hunting and DFIR on all endpoints with [Velociraptor](https://docs.velociraptor.app/).
 
 # Downloads
 
-Please download the latest stable version of hayabusa with compiled binaries or the source code from the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page.
+Please download the latest stable version of Hayabusa with compiled binaries or compile the source code from the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page.
 
 # Git cloning
 
@@ -188,7 +183,7 @@ If the update fails, you may need to rename the `rules` folder and try again.
 >> Caution: When updating, rules and config files in the `rules` folder are replaced with the latest rules and config files in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository. 
 >> Any changes you make to existing files will be overwritten, so we recommend that you make backups of any files that you edit before updating.
 >> If you are performing level tuning with `--level-tuning`, please re-tune your rule files after each update. 
->> If you add new rules inside of the `rules` folder, they will **not** be overwritten or deleted when updating.
+>> If you add **new** rules inside of the `rules` folder, they will **not** be overwritten or deleted when updating.
 
 # Advanced: Compiling From Source (Optional)
 
@@ -727,6 +722,7 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## English
 
+* 2022/06/19 [Velociraptor Walkthrough and Hayabusa Integration](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Cupuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Graphing Hayabusa results in neo4j](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
 
 ## Japanese
