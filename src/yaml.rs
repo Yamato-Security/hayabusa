@@ -233,7 +233,9 @@ impl ParseYaml {
                         };
                         let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
                         *entry += 1;
-                        return Option::None;
+                        if entry_key == "excluded" || (entry_key == "noisy" && !configs::CONFIG.read().unwrap().args.enable_noisy_rules ) {
+                            return Option::None;
+                        }
                     }
                 }
 
