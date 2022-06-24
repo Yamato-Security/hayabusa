@@ -252,6 +252,15 @@ pub fn write_color_buffer(
     wtr.print(&buf)
 }
 
+/// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
+pub fn get_writable_color(color: Option<Color>) -> Option<Color> {
+    if configs::CONFIG.read().unwrap().args.no_color {
+        None
+    } else {
+        color
+    }
+}
+
 /**
  * CSVのrecord infoカラムに出力する文字列を作る
  */

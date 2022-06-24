@@ -12,6 +12,7 @@
 - Updated clap crate package to version 3. (#413) (@hitnekoku)
 - Updated the default usage and help menu. (#387) (@hitenkoku)
 - Added default details output based on `rules/config/default_details.txt` when no `details` field in a rule is specified. (i.e. Sigma rules) (#359) (@hitenkoku)
+- Added saved file size output when `output` is specified. (#595) (@hitenkoku)
 
 **Bug Fixes:**
 
