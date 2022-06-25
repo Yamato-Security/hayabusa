@@ -460,7 +460,7 @@ mod tests {
         yaml.read_dir(path, "", &exclude_ids).unwrap();
         assert_eq!(
             yaml.rule_status_cnt.get("deprecated").unwrap().to_owned(),
-            2
+            1
         );
     }
 }
