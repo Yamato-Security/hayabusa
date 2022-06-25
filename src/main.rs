@@ -157,6 +157,19 @@ impl App {
         {
             configs::CONFIG.write().unwrap().args.config = CURRENT_EXE_PATH.join("rules/config");
         }
+                // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+                if configs::CONFIG
+                .read()
+                .unwrap()
+                .args
+                .rules
+                .to_str()
+                .unwrap()
+                == "./rules"
+            {
+                configs::CONFIG.write().unwrap().args.rules = CURRENT_EXE_PATH.join("rules");
+            }
+    
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
             let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
             pivot_key_unions.iter().for_each(|(key, _)| {
