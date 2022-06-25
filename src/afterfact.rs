@@ -428,7 +428,6 @@ fn emit_csv<W: std::io::Write>(
     )
     .ok();
     println!();
-    println!();
 
     _print_unique_results(
         total_detect_counts_by_level,
