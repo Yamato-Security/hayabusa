@@ -246,7 +246,8 @@ impl ParseYaml {
                         };
                         // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
                         if v != "00000000-0000-0000-0000-000000000000" {
-                            let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
+                            let entry =
+                                self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
                             *entry += 1;
                         }
                         if entry_key == "excluded"
