@@ -59,7 +59,7 @@ impl LevelTuning {
         for (path, rule) in rulefile_loader.files {
             if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
                 write_color_buffer(
-                    BufferWriter::stdout(ColorChoice::Always),
+                    &BufferWriter::stdout(ColorChoice::Always),
                     None,
                     &format!("path: {}", path),
                 )
@@ -94,7 +94,7 @@ impl LevelTuning {
                 file.write_all(content.as_bytes()).unwrap();
                 file.flush().unwrap();
                 write_color_buffer(
-                    BufferWriter::stdout(ColorChoice::Always),
+                    &BufferWriter::stdout(ColorChoice::Always),
                     None,
                     &format!(
                         "level: {} -> {}",
