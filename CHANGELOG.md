@@ -1,10 +1,11 @@
 # Changes
 
-## v1.4 [2022/XX/XX]
+## v1.4.0 [2022/XX/XX]
 
 **New Features:**
 
 - Added `--target-file-ext` option. You can specify additional file extensions to scan in addtition to the default `.evtx` files. For example, `--target-file-ext evtx_data` or multiple extensions with `--target-file-ext evtx1 evtx2`. (#586) (@hitenkoku)
+- Added `--exclude-status` option: You can ignore rules based on their `status`. (#596) (@hitenkoku)
 
 **Enhancements:**
 
@@ -13,6 +14,7 @@
 - Added default details output based on `rules/config/default_details.txt` when no `details` field in a rule is specified. (i.e. Sigma rules) (#359) (@hitenkoku)
 - Hayabusa can be run from any directory, not just from the current directory. (#592) (@hitenkoku)
 - Added saved file size output when `output` is specified. (#595) (@hitenkoku)
+- Ignored loading yml file in `rules/tools/sigmac/testfiles`. (#602) (@hitenkoku)
 
 **Bug Fixes:**
 

@@ -1,6 +1,9 @@
 extern crate csv;
 
 use crate::detections::configs;
+use crate::detections::utils::write_color_buffer;
+use termcolor::{BufferWriter, Color, ColorChoice};
+
 use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
@@ -119,13 +122,11 @@ impl Detection {
             .filter_map(return_if_success)
             .collect();
         if !*LOGONSUMMARY_FLAG {
-            let _ = &rulefile_loader
-                .rule_load_cnt
-                .insert(String::from("rule parsing error"), parseerror_count);
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
                 &rulefile_loader.rule_load_cnt,
                 &rulefile_loader.rule_status_cnt,
+                &parseerror_count,
             );
         }
         ret
@@ -363,46 +364,80 @@ impl Detection {
         rc: &HashMap<String, u128>,
         ld_rc: &HashMap<String, u128>,
         st_rc: &HashMap<String, u128>,
+        err_rc: &u128,
     ) {
         if *STATISTICS_FLAG {
             return;
         }
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
+        let args = &configs::CONFIG.read().unwrap().args;
+
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
-            //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
-            println!(
-                "{} rules: {}",
-                make_ascii_titlecase(key.clone().as_mut()),
-                value,
-            );
+            if value != &0_u128 {
+                let disable_flag = if key == "noisy" && !args.enable_noisy_rules {
+                    " (Disabled)"
+                } else {
+                    ""
+                };
+                //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+                println!(
+                    "{} rules: {}{}",
+                    make_ascii_titlecase(key.clone().as_mut()),
+                    value,
+                    disable_flag,
+                );
+            }
         });
+        if err_rc != &0_u128 {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                Some(Color::Red),
+                &format!("Rule parsing errors: {}", err_rc),
+            )
+            .ok();
+        }
         println!();
 
         let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
         let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| v.to_owned()).sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
-            let rate = if value == &0_u128 {
-                0 as f64
-            } else {
-                (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0
-            };
-            //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
-            println!(
-                "{} rules: {} ({:.2}%)",
-                make_ascii_titlecase(key.clone().as_mut()),
-                value,
-                rate
-            );
+            if value != &0_u128 {
+                let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
+                let deprecated_flag = if key == "deprecated" && !args.enable_deprecated_rules {
+                    " (Disabled)"
+                } else {
+                    ""
+                };
+                //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &format!(
+                        "{} rules: {} ({:.2}%){}",
+                        make_ascii_titlecase(key.clone().as_mut()),
+                        value,
+                        rate,
+                        deprecated_flag
+                    ),
+                )
+                .ok();
+            }
         });
         println!();
 
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
-            println!("{} rules: {}", key, value);
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &format!("{} rules: {}", key, value),
+            )
+            .ok();
         });
+
         println!("Total enabled detection rules: {}", total_loaded_rule_cnt);
         println!();
     }

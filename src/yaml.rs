@@ -2,9 +2,9 @@ extern crate serde_derive;
 extern crate yaml_rust;
 
 use crate::detections::configs;
+use crate::detections::configs::EXCLUDE_STATUS;
 use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_STACK;
-use crate::detections::print::QUIET_ERRORS_FLAG;
+use crate::detections::print::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use crate::filter::RuleExclude;
 use hashbrown::HashMap;
 use std::ffi::OsStr;
@@ -165,6 +165,19 @@ impl ParseYaml {
                     return io::Result::Ok(ret);
                 }
 
+                // ignore if tool test yml file in hayabusa-rules.
+                if path
+                    .to_str()
+                    .unwrap()
+                    .contains("rules/tools/sigmac/test_files")
+                    || path
+                        .to_str()
+                        .unwrap()
+                        .contains("rules\\tools\\sigmac\\test_files")
+                {
+                    return io::Result::Ok(ret);
+                }
+
                 // 個別のファイルの読み込みは即終了としない。
                 let read_content = self.read_file(path);
                 if read_content.is_err() {
@@ -231,7 +244,28 @@ impl ParseYaml {
                         } else {
                             "noisy"
                         };
-                        let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
+                        // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
+                        if v != "00000000-0000-0000-0000-000000000000" {
+                            let entry =
+                                self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
+                            *entry += 1;
+                        }
+                        if entry_key == "excluded"
+                            || (entry_key == "noisy"
+                                && !configs::CONFIG.read().unwrap().args.enable_noisy_rules)
+                        {
+                            return Option::None;
+                        }
+                    }
+                }
+
+                let status = &yaml_doc["status"].as_str();
+                if let Some(s) = status {
+                    if EXCLUDE_STATUS.contains(&s.to_string()) {
+                        let entry = self
+                            .rule_load_cnt
+                            .entry("excluded".to_string())
+                            .or_insert(0);
                         *entry += 1;
                         return Option::None;
                     }
@@ -271,19 +305,6 @@ impl ParseYaml {
                 if doc_level_num < args_level_num {
                     return Option::None;
                 }
-
-                if !configs::CONFIG.read().unwrap().args.enable_deprecated_rules {
-                    let rule_status = &yaml_doc["status"].as_str().unwrap_or_default();
-                    if *rule_status == "deprecated" {
-                        let entry = self
-                            .rule_status_cnt
-                            .entry(rule_status.to_string())
-                            .or_insert(0);
-                        *entry += 1;
-                        return Option::None;
-                    }
-                }
-
                 Option::Some((filepath, yaml_doc))
             })
             .collect();
@@ -439,7 +460,7 @@ mod tests {
         yaml.read_dir(path, "", &exclude_ids).unwrap();
         assert_eq!(
             yaml.rule_status_cnt.get("deprecated").unwrap().to_owned(),
-            2
+            1
         );
     }
 }
