@@ -453,7 +453,7 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string("./contributors.txt") {
+        match fs::read_to_string(CURRENT_EXE_PATH.join("contributors.txt")) {
             Ok(contents) => {
                 write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &contents)
                     .ok();
