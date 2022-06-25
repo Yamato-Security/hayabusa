@@ -11,6 +11,7 @@ use chrono::{DateTime, Datelike, Local, TimeZone};
 use evtx::{EvtxParser, ParserSettings};
 use git2::Repository;
 use hashbrown::{HashMap, HashSet};
+use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::pivot::PivotKeyword;
@@ -82,7 +83,12 @@ impl App {
 
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
-            load_pivot_keywords("config/pivot_keywords.txt");
+            load_pivot_keywords(
+                CURRENT_EXE_PATH
+                    .join("config/pivot_keywords.txt")
+                    .to_str()
+                    .unwrap(),
+            );
         }
 
         let analysis_start_time: DateTime<Local> = Local::now();
@@ -132,13 +138,29 @@ impl App {
             println!();
             return;
         }
-
-        if !Path::new("./config").exists() {
+        // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
+        if !CURRENT_EXE_PATH.join("config").exists() {
             AlertMessage::alert(
-                "Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe"
+                "Hayabusa could not find the config directory.\nPlease make sure that it is in the same directory as the hayabusa executable."
             )
             .ok();
             return;
+        }
+        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .config
+            .to_str()
+            .unwrap()
+            == "./rules/config"
+        {
+            configs::CONFIG.write().unwrap().args.config = CURRENT_EXE_PATH.join("rules/config");
+        }
+        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG.read().unwrap().args.rules.to_str().unwrap() == "./rules" {
+            configs::CONFIG.write().unwrap().args.rules = CURRENT_EXE_PATH.join("rules");
         }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
@@ -441,7 +463,7 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string("./contributors.txt") {
+        match fs::read_to_string(CURRENT_EXE_PATH.join("contributors.txt")) {
             Ok(contents) => {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -684,7 +706,7 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = &"art/logo.txt".to_string();
+        let fp = CURRENT_EXE_PATH.join("art/logo.txt");
         let content = fs::read_to_string(fp).unwrap_or_default();
         let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
@@ -711,7 +733,8 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let content = fs::read_to_string(path).unwrap_or_default();
+                let egg_path = CURRENT_EXE_PATH.join(path);
+                let content = fs::read_to_string(egg_path).unwrap_or_default();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
@@ -728,8 +751,9 @@ impl App {
         let mut result;
         let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let mut prev_modified_rules: HashSet<String> = HashSet::default();
-        let hayabusa_repo = Repository::open(Path::new("."));
-        let hayabusa_rule_repo = Repository::open(Path::new("rules"));
+        let hayabusa_repo = Repository::open(CURRENT_EXE_PATH.as_path());
+        let rules_path = CURRENT_EXE_PATH.join("rules");
+        let hayabusa_rule_repo = Repository::open(&rules_path);
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
@@ -744,23 +768,23 @@ impl App {
             // case of exist hayabusa-rules repository
             self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
+            prev_modified_rules =
+                self.get_updated_rules(rules_path.to_str().unwrap(), &prev_modified_time);
+            prev_modified_time = fs::metadata(&rules_path).unwrap().modified().unwrap();
             result = self.pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
             // case of no exist hayabusa-rules repository in rules.
             // execute update because submodule information exists if hayabusa repository exists submodule information.
 
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
-            let rules_path = Path::new("rules");
-            if !rules_path.exists() {
-                create_dir(rules_path).ok();
+            prev_modified_time = fs::metadata(&rules_path).unwrap().modified().unwrap();
+            if !&rules_path.exists() {
+                create_dir(&rules_path).ok();
             }
             let hayabusa_repo = hayabusa_repo.unwrap();
             let submodules = hayabusa_repo.submodules()?;
             let mut is_success_submodule_update = true;
             // submodule rules erase path is hard coding to avoid unintentional remove folder.
-            fs::remove_dir_all(".git/.submodule/rules").ok();
+            fs::remove_dir_all(CURRENT_EXE_PATH.join(".git/.submodule/rules")).ok();
             for mut submodule in submodules {
                 submodule.update(true, None)?;
                 let submodule_repo = submodule.open()?;
@@ -776,7 +800,8 @@ impl App {
             }
         }
         if result.is_ok() {
-            let updated_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
+            let updated_modified_rules =
+                self.get_updated_rules(rules_path.to_str().unwrap(), &prev_modified_time);
             result =
                 self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
@@ -833,7 +858,7 @@ impl App {
     fn clone_rules(&self) -> Result<String, git2::Error> {
         match Repository::clone(
             "https://github.com/Yamato-Security/hayabusa-rules.git",
-            "rules",
+            CURRENT_EXE_PATH.join("rules"),
         ) {
             Ok(_repo) => {
                 println!("Finished cloning the hayabusa-rules repository.");
