@@ -305,19 +305,6 @@ impl ParseYaml {
                 if doc_level_num < args_level_num {
                     return Option::None;
                 }
-
-                if !configs::CONFIG.read().unwrap().args.enable_deprecated_rules {
-                    let rule_status = &yaml_doc["status"].as_str().unwrap_or_default();
-                    if *rule_status == "deprecated" {
-                        let entry = self
-                            .rule_status_cnt
-                            .entry(rule_status.to_string())
-                            .or_insert(0);
-                        *entry += 1;
-                        return Option::None;
-                    }
-                }
-
                 Option::Some((filepath, yaml_doc))
             })
             .collect();
