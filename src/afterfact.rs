@@ -283,12 +283,20 @@ fn emit_csv<W: std::io::Write>(
 
                 //ヘッダーのみを出力
                 if plus_header {
-                    write_color_buffer(&disp_wtr, get_writable_color(None), &_get_serialized_disp_output(None)).ok();
+                    write_color_buffer(
+                        &disp_wtr,
+                        get_writable_color(None),
+                        &_get_serialized_disp_output(None),
+                    )
+                    .ok();
                     plus_header = false;
                 }
                 write_color_buffer(
-                    &disp_wtr, get_writable_color(_get_output_color(&color_map, &detect_info.level)),&_get_serialized_disp_output(Some(dispformat))
-                ).ok();
+                    &disp_wtr,
+                    get_writable_color(_get_output_color(&color_map, &detect_info.level)),
+                    &_get_serialized_disp_output(Some(dispformat)),
+                )
+                .ok();
             } else {
                 // csv output format
                 wtr.serialize(CsvFormat {
