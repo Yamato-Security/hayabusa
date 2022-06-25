@@ -17,7 +17,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed output error and terminate program when long output is displayed with color. (#603) (@hitenkoku)
 
 ## v1.3.2 [2022/06/13]
 
