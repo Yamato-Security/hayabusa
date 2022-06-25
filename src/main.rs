@@ -737,7 +737,7 @@ impl App {
             self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
             prev_modified_rules =
-                self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
+                self.get_updated_rules(rules_path.to_str().unwrap(), &prev_modified_time);
             prev_modified_time = fs::metadata(&rules_path).unwrap().modified().unwrap();
             result = self.pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
@@ -769,7 +769,7 @@ impl App {
         }
         if result.is_ok() {
             let updated_modified_rules =
-                self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
+                self.get_updated_rules(rules_path.to_str().unwrap(), &prev_modified_time);
             result =
                 self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
