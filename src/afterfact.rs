@@ -283,20 +283,12 @@ fn emit_csv<W: std::io::Write>(
 
                 //ヘッダーのみを出力
                 if plus_header {
-                    write!(disp_wtr_buf, "{}", _get_serialized_disp_output(None)).ok();
+                    write_color_buffer(&disp_wtr, get_writable_color(None), &_get_serialized_disp_output(None)).ok();
                     plus_header = false;
                 }
-                disp_wtr_buf
-                    .set_color(
-                        ColorSpec::new().set_fg(_get_output_color(&color_map, &detect_info.level)),
-                    )
-                    .ok();
-                write!(
-                    disp_wtr_buf,
-                    "{}",
-                    _get_serialized_disp_output(Some(dispformat))
-                )
-                .ok();
+                write_color_buffer(
+                    &disp_wtr, get_writable_color(_get_output_color(&color_map, &detect_info.level)),&_get_serialized_disp_output(Some(dispformat))
+                ).ok();
             } else {
                 // csv output format
                 wtr.serialize(CsvFormat {
@@ -354,7 +346,6 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if displayflag {
-        disp_wtr.print(&disp_wtr_buf)?;
         println!();
     } else {
         wtr.flush()?;
