@@ -334,6 +334,7 @@ impl AlertMessage {
             &BufferWriter::stderr(ColorChoice::Always),
             None,
             &format!("[ERROR] {}", contents),
+            true,
         )
     }
 
@@ -343,6 +344,7 @@ impl AlertMessage {
             &BufferWriter::stderr(ColorChoice::Always),
             None,
             &format!("[WARN] {}", contents),
+            true,
         )
     }
 }

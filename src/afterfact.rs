@@ -288,18 +288,20 @@ fn emit_csv<W: std::io::Write>(
 
                 //ヘッダーのみを出力
                 if plus_header {
-                    write!(disp_wtr_buf, "{}", _get_serialized_disp_output(None)).ok();
-                    plus_header = false;
-                }
-                disp_wtr_buf
-                    .set_color(
-                        ColorSpec::new().set_fg(_get_output_color(&color_map, &detect_info.level)),
+                    write_color_buffer(
+                        &disp_wtr,
+                        get_writable_color(None),
+                        &_get_serialized_disp_output(None),
+                        true,
                     )
                     .ok();
-                write!(
-                    disp_wtr_buf,
-                    "{}",
-                    _get_serialized_disp_output(Some(dispformat))
+                    plus_header = false;
+                }
+                write_color_buffer(
+                    &disp_wtr,
+                    get_writable_color(_get_output_color(&color_map, &detect_info.level)),
+                    &_get_serialized_disp_output(Some(dispformat)),
+                    false,
                 )
                 .ok();
             } else {
@@ -359,7 +361,6 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if displayflag {
-        disp_wtr.print(&disp_wtr_buf)?;
         println!();
     } else {
         wtr.flush()?;
@@ -389,6 +390,7 @@ fn emit_csv<W: std::io::Write>(
         &disp_wtr,
         get_writable_color(Some(Color::Green)),
         "Results Summary:",
+        true,
     )
     .ok();
 
@@ -412,6 +414,7 @@ fn emit_csv<W: std::io::Write>(
         &disp_wtr,
         get_writable_color(None),
         &format!("Total events: {}", all_record_cnt),
+        true,
     )
     .ok();
     write_color_buffer(
@@ -421,6 +424,7 @@ fn emit_csv<W: std::io::Write>(
             "Data reduction: {} events ({:.2}%)",
             reducted_record_cnt, reducted_percent
         ),
+        true,
     )
     .ok();
     println!();
@@ -477,7 +481,7 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
         if configs::CONFIG.read().unwrap().args.full_data {
             titles.push("RecordInformation");
         }
-        return format!("{}\n", titles.join("|"));
+        return titles.join("|");
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
@@ -527,8 +531,9 @@ fn _print_unique_results(
             "{} {}: {}",
             head_word,
             tail_word,
-            counts_by_level.iter().sum::<u128>()
+            counts_by_level.iter().sum::<u128>(),
         ),
+        true,
     )
     .ok();
 
@@ -544,6 +549,7 @@ fn _print_unique_results(
             &BufferWriter::stdout(ColorChoice::Always),
             _get_output_color(color_map, level_name),
             &output_raw_str,
+            true,
         )
         .ok();
     }
@@ -827,7 +833,7 @@ mod tests {
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details\n";
+        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
@@ -851,7 +857,7 @@ mod tests {
             + "|"
             + test_recinfo
             + "\n";
-        assert_eq!(_get_serialized_disp_output(None,), expect_header);
+        assert_eq!(_get_serialized_disp_output(None), expect_header);
         assert_eq!(
             _get_serialized_disp_output(Some(DisplayFormat {
                 timestamp: &format_time(&test_timestamp, false),
