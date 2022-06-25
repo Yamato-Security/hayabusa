@@ -245,10 +245,15 @@ pub fn write_color_buffer(
     wtr: &BufferWriter,
     color: Option<Color>,
     output_str: &str,
+    newline_flag: bool,
 ) -> io::Result<()> {
     let mut buf = wtr.buffer();
     buf.set_color(ColorSpec::new().set_fg(color)).ok();
-    writeln!(buf, "{}", output_str).ok();
+    if newline_flag {
+        writeln!(buf, "{}", output_str).ok();
+    } else {
+        write!(buf, "{}", output_str).ok();
+    }
     wtr.print(&buf)
 }
 

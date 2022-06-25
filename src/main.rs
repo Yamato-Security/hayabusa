@@ -120,6 +120,7 @@ impl App {
                             &BufferWriter::stdout(ColorChoice::Always),
                             None,
                             "Rules updated successfully.",
+                            true,
                         )
                         .ok();
                     }
@@ -173,6 +174,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Event ID Statistics",
+                true,
             )
             .ok();
             println!();
@@ -182,6 +184,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Logons Summary",
+                true,
             )
             .ok();
             println!();
@@ -265,6 +268,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &configs::CONFIG.read().unwrap().headless_help,
+                true,
             )
             .ok();
             return;
@@ -277,6 +281,7 @@ impl App {
             &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
+            true,
         )
         .ok();
         println!();
@@ -329,17 +334,30 @@ impl App {
                     )
                     .ok();
                 });
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output,
+                    true,
+                )
+                .ok();
             } else {
                 //標準出力の場合
                 let output = "The following pivot keywords were found:".to_string();
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output,
+                    true,
+                )
+                .ok();
 
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
                         &create_output(String::default(), key, pivot_keyword),
+                        true,
                     )
                     .ok();
                 });
@@ -425,8 +443,13 @@ impl App {
     fn print_contributors(&self) {
         match fs::read_to_string("./contributors.txt") {
             Ok(contents) => {
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &contents)
-                    .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &contents,
+                    true,
+                )
+                .ok();
             }
             Err(err) => {
                 AlertMessage::alert(&format!("{}", err)).ok();
@@ -445,6 +468,7 @@ impl App {
             &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Analyzing event files: {:?}", evtx_files.len()),
+            true,
         )
         .ok();
 
@@ -671,6 +695,7 @@ impl App {
             &BufferWriter::stdout(ColorChoice::Always),
             output_color,
             &content,
+            true,
         )
         .ok();
     }
@@ -687,7 +712,13 @@ impl App {
             None => {}
             Some(path) => {
                 let content = fs::read_to_string(path).unwrap_or_default();
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &content,
+                    true,
+                )
+                .ok();
             }
         }
     }
@@ -704,6 +735,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Attempting to git clone the hayabusa-rules repository into the rules folder.",
+                true,
             )
             .ok();
             // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
@@ -886,6 +918,7 @@ impl App {
                     "[Updated] {} (Modified: {} | Path: {})",
                     tmp[0], tmp[1], tmp[2]
                 ),
+                true,
             )
             .ok();
         }
@@ -900,6 +933,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "You currently have the latest rules.",
+                true,
             )
             .ok();
             Ok("You currently have the latest rules.".to_string())

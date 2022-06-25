@@ -287,6 +287,7 @@ fn emit_csv<W: std::io::Write>(
                         &disp_wtr,
                         get_writable_color(None),
                         &_get_serialized_disp_output(None),
+                        true,
                     )
                     .ok();
                     plus_header = false;
@@ -295,6 +296,7 @@ fn emit_csv<W: std::io::Write>(
                     &disp_wtr,
                     get_writable_color(_get_output_color(&color_map, &detect_info.level)),
                     &_get_serialized_disp_output(Some(dispformat)),
+                    false,
                 )
                 .ok();
             } else {
@@ -383,6 +385,7 @@ fn emit_csv<W: std::io::Write>(
         &disp_wtr,
         get_writable_color(Some(Color::Green)),
         "Results Summary:",
+        true,
     )
     .ok();
 
@@ -406,6 +409,7 @@ fn emit_csv<W: std::io::Write>(
         &disp_wtr,
         get_writable_color(None),
         &format!("Total events: {}", all_record_cnt),
+        true,
     )
     .ok();
     write_color_buffer(
@@ -415,6 +419,7 @@ fn emit_csv<W: std::io::Write>(
             "Data reduction: {} events ({:.2}%)",
             reducted_record_cnt, reducted_percent
         ),
+        true,
     )
     .ok();
     println!();
@@ -471,7 +476,7 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
         if configs::CONFIG.read().unwrap().args.full_data {
             titles.push("RecordInformation");
         }
-        return format!("{}\n", titles.join("|"));
+        return titles.join("|").to_string();
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
@@ -521,8 +526,9 @@ fn _print_unique_results(
             "{} {}: {}",
             head_word,
             tail_word,
-            counts_by_level.iter().sum::<u128>()
+            counts_by_level.iter().sum::<u128>(),
         ),
+        true,
     )
     .ok();
 
@@ -538,6 +544,7 @@ fn _print_unique_results(
             &BufferWriter::stdout(ColorChoice::Always),
             _get_output_color(color_map, level_name),
             &output_raw_str,
+            true,
         )
         .ok();
     }
