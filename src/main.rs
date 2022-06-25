@@ -728,8 +728,9 @@ impl App {
         let mut result;
         let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let mut prev_modified_rules: HashSet<String> = HashSet::default();
-        let hayabusa_repo = Repository::open(Path::new("."));
-        let hayabusa_rule_repo = Repository::open(Path::new("rules"));
+        let hayabusa_repo = Repository::open(CURRENT_EXE_PATH.as_path());
+        let rules_path = CURRENT_EXE_PATH.join("rules");
+        let hayabusa_rule_repo = Repository::open(&rules_path);
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
@@ -743,23 +744,22 @@ impl App {
             // case of exist hayabusa-rules repository
             self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
+            prev_modified_rules = self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
+            prev_modified_time = fs::metadata(&rules_path).unwrap().modified().unwrap();
             result = self.pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
             // case of no exist hayabusa-rules repository in rules.
             // execute update because submodule information exists if hayabusa repository exists submodule information.
 
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
-            let rules_path = Path::new("rules");
-            if !rules_path.exists() {
-                create_dir(rules_path).ok();
+            prev_modified_time = fs::metadata(&rules_path).unwrap().modified().unwrap();
+            if !&rules_path.exists() {
+                create_dir(&rules_path).ok();
             }
             let hayabusa_repo = hayabusa_repo.unwrap();
             let submodules = hayabusa_repo.submodules()?;
             let mut is_success_submodule_update = true;
             // submodule rules erase path is hard coding to avoid unintentional remove folder.
-            fs::remove_dir_all(".git/.submodule/rules").ok();
+            fs::remove_dir_all(CURRENT_EXE_PATH.join(".git/.submodule/rules")).ok();
             for mut submodule in submodules {
                 submodule.update(true, None)?;
                 let submodule_repo = submodule.open()?;
@@ -775,7 +775,7 @@ impl App {
             }
         }
         if result.is_ok() {
-            let updated_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
+            let updated_modified_rules = self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
             result =
                 self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
@@ -832,7 +832,7 @@ impl App {
     fn clone_rules(&self) -> Result<String, git2::Error> {
         match Repository::clone(
             "https://github.com/Yamato-Security/hayabusa-rules.git",
-            "rules",
+            CURRENT_EXE_PATH.join("rules"),
         ) {
             Ok(_repo) => {
                 println!("Finished cloning the hayabusa-rules repository.");
