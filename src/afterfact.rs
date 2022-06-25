@@ -476,7 +476,7 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
         if configs::CONFIG.read().unwrap().args.full_data {
             titles.push("RecordInformation");
         }
-        return titles.join("|").to_string();
+        return titles.join("|");
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
