@@ -157,19 +157,11 @@ impl App {
         {
             configs::CONFIG.write().unwrap().args.config = CURRENT_EXE_PATH.join("rules/config");
         }
-                // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-                if configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .rules
-                .to_str()
-                .unwrap()
-                == "./rules"
-            {
-                configs::CONFIG.write().unwrap().args.rules = CURRENT_EXE_PATH.join("rules");
-            }
-    
+        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG.read().unwrap().args.rules.to_str().unwrap() == "./rules" {
+            configs::CONFIG.write().unwrap().args.rules = CURRENT_EXE_PATH.join("rules");
+        }
+
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
             let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
             pivot_key_unions.iter().for_each(|(key, _)| {
@@ -744,7 +736,8 @@ impl App {
             // case of exist hayabusa-rules repository
             self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
+            prev_modified_rules =
+                self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
             prev_modified_time = fs::metadata(&rules_path).unwrap().modified().unwrap();
             result = self.pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
@@ -775,7 +768,8 @@ impl App {
             }
         }
         if result.is_ok() {
-            let updated_modified_rules = self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
+            let updated_modified_rules =
+                self.get_updated_rules(&rules_path.to_str().unwrap(), &prev_modified_time);
             result =
                 self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
