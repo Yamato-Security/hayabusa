@@ -28,7 +28,7 @@ impl UpdateRules {
         let hayabusa_rule_repo = Repository::open(Path::new("rules"));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Attempting to git clone the hayabusa-rules repository into the rules folder.",
             )
@@ -205,7 +205,7 @@ impl UpdateRules {
                 .entry(tmp[3].to_string())
                 .or_insert(0b0) += 1;
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &format!(
                     "[Updated] {} (Modified: {} | Path: {})",
@@ -222,7 +222,7 @@ impl UpdateRules {
             Ok("Rule updated".to_string())
         } else {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "You currently have the latest rules.",
             )
