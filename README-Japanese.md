@@ -341,7 +341,7 @@ OPTIONS:
     -h, --help                                    ヘルプ情報を表示する
     -l, --live-analysis                           ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
     -L, --logon-summary                           成功と失敗したログオン情報の要約を出力する
-        --level-tuning <LEVEL_TUNING_FILE>        ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+        --level-tuning [<LEVEL_TUNING_FILE>]      ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
     -m, --min-level <LEVEL>                       結果出力をするルールの最低レベル (デフォルト: informational)
     -n, --enable-noisy-rules                      Noisyルールを有効にする
         --no_color                                カラー出力を無効にする

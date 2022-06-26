@@ -337,7 +337,7 @@ OPTIONS:
     -h, --help                                    Print help information
     -l, --live-analysis                           Analyze the local C:\Windows\System32\winevt\Logs folder
     -L, --logon-summary                           Print a summary of successful and failed logons
-        --level-tuning <LEVEL_TUNING_FILE>        Tune alert levels (default: ./rules/config/level_tuning.txt)
+        --level-tuning [<LEVEL_TUNING_FILE>]      Tune alert levels (default: ./rules/config/level_tuning.txt)
     -m, --min-level <LEVEL>                       Minimum level for rules (default: informational)
     -n, --enable-noisy-rules                      Enable rules marked as noisy
         --no-color                                Disable color output
