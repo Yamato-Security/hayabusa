@@ -98,23 +98,23 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ## Startup
 
-![Hayabusa Startup](/screenshots/Hayabusa-Startup.png)
+![Hayabusa Startup](screenshots/Hayabusa-Startup.png)
 
 ## Terminal Output
 
-![Hayabusa terminal output](/screenshots/Hayabusa-Results.png)
+![Hayabusa terminal output](screenshots/Hayabusa-Results.png)
 
 ## Event Fequency Timeline (`-V` option)
 
-![Hayabusa Event Frequency Timeline](/screenshots/HayabusaEventFrequencyTimeline.png)
+![Hayabusa Event Frequency Timeline](screenshots/HayabusaEventFrequencyTimeline.png)
 
 ## Results Summary
 
-![Hayabusa results summary](/screenshots/HayabusaResultsSummary.png)
+![Hayabusa results summary](screenshots/HayabusaResultsSummary.png)
 
 ## Analysis in Excel
 
-![Hayabusa analysis in Excel](/screenshots/ExcelScreenshot.png)
+![Hayabusa analysis in Excel](screenshots/ExcelScreenshot.png)
 
 ## Analysis in Timeline Explorer
 
@@ -292,11 +292,11 @@ Then, try to run it from the Hayabusa root directory:
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
 
-![Mac Error 1 EN](/screenshots/MacOS-RunError-1-EN.png)
+![Mac Error 1 EN](screenshots/MacOS-RunError-1-EN.png)
 
 Click "Cancel" and then from System Preferences, open "Security & Privacy" and from the General tab, click "Allow Anyway".
 
-![Mac Error 2 EN](/screenshots/MacOS-RunError-2-EN.png)
+![Mac Error 2 EN](screenshots/MacOS-RunError-2-EN.png)
 
 After that, try to run it again.
 
@@ -306,7 +306,7 @@ After that, try to run it again.
 
 The following warning will pop up, so please click "Open".
 
-![Mac Error 3 EN](/screenshots/MacOS-RunError-3-EN.png)
+![Mac Error 3 EN](screenshots/MacOS-RunError-3-EN.png)
 
 You should now be able to run hayabusa.
 

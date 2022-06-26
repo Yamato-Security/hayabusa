@@ -104,23 +104,23 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ## 起動画面
 
-![Hayabusa 起動画面](/screenshots/Hayabusa-Startup.png)
+![Hayabusa 起動画面](screenshots/Hayabusa-Startup.png)
 
 ## ターミナル出力画面
 
-![Hayabusa ターミナル出力画面](/screenshots/Hayabusa-Results.png)
+![Hayabusa ターミナル出力画面](screenshots/Hayabusa-Results.png)
 
 ## イベント頻度タイムライン出力画面 (`-V`オプション)
 
-![Hayabusa イベント頻度タイムライン出力画面](/screenshots/HayabusaEventFrequencyTimeline.png)
+![Hayabusa イベント頻度タイムライン出力画面](screenshots/HayabusaEventFrequencyTimeline.png)
 
 ## 結果サマリ画面
 
-![Hayabusa 結果サマリ画面](/screenshots/HayabusaResultsSummary.png)
+![Hayabusa 結果サマリ画面](screenshots/HayabusaResultsSummary.png)
 
 ## Excelでの解析
 
-![Hayabusa Excelでの解析](/screenshots/ExcelScreenshot.png)
+![Hayabusa Excelでの解析](screenshots/ExcelScreenshot.png)
 
 ## Timeline Explorerでの解析
 
@@ -296,11 +296,11 @@ chmod +x ./hayabusa-1.4.0-mac-intel
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
 
-![Mac Error 1 JP](/screenshots/MacOS-RunError-1-JP.png)
+![Mac Error 1 JP](screenshots/MacOS-RunError-1-JP.png)
 
 macOSの環境設定から「セキュリティとプライバシー」を開き、「一般」タブから「このまま許可」ボタンをクリックしてください。
 
-![Mac Error 2 JP](/screenshots/MacOS-RunError-2-JP.png)
+![Mac Error 2 JP](screenshots/MacOS-RunError-2-JP.png)
 
 その後、ターミナルからもう一回実行してみてください：
 
@@ -310,7 +310,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 以下の警告が出るので、「開く」をクリックしてください。
 
-![Mac Error 3 JP](/screenshots/MacOS-RunError-3-JP.png)
+![Mac Error 3 JP](screenshots/MacOS-RunError-3-JP.png)
 
 これで実行できるようになります。
 
