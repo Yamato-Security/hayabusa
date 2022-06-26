@@ -260,7 +260,7 @@ impl App {
             .level_tuning.clone().unwrap();
             let level_tuning_config_path = match level_tuning_val {
                 Some (path) => path.to_owned(),
-                _ => "./rules/config/level_tuning.txt".to_string(),
+                _ => CURRENT_EXE_PATH.join("./rules/config/level_tuning.txt").display().to_string(),
             };
                 
 
