@@ -251,18 +251,18 @@ impl App {
         } else if configs::CONFIG.read().unwrap().args.contributors {
             self.print_contributors();
             return;
-        } else if std::env::args()
-            .into_iter()
-            .any(|arg| arg.contains("level-tuning"))
+        } else if configs::CONFIG.read().unwrap().args.level_tuning.is_some()
         {
-            let level_tuning_config_path = configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .level_tuning
-                .as_path()
-                .display()
-                .to_string();
+            let level_tuning_val = &configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .level_tuning.clone().unwrap();
+            let level_tuning_config_path = match level_tuning_val {
+                Some (path) => path.to_owned(),
+                _ => "./rules/config/level_tuning.txt".to_string(),
+            };
+                
 
             if Path::new(&level_tuning_config_path).exists() {
                 if let Err(err) = LevelTuning::run(
