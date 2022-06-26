@@ -388,7 +388,7 @@ fn emit_csv<W: std::io::Write>(
     disp_wtr_buf.clear();
     write_color_buffer(
         &disp_wtr,
-        get_writable_color(Some(Color::Green)),
+        get_writable_color(Some(Color::Rgb(0, 255, 0))),
         "Results Summary:",
         true,
     )
@@ -427,7 +427,6 @@ fn emit_csv<W: std::io::Write>(
         true,
     )
     .ok();
-    println!();
     println!();
 
     _print_unique_results(

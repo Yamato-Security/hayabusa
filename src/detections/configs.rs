@@ -191,11 +191,10 @@ pub struct Config {
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[clap(
         long = "level-tuning",
-        default_value = "./rules/config/level_tuning.txt",
         hide_default_value = true,
         value_name = "LEVEL_TUNING_FILE"
     )]
-    pub level_tuning: PathBuf,
+    pub level_tuning: Option<Option<String>>,
 
     /// Quiet mode: do not display the launch banner
     #[clap(short, long)]
