@@ -1,5 +1,19 @@
 # Changes
 
+## v1.4.1 [2022/xx/xx]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added `--deep-scan` option. Default scan target is filtered EventIDs in `config/target_event_ids.txt`. With this option, scan target is all EventIDs. (#608) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.4.0 [2022/06/26]
 
 **New Features:**
