@@ -329,7 +329,8 @@ OPTIONS:
     -c, --rules-config <RULE_CONFIG_DIRECTORY>    Specify custom rule config folder (default: ./rules/config)
         --contributors                            Print the list of contributors
     -d, --directory <DIRECTORY>                   Directory of multiple .evtx files
-    -D, --enable-deprecated-rules                 Enable rules marked as deprecated
+    -D, --deep-scan                               Scan to all event ID
+        --enable-deprecated-rules                 Enable rules marked as deprecated
         --end-timeline <END_TIMELINE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
         --exclude-status <EXCLUDE_STATUS>...      Ignore rules according to status (ex: experimental) (ex: stable test)
     -f, --filepath <FILE_PATH>                    File path to one .evtx file
