@@ -595,7 +595,9 @@ impl App {
 
                 // target_eventids.txtでイベントIDベースでフィルタする。
                 let data = record_result.as_ref().unwrap().data.clone();
-                if !self._is_target_event_id(&data) && !configs::CONFIG.read().unwrap().args.deep_scan {
+                if !self._is_target_event_id(&data)
+                    && !configs::CONFIG.read().unwrap().args.deep_scan
+                {
                     continue;
                 }
 
