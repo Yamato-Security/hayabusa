@@ -675,6 +675,7 @@ id,new_level
 
 `config/target_eventids.txt`にイベントID番号を追加することで、イベントIDでフィルタリングすることができます。
 これはパフォーマンスを向上させるので、特定のIDだけを検索したい場合に推奨されます。
+このイベントIDフィルタリングを除外したい場合は`-D`もしくは`--deepscan`オプションを利用してください。
 
 すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
 

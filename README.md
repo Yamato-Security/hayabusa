@@ -672,6 +672,7 @@ In this case, the risk level of the rule with an `id` of `00000000-0000-0000-000
 
 You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
 This will increase performance so it is recommended if you only need to search for certain IDs.
+You can exclude event IDs filter with `-D` or `--deep-scan` option.
 
 We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
 
