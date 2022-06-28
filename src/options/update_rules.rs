@@ -31,6 +31,7 @@ impl UpdateRules {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Attempting to git clone the hayabusa-rules repository into the rules folder.",
+                true,
             )
             .ok();
             // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
@@ -211,6 +212,7 @@ impl UpdateRules {
                     "[Updated] {} (Modified: {} | Path: {})",
                     tmp[0], tmp[1], tmp[2]
                 ),
+                true,
             )
             .ok();
         }
@@ -225,6 +227,7 @@ impl UpdateRules {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "You currently have the latest rules.",
+                true,
             )
             .ok();
             Ok("You currently have the latest rules.".to_string())
