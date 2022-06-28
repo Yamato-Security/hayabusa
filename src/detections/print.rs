@@ -1,5 +1,6 @@
 extern crate lazy_static;
 use crate::detections::configs;
+use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
 use crate::detections::utils::write_color_buffer;
@@ -53,12 +54,18 @@ lazy_static! {
     pub static ref STATISTICS_FLAG: bool = configs::CONFIG.read().unwrap().args.statistics;
     pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
-        "config/output_tag.txt",
+        CURRENT_EXE_PATH
+            .join("config/output_tag.txt")
+            .to_str()
+            .unwrap(),
         true,
         configs::CONFIG.read().unwrap().args.all_tags
     );
     pub static ref CH_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
-        "config/channel_abbreviations.txt",
+        CURRENT_EXE_PATH
+            .join("config/channel_abbreviations.txt")
+            .to_str()
+            .unwrap(),
         false,
         configs::CONFIG.read().unwrap().args.all_tags
     );
@@ -327,6 +334,7 @@ impl AlertMessage {
             &BufferWriter::stderr(ColorChoice::Always),
             None,
             &format!("[ERROR] {}", contents),
+            true,
         )
     }
 
@@ -336,6 +344,7 @@ impl AlertMessage {
             &BufferWriter::stderr(ColorChoice::Always),
             None,
             &format!("[WARN] {}", contents),
+            true,
         )
     }
 }

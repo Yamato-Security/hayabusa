@@ -10,6 +10,7 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
+use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::pivot::PivotKeyword;
@@ -77,7 +78,12 @@ impl App {
 
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
-            load_pivot_keywords("config/pivot_keywords.txt");
+            load_pivot_keywords(
+                CURRENT_EXE_PATH
+                    .join("config/pivot_keywords.txt")
+                    .to_str()
+                    .unwrap(),
+            );
         }
 
         let analysis_start_time: DateTime<Local> = Local::now();
@@ -115,6 +121,7 @@ impl App {
                             &BufferWriter::stdout(ColorChoice::Always),
                             None,
                             "Rules updated successfully.",
+                            true,
                         )
                         .ok();
                     }
@@ -126,13 +133,29 @@ impl App {
             println!();
             return;
         }
-
-        if !Path::new("./config").exists() {
+        // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
+        if !CURRENT_EXE_PATH.join("config").exists() {
             AlertMessage::alert(
-                "Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe"
+                "Hayabusa could not find the config directory.\nPlease make sure that it is in the same directory as the hayabusa executable."
             )
             .ok();
             return;
+        }
+        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .config
+            .to_str()
+            .unwrap()
+            == "./rules/config"
+        {
+            configs::CONFIG.write().unwrap().args.config = CURRENT_EXE_PATH.join("rules/config");
+        }
+        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG.read().unwrap().args.rules.to_str().unwrap() == "./rules" {
+            configs::CONFIG.write().unwrap().args.rules = CURRENT_EXE_PATH.join("rules");
         }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
@@ -168,6 +191,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Event ID Statistics",
+                true,
             )
             .ok();
             println!();
@@ -177,6 +201,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Logons Summary",
+                true,
             )
             .ok();
             println!();
@@ -221,18 +246,21 @@ impl App {
         } else if configs::CONFIG.read().unwrap().args.contributors {
             self.print_contributors();
             return;
-        } else if std::env::args()
-            .into_iter()
-            .any(|arg| arg.contains("level-tuning"))
-        {
-            let level_tuning_config_path = configs::CONFIG
+        } else if configs::CONFIG.read().unwrap().args.level_tuning.is_some() {
+            let level_tuning_val = &configs::CONFIG
                 .read()
                 .unwrap()
                 .args
                 .level_tuning
-                .as_path()
-                .display()
-                .to_string();
+                .clone()
+                .unwrap();
+            let level_tuning_config_path = match level_tuning_val {
+                Some(path) => path.to_owned(),
+                _ => CURRENT_EXE_PATH
+                    .join("./rules/config/level_tuning.txt")
+                    .display()
+                    .to_string(),
+            };
 
             if Path::new(&level_tuning_config_path).exists() {
                 if let Err(err) = LevelTuning::run(
@@ -260,6 +288,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &configs::CONFIG.read().unwrap().headless_help,
+                true,
             )
             .ok();
             return;
@@ -272,6 +301,7 @@ impl App {
             &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
+            true,
         )
         .ok();
         println!();
@@ -324,17 +354,30 @@ impl App {
                     )
                     .ok();
                 });
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output,
+                    true,
+                )
+                .ok();
             } else {
                 //標準出力の場合
                 let output = "The following pivot keywords were found:".to_string();
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output,
+                    true,
+                )
+                .ok();
 
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
                         &create_output(String::default(), key, pivot_keyword),
+                        true,
                     )
                     .ok();
                 });
@@ -418,10 +461,15 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string("./contributors.txt") {
+        match fs::read_to_string(CURRENT_EXE_PATH.join("contributors.txt")) {
             Ok(contents) => {
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &contents)
-                    .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &contents,
+                    true,
+                )
+                .ok();
             }
             Err(err) => {
                 AlertMessage::alert(&format!("{}", err)).ok();
@@ -440,6 +488,7 @@ impl App {
             &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Analyzing event files: {:?}", evtx_files.len()),
+            true,
         )
         .ok();
 
@@ -655,7 +704,7 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = &"art/logo.txt".to_string();
+        let fp = CURRENT_EXE_PATH.join("art/logo.txt");
         let content = fs::read_to_string(fp).unwrap_or_default();
         let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
@@ -666,6 +715,7 @@ impl App {
             &BufferWriter::stdout(ColorChoice::Always),
             output_color,
             &content,
+            true,
         )
         .ok();
     }
@@ -681,8 +731,15 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let content = fs::read_to_string(path).unwrap_or_default();
-                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
+                let egg_path = CURRENT_EXE_PATH.join(path);
+                let content = fs::read_to_string(egg_path).unwrap_or_default();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &content,
+                    true,
+                )
+                .ok();
             }
         }
     }

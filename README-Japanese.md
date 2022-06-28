@@ -104,23 +104,23 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ## 起動画面
 
-![Hayabusa 起動画面](/screenshots/Hayabusa-Startup.png)
+![Hayabusa 起動画面](screenshots/Hayabusa-Startup.png)
 
 ## ターミナル出力画面
 
-![Hayabusa ターミナル出力画面](/screenshots/Hayabusa-Results.png)
+![Hayabusa ターミナル出力画面](screenshots/Hayabusa-Results.png)
 
 ## イベント頻度タイムライン出力画面 (`-V`オプション)
 
-![Hayabusa イベント頻度タイムライン出力画面](/screenshots/HayabusaEventFrequencyTimeline.png)
+![Hayabusa イベント頻度タイムライン出力画面](screenshots/HayabusaEventFrequencyTimeline.png)
 
 ## 結果サマリ画面
 
-![Hayabusa 結果サマリ画面](/screenshots/HayabusaResultsSummary.png)
+![Hayabusa 結果サマリ画面](screenshots/HayabusaResultsSummary.png)
 
 ## Excelでの解析
 
-![Hayabusa Excelでの解析](/screenshots/ExcelScreenshot.png)
+![Hayabusa Excelでの解析](screenshots/ExcelScreenshot.png)
 
 ## Timeline Explorerでの解析
 
@@ -182,7 +182,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -u
+hayabusa-1.4.0-win-x64.exe -u
 ```
 
 アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
@@ -264,20 +264,20 @@ Hayabusa実行する際や、`.yml`ルールのダウンロードや実行時に
 ## Windows
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
-例: `hayabusa-1.3.2-windows-x64.exe`
+例: `hayabusa-1.4.0-windows-x64.exe`
 
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.3.2-linux-x64-gnu
+chmod +x ./hayabusa-1.4.0-linux-x64-gnu
 ```
 
 次に、Hayabusaのルートディレクトリから実行します：
 
 ```bash
-./hayabusa-1.3.2-linux-x64-gnu
+./hayabusa-1.4.0-linux-x64-gnu
 ```
 
 ## macOS
@@ -285,32 +285,32 @@ chmod +x ./hayabusa-1.3.2-linux-x64-gnu
 まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.3.2-mac-intel
+chmod +x ./hayabusa-1.4.0-mac-intel
 ```
 
 次に、Hayabusaのルートディレクトリから実行してみてください：
 
 ```bash
-./hayabusa-1.3.2-mac-intel
+./hayabusa-1.4.0-mac-intel
 ```
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
 
-![Mac Error 1 JP](/screenshots/MacOS-RunError-1-JP.png)
+![Mac Error 1 JP](screenshots/MacOS-RunError-1-JP.png)
 
 macOSの環境設定から「セキュリティとプライバシー」を開き、「一般」タブから「このまま許可」ボタンをクリックしてください。
 
-![Mac Error 2 JP](/screenshots/MacOS-RunError-2-JP.png)
+![Mac Error 2 JP](screenshots/MacOS-RunError-2-JP.png)
 
 その後、ターミナルからもう一回実行してみてください：
 
 ```bash
-./hayabusa-1.3.2-mac-intel
+./hayabusa-1.4.0-mac-intel
 ```
 
 以下の警告が出るので、「開く」をクリックしてください。
 
-![Mac Error 3 JP](/screenshots/MacOS-RunError-3-JP.png)
+![Mac Error 3 JP](screenshots/MacOS-RunError-3-JP.png)
 
 これで実行できるようになります。
 
@@ -323,42 +323,42 @@ USAGE:
     hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
 
 OPTIONS:
-        --European-time                       ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-        --RFC-2822                            RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-        --RFC-3339                            RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-        --US-military-time                    24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-        --US-time                             アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-        --target-file-ext <EVTX_FILE_EXT>...  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
-        --all-tags                            出力したCSVファイルにルール内のタグ情報を全て出力する
-    -c, --config <RULE_CONFIG_DIRECTORY>      ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-        --contributors                        コントリビュータの一覧表示
-    -d, --directory <DIRECTORY>               .evtxファイルを持つディレクトリのパス
-    -D, --enable-deprecated-rules             Deprecatedルールを有効にする
-        --end-timeline <END_TIMELINE>         解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-        --exclude-status <EXCLUDE_STATUS>...  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
-    -f, --filepath <FILE_PATH>                1つの.evtxファイルに対して解析を行う
-    -F, --full-data                           全てのフィールド情報を出力する
-    -h, --help                                ヘルプ情報を表示する
-    -l, --live-analysis                       ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-    -L, --logon-summary                       成功と失敗したログオン情報の要約を出力する
-        --level-tuning <LEVEL_TUNING_FILE>    ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-    -m, --min-level <LEVEL>                   結果出力をするルールの最低レベル (デフォルト: informational)
-    -n, --enable-noisy-rules                  Noisyルールを有効にする
-        --no_color                            カラー出力を無効にする
-    -o, --output <CSV_TIMELINE>               タイムラインをCSV形式で保存する (例: results.csv)
-    -p, --pivot-keywords-list                 ピボットキーワードの一覧作成
-    -q, --quiet                               Quietモード: 起動バナーを表示しない
-    -Q, --quiet-errors                        Quiet errorsモード: エラーログを保存しない
-    -r, --rules <RULE_DIRECTORY/RULE_FILE>    ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
-    -R, --hide-record-id                      イベントレコードIDを表示しない
-    -s, --statistics                          イベントIDの統計情報を表示する
-        --start-timeline <START_TIMELINE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
-    -t, --thread-number <NUMBER>              スレッド数 (デフォルト: パフォーマンスに最適な数値)
-    -u, --update-rules                        rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
-    -U, --UTC                                 UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
-    -v, --verbose                             詳細な情報を出力する
-    -V, --visualize-timeline                  イベント頻度タイムラインを出力する
-        --version                             バージョン情報を表示する
+        --European-time                           ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+        --RFC-2822                                RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+        --RFC-3339                                RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+        --US-military-time                        24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+        --US-time                                 アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+        --target-file-ext <EVTX_FILE_EXT>...      evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
+        --all-tags                                出力したCSVファイルにルール内のタグ情報を全て出力する
+    -c, --rules-config <RULE_CONFIG_DIRECTORY>    ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+        --contributors                            コントリビュータの一覧表示
+    -d, --directory <DIRECTORY>                   .evtxファイルを持つディレクトリのパス
+    -D, --enable-deprecated-rules                 Deprecatedルールを有効にする
+        --end-timeline <END_TIMELINE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+        --exclude-status <EXCLUDE_STATUS>...      読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
+    -f, --filepath <FILE_PATH>                    1つの.evtxファイルに対して解析を行う
+    -F, --full-data                               全てのフィールド情報を出力する
+    -h, --help                                    ヘルプ情報を表示する
+    -l, --live-analysis                           ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+    -L, --logon-summary                           成功と失敗したログオン情報の要約を出力する
+        --level-tuning [<LEVEL_TUNING_FILE>]      ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+    -m, --min-level <LEVEL>                       結果出力をするルールの最低レベル (デフォルト: informational)
+    -n, --enable-noisy-rules                      Noisyルールを有効にする
+        --no_color                                カラー出力を無効にする
+    -o, --output <CSV_TIMELINE>                   タイムラインをCSV形式で保存する (例: results.csv)
+    -p, --pivot-keywords-list                     ピボットキーワードの一覧作成
+    -q, --quiet                                   Quietモード: 起動バナーを表示しない
+    -Q, --quiet-errors                            Quiet errorsモード: エラーログを保存しない
+    -r, --rules <RULE_DIRECTORY/RULE_FILE>        ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+    -R, --hide-record-id                          イベントレコードIDを表示しない
+    -s, --statistics                              イベントIDの統計情報を表示する
+        --start-timeline <START_TIMELINE>         解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+    -t, --thread-number <NUMBER>                  スレッド数 (デフォルト: パフォーマンスに最適な数値)
+    -u, --update-rules                            rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
+    -U, --UTC                                     UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+    -v, --verbose                                 詳細な情報を出力する
+    -V, --visualize-timeline                      イベント頻度タイムラインを出力する
+        --version                                 バージョン情報を表示する
 ```
 
 ## 使用例
@@ -366,79 +366,79 @@ OPTIONS:
 * １つのWindowsイベントログファイルに対してHayabusaを実行します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -f eventlog.evtx
+hayabusa-1.4.0-win-x64.exe -f eventlog.evtx
 ```
 
 * 複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx
 ```
 
-* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができます:
+* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができます(注意: `-F`を有効にすると、出力するファイルのサイズがとても大きくなります！):
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Hayabusaルールのみを実行します（デフォルトでは `-r .\rules` にあるすべてのルールが利用されます）:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Sigmaルールのみを実行します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にします:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
 ```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -l -m low
+hayabusa-1.4.0-win-x64.exe -l -m low
 ```
 
 * criticalレベルのアラートからピボットキーワードの一覧を作成します(結果は結果毎に`keywords-Ip Address.txt`や`keyworss-Users.txt`等に出力されます):
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.4.0-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * イベントIDの統計情報を取得します:
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -f Security.evtx -s
+hayabusa-1.4.0-win-x64.exe -f Security.evtx -s
 ```
 
 * 詳細なメッセージを出力します(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 
 ```bash
-hayabusa-1.3.2-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
@@ -659,7 +659,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.3.2-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.4.0-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
 `./rules/config/level_tuning.txt`の例:
@@ -685,7 +685,7 @@ id,new_level
 
 * [APT-Hunter](https://github.com/ahmedkhlief/APT-Hunter) - Pythonで開発された攻撃検知ツール。
 * [Awesome Event IDs](https://github.com/stuhli/awesome-event-ids) -  フォレンジック調査とインシデント対応に役立つイベントIDのリソース。
-* [Chainsaw](https://github.com/countercept/chainsaw) - Rustで開発された同様のSigmaベースの攻撃検知ツール。
+* [Chainsaw](https://github.com/countercept/chainsaw) - Rustで開発されたSigmaベースの攻撃検知ツール。
 * [DeepBlueCLI](https://github.com/sans-blue-team/DeepBlueCLI) - [Eric Conrad](https://twitter.com/eric_conrad) によってPowershellで開発された攻撃検知ツール。
 * [Epagneul](https://github.com/jurelou/epagneul) - Windowsイベントログの可視化ツール。
 * [EventList](https://github.com/miriamxyra/EventList/) - [Miriam Wiesner](https://github.com/miriamxyra)によるセキュリティベースラインの有効なイベントIDをMITRE ATT&CKにマッピングするPowerShellツール。 

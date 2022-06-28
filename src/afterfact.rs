@@ -1,5 +1,5 @@
 use crate::detections::configs;
-use crate::detections::configs::TERM_SIZE;
+use crate::detections::configs::{CURRENT_EXE_PATH, TERM_SIZE};
 use crate::detections::print;
 use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
@@ -64,7 +64,12 @@ lazy_static! {
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn set_output_color() -> HashMap<String, Color> {
-    let read_result = utils::read_csv("config/level_color.txt");
+    let read_result = utils::read_csv(
+        CURRENT_EXE_PATH
+            .join("config/level_color.txt")
+            .to_str()
+            .unwrap(),
+    );
     let mut color_map: HashMap<String, Color> = HashMap::new();
     if configs::CONFIG.read().unwrap().args.no_color {
         return color_map;
@@ -283,18 +288,20 @@ fn emit_csv<W: std::io::Write>(
 
                 //ヘッダーのみを出力
                 if plus_header {
-                    write!(disp_wtr_buf, "{}", _get_serialized_disp_output(None)).ok();
-                    plus_header = false;
-                }
-                disp_wtr_buf
-                    .set_color(
-                        ColorSpec::new().set_fg(_get_output_color(&color_map, &detect_info.level)),
+                    write_color_buffer(
+                        &disp_wtr,
+                        get_writable_color(None),
+                        &_get_serialized_disp_output(None),
+                        true,
                     )
                     .ok();
-                write!(
-                    disp_wtr_buf,
-                    "{}",
-                    _get_serialized_disp_output(Some(dispformat))
+                    plus_header = false;
+                }
+                write_color_buffer(
+                    &disp_wtr,
+                    get_writable_color(_get_output_color(&color_map, &detect_info.level)),
+                    &_get_serialized_disp_output(Some(dispformat)),
+                    false,
                 )
                 .ok();
             } else {
@@ -354,7 +361,6 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if displayflag {
-        disp_wtr.print(&disp_wtr_buf)?;
         println!();
     } else {
         wtr.flush()?;
@@ -382,8 +388,9 @@ fn emit_csv<W: std::io::Write>(
     disp_wtr_buf.clear();
     write_color_buffer(
         &disp_wtr,
-        get_writable_color(Some(Color::Green)),
+        get_writable_color(Some(Color::Rgb(0, 255, 0))),
         "Results Summary:",
+        true,
     )
     .ok();
 
@@ -407,6 +414,7 @@ fn emit_csv<W: std::io::Write>(
         &disp_wtr,
         get_writable_color(None),
         &format!("Total events: {}", all_record_cnt),
+        true,
     )
     .ok();
     write_color_buffer(
@@ -416,9 +424,9 @@ fn emit_csv<W: std::io::Write>(
             "Data reduction: {} events ({:.2}%)",
             reducted_record_cnt, reducted_percent
         ),
+        true,
     )
     .ok();
-    println!();
     println!();
 
     _print_unique_results(
@@ -472,7 +480,7 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
         if configs::CONFIG.read().unwrap().args.full_data {
             titles.push("RecordInformation");
         }
-        return format!("{}\n", titles.join("|"));
+        return titles.join("|");
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
@@ -522,8 +530,9 @@ fn _print_unique_results(
             "{} {}: {}",
             head_word,
             tail_word,
-            counts_by_level.iter().sum::<u128>()
+            counts_by_level.iter().sum::<u128>(),
         ),
+        true,
     )
     .ok();
 
@@ -539,6 +548,7 @@ fn _print_unique_results(
             &BufferWriter::stdout(ColorChoice::Always),
             _get_output_color(color_map, level_name),
             &output_raw_str,
+            true,
         )
         .ok();
     }
@@ -695,8 +705,7 @@ mod tests {
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
     use crate::detections::print;
-    use crate::detections::print::DetectInfo;
-    use crate::detections::print::CH_CONFIG;
+    use crate::detections::print::{DetectInfo, Message};
     use chrono::{Local, TimeZone, Utc};
     use hashbrown::HashMap;
     use serde_json::Value;
@@ -712,6 +721,8 @@ mod tests {
     }
 
     fn test_emit_csv_output() {
+        let mock_ch_filter =
+            Message::create_output_filter_config("config/channel_abbreviations.txt", true, false);
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
         let test_title = "test_title";
@@ -750,7 +761,7 @@ mod tests {
                     level: test_level.to_string(),
                     computername: test_computername.to_string(),
                     eventid: test_eventid.to_string(),
-                    channel: CH_CONFIG
+                    channel: mock_ch_filter
                         .get("Security")
                         .unwrap_or(&String::default())
                         .to_string(),
@@ -821,7 +832,7 @@ mod tests {
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details\n";
+        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
@@ -845,7 +856,7 @@ mod tests {
             + "|"
             + test_recinfo
             + "\n";
-        assert_eq!(_get_serialized_disp_output(None,), expect_header);
+        assert_eq!(_get_serialized_disp_output(None), expect_header);
         assert_eq!(
             _get_serialized_disp_output(Some(DisplayFormat {
                 timestamp: &format_time(&test_timestamp, false),

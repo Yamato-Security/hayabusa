@@ -3,6 +3,8 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs;
+use crate::detections::configs::CURRENT_EXE_PATH;
+
 use termcolor::Color;
 
 use tokio::runtime::Builder;
@@ -66,7 +68,16 @@ pub fn value_to_string(value: &Value) -> Option<String> {
 }
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
-    let f = File::open(filename);
+    let filepath = if filename.starts_with("./") {
+        CURRENT_EXE_PATH
+            .join(filename)
+            .to_str()
+            .unwrap()
+            .to_string()
+    } else {
+        filename.to_string()
+    };
+    let f = File::open(filepath);
     if f.is_err() {
         let errmsg = format!("Cannot open file. [file:{}]", filename);
         return Result::Err(errmsg);
@@ -245,10 +256,15 @@ pub fn write_color_buffer(
     wtr: &BufferWriter,
     color: Option<Color>,
     output_str: &str,
+    newline_flag: bool,
 ) -> io::Result<()> {
     let mut buf = wtr.buffer();
     buf.set_color(ColorSpec::new().set_fg(color)).ok();
-    writeln!(buf, "{}", output_str).ok();
+    if newline_flag {
+        writeln!(buf, "{}", output_str).ok();
+    } else {
+        write!(buf, "{}", output_str).ok();
+    }
     wtr.print(&buf)
 }
 
@@ -432,7 +448,7 @@ mod tests {
     #[test]
     fn test_check_regex() {
         let regexes: Vec<Regex> =
-            utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
+            utils::read_txt("./../../../rules/config/regex/detectlist_suspicous_services.txt")
                 .unwrap()
                 .into_iter()
                 .map(|regex_str| Regex::new(&regex_str).unwrap())
@@ -448,7 +464,7 @@ mod tests {
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
         let allowlist: Vec<Regex> =
-            utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
+            utils::read_txt("./../../../rules/config/regex/allowlist_legitimate_services.txt")
                 .unwrap()
                 .into_iter()
                 .map(|allow_str| Regex::new(&allow_str).unwrap())

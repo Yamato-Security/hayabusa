@@ -1,6 +1,6 @@
 # 変更点
 
-## v1.4.0 [2022/XX/XX]
+## v1.4.0 [2022/06/26]
 
 **新機能:**
 
@@ -9,14 +9,16 @@
 
 **改善:**
 
+- ルール内に`details`フィールドがないときに、`rules/config/default_details.txt`に設定されたデフォルトの出力を行えるようにした。 (#359) (@hitenkoku)
 - Clap Crateパッケージの更新 (#413) (@hitenkoku)
 - オプションの指定がないときに、`--help`と同じ画面出力を行うように変更した。(#387) (@hitenkoku)
-- ルール内に`details`フィールドがないときに、`rules/config/default_details.txt`に設定されたデフォルトの出力を行えるようにした。 (#359) (@hitenkoku)
+- hayabusa.exeをカレントワーキングディレクトリ以外から動作できるようにした。 (#592) (@hitenkoku)
 - `output` オプションで指定されファイルのサイズを出力するようにした。 (#595) (@hitenkoku)
 
 **バグ修正:**
 
-- XXX
+- カラー出力で長い出力があった場合にエラーが出て終了する問題を修正した。 (#603) (@hitenkoku)
+- `Excluded rules`の合計で`rules/tools/sigmac/testfiles`配下のテストルールも入っていたので、無視するようにした。 (#602) (@hitenkoku)
 
 ## v1.3.2 [2022/06/13]
 

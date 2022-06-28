@@ -394,6 +394,7 @@ impl Detection {
                 &BufferWriter::stdout(ColorChoice::Always),
                 Some(Color::Red),
                 &format!("Rule parsing errors: {}", err_rc),
+                true,
             )
             .ok();
         }
@@ -421,6 +422,7 @@ impl Detection {
                         rate,
                         deprecated_flag
                     ),
+                    true,
                 )
                 .ok();
             }
@@ -434,6 +436,7 @@ impl Detection {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &format!("{} rules: {}", key, value),
+                true,
             )
             .ok();
         });

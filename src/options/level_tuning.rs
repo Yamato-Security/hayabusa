@@ -62,6 +62,7 @@ impl LevelTuning {
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
                     &format!("path: {}", path),
+                    true,
                 )
                 .ok();
                 let mut content = match fs::read_to_string(&path) {
@@ -101,6 +102,7 @@ impl LevelTuning {
                         rule["level"].as_str().unwrap(),
                         new_level
                     ),
+                    true,
                 )
                 .ok();
             }
