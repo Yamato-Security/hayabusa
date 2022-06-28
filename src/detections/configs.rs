@@ -119,7 +119,7 @@ pub struct Config {
     pub enable_deprecated_rules: bool,
 
     /// Scan to all event ID
-    #[clap(short = "D", long="deep-scan")]
+    #[clap(short = 'D', long = "deep-scan")]
     pub deep_scan: bool,
 
     /// Enable rules marked as noisy
