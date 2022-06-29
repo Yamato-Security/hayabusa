@@ -236,7 +236,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
     let rec_info = Option::Some(create_recordinfos(&data));
-    
+
     EvtxRecordInfo {
         evtx_filepath: path,
         record: data,

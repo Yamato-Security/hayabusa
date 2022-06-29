@@ -243,10 +243,9 @@ impl Detection {
         .unwrap_or_default();
         let eid = get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
             .unwrap_or_else(|| "-".to_owned());
-        let default_output =  match DEFAULT_DETAILS
-            .get(&format!("{}_{}", provider, &eid)) {
-                Some(str) => str.to_owned(),
-                None => recinfo.as_ref().unwrap_or(&"-".to_string()).to_string(),
+        let default_output = match DEFAULT_DETAILS.get(&format!("{}_{}", provider, &eid)) {
+            Some(str) => str.to_owned(),
+            None => recinfo.as_ref().unwrap_or(&"-".to_string()).to_string(),
         };
         let opt_record_info = if configs::CONFIG.read().unwrap().args.full_data {
             recinfo
