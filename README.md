@@ -503,7 +503,7 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
 * `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log. You can hidde this output with the `-R` or `--hide-record-id` option.
 * `Title`: This comes from the `title` field in the YML detection rule.
-* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`.
+* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`.
 
 The following additional columns will be added to the output when saving to a CSV file:
 
@@ -547,7 +547,7 @@ If you want to output all the tags defined in a rule, please specify the `--all-
 ## Channel Abbreviations
 
 In order to save space, we use the following abbreviations when displaying Channel.
-You can freely edit these abbreviations in the `config/channel_abbreviations.txt` configuration file.
+You can freely edit these abbreviations in the `rules/config/channel_abbreviations.txt` configuration file.
 
 * `App` : `Application`
 * `AppLocker` : `Microsoft-Windows-AppLocker/*`
@@ -586,7 +586,7 @@ It will display in real time the number and percent of evtx files that it has fi
 ## Color Output
 
 The alerts will be outputted in color based on the alert `level`.
-You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
+You can change the default colors in the config file at `config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
 If you want to disable color output, you can use `--no-color` option.
 
 ## Event Fequency Timeline
@@ -656,10 +656,10 @@ You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore 
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.4.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `rules/config/level_tuning.txt` and executing `hayabusa-1.4.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
-`./rules/config/level_tuning.txt` sample line:
+`rules/config/level_tuning.txt` sample line:
 
 ```
 id,new_level
