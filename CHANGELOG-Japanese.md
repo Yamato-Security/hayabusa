@@ -1,19 +1,19 @@
 # 変更点
 
-## v1.4.1 [2022/0X/XX]
+## v1.4.1 [2022/xx/xx]
 
-**New Features:**
+**新機能:**
 
-- XX
+- XXX
 
-**Enhancements:**
+**改善:**
 
 - ルールや`default_details.txt` に対応する`details`の記載がない場合、すべてのフィールド情報を結果の``Details`列に出力するようにした (#606) (@hitenkoku)
+- `--deep-scan`オプションの追加。 このオプションがない場合、`config/target_event_ids.txt`で指定されたイベントIDのみをスキャン対象とします。 このオプションをつけることですべてのイベントIDをスキャン対象とします。(#608) (@hitenkoku)
 
-**Bug Fixes:**
+**バグ修正:**
 
-- XX
-
+- XXX
 
 ## v1.4.0 [2022/06/26]
 

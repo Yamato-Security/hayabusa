@@ -63,7 +63,7 @@ lazy_static! {
     );
     pub static ref CH_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
         CURRENT_EXE_PATH
-            .join("config/channel_abbreviations.txt")
+            .join("rules/config/channel_abbreviations.txt")
             .to_str()
             .unwrap(),
         false,
