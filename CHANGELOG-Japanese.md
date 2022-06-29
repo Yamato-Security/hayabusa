@@ -1,5 +1,20 @@
 # 変更点
 
+## v1.4.1 [2022/0X/XX]
+
+**New Features:**
+
+- XX
+
+**Enhancements:**
+
+- ルールや`default_details.txt` に対応する`details`の記載がない場合、すべてのフィールド情報を結果の``Details`列に出力するようにした (#606) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XX
+
+
 ## v1.4.0 [2022/06/26]
 
 **新機能:**

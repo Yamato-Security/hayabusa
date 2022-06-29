@@ -1,5 +1,19 @@
 # Changes
 
+## v1.4.1 [2022/0X/XX]
+
+**New Features:**
+
+- XX
+
+**Enhancements:**
+
+- Changed output all field info when no details are defined in rule and `default_details.txt` . (#606) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XX
+
 ## v1.4.0 [2022/06/26]
 
 **New Features:**
