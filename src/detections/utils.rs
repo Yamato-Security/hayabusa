@@ -235,11 +235,8 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
 
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
-    let rec_info = if configs::CONFIG.read().unwrap().args.full_data {
-        Option::Some(create_recordinfos(&data))
-    } else {
-        Option::None
-    };
+    let rec_info = Option::Some(create_recordinfos(&data));
+
     EvtxRecordInfo {
         evtx_filepath: path,
         record: data,
