@@ -242,13 +242,13 @@ impl ConfigReader<'_> {
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
                 CURRENT_EXE_PATH
-                    .join("config/statistics_event_info.txt")
+                    .join("rules/config/statistics_event_info.txt")
                     .to_str()
                     .unwrap(),
             ),
             target_eventids: load_target_ids(
                 CURRENT_EXE_PATH
-                    .join("config/target_eventids.txt")
+                    .join("rules/config/target_event_IDs.txt")
                     .to_str()
                     .unwrap(),
             ),
