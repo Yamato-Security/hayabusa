@@ -248,6 +248,12 @@ impl Detection {
                 Some(str) => str.to_owned(),
                 None => recinfo.as_ref().unwrap_or(&"-".to_string()).to_string(),
         };
+        let opt_record_info = if configs::CONFIG.read().unwrap().args.full_data {
+            recinfo
+        } else {
+            None
+        };
+
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: rule.rulepath.to_string(),
@@ -260,7 +266,7 @@ impl Detection {
             alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
             detail: String::default(),
             tag_info: tag_info.join(" | "),
-            record_information: recinfo,
+            record_information: opt_record_info,
             record_id: rec_id,
         };
         MESSAGES.lock().unwrap().insert(
