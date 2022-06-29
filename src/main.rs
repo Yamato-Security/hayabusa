@@ -588,11 +588,17 @@ impl App {
                     continue;
                 }
 
-                // target_eventids.txtでフィルタする。
+                // target_eventids.txtでイベントIDベースでフィルタする。
                 let data = record_result.as_ref().unwrap().data.clone();
-                let timestamp = record_result.unwrap().timestamp;
+                if !self._is_target_event_id(&data)
+                    && !configs::CONFIG.read().unwrap().args.deep_scan
+                {
+                    continue;
+                }
 
-                if !self._is_target_event_id(&data) || !time_filter.is_target(&Some(timestamp)) {
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = record_result.unwrap().timestamp;
+                if !time_filter.is_target(&Some(timestamp)) {
                     continue;
                 }
 

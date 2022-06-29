@@ -333,7 +333,8 @@ OPTIONS:
     -c, --rules-config <RULE_CONFIG_DIRECTORY>    ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
         --contributors                            コントリビュータの一覧表示
     -d, --directory <DIRECTORY>                   .evtxファイルを持つディレクトリのパス
-    -D, --enable-deprecated-rules                 Deprecatedルールを有効にする
+    -D, --deep-scan                               すべてのイベントIDを対象にしたスキャンを行う
+        --enable-deprecated-rules                 Deprecatedルールを有効にする
         --end-timeline <END_TIMELINE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
         --exclude-status <EXCLUDE_STATUS>...      読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
     -f, --filepath <FILE_PATH>                    1つの.evtxファイルに対して解析を行う
@@ -505,7 +506,7 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
 * `Title`: YML検知ルールの`title`フィールドから来ています。
 * `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。`-R`もしくは`--hide-record-id`オプションを付けると表示されません。
-* `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。
+* `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。
 
 CSVファイルとして保存する場合、以下の列が追加されます:
 
@@ -549,7 +550,7 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 ## Channel情報の省略
 
 簡潔に出力するためにChannelの表示を以下のように省略しています。
-`config/channel_abbreviations.txt`の設定ファイルで自由に編集できます。
+`rules/config/channel_abbreviations.txt`の設定ファイルで自由に編集できます。
 
 * `App` : `Application`
 * `AppLocker` : `Microsoft-Windows-AppLocker/*`
@@ -588,7 +589,7 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 ## 標準出力へのカラー設定
 
 Hayabusaの結果は`level`毎に文字色が変わります。
-`./config/level_color.txt`の値を変更することで文字色を変えることができます。
+`config/level_color.txt`の値を変更することで文字色を変えることができます。
 形式は`level名,(6桁のRGBのカラーhex)`です。
 カラー出力をしないようにしたい場合は`--no-color`オプションをご利用ください。
 
@@ -659,10 +660,10 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.4.0-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.4.0-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
-`./rules/config/level_tuning.txt`の例:
+`rules/config/level_tuning.txt`の例:
 ```
 id,new_level
 00000000-0000-0000-0000-000000000000,informational # sample level tuning line
@@ -672,12 +673,10 @@ id,new_level
 
 ## イベントIDフィルタリング
 
-`config/target_eventids.txt`にイベントID番号を追加することで、イベントIDでフィルタリングすることができます。
-これはパフォーマンスを向上させるので、特定のIDだけを検索したい場合に推奨されます。
-
-すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
-
-最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、検出漏れの可能性が若干あることにご注意ください。
+バージョン1.4.1以降では、デフォルトでパフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを無視しています。
+デフォルトでは`rules/config/target_event_IDs.txt`で定義されたIDがスキャンされます。
+If you want to scan all events, please use the `-D, --deep-scan` option.
+すべてのイベントをスキャンしたい場合は、`-D, --deep-scan`オプションを使用してください。
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
 

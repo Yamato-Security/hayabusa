@@ -1,5 +1,19 @@
 # Changes
 
+## v1.4.1 [2022/xx/xx]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added the `-D, --deep-scan` option. Now by default, events are filtered by Event IDs that there are detection rules for defined in `rules/config/target_event_IDs.txt`. This should improve performance by 25~55% while still detecting almost everything. If you want to do a thorough scan on all events, you can disable the event ID filter with `-D, --deep-scan`. (#608) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.4.0 [2022/06/26]
 
 **New Features:**

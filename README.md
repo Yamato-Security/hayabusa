@@ -329,7 +329,8 @@ OPTIONS:
     -c, --rules-config <RULE_CONFIG_DIRECTORY>    Specify custom rule config folder (default: ./rules/config)
         --contributors                            Print the list of contributors
     -d, --directory <DIRECTORY>                   Directory of multiple .evtx files
-    -D, --enable-deprecated-rules                 Enable rules marked as deprecated
+    -D, --deep-scan                               Disable event ID filter to scan all events
+        --enable-deprecated-rules                 Enable rules marked as deprecated
         --end-timeline <END_TIMELINE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
         --exclude-status <EXCLUDE_STATUS>...      Ignore rules according to status (ex: experimental) (ex: stable test)
     -f, --filepath <FILE_PATH>                    File path to one .evtx file
@@ -502,7 +503,7 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
 * `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log. You can hidde this output with the `-R` or `--hide-record-id` option.
 * `Title`: This comes from the `title` field in the YML detection rule.
-* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`.
+* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`.
 
 The following additional columns will be added to the output when saving to a CSV file:
 
@@ -546,7 +547,7 @@ If you want to output all the tags defined in a rule, please specify the `--all-
 ## Channel Abbreviations
 
 In order to save space, we use the following abbreviations when displaying Channel.
-You can freely edit these abbreviations in the `config/channel_abbreviations.txt` configuration file.
+You can freely edit these abbreviations in the `rules/config/channel_abbreviations.txt` configuration file.
 
 * `App` : `Application`
 * `AppLocker` : `Microsoft-Windows-AppLocker/*`
@@ -585,7 +586,7 @@ It will display in real time the number and percent of evtx files that it has fi
 ## Color Output
 
 The alerts will be outputted in color based on the alert `level`.
-You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
+You can change the default colors in the config file at `config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
 If you want to disable color output, you can use `--no-color` option.
 
 ## Event Fequency Timeline
@@ -655,10 +656,10 @@ You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore 
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.4.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `rules/config/level_tuning.txt` and executing `hayabusa-1.4.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
-`./rules/config/level_tuning.txt` sample line:
+`rules/config/level_tuning.txt` sample line:
 
 ```
 id,new_level
@@ -669,12 +670,9 @@ In this case, the risk level of the rule with an `id` of `00000000-0000-0000-000
 
 ## Event ID Filtering
 
-You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
-This will increase performance so it is recommended if you only need to search for certain IDs.
-
-We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
-
-Please use this list if you want the best performance but be aware that there is a slight possibility for missing events (false negatives). 
+As of version 1.4.1, by default, events are filtered by ID to improve performance by ignorning events that have no detection rules.
+The IDs defined in `rules/config/target_event_IDs.txt` will be scanned by default.
+If you want to scan all events, please use the `-D, --deep-scan` option.
 
 # Other Windows Event Log Analyzers and Related Resources
 
