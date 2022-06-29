@@ -721,8 +721,11 @@ mod tests {
     }
 
     fn test_emit_csv_output() {
-        let mock_ch_filter =
-            Message::create_output_filter_config("rules/config/channel_abbreviations.txt", true, false);
+        let mock_ch_filter = Message::create_output_filter_config(
+            "rules/config/channel_abbreviations.txt",
+            true,
+            false,
+        );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
         let test_title = "test_title";
