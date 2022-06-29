@@ -118,7 +118,7 @@ pub struct Config {
     #[clap(long = "enable-deprecated-rules")]
     pub enable_deprecated_rules: bool,
 
-    /// Scan to all event ID
+    /// Disable event ID filter to scan all events
     #[clap(short = 'D', long = "deep-scan")]
     pub deep_scan: bool,
 

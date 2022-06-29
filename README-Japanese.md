@@ -673,13 +673,10 @@ id,new_level
 
 ## イベントIDフィルタリング
 
-`config/target_eventids.txt`にイベントID番号を追加することで、イベントIDでフィルタリングすることができます。
-これはパフォーマンスを向上させるので、特定のIDだけを検索したい場合に推奨されます。
-このイベントIDフィルタリングを除外したい場合は`-D`もしくは`--deepscan`オプションを利用してください。
-
-すべてのルールの`EventID`フィールドと実際のスキャン結果で見られるIDから作成したIDフィルタリストのサンプルを[`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt)で提供しています。
-
-最高のパフォーマンスを得たい場合はこのリストを使用してください。ただし、検出漏れの可能性が若干あることにご注意ください。
+バージョン1.4.1以降では、デフォルトでパフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを無視しています。
+デフォルトでは`rules/config/target_event_IDs.txt`で定義されたIDがスキャンされます。
+If you want to scan all events, please use the `-D, --deep-scan` option.
+すべてのイベントをスキャンしたい場合は、`-D, --deep-scan`オプションを使用してください。
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
 

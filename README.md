@@ -329,7 +329,7 @@ OPTIONS:
     -c, --rules-config <RULE_CONFIG_DIRECTORY>    Specify custom rule config folder (default: ./rules/config)
         --contributors                            Print the list of contributors
     -d, --directory <DIRECTORY>                   Directory of multiple .evtx files
-    -D, --deep-scan                               Scan to all event ID
+    -D, --deep-scan                               Disable event ID filter to scan all events
         --enable-deprecated-rules                 Enable rules marked as deprecated
         --end-timeline <END_TIMELINE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
         --exclude-status <EXCLUDE_STATUS>...      Ignore rules according to status (ex: experimental) (ex: stable test)
@@ -670,13 +670,9 @@ In this case, the risk level of the rule with an `id` of `00000000-0000-0000-000
 
 ## Event ID Filtering
 
-You can filter on event IDs by placing event ID numbers in `config/target_eventids.txt`.
-This will increase performance so it is recommended if you only need to search for certain IDs.
-You can exclude event IDs filter with `-D` or `--deep-scan` option.
-
-We have provided a sample ID filter list at [`config/target_eventids_sample.txt`](https://github.com/Yamato-Security/hayabusa/blob/main/config/target_eventids_sample.txt) created from the `EventID` fields in all of the rules as well as IDs seen in actual results.
-
-Please use this list if you want the best performance but be aware that there is a slight possibility for missing events (false negatives). 
+As of version 1.4.1, by default, events are filtered by ID to improve performance by ignorning events that have no detection rules.
+The IDs defined in `rules/config/target_event_IDs.txt` will be scanned by default.
+If you want to scan all events, please use the `-D, --deep-scan` option.
 
 # Other Windows Event Log Analyzers and Related Resources
 

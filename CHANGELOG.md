@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- Added `--deep-scan` option. Default scan target is filtered EventIDs in `config/target_event_ids.txt`. With this option, scan target is all EventIDs. (#608) (@hitenkoku)
+- Added the `-D, --deep-scan` option. Now by default, events are filtered by Event IDs that there are detection rules for defined in `rules/config/target_event_IDs.txt`. This should improve performance by 25~55% while still detecting almost everything. If you want to do a thorough scan on all events, you can disable the event ID filter with `-D, --deep-scan`. (#608) (@hitenkoku)
 
 **Bug Fixes:**
 
