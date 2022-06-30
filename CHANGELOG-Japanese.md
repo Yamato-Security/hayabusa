@@ -4,7 +4,7 @@
 
 **改善:**
 
-- ルールや`default_details.txt` に対応する`details`の記載がない場合、すべてのフィールド情報を結果の``Details`列に出力するようにした (#606) (@hitenkoku)
+- ルールや`./rules/config/default_details.txt` に対応する`details`の記載がない場合、すべてのフィールド情報を結果の``Details`列に出力するようにした (#606) (@hitenkoku)
 - `--deep-scan`オプションの追加。 このオプションがない場合、`config/target_event_ids.txt`で指定されたイベントIDのみをスキャン対象とします。 このオプションをつけることですべてのイベントIDをスキャン対象とします。(#608) (@hitenkoku)
 - `-U, --update-rules`オプションで`channel_abbreviations.txt`、`statistics_event_info.txt`、`target_event_IDs.txt`を更新できるように、`config`ディレクトリから`rules/config`ディレクトリに移動した。
 

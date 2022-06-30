@@ -4,8 +4,8 @@
 
 **Enhancements:**
 
-- When no `details` field is defined in rule nor `default_details.txt`, all fields will be outputted to the `details` column. (#606) (@hitenkoku)
-- Added the `-D, --deep-scan` option. Now by default, events are filtered by Event IDs that there are detection rules for defined in `rules/config/target_event_IDs.txt`. This should improve performance by 25~55% while still detecting almost everything. If you want to do a thorough scan on all events, you can disable the event ID filter with `-D, --deep-scan`. (#608) (@hitenkoku)
+- When no `details` field is defined in a rule nor in `./rules/config/default_details.txt`, all fields will be outputted to the `details` column. (#606) (@hitenkoku)
+- Added the `-D, --deep-scan` option. Now by default, events are filtered by Event IDs that there are detection rules for defined in `./rules/config/target_event_IDs.txt`. This should improve performance by 25~55% while still detecting almost everything. If you want to do a thorough scan on all events, you can disable the event ID filter with `-D, --deep-scan`. (#608) (@hitenkoku)
 - `channel_abbreviations.txt`, `statistics_event_info.txt` and `target_event_IDs.txt` have been moved from the `config` directory to the `rules/config` directory in order to provide updates with `-U, --update-rules`.
 
 ## v1.4.0 [2022/06/26]
