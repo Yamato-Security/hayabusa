@@ -259,7 +259,9 @@ If you are worried about malware or supply chain attacks, please check the hayab
 
 ## Windows
 
-In Command Prompt or Windows Terminal, just run the 32-bit or 64-bit Windows binary from the hayabusa root directory. 
+In Command Prompt or Windows Terminal, just run the 32-bit or 64-bit Windows binary from the hayabusa root directory.  
+Note: Slow at first run after PC boot is due to the real-time protection of Windows Defender. You can avoid it by doing real-time protection off, but we don't recommend it.
+
 Example: `hayabusa-1.4.1-windows-x64.exe`
 
 ## Linux

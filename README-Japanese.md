@@ -264,6 +264,8 @@ Hayabusa実行する際や、`.yml`ルールのダウンロードや実行時に
 ## Windows
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
+PC起動後の初回実行時に時間がかかります。これはWindows Defenderのリアルタイムスキャンが行われていることが原因です。リアルタイムスキャンをoff`にすることでこの現象は解消しますが、おすすめしません。
+
 例: `hayabusa-1.4.1-windows-x64.exe`
 
 ## Linux
