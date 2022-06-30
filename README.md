@@ -48,7 +48,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [macOS Compiling Notes](#macos-compiling-notes)
   - [Linux Compiling Notes](#linux-compiling-notes)
 - [Running Hayabusa](#running-hayabusa)
-  - [Caution: Anti-Virus/EDR Warnings](#caution-anti-virusedr-warnings)
+  - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
@@ -251,15 +251,18 @@ sudo yum install openssl-devel
 
 # Running Hayabusa
 
-## Caution: Anti-Virus/EDR Warnings
+## Caution: Anti-Virus/EDR Warnings and Slow Runtimes
 
 You may receive an alert from anti-virus or EDR products when trying to run hayabusa or even just when downloading the `.yml` rules as there will be keywords like `mimikatz` and suspicious PowerShell commands in the detection signature.
 These are false positives so will need to configure exclusions in your security products to allow hayabusa to run.
 If you are worried about malware or supply chain attacks, please check the hayabusa source code and compile the binaries yourself.
 
+You may experience slow runtime especially on the first run after a reboot due to the real-time protection of Windows Defender. You can avoid this by temporarily turning real-time protection off or adding an exclusion to the hayabusa runtime directory. (Please take into consideration the security risks before doing these.)
+
 ## Windows
 
-In Command Prompt or Windows Terminal, just run the 32-bit or 64-bit Windows binary from the hayabusa root directory. 
+In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.  
+
 Example: `hayabusa-1.4.1-windows-x64.exe`
 
 ## Linux
@@ -489,8 +492,6 @@ You can download the sample evtx files to a new `hayabusa-sample-evtx` sub-direc
 ```bash
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
-
-> Note: You need to run the binary from the Hayabusa root directory. 
 
 # Hayabusa Output
 
