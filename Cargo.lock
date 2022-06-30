@@ -496,7 +496,7 @@ dependencies = [
 [[package]]
 name = "evtx"
 version = "0.7.3"
-source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git#825f8aa7ce3477cfb405f4f8041747db75382590"
+source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git#fc60acd2573c90219f133bead4a70b581d613319"
 dependencies = [
  "anyhow",
  "bitflags",
@@ -673,7 +673,7 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "1.4.1-dev"
+version = "1.4.1"
 dependencies = [
  "base64",
  "bytesize",
