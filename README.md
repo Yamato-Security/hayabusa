@@ -175,7 +175,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -u
+hayabusa-1.4.1-win-x64.exe -u
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -202,7 +202,7 @@ Be sure to periodically update Rust with:
 rustup update stable
 ```
 
-The compiled binary will be outputted in the `target/release` folder.
+The compiled binary will be outputted in the `./target/release` folder.
 
 ## Updating Rust Packages
 
@@ -260,20 +260,20 @@ If you are worried about malware or supply chain attacks, please check the hayab
 ## Windows
 
 In Command Prompt or Windows Terminal, just run the 32-bit or 64-bit Windows binary from the hayabusa root directory. 
-Example: `hayabusa-1.4.0-windows-x64.exe`
+Example: `hayabusa-1.4.1-windows-x64.exe`
 
 ## Linux
 
 You first need to make the binary executable. 
 
 ```bash
-chmod +x ./hayabusa-1.4.0-linux-x64-gnu
+chmod +x ./hayabusa-1.4.1-linux-x64-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.4.0-linux-x64-gnu
+./hayabusa-1.4.1-linux-x64-gnu
 ```
 
 ## macOS
@@ -281,13 +281,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-1.4.0-mac-intel
+chmod +x ./hayabusa-1.4.1-mac-intel
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.4.0-mac-intel
+./hayabusa-1.4.1-mac-intel
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -301,7 +301,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-1.4.0-mac-intel
+./hayabusa-1.4.1-mac-intel
 ```
 
 The following warning will pop up, so please click "Open".
@@ -363,79 +363,79 @@ OPTIONS:
 * Run hayabusa against one Windows event log file:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -f eventlog.evtx
+hayabusa-1.4.1-win-x64.exe -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx
 ```
 
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with `-F` enabled!):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -l -m low
+hayabusa-1.4.1-win-x64.exe -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.4.1-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * Print Event ID statistics:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -f Security.evtx -s
+hayabusa-1.4.1-win-x64.exe -f Security.evtx -s
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:
@@ -459,7 +459,7 @@ If you do not want to save error messages, please add `-Q`.
 
 ## Pivot Keyword Generator
 
-You can use the `-p` or `--pivot-keywords-list` option to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. You can customize what keywords you want to search for by editing `config/pivot_keywords.txt`.
+You can use the `-p` or `--pivot-keywords-list` option to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. You can customize what keywords you want to search for by editing `./config/pivot_keywords.txt`.
 This is the default setting:
 
 ```
@@ -503,7 +503,7 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
 * `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log. You can hidde this output with the `-R` or `--hide-record-id` option.
 * `Title`: This comes from the `title` field in the YML detection rule.
-* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no description in `default_details.txt` and the YML detection rule, all fields information will be outputted.
+* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no description in `default_details.txt` and the YML detection rule, all fields information will be outputted.
 
 The following additional columns will be added to the output when saving to a CSV file:
 
@@ -526,7 +526,7 @@ In order to save space, we use the following abbrevations when displaying the al
 ## MITRE ATT&CK Tactics Abbreviations
 
 In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactic tags.
-You can freely edit these abbreviations in the `config/output_tag.txt` configuration file.
+You can freely edit these abbreviations in the `./config/output_tag.txt` configuration file.
 If you want to output all the tags defined in a rule, please specify the `--all-tags` option.
 
 * `Recon` : Reconnaissance
@@ -547,7 +547,7 @@ If you want to output all the tags defined in a rule, please specify the `--all-
 ## Channel Abbreviations
 
 In order to save space, we use the following abbreviations when displaying Channel.
-You can freely edit these abbreviations in the `rules/config/channel_abbreviations.txt` configuration file.
+You can freely edit these abbreviations in the `./rules/config/channel_abbreviations.txt` configuration file.
 
 * `App` : `Application`
 * `AppLocker` : `Microsoft-Windows-AppLocker/*`
@@ -586,7 +586,7 @@ It will display in real time the number and percent of evtx files that it has fi
 ## Color Output
 
 The alerts will be outputted in color based on the alert `level`.
-You can change the default colors in the config file at `config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
+You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
 If you want to disable color output, you can use `--no-color` option.
 
 ## Event Fequency Timeline
@@ -648,18 +648,18 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 
 Like firewalls and IDSes, any signature-based tool will require some tuning to fit your environment so you may need to permanently or temporarily exclude certain rules.
 
-You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `rules/config/exclude_rules.txt` in order to ignore any rule that you do not need or cannot be used.
+You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `./rules/config/exclude_rules.txt` in order to ignore any rule that you do not need or cannot be used.
 
-You can also add a rule ID to `rules/config/noisy_rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
+You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
 
 ## Detection Level Tuning
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `rules/config/level_tuning.txt` and executing `hayabusa-1.4.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.4.1-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
-`rules/config/level_tuning.txt` sample line:
+`./rules/config/level_tuning.txt` sample line:
 
 ```
 id,new_level
@@ -671,7 +671,7 @@ In this case, the risk level of the rule with an `id` of `00000000-0000-0000-000
 ## Event ID Filtering
 
 As of version 1.4.1, by default, events are filtered by ID to improve performance by ignorning events that have no detection rules.
-The IDs defined in `rules/config/target_event_IDs.txt` will be scanned by default.
+The IDs defined in `./rules/config/target_event_IDs.txt` will be scanned by default.
 If you want to scan all events, please use the `-D, --deep-scan` option.
 
 # Other Windows Event Log Analyzers and Related Resources

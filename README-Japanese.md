@@ -182,7 +182,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -u
+hayabusa-1.4.1-win-x64.exe -u
 ```
 
 アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
@@ -264,20 +264,20 @@ Hayabusa実行する際や、`.yml`ルールのダウンロードや実行時に
 ## Windows
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
-例: `hayabusa-1.4.0-windows-x64.exe`
+例: `hayabusa-1.4.1-windows-x64.exe`
 
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.4.0-linux-x64-gnu
+chmod +x ./hayabusa-1.4.1-linux-x64-gnu
 ```
 
 次に、Hayabusaのルートディレクトリから実行します：
 
 ```bash
-./hayabusa-1.4.0-linux-x64-gnu
+./hayabusa-1.4.1-linux-x64-gnu
 ```
 
 ## macOS
@@ -285,13 +285,13 @@ chmod +x ./hayabusa-1.4.0-linux-x64-gnu
 まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.4.0-mac-intel
+chmod +x ./hayabusa-1.4.1-mac-intel
 ```
 
 次に、Hayabusaのルートディレクトリから実行してみてください：
 
 ```bash
-./hayabusa-1.4.0-mac-intel
+./hayabusa-1.4.1-mac-intel
 ```
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
@@ -305,7 +305,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 その後、ターミナルからもう一回実行してみてください：
 
 ```bash
-./hayabusa-1.4.0-mac-intel
+./hayabusa-1.4.1-mac-intel
 ```
 
 以下の警告が出るので、「開く」をクリックしてください。
@@ -367,79 +367,79 @@ OPTIONS:
 * １つのWindowsイベントログファイルに対してHayabusaを実行します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -f eventlog.evtx
+hayabusa-1.4.1-win-x64.exe -f eventlog.evtx
 ```
 
 * 複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx
 ```
 
 * 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができます(注意: `-F`を有効にすると、出力するファイルのサイズがとても大きくなります！):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Hayabusaルールのみを実行します（デフォルトでは `-r .\rules` にあるすべてのルールが利用されます）:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Sigmaルールのみを実行します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にします:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
 ```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -l -m low
+hayabusa-1.4.1-win-x64.exe -l -m low
 ```
 
-* criticalレベルのアラートからピボットキーワードの一覧を作成します(結果は結果毎に`keywords-Ip Address.txt`や`keyworss-Users.txt`等に出力されます):
+* criticalレベルのアラートからピボットキーワードの一覧を作成します(結果は結果毎に`keywords-Ip Address.txt`や`keywords-Users.txt`等に出力されます):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.4.1-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * イベントIDの統計情報を取得します:
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -f Security.evtx -s
+hayabusa-1.4.1-win-x64.exe -f Security.evtx -s
 ```
 
 * 詳細なメッセージを出力します(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 
 ```bash
-hayabusa-1.4.0-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.4.1-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
@@ -464,7 +464,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 ## ピボットキーワードの作成
 
 `-p`もしくは`--pivot-keywords-list`オプションを使うことで不審なユーザやホスト名、プロセスなどを一覧で出力することができ、イベントログから素早く特定することができます。
-ピボットキーワードのカスタマイズは`config/pivot_keywords.txt`を変更することで行うことができます。以下はデフォルトの設定になります:
+ピボットキーワードのカスタマイズは`./config/pivot_keywords.txt`を変更することで行うことができます。以下はデフォルトの設定になります:
 
 ```
 Users.SubjectUserName
@@ -506,7 +506,7 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
 * `Title`: YML検知ルールの`title`フィールドから来ています。
 * `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。`-R`もしくは`--hide-record-id`オプションを付けると表示されません。
-* `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。
+* `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。
 
 CSVファイルとして保存する場合、以下の列が追加されます:
 
@@ -529,7 +529,7 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 ## MITRE ATT&CK戦術の省略
 
 簡潔に出力するためにMITRE ATT&CKの戦術を以下のように省略しています。
-`config/output_tag.txt`の設定ファイルで自由に編集できます。
+`./config/output_tag.txt`の設定ファイルで自由に編集できます。
 検知したデータの戦術を全て出力したい場合は、`--all-tags`オプションをつけてください。
 
 * `Recon` : Reconnaissance (偵察)
@@ -550,7 +550,7 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 ## Channel情報の省略
 
 簡潔に出力するためにChannelの表示を以下のように省略しています。
-`rules/config/channel_abbreviations.txt`の設定ファイルで自由に編集できます。
+`./rules/config/channel_abbreviations.txt`の設定ファイルで自由に編集できます。
 
 * `App` : `Application`
 * `AppLocker` : `Microsoft-Windows-AppLocker/*`
@@ -589,7 +589,7 @@ CSVファイルとして保存する場合、以下の列が追加されます:
 ## 標準出力へのカラー設定
 
 Hayabusaの結果は`level`毎に文字色が変わります。
-`config/level_color.txt`の値を変更することで文字色を変えることができます。
+`./config/level_color.txt`の値を変更することで文字色を変えることができます。
 形式は`level名,(6桁のRGBのカラーhex)`です。
 カラー出力をしないようにしたい場合は`--no-color`オプションをご利用ください。
 
@@ -653,17 +653,17 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 
 ファイアウォールやIDSと同様に、シグネチャベースのツールは、環境に合わせて調整が必要になるため、特定のルールを永続的または一時的に除外する必要がある場合があります。
 
-ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `rules/config/exclude_rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
+ルールID(例: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) を `./rules/config/exclude_rules.txt`に追加すると、不要なルールや利用できないルールを無視することができます。
 
-ルールIDを `rules/config/noisy_rules.txt`に追加して、デフォルトでルールを無視することもできますが、`-n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
+ルールIDを `./rules/config/noisy_rules.txt`に追加して、デフォルトでルールを無視することもできますが、`-n`または `--enable-noisy-rules`オプションを指定してルールを使用することもできます。
 
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.4.0-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.4.1-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
-`rules/config/level_tuning.txt`の例:
+`./rules/config/level_tuning.txt`の例:
 ```
 id,new_level
 00000000-0000-0000-0000-000000000000,informational # sample level tuning line
@@ -674,7 +674,7 @@ id,new_level
 ## イベントIDフィルタリング
 
 バージョン1.4.1以降では、デフォルトでパフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを無視しています。
-デフォルトでは`rules/config/target_event_IDs.txt`で定義されたIDがスキャンされます。
+デフォルトでは`./rules/config/target_event_IDs.txt`で定義されたIDがスキャンされます。
 If you want to scan all events, please use the `-D, --deep-scan` option.
 すべてのイベントをスキャンしたい場合は、`-D, --deep-scan`オプションを使用してください。
 
