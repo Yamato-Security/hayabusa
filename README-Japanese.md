@@ -49,7 +49,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
   - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
 - [Hayabusaの実行](#hayabusaの実行)
-  - [注意: アンチウィルス/EDRの誤検知](#注意-アンチウィルスedrの誤検知)
+  - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
@@ -255,16 +255,17 @@ sudo yum install openssl-devel
 
 # Hayabusaの実行
 
-## 注意: アンチウィルス/EDRの誤検知
+## 注意: アンチウィルス/EDRの誤検知と遅い初回実行
 
 Hayabusa実行する際や、`.yml`ルールのダウンロードや実行時にルール内でdetectionに不審なPowerShellコマンドや`mimikatz`のようなキーワードが書かれている際に、アンチウィルスやEDRにブロックされる可能性があります。
 誤検知のため、セキュリティ対策の製品がHayabusaを許可するように設定する必要があります。
 マルウェア感染が心配であれば、ソースコードを確認した上で、自分でバイナリをコンパイルして下さい。
 
+Windows PC起動後の初回実行時に時間がかかる場合があります。これはWindows Defenderのリアルタイムスキャンが行われていることが原因です。リアルタイムスキャンを無効にするかHayabusaのディレクトリをアンチウィルススキャンから除外することでこの現象は解消しますが、設定を変える前にセキュリティリスクを十分ご考慮ください。
+
 ## Windows
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
-PC起動後の初回実行時に時間がかかります。これはWindows Defenderのリアルタイムスキャンが行われていることが原因です。リアルタイムスキャンをoff`にすることでこの現象は解消しますが、おすすめしません。
 
 例: `hayabusa-1.4.1-windows-x64.exe`
 
@@ -494,8 +495,6 @@ Hayabusaをテストしたり、新しいルールを作成したりするため
 ```bash
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
-
-> ※ 以下の例でHayabusaを試したい方は、上記コマンドをhayabusaのルートフォルダから実行してください。
 
 # Hayabusaの出力
 
