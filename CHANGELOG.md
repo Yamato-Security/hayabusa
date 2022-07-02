@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- You can specify update target repository by `--rules`  option when you use `--update-rules`  option. (#615) (@hitenkoku)
+- Combining the two options, you can now update rules with `--update-rules` option to a custom rules directory with the `--rules` option. (#615) (@hitenkoku)
 
 **Bug Fixes:**
 
