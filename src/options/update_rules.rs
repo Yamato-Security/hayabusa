@@ -35,7 +35,7 @@ impl UpdateRules {
             )
             .ok();
             // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
-            result = UpdateRules::clone_rules();
+            result = UpdateRules::clone_rules(Path::new(rule_path));
         } else if hayabusa_rule_repo.is_ok() {
             // case of exist hayabusa-rules repository
             UpdateRules::_repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
@@ -52,23 +52,35 @@ impl UpdateRules {
             if !rules_path.exists() {
                 create_dir(rules_path).ok();
             }
-            let hayabusa_repo = hayabusa_repo.unwrap();
-            let submodules = hayabusa_repo.submodules()?;
-            let mut is_success_submodule_update = true;
-            // submodule rules erase path is hard coding to avoid unintentional remove folder.
-            fs::remove_dir_all(".git/.submodule/rules").ok();
-            for mut submodule in submodules {
-                submodule.update(true, None)?;
-                let submodule_repo = submodule.open()?;
-                if let Err(e) = UpdateRules::pull_repository(&submodule_repo) {
-                    AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
-                    is_success_submodule_update = false;
+            if rule_path == "./rules" {
+                let hayabusa_repo = hayabusa_repo.unwrap();
+                let submodules = hayabusa_repo.submodules()?;
+                let mut is_success_submodule_update = true;
+                // submodule rules erase path is hard coding to avoid unintentional remove folder.
+                fs::remove_dir_all(".git/.submodule/rules").ok();
+                for mut submodule in submodules {
+                    submodule.update(true, None)?;
+                    let submodule_repo = submodule.open()?;
+                    if let Err(e) = UpdateRules::pull_repository(&submodule_repo) {
+                        AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
+                        is_success_submodule_update = false;
+                    }
                 }
-            }
-            if is_success_submodule_update {
-                result = Ok("Successed submodule update".to_string());
+                if is_success_submodule_update {
+                    result = Ok("Successed submodule update".to_string());
+                } else {
+                    result = Err(git2::Error::from_str(&String::default()));
+                }
             } else {
-                result = Err(git2::Error::from_str(&String::default()));
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    "Attempting to git clone the hayabusa-rules repository into the rules folder.",
+                    true,
+                )
+                .ok();
+                // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
+                result = UpdateRules::clone_rules(rules_path);
             }
         }
         if result.is_ok() {
@@ -129,10 +141,10 @@ impl UpdateRules {
     }
 
     /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
-    fn clone_rules() -> Result<String, git2::Error> {
+    fn clone_rules(rules_path: &Path) -> Result<String, git2::Error> {
         match Repository::clone(
             "https://github.com/Yamato-Security/hayabusa-rules.git",
-            "rules",
+            rules_path,
         ) {
             Ok(_repo) => {
                 println!("Finished cloning the hayabusa-rules repository.");
