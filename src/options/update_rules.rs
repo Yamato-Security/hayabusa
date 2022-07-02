@@ -20,12 +20,12 @@ pub struct UpdateRules {}
 
 impl UpdateRules {
     /// update rules(hayabusa-rules subrepository)
-    pub fn update_rules() -> Result<String, git2::Error> {
+    pub fn update_rules(rule_path: &str) -> Result<String, git2::Error> {
         let mut result;
         let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let mut prev_modified_rules: HashSet<String> = HashSet::default();
         let hayabusa_repo = Repository::open(Path::new("."));
-        let hayabusa_rule_repo = Repository::open(Path::new("rules"));
+        let hayabusa_rule_repo = Repository::open(Path::new(rule_path));
         if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
@@ -40,15 +40,15 @@ impl UpdateRules {
             // case of exist hayabusa-rules repository
             UpdateRules::_repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = UpdateRules::get_updated_rules("rules", &prev_modified_time);
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
+            prev_modified_rules = UpdateRules::get_updated_rules(rule_path, &prev_modified_time);
+            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
             result = UpdateRules::pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
             // case of no exist hayabusa-rules repository in rules.
             // execute update because submodule information exists if hayabusa repository exists submodule information.
 
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
-            let rules_path = Path::new("rules");
+            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
+            let rules_path = Path::new(rule_path);
             if !rules_path.exists() {
                 create_dir(rules_path).ok();
             }
@@ -73,7 +73,7 @@ impl UpdateRules {
         }
         if result.is_ok() {
             let updated_modified_rules =
-                UpdateRules::get_updated_rules("rules", &prev_modified_time);
+                UpdateRules::get_updated_rules(rule_path, &prev_modified_time);
             result = UpdateRules::print_diff_modified_rule_dates(
                 prev_modified_rules,
                 updated_modified_rules,
