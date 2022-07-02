@@ -114,7 +114,9 @@ impl App {
         }
 
         if configs::CONFIG.read().unwrap().args.update_rules {
-            match UpdateRules::update_rules() {
+            match UpdateRules::update_rules(
+                configs::CONFIG.read().unwrap().args.rules.to_str().unwrap(),
+            ) {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
                         write_color_buffer(

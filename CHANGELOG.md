@@ -1,5 +1,19 @@
 # Changes
 
+## v1.4.2 [2022/07/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Combining the two options, you can now update rules with `--update-rules` option to a custom rules directory with the `--rules` option. (#615) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.4.1 [2022/06/30]
 
 **Enhancements:**
