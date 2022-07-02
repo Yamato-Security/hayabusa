@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- You can specify update target repository by `--rules`  option when you use `--update-rules`  option. (#615) (@hitenkoku)
 
 **Bug Fixes:**
 
