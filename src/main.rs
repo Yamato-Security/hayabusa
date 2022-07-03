@@ -79,10 +79,12 @@ impl App {
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
             load_pivot_keywords(
-                CURRENT_EXE_PATH
-                    .join("config/pivot_keywords.txt")
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "config/pivot_keywords.txt",
+                )
+                .to_str()
+                .unwrap(),
             );
         }
 
@@ -136,28 +138,23 @@ impl App {
             return;
         }
         // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
-        if !CURRENT_EXE_PATH.join("config").exists() {
+        if !CURRENT_EXE_PATH.join("config").exists() && !Path::new("./config").exists() {
             AlertMessage::alert(
                 "Hayabusa could not find the config directory.\nPlease make sure that it is in the same directory as the hayabusa executable."
             )
             .ok();
             return;
         }
-        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .config
-            .to_str()
-            .unwrap()
-            == "./rules/config"
-        {
-            configs::CONFIG.write().unwrap().args.config = CURRENT_EXE_PATH.join("rules/config");
+        // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG.read().unwrap().args.config == Path::new("./rules/config") {
+            configs::CONFIG.write().unwrap().args.config =
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules/config");
         }
-        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG.read().unwrap().args.rules.to_str().unwrap() == "./rules" {
-            configs::CONFIG.write().unwrap().args.rules = CURRENT_EXE_PATH.join("rules");
+
+        // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG.read().unwrap().args.rules == Path::new("./rules") {
+            configs::CONFIG.write().unwrap().args.rules =
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules");
         }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
@@ -258,10 +255,12 @@ impl App {
                 .unwrap();
             let level_tuning_config_path = match level_tuning_val {
                 Some(path) => path.to_owned(),
-                _ => CURRENT_EXE_PATH
-                    .join("./rules/config/level_tuning.txt")
-                    .display()
-                    .to_string(),
+                _ => utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "./rules/config/level_tuning.txt",
+                )
+                .display()
+                .to_string(),
             };
 
             if Path::new(&level_tuning_config_path).exists() {
@@ -463,7 +462,10 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string(CURRENT_EXE_PATH.join("contributors.txt")) {
+        match fs::read_to_string(utils::check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "contributors.txt",
+        )) {
             Ok(contents) => {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -712,7 +714,7 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = CURRENT_EXE_PATH.join("art/logo.txt");
+        let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt");
         let content = fs::read_to_string(fp).unwrap_or_default();
         let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
@@ -739,7 +741,7 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let egg_path = CURRENT_EXE_PATH.join(path);
+                let egg_path = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), path);
                 let content = fs::read_to_string(egg_path).unwrap_or_default();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),

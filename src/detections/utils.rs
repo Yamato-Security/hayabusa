@@ -4,6 +4,8 @@ extern crate regex;
 
 use crate::detections::configs;
 use crate::detections::configs::CURRENT_EXE_PATH;
+use std::path::Path;
+use std::path::PathBuf;
 
 use termcolor::Color;
 
@@ -69,8 +71,7 @@ pub fn value_to_string(value: &Value) -> Option<String> {
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     let filepath = if filename.starts_with("./") {
-        CURRENT_EXE_PATH
-            .join(filename)
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename)
             .to_str()
             .unwrap()
             .to_string()
@@ -376,9 +377,20 @@ pub fn make_ascii_titlecase(s: &mut str) -> String {
     }
 }
 
+/// base_path/path が存在するかを確認し、存在しなければカレントディレクトリを参照するpathを返す関数
+pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
+    if base_path.join(path).exists() {
+        base_path.join(path)
+    } else {
+        Path::new(path).to_path_buf()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::detections::utils::{self, make_ascii_titlecase};
+    use std::path::Path;
+
+    use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
     use regex::Regex;
     use serde_json::Value;
 
@@ -539,5 +551,32 @@ mod tests {
             "I am Test"
         );
         assert_eq!(make_ascii_titlecase("β".to_string().as_mut()), "β");
+    }
+
+    #[test]
+    /// 与えられたパスからファイルの存在確認ができているかのテスト
+    fn test_check_setting_path() {
+        let exist_path = Path::new("./test_files").to_path_buf();
+        let not_exist_path = Path::new("not_exist_path").to_path_buf();
+        assert_eq!(
+            check_setting_path(&not_exist_path, "rules")
+                .to_str()
+                .unwrap(),
+            "rules"
+        );
+        assert_eq!(
+            check_setting_path(&not_exist_path, "fake")
+                .to_str()
+                .unwrap(),
+            "fake"
+        );
+        assert_eq!(
+            check_setting_path(&exist_path, "rules").to_str().unwrap(),
+            exist_path.join("rules").to_str().unwrap()
+        );
+        assert_eq!(
+            check_setting_path(&exist_path, "fake").to_str().unwrap(),
+            "fake"
+        );
     }
 }

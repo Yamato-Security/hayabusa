@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed error due to the files in the config folder cannot be read. (#618) (@hitenkoku)
 
 ## v1.4.1 [2022/06/30]
 

@@ -241,16 +241,20 @@ impl ConfigReader<'_> {
             args: parse,
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
-                CURRENT_EXE_PATH
-                    .join("rules/config/statistics_event_info.txt")
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/statistics_event_info.txt",
+                )
+                .to_str()
+                .unwrap(),
             ),
             target_eventids: load_target_ids(
-                CURRENT_EXE_PATH
-                    .join("rules/config/target_event_IDs.txt")
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/target_event_IDs.txt",
+                )
+                .to_str()
+                .unwrap(),
             ),
         }
     }
