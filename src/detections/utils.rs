@@ -4,6 +4,8 @@ extern crate regex;
 
 use crate::detections::configs;
 use crate::detections::configs::CURRENT_EXE_PATH;
+use std::path::Path;
+use std::path::PathBuf;
 
 use termcolor::Color;
 
@@ -376,9 +378,20 @@ pub fn make_ascii_titlecase(s: &mut str) -> String {
     }
 }
 
+/// base_path/path が存在するかを確認し、存在しなければカレントディレクトリを参照するpathを返す関数
+pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
+    if base_path.join(path).exists() {
+        base_path.join(path)
+    } else {
+        Path::new(path).to_path_buf()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::detections::utils::{self, make_ascii_titlecase};
+    use std::path::Path;
+
+    use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
     use regex::Regex;
     use serde_json::Value;
 
