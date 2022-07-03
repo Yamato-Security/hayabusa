@@ -79,10 +79,12 @@ impl App {
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
             load_pivot_keywords(
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(),
-"config/pivot_keywords.txt")
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "config/pivot_keywords.txt",
+                )
+                .to_str()
+                .unwrap(),
             );
         }
 
@@ -253,10 +255,12 @@ impl App {
                 .unwrap();
             let level_tuning_config_path = match level_tuning_val {
                 Some(path) => path.to_owned(),
-                _ => utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(),
-                    "./rules/config/level_tuning.txt")
-                    .display()
-                    .to_string(),
+                _ => utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "./rules/config/level_tuning.txt",
+                )
+                .display()
+                .to_string(),
             };
 
             if Path::new(&level_tuning_config_path).exists() {
@@ -458,7 +462,10 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string(utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "contributors.txt")) {
+        match fs::read_to_string(utils::check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "contributors.txt",
+        )) {
             Ok(contents) => {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -734,7 +741,7 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let egg_path =utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(),path);
+                let egg_path = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), path);
                 let content = fs::read_to_string(egg_path).unwrap_or_default();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),

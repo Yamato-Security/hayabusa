@@ -65,8 +65,7 @@ lazy_static! {
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn set_output_color() -> HashMap<String, Color> {
     let read_result = utils::read_csv(
-        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(),
-"config/level_color.txt")
+        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/level_color.txt")
             .to_str()
             .unwrap(),
     );
