@@ -143,7 +143,7 @@ impl App {
             .ok();
             return;
         }
-        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
         if configs::CONFIG
             .read()
             .unwrap()
@@ -154,10 +154,20 @@ impl App {
             == "./rules/config"
         {
             configs::CONFIG.write().unwrap().args.config = CURRENT_EXE_PATH.join("rules/config");
+            // hayabusa.exeが存在するパスにrules/configがない場合はカレントディレクトリのrules/configを確認する
+            if !configs::CONFIG.read().unwrap().args.config.exists() {
+                configs::CONFIG.write().unwrap().args.config =
+                    Path::new("./rules/config").to_path_buf();
+            }
         }
-        // ワーキングディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+
+        // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
         if configs::CONFIG.read().unwrap().args.rules.to_str().unwrap() == "./rules" {
             configs::CONFIG.write().unwrap().args.rules = CURRENT_EXE_PATH.join("rules");
+            // hayabusa.exeが存在するパスにrulesがない場合はカレントディレクトリのrulesを確認する
+            if !configs::CONFIG.read().unwrap().args.rules.exists() {
+                configs::CONFIG.write().unwrap().args.rules = Path::new("./rules").to_path_buf();
+            }
         }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
