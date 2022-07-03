@@ -79,8 +79,8 @@ impl App {
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
             load_pivot_keywords(
-                CURRENT_EXE_PATH
-                    .join("config/pivot_keywords.txt")
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(),
+"config/pivot_keywords.txt")
                     .to_str()
                     .unwrap(),
             );
@@ -253,8 +253,8 @@ impl App {
                 .unwrap();
             let level_tuning_config_path = match level_tuning_val {
                 Some(path) => path.to_owned(),
-                _ => CURRENT_EXE_PATH
-                    .join("./rules/config/level_tuning.txt")
+                _ => utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(),
+                    "./rules/config/level_tuning.txt")
                     .display()
                     .to_string(),
             };
@@ -458,7 +458,7 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string(CURRENT_EXE_PATH.join("contributors.txt")) {
+        match fs::read_to_string(utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "contributors.txt")) {
             Ok(contents) => {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -707,7 +707,7 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = CURRENT_EXE_PATH.join("art/logo.txt");
+        let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt");
         let content = fs::read_to_string(fp).unwrap_or_default();
         let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
@@ -734,7 +734,7 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let egg_path = CURRENT_EXE_PATH.join(path);
+                let egg_path =utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(),path);
                 let content = fs::read_to_string(egg_path).unwrap_or_default();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
