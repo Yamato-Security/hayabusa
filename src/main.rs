@@ -136,7 +136,7 @@ impl App {
             return;
         }
         // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
-        if !CURRENT_EXE_PATH.join("config").exists() {
+        if !CURRENT_EXE_PATH.join("config").exists() && !Path::new("./config").exists() {
             AlertMessage::alert(
                 "Hayabusa could not find the config directory.\nPlease make sure that it is in the same directory as the hayabusa executable."
             )
