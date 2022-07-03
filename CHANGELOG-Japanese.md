@@ -12,7 +12,7 @@
 
 **バグ修正:**
 
-- cargo runコマンドでhayabusaを実行した場合、configフォルダの読み込みエラーが発生する問題を修正した。 (#618) (@hitenkoku)
+- cargo runコマンドでhayabusaを実行するとconfigフォルダの読み込みエラーが発生する問題を修正した。 (#618) (@hitenkoku)
 
 ## v1.4.1 [2022/06/30]
 
