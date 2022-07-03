@@ -553,4 +553,31 @@ mod tests {
         );
         assert_eq!(make_ascii_titlecase("β".to_string().as_mut()), "β");
     }
+
+    #[test]
+    /// 与えられたパスからファイルの存在確認ができているかのテスト
+    fn test_check_setting_path() {
+        let exist_path = Path::new("./test_files").to_path_buf();
+        let not_exist_path = Path::new("not_exist_path").to_path_buf();
+        assert_eq!(
+            check_setting_path(&not_exist_path, "rules")
+                .to_str()
+                .unwrap(),
+            "rules"
+        );
+        assert_eq!(
+            check_setting_path(&not_exist_path, "fake")
+                .to_str()
+                .unwrap(),
+            "fake"
+        );
+        assert_eq!(
+            check_setting_path(&exist_path, "rules").to_str().unwrap(),
+            exist_path.join("rules").to_str().unwrap()
+        );
+        assert_eq!(
+            check_setting_path(&exist_path, "fake").to_str().unwrap(),
+            "fake"
+        );
+    }
 }
