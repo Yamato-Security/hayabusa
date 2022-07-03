@@ -71,8 +71,7 @@ pub fn value_to_string(value: &Value) -> Option<String> {
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     let filepath = if filename.starts_with("./") {
-        CURRENT_EXE_PATH
-            .join(filename)
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename)
             .to_str()
             .unwrap()
             .to_string()

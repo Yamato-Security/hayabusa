@@ -54,18 +54,19 @@ lazy_static! {
     pub static ref STATISTICS_FLAG: bool = configs::CONFIG.read().unwrap().args.statistics;
     pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
-        CURRENT_EXE_PATH
-            .join("config/output_tag.txt")
+        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/output_tag.txt")
             .to_str()
             .unwrap(),
         true,
         configs::CONFIG.read().unwrap().args.all_tags
     );
     pub static ref CH_CONFIG: HashMap<String, String> = Message::create_output_filter_config(
-        CURRENT_EXE_PATH
-            .join("rules/config/channel_abbreviations.txt")
-            .to_str()
-            .unwrap(),
+        utils::check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "rules/config/channel_abbreviations.txt"
+        )
+        .to_str()
+        .unwrap(),
         false,
         configs::CONFIG.read().unwrap().args.all_tags
     );
