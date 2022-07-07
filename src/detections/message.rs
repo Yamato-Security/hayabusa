@@ -68,17 +68,16 @@ lazy_static! {
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
     pub static ref IS_HIDE_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.hide_record_id;
-    pub static ref DEFAULT_DETAILS: HashMap<String, String> =
-        get_default_details(&format!(
-            "{}/default_details.txt",
-            configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .config
-                .as_path()
-                .display()
-        ));
+    pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(&format!(
+        "{}/default_details.txt",
+        configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .config
+            .as_path()
+            .display()
+    ));
 }
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
@@ -322,8 +321,8 @@ impl AlertMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::print::{DetectInfo, MESSAGES, insert, parse_message};
-    use crate::detections::print::{AlertMessage};
+    use crate::detections::message::AlertMessage;
+    use crate::detections::message::{insert, parse_message, DetectInfo, MESSAGES};
     use hashbrown::HashMap;
     use serde_json::Value;
 
@@ -684,8 +683,7 @@ mod tests {
     #[test]
     /// test of loading output filter config by output_tag.txt
     fn test_load_output_tag() {
-        let actual =
-            create_output_filter_config("test_files/config/output_tag.txt", true, false);
+        let actual = create_output_filter_config("test_files/config/output_tag.txt", true, false);
         let expected: HashMap<String, String> = HashMap::from([
             ("attack.impact".to_string(), "Impact".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
@@ -696,8 +694,7 @@ mod tests {
     #[test]
     /// test of loading pass by output_tag.txt
     fn test_no_load_output_tag() {
-        let actual =
-            create_output_filter_config("test_files/config/output_tag.txt", true, true);
+        let actual = create_output_filter_config("test_files/config/output_tag.txt", true, true);
         let expected: HashMap<String, String> = HashMap::new();
         _check_hashmap_element(&expected, actual);
     }
@@ -705,11 +702,8 @@ mod tests {
     #[test]
     /// loading test to channel_abbrevations.txt
     fn test_load_abbrevations() {
-        let actual = create_output_filter_config(
-            "test_files/config/channel_abbreviations.txt",
-            false,
-            true,
-        );
+        let actual =
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", false, true);
         let actual2 = create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
             false,

@@ -4,15 +4,14 @@ use crate::detections::configs;
 use crate::detections::utils::write_color_buffer;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
-use crate::detections::pivot::insert_pivot_keyword;
-use crate::detections::print::AlertMessage;
-use crate::detections::print::DetectInfo;
-use crate::detections::print::ERROR_LOG_STACK;
-use crate::detections::print;
-use crate::detections::print::{CH_CONFIG, DEFAULT_DETAILS, IS_HIDE_RECORD_ID, TAGS_CONFIG};
-use crate::detections::print::{
+use crate::detections::message::AlertMessage;
+use crate::detections::message::DetectInfo;
+use crate::detections::message::ERROR_LOG_STACK;
+use crate::detections::message::{CH_CONFIG, DEFAULT_DETAILS, IS_HIDE_RECORD_ID, TAGS_CONFIG};
+use crate::detections::message::{
     LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
+use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
@@ -26,6 +25,8 @@ use std::fmt::Write;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
+
+use super::message;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -268,7 +269,7 @@ impl Detection {
             record_information: opt_record_info,
             record_id: rec_id,
         };
-        print::insert(
+        message::insert(
             &record_info.record,
             rule.yaml["details"]
                 .as_str()
@@ -312,7 +313,7 @@ impl Detection {
             record_id: rec_id,
         };
 
-        print::insert_message(detect_info, agg_result.start_timedate)
+        message::insert_message(detect_info, agg_result.start_timedate)
     }
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数

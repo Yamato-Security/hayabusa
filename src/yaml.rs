@@ -3,8 +3,8 @@ extern crate yaml_rust;
 
 use crate::detections::configs;
 use crate::detections::configs::EXCLUDE_STATUS;
-use crate::detections::print::AlertMessage;
-use crate::detections::print::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
+use crate::detections::message::AlertMessage;
+use crate::detections::message::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use crate::filter::RuleExclude;
 use hashbrown::HashMap;
 use std::ffi::OsStr;
@@ -316,8 +316,8 @@ impl ParseYaml {
 #[cfg(test)]
 mod tests {
 
-    use crate::detections::print::AlertMessage;
-    use crate::detections::print::ERROR_LOG_PATH;
+    use crate::detections::message::AlertMessage;
+    use crate::detections::message::ERROR_LOG_PATH;
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;

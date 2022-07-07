@@ -1,7 +1,7 @@
 use crate::detections::configs;
 use crate::detections::configs::{CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::print;
-use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
+use crate::detections::message::{self};
+use crate::detections::message::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
 use crate::detections::utils::{get_writable_color, write_color_buffer};
 use bytesize::ByteSize;
@@ -205,7 +205,6 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let messages = &print::MESSAGES;
     // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
@@ -242,7 +241,7 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    for multi in messages.iter() {
+    for multi in message::MESSAGES.iter() {
         let (time, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
@@ -703,8 +702,8 @@ mod tests {
     use crate::afterfact::_get_serialized_disp_output;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
-    use crate::detections::print;
-    use crate::detections::print::{DetectInfo};
+    use crate::detections::message;
+    use crate::detections::message::DetectInfo;
     use chrono::{Local, TimeZone, Utc};
     use hashbrown::HashMap;
     use serde_json::Value;
@@ -720,7 +719,7 @@ mod tests {
     }
 
     fn test_emit_csv_output() {
-        let mock_ch_filter = print::create_output_filter_config(
+        let mock_ch_filter = message::create_output_filter_config(
             "rules/config/channel_abbreviations.txt",
             true,
             false,
@@ -737,7 +736,7 @@ mod tests {
         let test_recinfo = "record_infoinfo11";
         let test_record_id = "11111";
         {
-            let messages = &print::MESSAGES;
+            let messages = &message::MESSAGES;
             messages.clear();
             let val = r##"
                 {
@@ -754,7 +753,7 @@ mod tests {
                 }
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
-            print::insert(
+            message::insert(
                 &event,
                 output.to_string(),
                 DetectInfo {

@@ -1,6 +1,6 @@
+use crate::detections::message::AlertMessage;
 use crate::detections::pivot::PivotKeyword;
 use crate::detections::pivot::PIVOT_KEYWORD;
-use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
