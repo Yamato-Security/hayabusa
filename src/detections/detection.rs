@@ -8,7 +8,7 @@ use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::print::AlertMessage;
 use crate::detections::print::DetectInfo;
 use crate::detections::print::ERROR_LOG_STACK;
-use crate::detections::print::MESSAGES;
+use crate::detections::print;
 use crate::detections::print::{CH_CONFIG, DEFAULT_DETAILS, IS_HIDE_RECORD_ID, TAGS_CONFIG};
 use crate::detections::print::{
     LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
@@ -268,7 +268,7 @@ impl Detection {
             record_information: opt_record_info,
             record_id: rec_id,
         };
-        MESSAGES.lock().unwrap().insert(
+        print::insert(
             &record_info.record,
             rule.yaml["details"]
                 .as_str()
@@ -312,10 +312,7 @@ impl Detection {
             record_id: rec_id,
         };
 
-        MESSAGES
-            .lock()
-            .unwrap()
-            .insert_message(detect_info, agg_result.start_timedate)
+        print::insert_message(detect_info, agg_result.start_timedate)
     }
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
