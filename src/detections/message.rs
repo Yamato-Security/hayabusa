@@ -37,7 +37,7 @@ pub struct DetectInfo {
 pub struct AlertMessage {}
 
 lazy_static! {
-    #[derive(Debug)]
+    #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
     pub static ref MESSAGES: DashMap<DateTime<Utc>, Vec<DetectInfo>> = DashMap::new();
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();

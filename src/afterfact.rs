@@ -9,11 +9,13 @@ use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
+use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use serde::Serialize;
 use std::cmp::min;
 use std::error::Error;
+use std::fmt::Debug;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -241,8 +243,9 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    for multi in message::MESSAGES.iter() {
-        let (time, detect_infos) = multi.pair();
+    for time in message::MESSAGES.clone().into_read_only().keys().sorted() {
+        let multi = message::MESSAGES.get(time).unwrap();
+        let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
             detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
