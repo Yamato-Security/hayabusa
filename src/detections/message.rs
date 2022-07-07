@@ -10,7 +10,10 @@ use hashbrown::HashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
+use std::collections::hash_map::RandomState;
 use std::env;
+use std::fmt;
+use std::fmt::Formatter;
 use std::fs::create_dir;
 use std::fs::File;
 use std::io::BufWriter;
@@ -18,6 +21,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, ColorChoice};
+use std::hash::Hash;
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
@@ -37,6 +41,7 @@ pub struct DetectInfo {
 pub struct AlertMessage {}
 
 lazy_static! {
+    #[derive(Debug)]
     pub static ref MESSAGES: DashMap<DateTime<Utc>, Vec<DetectInfo>> = DashMap::new();
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
@@ -80,6 +85,19 @@ lazy_static! {
     ));
 }
 
+pub trait Debug {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error>;
+}
+
+impl<K: Eq + Hash + Clone + fmt::Debug, V: Clone + fmt::Debug> Debug for DashMap<K, V, RandomState> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.debug_map()
+           .entries(self.iter().map(|ref r| (r.key().clone(), r.value().clone())))
+           .finish()
+    }
+}
+
+///----------------------start for struct MESSAGE------------------------------
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
 /// ex. attack.impact,Impact
 pub fn create_output_filter_config(
@@ -267,6 +285,8 @@ pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
     }
 }
 
+///----------------------end for struct MESSAGE------------------------------
+
 impl AlertMessage {
     ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
     pub fn create_error_log(path_str: String) {
@@ -328,7 +348,6 @@ mod tests {
 
     use super::{create_output_filter_config, get_default_details};
 
-    /*
     #[test]
     fn test_create_and_append_message() {
         MESSAGES.clear();
@@ -459,12 +478,11 @@ mod tests {
             },
         );
 
-        let display = format!("{}", format_args!("{:?}", message));
+        let display = format!("{}", format_args!("{:?}", MESSAGES));
         println!("display::::{}", display);
-        let expect = "Message { map: {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", channel: \"\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\", record_information: Some(\"record_information4\"), record_id: None }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", channel: \"\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\", record_information: Some(\"record_information1\"), record_id: Some(\"11111\") }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", channel: \"\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\", record_information: Some(\"record_information2\"), record_id: Some(\"22222\") }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", channel: \"\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\", record_information: Some(\"record_information3\"), record_id: Some(\"33333\") }]} }";
+        let expect = "Message {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", channel: \"\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\", record_information: Some(\"record_information4\"), record_id: None }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", channel: \"\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\", record_information: Some(\"record_information1\"), record_id: Some(\"11111\") }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", channel: \"\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\", record_information: Some(\"record_information2\"), record_id: Some(\"22222\") }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", channel: \"\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\", record_information: Some(\"record_information3\"), record_id: Some(\"33333\") }]} ";
         assert_eq!(display, expect);
     }
-    */
 
     #[test]
     fn test_error_message() {
