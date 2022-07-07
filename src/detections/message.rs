@@ -10,10 +10,7 @@ use hashbrown::HashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
-use std::collections::hash_map::RandomState;
 use std::env;
-use std::fmt;
-use std::fmt::Formatter;
 use std::fs::create_dir;
 use std::fs::File;
 use std::io::BufWriter;
@@ -21,7 +18,6 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, ColorChoice};
-use std::hash::Hash;
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
@@ -83,18 +79,6 @@ lazy_static! {
             .as_path()
             .display()
     ));
-}
-
-pub trait Debug {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error>;
-}
-
-impl<K: Eq + Hash + Clone + fmt::Debug, V: Clone + fmt::Debug> Debug for DashMap<K, V, RandomState> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.debug_map()
-           .entries(self.iter().map(|ref r| (r.key().clone(), r.value().clone())))
-           .finish()
-    }
 }
 
 ///----------------------start for struct MESSAGE------------------------------
@@ -342,147 +326,11 @@ impl AlertMessage {
 #[cfg(test)]
 mod tests {
     use crate::detections::message::AlertMessage;
-    use crate::detections::message::{insert, parse_message, DetectInfo, MESSAGES};
+    use crate::detections::message::{parse_message, MESSAGES};
     use hashbrown::HashMap;
     use serde_json::Value;
 
     use super::{create_output_filter_config, get_default_details};
-
-    #[test]
-    fn test_create_and_append_message() {
-        MESSAGES.clear();
-        let json_str_1 = r##"
-        {
-            "Event": {
-                "EventData": {
-                    "CommandLine": "hoge"
-                },
-                "System": {
-                    "TimeCreated_attributes": {
-                        "SystemTime": "1996-02-27T01:05:01Z"
-                    }
-                }
-            }
-        }
-    "##;
-        let event_record_1: Value = serde_json::from_str(json_str_1).unwrap();
-        insert(
-            &event_record_1,
-            "CommandLine1: %CommandLine%".to_string(),
-            DetectInfo {
-                filepath: "a".to_string(),
-                rulepath: "test_rule".to_string(),
-                level: "high".to_string(),
-                computername: "testcomputer1".to_string(),
-                eventid: "1".to_string(),
-                channel: String::default(),
-                alert: "test1".to_string(),
-                detail: String::default(),
-                tag_info: "txxx.001".to_string(),
-                record_information: Option::Some("record_information1".to_string()),
-                record_id: Option::Some("11111".to_string()),
-            },
-        );
-
-        let json_str_2 = r##"
-    {
-        "Event": {
-            "EventData": {
-                "CommandLine": "hoge"
-            },
-            "System": {
-                "TimeCreated_attributes": {
-                    "SystemTime": "1996-02-27T01:05:01Z"
-                }
-            }
-        }
-    }
-    "##;
-        let event_record_2: Value = serde_json::from_str(json_str_2).unwrap();
-        insert(
-            &event_record_2,
-            "CommandLine2: %CommandLine%".to_string(),
-            DetectInfo {
-                filepath: "a".to_string(),
-                rulepath: "test_rule2".to_string(),
-                level: "high".to_string(),
-                computername: "testcomputer2".to_string(),
-                eventid: "2".to_string(),
-                channel: String::default(),
-                alert: "test2".to_string(),
-                detail: String::default(),
-                tag_info: "txxx.002".to_string(),
-                record_information: Option::Some("record_information2".to_string()),
-                record_id: Option::Some("22222".to_string()),
-            },
-        );
-
-        let json_str_3 = r##"
-    {
-        "Event": {
-            "EventData": {
-                "CommandLine": "hoge"
-            },
-            "System": {
-                "TimeCreated_attributes": {
-                    "SystemTime": "2000-01-21T09:06:01Z"
-                }
-            }
-        }
-    }
-    "##;
-        let event_record_3: Value = serde_json::from_str(json_str_3).unwrap();
-        insert(
-            &event_record_3,
-            "CommandLine3: %CommandLine%".to_string(),
-            DetectInfo {
-                filepath: "a".to_string(),
-                rulepath: "test_rule3".to_string(),
-                level: "high".to_string(),
-                computername: "testcomputer3".to_string(),
-                eventid: "3".to_string(),
-                channel: String::default(),
-                alert: "test3".to_string(),
-                detail: String::default(),
-                tag_info: "txxx.003".to_string(),
-                record_information: Option::Some("record_information3".to_string()),
-                record_id: Option::Some("33333".to_string()),
-            },
-        );
-
-        let json_str_4 = r##"
-    {
-        "Event": {
-            "EventData": {
-                "CommandLine": "hoge"
-            }
-        }
-    }
-    "##;
-        let event_record_4: Value = serde_json::from_str(json_str_4).unwrap();
-        insert(
-            &event_record_4,
-            "CommandLine4: %CommandLine%".to_string(),
-            DetectInfo {
-                filepath: "a".to_string(),
-                rulepath: "test_rule4".to_string(),
-                level: "medium".to_string(),
-                computername: "testcomputer4".to_string(),
-                eventid: "4".to_string(),
-                channel: String::default(),
-                alert: "test4".to_string(),
-                detail: String::default(),
-                tag_info: "txxx.004".to_string(),
-                record_information: Option::Some("record_information4".to_string()),
-                record_id: Option::None,
-            },
-        );
-
-        let display = format!("{}", format_args!("{:?}", MESSAGES));
-        println!("display::::{}", display);
-        let expect = "Message {1970-01-01T00:00:00Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule4\", level: \"medium\", computername: \"testcomputer4\", eventid: \"4\", channel: \"\", alert: \"test4\", detail: \"CommandLine4: hoge\", tag_info: \"txxx.004\", record_information: Some(\"record_information4\"), record_id: None }], 1996-02-27T01:05:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule\", level: \"high\", computername: \"testcomputer1\", eventid: \"1\", channel: \"\", alert: \"test1\", detail: \"CommandLine1: hoge\", tag_info: \"txxx.001\", record_information: Some(\"record_information1\"), record_id: Some(\"11111\") }, DetectInfo { filepath: \"a\", rulepath: \"test_rule2\", level: \"high\", computername: \"testcomputer2\", eventid: \"2\", channel: \"\", alert: \"test2\", detail: \"CommandLine2: hoge\", tag_info: \"txxx.002\", record_information: Some(\"record_information2\"), record_id: Some(\"22222\") }], 2000-01-21T09:06:01Z: [DetectInfo { filepath: \"a\", rulepath: \"test_rule3\", level: \"high\", computername: \"testcomputer3\", eventid: \"3\", channel: \"\", alert: \"test3\", detail: \"CommandLine3: hoge\", tag_info: \"txxx.003\", record_information: Some(\"record_information3\"), record_id: Some(\"33333\") }]} ";
-        assert_eq!(display, expect);
-    }
 
     #[test]
     fn test_error_message() {
