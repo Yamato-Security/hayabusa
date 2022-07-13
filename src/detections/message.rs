@@ -81,7 +81,6 @@ lazy_static! {
     ));
 }
 
-///----------------------start for struct MESSAGE------------------------------
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
 /// ex. attack.impact,Impact
 pub fn create_output_filter_config(
@@ -268,8 +267,6 @@ pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
         }
     }
 }
-
-///----------------------end for struct MESSAGE------------------------------
 
 impl AlertMessage {
     ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
