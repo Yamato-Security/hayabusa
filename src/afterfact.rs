@@ -1,7 +1,7 @@
 use crate::detections::configs;
 use crate::detections::configs::{CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::print;
-use crate::detections::print::{AlertMessage, IS_HIDE_RECORD_ID};
+use crate::detections::message::{self};
+use crate::detections::message::{AlertMessage, IS_HIDE_RECORD_ID};
 use crate::detections::utils;
 use crate::detections::utils::{get_writable_color, write_color_buffer};
 use bytesize::ByteSize;
@@ -9,11 +9,13 @@ use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::QuoteStyle;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
+use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use serde::Serialize;
 use std::cmp::min;
 use std::error::Error;
+use std::fmt::Debug;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -205,7 +207,6 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let messages = print::MESSAGES.lock().unwrap();
     // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
@@ -242,8 +243,9 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    let detect_union = messages.iter();
-    for (time, detect_infos) in detect_union {
+    for time in message::MESSAGES.clone().into_read_only().keys().sorted() {
+        let multi = message::MESSAGES.get(time).unwrap();
+        let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
             detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
@@ -703,8 +705,8 @@ mod tests {
     use crate::afterfact::_get_serialized_disp_output;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
-    use crate::detections::print;
-    use crate::detections::print::{DetectInfo, Message};
+    use crate::detections::message;
+    use crate::detections::message::DetectInfo;
     use chrono::{Local, TimeZone, Utc};
     use hashbrown::HashMap;
     use serde_json::Value;
@@ -720,7 +722,7 @@ mod tests {
     }
 
     fn test_emit_csv_output() {
-        let mock_ch_filter = Message::create_output_filter_config(
+        let mock_ch_filter = message::create_output_filter_config(
             "rules/config/channel_abbreviations.txt",
             true,
             false,
@@ -737,7 +739,7 @@ mod tests {
         let test_recinfo = "record_infoinfo11";
         let test_record_id = "11111";
         {
-            let mut messages = print::MESSAGES.lock().unwrap();
+            let messages = &message::MESSAGES;
             messages.clear();
             let val = r##"
                 {
@@ -754,7 +756,7 @@ mod tests {
                 }
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
-            messages.insert(
+            message::insert(
                 &event,
                 output.to_string(),
                 DetectInfo {

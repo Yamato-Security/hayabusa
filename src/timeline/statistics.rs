@@ -1,4 +1,4 @@
-use crate::detections::print::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
+use crate::detections::message::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 

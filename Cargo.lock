@@ -361,6 +361,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dashmap"
+version = "5.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3495912c9c1ccf2e18976439f4443f3fee0fd61f424ff99fde6a66b15ecb448f"
+dependencies = [
+ "cfg-if",
+ "hashbrown",
+ "lock_api",
+ "parking_lot_core",
+]
+
+[[package]]
 name = "dialoguer"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -681,6 +693,7 @@ dependencies = [
  "clap 3.2.8",
  "crossbeam-utils",
  "csv",
+ "dashmap",
  "downcast-rs",
  "evtx",
  "flate2",
@@ -690,6 +703,7 @@ dependencies = [
  "hhmmss",
  "hyper",
  "is_elevated",
+ "itertools",
  "krapslog",
  "lazy_static",
  "linked-hash-map",
@@ -861,6 +875,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5299060ff5db63e788015dcb9525ad9b84f4fd9717ed2cbdeba5018cbf42f9b5"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "itertools"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
+dependencies = [
+ "either",
 ]
 
 [[package]]

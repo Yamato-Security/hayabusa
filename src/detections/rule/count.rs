@@ -1,9 +1,9 @@
 use crate::detections::configs;
-use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_STACK;
-use crate::detections::print::QUIET_ERRORS_FLAG;
+use crate::detections::message;
+use crate::detections::message::AlertMessage;
+use crate::detections::message::ERROR_LOG_STACK;
+use crate::detections::message::QUIET_ERRORS_FLAG;
 use crate::detections::rule::AggResult;
-use crate::detections::rule::Message;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use hashbrown::HashMap;
@@ -33,7 +33,7 @@ pub fn count(rule: &mut RuleNode, record: &Value) {
         rule,
         key,
         field_value,
-        Message::get_event_time(record).unwrap_or(default_time),
+        message::get_event_time(record).unwrap_or(default_time),
     );
 }
 

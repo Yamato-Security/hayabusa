@@ -1,4 +1,4 @@
-use crate::detections::print::AlertMessage;
+use crate::detections::message::AlertMessage;
 use crate::detections::utils::write_color_buffer;
 use crate::filter;
 use crate::yaml::ParseYaml;
