@@ -15,7 +15,7 @@ quick-xml = {version = "0.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
 serde_derive = "1.*"
-regex = "1.5.*"
+regex = "1"
 csv = "1.1.*"
 base64 = "*"
 flate2 = "1.*"
