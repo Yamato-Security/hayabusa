@@ -9,10 +9,12 @@
 **Enhancements:**
 
 - Combining the two options, you can now update rules with `--update-rules` option to a custom rules directory with the `--rules` option. (#615) (@hitenkoku)
+- Ommited RulePath and FilePath relative path options in output file when `--rules`  and `--file-path` and `--directory` option is relative path. (#623) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Fixed error due to the files in the config folder cannot be read. (#618) (@hitenkoku)
+- removed unnecessary `./`  in output. (#623) (@hitenkoku)
 
 ## v1.4.1 [2022/06/30]
 
