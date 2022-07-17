@@ -601,4 +601,14 @@ mod tests {
             "fake"
         );
     }
+
+    #[test]
+    /// 与えられた相対パスから不要な表記("./", "../")削除を確認するテスト
+    fn test_get_output_relative_path() {
+        let exist_path = Path::new("./test_files/rules/yaml/1.yml").to_path_buf();
+        assert_eq!(
+            get_output_str_path(Path::new("."), &exist_path),
+            "test_files/rules/yaml/1.yml"
+        );
+    }
 }
