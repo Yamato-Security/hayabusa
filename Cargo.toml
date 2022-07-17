@@ -37,6 +37,7 @@ bytesize = "1.*"
 hyper = "0.14.*"
 lock_api = "0.4.*"
 crossbeam-utils = "0.8.*"
+pathdiff = "*"
 
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.*"
