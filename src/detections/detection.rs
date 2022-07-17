@@ -260,7 +260,6 @@ impl Detection {
         let fmted_rule_path_str = if configs::CONFIG.read().unwrap().args.rules.is_absolute() {
             abs_rule_path.to_str().unwrap().to_string()
         } else {
-            // ``個々の部分をregexとかで回してiterで落としたほうが速度向上につながると思われるため検討する
             diff_paths(abs_rule_path, &env::current_dir().unwrap()).unwrap().to_str().unwrap().replace("..\\", "").replace(".\\", "")
         };
         let detect_info = DetectInfo {
