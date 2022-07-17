@@ -1,7 +1,7 @@
 extern crate csv;
 
 use crate::detections::configs;
-use crate::detections::utils::write_color_buffer;
+use crate::detections::utils::{write_color_buffer, get_output_str_path};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::AlertMessage;
@@ -21,10 +21,9 @@ use crate::yaml::ParseYaml;
 use hashbrown;
 use hashbrown::HashMap;
 use serde_json::Value;
-use std::env;
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
-use pathdiff::diff_paths;
+
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
@@ -255,16 +254,16 @@ impl Detection {
         } else {
             None
         };
-        let tmp_fmt_path = &PathBuf::from(&rule.rulepath).canonicalize().unwrap().display().to_string()[4..];
-        let abs_rule_path = Path::new(tmp_fmt_path);
-        let fmted_rule_path_str = if configs::CONFIG.read().unwrap().args.rules.is_absolute() {
-            abs_rule_path.to_str().unwrap().to_string()
+        let conf = configs::CONFIG.read().unwrap();
+        let abs_rule_path = &PathBuf::from(&rule.rulepath).canonicalize().unwrap().display().to_string()[4..];
+        let file_opt_path = if conf.args.filepath.is_some() {
+            conf.args.filepath.as_ref().unwrap()
         } else {
-            diff_paths(abs_rule_path, &env::current_dir().unwrap()).unwrap().to_str().unwrap().replace("..\\", "").replace(".\\", "")
+            conf.args.directory.as_ref().unwrap()
         };
         let detect_info = DetectInfo {
-            filepath: record_info.evtx_filepath.to_string(),
-            rulepath: fmted_rule_path_str,
+            filepath: get_output_str_path(file_opt_path, Path::new(&record_info.evtx_filepath)),
+            rulepath: get_output_str_path(&configs::CONFIG.read().unwrap().args.rules, Path::new(abs_rule_path)),
             level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
@@ -308,16 +307,11 @@ impl Detection {
             None
         };
         // canonicalizeを行った際に、windows環境で\\?\が必ず文字列として入ってしまう問題があったため先頭の4文字を除外している
-        let tmp_fmt_path = &PathBuf::from(&rule.rulepath).canonicalize().unwrap().display().to_string()[4..];
-        let abs_rule_path = Path::new(tmp_fmt_path);
-        let fmted_rule_path_str = if configs::CONFIG.read().unwrap().args.rules.is_absolute() {
-            abs_rule_path.to_str().unwrap().to_string()
-        } else {
-            diff_paths(abs_rule_path, &env::current_dir().unwrap()).unwrap().to_str().unwrap().replace("..\\", "").replace(".\\", "")
-        };
+        let abs_rule_path = &PathBuf::from(&rule.rulepath).canonicalize().unwrap().display().to_string()[4..];
+        
         let detect_info = DetectInfo {
             filepath: "-".to_owned(),
-            rulepath: fmted_rule_path_str,
+            rulepath: get_output_str_path(&configs::CONFIG.read().unwrap().args.rules, Path::new(abs_rule_path)),
             level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
