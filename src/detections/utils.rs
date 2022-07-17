@@ -31,7 +31,8 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use super::detection::EvtxRecordInfo;
 
 lazy_static! {
-    pub static ref OUTPUT_OMIT_REGEX:Regex = Regex::new(r"\.\./|\./|\.\.\\\\|\.\\|\.\.\\").unwrap();
+    pub static ref OUTPUT_OMIT_REGEX: Regex =
+        Regex::new(r"\.\./|\./|\.\.\\\\|\.\\|\.\.\\").unwrap();
 }
 
 pub fn concat_selection_key(key_list: &[String]) -> String {
@@ -400,10 +401,14 @@ pub fn get_output_str_path(option_path: &Path, target_path: &Path) -> String {
         target_path.to_str().unwrap().to_string()
     } else {
         let diff_path_result = diff_paths(target_path, &env::current_dir().unwrap());
-        if let Some(diff_path)  = diff_path_result {
-            OUTPUT_OMIT_REGEX.replace_all(diff_path.to_str().unwrap(), "").to_string()
+        if let Some(diff_path) = diff_path_result {
+            OUTPUT_OMIT_REGEX
+                .replace_all(diff_path.to_str().unwrap(), "")
+                .to_string()
         } else {
-            OUTPUT_OMIT_REGEX.replace_all(target_path.to_str().unwrap(), "").to_string()
+            OUTPUT_OMIT_REGEX
+                .replace_all(target_path.to_str().unwrap(), "")
+                .to_string()
         }
     }
 }
@@ -412,7 +417,9 @@ pub fn get_output_str_path(option_path: &Path, target_path: &Path) -> String {
 mod tests {
     use std::path::Path;
 
-    use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase, get_output_str_path};
+    use crate::detections::utils::{
+        self, check_setting_path, get_output_str_path, make_ascii_titlecase,
+    };
     use regex::Regex;
     use serde_json::Value;
 

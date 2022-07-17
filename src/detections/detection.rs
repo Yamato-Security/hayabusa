@@ -1,7 +1,7 @@
 extern crate csv;
 
 use crate::detections::configs;
-use crate::detections::utils::{write_color_buffer, get_output_str_path};
+use crate::detections::utils::{get_output_str_path, write_color_buffer};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::AlertMessage;
@@ -255,7 +255,11 @@ impl Detection {
             None
         };
         let conf = configs::CONFIG.read().unwrap();
-        let abs_rule_path = &PathBuf::from(&rule.rulepath).canonicalize().unwrap().display().to_string()[4..];
+        let abs_rule_path = &PathBuf::from(&rule.rulepath)
+            .canonicalize()
+            .unwrap()
+            .display()
+            .to_string()[4..];
         let file_opt_path = if conf.args.filepath.is_some() {
             conf.args.filepath.as_ref().unwrap()
         } else {
@@ -263,7 +267,10 @@ impl Detection {
         };
         let detect_info = DetectInfo {
             filepath: get_output_str_path(file_opt_path, Path::new(&record_info.evtx_filepath)),
-            rulepath: get_output_str_path(&configs::CONFIG.read().unwrap().args.rules, Path::new(abs_rule_path)),
+            rulepath: get_output_str_path(
+                &configs::CONFIG.read().unwrap().args.rules,
+                Path::new(abs_rule_path),
+            ),
             level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
@@ -307,11 +314,18 @@ impl Detection {
             None
         };
         // canonicalizeを行った際に、windows環境で\\?\が必ず文字列として入ってしまう問題があったため先頭の4文字を除外している
-        let abs_rule_path = &PathBuf::from(&rule.rulepath).canonicalize().unwrap().display().to_string()[4..];
-        
+        let abs_rule_path = &PathBuf::from(&rule.rulepath)
+            .canonicalize()
+            .unwrap()
+            .display()
+            .to_string()[4..];
+
         let detect_info = DetectInfo {
             filepath: "-".to_owned(),
-            rulepath: get_output_str_path(&configs::CONFIG.read().unwrap().args.rules, Path::new(abs_rule_path)),
+            rulepath: get_output_str_path(
+                &configs::CONFIG.read().unwrap().args.rules,
+                Path::new(abs_rule_path),
+            ),
             level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
