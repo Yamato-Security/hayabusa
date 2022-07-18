@@ -10,7 +10,7 @@
 
 - Combining the two options, you can now update rules with `--update-rules` option to a custom rules directory with the `--rules` option. (#615) (@hitenkoku)
 - Improve parallel processing. (#479) (@kazuminn)
-- Ommited RulePath and FilePath relative path options in output file when `--rules`  and `--file-path` and `--directory` option is relative path. (#623) (@hitenkoku)
+- Ommited RulePath and FilePath relative path options in output file when `--rules`  option value is relative path. (#623) (@hitenkoku)
 
 **Bug Fixes:**
 
