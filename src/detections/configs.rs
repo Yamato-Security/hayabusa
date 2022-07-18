@@ -223,6 +223,14 @@ pub struct Config {
     /// Ignore rules according to status (ex: experimental) (ex: stable test)
     #[clap(long = "exclude-status", multiple_values = true)]
     pub exclude_status: Option<Vec<String>>,
+
+    /// Specify output profile
+    #[clap(short = 'P', long = "profile")]
+    pub profile: Option<String>,
+
+    /// Set default output profile
+    #[clap(long = "set-default-profile")]
+    pub set_default_profile: Option<String>,
 }
 
 impl ConfigReader<'_> {
