@@ -4,8 +4,10 @@ use crate::detections::utils::check_setting_path;
 use crate::yaml;
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::Path;
-use yaml_rust::{Yaml, YamlLoader};
+use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 lazy_static! {
     pub static ref PROFILES: Option<HashMap<String, String>> = load_profile(
@@ -83,5 +85,52 @@ pub fn load_profile(
     } else {
         AlertMessage::alert("Not specified --profile").ok();
         None
+    }
+}
+
+/// デフォルトプロファイルを設定する関数
+pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Result<(), String> {
+    let profile_data: Vec<Yaml> = match read_profile_data(profile_path) {
+        Ok(data) => data,
+        Err(e) => {
+            AlertMessage::alert(&e).ok();
+            return Err("Failed set default profile.".to_string());
+        }
+    };
+
+    // デフォルトプロファイルを設定する処理
+    if let Some(profile_name) = &configs::CONFIG.read().unwrap().args.set_default_profile {
+        if let Ok(mut buf_wtr) = File::open(default_profile_path).map(BufWriter::new) {
+            let prof_all_data = &profile_data[0];
+            let overwrite_default_data = &prof_all_data[profile_name.as_str()];
+            println!("hoge is {:?}", prof_all_data["hoge"]);
+            if !overwrite_default_data.is_null() {
+                let mut out_str = String::default();
+                let mut yml_writer = YamlEmitter::new(&mut out_str);
+                let dump_result = yml_writer.dump(overwrite_default_data);
+                match dump_result {
+                    Ok(_) => match write!(buf_wtr, "{}", out_str) {
+                        Err(e) => Err(format!(
+                            "Failed set profile to default profile file({}). {}",
+                            profile_path, e
+                        )),
+                        _ => Ok(()),
+                    },
+                    Err(e) => Err(format!(
+                        "Failed set profile to default profile file({}). {}",
+                        profile_path, e
+                    )),
+                }
+            } else {
+                Err(format!("Invalid profile specified: {}", profile_name))
+            }
+        } else {
+            Err(format!(
+                "Failed set profile to default profile file({}).",
+                profile_path
+            ))
+        }
+    } else {
+        Err("Not specified --set-default-profile".to_string())
     }
 }
