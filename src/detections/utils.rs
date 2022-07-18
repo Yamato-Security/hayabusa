@@ -31,8 +31,7 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use super::detection::EvtxRecordInfo;
 
 lazy_static! {
-    pub static ref OUTPUT_OMIT_REGEX: Regex =
-        Regex::new(r"\.\./|\./|\.\.\\\\|\.\\|\.\.\\").unwrap();
+    pub static ref OUTPUT_OMIT_REGEX: Regex = Regex::new(r"\.\./|\./|\.\\|\.\.\\").unwrap();
 }
 
 pub fn concat_selection_key(key_list: &[String]) -> String {
