@@ -31,7 +31,8 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use super::detection::EvtxRecordInfo;
 
 lazy_static! {
-    pub static ref OUTPUT_OMIT_REGEX: Regex = Regex::new(r"\.\./|\./|\.\\|\.\.\\").unwrap();
+    pub static ref OUTPUT_OMIT_REGEX: Regex =
+        Regex::new(r"\.\./|\./|\.\\|\.\.\\|\\\\\?\\").unwrap();
 }
 
 pub fn concat_selection_key(key_list: &[String]) -> String {
@@ -396,20 +397,19 @@ pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
 /// 与えられたoption_pathが相対パスであるかを確認し、絶対パスであればそのまま絶対パスのまま文字列として返却を行い、
 /// 相対パスであれば、カレントディレクトリとの相対パスの文字列から不要な(./、../)を除外した文字列を返却する関数
 pub fn get_output_str_path(option_path: &Path, target_path: &Path) -> String {
-    if option_path.is_absolute() && !OUTPUT_OMIT_REGEX.is_match(option_path.to_str().unwrap()) {
-        target_path.to_str().unwrap().to_string()
+    let ret_path = if option_path.is_absolute()
+        || !OUTPUT_OMIT_REGEX.is_match(target_path.to_str().unwrap())
+    {
+        target_path.canonicalize().unwrap().display().to_string()
     } else {
         let diff_path_result = diff_paths(target_path, &env::current_dir().unwrap());
         if let Some(diff_path) = diff_path_result {
-            OUTPUT_OMIT_REGEX
-                .replace_all(diff_path.to_str().unwrap(), "")
-                .to_string()
+            diff_path.display().to_string()
         } else {
-            OUTPUT_OMIT_REGEX
-                .replace_all(target_path.to_str().unwrap(), "")
-                .to_string()
+            target_path.display().to_string()
         }
-    }
+    };
+    OUTPUT_OMIT_REGEX.replace_all(&ret_path, "").to_string()
 }
 
 #[cfg(test)]

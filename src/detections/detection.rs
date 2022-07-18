@@ -254,16 +254,11 @@ impl Detection {
         } else {
             None
         };
-        let abs_rule_path = &PathBuf::from(&rule.rulepath)
-            .canonicalize()
-            .unwrap()
-            .display()
-            .to_string()[4..];
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: get_output_str_path(
                 &configs::CONFIG.read().unwrap().args.rules,
-                Path::new(abs_rule_path),
+                Path::new(&rule.rulepath),
             ),
             level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
