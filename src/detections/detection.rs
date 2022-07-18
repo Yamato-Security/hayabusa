@@ -254,19 +254,13 @@ impl Detection {
         } else {
             None
         };
-        let conf = configs::CONFIG.read().unwrap();
         let abs_rule_path = &PathBuf::from(&rule.rulepath)
             .canonicalize()
             .unwrap()
             .display()
             .to_string()[4..];
-        let file_opt_path = if conf.args.filepath.is_some() {
-            conf.args.filepath.as_ref().unwrap()
-        } else {
-            conf.args.directory.as_ref().unwrap()
-        };
         let detect_info = DetectInfo {
-            filepath: get_output_str_path(file_opt_path, Path::new(&record_info.evtx_filepath)),
+            filepath: record_info.evtx_filepath.to_string(),
             rulepath: get_output_str_path(
                 &configs::CONFIG.read().unwrap().args.rules,
                 Path::new(abs_rule_path),
