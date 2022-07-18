@@ -134,3 +134,25 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
         Err("Not specified --set-default-profile".to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::options::profile::load_profile;
+    use crate::detections::configs;
+
+    #[test]
+    /// プロファイルオプションが設定されていないときにロードをした場合のテスト
+    fn test_load_profile_without_profile_option() {
+        configs::CONFIG.write().unwrap().args.profile = None;
+        assert_eq!(None, load_profile("test_files/config/profile/default_profile.txt", "test_files/config/profile/target.txt"));
+    }
+
+    #[test]
+    /// プロファイルオプションが設定されていないときにロードをした場合のテスト
+    fn test_load_profile_no_exist_profile_files() {
+        configs::CONFIG.write().unwrap().args.profile = Some("minimal".to_string());
+        assert_eq!(None, load_profile("test_files/config/profile/no_exist_default_profile.txt", "test_files/config/profile/no_exist_target.txt"));
+        assert_eq!(None, load_profile("test_files/config/profile/default_profile.txt", "test_files/config/profile/no_exist_target.txt"));
+        assert_eq!(None, load_profile("test_files/config/profile/no_exist_default_profile.txt", "test_files/config/profile/target.txt"));
+    }
+}
