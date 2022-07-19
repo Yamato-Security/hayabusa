@@ -1,7 +1,7 @@
 extern crate csv;
 
 use crate::detections::configs;
-use crate::detections::utils::{get_output_str_path, write_color_buffer};
+use crate::detections::utils::write_color_buffer;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::AlertMessage;
@@ -22,7 +22,7 @@ use hashbrown;
 use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};

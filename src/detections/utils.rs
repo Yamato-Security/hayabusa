@@ -4,12 +4,9 @@ extern crate regex;
 
 use crate::detections::configs;
 use crate::detections::configs::CURRENT_EXE_PATH;
-use std::env;
 use std::path::Path;
 use std::path::PathBuf;
 
-use lazy_static::lazy_static;
-use pathdiff::diff_paths;
 use termcolor::Color;
 
 use tokio::runtime::Builder;
@@ -29,11 +26,6 @@ use std::vec;
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
 use super::detection::EvtxRecordInfo;
-
-lazy_static! {
-    pub static ref OUTPUT_OMIT_REGEX: Regex =
-        Regex::new(r"\.\./|\./|\.\\|\.\.\\|\\\\\?\\").unwrap();
-}
 
 pub fn concat_selection_key(key_list: &[String]) -> String {
     return key_list
@@ -394,30 +386,12 @@ pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
     }
 }
 
-/// 与えられたoption_pathが相対パスであるかを確認し、絶対パスであればそのまま絶対パスのまま文字列として返却を行い、
-/// 相対パスであれば、カレントディレクトリとの相対パスの文字列から不要な(./、../)を除外した文字列を返却する関数
-pub fn get_output_str_path(option_path: &Path, target_path: &Path) -> String {
-    let ret_path = if option_path.is_absolute()
-        || !OUTPUT_OMIT_REGEX.is_match(target_path.to_str().unwrap())
-    {
-        target_path.canonicalize().unwrap().display().to_string()
-    } else {
-        let diff_path_result = diff_paths(target_path, &env::current_dir().unwrap());
-        if let Some(diff_path) = diff_path_result {
-            diff_path.display().to_string()
-        } else {
-            target_path.display().to_string()
-        }
-    };
-    OUTPUT_OMIT_REGEX.replace_all(&ret_path, "").to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
     use crate::detections::utils::{
-        self, check_setting_path, get_output_str_path, make_ascii_titlecase,
+        self, check_setting_path, make_ascii_titlecase,
     };
     use regex::Regex;
     use serde_json::Value;
@@ -605,16 +579,6 @@ mod tests {
         assert_eq!(
             check_setting_path(&exist_path, "fake").to_str().unwrap(),
             "fake"
-        );
-    }
-
-    #[test]
-    /// 与えられた相対パスから不要な表記("./", "../")削除を確認するテスト
-    fn test_get_output_relative_path() {
-        let exist_path = Path::new("./test_files/rules/yaml/1.yml").to_path_buf();
-        assert_eq!(
-            get_output_str_path(Path::new("."), &exist_path),
-            "test_files/rules/yaml/1.yml"
         );
     }
 }
