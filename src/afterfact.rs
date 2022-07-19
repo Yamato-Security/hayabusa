@@ -787,7 +787,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,FilePath\n"
+            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile\n"
                 .to_string()
                 + &expect_tz
                     .clone()
