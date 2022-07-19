@@ -6,7 +6,7 @@
 
 - You can now update rules to a custom directory by combining the `--update-rules` and `--rules` options. (#615) (@hitenkoku)
 - Improved speed with parallel processing by up to 20% with large files. (#479) (@kazuminn)
-- The `.yml` rule path (RulePath) saved with `-o` now outputs just the relative directory instead of the absolute directory to decrease memory usage and file size. (#623) (@hitenkoku)
+- The `.yml` rule path (changed from RulePath to RuleFile) saved with `-o` now outputs to decrease memory usage and file size. (#623) (@hitenkoku)
 
 **Bug Fixes:**
 
