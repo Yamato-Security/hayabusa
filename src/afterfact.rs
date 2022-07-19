@@ -21,6 +21,7 @@ use std::fs::File;
 use std::io;
 use std::io::BufWriter;
 use std::io::Write;
+use std::path::Path;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
@@ -40,7 +41,7 @@ pub struct CsvFormat<'a> {
     details: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     record_information: Option<&'a str>,
-    rule_path: &'a str,
+    rule_file: &'a str,
     file_path: &'a str,
 }
 
@@ -318,7 +319,7 @@ fn emit_csv<W: std::io::Write>(
                     details: &detect_info.detail,
                     record_information: detect_info.record_information.as_deref(),
                     file_path: &detect_info.filepath,
-                    rule_path: &detect_info.rulepath,
+                    rule_file: Path::new(&detect_info.rulepath).file_name().unwrap().to_str().unwrap(),
                     record_i_d: detect_info.record_id.as_deref(),
                 })?;
             }
@@ -782,7 +783,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RulePath,FilePath\n"
+            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,FilePath\n"
                 .to_string()
                 + &expect_tz
                     .clone()
