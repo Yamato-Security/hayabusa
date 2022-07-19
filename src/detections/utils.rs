@@ -390,9 +390,7 @@ pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
 mod tests {
     use std::path::Path;
 
-    use crate::detections::utils::{
-        self, check_setting_path, make_ascii_titlecase,
-    };
+    use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
     use regex::Regex;
     use serde_json::Value;
 

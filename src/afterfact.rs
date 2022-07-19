@@ -319,7 +319,11 @@ fn emit_csv<W: std::io::Write>(
                     details: &detect_info.detail,
                     record_information: detect_info.record_information.as_deref(),
                     file_path: &detect_info.filepath,
-                    rule_file: Path::new(&detect_info.rulepath).file_name().unwrap().to_str().unwrap(),
+                    rule_file: Path::new(&detect_info.rulepath)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
                     record_i_d: detect_info.record_id.as_deref(),
                 })?;
             }
