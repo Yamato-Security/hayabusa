@@ -509,8 +509,8 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 The following additional columns will be added to the output when saving to a CSV file:
 
 * `MitreAttack`: MITRE ATT&CK tactics.
-* `Rule Path`: The path to the detection rule that generated the alert or event.
-* `File Path`: The path to the evtx file that caused the alert or event.
+* `RuleFile`: The filename of the detection rule that generated the alert or event.
+* `EvtxFile`: The path to the evtx file that caused the alert or event.
 
 If you add the `-F` or `--full-data` option, a `RecordInformation` column with all field information will also be added.
 

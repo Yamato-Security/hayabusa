@@ -23,6 +23,7 @@ use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
+
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
@@ -253,10 +254,9 @@ impl Detection {
         } else {
             None
         };
-
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
-            rulepath: rule.rulepath.to_string(),
+            rulepath: (&rule.rulepath).to_owned(),
             level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
@@ -299,9 +299,10 @@ impl Detection {
         } else {
             None
         };
+
         let detect_info = DetectInfo {
             filepath: "-".to_owned(),
-            rulepath: rule.rulepath.to_owned(),
+            rulepath: (&rule.rulepath).to_owned(),
             level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),

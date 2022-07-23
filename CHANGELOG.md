@@ -2,17 +2,15 @@
 
 ## v1.4.2 [2022/07/XX]
 
-**New Features:**
-
-- XXX
-
 **Enhancements:**
 
-- Combining the two options, you can now update rules with `--update-rules` option to a custom rules directory with the `--rules` option. (#615) (@hitenkoku)
+- You can now update rules to a custom directory by combining the `--update-rules` and `--rules` options. (#615) (@hitenkoku)
+- Improved speed with parallel processing by up to 20% with large files. (#479) (@kazuminn)
+- The `.yml` rule path (changed from RulePath to RuleFile) saved with `-o` now outputs to decrease memory usage and file size. (#623) (@hitenkoku)
 
 **Bug Fixes:**
 
-- Fixed error due to the files in the config folder cannot be read. (#618) (@hitenkoku)
+- Fixed a runtime error when hayabusa is run from a different path than the current directory. (#618) (@hitenkoku)
 
 ## v1.4.1 [2022/06/30]
 
