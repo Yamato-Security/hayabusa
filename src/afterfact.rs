@@ -42,7 +42,7 @@ pub struct CsvFormat<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     record_information: Option<&'a str>,
     rule_file: &'a str,
-    file_path: &'a str,
+    evtx_file: &'a str,
 }
 
 #[derive(Debug, Serialize)]
@@ -318,7 +318,7 @@ fn emit_csv<W: std::io::Write>(
                     rule_title: &detect_info.alert,
                     details: &detect_info.detail,
                     record_information: detect_info.record_information.as_deref(),
-                    file_path: &detect_info.filepath,
+                    evtx_file: &detect_info.filepath,
                     rule_file: Path::new(&detect_info.rulepath)
                         .file_name()
                         .unwrap()
