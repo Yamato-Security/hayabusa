@@ -2,6 +2,7 @@ extern crate csv;
 
 use crate::detections::configs;
 use crate::detections::utils::write_color_buffer;
+use crate::options::profile::LOAEDED_PROFILE_ALIAS;
 use crate::options::profile::PROFILES;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
@@ -205,17 +206,6 @@ impl Detection {
 
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
-        let profile_all_alias = if PROFILES.is_some() {
-            PROFILES
-                .as_ref()
-                .unwrap()
-                .values()
-                .cloned()
-                .collect::<Vec<_>>()
-                .join("|")
-        } else {
-            String::default()
-        };
         let tag_info: Vec<String> = match TAGS_CONFIG.is_empty() {
             false => rule.yaml["tags"]
                 .as_vec()
@@ -241,7 +231,7 @@ impl Detection {
             .record_information
             .as_ref()
             .map(|recinfo| recinfo.to_string());
-        let rec_id = if !profile_all_alias.contains("%RecordID%") {
+        let rec_id = if !LOAEDED_PROFILE_ALIAS.contains("%RecordID%") {
             Some(
                 get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
                     .unwrap_or_default(),
@@ -261,7 +251,7 @@ impl Detection {
             Some(str) => str.to_owned(),
             None => recinfo.as_ref().unwrap_or(&"-".to_string()).to_string(),
         };
-        let opt_record_info = if profile_all_alias.contains("%RecordInformation%") {
+        let opt_record_info = if LOAEDED_PROFILE_ALIAS.contains("%RecordInformation%") {
             recinfo
         } else {
             None
@@ -303,7 +293,7 @@ impl Detection {
             .map(|str| str.to_owned())
             .collect();
         let output = Detection::create_count_output(rule, &agg_result);
-        let rec_info = if configs::CONFIG.read().unwrap().args.full_data {
+        let rec_info = if LOAEDED_PROFILE_ALIAS.contains("%RecordInformation%") {
             Option::Some(String::default())
         } else {
             Option::None

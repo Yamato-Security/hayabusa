@@ -69,10 +69,6 @@ pub struct Config {
     #[clap(short = 'f', long, value_name = "FILE_PATH")]
     pub filepath: Option<PathBuf>,
 
-    /// Print all field information
-    #[clap(short = 'F', long = "full-data")]
-    pub full_data: bool,
-
     /// Specify a rule directory or file (default: ./rules)
     #[clap(
         short = 'r',

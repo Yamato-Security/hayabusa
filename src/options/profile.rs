@@ -4,6 +4,7 @@ use crate::detections::utils::check_setting_path;
 use crate::yaml;
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -20,6 +21,13 @@ lazy_static! {
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/profiles.txt")
             .to_str()
             .unwrap()
+    );
+    pub static ref LOAEDED_PROFILE_ALIAS: HashSet<String> = HashSet::from_iter(
+        PROFILES
+            .as_ref()
+            .unwrap_or(&LinkedHashMap::default())
+            .values()
+            .cloned()
     );
 }
 
