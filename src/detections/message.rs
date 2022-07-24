@@ -6,10 +6,10 @@ use crate::detections::utils::get_serde_number_to_string;
 use crate::detections::utils::write_color_buffer;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use dashmap::DashMap;
-use std::collections::HashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::env;
 use std::fs::create_dir;
 use std::fs::File;
@@ -324,8 +324,8 @@ impl AlertMessage {
 mod tests {
     use crate::detections::message::AlertMessage;
     use crate::detections::message::{parse_message, MESSAGES};
-    use std::collections::HashMap;
     use serde_json::Value;
+    use std::collections::HashMap;
 
     use super::{create_output_filter_config, get_default_details};
 

@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
 use lazy_static::lazy_static;
 use serde_json::Value;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::RwLock;
 
 use crate::detections::configs;
