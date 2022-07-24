@@ -209,7 +209,7 @@ fn emit_csv<W: std::io::Write>(
                         &disp_wtr,
                         get_writable_color(None),
                         &_get_serialized_disp_output(PROFILES.as_ref().unwrap().clone(), true),
-                        true,
+                        false,
                     )
                     .ok();
                     plus_header = false;
