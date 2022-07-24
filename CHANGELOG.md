@@ -1,5 +1,19 @@
 # Changes
 
+## v1.4.3 [2022/XX/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.4.2 [2022/07/24]
 
 **Enhancements:**
