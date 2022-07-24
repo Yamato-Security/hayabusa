@@ -136,7 +136,12 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
 
     // デフォルトプロファイルを設定する処理
     if let Some(profile_name) = &configs::CONFIG.read().unwrap().args.set_default_profile {
-        if let Ok(mut buf_wtr) = OpenOptions::new().write(true).truncate(true).open(default_profile_path).map(BufWriter::new) {
+        if let Ok(mut buf_wtr) = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(default_profile_path)
+            .map(BufWriter::new)
+        {
             let prof_all_data = &profile_data[0];
             let overwrite_default_data = &prof_all_data[profile_name.as_str()];
             if !overwrite_default_data.is_null() {
@@ -152,7 +157,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
                         _ => {
                             buf_wtr.flush().ok();
                             Ok(())
-                        },
+                        }
                     },
                     Err(e) => Err(format!(
                         "Failed set profile to default profile file({}). {}",
