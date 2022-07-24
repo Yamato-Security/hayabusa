@@ -148,8 +148,9 @@ pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo)
 
     let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
     let time = get_event_time(event_record).unwrap_or(default_time);
+    let reserverd_by_profile = _create_config_reserved_info(&detect_info, time);
     for (k, v) in detect_info.ext_field.clone() {
-        let converted_reserve_info = convert_profile_reserved_info(v, &detect_info, time);
+        let converted_reserve_info = convert_profile_reserved_info(v, &reserverd_by_profile);
         detect_info
             .ext_field
             .insert(k, parse_message(event_record, converted_reserve_info));
@@ -157,12 +158,11 @@ pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo)
     insert_message(detect_info, time)
 }
 
-/// profileで用いられる予約語の情報を変換する関数
-fn convert_profile_reserved_info(
-    output: String,
+/// profileで用いられる予約語の情報を保持したHashMapを返す関数
+fn _create_config_reserved_info(
     detect_info: &DetectInfo,
     time: DateTime<Utc>,
-) -> String {
+) -> HashMap<String, String> {
     let mut config_reserved_info: HashMap<String, String> = HashMap::new();
     for k in detect_info.ext_field.values() {
         let tmp = k.as_str();
@@ -197,7 +197,7 @@ fn convert_profile_reserved_info(
             "%RecordID%" => {
                 config_reserved_info.insert(
                     "%RecordID%".to_string(),
-                    detect_info.record_id.as_ref().unwrap().to_owned(),
+                    detect_info.record_id.as_ref().unwrap_or(&"-".to_string()).to_owned(),
                 );
             }
             "%RuleTitle%" => {
@@ -207,7 +207,7 @@ fn convert_profile_reserved_info(
             "%RecordInformation%" => {
                 config_reserved_info.insert(
                     "%RecordInformation%".to_string(),
-                    detect_info.record_information.as_ref().unwrap().to_owned(),
+                    detect_info.record_information.as_ref().unwrap_or(&"-".to_string()).to_owned(),
                 );
             }
             "%RuleFile%" => {
@@ -221,9 +221,17 @@ fn convert_profile_reserved_info(
             _ => {}
         }
     }
+    config_reserved_info
+}
+
+/// profileで用いられる予約語の情報を変換する関数
+fn convert_profile_reserved_info(
+    output: String,
+    config_reserved_info: &HashMap<String, String>,
+) -> String {
     let mut ret = output;
     config_reserved_info.into_iter().for_each(|(k, v)| {
-        ret = ret.replace(&k, &v);
+        ret = ret.replace(k, v);
     });
     ret
 }
