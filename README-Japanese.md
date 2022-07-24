@@ -517,8 +517,8 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 ## プロファイルによる出力のカスタマイズ
 
 Hayabusaの出力内容はconfig/profiles.txtとconfig/default_profile.txtを変更することでカスタマイズできます。カスタマイズではHayabusaの出力で用いられている内容を以下のエイリアスで呼び出すことができます。
-もし、config/profiles.txtに書いてるプロファイルを用いたい場合は-p/--profileオプションを利用してください。
-default_profiles.txtをprofile.txtに書かれているプロファイルで上書きしたい場合は--set-default-profileオプションを利用してください。
+もし、`config/profiles.txt`に書いてるプロファイルを用いたい場合は`-P/--profile`オプションを利用してください。
+default_profiles.txtをprofile.txtに書かれているプロファイルで上書きしたい場合は`--set-default-profile`オプションを利用してください。
 
 |エイリアス名|Haysbusaの出力にある情報|
 |:---|:---|
@@ -534,7 +534,6 @@ default_profiles.txtをprofile.txtに書かれているプロファイルで上�
 |%RecordInformation% | `RecordInformation` |
 |%RuleFile% | `RuleFile` |
 |%EvtxFile% | `EvtxFile` |
-
 
 profiles.txtへの記載例:
 

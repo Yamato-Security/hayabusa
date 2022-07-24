@@ -515,7 +515,7 @@ When hayabusa output is being displayed to the screen (the default), it can disp
 
 You can customize the output by modifiy `config/profiles.txt` and `config/default_profile.txt`.
 You can be setting following alias. 
-If you want to use profile in `config/profiles.txt` , you use `-p/-profile` option.
+If you want to use profile in `config/profiles.txt` , you use `-P/--profile` option.
 Please use `--set-default-profile`  option when you want to overwrite `default_profiles.txt`  by profile in `config/profiles.txt`.
 
 |alias name| Hayabusa output information|
