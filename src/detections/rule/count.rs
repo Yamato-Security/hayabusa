@@ -499,7 +499,7 @@ mod tests {
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::utils;
-    use hashbrown::HashMap;
+    use std::collections::HashMap;
 
     use chrono::{TimeZone, Utc};
     use yaml_rust::YamlLoader;

@@ -4,6 +4,7 @@ extern crate regex;
 
 use crate::detections::configs;
 use crate::detections::configs::CURRENT_EXE_PATH;
+use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -219,8 +220,8 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
     // この処理を高速化するため、rec.key_2_valueというhashmapに"Event.System.EventID"というキーで値を設定しておく。
     // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
-    // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。
-    let mut key_2_values = hashbrown::HashMap::new();
+    // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。標準ライブラリがhashbrownを採用したためserde_jsonについても高速化した。
+    let mut key_2_values = HashMap::new();
     for key in keys {
         let val = get_event_value(key, &data);
         if val.is_none() {

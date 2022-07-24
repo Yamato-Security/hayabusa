@@ -2,7 +2,7 @@ use crate::detections::configs;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::message::QUIET_ERRORS_FLAG;
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader};

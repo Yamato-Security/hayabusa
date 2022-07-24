@@ -4,8 +4,7 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
-use hashbrown::HashMap;
-use hashbrown::HashSet;
+use std::collections::{HashSet, HashMap};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::env::current_exe;
@@ -101,10 +100,6 @@ pub struct Config {
     /// Output all tags when saving to a CSV file
     #[clap(long = "all-tags")]
     pub all_tags: bool,
-
-    /// Do not display EventRecordID numbers
-    #[clap(short = 'R', long = "hide-record-id")]
-    pub hide_record_id: bool,
 
     /// Output verbose information
     #[clap(short = 'v', long)]
@@ -577,7 +572,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
-    use hashbrown::HashSet;
+    use std::collections::HashSet;
 
     //     #[test]
     //     #[ignore]

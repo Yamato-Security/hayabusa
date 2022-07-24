@@ -1,6 +1,6 @@
 use crate::detections::message::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
 use crate::detections::{detection::EvtxRecordInfo, utils};
-use hashbrown::HashMap;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct EventStatistics {
@@ -111,7 +111,7 @@ impl EventStatistics {
                 continue;
             }
             let username = utils::get_event_value("TargetUserName", &record.record);
-            let idnum = evtid.unwrap();
+            let idnum = evtid.unwrap().as_i64().unwrap();
             let countlist: [usize; 2] = [0, 0];
             if idnum == 4624 {
                 let count: &mut [usize; 2] = self
