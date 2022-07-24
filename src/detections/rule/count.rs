@@ -6,8 +6,8 @@ use crate::detections::message::QUIET_ERRORS_FLAG;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
-use std::collections::HashMap;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::num::ParseIntError;
 use std::path::Path;
 

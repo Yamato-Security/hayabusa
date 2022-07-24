@@ -7,23 +7,23 @@ use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
-use csv::{QuoteStyle, Writer};
+use csv::QuoteStyle;
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
-use serde::Serialize;
+
 use std::cmp::min;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::fmt::Debug;
+
 use std::fs::File;
 use std::io;
 use std::io::BufWriter;
 use std::io::Write;
-use std::path::Path;
+
+use std::fs;
 use std::process;
-use std::{collections, fs};
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
