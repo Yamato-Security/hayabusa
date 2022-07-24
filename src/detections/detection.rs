@@ -18,8 +18,7 @@ use crate::detections::rule::RuleNode;
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
 use crate::yaml::ParseYaml;
-use hashbrown;
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
@@ -35,7 +34,7 @@ pub struct EvtxRecordInfo {
     pub evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
-    pub key_2_value: hashbrown::HashMap<String, String>,
+    pub key_2_value: HashMap<String, String>,
     pub record_information: Option<String>,
 }
 

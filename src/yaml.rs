@@ -6,7 +6,7 @@ use crate::detections::configs::EXCLUDE_STATUS;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use crate::filter::RuleExclude;
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -321,7 +321,7 @@ mod tests {
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
-    use hashbrown::HashMap;
+    use std::collections::HashMap;
     use std::path::Path;
     use yaml_rust::YamlLoader;
 

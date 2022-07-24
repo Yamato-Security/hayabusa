@@ -1,6 +1,6 @@
 use crate::detections::message::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
 use crate::detections::{detection::EvtxRecordInfo, utils};
-use hashbrown::HashMap;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct EventStatistics {

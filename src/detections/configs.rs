@@ -4,8 +4,8 @@ use crate::detections::pivot::PIVOT_KEYWORD;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
-use hashbrown::HashMap;
-use hashbrown::HashSet;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::env::current_exe;
@@ -473,7 +473,7 @@ pub fn load_pivot_keywords(path: &str) {
             .write()
             .unwrap()
             .entry(map[0].to_string())
-            .or_insert(PivotKeyword::new());
+            .or_insert_with(PivotKeyword::new);
 
         PIVOT_KEYWORD
             .write()
@@ -569,7 +569,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
-    use hashbrown::HashSet;
+    use std::collections::HashSet;
 
     //     #[test]
     //     #[ignore]

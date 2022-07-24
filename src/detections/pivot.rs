@@ -1,5 +1,5 @@
-use hashbrown::HashMap;
-use hashbrown::HashSet;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use lazy_static::lazy_static;
 use serde_json::Value;
 use std::sync::RwLock;
