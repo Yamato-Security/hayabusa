@@ -4,6 +4,7 @@ use crate::detections::utils::check_setting_path;
 use crate::yaml;
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
+use regex::RegexSet;
 use std::collections::HashSet;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
@@ -29,6 +30,20 @@ lazy_static! {
             .values()
             .cloned()
     );
+    pub static ref PRELOAD_PROFILE: Vec<&'static str> = vec![
+        "%Timestamp%",
+        "%Computer%",
+        "%Channel%",
+        "%Level%",
+        "%EventID%",
+        "%MitreAttack%",
+        "%RecordID%",
+        "%RuleTitle%",
+        "%RecordInformation%",
+        "%RuleFile%",
+        "%EvtxFile%"
+    ];
+    pub static ref PRELOAD_PROFILE_REGEX: RegexSet = RegexSet::new(&*PRELOAD_PROFILE).unwrap();
 }
 
 // 指定されたパスのprofileを読み込む処理
@@ -52,20 +67,14 @@ pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
 ) -> Option<LinkedHashMap<String, String>> {
-    if configs::CONFIG
-        .read()
-        .unwrap()
-        .args
-        .set_default_profile
-        .is_some()
-    {
+    let conf = &configs::CONFIG.read().unwrap().args;
+    if conf.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
             AlertMessage::alert(&e).ok();
         } else {
             println!("Successed set default profile");
         };
     }
-    let conf = &configs::CONFIG.read().unwrap().args;
     let profile_all: Vec<Yaml> = if conf.profile.is_none() {
         match read_profile_data(default_profile_path) {
             Ok(data) => data,
@@ -91,9 +100,9 @@ pub fn load_profile(
     let profile_data = &profile_all[0];
     let mut ret: LinkedHashMap<String, String> = LinkedHashMap::new();
     if let Some(profile_name) = &conf.profile {
-        if !profile_data[profile_name.as_str()].is_badvalue() {
-            profile_data[profile_name.as_str()]
-                .clone()
+        let target_data = &profile_data[profile_name.as_str()];
+        if !target_data.is_badvalue() {
+            target_data
                 .as_hash()
                 .unwrap()
                 .into_iter()
@@ -109,8 +118,7 @@ pub fn load_profile(
             None
         }
     } else {
-        profile_all[0]
-            .clone()
+        profile_data
             .as_hash()
             .unwrap()
             .into_iter()

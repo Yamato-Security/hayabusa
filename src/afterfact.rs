@@ -208,7 +208,7 @@ fn emit_csv<W: std::io::Write>(
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None),
-                        &_get_serialized_disp_output(PROFILES.as_ref().unwrap().clone(), true),
+                        &_get_serialized_disp_output(&mut PROFILES.as_ref().unwrap().clone(), true),
                         false,
                     )
                     .ok();
@@ -222,7 +222,7 @@ fn emit_csv<W: std::io::Write>(
                             .get(&detect_info.level)
                             .unwrap_or(&String::default()),
                     )),
-                    &_get_serialized_disp_output(detect_info.ext_field.clone(), false),
+                    &_get_serialized_disp_output(&mut detect_info.ext_field.clone(), false),
                     false,
                 )
                 .ok();
@@ -279,7 +279,7 @@ fn emit_csv<W: std::io::Write>(
         wtr.flush()?;
     }
 
-    let output_path = configs::CONFIG.read().unwrap().args.output.clone();
+    let output_path = &configs::CONFIG.read().unwrap().args.output;
     if let Some(path) = output_path {
         if let Ok(metadata) = fs::metadata(path) {
             println!(
@@ -376,7 +376,7 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(mut data: LinkedHashMap<String, String>, header: bool) -> String {
+fn _get_serialized_disp_output(data: &mut LinkedHashMap<String, String>, header: bool) -> String {
     let data_length = &data.len();
     let entries = data.entries();
     let mut ret: Vec<String> = vec![];
@@ -475,7 +475,6 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let output_levels = Vec::from(["crit", "high", "med ", "low ", "info"]);
     let level_full_map = HashMap::from([
         ("crit", "critical"),
         ("high", "high"),
@@ -484,7 +483,7 @@ fn _print_detection_summary_by_date(
         ("info", "informational"),
     ]);
 
-    for level in output_levels {
+    for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
         let mut max_detect_str = String::default();
@@ -499,7 +498,7 @@ fn _print_detection_summary_by_date(
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            level_full_map.get(level).unwrap(),
+            level_full_map.get(level.as_str()).unwrap(),
         )))
         .ok();
         if date_str == String::default() {
@@ -508,7 +507,7 @@ fn _print_detection_summary_by_date(
         writeln!(
             wtr,
             "Date with most total {} detections: {}",
-            level_full_map.get(level).unwrap(),
+            level_full_map.get(level.as_str()).unwrap(),
             &max_detect_str
         )
         .ok();
@@ -525,7 +524,6 @@ fn _print_detection_summary_by_computer(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let output_levels = Vec::from(["crit", "high", "med ", "low ", "info"]);
     let level_full_map = HashMap::from([
         ("crit", "critical"),
         ("high", "high"),
@@ -534,7 +532,7 @@ fn _print_detection_summary_by_computer(
         ("info", "informational"),
     ]);
 
-    for level in output_levels {
+    for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
         let mut result_vec: Vec<String> = Vec::new();
@@ -557,13 +555,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            level_full_map.get(level).unwrap(),
+            level_full_map.get(level.as_str()).unwrap(),
         )))
         .ok();
         writeln!(
             wtr,
             "Top 5 computers with most unique {} detections: {}",
-            level_full_map.get(level).unwrap(),
+            level_full_map.get(level.as_str()).unwrap(),
             &result_str
         )
         .ok();
@@ -615,6 +613,10 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "record_infoinfo11";
         let test_record_id = "11111";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Local);
         let output_profile: LinkedHashMap<String, String> = load_profile(
             "test_files/config/default_profile.txt",
             "test_files/config/profiles.txt",
@@ -638,6 +640,26 @@ mod tests {
                 }
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
+            let mut profile_converter: HashMap<String, String> = HashMap::from([
+                ("%Timestamp%".to_owned(), format_time(&expect_time, false)),
+                ("%Computer%".to_owned(), test_computername.to_string()),
+                (
+                    "%Channel%".to_owned(),
+                    mock_ch_filter
+                        .get("Security")
+                        .unwrap_or(&String::default())
+                        .to_string(),
+                ),
+                ("%Level%".to_owned(), test_level.to_string()),
+                ("%EventID%".to_owned(), test_eventid.to_string()),
+                ("%MitreAttack%".to_owned(), test_attack.to_string()),
+                ("%RecordID%".to_owned(), test_record_id.to_string()),
+                ("%RuleTitle%".to_owned(), test_title.to_owned()),
+                ("%RecordInformation%".to_owned(), test_recinfo.to_owned()),
+                ("%RuleFile%".to_owned(), test_rulepath.to_string()),
+                ("%EvtxFile%".to_owned(), test_filepath.to_string()),
+                ("%Tags%".to_owned(), test_attack.to_string()),
+            ]);
             message::insert(
                 &event,
                 output.to_string(),
@@ -658,12 +680,10 @@ mod tests {
                     record_id: Option::Some(test_record_id.to_string()),
                     ext_field: output_profile,
                 },
+                expect_time,
+                &mut profile_converter,
             );
         }
-        let expect_time = Utc
-            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
-            .unwrap();
-        let expect_tz = expect_time.with_timezone(&Local);
         let expect =
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
@@ -756,12 +776,9 @@ mod tests {
         data.insert("Details".to_owned(), output.to_owned());
         data.insert("RecordInformation".to_owned(), test_recinfo.to_owned());
 
+        assert_eq!(_get_serialized_disp_output(&mut data, true), expect_header);
         assert_eq!(
-            _get_serialized_disp_output(data.clone(), true),
-            expect_header
-        );
-        assert_eq!(
-            _get_serialized_disp_output(data.clone(), false),
+            _get_serialized_disp_output(&mut data, false),
             expect_no_header
         );
     }

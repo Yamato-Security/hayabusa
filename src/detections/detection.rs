@@ -1,9 +1,13 @@
 extern crate csv;
 
 use crate::detections::configs;
+use crate::detections::utils::format_time;
 use crate::detections::utils::write_color_buffer;
 use crate::options::profile::LOAEDED_PROFILE_ALIAS;
+use crate::options::profile::PRELOAD_PROFILE;
+use crate::options::profile::PRELOAD_PROFILE_REGEX;
 use crate::options::profile::PROFILES;
+use chrono::{TimeZone, Utc};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::AlertMessage;
@@ -256,7 +260,78 @@ impl Detection {
         } else {
             None
         };
+
+        let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+
+        let mut profile_converter: HashMap<String, String> = HashMap::new();
+        for (k, v) in PROFILES.as_ref().unwrap().iter() {
+            let tmp = v.as_str();
+            for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
+                match PRELOAD_PROFILE[target_profile] {
+                    "%Timestamp%" => {
+                        profile_converter.insert(k.to_string(), format_time(&time, false));
+                    }
+                    "%Computer%" => {
+                        profile_converter.insert(
+                            k.to_string(),
+                            record_info.record["Event"]["System"]["Computer"]
+                                .to_string()
+                                .replace('\"', ""),
+                        );
+                    }
+                    "%Channel%" => {
+                        profile_converter.insert(
+                            k.to_string(),
+                            CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
+                        );
+                    }
+                    "%Level%" => {
+                        profile_converter.insert(
+                            k.to_string(),
+                            LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
+                        );
+                    }
+                    "%EventID%" => {
+                        profile_converter.insert(k.to_string(), eid.to_owned());
+                    }
+                    "%MitreAttack%" => {
+                        profile_converter.insert(k.to_string(), tag_info.join(" | "));
+                    }
+                    "%RecordID%" => {
+                        profile_converter.insert(
+                            k.to_string(),
+                            rec_id.as_ref().unwrap_or(&"-".to_string()).to_owned(),
+                        );
+                    }
+                    "%RuleTitle%" => {
+                        profile_converter.insert(
+                            k.to_string(),
+                            rule.yaml["title"].as_str().unwrap_or("").to_string(),
+                        );
+                    }
+                    "%RecordInformation%" => {
+                        profile_converter.insert(
+                            k.to_string(),
+                            opt_record_info
+                                .as_ref()
+                                .unwrap_or(&"-".to_string())
+                                .to_owned(),
+                        );
+                    }
+                    "%RuleFile%" => {
+                        profile_converter.insert(k.to_string(), (&rule.rulepath).to_owned());
+                    }
+                    "%EvtxFile%" => {
+                        profile_converter
+                            .insert(k.to_string(), record_info.evtx_filepath.to_string());
+                    }
+                    _ => {}
+                }
+            }
+        }
+
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: (&rule.rulepath).to_owned(),
@@ -280,6 +355,8 @@ impl Detection {
                 .unwrap_or(&default_output)
                 .to_string(),
             detect_info,
+            time,
+            &mut profile_converter,
         );
     }
 

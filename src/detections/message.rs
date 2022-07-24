@@ -4,7 +4,8 @@ use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
 use crate::detections::utils::write_color_buffer;
-use chrono::{DateTime, Local, TimeZone, Utc};
+use crate::options::profile::PROFILES;
+use chrono::{DateTime, Local, Utc};
 use dashmap::DashMap;
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
@@ -19,8 +20,6 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, ColorChoice};
-
-use super::utils::format_time;
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
@@ -83,7 +82,7 @@ lazy_static! {
             .display()
     ));
     pub static ref LEVEL_ABBR: HashMap<String, String> = HashMap::from([
-        (String::from("cruitical"), String::from("crit")),
+        (String::from("critical"), String::from("crit")),
         (String::from("high"), String::from("high")),
         (String::from("medium"), String::from("med ")),
         (String::from("low"), String::from("low ")),
@@ -113,9 +112,8 @@ pub fn create_output_filter_config(
             return;
         }
 
-        let empty = &"".to_string();
-        let tag_full_str = line.get(0).unwrap_or(empty).trim();
-        let tag_replace_str = line.get(1).unwrap_or(empty).trim();
+        let tag_full_str = line[0].trim();
+        let tag_replace_str = line[1].trim();
 
         ret.insert(tag_full_str.to_owned(), tag_replace_str.to_owned());
     });
@@ -134,8 +132,14 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 }
 
 /// メッセージを設定
-pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo) {
-    let parsed_detail = parse_message(event_record, output)
+pub fn insert(
+    event_record: &Value,
+    output: String,
+    mut detect_info: DetectInfo,
+    time: DateTime<Utc>,
+    profile_converter: &mut HashMap<String, String>,
+) {
+    let parsed_detail = parse_message(event_record, &output)
         .chars()
         .filter(|&c| !c.is_control())
         .collect::<String>();
@@ -145,100 +149,41 @@ pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo)
     } else {
         parsed_detail
     };
-
-    let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
-    let time = get_event_time(event_record).unwrap_or(default_time);
-    let reserverd_by_profile = _create_config_reserved_info(&detect_info, time);
-    for (k, v) in detect_info.ext_field.clone() {
-        let converted_reserve_info = convert_profile_reserved_info(v, &reserverd_by_profile);
-        detect_info
-            .ext_field
-            .insert(k, parse_message(event_record, converted_reserve_info));
-    }
-    insert_message(detect_info, time)
-}
-
-/// profileで用いられる予約語の情報を保持したHashMapを返す関数
-fn _create_config_reserved_info(
-    detect_info: &DetectInfo,
-    time: DateTime<Utc>,
-) -> HashMap<String, String> {
-    let mut config_reserved_info: HashMap<String, String> = HashMap::new();
-    for k in detect_info.ext_field.values() {
-        let tmp = k.as_str();
-        match tmp {
-            "%Timestamp%" => {
-                config_reserved_info.insert("%Timestamp%".to_string(), format_time(&time, false));
-            }
-            "%Computer%" => {
-                config_reserved_info.insert(
-                    "%Computer%".to_string(),
-                    detect_info.computername.to_owned(),
-                );
-            }
-            "%Details%" => {
-                config_reserved_info.insert("%Details%".to_string(), detect_info.detail.to_owned());
-            }
-            "%Channel%" => {
-                config_reserved_info
-                    .insert("%Channel%".to_string(), detect_info.channel.to_owned());
-            }
-            "%Level%" => {
-                config_reserved_info.insert("%Level%".to_string(), detect_info.level.to_owned());
-            }
-            "%EventID%" => {
-                config_reserved_info
-                    .insert("%EventID%".to_string(), detect_info.eventid.to_owned());
-            }
-            "%MitreAttack%" => {
-                config_reserved_info
-                    .insert("%MitreAttack%".to_string(), detect_info.tag_info.to_owned());
-            }
-            "%RecordID%" => {
-                config_reserved_info.insert(
-                    "%RecordID%".to_string(),
-                    detect_info.record_id.as_ref().unwrap_or(&"-".to_string()).to_owned(),
-                );
-            }
-            "%RuleTitle%" => {
-                config_reserved_info
-                    .insert("%RuleTitle%".to_string(), detect_info.alert.to_owned());
-            }
-            "%RecordInformation%" => {
-                config_reserved_info.insert(
-                    "%RecordInformation%".to_string(),
-                    detect_info.record_information.as_ref().unwrap_or(&"-".to_string()).to_owned(),
-                );
-            }
-            "%RuleFile%" => {
-                config_reserved_info
-                    .insert("%RuleFile%".to_string(), detect_info.rulepath.to_owned());
-            }
-            "%EvtxFile%" => {
-                config_reserved_info
-                    .insert("%EvtxFile%".to_string(), detect_info.filepath.to_owned());
-            }
-            _ => {}
+    let mut exist_detail = false;
+    PROFILES.as_ref().unwrap().iter().for_each(|(_k, v)| {
+        if v.contains("%Details%") {
+            exist_detail = true;
         }
+    });
+    if exist_detail {
+        profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    config_reserved_info
+    let mut converted_detect_info = detect_info.clone();
+    for (k, v) in &detect_info.ext_field {
+        let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
+        converted_detect_info.ext_field.insert(
+            k.to_owned(),
+            parse_message(event_record, &converted_reserve_info),
+        );
+    }
+    insert_message(converted_detect_info, time)
 }
 
 /// profileで用いられる予約語の情報を変換する関数
 fn convert_profile_reserved_info(
-    output: String,
+    output: &String,
     config_reserved_info: &HashMap<String, String>,
 ) -> String {
-    let mut ret = output;
-    config_reserved_info.into_iter().for_each(|(k, v)| {
+    let mut ret = output.to_owned();
+    config_reserved_info.iter().for_each(|(k, v)| {
         ret = ret.replace(k, v);
     });
     ret
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
-fn parse_message(event_record: &Value, output: String) -> String {
-    let mut return_message: String = output;
+fn parse_message(event_record: &Value, output: &String) -> String {
+    let mut return_message = output.to_owned();
     let mut hash_map: HashMap<String, String> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
@@ -253,7 +198,7 @@ fn parse_message(event_record: &Value, output: String) -> String {
         {
             _array_str.to_string()
         } else {
-            "Event.EventData.".to_owned() + &target_str
+            format!("Event.EventData.{}", target_str)
         };
 
         let split: Vec<&str> = array_str.split('.').collect();
@@ -291,7 +236,6 @@ fn parse_message(event_record: &Value, output: String) -> String {
     for (k, v) in &hash_map {
         return_message = return_message.replace(k, v);
     }
-
     return_message
 }
 
@@ -472,7 +416,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
             ),
             expected,
         );
@@ -493,7 +437,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "alias:no_alias";
         assert_eq!(
-            parse_message(&event_record, "alias:%NoAlias%".to_owned()),
+            parse_message(&event_record, &"alias:%NoAlias%".to_owned()),
             expected,
         );
     }
@@ -519,7 +463,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "NoExistAlias:n/a";
         assert_eq!(
-            parse_message(&event_record, "NoExistAlias:%NoAliasNoHit%".to_owned()),
+            parse_message(&event_record, &"NoExistAlias:%NoAliasNoHit%".to_owned()),
             expected,
         );
     }
@@ -546,7 +490,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
             ),
             expected,
         );
@@ -579,7 +523,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% data:%Data%".to_owned()
+                &"commandline:%CommandLine% data:%Data%".to_owned()
             ),
             expected,
         );
@@ -612,7 +556,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% data:%Data[2]%".to_owned()
+                &"commandline:%CommandLine% data:%Data[2]%".to_owned()
             ),
             expected,
         );
@@ -645,7 +589,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% data:%Data[0]%".to_owned()
+                &"commandline:%CommandLine% data:%Data[0]%".to_owned()
             ),
             expected,
         );
