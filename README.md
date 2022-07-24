@@ -59,6 +59,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Logon Summary Generator](#logon-summary-generator)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
+  - [Output customize by profile](#output-customize-by-profile)
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
@@ -495,7 +496,7 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 # Hayabusa Output
 
-When hayabusa output is being displayed to the screen (the default), it will display the following information:
+When hayabusa output is being displayed to the screen (the default), it can display the following information:
 
 * `Timestamp`: Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. This comes from the `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--utc` option.
 * `Computer`: This comes from the `<Event><System><Computer>` field in the event log.
@@ -505,14 +506,42 @@ When hayabusa output is being displayed to the screen (the default), it will dis
 * `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log. You can hidde this output with the `-R` or `--hide-record-id` option.
 * `Title`: This comes from the `title` field in the YML detection rule.
 * `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column.
-
-The following additional columns will be added to the output when saving to a CSV file:
-
 * `MitreAttack`: MITRE ATT&CK tactics.
 * `RuleFile`: The filename of the detection rule that generated the alert or event.
 * `EvtxFile`: The path to the evtx file that caused the alert or event.
+* `RecordInformation`: All field information.
 
-If you add the `-F` or `--full-data` option, a `RecordInformation` column with all field information will also be added.
+## Output customize by profile
+
+You can customize the output by modifiy `config/profiles.txt` and `config/default_profile.txt`.
+You can be setting following alias. 
+If you want to use profile in `config/profiles.txt` , you use `-p/-profile` option.
+Please use `--set-default-profile`  option when you want to overwrite `default_profiles.txt`  by profile in `config/profiles.txt`.
+
+|alias name| Hayabusa output information|
+|:---|:---|
+|%Timestamp% | `Timestamp` |
+|%Computer% | `Computer` |
+|%Channel% | `Channel` |
+|%Level% | `Level` |
+|%EventID% | `EventID` |
+|%MitreAttack% | `MitreAttack` |
+|%RecordID% | `RecordID` |
+|%RuleTitle% | `Title` |
+|%Details% | `Details` |
+|%RecordInformation% | `RecordInformation` |
+|%RuleFile% | `RuleFile` |
+|%EvtxFile% | `EvtxFile` |
+
+e.g. profile customize
+
+```yaml
+(profilename):
+    (column name): '%Timestamp%'
+    (column name2): '%Computer%'
+    (column name3): '%Channel%'
+```
+
 
 ## Level Abbrevations
 

@@ -60,6 +60,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ログオン情報の要約](#ログオン情報の要約)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
+  - [プロファイルによる出力のカスタマイズ](#プロファイルによる出力のカスタマイズ)
   - [Levelの省略](#levelの省略)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
@@ -498,7 +499,7 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 # Hayabusaの出力
 
-Hayabusaの結果を標準出力に表示しているとき（デフォルト）は、以下の情報を表示します:
+Hayabusaの結果を標準出力に表示しているとき（デフォルト）は、以下の情報を表示することができます:
 
 * `Timestamp`: デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっています。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ています。デフォルトのタイムゾーンはローカルのタイムゾーンになりますが、`--utc` オプションで UTC に変更することができます。
 * `Computer`: イベントログの`<Event><System><Computer>`フィールドから来ています。
@@ -508,14 +509,41 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Title`: YML検知ルールの`title`フィールドから来ています。
 * `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。`-R`もしくは`--hide-record-id`オプションを付けると表示されません。
 * `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。
-
-CSVファイルとして保存する場合、以下の列が追加されます:
-
 * `MitreAttack`: MITRE ATT&CKの戦術。
 * `RuleFile`: アラートまたはイベントを生成した検知ルールのファイル名。
 * `EvtxFile`: アラートまたはイベントを起こしたevtxファイルへのパス。
+* `RecordInformation`: すべてのフィールド情報。
 
-`-F`もしくは`--full-data`オプションを指定した場合、全てのフィールド情報が`RecordInformation`カラムにで出力されます。
+## プロファイルによる出力のカスタマイズ
+
+Hayabusaの出力内容はconfig/profiles.txtとconfig/default_profile.txtを変更することでカスタマイズできます。カスタマイズではHayabusaの出力で用いられている内容を以下のエイリアスで呼び出すことができます。
+もし、config/profiles.txtに書いてるプロファイルを用いたい場合は-p/--profileオプションを利用してください。
+default_profiles.txtをprofile.txtに書かれているプロファイルで上書きしたい場合は--set-default-profileオプションを利用してください。
+
+|エイリアス名|Haysbusaの出力にある情報|
+|:---|:---|
+|%Timestamp% | `Timestamp` |
+|%Computer% | `Computer` |
+|%Channel% | `Channel` |
+|%Level% | `Level` |
+|%EventID% | `EventID` |
+|%MitreAttack% | `MitreAttack` |
+|%RecordID% | `RecordID` |
+|%RuleTitle% | `Title` |
+|%Details% | `Details` |
+|%RecordInformation% | `RecordInformation` |
+|%RuleFile% | `RuleFile` |
+|%EvtxFile% | `EvtxFile` |
+
+
+profiles.txtへの記載例:
+
+```yaml
+(profilename):
+    (column name): '%Timestamp%'
+    (column name2): '%Computer%'
+    (column name3): '%Channel%'
+```
 
 ## Levelの省略
 
