@@ -609,6 +609,7 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "record_infoinfo11";
         let test_record_id = "11111";
+        let output_profile: LinkedHashMap<String, String> = load_profile("test_files/config/default_profile.txt", "test_files/config/profiles.txt").unwrap();
         {
             let messages = &message::MESSAGES;
             messages.clear();
@@ -645,6 +646,7 @@ mod tests {
                     tag_info: test_attack.to_string(),
                     record_information: Option::Some(test_recinfo.to_string()),
                     record_id: Option::Some(test_record_id.to_string()),
+                    ext_field: output_profile,
                 },
             );
         }
@@ -653,7 +655,7 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let expect =
-            "Timestamp,Computer,Channel,EventID,Level,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile\n"
+            "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
                 + &expect_tz
                     .clone()
@@ -664,9 +666,9 @@ mod tests {
                 + ","
                 + test_channel
                 + ","
-                + test_eventid
-                + ","
                 + test_level
+                + ","
+                + test_eventid
                 + ","
                 + test_attack
                 + ","
@@ -681,9 +683,11 @@ mod tests {
                 + test_rulepath
                 + ","
                 + test_filepath
+                + ","
+                + test_attack
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::default(), 1).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::new(), 1).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -691,10 +695,11 @@ mod tests {
             }
         };
         assert!(remove_file("./test_emit_csv.csv").is_ok());
-        check_emit_csv_display();
+        
     }
 
-    fn check_emit_csv_display() {
+    #[test]
+    fn test_emit_csv_display() {
         let test_title = "test_title2";
         let test_level = "medium";
         let test_computername = "testcomputer2";
@@ -707,43 +712,44 @@ mod tests {
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details";
+        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details|RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
             .clone()
             .format("%Y-%m-%d %H:%M:%S%.3f %:z")
             .to_string()
-            + "|"
+            + " | "
             + test_computername
-            + "|"
+            + " | "
             + test_channel
-            + "|"
+            + " | "
             + test_eventid
-            + "|"
+            + " | "
             + test_level
-            + "|"
+            + " | "
             + test_recid
-            + "|"
+            + " | "
             + test_title
-            + "|"
+            + " | "
             + output
-            + "|"
+            + " | "
             + test_recinfo
             + "\n";
-        assert_eq!(_get_serialized_disp_output(None), expect_header);
+        let mut data:LinkedHashMap<String,String> = LinkedHashMap::new();
+        data.insert("Timestamp".to_owned(), format_time(&test_timestamp, false));
+        data.insert("Computer".to_owned(), test_computername.to_owned());
+        data.insert("Channel".to_owned(), test_channel.to_owned());
+        data.insert("EventID".to_owned(), test_eventid.to_owned());
+        data.insert("Level".to_owned(), test_level.to_owned());
+        data.insert("RecordID".to_owned(), test_recid.to_owned());
+        data.insert("RuleTitle".to_owned(), test_title.to_owned());
+        data.insert("Details".to_owned(), output.to_owned());
+        data.insert("RecordInformation".to_owned(), test_recinfo.to_owned());
+
+        assert_eq!(_get_serialized_disp_output(data.clone(), true), expect_header);
         assert_eq!(
-            _get_serialized_disp_output(Some(DisplayFormat {
-                timestamp: &format_time(&test_timestamp, false),
-                level: test_level,
-                computer: test_computername,
-                event_i_d: test_eventid,
-                channel: test_channel,
-                rule_title: test_title,
-                details: output,
-                record_information: Some(test_recinfo),
-                record_i_d: Some(test_recid),
-            })),
+            _get_serialized_disp_output(data.clone(), false),
             expect_no_header
         );
     }

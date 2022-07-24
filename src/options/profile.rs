@@ -139,22 +139,66 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
 
 #[cfg(test)]
 mod tests {
+    use linked_hash_map::LinkedHashMap;
+
     use crate::options::profile::load_profile;
     use crate::detections::configs;
 
     #[test]
+    ///オプションの設定が入ると値の冪等性が担保できないためテストを逐次的に処理する
+    fn test_load_profile() {
+        test_load_profile_without_profile_option();
+        test_load_profile_no_exist_profile_files();
+        test_load_profile_with_profile_option();
+    }
+
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
     fn test_load_profile_without_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = None;
-        assert_eq!(None, load_profile("test_files/config/profile/default_profile.txt", "test_files/config/profile/target.txt"));
+        let mut expect: LinkedHashMap<String, String> = LinkedHashMap::new();
+        expect.insert("Timestamp".to_owned(), "%Timestamp%".to_owned());
+        expect.insert("Computer".to_owned(), "%Computer%".to_owned());
+        expect.insert("Channel".to_owned(), "%Channel%".to_owned());
+        expect.insert("Level".to_owned(), "%Level%".to_owned());
+        expect.insert("EventID".to_owned(), "%EventID%".to_owned());
+        expect.insert("MitreAttack".to_owned(), "%MitreAttack%".to_owned());
+        expect.insert("RecordID".to_owned(), "%RecordID%".to_owned());
+        expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
+        expect.insert("Details".to_owned(), "%Details%".to_owned());
+        expect.insert("RecordInformation".to_owned(), "%RecordInformation%".to_owned());
+        expect.insert("RuleFile".to_owned(), "%RuleFile%".to_owned());
+        expect.insert("EvtxFile".to_owned(), "%EvtxFile%".to_owned());
+        expect.insert("Tags".to_owned(), "%MitreAttack%".to_owned());
+
+        assert_eq!(Some(expect), load_profile("test_files/config/default_profile.txt", "test_files/config/profiles.txt"));
     }
 
-    #[test]
-    /// プロファイルオプションが設定されていないときにロードをした場合のテスト
-    fn test_load_profile_no_exist_profile_files() {
+    /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
+    fn test_load_profile_with_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = Some("minimal".to_string());
-        assert_eq!(None, load_profile("test_files/config/profile/no_exist_default_profile.txt", "test_files/config/profile/no_exist_target.txt"));
-        assert_eq!(None, load_profile("test_files/config/profile/default_profile.txt", "test_files/config/profile/no_exist_target.txt"));
-        assert_eq!(None, load_profile("test_files/config/profile/no_exist_default_profile.txt", "test_files/config/profile/target.txt"));
+        let mut expect: LinkedHashMap<String, String> = LinkedHashMap::new();
+        expect.insert("Timestamp".to_owned(), "%Timestamp%".to_owned());
+        expect.insert("Computer".to_owned(), "%Computer%".to_owned());
+        expect.insert("Channel".to_owned(), "%Channel%".to_owned());
+        expect.insert("EventID".to_owned(), "%EventID%".to_owned());
+        expect.insert("Level".to_owned(), "%Level%".to_owned());
+        expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
+        expect.insert("Details".to_owned(), "%Details%".to_owned());
+
+        assert_eq!(Some(expect), load_profile("test_files/config/default_profile.txt", "test_files/config/profiles.txt"));
+    }
+
+    /// プロファイルオプションが設定されているが、対象のオプションが存在しない場合のテスト
+    fn test_load_profile_no_exist_profile_files() {
+        configs::CONFIG.write().unwrap().args.profile = Some("not_exist".to_string());
+        
+        //両方のファイルが存在しない場合
+        assert_eq!(None, load_profile("test_files/config/no_exist_default_profile.txt", "test_files/config/no_exist_profiles.txt"));
+
+        //デフォルトプロファイルは存在しているがprofileオプションが指定されているため読み込み失敗の場合
+        assert_eq!(None, load_profile("test_files/config/profile/default_profile.txt", "test_files/config/profile/no_exist_profiles.txt"));
+
+        //オプション先のターゲットのプロファイルファイルが存在しているが、profileオプションで指定されたオプションが存在しない場合
+        assert_eq!(None, load_profile("test_files/config/no_exist_default_profile.txt", "test_files/config/profiles.txt"));
     }
 }
