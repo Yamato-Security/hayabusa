@@ -341,7 +341,6 @@ OPTIONS:
         --end-timeline <END_TIMELINE>                  解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
         --exclude-status <EXCLUDE_STATUS>...           読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
     -f, --filepath <FILE_PATH>                         1つの.evtxファイルに対して解析を行う
-    -F, --full-data                                    全てのフィールド情報を出力する
     -h, --help                                         ヘルプ情報を表示する
     -l, --live-analysis                                ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
     -L, --logon-summary                                成功と失敗したログオン情報の要約を出力する
@@ -508,7 +507,7 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Event ID`: イベントログの`<Event><System><EventID>`フィールドから来ています。
 * `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
 * `Title`: YML検知ルールの`title`フィールドから来ています。
-* `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。`-R`もしくは`--hide-record-id`オプションを付けると表示されません。
+* `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。
 * `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。
 * `MitreAttack`: MITRE ATT&CKの戦術。
 * `RuleFile`: アラートまたはイベントを生成した検知ルールのファイル名。
