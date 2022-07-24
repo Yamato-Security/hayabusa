@@ -52,6 +52,18 @@ pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
 ) -> Option<LinkedHashMap<String, String>> {
+    if configs::CONFIG
+        .read()
+        .unwrap()
+        .args
+        .set_default_profile
+        .is_some()
+    {
+        match set_default_profile(default_profile_path, profile_path) {
+            Err(e) => AlertMessage::alert(&e).ok(),
+            _ => None,
+        };
+    }
     let conf = &configs::CONFIG.read().unwrap().args;
     let profile_all: Vec<Yaml> = if conf.profile.is_none() {
         match read_profile_data(default_profile_path) {
@@ -126,7 +138,6 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
         if let Ok(mut buf_wtr) = File::open(default_profile_path).map(BufWriter::new) {
             let prof_all_data = &profile_data[0];
             let overwrite_default_data = &prof_all_data[profile_name.as_str()];
-            println!("hoge is {:?}", prof_all_data["hoge"]);
             if !overwrite_default_data.is_null() {
                 let mut out_str = String::default();
                 let mut yml_writer = YamlEmitter::new(&mut out_str);
