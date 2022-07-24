@@ -21,7 +21,7 @@ use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
-use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules};
+use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules, profile::PROFILES};
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};

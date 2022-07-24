@@ -2,12 +2,15 @@ extern crate csv;
 
 use crate::detections::configs;
 use crate::detections::utils::write_color_buffer;
+use crate::options::profile;
+use crate::options::profile::PROFILES;
+use linked_hash_map::LinkedHashMap;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::AlertMessage;
 use crate::detections::message::DetectInfo;
 use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::message::{CH_CONFIG, DEFAULT_DETAILS, IS_HIDE_RECORD_ID, TAGS_CONFIG};
+use crate::detections::message::{CH_CONFIG, DEFAULT_DETAILS, TAGS_CONFIG};
 use crate::detections::message::{
     LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
@@ -202,8 +205,12 @@ impl Detection {
         rule
     }
 
-    /// 条件に合致したレコードを表示するための関数
+    /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
+        let profile_all_alias = if PROFILES.is_some() {
+            PROFILES.as_ref().unwrap().values().cloned().collect::<Vec<_>>().join("|")
+        }
+        else{String::default()};
         let tag_info: Vec<String> = match TAGS_CONFIG.is_empty() {
             false => rule.yaml["tags"]
                 .as_vec()
@@ -229,7 +236,7 @@ impl Detection {
             .record_information
             .as_ref()
             .map(|recinfo| recinfo.to_string());
-        let rec_id = if !*IS_HIDE_RECORD_ID {
+        let rec_id = if !profile_all_alias.contains("%RecordID%") {
             Some(
                 get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
                     .unwrap_or_default(),
@@ -268,6 +275,7 @@ impl Detection {
             tag_info: tag_info.join(" | "),
             record_information: opt_record_info,
             record_id: rec_id,
+            ext_field: PROFILES.as_ref().unwrap().to_owned(),
         };
         message::insert(
             &record_info.record,
@@ -311,7 +319,8 @@ impl Detection {
             detail: output,
             record_information: rec_info,
             tag_info: tag_info.join(" : "),
-            record_id: rec_id,
+            record_id: Some("-".to_owned()),
+            ext_field: PROFILES.as_ref().unwrap().to_owned(),
         };
 
         message::insert_message(detect_info, agg_result.start_timedate)

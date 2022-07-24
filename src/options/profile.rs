@@ -10,7 +10,7 @@ use std::path::Path;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 lazy_static! {
-    pub static ref PROFILES: Option<HashMap<String, String>> = load_profile(
+    pub static ref PROFILES: Option<LinkedHashMap<String, String>> = load_profile(
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
             "config/default_profile.txt"
@@ -46,7 +46,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
 pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
-) -> Option<HashMap<String, String>> {
+) -> Option<LinkedHashMap<String, String>> {
     let conf = &configs::CONFIG.read().unwrap().args;
     let profile_all: Vec<Yaml> = if conf.profile.is_none() {
         match read_profile_data(default_profile_path) {
@@ -71,7 +71,7 @@ pub fn load_profile(
         return None;
     }
     let profile_data = &profile_all[0];
-    let mut ret: HashMap<String, String> = HashMap::new();
+    let mut ret: LinkedHashMap<String, String> = LinkedHashMap::new();
     if let Some(profile_name) = &conf.profile {
         if !profile_data[profile_name.as_str()].is_badvalue() {
             profile_data[profile_name.as_str()].clone().as_hash().unwrap().into_iter().for_each(|(k, v)| {
@@ -83,8 +83,10 @@ pub fn load_profile(
             None
         }
     } else {
-        AlertMessage::alert("Not specified --profile").ok();
-        None
+        profile_all[0].clone().as_hash().unwrap().into_iter().for_each(|(k, v)| {
+            ret.insert(k.as_str().unwrap().to_string(), v.as_str().unwrap().to_string());
+        });
+        Some(ret)
     }
 }
 

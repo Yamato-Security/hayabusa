@@ -27,41 +27,6 @@ use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct CsvFormat<'a> {
-    timestamp: &'a str,
-    computer: &'a str,
-    channel: &'a str,
-    event_i_d: &'a str,
-    level: &'a str,
-    mitre_attack: &'a str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    record_i_d: Option<&'a str>,
-    rule_title: &'a str,
-    details: &'a str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    record_information: Option<&'a str>,
-    rule_file: &'a str,
-    evtx_file: &'a str,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct DisplayFormat<'a> {
-    timestamp: &'a str,
-    pub computer: &'a str,
-    pub channel: &'a str,
-    pub event_i_d: &'a str,
-    pub level: &'a str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    record_i_d: Option<&'a str>,
-    pub rule_title: &'a str,
-    pub details: &'a str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub record_information: Option<&'a str>,
-}
-
 lazy_static! {
     pub static ref OUTPUT_COLOR: HashMap<String, Color> = set_output_color();
 }
@@ -251,50 +216,13 @@ fn emit_csv<W: std::io::Write>(
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
             detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
-            let level = detect_info.level.to_string();
-            let time_str = format_time(time, false);
             if displayflag {
-                let record_id = detect_info
-                    .record_id
-                    .as_ref()
-                    .map(|recinfo| _format_cellpos(recinfo, ColPos::Other));
-                let recinfo = detect_info
-                    .record_information
-                    .as_ref()
-                    .map(|recinfo| _format_cellpos(recinfo, ColPos::Last));
-                let ctr_char_exclude_details = detect_info
-                    .detail
-                    .chars()
-                    .filter(|&c| !c.is_control())
-                    .collect::<String>();
-
-                let details = if ctr_char_exclude_details.is_empty() {
-                    "-".to_string()
-                } else {
-                    ctr_char_exclude_details
-                };
-
-                let dispformat: _ = DisplayFormat {
-                    timestamp: &_format_cellpos(&time_str, ColPos::First),
-                    level: &_format_cellpos(
-                        level_abbr.get(&level).unwrap_or(&level),
-                        ColPos::Other,
-                    ),
-                    computer: &_format_cellpos(&detect_info.computername, ColPos::Other),
-                    event_i_d: &_format_cellpos(&detect_info.eventid, ColPos::Other),
-                    channel: &_format_cellpos(&detect_info.channel, ColPos::Other),
-                    rule_title: &_format_cellpos(&detect_info.alert, ColPos::Other),
-                    details: &_format_cellpos(&details, ColPos::Other),
-                    record_information: recinfo.as_deref(),
-                    record_i_d: record_id.as_deref(),
-                };
-
                 //ヘッダーのみを出力
                 if plus_header {
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None),
-                        &_get_serialized_disp_output(None),
+                        &_get_serialized_disp_output(PROFILES.as_ref().unwrap().clone(), true),
                         true,
                     )
                     .ok();
@@ -302,31 +230,18 @@ fn emit_csv<W: std::io::Write>(
                 }
                 write_color_buffer(
                     &disp_wtr,
-                    get_writable_color(_get_output_color(&color_map, &detect_info.level)),
-                    &_get_serialized_disp_output(Some(dispformat)),
+                    get_writable_color(_get_output_color(&color_map, LEVEL_ABBR.get(&detect_info.level).unwrap_or(&String::default()))),
+                    &_get_serialized_disp_output(detect_info.ext_field.clone(), false),
                     false,
                 )
                 .ok();
             } else {
                 // csv output format
-                wtr.serialize(CsvFormat {
-                    timestamp: &time_str,
-                    level: level_abbr.get(&level).unwrap_or(&level).trim(),
-                    computer: &detect_info.computername,
-                    event_i_d: &detect_info.eventid,
-                    channel: &detect_info.channel,
-                    mitre_attack: &detect_info.tag_info,
-                    rule_title: &detect_info.alert,
-                    details: &detect_info.detail,
-                    record_information: detect_info.record_information.as_deref(),
-                    evtx_file: &detect_info.filepath,
-                    rule_file: Path::new(&detect_info.rulepath)
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap(),
-                    record_i_d: detect_info.record_id.as_deref(),
-                })?;
+                if plus_header {
+                    wtr.write_record(detect_info.ext_field.keys())?;
+                    plus_header = false;
+                }
+                wtr.write_record(detect_info.ext_field.values())?;
             }
             let level_suffix = *configs::LEVELMAP
                 .get(&detect_info.level.to_uppercase())
@@ -470,24 +385,24 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
-    if dispformat.is_none() {
-        let mut titles = vec![
-            "Timestamp",
-            "Computer",
-            "Channel",
-            "EventID",
-            "Level",
-            "RuleTitle",
-            "Details",
-        ];
-        if !*IS_HIDE_RECORD_ID {
-            titles.insert(5, "RecordID");
-        }
-        if configs::CONFIG.read().unwrap().args.full_data {
-            titles.push("RecordInformation");
-        }
-        return titles.join("|");
+fn _get_serialized_disp_output(mut data: LinkedHashMap<String, String>, header: bool) -> String {
+    let data_length = &data.len();
+    let entries = data.entries();
+    let mut ret:Vec<String> = vec![];
+    if header {
+        entries.for_each(|entry|{
+            ret.push(entry.key().to_owned());
+        });
+    } else {
+        entries.enumerate().for_each(|(i, entry)|{
+            if i == 0 {
+                ret.push(_format_cellpos(entry.get(), ColPos::First))
+            } else if i == data_length - 1{
+                ret.push(_format_cellpos(entry.get(), ColPos::Last))
+            } else {
+                ret.push(_format_cellpos(entry.get(), ColPos::Other))
+            }
+        });
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
@@ -496,8 +411,7 @@ fn _get_serialized_disp_output(dispformat: Option<DisplayFormat>) -> String {
         .has_headers(false)
         .from_writer(vec![]);
 
-    disp_serializer.serialize(dispformat.unwrap()).ok();
-
+    disp_serializer.write_record(ret).ok();
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default()).unwrap_or_default()
 }
 

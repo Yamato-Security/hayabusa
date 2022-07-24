@@ -20,6 +20,8 @@ use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, ColorChoice};
 
+use super::utils::format_time;
+
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
     pub filepath: String,
@@ -33,6 +35,7 @@ pub struct DetectInfo {
     pub tag_info: String,
     pub record_information: Option<String>,
     pub record_id: Option<String>,
+    pub ext_field: LinkedHashMap<String, String>,
 }
 
 pub struct AlertMessage {}
