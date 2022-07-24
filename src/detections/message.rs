@@ -149,7 +149,7 @@ pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo)
     let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
     let time = get_event_time(event_record).unwrap_or(default_time);
     for (k, v) in detect_info.ext_field.clone() {
-        let converted_reserve_info = convert_profile_reserved_info(v, detect_info.clone(), time);
+        let converted_reserve_info = convert_profile_reserved_info(v, &detect_info, time);
         detect_info
             .ext_field
             .insert(k, parse_message(event_record, converted_reserve_info));
@@ -160,46 +160,69 @@ pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo)
 /// profileで用いられる予約語の情報を変換する関数
 fn convert_profile_reserved_info(
     output: String,
-    detect_info: DetectInfo,
+    detect_info: &DetectInfo,
     time: DateTime<Utc>,
 ) -> String {
-    let config_reserved_info: HashMap<String, String> = HashMap::from([
-        ("Timestamp".to_string(), format_time(&time, false)),
-        ("Computer".to_string(), detect_info.computername),
-        ("Channel".to_string(), detect_info.channel),
-        ("Level".to_string(), detect_info.level),
-        ("EventID".to_string(), detect_info.eventid),
-        ("MitreAttack".to_string(), detect_info.tag_info),
-        (
-            "RecordID".to_string(),
-            detect_info.record_id.unwrap_or_else(|| "-".to_string()),
-        ),
-        ("RuleTitle".to_string(), detect_info.alert),
-        ("Details".to_string(), detect_info.detail),
-        (
-            "RecordInformation".to_string(),
-            detect_info
-                .record_information
-                .unwrap_or_else(|| "-".to_string()),
-        ),
-        ("RuleFile".to_string(), detect_info.rulepath),
-        ("EvtxFile".to_string(), detect_info.filepath),
-    ]);
-    let mut ret = output;
-    let mut convert_target: HashMap<String, String> = HashMap::new();
-    for caps in ALIASREGEX.captures_iter(&ret) {
-        let full_target_str = &caps[0];
-        let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
-        let target_str = full_target_str
-            .chars()
-            .skip(1)
-            .take(target_length)
-            .collect::<String>();
-        if let Some(reserved) = config_reserved_info.get(&target_str) {
-            convert_target.insert(full_target_str.to_string(), reserved.to_string());
+    let mut config_reserved_info: HashMap<String, String> = HashMap::new();
+    for k in detect_info.ext_field.values() {
+        let tmp = k.as_str();
+        match tmp {
+            "%Timestamp%" => {
+                config_reserved_info.insert("%Timestamp%".to_string(), format_time(&time, false));
+            }
+            "%Computer%" => {
+                config_reserved_info.insert(
+                    "%Computer%".to_string(),
+                    detect_info.computername.to_owned(),
+                );
+            }
+            "%Details%" => {
+                config_reserved_info.insert("%Details%".to_string(), detect_info.detail.to_owned());
+            }
+            "%Channel%" => {
+                config_reserved_info
+                    .insert("%Channel%".to_string(), detect_info.channel.to_owned());
+            }
+            "%Level%" => {
+                config_reserved_info.insert("%Level%".to_string(), detect_info.level.to_owned());
+            }
+            "%EventID%" => {
+                config_reserved_info
+                    .insert("%EventID%".to_string(), detect_info.eventid.to_owned());
+            }
+            "%MitreAttack%" => {
+                config_reserved_info
+                    .insert("%MitreAttack%".to_string(), detect_info.tag_info.to_owned());
+            }
+            "%RecordID%" => {
+                config_reserved_info.insert(
+                    "%RecordID%".to_string(),
+                    detect_info.record_id.as_ref().unwrap().to_owned(),
+                );
+            }
+            "%RuleTitle%" => {
+                config_reserved_info
+                    .insert("%RuleTitle%".to_string(), detect_info.alert.to_owned());
+            }
+            "%RecordInformation%" => {
+                config_reserved_info.insert(
+                    "%RecordInformation%".to_string(),
+                    detect_info.record_information.as_ref().unwrap().to_owned(),
+                );
+            }
+            "%RuleFile%" => {
+                config_reserved_info
+                    .insert("%RuleFile%".to_string(), detect_info.rulepath.to_owned());
+            }
+            "%EvtxFile%" => {
+                config_reserved_info
+                    .insert("%EvtxFile%".to_string(), detect_info.filepath.to_owned());
+            }
+            _ => {}
         }
     }
-    convert_target.into_iter().for_each(|(k, v)| {
+    let mut ret = output;
+    config_reserved_info.into_iter().for_each(|(k, v)| {
         ret = ret.replace(&k, &v);
     });
     ret
