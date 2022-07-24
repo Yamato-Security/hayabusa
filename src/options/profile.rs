@@ -2,7 +2,7 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::yaml;
-use hashbrown::HashMap;
+use linked_hash_map::LinkedHashMap;
 use lazy_static::lazy_static;
 use std::fs::File;
 use std::io::{BufWriter, Write};

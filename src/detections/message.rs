@@ -6,7 +6,8 @@ use crate::detections::utils::get_serde_number_to_string;
 use crate::detections::utils::write_color_buffer;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use dashmap::DashMap;
-use hashbrown::HashMap;
+use linked_hash_map::LinkedHashMap;
+use std::collections::HashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde_json::Value;
@@ -324,7 +325,7 @@ impl AlertMessage {
 mod tests {
     use crate::detections::message::AlertMessage;
     use crate::detections::message::{parse_message, MESSAGES};
-    use hashbrown::HashMap;
+    use std::collections::HashMap;
     use serde_json::Value;
 
     use super::{create_output_filter_config, get_default_details};

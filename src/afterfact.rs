@@ -1,14 +1,15 @@
 use crate::detections::configs;
 use crate::detections::configs::{CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::message::{self};
-use crate::detections::message::{AlertMessage, IS_HIDE_RECORD_ID};
-use crate::detections::utils;
+use crate::detections::message::{self, LEVEL_ABBR};
+use crate::detections::message::AlertMessage;
+use crate::detections::utils::{self, format_time};
 use crate::detections::utils::{get_writable_color, write_color_buffer};
+use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
-use csv::QuoteStyle;
-use hashbrown::HashMap;
-use hashbrown::HashSet;
+use csv::{QuoteStyle, Writer};
+use linked_hash_map::LinkedHashMap;
+use std::collections::{HashMap, HashSet, BTreeMap};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
@@ -16,7 +17,7 @@ use serde::Serialize;
 use std::cmp::min;
 use std::error::Error;
 use std::fmt::Debug;
-use std::fs;
+use std::{fs, collections};
 use std::fs::File;
 use std::io;
 use std::io::BufWriter;
@@ -661,71 +662,23 @@ fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
     }
 }
 
-/// return rfc time format string by option
-fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>, date_only: bool) -> String
-where
-    Tz::Offset: std::fmt::Display,
-{
-    let time_args = &configs::CONFIG.read().unwrap().args;
-    if time_args.rfc_2822 {
-        if date_only {
-            time.format("%a, %e %b %Y").to_string()
-        } else {
-            time.format("%a, %e %b %Y %H:%M:%S %:z").to_string()
-        }
-    } else if time_args.rfc_3339 {
-        if date_only {
-            time.format("%Y-%m-%d").to_string()
-        } else {
-            time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
-        }
-    } else if time_args.us_time {
-        if date_only {
-            time.format("%m-%d-%Y").to_string()
-        } else {
-            time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
-        }
-    } else if time_args.us_military_time {
-        if date_only {
-            time.format("%m-%d-%Y").to_string()
-        } else {
-            time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
-        }
-    } else if time_args.european_time {
-        if date_only {
-            time.format("%d-%m-%Y").to_string()
-        } else {
-            time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
-        }
-    } else if date_only {
-        time.format("%Y-%m-%d").to_string()
-    } else {
-        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::afterfact::DisplayFormat;
     use crate::afterfact::_get_serialized_disp_output;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
+    use crate::options::profile::load_profile;
     use chrono::{Local, TimeZone, Utc};
-    use hashbrown::HashMap;
+    use linked_hash_map::LinkedHashMap;
+    use std::collections::HashMap;
     use serde_json::Value;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;
 
     #[test]
-    fn test_emit_csv() {
-        //テストの並列処理によって読み込みの順序が担保できずstatic変数の内容が担保が取れない為、このテストはシーケンシャルで行う
-        test_emit_csv_output();
-        test_emit_csv_output();
-    }
-
     fn test_emit_csv_output() {
         let mock_ch_filter = message::create_output_filter_config(
             "rules/config/channel_abbreviations.txt",
