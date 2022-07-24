@@ -6,11 +6,11 @@ use crate::detections::utils::get_serde_number_to_string;
 use crate::detections::utils::write_color_buffer;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use dashmap::DashMap;
-use linked_hash_map::LinkedHashMap;
-use std::collections::HashMap;
 use lazy_static::lazy_static;
+use linked_hash_map::LinkedHashMap;
 use regex::Regex;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::env;
 use std::fs::create_dir;
 use std::fs::File;
@@ -135,9 +135,10 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 
 /// メッセージを設定
 pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo) {
-    let parsed_detail =parse_message(event_record, output).chars()
-    .filter(|&c| !c.is_control())
-    .collect::<String>();
+    let parsed_detail = parse_message(event_record, output)
+        .chars()
+        .filter(|&c| !c.is_control())
+        .collect::<String>();
 
     detect_info.detail = if parsed_detail.is_empty() {
         "-".to_string()
@@ -149,38 +150,52 @@ pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo)
     let time = get_event_time(event_record).unwrap_or(default_time);
     for (k, v) in detect_info.ext_field.clone() {
         let converted_reserve_info = convert_profile_reserved_info(v, detect_info.clone(), time);
-        detect_info.ext_field.insert(k, parse_message(event_record, converted_reserve_info));
+        detect_info
+            .ext_field
+            .insert(k, parse_message(event_record, converted_reserve_info));
     }
     insert_message(detect_info, time)
 }
 
 /// profileで用いられる予約語の情報を変換する関数
-fn convert_profile_reserved_info (output:String, detect_info: DetectInfo, time: DateTime<Utc>) -> String {
-    let config_reserved_info:HashMap<String, String> = HashMap::from([
-        ("Timestamp".to_string(), format_time(&time,false)),
+fn convert_profile_reserved_info(
+    output: String,
+    detect_info: DetectInfo,
+    time: DateTime<Utc>,
+) -> String {
+    let config_reserved_info: HashMap<String, String> = HashMap::from([
+        ("Timestamp".to_string(), format_time(&time, false)),
         ("Computer".to_string(), detect_info.computername),
         ("Channel".to_string(), detect_info.channel),
         ("Level".to_string(), detect_info.level),
         ("EventID".to_string(), detect_info.eventid),
         ("MitreAttack".to_string(), detect_info.tag_info),
-        ("RecordID".to_string(), detect_info.record_id.unwrap_or_else(|| "-".to_string())),
+        (
+            "RecordID".to_string(),
+            detect_info.record_id.unwrap_or_else(|| "-".to_string()),
+        ),
         ("RuleTitle".to_string(), detect_info.alert),
         ("Details".to_string(), detect_info.detail),
-        ("RecordInformation".to_string(), detect_info.record_information.unwrap_or_else(|| "-".to_string())),
+        (
+            "RecordInformation".to_string(),
+            detect_info
+                .record_information
+                .unwrap_or_else(|| "-".to_string()),
+        ),
         ("RuleFile".to_string(), detect_info.rulepath),
         ("EvtxFile".to_string(), detect_info.filepath),
     ]);
     let mut ret = output;
-    let mut convert_target:HashMap<String, String> = HashMap::new();
+    let mut convert_target: HashMap<String, String> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&ret) {
         let full_target_str = &caps[0];
         let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
         let target_str = full_target_str
-        .chars()
-        .skip(1)
-        .take(target_length)
-        .collect::<String>();
-        if let Some(reserved) =  config_reserved_info.get(&target_str) {
+            .chars()
+            .skip(1)
+            .take(target_length)
+            .collect::<String>();
+        if let Some(reserved) = config_reserved_info.get(&target_str) {
             convert_target.insert(full_target_str.to_string(), reserved.to_string());
         }
     }
@@ -385,8 +400,8 @@ impl AlertMessage {
 mod tests {
     use crate::detections::message::AlertMessage;
     use crate::detections::message::{parse_message, MESSAGES};
-    use std::collections::HashMap;
     use serde_json::Value;
+    use std::collections::HashMap;
 
     use super::{create_output_filter_config, get_default_details};
 

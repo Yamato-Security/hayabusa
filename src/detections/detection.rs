@@ -209,9 +209,16 @@ impl Detection {
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
         let profile_all_alias = if PROFILES.is_some() {
-            PROFILES.as_ref().unwrap().values().cloned().collect::<Vec<_>>().join("|")
-        }
-        else{String::default()};
+            PROFILES
+                .as_ref()
+                .unwrap()
+                .values()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("|")
+        } else {
+            String::default()
+        };
         let tag_info: Vec<String> = match TAGS_CONFIG.is_empty() {
             false => rule.yaml["tags"]
                 .as_vec()
@@ -262,7 +269,7 @@ impl Detection {
         } else {
             None
         };
-        let level= rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: (&rule.rulepath).to_owned(),

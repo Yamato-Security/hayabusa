@@ -2,8 +2,8 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::yaml;
-use linked_hash_map::LinkedHashMap;
 use lazy_static::lazy_static;
+use linked_hash_map::LinkedHashMap;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -17,12 +17,9 @@ lazy_static! {
         )
         .to_str()
         .unwrap(),
-        check_setting_path(
-            &CURRENT_EXE_PATH.to_path_buf(),
-            "config/profiles.txt"
-        )
-        .to_str()
-        .unwrap()
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/profiles.txt")
+            .to_str()
+            .unwrap()
     );
 }
 
@@ -31,8 +28,8 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     let yml = yaml::ParseYaml::new();
     if let Ok(loaded_profile) = yml.read_file(Path::new(profile_path).to_path_buf()) {
         match YamlLoader::load_from_str(&loaded_profile) {
-            Ok(profile_yml) => Ok(profile_yml), 
-            Err(e) => Err(format!("Parse error: {}. {}", profile_path, e))
+            Ok(profile_yml) => Ok(profile_yml),
+            Err(e) => Err(format!("Parse error: {}. {}", profile_path, e)),
         }
     } else {
         Err(format!(
@@ -74,18 +71,34 @@ pub fn load_profile(
     let mut ret: LinkedHashMap<String, String> = LinkedHashMap::new();
     if let Some(profile_name) = &conf.profile {
         if !profile_data[profile_name.as_str()].is_badvalue() {
-            profile_data[profile_name.as_str()].clone().as_hash().unwrap().into_iter().for_each(|(k, v)| {
-                ret.insert(k.as_str().unwrap().to_string(), v.as_str().unwrap().to_string());
-            });
+            profile_data[profile_name.as_str()]
+                .clone()
+                .as_hash()
+                .unwrap()
+                .into_iter()
+                .for_each(|(k, v)| {
+                    ret.insert(
+                        k.as_str().unwrap().to_string(),
+                        v.as_str().unwrap().to_string(),
+                    );
+                });
             Some(ret)
         } else {
             AlertMessage::alert(&format!("Invalid profile specified: {}", profile_name)).ok();
             None
         }
     } else {
-        profile_all[0].clone().as_hash().unwrap().into_iter().for_each(|(k, v)| {
-            ret.insert(k.as_str().unwrap().to_string(), v.as_str().unwrap().to_string());
-        });
+        profile_all[0]
+            .clone()
+            .as_hash()
+            .unwrap()
+            .into_iter()
+            .for_each(|(k, v)| {
+                ret.insert(
+                    k.as_str().unwrap().to_string(),
+                    v.as_str().unwrap().to_string(),
+                );
+            });
         Some(ret)
     }
 }
@@ -141,8 +154,8 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
 mod tests {
     use linked_hash_map::LinkedHashMap;
 
-    use crate::options::profile::load_profile;
     use crate::detections::configs;
+    use crate::options::profile::load_profile;
 
     #[test]
     ///オプションの設定が入ると値の冪等性が担保できないためテストを逐次的に処理する
@@ -165,12 +178,21 @@ mod tests {
         expect.insert("RecordID".to_owned(), "%RecordID%".to_owned());
         expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
         expect.insert("Details".to_owned(), "%Details%".to_owned());
-        expect.insert("RecordInformation".to_owned(), "%RecordInformation%".to_owned());
+        expect.insert(
+            "RecordInformation".to_owned(),
+            "%RecordInformation%".to_owned(),
+        );
         expect.insert("RuleFile".to_owned(), "%RuleFile%".to_owned());
         expect.insert("EvtxFile".to_owned(), "%EvtxFile%".to_owned());
         expect.insert("Tags".to_owned(), "%MitreAttack%".to_owned());
 
-        assert_eq!(Some(expect), load_profile("test_files/config/default_profile.txt", "test_files/config/profiles.txt"));
+        assert_eq!(
+            Some(expect),
+            load_profile(
+                "test_files/config/default_profile.txt",
+                "test_files/config/profiles.txt"
+            )
+        );
     }
 
     /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
@@ -185,20 +207,44 @@ mod tests {
         expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
         expect.insert("Details".to_owned(), "%Details%".to_owned());
 
-        assert_eq!(Some(expect), load_profile("test_files/config/default_profile.txt", "test_files/config/profiles.txt"));
+        assert_eq!(
+            Some(expect),
+            load_profile(
+                "test_files/config/default_profile.txt",
+                "test_files/config/profiles.txt"
+            )
+        );
     }
 
     /// プロファイルオプションが設定されているが、対象のオプションが存在しない場合のテスト
     fn test_load_profile_no_exist_profile_files() {
         configs::CONFIG.write().unwrap().args.profile = Some("not_exist".to_string());
-        
+
         //両方のファイルが存在しない場合
-        assert_eq!(None, load_profile("test_files/config/no_exist_default_profile.txt", "test_files/config/no_exist_profiles.txt"));
+        assert_eq!(
+            None,
+            load_profile(
+                "test_files/config/no_exist_default_profile.txt",
+                "test_files/config/no_exist_profiles.txt"
+            )
+        );
 
         //デフォルトプロファイルは存在しているがprofileオプションが指定されているため読み込み失敗の場合
-        assert_eq!(None, load_profile("test_files/config/profile/default_profile.txt", "test_files/config/profile/no_exist_profiles.txt"));
+        assert_eq!(
+            None,
+            load_profile(
+                "test_files/config/profile/default_profile.txt",
+                "test_files/config/profile/no_exist_profiles.txt"
+            )
+        );
 
         //オプション先のターゲットのプロファイルファイルが存在しているが、profileオプションで指定されたオプションが存在しない場合
-        assert_eq!(None, load_profile("test_files/config/no_exist_default_profile.txt", "test_files/config/profiles.txt"));
+        assert_eq!(
+            None,
+            load_profile(
+                "test_files/config/no_exist_default_profile.txt",
+                "test_files/config/profiles.txt"
+            )
+        );
     }
 }

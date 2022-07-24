@@ -1,29 +1,29 @@
 use crate::detections::configs;
 use crate::detections::configs::{CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::message::{self, LEVEL_ABBR};
 use crate::detections::message::AlertMessage;
+use crate::detections::message::{self, LEVEL_ABBR};
 use crate::detections::utils::{self, format_time};
 use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use csv::{QuoteStyle, Writer};
-use linked_hash_map::LinkedHashMap;
-use std::collections::{HashMap, HashSet, BTreeMap};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
+use linked_hash_map::LinkedHashMap;
 use serde::Serialize;
 use std::cmp::min;
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Debug;
-use std::{fs, collections};
 use std::fs::File;
 use std::io;
 use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
 use std::process;
+use std::{collections, fs};
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
@@ -184,14 +184,7 @@ fn emit_csv<W: std::io::Write>(
     let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
 
-    let levels = Vec::from([
-        "crit",
-        "high",
-        "med ",
-        "low ",
-        "info",
-        "undefined",
-    ]);
+    let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
@@ -223,7 +216,12 @@ fn emit_csv<W: std::io::Write>(
                 }
                 write_color_buffer(
                     &disp_wtr,
-                    get_writable_color(_get_output_color(&color_map, LEVEL_ABBR.get(&detect_info.level).unwrap_or(&String::default()))),
+                    get_writable_color(_get_output_color(
+                        &color_map,
+                        LEVEL_ABBR
+                            .get(&detect_info.level)
+                            .unwrap_or(&String::default()),
+                    )),
                     &_get_serialized_disp_output(detect_info.ext_field.clone(), false),
                     false,
                 )
@@ -381,16 +379,16 @@ enum ColPos {
 fn _get_serialized_disp_output(mut data: LinkedHashMap<String, String>, header: bool) -> String {
     let data_length = &data.len();
     let entries = data.entries();
-    let mut ret:Vec<String> = vec![];
+    let mut ret: Vec<String> = vec![];
     if header {
-        entries.for_each(|entry|{
+        entries.for_each(|entry| {
             ret.push(entry.key().to_owned());
         });
     } else {
-        entries.enumerate().for_each(|(i, entry)|{
+        entries.enumerate().for_each(|(i, entry)| {
             if i == 0 {
                 ret.push(_format_cellpos(entry.get(), ColPos::First))
-            } else if i == data_length - 1{
+            } else if i == data_length - 1 {
                 ret.push(_format_cellpos(entry.get(), ColPos::Last))
             } else {
                 ret.push(_format_cellpos(entry.get(), ColPos::Other))
@@ -499,15 +497,19 @@ fn _print_detection_summary_by_date(
                 tmp_cnt = *cnt;
             }
         }
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level_full_map.get(level).unwrap())))
-            .ok();
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
+            color_map,
+            level_full_map.get(level).unwrap(),
+        )))
+        .ok();
         if date_str == String::default() {
             max_detect_str = "n/a".to_string();
         }
         writeln!(
             wtr,
             "Date with most total {} detections: {}",
-            level_full_map.get(level).unwrap(), &max_detect_str
+            level_full_map.get(level).unwrap(),
+            &max_detect_str
         )
         .ok();
     }
@@ -553,12 +555,16 @@ fn _print_detection_summary_by_computer(
             result_vec.join(", ")
         };
 
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level_full_map.get(level).unwrap())))
-            .ok();
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
+            color_map,
+            level_full_map.get(level).unwrap(),
+        )))
+        .ok();
         writeln!(
             wtr,
             "Top 5 computers with most unique {} detections: {}",
-            level_full_map.get(level).unwrap(), &result_str
+            level_full_map.get(level).unwrap(),
+            &result_str
         )
         .ok();
     }
@@ -585,8 +591,8 @@ mod tests {
     use crate::options::profile::load_profile;
     use chrono::{Local, TimeZone, Utc};
     use linked_hash_map::LinkedHashMap;
-    use std::collections::HashMap;
     use serde_json::Value;
+    use std::collections::HashMap;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;
@@ -609,7 +615,11 @@ mod tests {
         let test_attack = "execution/txxxx.yyy";
         let test_recinfo = "record_infoinfo11";
         let test_record_id = "11111";
-        let output_profile: LinkedHashMap<String, String> = load_profile("test_files/config/default_profile.txt", "test_files/config/profiles.txt").unwrap();
+        let output_profile: LinkedHashMap<String, String> = load_profile(
+            "test_files/config/default_profile.txt",
+            "test_files/config/profiles.txt",
+        )
+        .unwrap();
         {
             let messages = &message::MESSAGES;
             messages.clear();
@@ -695,7 +705,6 @@ mod tests {
             }
         };
         assert!(remove_file("./test_emit_csv.csv").is_ok());
-        
     }
 
     #[test]
@@ -736,7 +745,7 @@ mod tests {
             + " | "
             + test_recinfo
             + "\n";
-        let mut data:LinkedHashMap<String,String> = LinkedHashMap::new();
+        let mut data: LinkedHashMap<String, String> = LinkedHashMap::new();
         data.insert("Timestamp".to_owned(), format_time(&test_timestamp, false));
         data.insert("Computer".to_owned(), test_computername.to_owned());
         data.insert("Channel".to_owned(), test_channel.to_owned());
@@ -747,7 +756,10 @@ mod tests {
         data.insert("Details".to_owned(), output.to_owned());
         data.insert("RecordInformation".to_owned(), test_recinfo.to_owned());
 
-        assert_eq!(_get_serialized_disp_output(data.clone(), true), expect_header);
+        assert_eq!(
+            _get_serialized_disp_output(data.clone(), true),
+            expect_header
+        );
         assert_eq!(
             _get_serialized_disp_output(data.clone(), false),
             expect_no_header
