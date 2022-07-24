@@ -83,6 +83,14 @@ lazy_static! {
             .as_path()
             .display()
     ));
+    pub static ref LEVEL_ABBR: HashMap<String, String> = HashMap::from([
+        (String::from("cruitical"), String::from("crit")),
+        (String::from("high"), String::from("high")),
+        (String::from("medium"), String::from("med ")),
+        (String::from("low"), String::from("low ")),
+        (String::from("informational"), String::from("info")),
+    ]);
+
 }
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。

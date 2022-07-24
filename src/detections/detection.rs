@@ -31,6 +31,7 @@ use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use super::message;
+use super::message::LEVEL_ABBR;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -256,15 +257,16 @@ impl Detection {
             Some(str) => str.to_owned(),
             None => recinfo.as_ref().unwrap_or(&"-".to_string()).to_string(),
         };
-        let opt_record_info = if configs::CONFIG.read().unwrap().args.full_data {
+        let opt_record_info = if profile_all_alias.contains("%RecordInformation%") {
             recinfo
         } else {
             None
         };
+        let level= rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let detect_info = DetectInfo {
             filepath: record_info.evtx_filepath.to_string(),
             rulepath: (&rule.rulepath).to_owned(),
-            level: rule.yaml["level"].as_str().unwrap_or("-").to_string(),
+            level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace('\"', ""),

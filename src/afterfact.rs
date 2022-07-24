@@ -185,19 +185,12 @@ fn emit_csv<W: std::io::Write>(
         HashMap::new();
 
     let levels = Vec::from([
-        "critical",
+        "crit",
         "high",
-        "medium",
-        "low",
-        "informational",
+        "med ",
+        "low ",
+        "info",
         "undefined",
-    ]);
-    let level_abbr: HashMap<String, String> = HashMap::from([
-        (String::from("cruitical"), String::from("crit")),
-        (String::from("high"), String::from("high")),
-        (String::from("medium"), String::from("med ")),
-        (String::from("low"), String::from("low ")),
-        (String::from("informational"), String::from("info")),
     ]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
@@ -484,7 +477,14 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let output_levels = Vec::from(["critical", "high", "medium", "low", "informational"]);
+    let output_levels = Vec::from(["crit", "high", "med ", "low ", "info"]);
+    let level_full_map = HashMap::from([
+        ("crit", "critical"),
+        ("high", "high"),
+        ("med ", "medium"),
+        ("low ", "low"),
+        ("info", "informational"),
+    ]);
 
     for level in output_levels {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -499,7 +499,7 @@ fn _print_detection_summary_by_date(
                 tmp_cnt = *cnt;
             }
         }
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level_full_map.get(level).unwrap())))
             .ok();
         if date_str == String::default() {
             max_detect_str = "n/a".to_string();
@@ -507,7 +507,7 @@ fn _print_detection_summary_by_date(
         writeln!(
             wtr,
             "Date with most total {} detections: {}",
-            level, &max_detect_str
+            level_full_map.get(level).unwrap(), &max_detect_str
         )
         .ok();
     }
@@ -523,7 +523,14 @@ fn _print_detection_summary_by_computer(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let output_levels = Vec::from(["critical", "high", "medium", "low", "informational"]);
+    let output_levels = Vec::from(["crit", "high", "med ", "low ", "info"]);
+    let level_full_map = HashMap::from([
+        ("crit", "critical"),
+        ("high", "high"),
+        ("med ", "medium"),
+        ("low ", "low"),
+        ("info", "informational"),
+    ]);
 
     for level in output_levels {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -546,24 +553,16 @@ fn _print_detection_summary_by_computer(
             result_vec.join(", ")
         };
 
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level)))
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(color_map, level_full_map.get(level).unwrap())))
             .ok();
         writeln!(
             wtr,
             "Top 5 computers with most unique {} detections: {}",
-            level, &result_str
+            level_full_map.get(level).unwrap(), &result_str
         )
         .ok();
     }
     buf_wtr.print(&wtr).ok();
-}
-
-fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
-    if configs::CONFIG.read().unwrap().args.utc {
-        format_rfc(time, date_only)
-    } else {
-        format_rfc(&time.with_timezone(&Local), date_only)
-    }
 }
 
 /// get timestamp to input datetime.
