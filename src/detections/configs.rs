@@ -476,7 +476,7 @@ pub fn load_pivot_keywords(path: &str) {
             .write()
             .unwrap()
             .entry(map[0].to_string())
-            .or_insert(PivotKeyword::new());
+            .or_insert_with(PivotKeyword::new);
 
         PIVOT_KEYWORD
             .write()

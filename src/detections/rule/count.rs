@@ -6,7 +6,7 @@ use crate::detections::message::QUIET_ERRORS_FLAG;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use serde_json::Value;
 use std::num::ParseIntError;
 use std::path::Path;
@@ -311,10 +311,9 @@ impl CountStrategy for FieldStrategy {
         }
 
         let value = &datas[idx as usize].field_record_value;
-        let key_val = self.value_2_cnt.get_key_value_mut(value);
+        let key_val = self.value_2_cnt.get_mut(value);
         if let Some(kv) = key_val {
-            let (_, val) = kv;
-            *val += 1;
+            *kv += 1;
         } else {
             self.value_2_cnt.insert(value.to_string(), 1);
         }
@@ -326,12 +325,12 @@ impl CountStrategy for FieldStrategy {
         }
 
         let record_value = &datas[idx as usize].field_record_value;
-        let key_val = self.value_2_cnt.get_key_value_mut(record_value);
+        let key_val = self.value_2_cnt.get_mut(record_value);
         if key_val.is_none() {
             return;
         }
 
-        let val: &mut i64 = key_val.unwrap().1;
+        let val: &mut i64 = key_val.unwrap();
         if val <= &mut 1 {
             // 0になる場合はキー自体削除する
             self.value_2_cnt.remove(record_value);

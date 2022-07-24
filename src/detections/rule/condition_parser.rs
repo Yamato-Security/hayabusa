@@ -5,7 +5,7 @@ use self::selectionnodes::{
     AndSelectionNode, NotSelectionNode, OrSelectionNode, RefSelectionNode, SelectionNode,
 };
 use super::selectionnodes;
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 lazy_static! {

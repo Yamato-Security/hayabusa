@@ -9,7 +9,7 @@ extern crate static_vcruntime;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
-use hashbrown::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
