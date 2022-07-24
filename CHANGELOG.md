@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- XXX
+- Added definition feature to output format by profiles.txt and default_profile.txt (#165) (@hitenkoku)
 
 **Enhancements:**
 
