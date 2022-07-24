@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Organized crates due to addition of hashbrown crate in std::collections crate. (#629) (@hitenkoku)
 
 **Bug Fixes:**
 
