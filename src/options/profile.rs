@@ -5,7 +5,7 @@ use crate::yaml;
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 use std::collections::HashSet;
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
@@ -59,9 +59,10 @@ pub fn load_profile(
         .set_default_profile
         .is_some()
     {
-        match set_default_profile(default_profile_path, profile_path) {
-            Err(e) => AlertMessage::alert(&e).ok(),
-            _ => None,
+        if let Err(e) = set_default_profile(default_profile_path, profile_path) {
+            AlertMessage::alert(&e).ok();
+        } else {
+            println!("Successed set default profile");
         };
     }
     let conf = &configs::CONFIG.read().unwrap().args;
@@ -135,7 +136,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
 
     // デフォルトプロファイルを設定する処理
     if let Some(profile_name) = &configs::CONFIG.read().unwrap().args.set_default_profile {
-        if let Ok(mut buf_wtr) = File::open(default_profile_path).map(BufWriter::new) {
+        if let Ok(mut buf_wtr) = OpenOptions::new().write(true).truncate(true).open(default_profile_path).map(BufWriter::new) {
             let prof_all_data = &profile_data[0];
             let overwrite_default_data = &prof_all_data[profile_name.as_str()];
             if !overwrite_default_data.is_null() {
@@ -143,12 +144,15 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
                 let mut yml_writer = YamlEmitter::new(&mut out_str);
                 let dump_result = yml_writer.dump(overwrite_default_data);
                 match dump_result {
-                    Ok(_) => match write!(buf_wtr, "{}", out_str) {
+                    Ok(_) => match buf_wtr.write_all(out_str.as_bytes()) {
                         Err(e) => Err(format!(
                             "Failed set profile to default profile file({}). {}",
                             profile_path, e
                         )),
-                        _ => Ok(()),
+                        _ => {
+                            buf_wtr.flush().ok();
+                            Ok(())
+                        },
                     },
                     Err(e) => Err(format!(
                         "Failed set profile to default profile file({}). {}",
