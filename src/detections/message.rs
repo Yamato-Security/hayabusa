@@ -72,7 +72,6 @@ lazy_static! {
     );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
-    pub static ref IS_HIDE_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.hide_record_id;
     pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(&format!(
         "{}/default_details.txt",
         configs::CONFIG
@@ -136,12 +135,62 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 
 /// メッセージを設定
 pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo) {
-    detect_info.detail = parse_message(event_record, output);
+    let parsed_detail =parse_message(event_record, output).chars()
+    .filter(|&c| !c.is_control())
+    .collect::<String>();
+
+    detect_info.detail = if parsed_detail.is_empty() {
+        "-".to_string()
+    } else {
+        parsed_detail
+    };
+
     let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
     let time = get_event_time(event_record).unwrap_or(default_time);
+    for (k, v) in detect_info.ext_field.clone() {
+        let converted_reserve_info = convert_profile_reserved_info(v, detect_info.clone(), time);
+        detect_info.ext_field.insert(k, parse_message(event_record, converted_reserve_info));
+    }
     insert_message(detect_info, time)
 }
 
+/// profileで用いられる予約語の情報を変換する関数
+fn convert_profile_reserved_info (output:String, detect_info: DetectInfo, time: DateTime<Utc>) -> String {
+    let config_reserved_info:HashMap<String, String> = HashMap::from([
+        ("Timestamp".to_string(), format_time(&time,false)),
+        ("Computer".to_string(), detect_info.computername),
+        ("Channel".to_string(), detect_info.channel),
+        ("Level".to_string(), detect_info.level),
+        ("EventID".to_string(), detect_info.eventid),
+        ("MitreAttack".to_string(), detect_info.tag_info),
+        ("RecordID".to_string(), detect_info.record_id.unwrap_or_else(|| "-".to_string())),
+        ("RuleTitle".to_string(), detect_info.alert),
+        ("Details".to_string(), detect_info.detail),
+        ("RecordInformation".to_string(), detect_info.record_information.unwrap_or_else(|| "-".to_string())),
+        ("RuleFile".to_string(), detect_info.rulepath),
+        ("EvtxFile".to_string(), detect_info.filepath),
+    ]);
+    let mut ret = output;
+    let mut convert_target:HashMap<String, String> = HashMap::new();
+    for caps in ALIASREGEX.captures_iter(&ret) {
+        let full_target_str = &caps[0];
+        let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
+        let target_str = full_target_str
+        .chars()
+        .skip(1)
+        .take(target_length)
+        .collect::<String>();
+        if let Some(reserved) =  config_reserved_info.get(&target_str) {
+            convert_target.insert(full_target_str.to_string(), reserved.to_string());
+        }
+    }
+    convert_target.into_iter().for_each(|(k, v)| {
+        ret = ret.replace(&k, &v);
+    });
+    ret
+}
+
+/// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
 fn parse_message(event_record: &Value, output: String) -> String {
     let mut return_message: String = output;
     let mut hash_map: HashMap<String, String> = HashMap::new();

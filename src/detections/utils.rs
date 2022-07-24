@@ -7,6 +7,7 @@ use crate::detections::configs::CURRENT_EXE_PATH;
 use std::path::Path;
 use std::path::PathBuf;
 
+use chrono::Local;
 use termcolor::Color;
 
 use tokio::runtime::Builder;
@@ -383,6 +384,58 @@ pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
         base_path.join(path)
     } else {
         Path::new(path).to_path_buf()
+    }
+}
+
+///タイムゾーンに合わせた情報を情報を取得する関数
+pub fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
+    if configs::CONFIG.read().unwrap().args.utc {
+        format_rfc(time, date_only)
+    } else {
+        format_rfc(&time.with_timezone(&Local), date_only)
+    }
+}
+
+/// return rfc time format string by option
+fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>, date_only: bool) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    let time_args = &configs::CONFIG.read().unwrap().args;
+    if time_args.rfc_2822 {
+        if date_only {
+            time.format("%a, %e %b %Y").to_string()
+        } else {
+            time.format("%a, %e %b %Y %H:%M:%S %:z").to_string()
+        }
+    } else if time_args.rfc_3339 {
+        if date_only {
+            time.format("%Y-%m-%d").to_string()
+        } else {
+            time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
+        }
+    } else if time_args.us_time {
+        if date_only {
+            time.format("%m-%d-%Y").to_string()
+        } else {
+            time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
+        }
+    } else if time_args.us_military_time {
+        if date_only {
+            time.format("%m-%d-%Y").to_string()
+        } else {
+            time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
+        }
+    } else if time_args.european_time {
+        if date_only {
+            time.format("%d-%m-%Y").to_string()
+        } else {
+            time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
+        }
+    } else if date_only {
+        time.format("%Y-%m-%d").to_string()
+    } else {
+        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
     }
 }
 

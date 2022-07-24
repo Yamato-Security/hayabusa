@@ -304,11 +304,6 @@ impl Detection {
         } else {
             Option::None
         };
-        let rec_id = if !*IS_HIDE_RECORD_ID {
-            Some(String::default())
-        } else {
-            None
-        };
 
         let detect_info = DetectInfo {
             filepath: "-".to_owned(),
