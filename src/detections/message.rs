@@ -158,15 +158,16 @@ pub fn insert(
     if exist_detail {
         profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    let mut converted_detect_info = detect_info.clone();
-    for (k, v) in &detect_info.ext_field {
+    let mut tmp_converted_info : HashMap<String, String> = HashMap::new();
+    for (k, v) in detect_info.ext_field.iter() {
         let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
-        converted_detect_info.ext_field.insert(
-            k.to_owned(),
-            parse_message(event_record, &converted_reserve_info),
-        );
+        tmp_converted_info.insert(k.to_owned(),
+        parse_message(event_record, &converted_reserve_info));
     }
-    insert_message(converted_detect_info, time)
+    for (k, v) in tmp_converted_info {
+        detect_info.ext_field.insert(k, v);
+    }
+    insert_message(detect_info, time)
 }
 
 /// profileで用いられる予約語の情報を変換する関数
