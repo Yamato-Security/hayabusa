@@ -133,17 +133,19 @@ pub fn insert(
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<String, String>,
+    is_agg: bool,
 ) {
-    let parsed_detail = parse_message(event_record, &output)
-        .chars()
-        .filter(|&c| !c.is_control())
-        .collect::<String>();
-
-    detect_info.detail = if parsed_detail.is_empty() {
-        "-".to_string()
-    } else {
-        parsed_detail
-    };
+    if !is_agg {
+        let parsed_detail = parse_message(event_record, &output)
+            .chars()
+            .filter(|&c| !c.is_control())
+            .collect::<String>();
+        detect_info.detail = if parsed_detail.is_empty() {
+            "-".to_string()
+        } else {
+            parsed_detail
+        };
+    }
     let mut exist_detail = false;
     PROFILES.as_ref().unwrap().iter().for_each(|(_k, v)| {
         if v.contains("%Details%") {

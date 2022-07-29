@@ -330,6 +330,7 @@ impl Detection {
             detect_info,
             time,
             &mut profile_converter,
+            false,
         );
     }
 
@@ -398,7 +399,6 @@ impl Detection {
         }
 
         let detect_info = DetectInfo {
-            // filepath: "-".to_owned(),
             rulepath: (&rule.rulepath).to_owned(),
             level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
             computername: "-".to_owned(),
@@ -414,6 +414,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,
+            true,
         )
     }
 

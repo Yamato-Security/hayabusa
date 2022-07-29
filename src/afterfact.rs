@@ -673,6 +673,7 @@ mod tests {
                 },
                 expect_time,
                 &mut profile_converter,
+                false,
             );
         }
         let expect =
