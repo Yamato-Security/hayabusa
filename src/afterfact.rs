@@ -663,20 +663,12 @@ mod tests {
                 &event,
                 output.to_string(),
                 DetectInfo {
-                    filepath: test_filepath.to_string(),
                     rulepath: test_rulepath.to_string(),
                     level: test_level.to_string(),
                     computername: test_computername.to_string(),
                     eventid: test_eventid.to_string(),
-                    channel: mock_ch_filter
-                        .get("Security")
-                        .unwrap_or(&String::default())
-                        .to_string(),
-                    alert: test_title.to_string(),
                     detail: String::default(),
-                    tag_info: test_attack.to_string(),
                     record_information: Option::Some(test_recinfo.to_string()),
-                    record_id: Option::Some(test_record_id.to_string()),
                     ext_field: output_profile,
                 },
                 expect_time,

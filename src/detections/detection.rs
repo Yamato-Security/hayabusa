@@ -331,19 +331,14 @@ impl Detection {
         }
 
         let detect_info = DetectInfo {
-            filepath: record_info.evtx_filepath.to_string(),
             rulepath: (&rule.rulepath).to_owned(),
             level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace('\"', ""),
             eventid: eid,
-            channel: CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
-            alert: rule.yaml["title"].as_str().unwrap_or("").to_string(),
             detail: String::default(),
-            tag_info: tag_info.join(" | "),
             record_information: opt_record_info,
-            record_id: rec_id,
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
         };
         message::insert(

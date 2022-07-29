@@ -23,17 +23,12 @@ use termcolor::{BufferWriter, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
-    pub filepath: String,
     pub rulepath: String,
     pub level: String,
     pub computername: String,
     pub eventid: String,
-    pub channel: String,
-    pub alert: String,
     pub detail: String,
-    pub tag_info: String,
     pub record_information: Option<String>,
-    pub record_id: Option<String>,
     pub ext_field: LinkedHashMap<String, String>,
 }
 
