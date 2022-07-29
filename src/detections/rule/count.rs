@@ -326,12 +326,12 @@ impl CountStrategy for FieldStrategy {
         }
 
         let record_value = &datas[idx as usize].field_record_value;
-        let key_val = self.value_2_cnt.get_mut(record_value);
+        let key_val = self.value_2_cnt.get_key_value_mut(record_value);
         if key_val.is_none() {
             return;
         }
 
-        let val: &mut i64 = key_val.unwrap();
+        let val: &mut i64 = key_val.unwrap().1;
         if val <= &mut 1 {
             // 0になる場合はキー自体削除する
             self.value_2_cnt.remove(record_value);

@@ -158,8 +158,8 @@ pub fn insert(
     if exist_detail {
         profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    let mut tmp_converted_info: HashMap<String, String> = HashMap::new();
-    for (k, v) in detect_info.ext_field.iter() {
+    let mut tmp_converted_info: LinkedHashMap<String, String> = LinkedHashMap::new();
+    for (k, v) in &detect_info.ext_field {
         let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
         tmp_converted_info.insert(
             k.to_owned(),
