@@ -382,7 +382,7 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
     if header {
         for k in data.keys() {
             ret.push(k.to_owned());
-        };
+        }
     } else {
         for (i, (_, v)) in data.iter().enumerate() {
             if i == 0 {
@@ -776,9 +776,6 @@ mod tests {
         data.insert("RecordInformation".to_owned(), test_recinfo.to_owned());
 
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
-        assert_eq!(
-            _get_serialized_disp_output(&data, false),
-            expect_no_header
-        );
+        assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
     }
 }
