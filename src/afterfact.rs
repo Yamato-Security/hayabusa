@@ -208,7 +208,7 @@ fn emit_csv<W: std::io::Write>(
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None),
-                        &_get_serialized_disp_output(&mut PROFILES.as_ref().unwrap().clone(), true),
+                        &_get_serialized_disp_output(PROFILES.as_ref().unwrap(), true),
                         false,
                     )
                     .ok();
@@ -222,7 +222,7 @@ fn emit_csv<W: std::io::Write>(
                             .get(&detect_info.level)
                             .unwrap_or(&String::default()),
                     )),
-                    &_get_serialized_disp_output(&mut detect_info.ext_field.clone(), false),
+                    &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
                 )
                 .ok();
@@ -376,24 +376,23 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(data: &mut LinkedHashMap<String, String>, header: bool) -> String {
+fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: bool) -> String {
     let data_length = &data.len();
-    let entries = data.entries();
     let mut ret: Vec<String> = vec![];
     if header {
-        entries.for_each(|entry| {
-            ret.push(entry.key().to_owned());
-        });
+        for (k,v ) in data {
+            ret.push(k.to_owned());
+        };
     } else {
-        entries.enumerate().for_each(|(i, entry)| {
+        for (i, (_, v)) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(entry.get(), ColPos::First))
+                ret.push(_format_cellpos(v, ColPos::First))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(entry.get(), ColPos::Last))
+                ret.push(_format_cellpos(v, ColPos::Last))
             } else {
-                ret.push(_format_cellpos(entry.get(), ColPos::Other))
+                ret.push(_format_cellpos(v, ColPos::Other))
             }
-        });
+        }
     }
     let mut disp_serializer = csv::WriterBuilder::new()
         .double_quote(false)
@@ -776,9 +775,9 @@ mod tests {
         data.insert("Details".to_owned(), output.to_owned());
         data.insert("RecordInformation".to_owned(), test_recinfo.to_owned());
 
-        assert_eq!(_get_serialized_disp_output(&mut data, true), expect_header);
+        assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(
-            _get_serialized_disp_output(&mut data, false),
+            _get_serialized_disp_output(&data, false),
             expect_no_header
         );
     }
