@@ -245,20 +245,6 @@ pub fn get(time: DateTime<Utc>) -> Vec<DetectInfo> {
     }
 }
 
-/// 最後に表示を行う
-pub fn print() {
-    let mut detect_count = 0;
-    for multi in MESSAGES.iter() {
-        let (key, detect_infos) = multi.pair();
-        for detect_info in detect_infos.iter() {
-            println!("{} <{}> {}", key, detect_info.alert, detect_info.detail);
-        }
-        detect_count += detect_infos.len();
-    }
-    println!();
-    println!("Total events:{:?}", detect_count);
-}
-
 pub fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
     let system_time = &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"];
     return utils::str_time_to_datetime(system_time.as_str().unwrap_or(""));
