@@ -487,10 +487,10 @@ fn _print_detection_summary_by_date(
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
         let mut max_detect_str = String::default();
         let mut tmp_cnt: u128 = 0;
-        let mut date_str = String::default();
+        let mut exist_max_data = false;
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
-                date_str = date.clone();
+                exist_max_data = true;
                 max_detect_str = format!("{} ({})", date, cnt);
                 tmp_cnt = *cnt;
             }
@@ -500,7 +500,7 @@ fn _print_detection_summary_by_date(
             level_full_map.get(level.as_str()).unwrap(),
         )))
         .ok();
-        if date_str == String::default() {
+        if !exist_max_data {
             max_detect_str = "n/a".to_string();
         }
         writeln!(
