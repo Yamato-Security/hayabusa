@@ -1287,6 +1287,48 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_startswith_case_insensitive() {
+        // startswithが大文字小文字を区別しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith: "ADMINISTRATORS"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
     fn test_detect_endswith1() {
         // endswithが正しく検知できることを確認
         let rule_str = r#"
@@ -1371,6 +1413,48 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_endswith_case_insensitive() {
+        // endswithが大文字小文字を区別せず検知するかを確認するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith: "ADministRATORS"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
     fn test_detect_contains1() {
         // containsが正しく検知できることを確認
         let rule_str = r#"
@@ -1422,6 +1506,48 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|contains: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "Testministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_contains_case_insensitive() {
+        // containsが大文字小文字を区別せずに検知することを確認するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains: "ADminIstraTOrS"
         details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
