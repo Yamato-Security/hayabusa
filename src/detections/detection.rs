@@ -269,11 +269,11 @@ impl Detection {
             for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
                 match PRELOAD_PROFILE[target_profile] {
                     "%Timestamp%" => {
-                        profile_converter.insert(k.to_string(), format_time(&time, false));
+                        profile_converter.insert(format!("%{}%", k), format_time(&time, false));
                     }
                     "%Computer%" => {
                         profile_converter.insert(
-                            k.to_string(),
+                            format!("%{}%", k),
                             record_info.record["Event"]["System"]["Computer"]
                                 .to_string()
                                 .replace('\"', ""),
@@ -281,37 +281,37 @@ impl Detection {
                     }
                     "%Channel%" => {
                         profile_converter.insert(
-                            k.to_string(),
+                            format!("%{}%", k),
                             CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
                         );
                     }
                     "%Level%" => {
                         profile_converter.insert(
-                            k.to_string(),
+                            format!("%{}%", k),
                             LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
                         );
                     }
                     "%EventID%" => {
-                        profile_converter.insert(k.to_string(), eid.to_owned());
+                        profile_converter.insert(format!("%{}%", k), eid.to_owned());
                     }
                     "%MitreAttack%" => {
-                        profile_converter.insert(k.to_string(), tag_info.join(" | "));
+                        profile_converter.insert(format!("%{}%", k), tag_info.join(" | "));
                     }
                     "%RecordID%" => {
                         profile_converter.insert(
-                            k.to_string(),
+                            format!("%{}%", k),
                             rec_id.as_ref().unwrap_or(&"-".to_string()).to_owned(),
                         );
                     }
                     "%RuleTitle%" => {
                         profile_converter.insert(
-                            k.to_string(),
+                            format!("%{}%", k),
                             rule.yaml["title"].as_str().unwrap_or("").to_string(),
                         );
                     }
                     "%RecordInformation%" => {
                         profile_converter.insert(
-                            k.to_string(),
+                            format!("%{}%", k),
                             opt_record_info
                                 .as_ref()
                                 .unwrap_or(&"-".to_string())
@@ -319,11 +319,11 @@ impl Detection {
                         );
                     }
                     "%RuleFile%" => {
-                        profile_converter.insert(k.to_string(), (&rule.rulepath).to_owned());
+                        profile_converter.insert(format!("%{}%", k), (&rule.rulepath).to_owned());
                     }
                     "%EvtxFile%" => {
                         profile_converter
-                            .insert(k.to_string(), record_info.evtx_filepath.to_string());
+                            .insert(format!("%{}%", k), record_info.evtx_filepath.to_string());
                     }
                     _ => {}
                 }
