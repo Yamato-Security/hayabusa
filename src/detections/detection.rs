@@ -208,27 +208,7 @@ impl Detection {
 
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
-        let tag_info: Vec<String> = match TAGS_CONFIG.is_empty() {
-            false => rule.yaml["tags"]
-                .as_vec()
-                .unwrap_or(&Vec::default())
-                .iter()
-                .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
-                .map(|str| str.to_owned())
-                .collect(),
-            true => rule.yaml["tags"]
-                .as_vec()
-                .unwrap_or(&Vec::default())
-                .iter()
-                .map(
-                    |info| match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
-                        Some(s) => s.to_owned(),
-                        _ => info.as_str().unwrap_or("").replace("attack.", ""),
-                    },
-                )
-                .collect(),
-        };
-
+        let tag_info: Vec<String> = Detection::get_tag_info(rule);
         let recinfo = record_info
             .record_information
             .as_ref()
@@ -355,13 +335,7 @@ impl Detection {
 
     /// insert aggregation condition detection message to output stack
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
-        let tag_info: Vec<String> = rule.yaml["tags"]
-            .as_vec()
-            .unwrap_or(&Vec::default())
-            .iter()
-            .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
-            .map(|str| str.to_owned())
-            .collect();
+        let tag_info: Vec<String> = Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
         let rec_info = if LOAEDED_PROFILE_ALIAS.contains("%RecordInformation%") {
             Option::Some(String::default())
@@ -369,22 +343,102 @@ impl Detection {
             Option::None
         };
 
+        let mut profile_converter: HashMap<String, String> = HashMap::new();
+        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+
+        for (k, v) in PROFILES.as_ref().unwrap().iter() {
+            let tmp = v.as_str();
+            for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
+                match PRELOAD_PROFILE[target_profile] {
+                    "%Timestamp%" => {
+                        profile_converter.insert(
+                            format!("%{}%", k),
+                            format_time(&agg_result.start_timedate, false),
+                        );
+                    }
+                    "%Computer%" => {
+                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                    }
+                    "%Channel%" => {
+                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                    }
+                    "%Level%" => {
+                        profile_converter.insert(
+                            format!("%{}%", k),
+                            LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
+                        );
+                    }
+                    "%EventID%" => {
+                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                    }
+                    "%MitreAttack%" => {
+                        profile_converter.insert(format!("%{}%", k), tag_info.join(" | "));
+                    }
+                    "%RecordID%" => {
+                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                    }
+                    "%RuleTitle%" => {
+                        profile_converter.insert(
+                            format!("%{}%", k),
+                            rule.yaml["title"].as_str().unwrap_or("").to_string(),
+                        );
+                    }
+                    "%RecordInformation%" => {
+                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                    }
+                    "%RuleFile%" => {
+                        profile_converter.insert(format!("%{}%", k), (&rule.rulepath).to_owned());
+                    }
+                    "%EvtxFile%" => {
+                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                    }
+                    _ => {}
+                }
+            }
+        }
+
         let detect_info = DetectInfo {
-            filepath: "-".to_owned(),
+            // filepath: "-".to_owned(),
             rulepath: (&rule.rulepath).to_owned(),
             level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
-            channel: "-".to_owned(),
-            alert: rule.yaml["title"].as_str().unwrap_or("").to_owned(),
             detail: output,
             record_information: rec_info,
-            tag_info: tag_info.join(" : "),
-            record_id: Some("-".to_owned()),
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
         };
 
-        message::insert_message(detect_info, agg_result.start_timedate)
+        message::insert(
+            &Value::default(),
+            rule.yaml["details"].as_str().unwrap_or("-").to_string(),
+            detect_info,
+            agg_result.start_timedate,
+            &mut profile_converter,
+        )
+    }
+
+    /// rule内のtagsの内容を配列として返却する関数
+    fn get_tag_info(rule: &RuleNode) -> Vec<String> {
+        match TAGS_CONFIG.is_empty() {
+            false => rule.yaml["tags"]
+                .as_vec()
+                .unwrap_or(&Vec::default())
+                .iter()
+                .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
+                .map(|str| str.to_owned())
+                .collect(),
+            true => rule.yaml["tags"]
+                .as_vec()
+                .unwrap_or(&Vec::default())
+                .iter()
+                .map(
+                    |info| match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
+                        Some(s) => s.to_owned(),
+                        _ => info.as_str().unwrap_or("").replace("attack.", ""),
+                    },
+                )
+                .collect(),
+        }
     }
 
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
