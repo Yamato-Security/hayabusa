@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
 use std::env::current_exe;
 use std::path::PathBuf;
 use std::sync::RwLock;
@@ -568,7 +568,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 mod tests {
     use crate::detections::configs;
     use chrono::{DateTime, Utc};
-    use std::collections::HashSet;
+    use hashbrown::HashSet;
 
     //     #[test]
     //     #[ignore]

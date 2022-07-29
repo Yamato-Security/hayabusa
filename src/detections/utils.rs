@@ -4,7 +4,7 @@ extern crate regex;
 
 use crate::detections::configs;
 use crate::detections::configs::CURRENT_EXE_PATH;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 

@@ -5,7 +5,7 @@ use crate::yaml;
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 use regex::RegexSet;
-use std::collections::HashSet;
+use hashbrown::HashSet;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;

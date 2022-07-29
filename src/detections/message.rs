@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 use regex::Regex;
 use serde_json::Value;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::env;
 use std::fs::create_dir;
 use std::fs::File;
@@ -376,7 +376,7 @@ mod tests {
     use crate::detections::message::AlertMessage;
     use crate::detections::message::{parse_message, MESSAGES};
     use serde_json::Value;
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
 
     use super::{create_output_filter_config, get_default_details};
 

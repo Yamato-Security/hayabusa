@@ -8,7 +8,7 @@ use std::fs::{self};
 use std::path::Path;
 
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
 
 use std::time::SystemTime;
 

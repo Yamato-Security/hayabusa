@@ -27,7 +27,7 @@ use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;

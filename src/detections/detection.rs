@@ -25,7 +25,7 @@ use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase}
 use crate::filter;
 use crate::yaml::ParseYaml;
 use serde_json::Value;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::fmt::Write;
 use std::path::Path;
 

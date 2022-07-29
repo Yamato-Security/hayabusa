@@ -7,7 +7,7 @@ use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
 use serde_json::Value;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::num::ParseIntError;
 use std::path::Path;
 
@@ -311,9 +311,10 @@ impl CountStrategy for FieldStrategy {
         }
 
         let value = &datas[idx as usize].field_record_value;
-        let key_val = self.value_2_cnt.get_mut(value);
+        let key_val = self.value_2_cnt.get_key_value_mut(value);
         if let Some(kv) = key_val {
-            *kv += 1;
+            let (_, val) = kv;
+            *val += 1;
         } else {
             self.value_2_cnt.insert(value.to_string(), 1);
         }
@@ -498,7 +499,7 @@ mod tests {
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::utils;
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
 
     use chrono::{TimeZone, Utc};
     use yaml_rust::YamlLoader;

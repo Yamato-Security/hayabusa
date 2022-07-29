@@ -2,7 +2,7 @@ extern crate regex;
 
 use chrono::{DateTime, Utc};
 
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::{fmt::Debug, sync::Arc, vec};
 
 use yaml_rust::Yaml;

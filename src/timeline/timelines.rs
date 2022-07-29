@@ -3,7 +3,7 @@ use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use prettytable::{Cell, Row, Table};
 
 use super::statistics::EventStatistics;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct Timeline {

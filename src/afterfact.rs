@@ -14,7 +14,7 @@ use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 
 use std::cmp::min;
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
 use std::error::Error;
 
 use std::fs::File;
@@ -475,7 +475,7 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let level_full_map = HashMap::from([
+    let level_full_map = std::collections::HashMap::from([
         ("crit", "critical"),
         ("high", "high"),
         ("med ", "medium"),
@@ -524,7 +524,7 @@ fn _print_detection_summary_by_computer(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let level_full_map = HashMap::from([
+    let level_full_map = std::collections::HashMap::from([
         ("crit", "critical"),
         ("high", "high"),
         ("med ", "medium"),
@@ -590,7 +590,7 @@ mod tests {
     use chrono::{Local, TimeZone, Utc};
     use linked_hash_map::LinkedHashMap;
     use serde_json::Value;
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;
