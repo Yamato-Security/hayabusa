@@ -13,8 +13,8 @@ use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 
-use std::cmp::min;
 use hashbrown::{HashMap, HashSet};
+use std::cmp::min;
 use std::error::Error;
 
 use std::fs::File;
@@ -588,9 +588,9 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::options::profile::load_profile;
     use chrono::{Local, TimeZone, Utc};
+    use hashbrown::HashMap;
     use linked_hash_map::LinkedHashMap;
     use serde_json::Value;
-    use hashbrown::HashMap;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;

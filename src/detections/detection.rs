@@ -2,7 +2,9 @@ extern crate csv;
 
 use crate::detections::configs;
 use crate::detections::utils::{format_time, write_color_buffer};
-use crate::options::profile::{LOAEDED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES};
+use crate::options::profile::{
+    LOAEDED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES,
+};
 use chrono::{TimeZone, Utc};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
@@ -20,8 +22,8 @@ use crate::detections::rule::RuleNode;
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
 use crate::yaml::ParseYaml;
-use serde_json::Value;
 use hashbrown::HashMap;
+use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
 

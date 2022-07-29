@@ -7,8 +7,8 @@ use git2::Repository;
 use std::fs::{self};
 use std::path::Path;
 
-use std::cmp::Ordering;
 use hashbrown::{HashMap, HashSet};
+use std::cmp::Ordering;
 
 use std::time::SystemTime;
 

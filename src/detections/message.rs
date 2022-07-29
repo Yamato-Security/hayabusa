@@ -7,11 +7,11 @@ use crate::detections::utils::write_color_buffer;
 use crate::options::profile::PROFILES;
 use chrono::{DateTime, Local, Utc};
 use dashmap::DashMap;
+use hashbrown::HashMap;
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 use regex::Regex;
 use serde_json::Value;
-use hashbrown::HashMap;
 use std::env;
 use std::fs::create_dir;
 use std::fs::File;
@@ -158,11 +158,13 @@ pub fn insert(
     if exist_detail {
         profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    let mut tmp_converted_info : HashMap<String, String> = HashMap::new();
+    let mut tmp_converted_info: HashMap<String, String> = HashMap::new();
     for (k, v) in detect_info.ext_field.iter() {
         let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
-        tmp_converted_info.insert(k.to_owned(),
-        parse_message(event_record, &converted_reserve_info));
+        tmp_converted_info.insert(
+            k.to_owned(),
+            parse_message(event_record, &converted_reserve_info),
+        );
     }
     for (k, v) in tmp_converted_info {
         detect_info.ext_field.insert(k, v);
@@ -376,8 +378,8 @@ impl AlertMessage {
 mod tests {
     use crate::detections::message::AlertMessage;
     use crate::detections::message::{parse_message, MESSAGES};
-    use serde_json::Value;
     use hashbrown::HashMap;
+    use serde_json::Value;
 
     use super::{create_output_filter_config, get_default_details};
 
