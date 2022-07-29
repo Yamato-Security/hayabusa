@@ -380,7 +380,7 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
     let data_length = &data.len();
     let mut ret: Vec<String> = vec![];
     if header {
-        for (k,v ) in data {
+        for k in data.keys() {
             ret.push(k.to_owned());
         };
     } else {
