@@ -1,12 +1,8 @@
 extern crate csv;
 
 use crate::detections::configs;
-use crate::detections::utils::format_time;
-use crate::detections::utils::write_color_buffer;
-use crate::options::profile::LOAEDED_PROFILE_ALIAS;
-use crate::options::profile::PRELOAD_PROFILE;
-use crate::options::profile::PRELOAD_PROFILE_REGEX;
-use crate::options::profile::PROFILES;
+use crate::detections::utils::{format_time, write_color_buffer};
+use crate::options::profile::{LOAEDED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES};
 use chrono::{TimeZone, Utc};
 use termcolor::{BufferWriter, Color, ColorChoice};
 
