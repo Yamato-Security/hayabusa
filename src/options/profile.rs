@@ -56,7 +56,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
         }
     } else {
         Err(format!(
-            "Not exist profile file({}). Please check default profile.",
+            "The profile file({}) does not exist. Please check your default profile.",
             profile_path
         ))
     }
@@ -72,7 +72,7 @@ pub fn load_profile(
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
             AlertMessage::alert(&e).ok();
         } else {
-            println!("Successed set default profile");
+            println!("Successfully updated the default profile.");
         };
     }
     let profile_all: Vec<Yaml> = if conf.profile.is_none() {
@@ -138,7 +138,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
         Ok(data) => data,
         Err(e) => {
             AlertMessage::alert(&e).ok();
-            return Err("Failed set default profile.".to_string());
+            return Err("Failed to set the default profile.".to_string());
         }
     };
 
@@ -159,7 +159,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
                 match dump_result {
                     Ok(_) => match buf_wtr.write_all(out_str.as_bytes()) {
                         Err(e) => Err(format!(
-                            "Failed set profile to default profile file({}). {}",
+                            "Failed to set the default profile file({}). {}",
                             profile_path, e
                         )),
                         _ => {
@@ -168,7 +168,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
                         }
                     },
                     Err(e) => Err(format!(
-                        "Failed set profile to default profile file({}). {}",
+                        "Failed to set the default profile file({}). {}",
                         profile_path, e
                     )),
                 }
@@ -177,12 +177,12 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
             }
         } else {
             Err(format!(
-                "Failed set profile to default profile file({}).",
+                "Failed to set the default profile file({}).",
                 profile_path
             ))
         }
     } else {
-        Err("Not specified --set-default-profile".to_string())
+        Err("Not specified: --set-default-profile".to_string())
     }
 }
 
