@@ -38,9 +38,11 @@ hyper = "0.14.*"
 lock_api = "0.4.*"
 crossbeam-utils = "0.8.*"
 
+[build-dependencies]
+static_vcruntime = "2.*"
+
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.*"
-static_vcruntime = "2.*"
 
 [target.'cfg(unix)'.dependencies] #Mac and Linux
 openssl = { version = "*", features = ["vendored"] }  #vendored is needed to compile statically.
