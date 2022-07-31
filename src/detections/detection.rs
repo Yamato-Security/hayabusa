@@ -213,7 +213,7 @@ impl Detection {
             .record_information
             .as_ref()
             .map(|recinfo| recinfo.to_string());
-        let rec_id = if !LOAEDED_PROFILE_ALIAS.contains("%RecordID%") {
+        let rec_id = if LOAEDED_PROFILE_ALIAS.contains("%RecordID%") {
             Some(
                 get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
                     .unwrap_or_default(),
