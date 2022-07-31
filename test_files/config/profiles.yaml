@@ -7,7 +7,7 @@ minimal:
     RuleTitle: "%RuleTitle%"
     Details: "%Details%"
 
-default:
+standard:
     Timestamp: "%Timestamp%"
     Computer: "%Computer%"
     Channel: "%Channel%"
