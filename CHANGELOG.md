@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed error when target env not installed vc redistribute package. (#635) (@fukusuket)
 
 ## v1.4.2 [2022/07/24]
 
