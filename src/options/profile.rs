@@ -15,11 +15,11 @@ lazy_static! {
     pub static ref PROFILES: Option<LinkedHashMap<String, String>> = load_profile(
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
-            "config/default_profile.txt"
+            "config/default_profile.yaml"
         )
         .to_str()
         .unwrap(),
-        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/profiles.txt")
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/profiles.yaml")
             .to_str()
             .unwrap()
     );
@@ -225,8 +225,8 @@ mod tests {
         assert_eq!(
             Some(expect),
             load_profile(
-                "test_files/config/default_profile.txt",
-                "test_files/config/profiles.txt"
+                "test_files/config/default_profile.yaml",
+                "test_files/config/profiles.yaml"
             )
         );
     }
@@ -246,8 +246,8 @@ mod tests {
         assert_eq!(
             Some(expect),
             load_profile(
-                "test_files/config/default_profile.txt",
-                "test_files/config/profiles.txt"
+                "test_files/config/default_profile.yaml",
+                "test_files/config/profiles.yaml"
             )
         );
     }
@@ -260,8 +260,8 @@ mod tests {
         assert_eq!(
             None,
             load_profile(
-                "test_files/config/no_exist_default_profile.txt",
-                "test_files/config/no_exist_profiles.txt"
+                "test_files/config/no_exist_default_profile.yaml",
+                "test_files/config/no_exist_profiles.yaml"
             )
         );
 
@@ -269,8 +269,8 @@ mod tests {
         assert_eq!(
             None,
             load_profile(
-                "test_files/config/profile/default_profile.txt",
-                "test_files/config/profile/no_exist_profiles.txt"
+                "test_files/config/profile/default_profile.yaml",
+                "test_files/config/profile/no_exist_profiles.yaml"
             )
         );
 
@@ -278,8 +278,8 @@ mod tests {
         assert_eq!(
             None,
             load_profile(
-                "test_files/config/no_exist_default_profile.txt",
-                "test_files/config/profiles.txt"
+                "test_files/config/no_exist_default_profile.yaml",
+                "test_files/config/profiles.yaml"
             )
         );
     }

@@ -617,8 +617,8 @@ mod tests {
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
         let output_profile: LinkedHashMap<String, String> = load_profile(
-            "test_files/config/default_profile.txt",
-            "test_files/config/profiles.txt",
+            "test_files/config/default_profile.yaml",
+            "test_files/config/profiles.yaml",
         )
         .unwrap();
         {
