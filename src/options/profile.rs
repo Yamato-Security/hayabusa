@@ -114,7 +114,18 @@ pub fn load_profile(
                 });
             Some(ret)
         } else {
-            AlertMessage::alert(&format!("Invalid profile specified: {}", profile_name)).ok();
+            let profile_names: Vec<&str> = profile_data
+                .as_hash()
+                .unwrap()
+                .keys()
+                .map(|k| k.as_str().unwrap())
+                .collect();
+            AlertMessage::alert(&format!(
+                "Invalid profile specified: {}\n{}",
+                profile_name,
+                profile_names.join(", ")
+            ))
+            .ok();
             None
         }
     } else {
@@ -152,7 +163,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
         {
             let prof_all_data = &profile_data[0];
             let overwrite_default_data = &prof_all_data[profile_name.as_str()];
-            if !overwrite_default_data.is_null() {
+            if !overwrite_default_data.is_badvalue() {
                 let mut out_str = String::default();
                 let mut yml_writer = YamlEmitter::new(&mut out_str);
                 let dump_result = yml_writer.dump(overwrite_default_data);
@@ -173,7 +184,17 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
                     )),
                 }
             } else {
-                Err(format!("Invalid profile specified: {}", profile_name))
+                let profile_names: Vec<&str> = prof_all_data
+                    .as_hash()
+                    .unwrap()
+                    .keys()
+                    .map(|k| k.as_str().unwrap())
+                    .collect();
+                Err(format!(
+                    "Invalid profile specified: {}\n{}",
+                    profile_name,
+                    profile_names.join(", ")
+                ))
             }
         } else {
             Err(format!(
