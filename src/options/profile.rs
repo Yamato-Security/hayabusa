@@ -121,7 +121,7 @@ pub fn load_profile(
                 .map(|k| k.as_str().unwrap())
                 .collect();
             AlertMessage::alert(&format!(
-                "Invalid profile specified: {}\nPlease specify one of the following profiles\nProfile name: {}",
+                "Invalid profile specified: {}\nPlease specify one of the following profiles:\n {}",
                 profile_name,
                 profile_names.join(", ")
             ))
@@ -191,7 +191,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
                     .map(|k| k.as_str().unwrap())
                     .collect();
                 Err(format!(
-                    "Invalid profile specified: {}\nPlease specify one of the following profiles\nProfile name:{}",
+                    "Invalid profile specified: {}\nPlease specify one of the following profiles:\n{}",
                     profile_name,
                     profile_names.join(", ")
                 ))
