@@ -158,10 +158,14 @@ pub fn insert(
     let mut tmp_converted_info: LinkedHashMap<String, String> = LinkedHashMap::new();
     for (k, v) in &detect_info.ext_field {
         let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
-        tmp_converted_info.insert(
-            k.to_owned(),
-            parse_message(event_record, &converted_reserve_info),
-        );
+        if v == "%RecordInformation%" {
+            tmp_converted_info.insert(k.to_owned(), converted_reserve_info);
+        } else {
+            tmp_converted_info.insert(
+                k.to_owned(),
+                parse_message(event_record, &converted_reserve_info),
+            );
+        }
     }
     for (k, v) in tmp_converted_info {
         detect_info.ext_field.insert(k, v);

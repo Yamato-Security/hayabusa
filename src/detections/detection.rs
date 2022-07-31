@@ -244,16 +244,17 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
         let mut profile_converter: HashMap<String, String> = HashMap::new();
-        for (k, v) in PROFILES.as_ref().unwrap().iter() {
+        for (_k, v) in PROFILES.as_ref().unwrap().iter() {
             let tmp = v.as_str();
             for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
                 match PRELOAD_PROFILE[target_profile] {
                     "%Timestamp%" => {
-                        profile_converter.insert(format!("%{}%", k), format_time(&time, false));
+                        profile_converter
+                            .insert("%Timestamp%".to_string(), format_time(&time, false));
                     }
                     "%Computer%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%Computer%".to_string(),
                             record_info.record["Event"]["System"]["Computer"]
                                 .to_string()
                                 .replace('\"', ""),
@@ -261,37 +262,37 @@ impl Detection {
                     }
                     "%Channel%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%Channel%".to_string(),
                             CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
                         );
                     }
                     "%Level%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%Level%".to_string(),
                             LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
                         );
                     }
                     "%EventID%" => {
-                        profile_converter.insert(format!("%{}%", k), eid.to_owned());
+                        profile_converter.insert("%EventID%".to_string(), eid.to_owned());
                     }
                     "%MitreAttack%" => {
-                        profile_converter.insert(format!("%{}%", k), tag_info.join(" | "));
+                        profile_converter.insert("%MitreAttack%".to_string(), tag_info.join(" | "));
                     }
                     "%RecordID%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%RecordID%".to_string(),
                             rec_id.as_ref().unwrap_or(&"-".to_string()).to_owned(),
                         );
                     }
                     "%RuleTitle%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%RuleTitle%".to_string(),
                             rule.yaml["title"].as_str().unwrap_or("").to_string(),
                         );
                     }
                     "%RecordInformation%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%RecordInformation%".to_string(),
                             opt_record_info
                                 .as_ref()
                                 .unwrap_or(&"-".to_string())
@@ -300,7 +301,7 @@ impl Detection {
                     }
                     "%RuleFile%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%RuleFile%".to_string(),
                             Path::new(&rule.rulepath)
                                 .file_name()
                                 .unwrap_or_default()
@@ -311,7 +312,7 @@ impl Detection {
                     }
                     "%EvtxFile%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%EvtxFile%".to_string(),
                             Path::new(&record_info.evtx_filepath)
                                 .file_name()
                                 .unwrap_or_default()
@@ -362,49 +363,49 @@ impl Detection {
         let mut profile_converter: HashMap<String, String> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
-        for (k, v) in PROFILES.as_ref().unwrap().iter() {
+        for (_k, v) in PROFILES.as_ref().unwrap().iter() {
             let tmp = v.as_str();
             for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
                 match PRELOAD_PROFILE[target_profile] {
                     "%Timestamp%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%Timestamp%".to_string(),
                             format_time(&agg_result.start_timedate, false),
                         );
                     }
                     "%Computer%" => {
-                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                        profile_converter.insert("%Computer%".to_string(), "-".to_owned());
                     }
                     "%Channel%" => {
-                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                        profile_converter.insert("%Channel%".to_string(), "-".to_owned());
                     }
                     "%Level%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%Level%".to_string(),
                             LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
                         );
                     }
                     "%EventID%" => {
-                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                        profile_converter.insert("%EventID%".to_string(), "-".to_owned());
                     }
                     "%MitreAttack%" => {
-                        profile_converter.insert(format!("%{}%", k), tag_info.join(" | "));
+                        profile_converter.insert("%MitreAttack%".to_owned(), tag_info.join(" | "));
                     }
                     "%RecordID%" => {
-                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                        profile_converter.insert("%RecordID%".to_string(), "-".to_owned());
                     }
                     "%RuleTitle%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%RuleTitle%".to_string(),
                             rule.yaml["title"].as_str().unwrap_or("").to_string(),
                         );
                     }
                     "%RecordInformation%" => {
-                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                        profile_converter.insert("%RecordInformation%".to_string(), "-".to_owned());
                     }
                     "%RuleFile%" => {
                         profile_converter.insert(
-                            format!("%{}%", k),
+                            "%RuleFile%".to_string(),
                             Path::new(&rule.rulepath)
                                 .file_name()
                                 .unwrap_or_default()
@@ -414,7 +415,7 @@ impl Detection {
                         );
                     }
                     "%EvtxFile%" => {
-                        profile_converter.insert(format!("%{}%", k), "-".to_owned());
+                        profile_converter.insert("%EvtxFile%".to_string(), "-".to_owned());
                     }
                     _ => {}
                 }
