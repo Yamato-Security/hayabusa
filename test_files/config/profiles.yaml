@@ -1,44 +1,44 @@
 minimal:
-    Timestamp: '%Timestamp%'
-    Computer: '%Computer%'
-    Channel: '%Channel%'
-    EventID: '%EventID%'
-    Level: '%Level%'
-    RuleTitle: '%RuleTitle%'
-    Details: '%Details%'
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
 
 default:
-    Timestamp: '%Timestamp%'
-    Computer: '%Computer%'
-    Channel: '%Channel%'
-    EventID: '%EventID%'
-    Level: '%Level%'
-    Tags: '%MitreAttack%'
-    RecordID: '%RecordID%'
-    RuleTitle: '%RuleTitle%'
-    Details: '%Details%'
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    Tags: "%MitreAttack%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
 
 verbose-1:
-    Timestamp: '%Timestamp%'
-    Computer: '%Computer%'
-    Channel: '%Channel%'
-    EventID: '%EventID%'
-    Level: '%Level%'
-    Tags: '%MitreAttack%'
-    RecordID: '%RecordID%'
-    RuleTitle: '%RuleTitle%'
-    Details: '%Details%'
-    RulePath: '%RulePath%'
-    FilePath: '%FilePath%'
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    Tags: "%MitreAttack%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
+    RulePath: "%RulePath%"
+    FilePath: "%FilePath%"
 
 verbose-2:
-    Timestamp: '%Timestamp%'
-    Computer: '%Computer%'
-    Channel: '%Channel%'
-    EventID: '%EventID%'
-    Level: '%Level%'
-    Tags: '%MitreAttack%'
-    RecordID: '%RecordID%'
-    RuleTitle: '%RuleTitle%'
-    Details: '%Details%'
-    AllFieldInfo: '%RecordInformation%'
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    Tags: "%MitreAttack%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
+    AllFieldInfo: "%RecordInformation%"
