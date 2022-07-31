@@ -28,8 +28,8 @@ verbose-1:
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
     Details: "%Details%"
-    RulePath: "%RulePath%"
-    FilePath: "%FilePath%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
 
 verbose-2:
     Timestamp: "%Timestamp%"

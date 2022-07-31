@@ -299,11 +299,26 @@ impl Detection {
                         );
                     }
                     "%RuleFile%" => {
-                        profile_converter.insert(format!("%{}%", k), (&rule.rulepath).to_owned());
+                        profile_converter.insert(
+                            format!("%{}%", k),
+                            Path::new(&rule.rulepath)
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_str()
+                                .unwrap_or_default()
+                                .to_string(),
+                        );
                     }
                     "%EvtxFile%" => {
-                        profile_converter
-                            .insert(format!("%{}%", k), record_info.evtx_filepath.to_string());
+                        profile_converter.insert(
+                            format!("%{}%", k),
+                            Path::new(&record_info.evtx_filepath)
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_str()
+                                .unwrap_or_default()
+                                .to_string(),
+                        );
                     }
                     _ => {}
                 }
@@ -388,7 +403,15 @@ impl Detection {
                         profile_converter.insert(format!("%{}%", k), "-".to_owned());
                     }
                     "%RuleFile%" => {
-                        profile_converter.insert(format!("%{}%", k), (&rule.rulepath).to_owned());
+                        profile_converter.insert(
+                            format!("%{}%", k),
+                            Path::new(&rule.rulepath)
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_str()
+                                .unwrap_or_default()
+                                .to_string(),
+                        );
                     }
                     "%EvtxFile%" => {
                         profile_converter.insert(format!("%{}%", k), "-".to_owned());

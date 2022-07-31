@@ -508,7 +508,7 @@ When hayabusa output is being displayed to the screen (the default), it can disp
 * `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column.
 * `MitreAttack`: MITRE ATT&CK tactics.
 * `RuleFile`: The filename of the detection rule that generated the alert or event.
-* `EvtxFile`: The path to the evtx file that caused the alert or event.
+* `EvtxFile`: The evtx filename that caused the alert or event.
 * `RecordInformation`: All field information.
 
 ## Output customize by profile
