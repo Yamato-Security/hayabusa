@@ -314,8 +314,6 @@ impl Detection {
                         profile_converter.insert(
                             "%EvtxFile%".to_string(),
                             Path::new(&record_info.evtx_filepath)
-                                .file_name()
-                                .unwrap_or_default()
                                 .to_str()
                                 .unwrap_or_default()
                                 .to_string(),
