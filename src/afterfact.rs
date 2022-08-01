@@ -1,7 +1,7 @@
 use crate::detections::configs;
 use crate::detections::configs::{CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::message::AlertMessage;
 use crate::detections::message::{self, LEVEL_ABBR};
+use crate::detections::message::{AlertMessage, LEVEL_FULL};
 use crate::detections::utils::{self, format_time};
 use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::options::profile::PROFILES;
@@ -229,13 +229,19 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(detect_info.ext_field.keys())?;
+                    wtr.write_record(detect_info.ext_field.keys().map(|x| x.trim()))?;
                     plus_header = false;
                 }
-                wtr.write_record(detect_info.ext_field.values())?;
+                wtr.write_record(detect_info.ext_field.values().map(|x| x.trim()))?;
             }
+
             let level_suffix = *configs::LEVELMAP
-                .get(&detect_info.level.to_uppercase())
+                .get(
+                    &LEVEL_FULL
+                        .get(&detect_info.level)
+                        .unwrap_or(&"undefined".to_string())
+                        .to_uppercase(),
+                )
                 .unwrap_or(&0) as usize;
             let time_str_date = format_time(time, true);
             let mut detect_counts_by_date = detect_counts_by_date_and_level
@@ -474,14 +480,6 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    let level_full_map = std::collections::HashMap::from([
-        ("crit", "critical"),
-        ("high", "high"),
-        ("med ", "medium"),
-        ("low ", "low"),
-        ("info", "informational"),
-    ]);
-
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
@@ -497,7 +495,7 @@ fn _print_detection_summary_by_date(
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            level_full_map.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(level.as_str()).unwrap(),
         )))
         .ok();
         if !exist_max_data {
@@ -506,7 +504,7 @@ fn _print_detection_summary_by_date(
         writeln!(
             wtr,
             "Date with most total {} detections: {}",
-            level_full_map.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(level.as_str()).unwrap(),
             &max_detect_str
         )
         .ok();
@@ -522,14 +520,6 @@ fn _print_detection_summary_by_computer(
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-
-    let level_full_map = std::collections::HashMap::from([
-        ("crit", "critical"),
-        ("high", "high"),
-        ("med ", "medium"),
-        ("low ", "low"),
-        ("info", "informational"),
-    ]);
 
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -554,13 +544,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            level_full_map.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(level.as_str()).unwrap(),
         )))
         .ok();
         writeln!(
             wtr,
             "Top 5 computers with most unique {} detections: {}",
-            level_full_map.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(level.as_str()).unwrap(),
             &result_str
         )
         .ok();

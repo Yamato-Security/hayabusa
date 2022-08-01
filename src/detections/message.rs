@@ -77,13 +77,19 @@ lazy_static! {
             .display()
     ));
     pub static ref LEVEL_ABBR: HashMap<String, String> = HashMap::from([
-        (String::from("critical"), String::from("crit")),
-        (String::from("high"), String::from("high")),
-        (String::from("medium"), String::from("med ")),
-        (String::from("low"), String::from("low ")),
-        (String::from("informational"), String::from("info")),
+        ("critical".to_string(), "crit".to_string()),
+        ("high".to_string(), "high".to_string()),
+        ("medium".to_string(), "med ".to_string()),
+        ("low".to_string(), "low ".to_string()),
+        ("informational".to_string(), "info".to_string()),
     ]);
-
+    pub static ref LEVEL_FULL: HashMap<String, String> = HashMap::from([
+        ("crit".to_string(), "critical".to_string()),
+        ("high".to_string(), "high".to_string()),
+        ("med ".to_string(), "medium".to_string()),
+        ("low ".to_string(), "low".to_string()),
+        ("info".to_string(), "informational".to_string())
+    ]);
 }
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
