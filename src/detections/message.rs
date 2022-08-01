@@ -165,7 +165,7 @@ pub fn insert(
     for (k, v) in &detect_info.ext_field {
         let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
         if v == "%RecordInformation%" {
-            tmp_converted_info.insert(k.to_owned(), v.to_owned());
+            tmp_converted_info.insert(k.to_owned(), converted_reserve_info);
         } else {
             tmp_converted_info.insert(
                 k.to_owned(),
