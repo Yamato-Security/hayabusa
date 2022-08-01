@@ -424,7 +424,7 @@ impl Detection {
 
         let detect_info = DetectInfo {
             rulepath: (&rule.rulepath).to_owned(),
-            level: rule.yaml["level"].as_str().unwrap_or("").to_owned(),
+            level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
             detail: output,
