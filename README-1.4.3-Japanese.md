@@ -60,6 +60,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ログオン情報の要約](#ログオン情報の要約)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
 - [Hayabusaの出力](#hayabusaの出力)
+  - [プロファイルによる出力のカスタマイズ](#プロファイルによる出力のカスタマイズ)
   - [Levelの省略](#levelの省略)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
@@ -326,43 +327,43 @@ USAGE:
     hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
 
 OPTIONS:
-        --European-time                           ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-        --RFC-2822                                RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-        --RFC-3339                                RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-        --US-military-time                        24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-        --US-time                                 アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-        --target-file-ext <EVTX_FILE_EXT>...      evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
-        --all-tags                                出力したCSVファイルにルール内のタグ情報を全て出力する
-    -c, --rules-config <RULE_CONFIG_DIRECTORY>    ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-        --contributors                            コントリビュータの一覧表示
-    -d, --directory <DIRECTORY>                   .evtxファイルを持つディレクトリのパス
-    -D, --deep-scan                               すべてのイベントIDを対象にしたスキャンを行う
-        --enable-deprecated-rules                 Deprecatedルールを有効にする
-        --end-timeline <END_TIMELINE>             解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-        --exclude-status <EXCLUDE_STATUS>...      読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
-    -f, --filepath <FILE_PATH>                    1つの.evtxファイルに対して解析を行う
-    -F, --full-data                               全てのフィールド情報を出力する
-    -h, --help                                    ヘルプ情報を表示する
-    -l, --live-analysis                           ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-    -L, --logon-summary                           成功と失敗したログオン情報の要約を出力する
-        --level-tuning [<LEVEL_TUNING_FILE>]      ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-    -m, --min-level <LEVEL>                       結果出力をするルールの最低レベル (デフォルト: informational)
-    -n, --enable-noisy-rules                      Noisyルールを有効にする
-        --no_color                                カラー出力を無効にする
-    -o, --output <CSV_TIMELINE>                   タイムラインをCSV形式で保存する (例: results.csv)
-    -p, --pivot-keywords-list                     ピボットキーワードの一覧作成
-    -q, --quiet                                   Quietモード: 起動バナーを表示しない
-    -Q, --quiet-errors                            Quiet errorsモード: エラーログを保存しない
-    -r, --rules <RULE_DIRECTORY/RULE_FILE>        ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
-    -R, --hide-record-id                          イベントレコードIDを表示しない
-    -s, --statistics                              イベントIDの統計情報を表示する
-        --start-timeline <START_TIMELINE>         解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
-    -t, --thread-number <NUMBER>                  スレッド数 (デフォルト: パフォーマンスに最適な数値)
-    -u, --update-rules                            rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
-    -U, --UTC                                     UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
-    -v, --verbose                                 詳細な情報を出力する
-    -V, --visualize-timeline                      イベント頻度タイムラインを出力する
-        --version                                 バージョン情報を表示する
+        --European-time                                ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+        --RFC-2822                                     RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+        --RFC-3339                                     RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+        --US-military-time                             24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+        --US-time                                      アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+        --all-tags                                     出力したCSVファイルにルール内のタグ情報を全て出力する
+    -c, --rules-config <RULE_CONFIG_DIRECTORY>         ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+        --contributors                                 コントリビュータの一覧表示
+    -d, --directory <DIRECTORY>                        .evtxファイルを持つディレクトリのパス
+    -D, --deep-scan                                    すべてのイベントIDを対象にしたスキャンを行う
+        --enable-deprecated-rules                      Deprecatedルールを有効にする
+        --end-timeline <END_TIMELINE>                  解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+        --exclude-status <EXCLUDE_STATUS>...           読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
+    -f, --filepath <FILE_PATH>                         1つの.evtxファイルに対して解析を行う
+    -h, --help                                         ヘルプ情報を表示する
+    -l, --live-analysis                                ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+    -L, --logon-summary                                成功と失敗したログオン情報の要約を出力する
+        --level-tuning [<LEVEL_TUNING_FILE>]           ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+    -m, --min-level <LEVEL>                            結果出力をするルールの最低レベル (デフォルト: informational)
+    -n, --enable-noisy-rules                           Noisyルールを有効にする
+        --no_color                                     カラー出力を無効にする
+    -o, --output <CSV_TIMELINE>                        タイムラインをCSV形式で保存する (例: results.csv)
+    -p, --pivot-keywords-list                          ピボットキーワードの一覧作成
+    -P, --profile <PROFILE>                            利用する出力プロファイル名を指定する
+    -q, --quiet                                        Quietモード: 起動バナーを表示しない
+    -Q, --quiet-errors                                 Quiet errorsモード: エラーログを保存しない
+    -r, --rules <RULE_DIRECTORY/RULE_FILE>             ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+    -s, --statistics                                   イベントIDの統計情報を表示する
+        --set-default-profile <SET_DEFAULT_PROFILE>    デフォルトの出力コンフィグを設定する
+        --start-timeline <START_TIMELINE>              解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+    -t, --thread-number <NUMBER>                       スレッド数 (デフォルト: パフォーマンスに最適な数値)
+        --target-file-ext <EVTX_FILE_EXT>...           evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
+    -u, --update-rules                                 rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
+    -U, --UTC                                          UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+    -v, --verbose                                      詳細な情報を出力する
+    -V, --visualize-timeline                           イベント頻度タイムラインを出力する
+        --version                                      バージョン情報を表示する
 ```
 
 ## 使用例
@@ -498,7 +499,7 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 # Hayabusaの出力
 
-Hayabusaの結果を標準出力に表示しているとき（デフォルト）は、以下の情報を表示します:
+Hayabusaの結果を標準出力に表示しているとき（デフォルト）は、以下の情報を表示することができます:
 
 * `Timestamp`: デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっています。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ています。デフォルトのタイムゾーンはローカルのタイムゾーンになりますが、`--utc` オプションで UTC に変更することができます。
 * `Computer`: イベントログの`<Event><System><Computer>`フィールドから来ています。
@@ -506,16 +507,42 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Event ID`: イベントログの`<Event><System><EventID>`フィールドから来ています。
 * `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
 * `Title`: YML検知ルールの`title`フィールドから来ています。
-* `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。`-R`もしくは`--hide-record-id`オプションを付けると表示されません。
+* `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。
 * `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。
-
-CSVファイルとして保存する場合、以下の列が追加されます:
-
 * `MitreAttack`: MITRE ATT&CKの戦術。
 * `RuleFile`: アラートまたはイベントを生成した検知ルールのファイル名。
 * `EvtxFile`: アラートまたはイベントを起こしたevtxファイルへのパス。
+* `RecordInformation`: すべてのフィールド情報。
 
-`-F`もしくは`--full-data`オプションを指定した場合、全てのフィールド情報が`RecordInformation`カラムにで出力されます。
+## プロファイルによる出力のカスタマイズ
+
+Hayabusaの出力内容はconfig/profiles.txtとconfig/default_profile.txtを変更することでカスタマイズできます。カスタマイズではHayabusaの出力で用いられている内容を以下のエイリアスで呼び出すことができます。
+もし、`config/profiles.txt`に書いてるプロファイルを用いたい場合は`-P/--profile`オプションを利用してください。
+default_profiles.txtをprofile.txtに書かれているプロファイルで上書きしたい場合は`--set-default-profile`オプションを利用してください。
+
+|エイリアス名|Haysbusaの出力にある情報|
+|:---|:---|
+|%Timestamp% | `Timestamp` |
+|%Computer% | `Computer` |
+|%Channel% | `Channel` |
+|%Level% | `Level` |
+|%EventID% | `EventID` |
+|%MitreAttack% | `MitreAttack` |
+|%RecordID% | `RecordID` |
+|%RuleTitle% | `Title` |
+|%Details% | `Details` |
+|%RecordInformation% | `RecordInformation` |
+|%RuleFile% | `RuleFile` |
+|%EvtxFile% | `EvtxFile` |
+
+profiles.txtへの記載例:
+
+```yaml
+(profilename):
+    (column name): '%Timestamp%'
+    (column name2): '%Computer%'
+    (column name3): '%Channel%'
+```
 
 ## Levelの省略
 

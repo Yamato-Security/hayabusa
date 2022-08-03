@@ -4,10 +4,12 @@ use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::utils;
 use crate::detections::utils::get_serde_number_to_string;
 use crate::detections::utils::write_color_buffer;
-use chrono::{DateTime, Local, TimeZone, Utc};
+use crate::options::profile::PROFILES;
+use chrono::{DateTime, Local, Utc};
 use dashmap::DashMap;
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
+use linked_hash_map::LinkedHashMap;
 use regex::Regex;
 use serde_json::Value;
 use std::env;
@@ -21,17 +23,13 @@ use termcolor::{BufferWriter, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
-    pub filepath: String,
     pub rulepath: String,
     pub level: String,
     pub computername: String,
     pub eventid: String,
-    pub channel: String,
-    pub alert: String,
     pub detail: String,
-    pub tag_info: String,
     pub record_information: Option<String>,
-    pub record_id: Option<String>,
+    pub ext_field: LinkedHashMap<String, String>,
 }
 
 pub struct AlertMessage {}
@@ -68,7 +66,6 @@ lazy_static! {
     );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
-    pub static ref IS_HIDE_RECORD_ID: bool = configs::CONFIG.read().unwrap().args.hide_record_id;
     pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(&format!(
         "{}/default_details.txt",
         configs::CONFIG
@@ -79,6 +76,20 @@ lazy_static! {
             .as_path()
             .display()
     ));
+    pub static ref LEVEL_ABBR: LinkedHashMap<String, String> = LinkedHashMap::from_iter([
+        ("critical".to_string(), "crit".to_string()),
+        ("high".to_string(), "high".to_string()),
+        ("medium".to_string(), "med ".to_string()),
+        ("low".to_string(), "low ".to_string()),
+        ("informational".to_string(), "info".to_string()),
+    ]);
+    pub static ref LEVEL_FULL: HashMap<String, String> = HashMap::from([
+        ("crit".to_string(), "critical".to_string()),
+        ("high".to_string(), "high".to_string()),
+        ("med ".to_string(), "medium".to_string()),
+        ("low ".to_string(), "low".to_string()),
+        ("info".to_string(), "informational".to_string())
+    ]);
 }
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
@@ -102,9 +113,8 @@ pub fn create_output_filter_config(
             return;
         }
 
-        let empty = &"".to_string();
-        let tag_full_str = line.get(0).unwrap_or(empty).trim();
-        let tag_replace_str = line.get(1).unwrap_or(empty).trim();
+        let tag_full_str = line[0].trim();
+        let tag_replace_str = line[1].trim();
 
         ret.insert(tag_full_str.to_owned(), tag_replace_str.to_owned());
     });
@@ -123,15 +133,67 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 }
 
 /// メッセージを設定
-pub fn insert(event_record: &Value, output: String, mut detect_info: DetectInfo) {
-    detect_info.detail = parse_message(event_record, output);
-    let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
-    let time = get_event_time(event_record).unwrap_or(default_time);
+pub fn insert(
+    event_record: &Value,
+    output: String,
+    mut detect_info: DetectInfo,
+    time: DateTime<Utc>,
+    profile_converter: &mut HashMap<String, String>,
+    is_agg: bool,
+) {
+    if !is_agg {
+        let parsed_detail = parse_message(event_record, &output)
+            .chars()
+            .filter(|&c| !c.is_control())
+            .collect::<String>();
+        detect_info.detail = if parsed_detail.is_empty() {
+            "-".to_string()
+        } else {
+            parsed_detail
+        };
+    }
+    let mut exist_detail = false;
+    PROFILES.as_ref().unwrap().iter().for_each(|(_k, v)| {
+        if v.contains("%Details%") {
+            exist_detail = true;
+        }
+    });
+    if exist_detail {
+        profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
+    }
+    let mut tmp_converted_info: LinkedHashMap<String, String> = LinkedHashMap::new();
+    for (k, v) in &detect_info.ext_field {
+        let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
+        if v.contains("%RecordInformation%") || v.contains("%Details%") {
+            tmp_converted_info.insert(k.to_owned(), converted_reserve_info);
+        } else {
+            tmp_converted_info.insert(
+                k.to_owned(),
+                parse_message(event_record, &converted_reserve_info),
+            );
+        }
+    }
+    for (k, v) in tmp_converted_info {
+        detect_info.ext_field.insert(k, v);
+    }
     insert_message(detect_info, time)
 }
 
-fn parse_message(event_record: &Value, output: String) -> String {
-    let mut return_message: String = output;
+/// profileで用いられる予約語の情報を変換する関数
+fn convert_profile_reserved_info(
+    output: &String,
+    config_reserved_info: &HashMap<String, String>,
+) -> String {
+    let mut ret = output.to_owned();
+    config_reserved_info.iter().for_each(|(k, v)| {
+        ret = ret.replace(k, v);
+    });
+    ret
+}
+
+/// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
+fn parse_message(event_record: &Value, output: &String) -> String {
+    let mut return_message = output.to_owned();
     let mut hash_map: HashMap<String, String> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
@@ -146,7 +208,7 @@ fn parse_message(event_record: &Value, output: String) -> String {
         {
             _array_str.to_string()
         } else {
-            "Event.EventData.".to_owned() + &target_str
+            format!("Event.EventData.{}", target_str)
         };
 
         let split: Vec<&str> = array_str.split('.').collect();
@@ -184,7 +246,6 @@ fn parse_message(event_record: &Value, output: String) -> String {
     for (k, v) in &hash_map {
         return_message = return_message.replace(k, v);
     }
-
     return_message
 }
 
@@ -194,20 +255,6 @@ pub fn get(time: DateTime<Utc>) -> Vec<DetectInfo> {
         Some(v) => v.to_vec(),
         None => Vec::new(),
     }
-}
-
-/// 最後に表示を行う
-pub fn print() {
-    let mut detect_count = 0;
-    for multi in MESSAGES.iter() {
-        let (key, detect_infos) = multi.pair();
-        for detect_info in detect_infos.iter() {
-            println!("{} <{}> {}", key, detect_info.alert, detect_info.detail);
-        }
-        detect_count += detect_infos.len();
-    }
-    println!();
-    println!("Total events:{:?}", detect_count);
 }
 
 pub fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
@@ -365,7 +412,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
             ),
             expected,
         );
@@ -386,7 +433,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "alias:no_alias";
         assert_eq!(
-            parse_message(&event_record, "alias:%NoAlias%".to_owned()),
+            parse_message(&event_record, &"alias:%NoAlias%".to_owned()),
             expected,
         );
     }
@@ -412,7 +459,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "NoExistAlias:n/a";
         assert_eq!(
-            parse_message(&event_record, "NoExistAlias:%NoAliasNoHit%".to_owned()),
+            parse_message(&event_record, &"NoExistAlias:%NoAliasNoHit%".to_owned()),
             expected,
         );
     }
@@ -439,7 +486,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
             ),
             expected,
         );
@@ -472,7 +519,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% data:%Data%".to_owned()
+                &"commandline:%CommandLine% data:%Data%".to_owned()
             ),
             expected,
         );
@@ -505,7 +552,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% data:%Data[2]%".to_owned()
+                &"commandline:%CommandLine% data:%Data[2]%".to_owned()
             ),
             expected,
         );
@@ -538,7 +585,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                "commandline:%CommandLine% data:%Data[0]%".to_owned()
+                &"commandline:%CommandLine% data:%Data[0]%".to_owned()
             ),
             expected,
         );

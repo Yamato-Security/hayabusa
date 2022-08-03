@@ -59,6 +59,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Logon Summary Generator](#logon-summary-generator)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
+  - [Output customize by profile](#output-customize-by-profile)
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
@@ -322,43 +323,43 @@ USAGE:
     hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
 
 OPTIONS:
-        --European-time                           Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-        --RFC-2822                                Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-        --RFC-3339                                Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-        --US-military-time                        Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-        --US-time                                 Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-        --target-file-ext <EVTX_FILE_EXT>...      Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-        --all-tags                                Output all tags when saving to a CSV file
-    -c, --rules-config <RULE_CONFIG_DIRECTORY>    Specify custom rule config folder (default: ./rules/config)
-        --contributors                            Print the list of contributors
-    -d, --directory <DIRECTORY>                   Directory of multiple .evtx files
-    -D, --deep-scan                               Disable event ID filter to scan all events
-        --enable-deprecated-rules                 Enable rules marked as deprecated
-        --end-timeline <END_TIMELINE>             End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-        --exclude-status <EXCLUDE_STATUS>...      Ignore rules according to status (ex: experimental) (ex: stable test)
-    -f, --filepath <FILE_PATH>                    File path to one .evtx file
-    -F, --full-data                               Print all field information
-    -h, --help                                    Print help information
-    -l, --live-analysis                           Analyze the local C:\Windows\System32\winevt\Logs folder
-    -L, --logon-summary                           Print a summary of successful and failed logons
-        --level-tuning [<LEVEL_TUNING_FILE>]      Tune alert levels (default: ./rules/config/level_tuning.txt)
-    -m, --min-level <LEVEL>                       Minimum level for rules (default: informational)
-    -n, --enable-noisy-rules                      Enable rules marked as noisy
-        --no-color                                Disable color output
-    -o, --output <CSV_TIMELINE>                   Save the timeline in CSV format (ex: results.csv)
-    -p, --pivot-keywords-list                     Create a list of pivot keywords
-    -q, --quiet                                   Quiet mode: do not display the launch banner
-    -Q, --quiet-errors                            Quiet errors mode: do not save error logs
-    -r, --rules <RULE_DIRECTORY/RULE_FILE>        Specify a rule directory or file (default: ./rules)
-    -R, --hide-record-ID                          Do not display EventRecordID numbers
-    -s, --statistics                              Print statistics of event IDs
-        --start-timeline <START_TIMELINE>         Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    -t, --thread-number <NUMBER>                  Thread number (default: optimal number for performance)
-    -u, --update-rules                            Update to the latest rules in the hayabusa-rules github repository
-    -U, --UTC                                     Output time in UTC format (default: local time)
-    -v, --verbose                                 Output verbose information
-    -V, --visualize-timeline                      Output event frequency timeline
-        --version                                 Print version information
+        --European-time                                Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+        --RFC-2822                                     Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+        --RFC-3339                                     Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+        --US-military-time                             Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+        --US-time                                      Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+        --all-tags                                     Output all tags when saving to a CSV file
+    -c, --rules-config <RULE_CONFIG_DIRECTORY>         Specify custom rule config folder (default: ./rules/config)
+        --contributors                                 Print the list of contributors
+    -d, --directory <DIRECTORY>                        Directory of multiple .evtx files
+    -D, --deep-scan                                    Disable event ID filter to scan all events
+        --enable-deprecated-rules                      Enable rules marked as deprecated
+        --end-timeline <END_TIMELINE>                  End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+        --exclude-status <EXCLUDE_STATUS>...           Ignore rules according to status (ex: experimental) (ex: stable test)
+    -f, --filepath <FILE_PATH>                         File path to one .evtx file
+    -h, --help                                         Print help information
+    -l, --live-analysis                                Analyze the local C:\Windows\System32\winevt\Logs folder
+    -L, --logon-summary                                Print a summary of successful and failed logons
+        --level-tuning [<LEVEL_TUNING_FILE>]           Tune alert levels (default: ./rules/config/level_tuning.txt)
+    -m, --min-level <LEVEL>                            Minimum level for rules (default: informational)
+    -n, --enable-noisy-rules                           Enable rules marked as noisy
+        --no-color                                     Disable color output
+    -o, --output <CSV_TIMELINE>                        Save the timeline in CSV format (ex: results.csv)
+    -p, --pivot-keywords-list                          Create a list of pivot keywords
+    -P, --profile <PROFILE>                            Specify output profile
+    -q, --quiet                                        Quiet mode: do not display the launch banner
+    -Q, --quiet-errors                                 Quiet errors mode: do not save error logs
+    -r, --rules <RULE_DIRECTORY/RULE_FILE>             Specify a rule directory or file (default: ./rules)
+    -s, --statistics                                   Print statistics of event IDs
+        --set-default-profile <SET_DEFAULT_PROFILE>    Set default output profile
+        --start-timeline <START_TIMELINE>              Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    -t, --thread-number <NUMBER>                       Thread number (default: optimal number for performance)
+        --target-file-ext <EVTX_FILE_EXT>...           Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
+    -u, --update-rules                                 Update to the latest rules in the hayabusa-rules github repository
+    -U, --UTC                                          Output time in UTC format (default: local time)
+    -v, --verbose                                      Output verbose information
+    -V, --visualize-timeline                           Output event frequency timeline
+        --version                                      Print version information
 ```
 
 ## Usage Examples
@@ -495,24 +496,52 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 # Hayabusa Output
 
-When hayabusa output is being displayed to the screen (the default), it will display the following information:
+When hayabusa output is being displayed to the screen (the default), it can display the following information:
 
 * `Timestamp`: Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. This comes from the `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--utc` option.
 * `Computer`: This comes from the `<Event><System><Computer>` field in the event log.
 * `Channel`: The name of log. This comes from the `<Event><System><Channel>` field in the event log.
 * `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
 * `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
-* `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log. You can hidde this output with the `-R` or `--hide-record-id` option.
+* `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log.
 * `Title`: This comes from the `title` field in the YML detection rule.
 * `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column.
-
-The following additional columns will be added to the output when saving to a CSV file:
-
 * `MitreAttack`: MITRE ATT&CK tactics.
 * `RuleFile`: The filename of the detection rule that generated the alert or event.
-* `EvtxFile`: The path to the evtx file that caused the alert or event.
+* `EvtxFile`: The evtx filename that caused the alert or event.
+* `RecordInformation`: All field information.
 
-If you add the `-F` or `--full-data` option, a `RecordInformation` column with all field information will also be added.
+## Output customize by profile
+
+You can customize the output by modifiy `config/profiles.txt` and `config/default_profile.txt`.
+You can be setting following alias. 
+If you want to use profile in `config/profiles.txt` , you use `-P/--profile` option.
+Please use `--set-default-profile`  option when you want to overwrite `default_profiles.txt`  by profile in `config/profiles.txt`.
+
+|alias name| Hayabusa output information|
+|:---|:---|
+|%Timestamp% | `Timestamp` |
+|%Computer% | `Computer` |
+|%Channel% | `Channel` |
+|%Level% | `Level` |
+|%EventID% | `EventID` |
+|%MitreAttack% | `MitreAttack` |
+|%RecordID% | `RecordID` |
+|%RuleTitle% | `Title` |
+|%Details% | `Details` |
+|%RecordInformation% | `RecordInformation` |
+|%RuleFile% | `RuleFile` |
+|%EvtxFile% | `EvtxFile` |
+
+e.g. profile customize
+
+```yaml
+(profilename):
+    (column name): '%Timestamp%'
+    (column name2): '%Computer%'
+    (column name3): '%Channel%'
+```
+
 
 ## Level Abbrevations
 

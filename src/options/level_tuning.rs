@@ -2,7 +2,7 @@ use crate::detections::utils::write_color_buffer;
 use crate::detections::{configs, utils};
 use crate::filter::RuleExclude;
 use crate::yaml::ParseYaml;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use termcolor::{BufferWriter, ColorChoice};

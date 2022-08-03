@@ -1,5 +1,19 @@
 # Changes
 
+## v1.5.0 [2022/XX/XX]
+
+**New Features:**
+
+- Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml` (#165) (@hitenkoku)
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.4.3 [2022/08/03]
 
 **Bug Fixes:**
