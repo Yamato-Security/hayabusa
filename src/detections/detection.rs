@@ -276,12 +276,12 @@ impl Detection {
                         profile_converter.insert("%EventID%".to_string(), eid.to_owned());
                     }
                     "%MitreAttack%" => {
-                        profile_converter.insert("%MitreAttack%".to_string(), tag_info.join(" | "));
+                        profile_converter.insert("%MitreAttack%".to_string(), tag_info.join(" : "));
                     }
                     "%RecordID%" => {
                         profile_converter.insert(
                             "%RecordID%".to_string(),
-                            rec_id.as_ref().unwrap_or(&"-".to_string()).to_owned(),
+                            rec_id.as_ref().unwrap_or(&"".to_string()).to_owned(),
                         );
                     }
                     "%RuleTitle%" => {
@@ -387,10 +387,10 @@ impl Detection {
                         profile_converter.insert("%EventID%".to_string(), "-".to_owned());
                     }
                     "%MitreAttack%" => {
-                        profile_converter.insert("%MitreAttack%".to_owned(), tag_info.join(" | "));
+                        profile_converter.insert("%MitreAttack%".to_owned(), tag_info.join(" : "));
                     }
                     "%RecordID%" => {
-                        profile_converter.insert("%RecordID%".to_string(), "-".to_owned());
+                        profile_converter.insert("%RecordID%".to_string(), "".to_owned());
                     }
                     "%RuleTitle%" => {
                         profile_converter.insert(

@@ -164,7 +164,7 @@ pub fn insert(
     let mut tmp_converted_info: LinkedHashMap<String, String> = LinkedHashMap::new();
     for (k, v) in &detect_info.ext_field {
         let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
-        if v == "%RecordInformation%" {
+        if v.contains("%RecordInformation%") || v.contains("%Details%") {
             tmp_converted_info.insert(k.to_owned(), converted_reserve_info);
         } else {
             tmp_converted_info.insert(
