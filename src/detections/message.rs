@@ -76,7 +76,7 @@ lazy_static! {
             .as_path()
             .display()
     ));
-    pub static ref LEVEL_ABBR: HashMap<String, String> = HashMap::from([
+    pub static ref LEVEL_ABBR: LinkedHashMap<String, String> = LinkedHashMap::from_iter([
         ("critical".to_string(), "crit".to_string()),
         ("high".to_string(), "high".to_string()),
         ("medium".to_string(), "med ".to_string()),

@@ -427,15 +427,6 @@ fn _print_unique_results(
     tail_word: String,
     color_map: &HashMap<String, Color>,
 ) {
-    let levels = Vec::from([
-        "critical",
-        "high",
-        "medium",
-        "low",
-        "informational",
-        "undefined",
-    ]);
-
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
 
@@ -453,7 +444,7 @@ fn _print_unique_results(
     )
     .ok();
 
-    for (i, level_name) in levels.iter().enumerate() {
+    for (i, level_name) in LEVEL_ABBR.keys().enumerate() {
         if "undefined" == *level_name {
             continue;
         }
