@@ -1,10 +1,10 @@
 # Changes
 
-## v1.4.4 [2022/XX/XX]
+## v1.5.0 [2022/XX/XX]
 
 **New Features:**
 
-- Added definition feature to output format by profiles.txt and default_profile.txt (#165) (@hitenkoku)
+- Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml` (#165) (@hitenkoku)
 
 **Enhancements:**
 

@@ -1,10 +1,10 @@
 # 変更点
 
-## v1.4.4 [2022/XX/XX]
+## v1.5.0 [2022/XX/XX]
 
 **新機能:**
 
-- 出力内容をprofileから設定できるようにした。 (#165) (@hitenkoku)
+- `config/profiles.yaml`と`config/default_profile.yaml`の設定ファイルで、出力内容をカストマイズできる。 (#165) (@hitenkoku)
 
 **改善:**
 
