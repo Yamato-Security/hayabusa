@@ -1,6 +1,6 @@
 # Changes
 
-## v1.4.3 [2022/XX/XX]
+## v1.4.4 [2022/XX/XX]
 
 **New Features:**
 
@@ -12,7 +12,13 @@
 
 **Bug Fixes:**
 
-- Fixed error when target env not installed vc redistribute package. (#635) (@fukusuket)
+- XXX
+
+## v1.4.3 [2022/08/03]
+
+**Bug Fixes:**
+
+- Hayabusa would not run on Windows 11 when the VC redistribute package was not installed but now everything is compiled statically. (#635) (@fukusuket)
 
 ## v1.4.2 [2022/07/24]
 
