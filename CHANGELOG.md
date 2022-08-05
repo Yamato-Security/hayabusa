@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed miscalculation of Data Reduction due to aggregation condition count. (#640) (@hitenkoku)
 
 ## v1.4.3 [2022/08/03]
 
