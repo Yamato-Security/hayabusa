@@ -201,7 +201,9 @@ fn emit_csv<W: std::io::Write>(
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
         for detect_info in detect_infos {
-            detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
+            if !detect_info.detail.starts_with("[condition]") {
+                detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
+            }
             if displayflag {
                 //ヘッダーのみを出力
                 if plus_header {
