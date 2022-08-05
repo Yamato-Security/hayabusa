@@ -217,12 +217,17 @@ impl UpdateRules {
             *update_count_by_rule_type
                 .entry(tmp[3].to_string())
                 .or_insert(0b0) += 1;
+            let path_str: &str = if tmp[2].starts_with("./") {
+                tmp[2].strip_prefix("./").unwrap()
+            } else {
+                tmp[2]
+            };
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &format!(
                     "[Updated] {} (Modified: {} | Path: {})",
-                    tmp[0], tmp[1], tmp[2]
+                    tmp[0], tmp[1], path_str
                 ),
                 true,
             )
