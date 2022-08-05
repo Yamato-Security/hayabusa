@@ -4,11 +4,11 @@
 
 **新機能:**
 
-- `config/profiles.yaml`と`config/default_profile.yaml`の設定ファイルで、出力内容をカストマイズできる。 (#165) (@hitenkoku)
+- `config/profiles.yaml`と`config/default_profile.yaml`の設定ファイルで、出力内容をカスタマイズできる。 (#165) (@hitenkoku)
 
 **改善:**
 
-- XXX
+- ルールのアップデート機能のルールパスの出力から./を削除した。 (#642) (@hitenkoku)
 
 **バグ修正:**
 

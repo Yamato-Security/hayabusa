@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Removed ./ from rule path when updating. (#642) (@hitenkoku)
 
 **Bug Fixes:**
 
