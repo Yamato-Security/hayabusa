@@ -6,6 +6,7 @@ use crate::options::profile::{
     LOAEDED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES,
 };
 use chrono::{TimeZone, Utc};
+use itertools::Itertools;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::AlertMessage;
@@ -208,7 +209,7 @@ impl Detection {
 
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
-        let tag_info: Vec<String> = Detection::get_tag_info(rule);
+        let tag_info: &Vec<String> = &Detection::get_tag_info(rule);
         let recinfo = record_info
             .record_information
             .as_ref()
@@ -316,6 +317,48 @@ impl Detection {
                                 .to_string(),
                         );
                     }
+                    "%MitreTactics%" => {
+                        let tactics: &Vec<String> = &tag_info.iter().filter(|x| TAGS_CONFIG.values().contains(x)).map(|y| {
+                            y.to_owned()
+                        })
+                        .collect();
+                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
+                    },
+                    "%MitreTechniques%" => {
+                        let techniques: &Vec<String> = &tag_info.
+                            iter()
+                            .filter(|x| {
+                                !TAGS_CONFIG.values().contains(x)
+                                    && (x.starts_with("attack.t")
+                                    || x.starts_with("attack.g")
+                                    || x.starts_with("attack.s"))
+                            })
+                            .map(|y| {
+                                let mut replaced_tag = y.replace("attack.", "");
+                                let (head, _) = replaced_tag.split_at_mut(1);
+                                head.make_ascii_uppercase();
+                                replaced_tag.to_owned()
+                            })
+                            .collect();
+                        profile_converter
+                            .insert("%MitreTechniques%".to_string(), techniques.join(" : "));
+                    },
+                    "%OtherTags%" => {
+                        let tags: &Vec<String> = &tag_info.iter()
+                            .filter(|x| {
+                                !(TAGS_CONFIG.values().contains(x)
+                                    || x.starts_with("attack.t")
+                                    || x.starts_with("attack.g")
+                                    || x.starts_with("attack.s"))
+                            })
+                            .map(|y| {
+                                y.to_owned()
+                            })
+                            .collect();
+                        profile_converter
+                            .insert("%OtherTags%".to_string(), tags.join(" : "));
+                    },
+
                     _ => {}
                 }
             }
@@ -347,7 +390,7 @@ impl Detection {
 
     /// insert aggregation condition detection message to output stack
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
-        let tag_info: Vec<String> = Detection::get_tag_info(rule);
+        let tag_info: &Vec<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
         let rec_info = if LOAEDED_PROFILE_ALIAS.contains("%RecordInformation%") {
             Option::Some(String::default())
@@ -408,7 +451,48 @@ impl Detection {
                     }
                     "%EvtxFile%" => {
                         profile_converter.insert("%EvtxFile%".to_string(), "-".to_owned());
-                    }
+                    },
+                    "%MitreTactics%" => {
+                        let tactics: &Vec<String> = &tag_info.iter().filter(|x| TAGS_CONFIG.values().contains(x)).map(|y| {
+                            y.to_owned()
+                        })
+                        .collect();
+                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
+                    },
+                    "%MitreTechniques%" => {
+                        let techniques: &Vec<String> = &tag_info.
+                            iter()
+                            .filter(|x| {
+                                !TAGS_CONFIG.values().contains(x)
+                                    && (x.starts_with("attack.t")
+                                    || x.starts_with("attack.g")
+                                    || x.starts_with("attack.s"))
+                            })
+                            .map(|y| {
+                                let mut replaced_tag = y.replace("attack.", "");
+                                let (head, _) = replaced_tag.split_at_mut(1);
+                                head.make_ascii_uppercase();
+                                replaced_tag.to_owned()
+                            })
+                            .collect();
+                        profile_converter
+                            .insert("%MitreTechniques%".to_string(), techniques.join(" : "));
+                    },
+                    "%OtherTags%" => {
+                        let tags: &Vec<String> = &tag_info.iter()
+                            .filter(|x| {
+                                !(TAGS_CONFIG.values().contains(x)
+                                    || x.starts_with("attack.t")
+                                    || x.starts_with("attack.g")
+                                    || x.starts_with("attack.s"))
+                            })
+                            .map(|y| {
+                                y.to_owned()
+                            })
+                            .collect();
+                        profile_converter
+                            .insert("%OtherTags%".to_string(), tags.join(" : "));
+                    },
                     _ => {}
                 }
             }
@@ -441,8 +525,14 @@ impl Detection {
                 .as_vec()
                 .unwrap_or(&Vec::default())
                 .iter()
-                .filter_map(|info| TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())))
-                .map(|str| str.to_owned())
+                .map(|info| {
+                    if let Some(tag) = TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default()))
+                    {
+                        tag.to_owned()
+                    } else {
+                        info.as_str().unwrap_or(&String::default()).to_owned()
+                    }
+                })
                 .collect(),
             true => rule.yaml["tags"]
                 .as_vec()
@@ -451,7 +541,7 @@ impl Detection {
                 .map(
                     |info| match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
                         Some(s) => s.to_owned(),
-                        _ => info.as_str().unwrap_or("").replace("attack.", ""),
+                        _ => info.as_str().unwrap_or("").to_string()
                     },
                 )
                 .collect(),
