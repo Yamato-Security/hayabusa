@@ -275,9 +275,6 @@ impl Detection {
                     "%EventID%" => {
                         profile_converter.insert("%EventID%".to_string(), eid.to_owned());
                     }
-                    "%MitreAttack%" => {
-                        profile_converter.insert("%MitreAttack%".to_string(), tag_info.join(" : "));
-                    }
                     "%RecordID%" => {
                         profile_converter.insert(
                             "%RecordID%".to_string(),
@@ -385,9 +382,6 @@ impl Detection {
                     }
                     "%EventID%" => {
                         profile_converter.insert("%EventID%".to_string(), "-".to_owned());
-                    }
-                    "%MitreAttack%" => {
-                        profile_converter.insert("%MitreAttack%".to_owned(), tag_info.join(" : "));
                     }
                     "%RecordID%" => {
                         profile_converter.insert("%RecordID%".to_string(), "".to_owned());
