@@ -509,7 +509,9 @@ Hayabusaの結果を標準出力に表示しているとき（デフォルト）
 * `Title`: YML検知ルールの`title`フィールドから来ています。
 * `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。
 * `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。
-* `MitreAttack`: MITRE ATT&CKの戦術。
+* `MitreTactics`: MITRE ATT&CKの戦術。
+* `MitreTags`: MITRE ATT&CKの戦術以外の情報。attack.g(グループ)、attack.t(技術)、attack.s(ソフトウェア)の情報を出力します。
+* `OtherTags`: YML検知ルールの`tags` フィールドから`MitreTactics`, `MitreTags` 以外の月情報を出力します。
 * `RuleFile`: アラートまたはイベントを生成した検知ルールのファイル名。
 * `EvtxFile`: アラートまたはイベントを起こしたevtxファイルへのパス。
 * `RecordInformation`: すべてのフィールド情報。
@@ -527,7 +529,9 @@ default_profiles.txtをprofile.txtに書かれているプロファイルで上�
 |%Channel% | `Channel` |
 |%Level% | `Level` |
 |%EventID% | `EventID` |
-|%MitreAttack% | `MitreAttack` |
+|%MitreTactics% | `MitreTactics` |
+|%MitreTags% | `MitreTags` |
+|%OtherTags% | `OtherTags` |
 |%RecordID% | `RecordID` |
 |%RuleTitle% | `Title` |
 |%Details% | `Details` |
