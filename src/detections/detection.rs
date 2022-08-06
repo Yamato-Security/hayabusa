@@ -325,7 +325,7 @@ impl Detection {
                             .collect();
                         profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
                     }
-                    "%MitreTechniques%" => {
+                    "%MitreTags%" => {
                         let techniques: &Vec<String> = &tag_info
                             .iter()
                             .filter(|x| {
@@ -336,13 +336,11 @@ impl Detection {
                             })
                             .map(|y| {
                                 let mut replaced_tag = y.replace("attack.", "");
-                                let (head, _) = replaced_tag.split_at_mut(1);
-                                head.make_ascii_uppercase();
-                                replaced_tag.to_owned()
+                                make_ascii_titlecase(&mut replaced_tag)
                             })
                             .collect();
                         profile_converter
-                            .insert("%MitreTechniques%".to_string(), techniques.join(" : "));
+                            .insert("%MitreTags%".to_string(), techniques.join(" : "));
                     }
                     "%OtherTags%" => {
                         let tags: &Vec<String> = &tag_info
@@ -459,7 +457,7 @@ impl Detection {
                             .collect();
                         profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
                     }
-                    "%MitreTechniques%" => {
+                    "%MitreTags%" => {
                         let techniques: &Vec<String> = &tag_info
                             .iter()
                             .filter(|x| {
@@ -470,13 +468,11 @@ impl Detection {
                             })
                             .map(|y| {
                                 let mut replaced_tag = y.replace("attack.", "");
-                                let (head, _) = replaced_tag.split_at_mut(1);
-                                head.make_ascii_uppercase();
-                                replaced_tag.to_owned()
+                                make_ascii_titlecase(&mut replaced_tag)
                             })
                             .collect();
                         profile_converter
-                            .insert("%MitreTechniques%".to_string(), techniques.join(" : "));
+                            .insert("%MitreTags%".to_string(), techniques.join(" : "));
                     }
                     "%OtherTags%" => {
                         let tags: &Vec<String> = &tag_info

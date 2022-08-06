@@ -42,7 +42,7 @@ lazy_static! {
         "%RuleFile%",
         "%EvtxFile%",
         "%MitreTactics%",
-        "%MitreTechniques%",
+        "%MitreTags%",
         "%OtherTags%"
     ];
     pub static ref PRELOAD_PROFILE_REGEX: RegexSet = RegexSet::new(&*PRELOAD_PROFILE).unwrap();
