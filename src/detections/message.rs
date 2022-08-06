@@ -48,7 +48,7 @@ lazy_static! {
     pub static ref STATISTICS_FLAG: bool = configs::CONFIG.read().unwrap().args.statistics;
     pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
-        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/output_tag.txt")
+        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt")
             .to_str()
             .unwrap(),
         true,
@@ -591,9 +591,10 @@ mod tests {
         );
     }
     #[test]
-    /// test of loading output filter config by output_tag.txt
-    fn test_load_output_tag() {
-        let actual = create_output_filter_config("test_files/config/output_tag.txt", true, false);
+    /// test of loading output filter config by mitre_tactics.txt
+    fn test_load_mitre_tactics_log() {
+        let actual =
+            create_output_filter_config("test_files/config/mitre_tactics.txt", true, false);
         let expected: HashMap<String, String> = HashMap::from([
             ("attack.impact".to_string(), "Impact".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
@@ -602,9 +603,9 @@ mod tests {
     }
 
     #[test]
-    /// test of loading pass by output_tag.txt
+    /// test of loading pass by mitre_tactics.txt
     fn test_no_load_output_tag() {
-        let actual = create_output_filter_config("test_files/config/output_tag.txt", true, true);
+        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt", true, true);
         let expected: HashMap<String, String> = HashMap::new();
         _check_hashmap_element(&expected, actual);
     }
