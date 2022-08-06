@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Removed ./ from rule path when updating. (#642) (@hitenkoku)
+- Added new output alias for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
 
 **Bug Fixes:**
 
