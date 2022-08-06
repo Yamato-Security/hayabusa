@@ -67,7 +67,7 @@ lazy_static! {
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
     pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(&format!(
-        "{}/default_details.yaml",
+        "{}/default_details.txt",
         configs::CONFIG
             .read()
             .unwrap()
