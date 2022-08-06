@@ -318,20 +318,21 @@ impl Detection {
                         );
                     }
                     "%MitreTactics%" => {
-                        let tactics: &Vec<String> = &tag_info.iter().filter(|x| TAGS_CONFIG.values().contains(x)).map(|y| {
-                            y.to_owned()
-                        })
-                        .collect();
+                        let tactics: &Vec<String> = &tag_info
+                            .iter()
+                            .filter(|x| TAGS_CONFIG.values().contains(x))
+                            .map(|y| y.to_owned())
+                            .collect();
                         profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
-                    },
+                    }
                     "%MitreTechniques%" => {
-                        let techniques: &Vec<String> = &tag_info.
-                            iter()
+                        let techniques: &Vec<String> = &tag_info
+                            .iter()
                             .filter(|x| {
                                 !TAGS_CONFIG.values().contains(x)
                                     && (x.starts_with("attack.t")
-                                    || x.starts_with("attack.g")
-                                    || x.starts_with("attack.s"))
+                                        || x.starts_with("attack.g")
+                                        || x.starts_with("attack.s"))
                             })
                             .map(|y| {
                                 let mut replaced_tag = y.replace("attack.", "");
@@ -342,22 +343,20 @@ impl Detection {
                             .collect();
                         profile_converter
                             .insert("%MitreTechniques%".to_string(), techniques.join(" : "));
-                    },
+                    }
                     "%OtherTags%" => {
-                        let tags: &Vec<String> = &tag_info.iter()
+                        let tags: &Vec<String> = &tag_info
+                            .iter()
                             .filter(|x| {
                                 !(TAGS_CONFIG.values().contains(x)
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
                             })
-                            .map(|y| {
-                                y.to_owned()
-                            })
+                            .map(|y| y.to_owned())
                             .collect();
-                        profile_converter
-                            .insert("%OtherTags%".to_string(), tags.join(" : "));
-                    },
+                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" : "));
+                    }
 
                     _ => {}
                 }
@@ -451,22 +450,23 @@ impl Detection {
                     }
                     "%EvtxFile%" => {
                         profile_converter.insert("%EvtxFile%".to_string(), "-".to_owned());
-                    },
+                    }
                     "%MitreTactics%" => {
-                        let tactics: &Vec<String> = &tag_info.iter().filter(|x| TAGS_CONFIG.values().contains(x)).map(|y| {
-                            y.to_owned()
-                        })
-                        .collect();
+                        let tactics: &Vec<String> = &tag_info
+                            .iter()
+                            .filter(|x| TAGS_CONFIG.values().contains(x))
+                            .map(|y| y.to_owned())
+                            .collect();
                         profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
-                    },
+                    }
                     "%MitreTechniques%" => {
-                        let techniques: &Vec<String> = &tag_info.
-                            iter()
+                        let techniques: &Vec<String> = &tag_info
+                            .iter()
                             .filter(|x| {
                                 !TAGS_CONFIG.values().contains(x)
                                     && (x.starts_with("attack.t")
-                                    || x.starts_with("attack.g")
-                                    || x.starts_with("attack.s"))
+                                        || x.starts_with("attack.g")
+                                        || x.starts_with("attack.s"))
                             })
                             .map(|y| {
                                 let mut replaced_tag = y.replace("attack.", "");
@@ -477,22 +477,20 @@ impl Detection {
                             .collect();
                         profile_converter
                             .insert("%MitreTechniques%".to_string(), techniques.join(" : "));
-                    },
+                    }
                     "%OtherTags%" => {
-                        let tags: &Vec<String> = &tag_info.iter()
+                        let tags: &Vec<String> = &tag_info
+                            .iter()
                             .filter(|x| {
                                 !(TAGS_CONFIG.values().contains(x)
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
                             })
-                            .map(|y| {
-                                y.to_owned()
-                            })
+                            .map(|y| y.to_owned())
                             .collect();
-                        profile_converter
-                            .insert("%OtherTags%".to_string(), tags.join(" : "));
-                    },
+                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" : "));
+                    }
                     _ => {}
                 }
             }
@@ -541,7 +539,7 @@ impl Detection {
                 .map(
                     |info| match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
                         Some(s) => s.to_owned(),
-                        _ => info.as_str().unwrap_or("").to_string()
+                        _ => info.as_str().unwrap_or("").to_string(),
                     },
                 )
                 .collect(),
