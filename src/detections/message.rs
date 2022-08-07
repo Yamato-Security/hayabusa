@@ -51,8 +51,6 @@ lazy_static! {
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt")
             .to_str()
             .unwrap(),
-        true,
-        configs::CONFIG.read().unwrap().args.all_tags
     );
     pub static ref CH_CONFIG: HashMap<String, String> = create_output_filter_config(
         utils::check_setting_path(
@@ -61,8 +59,6 @@ lazy_static! {
         )
         .to_str()
         .unwrap(),
-        false,
-        configs::CONFIG.read().unwrap().args.all_tags
     );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
@@ -96,13 +92,8 @@ lazy_static! {
 /// ex. attack.impact,Impact
 pub fn create_output_filter_config(
     path: &str,
-    read_tags: bool,
-    pass_flag: bool,
 ) -> HashMap<String, String> {
     let mut ret: HashMap<String, String> = HashMap::new();
-    if read_tags && pass_flag {
-        return ret;
-    }
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
         AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
@@ -594,7 +585,7 @@ mod tests {
     /// test of loading output filter config by mitre_tactics.txt
     fn test_load_mitre_tactics_log() {
         let actual =
-            create_output_filter_config("test_files/config/mitre_tactics.txt", true, false);
+            create_output_filter_config("test_files/config/mitre_tactics.txt");
         let expected: HashMap<String, String> = HashMap::from([
             ("attack.impact".to_string(), "Impact".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
@@ -603,22 +594,12 @@ mod tests {
     }
 
     #[test]
-    /// test of loading pass by mitre_tactics.txt
-    fn test_no_load_output_tag() {
-        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt", true, true);
-        let expected: HashMap<String, String> = HashMap::new();
-        _check_hashmap_element(&expected, actual);
-    }
-
-    #[test]
     /// loading test to channel_abbrevations.txt
     fn test_load_abbrevations() {
         let actual =
-            create_output_filter_config("test_files/config/channel_abbreviations.txt", false, true);
+            create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let actual2 = create_output_filter_config(
             "test_files/config/channel_abbreviations.txt",
-            false,
-            false,
         );
         let expected: HashMap<String, String> = HashMap::from([
             ("Security".to_string(), "Sec".to_string()),
