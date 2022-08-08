@@ -218,7 +218,7 @@ impl DefaultMatcher {
         });
     }
 
-    /// YEAのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
+    /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
     /// ワイルドカードの文字列を正規表現にする処理もこのメソッドに実装されています。patternにワイルドカードの文字列を指定して、pipesにPipeElement::Wildcardを指定すればOK!!
     fn from_pattern_to_regex_str(pattern: String, pipes: &[PipeElement]) -> String {
         // パターンをPipeで処理する。
