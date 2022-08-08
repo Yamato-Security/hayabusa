@@ -14,6 +14,7 @@ use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 
 use hashbrown::{HashMap, HashSet};
+use num_format::{ToFormattedString, Locale};
 use std::cmp::min;
 use std::error::Error;
 
@@ -334,7 +335,7 @@ fn emit_csv<W: std::io::Write>(
     write_color_buffer(
         &disp_wtr,
         get_writable_color(None),
-        &format!("Total events: {}", all_record_cnt),
+        &format!("Total events: {}", all_record_cnt.to_formatted_string(&Locale::en)),
         true,
     )
     .ok();
@@ -343,7 +344,7 @@ fn emit_csv<W: std::io::Write>(
         get_writable_color(None),
         &format!(
             "Data reduction: {} events ({:.2}%)",
-            reducted_record_cnt, reducted_percent
+            reducted_record_cnt.to_formatted_string(&Locale::en), reducted_percent
         ),
         true,
     )
@@ -440,7 +441,7 @@ fn _print_unique_results(
             "{} {}: {}",
             head_word,
             tail_word,
-            counts_by_level.iter().sum::<u128>(),
+            counts_by_level.iter().sum::<u128>().to_formatted_string(&Locale::en),
         ),
         true,
     )
@@ -452,7 +453,7 @@ fn _print_unique_results(
         }
         let output_raw_str = format!(
             "{} {} {}: {}",
-            head_word, level_name, tail_word, counts_by_level[i]
+            head_word, level_name, tail_word, counts_by_level[i].to_formatted_string(&Locale::en)
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -482,7 +483,7 @@ fn _print_detection_summary_by_date(
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
                 exist_max_data = true;
-                max_detect_str = format!("{} ({})", date, cnt);
+                max_detect_str = format!("{} ({})", date, cnt.to_formatted_string(&Locale::en));
                 tmp_cnt = *cnt;
             }
         }
@@ -527,7 +528,7 @@ fn _print_detection_summary_by_computer(
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         for x in sorted_detections.iter().take(5) {
-            result_vec.push(format!("{} ({})", x.0, x.1));
+            result_vec.push(format!("{} ({})", x.0, x.1.to_formatted_string(&Locale::en)));
         }
         let result_str = if result_vec.is_empty() {
             "n/a".to_string()
