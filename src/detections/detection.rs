@@ -339,8 +339,7 @@ impl Detection {
                                 make_ascii_titlecase(&mut replaced_tag)
                             })
                             .collect();
-                        profile_converter
-                            .insert("%MitreTags%".to_string(), techniques.join(" : "));
+                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" : "));
                     }
                     "%OtherTags%" => {
                         let tags: &Vec<String> = &tag_info
@@ -471,8 +470,7 @@ impl Detection {
                                 make_ascii_titlecase(&mut replaced_tag)
                             })
                             .collect();
-                        profile_converter
-                            .insert("%MitreTags%".to_string(), techniques.join(" : "));
+                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" : "));
                     }
                     "%OtherTags%" => {
                         let tags: &Vec<String> = &tag_info

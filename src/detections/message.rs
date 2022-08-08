@@ -90,9 +90,7 @@ lazy_static! {
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
 /// ex. attack.impact,Impact
-pub fn create_output_filter_config(
-    path: &str,
-) -> HashMap<String, String> {
+pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
     let mut ret: HashMap<String, String> = HashMap::new();
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
@@ -584,8 +582,7 @@ mod tests {
     #[test]
     /// test of loading output filter config by mitre_tactics.txt
     fn test_load_mitre_tactics_log() {
-        let actual =
-            create_output_filter_config("test_files/config/mitre_tactics.txt");
+        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt");
         let expected: HashMap<String, String> = HashMap::from([
             ("attack.impact".to_string(), "Impact".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
@@ -596,11 +593,8 @@ mod tests {
     #[test]
     /// loading test to channel_abbrevations.txt
     fn test_load_abbrevations() {
-        let actual =
-            create_output_filter_config("test_files/config/channel_abbreviations.txt");
-        let actual2 = create_output_filter_config(
-            "test_files/config/channel_abbreviations.txt",
-        );
+        let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
+        let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let expected: HashMap<String, String> = HashMap::from([
             ("Security".to_string(), "Sec".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
