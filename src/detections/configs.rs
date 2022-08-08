@@ -93,10 +93,6 @@ pub struct Config {
     #[clap(short = 'o', long, value_name = "CSV_TIMELINE")]
     pub output: Option<PathBuf>,
 
-    /// Output all tags when saving to a CSV file
-    #[clap(long = "all-tags")]
-    pub all_tags: bool,
-
     /// Output verbose information
     #[clap(short = 'v', long)]
     pub verbose: bool,

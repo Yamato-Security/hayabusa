@@ -36,12 +36,14 @@ lazy_static! {
         "%Channel%",
         "%Level%",
         "%EventID%",
-        "%MitreAttack%",
         "%RecordID%",
         "%RuleTitle%",
         "%RecordInformation%",
         "%RuleFile%",
-        "%EvtxFile%"
+        "%EvtxFile%",
+        "%MitreTactics%",
+        "%MitreTags%",
+        "%OtherTags%"
     ];
     pub static ref PRELOAD_PROFILE_REGEX: RegexSet = RegexSet::new(&*PRELOAD_PROFILE).unwrap();
 }
