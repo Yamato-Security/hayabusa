@@ -1,3 +1,4 @@
+#Standard profile minus MITRE ATT&CK Tactics and Record ID.
 minimal:
     Timestamp: "%Timestamp%"
     Computer: "%Computer%"
@@ -13,32 +14,40 @@ standard:
     Channel: "%Channel%"
     EventID: "%EventID%"
     Level: "%Level%"
-    Tags: "%MitreAttack%"
+    MitreTactics: "%MitreTactics%"
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
     Details: "%Details%"
 
-verbose-1:
+#Standard profile plus MitreTags(MITRE techniques, software and groups), rule filename and EVTX filename.
+verbose:
     Timestamp: "%Timestamp%"
     Computer: "%Computer%"
     Channel: "%Channel%"
     EventID: "%EventID%"
     Level: "%Level%"
-    Tags: "%MitreAttack%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
     Details: "%Details%"
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
 
-verbose-2:
+#Verbose-1 profile plus all field information. (Warning: this will more than double the output file size!)
+verbose-all-field-info:
     Timestamp: "%Timestamp%"
     Computer: "%Computer%"
     Channel: "%Channel%"
     EventID: "%EventID%"
     Level: "%Level%"
-    Tags: "%MitreAttack%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
     Details: "%Details%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
     AllFieldInfo: "%RecordInformation%"
