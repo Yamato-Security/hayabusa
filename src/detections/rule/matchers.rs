@@ -346,14 +346,18 @@ impl LeafMatcher for DefaultMatcher {
             return false;
         }
 
-        if event_value.is_none() {
+        // yamlにnullが設定されていた場合
+        if self.re.is_none() {
+            for v in self.key_list.iter() {
+                if recinfo.get_value(v).is_none() {return true;}
+            }
             return false;
-        }
+        } 
 
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
-            return self.re.as_ref().unwrap().is_match(event_value_str);
+            self.re.as_ref().unwrap().is_match(event_value_str)
         } else {
             // 通常の検索はこっち
             self.is_regex_fullmatch(event_value_str)
@@ -1984,4 +1988,67 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_eq_field_null() {
+        // 値でnullであった場合に対象のフィールドが存在しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    value: Security
+                Takoyaki: 
+                    value: null
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+    #[test]
+    fn test_eq_field_null_not_detect() {
+        // 値でnullであった場合に対象のフィールドが存在しないことを確認するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: null
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                println!("test :: keys {:?} | recinfo {:?}\n", keys, recinfo.record["Takoyaki"]);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(e) => {
+                panic!("Failed to parse json record.{:?}", e );
+            }
+        }
+    }
+
 }
