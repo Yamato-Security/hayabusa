@@ -89,13 +89,6 @@ impl App {
             return;
         }
         let analysis_start_time: DateTime<Local> = Local::now();
-        // Show usage when no arguments.
-        if std::env::args().len() == 1 {
-            self.output_logo();
-            configs::CONFIG.write().unwrap().app.print_help().ok();
-            println!();
-            return;
-        }
         if !configs::CONFIG.read().unwrap().args.quiet {
             self.output_logo();
             println!();
