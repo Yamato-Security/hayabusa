@@ -349,10 +349,12 @@ impl LeafMatcher for DefaultMatcher {
         // yamlにnullが設定されていた場合
         if self.re.is_none() {
             for v in self.key_list.iter() {
-                if recinfo.get_value(v).is_none() {return true;}
+                if recinfo.get_value(v).is_none() {
+                    return true;
+                }
             }
             return false;
-        } 
+        }
 
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
@@ -2042,13 +2044,11 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                println!("test :: keys {:?} | recinfo {:?}\n", keys, recinfo.record["Takoyaki"]);
                 assert!(!rule_node.select(&recinfo));
             }
             Err(e) => {
-                panic!("Failed to parse json record.{:?}", e );
+                panic!("Failed to parse json record.{:?}", e);
             }
         }
     }
-
 }
