@@ -4,7 +4,8 @@
 
 **New Features:**
 
-- Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml` (#165) (@hitenkoku)
+- Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml`. (#165) (@hitenkoku)
+- Implemented `null` keyword in rule. This paramter is used to check target field is not exist in record. (#643) (@hitenkoku)
 
 **Enhancements:**
 
