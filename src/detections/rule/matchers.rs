@@ -348,11 +348,16 @@ impl LeafMatcher for DefaultMatcher {
 
         // yamlにnullが設定されていた場合
         if self.re.is_none() {
+            // レコード内に対象のフィールドが存在しなければ検知したものとして扱う
             for v in self.key_list.iter() {
                 if recinfo.get_value(v).is_none() {
                     return true;
                 }
             }
+            return false;
+        }
+
+        if event_value.is_none() {
             return false;
         }
 
