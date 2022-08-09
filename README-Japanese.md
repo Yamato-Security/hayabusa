@@ -324,7 +324,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 ```
 USAGE:
-    hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
+    hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
 
 OPTIONS:
     -h, --help       ヘルプ情報を表示する

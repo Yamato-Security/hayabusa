@@ -320,7 +320,7 @@ You should now be able to run hayabusa.
 
 ```
 USAGE:
-    hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]
+    hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
 
 OPTIONS:
     -h, --help       Print help information
