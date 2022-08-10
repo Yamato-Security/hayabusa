@@ -62,22 +62,24 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ピボットキーワードの作成](#ピボットキーワードの作成)
   - [ログオン情報の要約](#ログオン情報の要約)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
-- [Hayabusaの出力プロファイル](#hayabusaの出力プロファイル)
-  - [1. `minimal`プロファイルの出力](#1-minimalプロファイルの出力)
-  - [2. `standard`プロファイルの出力](#2-standardプロファイルの出力)
-  - [3. `verbose`プロファイルの出力](#3-verboseプロファイルの出力)
-  - [4. `verbose-all-field-info`プロファイルの出力](#4-verbose-all-field-infoプロファイルの出力)
-  - [5. `verbose-details-and-all-field-info`プロファイルの出力](#5-verbose-details-and-all-field-infoプロファイルの出力)
+- [Hayabusaの出力](#hayabusaの出力)
+  - [プロファイル](#プロファイル)
+    - [1. `minimal`プロファイルの出力](#1-minimalプロファイルの出力)
+    - [2. `standard`プロファイルの出力](#2-standardプロファイルの出力)
+    - [3. `verbose`プロファイルの出力](#3-verboseプロファイルの出力)
+    - [4. `verbose-all-field-info`プロファイルの出力](#4-verbose-all-field-infoプロファイルの出力)
+    - [5. `verbose-details-and-all-field-info`プロファイルの出力](#5-verbose-details-and-all-field-infoプロファイルの出力)
     - [プロファイルの比較](#プロファイルの比較)
-  - [Profile Field Aliases](#profile-field-aliases)
+    - [Profile Field Aliases](#profile-field-aliases)
   - [Levelの省略](#levelの省略)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
   - [プログレスバー](#プログレスバー)
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
-  - [イベント頻度タイムライン](#イベント頻度タイムライン)
-  - [最多検知日の出力](#最多検知日の出力)
-  - [最多検知端末名の出力](#最多検知端末名の出力)
+  - [結果のサマリ](#結果のサマリ)
+    - [イベント頻度タイムライン](#イベント頻度タイムライン)
+    - [最多検知日の出力](#最多検知日の出力)
+    - [最多検知端末名の出力](#最多検知端末名の出力)
 - [Hayabusaルール](#hayabusaルール)
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
   - [検知ルールのチューニング](#検知ルールのチューニング)
@@ -546,7 +548,8 @@ Hayabusaをテストしたり、新しいルールを作成したりするため
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
 
-# Hayabusaの出力プロファイル
+# Hayabusaの出力
+## プロファイル
 
 Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロファイルが定義されています:
 
@@ -559,25 +562,25 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
 `--set-default-profile <profile>`オプションでデフォルトのプロファイルを変更することもできます。
 
-## 1. `minimal`プロファイルの出力
+### 1. `minimal`プロファイルの出力
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
 
-## 2. `standard`プロファイルの出力
+### 2. `standard`プロファイルの出力
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
 
-## 3. `verbose`プロファイルの出力
+### 3. `verbose`プロファイルの出力
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
 
-## 4. `verbose-all-field-info`プロファイルの出力
+### 4. `verbose-all-field-info`プロファイルの出力
 
 最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報が出力されます。
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
 
-## 5. `verbose-details-and-all-field-info`プロファイルの出力
+### 5. `verbose-details-and-all-field-info`プロファイルの出力
 
 `verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報が出力されます。
 (注意: 出力ファイルサイズは2倍になります！)
@@ -596,7 +599,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 | verbose-all-field-info | 16分50秒 | 1.6 GB |
 | verbose-details-and-all-field-info | 17分12秒 | 2.1 GB |
 
-## Profile Field Aliases
+### Profile Field Aliases
 
 | エイリアス名 | Hayabusaの出力情報 |
 | :--- | :--- |
@@ -694,16 +697,18 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 形式は`level名,(6桁のRGBのカラーhex)`です。
 カラー出力をしないようにしたい場合は`--no-color`オプションをご利用ください。
 
-## イベント頻度タイムライン
+## 結果のサマリ
+
+### イベント頻度タイムライン
 
 `-V`または`--visualize-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
 マーカーの数は最大10個です。デフォルトのCommand PromptとPowerShell Promptでは文字化けがでるので、Windows TerminalやiTerm2等のターミナルをご利用ください。
 
-## 最多検知日の出力
+### 最多検知日の出力
 
 各レベルで最も検知された日付を画面に出力します。
 
-## 最多検知端末名の出力
+### 最多検知端末名の出力
 
 各レベルで多く検知されたユニークなイベントが多い端末名上位5つを画面に出力します。
 

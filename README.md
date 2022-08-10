@@ -60,22 +60,24 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Pivot Keyword Generator](#pivot-keyword-generator)
   - [Logon Summary Generator](#logon-summary-generator)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
-- [Hayabusa Output Profiles](#hayabusa-output-profiles)
-  - [1. `minimal` profile output](#1-minimal-profile-output)
-  - [2. `standard` profile output](#2-standard-profile-output)
-  - [3. `verbose` profile output](#3-verbose-profile-output)
-  - [4. `verbose-all-field-info` profile output](#4-verbose-all-field-info-profile-output)
-  - [5. `verbose-details-and-all-field-info` profile output](#5-verbose-details-and-all-field-info-profile-output)
+- [Hayabusa Output](#hayabusa-output)
+  - [Profiles](#profiles)
+    - [1. `minimal` profile output](#1-minimal-profile-output)
+    - [2. `standard` profile output](#2-standard-profile-output)
+    - [3. `verbose` profile output](#3-verbose-profile-output)
+    - [4. `verbose-all-field-info` profile output](#4-verbose-all-field-info-profile-output)
+    - [5. `verbose-details-and-all-field-info` profile output](#5-verbose-details-and-all-field-info-profile-output)
     - [Profile Comparison](#profile-comparison)
-  - [Profile Field Aliases](#profile-field-aliases)
+    - [Profile Field Aliases](#profile-field-aliases)
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
-  - [Event Fequency Timeline](#event-fequency-timeline)
-  - [Dates with most total detections](#dates-with-most-total-detections)
-  - [Top 5 computers with most unique detections](#top-5-computers-with-most-unique-detections)
+  - [Results Summary](#results-summary-1)
+    - [Event Fequency Timeline](#event-fequency-timeline)
+    - [Dates with most total detections](#dates-with-most-total-detections)
+    - [Top 5 computers with most unique detections](#top-5-computers-with-most-unique-detections)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -540,7 +542,9 @@ You can download the sample evtx files to a new `hayabusa-sample-evtx` sub-direc
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
 
-# Hayabusa Output Profiles
+# Hayabusa Output
+
+## Profiles
 
 Hayabusa has 5 pre-defined profiles to use in `config/profiles.yaml`:
 
@@ -553,25 +557,25 @@ Hayabusa has 5 pre-defined profiles to use in `config/profiles.yaml`:
 You can easily customize or add your own profiles by editing this file.
 You can also easily change the default profile with `--set-default-profile <profile>`.
 
-## 1. `minimal` profile output
+### 1. `minimal` profile output
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
 
-## 2. `standard` profile output
+### 2. `standard` profile output
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
 
-## 3. `verbose` profile output
+### 3. `verbose` profile output
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
 
-## 4. `verbose-all-field-info` profile output
+### 4. `verbose-all-field-info` profile output
 
 Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted.
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
 
-## 5. `verbose-details-and-all-field-info` profile output
+### 5. `verbose-details-and-all-field-info` profile output
 
 `verbose` profile plus all field information. (Warning: this will usually double the output file size!)
 
@@ -589,7 +593,7 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 | verbose-all-field-info | 16 minutes 50 seconds | 1.6 GB |
 | verbose-details-and-all-field-info | 17 minutes 12 seconds | 2.1 GB |
 
-## Profile Field Aliases
+### Profile Field Aliases
 
 | Alias name | Hayabusa output information|
 | :--- | :--- |
@@ -686,16 +690,18 @@ The alerts will be outputted in color based on the alert `level`.
 You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
 If you want to disable color output, you can use `--no-color` option.
 
-## Event Fequency Timeline
+## Results Summary
+
+### Event Fequency Timeline
 
 If you add `-V` or `--visualize-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events. Also, the characters will not render correctly on the default Command Prompt or PowerShell Prompt, so please use a terminal like Windows Terminal, iTerm2, etc...
 
-## Dates with most total detections
+### Dates with most total detections
 
 A summary of the dates with the most total detections categorized by level (`critical`, `high`, etc...).
 
-## Top 5 computers with most unique detections
+### Top 5 computers with most unique detections
 
 The top 5 computers with the most unique detections categorized by level (`critical`, `high`, etc...).
 
