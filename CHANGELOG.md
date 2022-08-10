@@ -4,14 +4,15 @@
 
 **New Features:**
 
-- Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml` (#165) (@hitenkoku)
+- Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml`. (#165) (@hitenkoku)
+- Implemented the `null` keyword for rule detection. It is used to check if a target field exists or not. (#643) (@hitenkoku)
 
 **Enhancements:**
 
 - Removed ./ from rule path when updating. (#642) (@hitenkoku)
 - Added new output alias for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
-- Changed output summary numbers from without commas to with commas. (#649) (@hitenkoku)
 - Organized menu (#651) (@YamatoSecurity and @hitenkoku)
+- Added commas to summary numbers to make them easier to read. (#649) (@hitenkoku)
 
 **Bug Fixes:**
 
