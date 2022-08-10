@@ -185,7 +185,7 @@ pub struct Config {
 
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[clap(
-        help_heading = Some("ADVANCED"), 
+        help_heading = Some("OTHER-ACTIONS"), 
         long = "level-tuning",
         hide_default_value = true,
         value_name = "FILE"
@@ -216,12 +216,12 @@ pub struct Config {
     #[clap(help_heading = Some("FILTERING"), long = "exclude-status", multiple_values = true, value_name = "STATUS")]
     pub exclude_status: Option<Vec<String>>,
 
-    /// Specify output profile
-    #[clap(help_heading = Some("OUTPUT-SETTINGS"), short = 'P', long = "profile")]
+    /// Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+    #[clap(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
     pub profile: Option<String>,
 
-    /// Set default output profile
-    #[clap(help_heading = Some("OUTPUT-SETTINGS"), long = "set-default-profile", value_name = "PROFILE")]
+    /// Set default output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+    #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 }
 
