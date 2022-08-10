@@ -220,7 +220,7 @@ pub struct Config {
     #[clap(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
     pub profile: Option<String>,
 
-    /// Set default output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+    /// Set default output profile
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 }

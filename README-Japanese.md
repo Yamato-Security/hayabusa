@@ -48,19 +48,28 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [32ビットWindowsバイナリのクロスコンパイル](#32ビットwindowsバイナリのクロスコンパイル)
   - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
   - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
+  - [LinuxのMUSLバイナリのクロスコンパイル](#linuxのmuslバイナリのクロスコンパイル)
+  - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点-1)
 - [Hayabusaの実行](#hayabusaの実行)
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
 - [使用方法](#使用方法)
+  - [主なコマンド](#主なコマンド)
   - [コマンドラインオプション](#コマンドラインオプション)
   - [使用例](#使用例)
   - [ピボットキーワードの作成](#ピボットキーワードの作成)
   - [ログオン情報の要約](#ログオン情報の要約)
 - [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
-- [Hayabusaの出力](#hayabusaの出力)
-  - [プロファイルによる出力のカスタマイズ](#プロファイルによる出力のカスタマイズ)
+- [Hayabusaの出力プロファイル](#hayabusaの出力プロファイル)
+  - [1. `minimal`プロファイルの出力](#1-minimalプロファイルの出力)
+  - [2. `standard`プロファイルの出力](#2-standardプロファイルの出力)
+  - [3. `verbose`プロファイルの出力](#3-verboseプロファイルの出力)
+  - [4. `verbose-all-field-info`プロファイルの出力](#4-verbose-all-field-infoプロファイルの出力)
+  - [5. `verbose-details-and-all-field-info`プロファイルの出力](#5-verbose-details-and-all-field-infoプロファイルの出力)
+    - [プロファイルの比較](#プロファイルの比較)
+  - [Profile Field Aliases](#profile-field-aliases)
   - [Levelの省略](#levelの省略)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
@@ -183,7 +192,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -u
+hayabusa-1.5.0-win-x64.exe -u
 ```
 
 アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
@@ -198,7 +207,6 @@ hayabusa-1.4.3-win-x64.exe -u
 Rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
 ```bash
-cargo clean
 cargo build --release
 ```
 
@@ -254,6 +262,24 @@ Fedora系のディストロ:
 sudo yum install openssl-devel
 ```
 
+## LinuxのMUSLバイナリのクロスコンパイル
+
+まず、Linux OSでターゲットをインストールします。
+
+```bash
+rustup install stable-x86_64-unknown-linux-musl
+rustup target add x86_64-unknown-linux-musl
+```
+
+以下のようにコンパイルします:
+
+```
+rustup run stable-x86_64-unknown-linux-musl cargo build --release
+```
+
+## Linuxでのコンパイルの注意点
+
+
 # Hayabusaの実行
 
 ## 注意: アンチウィルス/EDRの誤検知と遅い初回実行
@@ -268,20 +294,20 @@ Windows PC起動後の初回実行時に時間がかかる場合があります�
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 
-例: `hayabusa-1.4.3-windows-x64.exe`
+例: `hayabusa-1.5.0-windows-x64.exe`
 
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.4.3-linux-x64-gnu
+chmod +x ./hayabusa-1.5.0-linux-x64-gnu
 ```
 
 次に、Hayabusaのルートディレクトリから実行します：
 
 ```bash
-./hayabusa-1.4.3-linux-x64-gnu
+./hayabusa-1.5.0-linux-x64-gnu
 ```
 
 ## macOS
@@ -289,13 +315,13 @@ chmod +x ./hayabusa-1.4.3-linux-x64-gnu
 まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.4.3-mac-intel
+chmod +x ./hayabusa-1.5.0-mac-intel
 ```
 
 次に、Hayabusaのルートディレクトリから実行してみてください：
 
 ```bash
-./hayabusa-1.4.3-mac-intel
+./hayabusa-1.5.0-mac-intel
 ```
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
@@ -309,7 +335,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 その後、ターミナルからもう一回実行してみてください：
 
 ```bash
-./hayabusa-1.4.3-mac-intel
+./hayabusa-1.5.0-mac-intel
 ```
 
 以下の警告が出るので、「開く」をクリックしてください。
@@ -319,16 +345,21 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 これで実行できるようになります。
 
 # 使用方法
+## 主なコマンド
+
+* デフォルト: ファストフォレンジックタイムラインの作成。
+* `--level-tuning`: アラート`level`のカスタムチューニング
+* `-L, --logon-summary`: ログオンイベントのサマリを出力する。
+* `-P, --pivot-keywords-list`: ピボットする不審なキーワードのリスト作成。 
+* `-s, --statistics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
+* `--set-default-profile`: デフォルトプロファイルを変更する。
+* `-u, --update`: GitHubの[hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)リポジトリにある最新のルールに同期させる。
 
 ## コマンドラインオプション
 
 ```
 USAGE:
     hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
-
-OPTIONS:
-    -h, --help       ヘルプ情報を表示する
-        --version    バージョン情報を表示する
 
 INPUT:
     -d, --directory <DIRECTORY>    .evtxファイルを持つディレクトリのパス
@@ -337,14 +368,14 @@ INPUT:
 
 ADVANCED:
     -c, --rules-config <DIRECTORY>              ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-        --level-tuning [<FILE>]                 ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
     -Q, --quiet-errors                          Quiet errorsモード: エラーログを保存しない
     -r, --rules <DIRECTORY/FILE>                ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
     -t, --thread-number <NUMBER>                スレッド数 (デフォルト: パフォーマンスに最適な数値)
         --target-file-ext <EVTX_FILE_EXT>...    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
 
 OUTPUT:
-    -o, --output <FILE>    タイムラインをCSV形式で保存する (例: results.csv)
+    -o, --output <FILE>                    タイムラインをCSV形式で保存する (例: results.csv)
+    -P, --profile <PROFILE>                利用する出力プロファイル名を指定する (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
 DISPLAY-SETTINGS:
         --no-color              カラー出力を無効にする
@@ -353,7 +384,7 @@ DISPLAY-SETTINGS:
     -V, --visualize-timeline    イベント頻度タイムラインを出力する
 
 FILTERING:
-    -D, --deep-scan                     すべてのイベントIDを対象にしたスキャンを行う
+    -D, --deep-scan                     すべてのイベントIDを対象にしたスキャンを行う（遅くなる）
         --enable-deprecated-rules       Deprecatedルールを有効にする
         --exclude-status <STATUS>...    読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
     -m, --min-level <LEVEL>             結果出力をするルールの最低レベル (デフォルト: informational)
@@ -364,8 +395,10 @@ FILTERING:
 OTHER-ACTIONS:
         --contributors           コントリビュータの一覧表示
     -L, --logon-summary          成功と失敗したログオン情報の要約を出力する
+        --level-tuning [<FILE>]                 ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
     -p, --pivot-keywords-list    ピボットキーワードの一覧作成
     -s, --statistics             イベントIDの統計情報を表示する
+        --set-default-profile <PROFILE>    デフォルトの出力コンフィグを設定する
     -u, --update-rules           rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
 
 TIME-FORMAT:
@@ -375,10 +408,6 @@ TIME-FORMAT:
         --US-military-time    24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
         --US-time             アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
     -U, --UTC                 UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
-
-OUTPUT-SETTINGS:
-    -P, --profile <PROFILE>                利用する出力プロファイル名を指定する
-        --set-default-profile <PROFILE>    デフォルトの出力コンフィグを設定する
 ```
 
 ## 使用例
@@ -386,79 +415,84 @@ OUTPUT-SETTINGS:
 * １つのWindowsイベントログファイルに対してHayabusaを実行します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -f eventlog.evtx
+hayabusa-1.5.0-win-x64.exe -f eventlog.evtx
 ```
 
-* 複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行します:
+* `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
-* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができます(注意: `-F`を有効にすると、出力するファイルのサイズがとても大きくなります！):
+* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができます(注意: `verbose-details-and-all-field-info`プロファイルを使すると、出力するファイルのサイズがとても大きくなります！):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P `verbose-details-and-all-field-info`
 ```
 
-* Hayabusaルールのみを実行します（デフォルトでは `-r .\rules` にあるすべてのルールが利用されます）:
+* Hayabusaルールのみを実行します（デフォルトでは`-r .\rules`にあるすべてのルールが利用されます）:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Sigmaルールのみを実行します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にします:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
 ```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -l -m low
+hayabusa-1.5.0-win-x64.exe -l -m low
 ```
 
 * criticalレベルのアラートからピボットキーワードの一覧を作成します(結果は結果毎に`keywords-Ip Address.txt`や`keywords-Users.txt`等に出力されます):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.5.0-win-x64.exe -l -m critical -p -o keywords
 ```
 
-* イベントIDの統計情報を取得します:
+* イベントIDの統計情報を出力します:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -f Security.evtx -s
+hayabusa-1.5.0-win-x64.exe -f Security.evtx -s
+```
+* ログオンサマリを出力します:
+
+```bash
+hayabusa-1.5.0-win-x64.exe -L -f Security.evtx -s
 ```
 
 * 詳細なメッセージを出力します(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
@@ -512,57 +546,77 @@ Hayabusaをテストしたり、新しいルールを作成したりするため
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
 
-# Hayabusaの出力
+# Hayabusaの出力プロファイル
 
-Hayabusaの結果を標準出力に表示しているとき（デフォルト）は、以下の情報を表示することができます:
+Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロファイルが定義されています:
 
-* `Timestamp`: デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっています。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ています。デフォルトのタイムゾーンはローカルのタイムゾーンになりますが、`--utc` オプションで UTC に変更することができます。
-* `Computer`: イベントログの`<Event><System><Computer>`フィールドから来ています。
-* `Channel`: ログ名です。イベントログの`<Event><System><EventID>`フィールドから来ています。
-* `Event ID`: イベントログの`<Event><System><EventID>`フィールドから来ています。
-* `Level`: YML検知ルールの`level`フィールドから来ています。(例：`informational`, `low`, `medium`, `high`, `critical`) デフォルトでは、すべてのレベルのアラートとイベントが出力されますが、`-m`オプションで最低のレベルを指定することができます。例えば`-m high`オプションを付けると、`high`と`critical`アラートしか出力されません。
-* `Title`: YML検知ルールの`title`フィールドから来ています。
-* `RecordID`: イベントレコードIDです。`<Event><System><EventRecordID>`フィールドから来ています。
-* `Details`: YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。
-* `MitreTactics`: MITRE ATT&CKの戦術。
-* `MitreTags`: MITRE ATT&CKの戦術以外の情報。attack.g(グループ)、attack.t(技術)、attack.s(ソフトウェア)の情報を出力します。
-* `OtherTags`: YML検知ルールの`tags` フィールドから`MitreTactics`, `MitreTags` 以外の月情報を出力します。
-* `RuleFile`: アラートまたはイベントを生成した検知ルールのファイル名。
-* `EvtxFile`: アラートまたはイベントを起こしたevtxファイルへのパス。
-* `RecordInformation`: すべてのフィールド情報。
+1. `minimal`
+2. `standard` (デフォルト)
+3. `verbose`
+4. `verbose-all-field-info`
+5. `verbose-details-and-all-field-info`
 
-## プロファイルによる出力のカスタマイズ
+このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
+`--set-default-profile <profile>`オプションでデフォルトのプロファイルを変更することもできます。
 
-Hayabusaの出力内容はconfig/profiles.txtとconfig/default_profile.txtを変更することでカスタマイズできます。カスタマイズではHayabusaの出力で用いられている内容を以下のエイリアスで呼び出すことができます。
-もし、`config/profiles.txt`に書いてるプロファイルを用いたい場合は`-P/--profile`オプションを利用してください。
-default_profiles.txtをprofile.txtに書かれているプロファイルで上書きしたい場合は`--set-default-profile`オプションを利用してください。
+## 1. `minimal`プロファイルの出力
 
-|エイリアス名|Haysbusaの出力にある情報|
-|:---|:---|
-|%Timestamp% | `Timestamp` |
-|%Computer% | `Computer` |
-|%Channel% | `Channel` |
-|%Level% | `Level` |
-|%EventID% | `EventID` |
-|%MitreTactics% | `MitreTactics` |
-|%MitreTags% | `MitreTags` |
-|%OtherTags% | `OtherTags` |
-|%RecordID% | `RecordID` |
-|%RuleTitle% | `Title` |
-|%Details% | `Details` |
-|%RecordInformation% | `RecordInformation` |
-|%RuleFile% | `RuleFile` |
-|%EvtxFile% | `EvtxFile` |
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
 
-profiles.txtへの記載例:
+## 2. `standard`プロファイルの出力
 
-```yaml
-(profilename):
-    (column name): '%Timestamp%'
-    (column name2): '%Computer%'
-    (column name3): '%Channel%'
-```
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
 
+## 3. `verbose`プロファイルの出力
+
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+
+## 4. `verbose-all-field-info`プロファイルの出力
+
+最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報が出力されます。
+
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+
+## 5. `verbose-details-and-all-field-info`プロファイルの出力
+
+`verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報が出力されます。
+(注意: 出力ファイルサイズは2倍になります！)
+
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+
+### プロファイルの比較
+
+以下のベンチマークは、2018年製のマックブックプロ上で7.5GBのEVTXデータに対して実施されました。
+
+| プロファイル | 処理時間 | 結果のファイルサイズ |
+| :---: | :---: | :---: |
+| minimal | 16分18秒 | 690 MB |
+| standard | 16分23秒 | 710 MB |
+| verbose | 17分 | 990 MB |
+| verbose-all-field-info | 16分50秒 | 1.6 GB |
+| verbose-details-and-all-field-info | 17分12秒 | 2.1 GB |
+
+## Profile Field Aliases
+
+| エイリアス名 | Hayabusaの出力情報 |
+| :--- | :--- |
+|%Timestamp% | デフォルトでは`YYYY-MM-DD HH:mm:ss.sss +hh:mm`形式になっている。イベントログの`<Event><System><TimeCreated SystemTime>`フィールドから来ている。デフォルトのタイムゾーンはローカルのタイムゾーンになるが、`--UTC`オプションでUTCに変更することができる。 |
+|%Computer% | イベントログの`<Event><System><Computer>`フィールド。 |
+|%Channel% |  ログ名。イベントログの`<Event><System><EventID>`フィールド。 |
+|%EventID% | イベントログの`<Event><System><EventID>`フィールド。 |
+|%Level% | YML検知ルールの`level`フィールド。(例：`informational`、`low`、`medium`、`high`、`critical`) |
+|%MitreTactics% | MITRE ATT&CKの[戦術](https://attack.mitre.org/tactics/enterprise/) (例: Initial Access、Lateral Movement等々） |
+|%MitreTags% | MITRE ATT&CKの戦術以外の情報。attack.g(グループ)、attack.t(技術)、attack.s(ソフトウェア)の情報を出力する。 |
+|%OtherTags% | YML検知ルールの`tags`フィールドから`MitreTactics`、`MitreTags`以外のキーワードを出力する。|
+|%RecordID% | `<Event><System><EventRecordID>`フィールドのイベントレコードID。 |
+|%RuleTitle% | YML検知ルールの`title`フィールド。 |
+|%Details% | YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。 |
+|%AllFieldInfo% | すべてのフィールド情報。 |
+|%RuleFile% | アラートまたはイベントを生成した検知ルールのファイル名。 |
+|%EvtxFile% | アラートまたはイベントを起こしたevtxファイルへのパス。 |
+
+これらのエイリアスは、出力プロファイルで使用することができます。また、他の[イベントキーアライズ](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、他のフィールドを出力することもできます。
+ 
 ## Levelの省略
 
 簡潔に出力するためにLevelを以下のように省略し出力しています。
@@ -707,7 +761,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.4.3-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.5.0-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
 `./rules/config/level_tuning.txt`の例:
@@ -720,9 +774,8 @@ id,new_level
 
 ## イベントIDフィルタリング
 
-バージョン1.4.3以降では、デフォルトでパフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを無視しています。
-デフォルトでは`./rules/config/target_event_IDs.txt`で定義されたIDがスキャンされます。
-If you want to scan all events, please use the `-D, --deep-scan` option.
+デフォルトではパフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを無視しています。
+`./rules/config/target_event_IDs.txt`で定義されたIDがスキャンされます。
 すべてのイベントをスキャンしたい場合は、`-D, --deep-scan`オプションを使用してください。
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
