@@ -13,6 +13,7 @@
 - Added new output alias for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
 - Organized menu (#651) (@YamatoSecurity and @hitenkoku)
 - Added commas to summary numbers to make them easier to read. (#649) (@hitenkoku)
+- Added output percentage of detections in Result Summary. (#658) (@hitenkoku)
 
 **Bug Fixes:**
 
