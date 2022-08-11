@@ -437,10 +437,7 @@ fn _print_unique_results(
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
 
-
-    let total_count = counts_by_level
-    .iter()
-    .sum::<u128>();
+    let total_count = counts_by_level.iter().sum::<u128>();
     // output total results
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
