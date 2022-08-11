@@ -275,6 +275,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
 The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/release/` directory.
+MUSL binaries are are about 15% slower than the GNU binaries.
 
 # Running Hayabusa
 

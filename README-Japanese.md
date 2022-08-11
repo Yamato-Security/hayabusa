@@ -280,6 +280,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
 MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクトリ配下に作成されます。
+MUSLバイナリはGNUバイナリより約15％遅いです。
 
 ## Linuxでのコンパイルの注意点
 
