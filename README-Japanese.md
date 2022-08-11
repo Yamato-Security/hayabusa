@@ -276,8 +276,10 @@ rustup target add x86_64-unknown-linux-musl
 以下のようにコンパイルします:
 
 ```
-rustup run stable-x86_64-unknown-linux-musl cargo build --release
+cargo build --release --target=x86_64-unknown-linux-musl
 ```
+
+MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクトリ配下に作成されます。
 
 ## Linuxでのコンパイルの注意点
 

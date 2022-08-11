@@ -271,8 +271,10 @@ rustup target add x86_64-unknown-linux-musl
 Compile with:
 
 ```
-rustup run stable-x86_64-unknown-linux-musl cargo build --release
+cargo build --release --target=x86_64-unknown-linux-musl
 ```
+
+The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/release/` directory.
 
 # Running Hayabusa
 
