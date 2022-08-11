@@ -59,7 +59,7 @@ impl Default for ConfigReader<'_> {
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name}\n{author}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n",
     version,
-    arg_required_else_help (true),
+    arg_required_else_help(true),
     term_width = 400
 )]
 pub struct Config {
