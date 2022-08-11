@@ -1,6 +1,6 @@
 <div align="center">
  <p>
-    <img alt="Hayabusa Logo" src="hayabusa-logo.png" width="50%">
+    <img alt="Hayabusa Logo" src="logo.png" width="50%">
  </p>
  [ <b>English</b> ] | [<a href="README-Japanese.md">日本語</a>]
 </div>
@@ -47,27 +47,37 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Cross-compiling 32-bit Windows Binaries](#cross-compiling-32-bit-windows-binaries)
   - [macOS Compiling Notes](#macos-compiling-notes)
   - [Linux Compiling Notes](#linux-compiling-notes)
+  - [Cross-compiling Linux MUSL Binaries](#cross-compiling-linux-musl-binaries)
 - [Running Hayabusa](#running-hayabusa)
   - [Caution: Anti-Virus/EDR Warnings and Slow Runtimes](#caution-anti-virusedr-warnings-and-slow-runtimes)
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
 - [Usage](#usage)
+  - [Main commands](#main-commands)
   - [Command Line Options](#command-line-options)
   - [Usage Examples](#usage-examples)
   - [Pivot Keyword Generator](#pivot-keyword-generator)
   - [Logon Summary Generator](#logon-summary-generator)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
-  - [Output customize by profile](#output-customize-by-profile)
+  - [Profiles](#profiles)
+    - [1. `minimal` profile output](#1-minimal-profile-output)
+    - [2. `standard` profile output](#2-standard-profile-output)
+    - [3. `verbose` profile output](#3-verbose-profile-output)
+    - [4. `verbose-all-field-info` profile output](#4-verbose-all-field-info-profile-output)
+    - [5. `verbose-details-and-all-field-info` profile output](#5-verbose-details-and-all-field-info-profile-output)
+    - [Profile Comparison](#profile-comparison)
+    - [Profile Field Aliases](#profile-field-aliases)
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
-  - [Event Fequency Timeline](#event-fequency-timeline)
-  - [Dates with most total detections](#dates-with-most-total-detections)
-  - [Top 5 computers with most unique detections](#top-5-computers-with-most-unique-detections)
+  - [Results Summary](#results-summary-1)
+    - [Event Fequency Timeline](#event-fequency-timeline)
+    - [Dates with most total detections](#dates-with-most-total-detections)
+    - [Top 5 computers with most unique detections](#top-5-computers-with-most-unique-detections)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -176,7 +186,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -u
+hayabusa-1.5.0-win-x64.exe -u
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -191,7 +201,6 @@ If the update fails, you may need to rename the `rules` folder and try again.
 If you have Rust installed, you can compile from source with the following command:
 
 ```bash
-cargo clean
 cargo build --release
 ```
 
@@ -250,6 +259,24 @@ Fedora-based distros:
 sudo yum install openssl-devel
 ```
 
+## Cross-compiling Linux MUSL Binaries
+
+On a Linux OS, first install the target.
+
+```bash
+rustup install stable-x86_64-unknown-linux-musl
+rustup target add x86_64-unknown-linux-musl
+```
+
+Compile with:
+
+```
+cargo build --release --target=x86_64-unknown-linux-musl
+```
+
+The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/release/` directory.
+MUSL binaries are are about 15% slower than the GNU binaries.
+
 # Running Hayabusa
 
 ## Caution: Anti-Virus/EDR Warnings and Slow Runtimes
@@ -264,20 +291,20 @@ You may experience slow runtime especially on the first run after a reboot due t
 
 In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.  
 
-Example: `hayabusa-1.4.3-windows-x64.exe`
+Example: `hayabusa-1.5.0-windows-x64.exe`
 
 ## Linux
 
 You first need to make the binary executable. 
 
 ```bash
-chmod +x ./hayabusa-1.4.3-linux-x64-gnu
+chmod +x ./hayabusa-1.5.0-linux-x64-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.4.3-linux-x64-gnu
+./hayabusa-1.5.0-linux-x64-gnu
 ```
 
 ## macOS
@@ -285,13 +312,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-1.4.3-mac-intel
+chmod +x ./hayabusa-1.5.0-mac-intel
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.4.3-mac-intel
+./hayabusa-1.5.0-mac-intel
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -305,7 +332,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-1.4.3-mac-intel
+./hayabusa-1.5.0-mac-intel
 ```
 
 The following warning will pop up, so please click "Open".
@@ -315,16 +342,21 @@ The following warning will pop up, so please click "Open".
 You should now be able to run hayabusa.
 
 # Usage
+## Main commands
+
+* default: Create a fast forensics timeline.
+* `--level-tuning`: Custom tune the alerts' `level`.
+* `-L, --logon-summary`: Print a summary of logon events.
+* `-P, --pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
+* `-s, --statistics`: Print metrics of the count and percentage of events based on Event ID.
+* `--set-default-profile`: Change the default profile.
+* `-u, --update`: Sync the rules to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) GitHub repository.
 
 ## Command Line Options
 
 ```
 USAGE:
     hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
-
-OPTIONS:
-    -h, --help       Print help information
-        --version    Print version information
 
 INPUT:
     -d, --directory <DIRECTORY>    Directory of multiple .evtx files
@@ -333,14 +365,14 @@ INPUT:
 
 ADVANCED:
     -c, --rules-config <DIRECTORY>              Specify custom rule config directory (default: ./rules/config)
-        --level-tuning [<FILE>]                 Tune alert levels (default: ./rules/config/level_tuning.txt)
     -Q, --quiet-errors                          Quiet errors mode: do not save error logs
     -r, --rules <DIRECTORY/FILE>                Specify a custom rule directory or file (default: ./rules)
     -t, --thread-number <NUMBER>                Thread number (default: optimal number for performance)
         --target-file-ext <EVTX_FILE_EXT>...    Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
 
 OUTPUT:
-    -o, --output <FILE>    Save the timeline in CSV format (ex: results.csv)
+    -o, --output <FILE>        Save the timeline in CSV format (ex: results.csv)
+    -P, --profile <PROFILE>    Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
 DISPLAY-SETTINGS:
         --no-color              Disable color output
@@ -349,7 +381,7 @@ DISPLAY-SETTINGS:
     -V, --visualize-timeline    Output event frequency timeline
 
 FILTERING:
-    -D, --deep-scan                     Disable event ID filter to scan all events
+    -D, --deep-scan                     Disable event ID filter to scan all events (slower)
         --enable-deprecated-rules       Enable rules marked as deprecated
         --exclude-status <STATUS>...    Ignore rules according to status (ex: experimental) (ex: stable test)
     -m, --min-level <LEVEL>             Minimum level for rules (default: informational)
@@ -358,11 +390,13 @@ FILTERING:
         --timeline-start <DATE>         Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 OTHER-ACTIONS:
-        --contributors           Print the list of contributors
-    -L, --logon-summary          Print a summary of successful and failed logons
-    -p, --pivot-keywords-list    Create a list of pivot keywords
-    -s, --statistics             Print statistics of event IDs
-    -u, --update-rules           Update to the latest rules in the hayabusa-rules github repository
+        --contributors                     Print the list of contributors
+    -L, --logon-summary                    Print a summary of successful and failed logons
+        --level-tuning [<FILE>]            Tune alert levels (default: ./rules/config/level_tuning.txt)
+    -p, --pivot-keywords-list              Create a list of pivot keywords
+    -s, --statistics                       Print statistics of event IDs
+        --set-default-profile <PROFILE>    Set default output profile
+    -u, --update-rules                     Update to the latest rules in the hayabusa-rules github repository
 
 TIME-FORMAT:
         --European-time       Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -371,90 +405,92 @@ TIME-FORMAT:
         --US-military-time    Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
         --US-time             Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
     -U, --UTC                 Output time in UTC format (default: local time)
-
-OUTPUT-SETTINGS:
-    -P, --profile <PROFILE>                Specify output profile
-        --set-default-profile <PROFILE>    Set default output profile
 ```
 
 ## Usage Examples
 
-* Run hayabusa against one Windows event log file:
+* Run hayabusa against one Windows event log file with default standard profile:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -f eventlog.evtx
+hayabusa-1.5.0-win-x64.exe -f eventlog.evtx
 ```
 
-* Run hayabusa against the sample-evtx directory with multiple Windows event log files:
+* Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
-* Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with `-F` enabled!):
+* Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `verbose-details-and-all-field-info` profile!):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -l -m low
+hayabusa-1.5.0-win-x64.exe -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.5.0-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * Print Event ID statistics:
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -f Security.evtx -s
+hayabusa-1.5.0-win-x64.exe -f Security.evtx -s
+```
+
+* Print logon summary:
+
+```bash
+hayabusa-1.5.0-win-x64.exe -L -f Security.evtx -s
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
 ```bash
-hayabusa-1.4.3-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:
@@ -511,56 +547,75 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 
 # Hayabusa Output
 
-When hayabusa output is being displayed to the screen (the default), it can display the following information:
+## Profiles
 
-* `Timestamp`: Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. This comes from the `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--utc` option.
-* `Computer`: This comes from the `<Event><System><Computer>` field in the event log.
-* `Channel`: The name of log. This comes from the `<Event><System><Channel>` field in the event log.
-* `Event ID`: This comes from the `<Event><System><EventID>` field in the event log.
-* `Level`: This comes from the `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) By default, all level alerts will be displayed but you can set the minimum level with `-m`. For example, you can set `-m high`) in order to only scan for and display high and critical alerts.
-* `RecordID`: This comes from the `<Event><System><EventRecordID>` field in the event log.
-* `Title`: This comes from the `title` field in the YML detection rule.
-* `Details`: This comes from the `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column.
-* `MitreTactics`: MITRE ATT&CK tactics.
-* `MitreTags`: MITRE ATT&CK group, technique, software.
-* `OtherTags`: This comes from the `tags` field in YML detection rule which is excluded `MitreTactics` and `MitreTags`.
-* `RuleFile`: The filename of the detection rule that generated the alert or event.
-* `EvtxFile`: The evtx filename that caused the alert or event.
-* `RecordInformation`: All field information.
+Hayabusa has 5 pre-defined profiles to use in `config/profiles.yaml`:
 
-## Output customize by profile
+1. `minimal`
+2. `standard` (default)
+3. `verbose`
+4. `verbose-all-field-info`
+5. `verbose-details-and-all-field-info`
 
-You can customize the output by modifiy `config/profiles.txt` and `config/default_profile.txt`.
-You can be setting following alias. 
-If you want to use profile in `config/profiles.txt` , you use `-P/--profile` option.
-Please use `--set-default-profile`  option when you want to overwrite `default_profiles.txt`  by profile in `config/profiles.txt`.
+You can easily customize or add your own profiles by editing this file.
+You can also easily change the default profile with `--set-default-profile <profile>`.
 
-|alias name| Hayabusa output information|
-|:---|:---|
-|%Timestamp% | `Timestamp` |
-|%Computer% | `Computer` |
-|%Channel% | `Channel` |
-|%Level% | `Level` |
-|%EventID% | `EventID` |
-|%MitreTactics% | `MitreTactics` |
-|%MitreTags% | `MitreTags` |
-|%OtherTags% | `OtherTags` |
-|%RecordID% | `RecordID` |
-|%RuleTitle% | `Title` |
-|%Details% | `Details` |
-|%RecordInformation% | `RecordInformation` |
-|%RuleFile% | `RuleFile` |
-|%EvtxFile% | `EvtxFile` |
+### 1. `minimal` profile output
 
-e.g. profile customize
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RuleTitle%`, `%Details%`
 
-```yaml
-(profilename):
-    (column name): '%Timestamp%'
-    (column name2): '%Computer%'
-    (column name3): '%Channel%'
-```
+### 2. `standard` profile output
 
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
+
+### 3. `verbose` profile output
+
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+
+### 4. `verbose-all-field-info` profile output
+
+Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted.
+
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+
+### 5. `verbose-details-and-all-field-info` profile output
+
+`verbose` profile plus all field information. (Warning: this will usually double the output file size!)
+
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+
+### Profile Comparison
+
+The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
+
+| Profile | Processing Time | Output Filesize |
+| :---: | :---: | :---: |
+| minimal | 16 minutes 18 seconds | 690 MB |
+| standard | 16 minutes 23 seconds | 710 MB |
+| verbose | 17 minutes | 990 MB |
+| verbose-all-field-info | 16 minutes 50 seconds | 1.6 GB |
+| verbose-details-and-all-field-info | 17 minutes 12 seconds | 2.1 GB |
+
+### Profile Field Aliases
+
+| Alias name | Hayabusa output information|
+| :--- | :--- |
+|%Timestamp% | Default is `YYYY-MM-DD HH:mm:ss.sss +hh:mm` format. `<Event><System><TimeCreated SystemTime>` field in the event log. The default timezone will be the local timezone but you can change the timezone to UTC with the `--UTC` option. |
+|%Computer% | The `<Event><System><Computer>` field. |
+|%Channel% | The name of log. `<Event><System><Channel>` field. |
+|%EventID% | The `<Event><System><EventID>` field. |
+|%Level% | The `level` field in the YML detection rule. (`informational`, `low`, `medium`, `high`, `critical`) |
+|%MitreTactics% | MITRE ATT&CK [tactics](https://attack.mitre.org/tactics/enterprise/) (Ex: Initial Access, Lateral Movement, etc...). |
+|%MitreTags% | MITRE ATT&CK Group ID, Technique ID and Software ID. |
+|%OtherTags% | Any keyword in the `tags` field in a YML detection rule which is not included in `MitreTactics` or `MitreTags`. |
+|%RecordID% | The Event Record ID from `<Event><System><EventRecordID>` field. |
+|%RuleTitle% | The `title` field in the YML detection rule. |
+|%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
+|%AllFieldInfo% | All field information. |
+|%RuleFile% | The filename of the detection rule that generated the alert or event. |
+|%EvtxFile% | The evtx filename that caused the alert or event. |
+
+You can use these aliases in your output profiles, as well as define other [event key alises](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
 
 ## Level Abbrevations
 
@@ -638,16 +693,18 @@ The alerts will be outputted in color based on the alert `level`.
 You can change the default colors in the config file at `./config/level_color.txt` in the format of `level,(RGB 6-digit ColorHex)`.
 If you want to disable color output, you can use `--no-color` option.
 
-## Event Fequency Timeline
+## Results Summary
+
+### Event Fequency Timeline
 
 If you add `-V` or `--visualize-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events. Also, the characters will not render correctly on the default Command Prompt or PowerShell Prompt, so please use a terminal like Windows Terminal, iTerm2, etc...
 
-## Dates with most total detections
+### Dates with most total detections
 
 A summary of the dates with the most total detections categorized by level (`critical`, `high`, etc...).
 
-## Top 5 computers with most unique detections
+### Top 5 computers with most unique detections
 
 The top 5 computers with the most unique detections categorized by level (`critical`, `high`, etc...).
 
@@ -705,7 +762,7 @@ You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignor
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.4.3-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.5.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:
@@ -719,8 +776,8 @@ In this case, the risk level of the rule with an `id` of `00000000-0000-0000-000
 
 ## Event ID Filtering
 
-As of version 1.4.3, by default, events are filtered by ID to improve performance by ignorning events that have no detection rules.
-The IDs defined in `./rules/config/target_event_IDs.txt` will be scanned by default.
+By default, events are filtered by ID to improve performance by ignorning events that have no detection rules.
+The IDs defined in `./rules/config/target_event_IDs.txt` will be scanned.
 If you want to scan all events, please use the `-D, --deep-scan` option.
 
 # Other Windows Event Log Analyzers and Related Resources
