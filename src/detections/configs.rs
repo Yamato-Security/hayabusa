@@ -54,7 +54,7 @@ impl Default for ConfigReader<'_> {
 
 #[derive(Parser)]
 #[clap(
-    name = "Hayabusa",
+    name = "Hayabusa 1.5.0-dev",
     usage = "hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name}\n{author}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n",
