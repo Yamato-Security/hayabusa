@@ -437,6 +437,7 @@ fn _print_unique_results(
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
 
+    let total_count = counts_by_level.iter().sum::<u128>();
     // output total results
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
@@ -445,10 +446,7 @@ fn _print_unique_results(
             "{} {}: {}",
             head_word,
             tail_word,
-            counts_by_level
-                .iter()
-                .sum::<u128>()
-                .to_formatted_string(&Locale::en),
+            total_count.to_formatted_string(&Locale::en),
         ),
         true,
     )
@@ -458,12 +456,18 @@ fn _print_unique_results(
         if "undefined" == *level_name {
             continue;
         }
+        let percent = if total_count == 0 {
+            0 as f64
+        } else {
+            (counts_by_level[i] as f64) / (total_count as f64) * 100.0
+        };
         let output_raw_str = format!(
-            "{} {} {}: {}",
+            "{} {} {}: {} ({:.2}%)",
             head_word,
             level_name,
             tail_word,
-            counts_by_level[i].to_formatted_string(&Locale::en)
+            counts_by_level[i].to_formatted_string(&Locale::en),
+            percent
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
