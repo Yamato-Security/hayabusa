@@ -153,6 +153,15 @@ pub fn after_fact(all_record_cnt: usize) {
                     process::exit(1);
                 }
             }
+        } else if let Some(json_path) = &configs::CONFIG.read().unwrap().args.json_timeline {
+            // output to file
+            match File::create(json_path) {
+                Ok(file) => Box::new(BufWriter::new(file)),
+                Err(err) => {
+                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                    process::exit(1);
+                }
+            }
         } else {
             displayflag = true;
             // stdoutput (termcolor crate color output is not csv writer)
@@ -172,8 +181,9 @@ fn emit_csv<W: std::io::Write>(
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
+    let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline.is_some();
 
-    let mut wtr = if configs::CONFIG.read().unwrap().args.json_timeline {
+    let mut wtr = if json_output_flag {
         WriterBuilder::new()
             .delimiter(b'\n')
             .double_quote(true)
@@ -207,7 +217,7 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    if configs::CONFIG.read().unwrap().args.json_timeline {
+    if json_output_flag {
         wtr.write_field("[")?;
     }
     for time in message::MESSAGES.clone().into_read_only().keys().sorted() {
@@ -242,7 +252,7 @@ fn emit_csv<W: std::io::Write>(
                     false,
                 )
                 .ok();
-            } else if configs::CONFIG.read().unwrap().args.json_timeline {
+            } else if json_output_flag {
                 wtr.write_field("  {")?;
                 wtr.write_field(&output_json_str(&detect_info.ext_field))?;
                 wtr.write_field("  },")?;
@@ -299,9 +309,10 @@ fn emit_csv<W: std::io::Write>(
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
     }
-    if configs::CONFIG.read().unwrap().args.json_timeline {
+    if json_output_flag {
         wtr.write_field("]")?;
     }
+
     if displayflag {
         println!();
     } else {
