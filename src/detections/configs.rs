@@ -219,7 +219,7 @@ pub struct Config {
     #[clap(long = "set-default-profile")]
     pub set_default_profile: Option<String>,
 
-    #[clap(short = 'j', long = "profile")]
+    #[clap(short = 'j', long = "json-timeline")]
     pub json_timeline: bool,
 }
 
