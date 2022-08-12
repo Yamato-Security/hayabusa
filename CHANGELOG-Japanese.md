@@ -6,6 +6,7 @@
 
 - `config/profiles.yaml`と`config/default_profile.yaml`の設定ファイルで、出力内容をカスタマイズできる。 (#165) (@hitenkoku)
 - 対象のフィールドがレコード内に存在しないことを確認する `null` キーワードに対応した。 (#643) (@hitenkoku)
+- 解析結果をJSONに出力する機能を追加した (`-j`  と `--json-timeline` )。  (#654) (@hitenkoku)
 
 **改善:**
 
