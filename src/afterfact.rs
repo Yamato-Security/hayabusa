@@ -7,11 +7,12 @@ use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
-use csv::QuoteStyle;
+use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
+use std::str::FromStr;
 
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
@@ -171,7 +172,16 @@ fn emit_csv<W: std::io::Write>(
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-    let mut wtr = csv::WriterBuilder::new().from_writer(writer);
+
+    let mut wtr = if configs::CONFIG.read().unwrap().args.json_timeline {
+        WriterBuilder::new()
+            .delimiter(b'\n')
+            .double_quote(true)
+            .quote_style(QuoteStyle::Never)
+            .from_writer(writer)
+    } else {
+        WriterBuilder::new().from_writer(writer)
+    };
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
@@ -197,6 +207,9 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
+    if configs::CONFIG.read().unwrap().args.json_timeline {
+        wtr.write_field("[")?;
+    }
     for time in message::MESSAGES.clone().into_read_only().keys().sorted() {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
@@ -229,6 +242,10 @@ fn emit_csv<W: std::io::Write>(
                     false,
                 )
                 .ok();
+            } else if configs::CONFIG.read().unwrap().args.json_timeline {
+                wtr.write_field("  {")?;
+                wtr.write_field(&output_json_str(&detect_info.ext_field))?;
+                wtr.write_field("  },")?;
             } else {
                 // csv output format
                 if plus_header {
@@ -281,6 +298,9 @@ fn emit_csv<W: std::io::Write>(
             detect_counts_by_date_and_level
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
+    }
+    if configs::CONFIG.read().unwrap().args.json_timeline {
+        wtr.write_field("]")?;
     }
     if displayflag {
         println!();
@@ -407,7 +427,7 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
             }
         }
     }
-    let mut disp_serializer = csv::WriterBuilder::new()
+    let mut disp_serializer = WriterBuilder::new()
         .double_quote(false)
         .quote_style(QuoteStyle::Never)
         .delimiter(b'|')
@@ -574,6 +594,71 @@ fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
         let offset_sec = Local.timestamp(0, 0).offset().local_minus_utc();
         offset_sec as i64 + time.with_timezone(&Local).timestamp()
     }
+}
+
+/// json出力の際に配列として対応させるdetails,MitreTactics,MitreTags,OtherTagsに該当する場合に配列を返す関数
+fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String> {
+    if target_alias_context.contains("%MitreTactics%")
+        || target_alias_context.contains("%OtherTags%")
+        || target_alias_context.contains("%MitreTags%")
+    {
+        let ret: Vec<String> = target_data
+            .to_owned()
+            .split(" : ")
+            .map(|x| x.to_string())
+            .collect();
+        ret
+    } else if target_alias_context.contains("%Details%") {
+        let ret: Vec<String> = target_data
+            .to_owned()
+            .split(" | ")
+            .map(|x| x.to_string())
+            .collect();
+        if target_data == &ret[0] && !target_data.contains(": ") {
+            vec![]
+        } else {
+            ret
+        }
+    } else {
+        vec![]
+    }
+}
+
+fn output_json_str(ext_field: &LinkedHashMap<String, String>) -> String {
+    let mut target: Vec<String> = vec![];
+    let profile = PROFILES.clone().unwrap_or_default();
+    for (k, v) in ext_field.iter() {
+        let output_value_fmt = profile.get(k).unwrap();
+        let vec_data = _get_json_vec(output_value_fmt, v);
+        if vec_data.is_empty() {
+            if let Ok(i) = i64::from_str(v) {
+                target.push(format!("    \"{}\": {}", k, i));
+            } else if let Ok(b) = bool::from_str(v) {
+                target.push(format!("    \"{}\": {}", k, b));
+            } else {
+                target.push(format!("    \"{}\": \"{}\"", k, v));
+            }
+        } else if output_value_fmt.contains("%Details%") {
+            let mut latest_valid_index = 0;
+            for (idx, detail_contents) in vec_data.iter().enumerate() {
+                let val: Vec<&str> = detail_contents.split(": ").collect();
+                println!("{} | {} | {}", idx, latest_valid_index, target.len());
+                if val.len() != 1 {
+                    target.push(format!("    \"{}\": {:?}", val[0], val[1..].join("")));
+                    latest_valid_index = idx;
+                } else {
+                    let prev_idx = if latest_valid_index == 0 {
+                        latest_valid_index
+                    } else {
+                        target.len() - 1
+                    };
+                    let prev = &target[prev_idx];
+                    target[prev_idx] = format!("{} | {}", prev, val[0]);
+                }
+            }
+        }
+    }
+    target.join(",\n")
 }
 
 #[cfg(test)]

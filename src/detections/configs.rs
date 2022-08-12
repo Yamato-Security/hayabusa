@@ -218,6 +218,9 @@ pub struct Config {
     /// Set default output profile
     #[clap(long = "set-default-profile")]
     pub set_default_profile: Option<String>,
+
+    #[clap(short = 'j', long = "profile")]
+    pub json_timeline: bool,
 }
 
 impl ConfigReader<'_> {
