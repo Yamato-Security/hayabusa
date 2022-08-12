@@ -657,7 +657,6 @@ fn output_json_str(ext_field: &LinkedHashMap<String, String>) -> String {
             let mut latest_valid_index = 0;
             for (idx, detail_contents) in vec_data.iter().enumerate() {
                 let val: Vec<&str> = detail_contents.split(": ").collect();
-                println!("{} | {} | {}", idx, latest_valid_index, target.len());
                 if val.len() != 1 {
                     target.push(format!("    \"{}\": {:?}", val[0], val[1..].join("")));
                     latest_valid_index = idx;
