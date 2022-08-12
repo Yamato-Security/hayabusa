@@ -224,7 +224,8 @@ pub struct Config {
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 
-    #[clap(short = 'j', long = "json-timeline")]
+    /// Output result in JSON format
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'j', long = "json-timeline")]
     pub json_timeline: bool,
 }
 
