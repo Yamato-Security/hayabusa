@@ -55,70 +55,74 @@ impl Default for ConfigReader<'_> {
 #[derive(Parser)]
 #[clap(
     name = "Hayabusa",
-    usage = "hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]",
+    usage = "hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+    help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n",
     version,
     term_width = 400
 )]
 pub struct Config {
     /// Directory of multiple .evtx files
-    #[clap(short = 'd', long, value_name = "DIRECTORY")]
+    #[clap(help_heading = Some("INPUT"), short = 'd', long, value_name = "DIRECTORY")]
     pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file
-    #[clap(short = 'f', long, value_name = "FILE_PATH")]
+    #[clap(help_heading = Some("INPUT"), short = 'f', long = "file", value_name = "FILE")]
     pub filepath: Option<PathBuf>,
 
-    /// Specify a rule directory or file (default: ./rules)
+    /// Specify a custom rule directory or file (default: ./rules)
     #[clap(
+        help_heading = Some("ADVANCED"), 
         short = 'r',
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "RULE_DIRECTORY/RULE_FILE"
+        value_name = "DIRECTORY/FILE"
     )]
     pub rules: PathBuf,
 
-    /// Specify custom rule config folder (default: ./rules/config)
+    /// Specify custom rule config directory (default: ./rules/config)
     #[clap(
+        help_heading = Some("ADVANCED"), 
         short = 'c',
         long = "rules-config",
         default_value = "./rules/config",
         hide_default_value = true,
-        value_name = "RULE_CONFIG_DIRECTORY"
+        value_name = "DIRECTORY"
     )]
     pub config: PathBuf,
 
     /// Save the timeline in CSV format (ex: results.csv)
-    #[clap(short = 'o', long, value_name = "CSV_TIMELINE")]
+    #[clap(help_heading = Some("OUTPUT"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
     /// Output verbose information
-    #[clap(short = 'v', long)]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short = 'v', long)]
     pub verbose: bool,
 
     /// Output event frequency timeline
-    #[clap(short = 'V', long = "visualize-timeline")]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short = 'V', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
     /// Enable rules marked as deprecated
-    #[clap(long = "enable-deprecated-rules")]
+    #[clap(help_heading = Some("FILTERING"), long = "enable-deprecated-rules")]
     pub enable_deprecated_rules: bool,
 
     /// Disable event ID filter to scan all events
-    #[clap(short = 'D', long = "deep-scan")]
+    #[clap(help_heading = Some("FILTERING"), short = 'D', long = "deep-scan")]
     pub deep_scan: bool,
 
     /// Enable rules marked as noisy
-    #[clap(short = 'n', long = "enable-noisy-rules")]
+    #[clap(help_heading = Some("FILTERING"), short = 'n', long = "enable-noisy-rules")]
     pub enable_noisy_rules: bool,
 
     /// Update to the latest rules in the hayabusa-rules github repository
-    #[clap(short = 'u', long = "update-rules")]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'u', long = "update-rules")]
     pub update_rules: bool,
 
     /// Minimum level for rules (default: informational)
     #[clap(
+        help_heading = Some("FILTERING"), 
         short = 'm',
         long = "min-level",
         default_value = "informational",
@@ -128,95 +132,96 @@ pub struct Config {
     pub min_level: String,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[clap(short = 'l', long = "live-analysis")]
+    #[clap(help_heading = Some("INPUT"), short = 'l', long = "live-analysis")]
     pub live_analysis: bool,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[clap(long = "start-timeline", value_name = "START_TIMELINE")]
+    #[clap(help_heading = Some("FILTERING"), long = "timeline-start", value_name = "DATE")]
     pub start_timeline: Option<String>,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[clap(long = "end-timeline", value_name = "END_TIMELINE")]
+    #[clap(help_heading = Some("FILTERING"), long = "timeline-end", value_name = "DATE")]
     pub end_timeline: Option<String>,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[clap(long = "RFC-2822")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "RFC-2822")]
     pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[clap(long = "RFC-3339")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "RFC-3339")]
     pub rfc_3339: bool,
 
     /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[clap(long = "US-time")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "US-time")]
     pub us_time: bool,
 
     /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[clap(long = "US-military-time")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "US-military-time")]
     pub us_military_time: bool,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[clap(long = "European-time")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "European-time")]
     pub european_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[clap(short = 'U', long = "UTC")]
+    #[clap(help_heading = Some("TIME-FORMAT"), short = 'U', long = "UTC")]
     pub utc: bool,
 
     /// Disable color output
-    #[clap(long = "no-color")]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "no-color")]
     pub no_color: bool,
 
     /// Thread number (default: optimal number for performance)
-    #[clap(short, long = "thread-number", value_name = "NUMBER")]
+    #[clap(help_heading = Some("ADVANCED"), short, long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
     /// Print statistics of event IDs
-    #[clap(short, long)]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short, long)]
     pub statistics: bool,
 
     /// Print a summary of successful and failed logons
-    #[clap(short = 'L', long = "logon-summary")]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'L', long = "logon-summary")]
     pub logon_summary: bool,
 
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[clap(
+        help_heading = Some("OTHER-ACTIONS"), 
         long = "level-tuning",
         hide_default_value = true,
-        value_name = "LEVEL_TUNING_FILE"
+        value_name = "FILE"
     )]
     pub level_tuning: Option<Option<String>>,
 
     /// Quiet mode: do not display the launch banner
-    #[clap(short, long)]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short, long)]
     pub quiet: bool,
 
     /// Quiet errors mode: do not save error logs
-    #[clap(short = 'Q', long = "quiet-errors")]
+    #[clap(help_heading = Some("ADVANCED"), short = 'Q', long = "quiet-errors")]
     pub quiet_errors: bool,
 
     /// Create a list of pivot keywords
-    #[clap(short = 'p', long = "pivot-keywords-list")]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'p', long = "pivot-keywords-list")]
     pub pivot_keywords_list: bool,
 
     /// Print the list of contributors
-    #[clap(long)]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), long)]
     pub contributors: bool,
 
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-    #[clap(long = "target-file-ext", multiple_values = true)]
+    #[clap(help_heading = Some("ADVANCED"), long = "target-file-ext", multiple_values = true)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable test)
-    #[clap(long = "exclude-status", multiple_values = true)]
+    #[clap(help_heading = Some("FILTERING"), long = "exclude-status", multiple_values = true, value_name = "STATUS")]
     pub exclude_status: Option<Vec<String>>,
 
-    /// Specify output profile
-    #[clap(short = 'P', long = "profile")]
+    /// Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+    #[clap(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
     pub profile: Option<String>,
 
     /// Set default output profile
-    #[clap(long = "set-default-profile")]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 }
 
