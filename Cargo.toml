@@ -42,6 +42,9 @@ num-format = "*"
 [build-dependencies]
 static_vcruntime = "2.*"
 
+[dev-dependencies]
+rand = "0.8.*"
+
 [target.'cfg(windows)'.dependencies]
 is_elevated = "0.1.*"
 
