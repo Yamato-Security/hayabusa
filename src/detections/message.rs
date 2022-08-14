@@ -112,13 +112,9 @@ pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
 
 /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
 pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
-    if let Some(mut v) = MESSAGES.get_mut(&event_time) {
-        let (_, info) = v.pair_mut();
-        info.push(detect_info);
-    } else {
-        let m = vec![detect_info; 1];
-        MESSAGES.insert(event_time, m);
-    }
+    let mut v = MESSAGES.entry(event_time).or_default();
+    let (_, info) = v.pair_mut();
+    info.push(detect_info);
 }
 
 /// メッセージを設定
@@ -358,10 +354,14 @@ impl AlertMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::message::AlertMessage;
+    use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
     use crate::detections::message::{parse_message, MESSAGES};
+    use chrono::Utc;
     use hashbrown::HashMap;
+    use rand::Rng;
     use serde_json::Value;
+    use std::thread;
+    use std::time::Duration;
 
     use super::{create_output_filter_config, get_default_details};
 
@@ -620,5 +620,46 @@ mod tests {
         for (k, v) in expected.iter() {
             assert!(actual.get(k).unwrap_or(&String::default()) == v);
         }
+    }
+
+    #[ignore]
+    #[test]
+    fn test_insert_message_race_condition() {
+        MESSAGES.clear();
+
+        // Setup test detect_info before starting threads.
+        let mut sample_detects = vec![];
+        let mut rng = rand::thread_rng();
+        let sample_event_time = Utc::now();
+        for i in 1..2001 {
+            let detect_info = DetectInfo {
+                rulepath: "".to_string(),
+                level: "".to_string(),
+                computername: "".to_string(),
+                eventid: i.to_string(),
+                detail: "".to_string(),
+                record_information: None,
+                ext_field: Default::default(),
+            };
+            sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
+        }
+
+        // Starting threads and randomly insert_message in parallel.
+        let mut handles = vec![];
+        for (event_time, detect_info, random_num) in sample_detects {
+            let handle = thread::spawn(move || {
+                thread::sleep(Duration::from_micros(random_num));
+                insert_message(detect_info, event_time);
+            });
+            handles.push(handle);
+        }
+
+        // Wait for all threads execution completion.
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        // Expect all sample_detects to be included, but the len() size will be different each time I run it
+        assert_eq!(get(sample_event_time).len(), 2000)
     }
 }
