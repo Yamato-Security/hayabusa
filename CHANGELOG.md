@@ -19,6 +19,7 @@
 **Bug Fixes:**
 
 - Fixed miscalculation of Data Reduction due to aggregation condition rule detection. (#640) (@hitenkoku)
+- Fixed race condition in detection. (#639) (@fukusuket)
 
 ## v1.4.3 [2022/08/03]
 
