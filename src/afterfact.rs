@@ -7,6 +7,7 @@ use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
+use core::cmp::max;
 use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
@@ -186,7 +187,7 @@ fn emit_csv<W: std::io::Write>(
     let mut wtr = if json_output_flag {
         WriterBuilder::new()
             .delimiter(b'\n')
-            .double_quote(true)
+            .double_quote(false)
             .quote_style(QuoteStyle::Never)
             .from_writer(writer)
     } else {
@@ -220,7 +221,13 @@ fn emit_csv<W: std::io::Write>(
     if json_output_flag {
         wtr.write_field("[")?;
     }
-    for time in message::MESSAGES.clone().into_read_only().keys().sorted() {
+    for (processed_message_cnt, time) in message::MESSAGES
+        .clone()
+        .into_read_only()
+        .keys()
+        .sorted()
+        .enumerate()
+    {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
@@ -255,7 +262,11 @@ fn emit_csv<W: std::io::Write>(
             } else if json_output_flag {
                 wtr.write_field("  {")?;
                 wtr.write_field(&output_json_str(&detect_info.ext_field))?;
-                wtr.write_field("  },")?;
+                if processed_message_cnt == message::MESSAGES.len() - 1 {
+                    wtr.write_field("  }")?;
+                } else {
+                    wtr.write_field("  },")?;
+                }
             } else {
                 // csv output format
                 if plus_header {
@@ -619,7 +630,7 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
     {
         let ret: Vec<String> = target_data
             .to_owned()
-            .split(" : ")
+            .split(": ")
             .map(|x| x.to_string())
             .collect();
         ret
@@ -639,6 +650,53 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
     }
 }
 
+fn _create_json_output_format(key: &String, value: &str, concat_flag: bool) -> String {
+    // 4 space is json indent.
+    if let Ok(i) = i64::from_str(value) {
+        format!("    \"{}\": {}", key, i)
+    } else if let Ok(b) = bool::from_str(value) {
+        format!("    \"{}\": {}", key, b)
+    } else if concat_flag {
+        format!("    \"{}\": {}", key, value)
+    } else {
+        format!("    \"{}\": \"{}\"", key, value)
+    }
+}
+
+fn _convert_valid_json_str(input: &[&str]) -> String {
+    let tmp = if input.is_empty() {
+        input[0].to_string()
+    } else {
+        input[1..].join(": ")
+    };
+    let char_cnt = tmp.char_indices().count();
+    let con_val = tmp.as_str();
+    if char_cnt == 0 {
+        tmp
+    } else if con_val.starts_with('\"') {
+        let (head, _) = tmp.char_indices().nth(min(1, char_cnt - 1)).unwrap();
+        let (tail, _) = tmp.char_indices().nth(max(0, char_cnt - 1)).unwrap();
+        let addition_quote = if !con_val.ends_with('\"') { "\"" } else { "" };
+        [
+            &con_val[..head],
+            con_val[head..tail]
+                .to_string()
+                .replace('\\', "\\\\")
+                .replace('\"', "\\\"")
+                .trim(),
+            &con_val[tail..],
+            addition_quote,
+        ]
+        .join("")
+    } else {
+        con_val
+            .replace('\\', "\\\\")
+            .replace('\"', "\\\"")
+            .trim()
+            .to_string()
+    }
+}
+
 fn output_json_str(ext_field: &LinkedHashMap<String, String>) -> String {
     let mut target: Vec<String> = vec![];
     let profile = PROFILES.clone().unwrap_or_default();
@@ -646,28 +704,49 @@ fn output_json_str(ext_field: &LinkedHashMap<String, String>) -> String {
         let output_value_fmt = profile.get(k).unwrap();
         let vec_data = _get_json_vec(output_value_fmt, v);
         if vec_data.is_empty() {
-            if let Ok(i) = i64::from_str(v) {
-                target.push(format!("    \"{}\": {}", k, i));
-            } else if let Ok(b) = bool::from_str(v) {
-                target.push(format!("    \"{}\": {}", k, b));
-            } else {
-                target.push(format!("    \"{}\": \"{}\"", k, v));
-            }
+            target.push(_create_json_output_format(k, v, v.starts_with('\"')));
         } else if output_value_fmt.contains("%Details%") {
-            let mut latest_valid_index = 0;
+            let mut tmp = String::default();
             for (idx, detail_contents) in vec_data.iter().enumerate() {
                 let val: Vec<&str> = detail_contents.split(": ").collect();
-                if val.len() != 1 {
-                    target.push(format!("    \"{}\": {:?}", val[0], val[1..].join("")));
-                    latest_valid_index = idx;
-                } else {
-                    let prev_idx = if latest_valid_index == 0 {
-                        latest_valid_index
+
+                // ': 'の記載が値の中にある場合があるため、追加予定の文面が存在するかを確認する
+                if !tmp.is_empty() {
+                    // 次の要素が確認できるかを確認する
+                    if idx != vec_data.len() - 1 {
+                        let space_split: Vec<&str> = vec_data[idx + 1].split(' ').collect();
+                        if !space_split[0].ends_with(':') {
+                            // 次の要素を確認してJSONのキー名がなかった場合は連結する
+                            let end_pos = if tmp.is_empty() { 0 } else { tmp.len() - 1 };
+                            tmp = tmp[..end_pos].to_string();
+                            tmp = [&tmp, val.join(": ").trim()].join(" | ");
+                        } else {
+                            // 次の要素がJSONのキー名に合致する箇所が存在した場合は現在の文字列を展開してJSONの要素として追加する
+                            // TODO: functionalize
+                            let tmp_val: Vec<&str> = tmp.split(": ").collect();
+                            let fmted_json_val = _convert_valid_json_str(&tmp_val);
+                            target.push(_create_json_output_format(
+                                &tmp_val[0].to_string(),
+                                &fmted_json_val,
+                                fmted_json_val.starts_with('\"'),
+                            ));
+                            tmp = "".to_string();
+                        }
                     } else {
-                        target.len() - 1
-                    };
-                    let prev = &target[prev_idx];
-                    target[prev_idx] = format!("{} | {}", prev, val[0]);
+                        // 配列の一番最後の要素の場合、JSONのオブジェクトとして出力する
+                        // TODO: functionalize
+                        let tmp_val: Vec<&str> = tmp.split(": ").collect();
+                        let fmted_json_val = _convert_valid_json_str(&tmp_val);
+                        target.push(_create_json_output_format(
+                            &tmp_val[0].to_string(),
+                            &fmted_json_val,
+                            fmted_json_val.starts_with('\"'),
+                        ));
+                        tmp = String::default();
+                    }
+                } else {
+                    // JSONの出力町文字列がない場合は値を追加する
+                    tmp = format!("{}: {}", val[0], val[1..].join(": ").trim());
                 }
             }
         }
