@@ -169,7 +169,7 @@ pub fn after_fact(all_record_cnt: usize) {
             Box::new(BufWriter::new(io::stdout()))
         };
     let color_map = set_output_color();
-    if let Err(err) = emit_csv(&mut target, displayflag, color_map, all_record_cnt as u128) {
+    if let Err(err) = emit_csv(&mut target, displayflag, color_map, all_record_cnt as u128, PROFILES.clone().unwrap_or_default()) {
         fn_emit_csv_err(Box::new(err));
     }
 }
@@ -179,6 +179,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<String, Color>,
     all_record_cnt: u128,
+    profile: LinkedHashMap<String, String>
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
@@ -241,7 +242,7 @@ fn emit_csv<W: std::io::Write>(
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None),
-                        &_get_serialized_disp_output(PROFILES.as_ref().unwrap(), true),
+                        &_get_serialized_disp_output(&profile, true),
                         false,
                     )
                     .ok();
@@ -261,7 +262,7 @@ fn emit_csv<W: std::io::Write>(
                 .ok();
             } else if json_output_flag {
                 wtr.write_field("  {")?;
-                wtr.write_field(&output_json_str(&detect_info.ext_field))?;
+                wtr.write_field(&output_json_str(&detect_info.ext_field, &profile))?;
                 if processed_message_cnt == message::MESSAGES.len() - 1 {
                     wtr.write_field("  }")?;
                 } else {
@@ -650,6 +651,7 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
     }
 }
 
+/// JSONの出力フォーマットに合わせた文字列を出力sるう関数
 fn _create_json_output_format(key: &String, value: &str, concat_flag: bool) -> String {
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
@@ -663,6 +665,7 @@ fn _create_json_output_format(key: &String, value: &str, concat_flag: bool) -> S
     }
 }
 
+/// JSONの値に対して文字列の出力形式をJSON出力でエラーにならないようにするための変換を行う関数
 fn _convert_valid_json_str(input: &[&str]) -> String {
     let tmp = if input.is_empty() {
         input[0].to_string()
@@ -697,9 +700,10 @@ fn _convert_valid_json_str(input: &[&str]) -> String {
     }
 }
 
-fn output_json_str(ext_field: &LinkedHashMap<String, String>) -> String {
+
+/// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
+fn output_json_str(ext_field: &LinkedHashMap<String, String>, profile: &LinkedHashMap<String, String>) -> String {
     let mut target: Vec<String> = vec![];
-    let profile = PROFILES.clone().unwrap_or_default();
     for (k, v) in ext_field.iter() {
         let output_value_fmt = profile.get(k).unwrap();
         let vec_data = _get_json_vec(output_value_fmt, v);
@@ -842,7 +846,7 @@ mod tests {
                     eventid: test_eventid.to_string(),
                     detail: String::default(),
                     record_information: Option::Some(test_recinfo.to_string()),
-                    ext_field: output_profile,
+                    ext_field: output_profile.clone(),
                 },
                 expect_time,
                 &mut profile_converter,
@@ -882,7 +886,7 @@ mod tests {
                 + test_attack
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::new(), 1).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::new(), 1, output_profile).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
