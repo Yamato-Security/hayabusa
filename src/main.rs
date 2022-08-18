@@ -213,6 +213,14 @@ impl App {
             }
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = &configs::CONFIG.read().unwrap().args.filepath {
+            if !filepath.exists() {
+                AlertMessage::alert(&format!(
+                    " The file {} does not exist. Please specify a valid file path.",
+                    filepath.as_os_str().to_str().unwrap()
+                ))
+                .ok();
+                return;
+            }
             if !TARGET_EXTENSIONS.contains(
                 filepath
                     .extension()
