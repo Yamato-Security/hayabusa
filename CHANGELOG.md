@@ -1,6 +1,6 @@
 # Changes
 
-## v1.5.0 [2022/XX/XX]
+## v1.5.0 [2022/08/18]
 
 **New Features:**
 
@@ -9,15 +9,16 @@
 
 **Enhancements:**
 
-- Removed ./ from rule path when updating. (#642) (@hitenkoku)
-- Added new output alias for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
-- Organized menu when `-h` is used. (#651) (@YamatoSecurity and @hitenkoku)
+- Trimmed `./` from the rule path when updating. (#642) (@hitenkoku)
+- Added new output aliases for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
+- Organized the menu output when `-h` is used. (#651) (@YamatoSecurity and @hitenkoku)
 - Added commas to summary numbers to make them easier to read. (#649) (@hitenkoku)
 - Added output percentage of detections in Result Summary. (#658) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Fixed miscalculation of Data Reduction due to aggregation condition rule detection. (#640) (@hitenkoku)
+- Fixed a race condition bug where a few events (around 0.01%) would not be detected. (#639 #660) (@fukusuket)
 
 ## v1.4.3 [2022/08/03]
 
