@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "1.5.0"
+version = "1.5.1"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 

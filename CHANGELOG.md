@@ -1,5 +1,12 @@
 # Changes
 
+## v1.5.1 [2022/08/19]
+
+**Bug Fixes:**
+
+- Critical, medium and low level alerts were not being displayed in color. (#663) (@fukusuket)
+- Hayabusa would crash when an evtx file specified with `-f` did not exist. (#664) (@fukusuket)
+
 ## v1.5.0 [2022/08/18]
 
 **New Features:**
