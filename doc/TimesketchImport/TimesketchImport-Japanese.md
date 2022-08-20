@@ -27,7 +27,7 @@ sudo docker-compose exec timesketch-web tsctl create-user <USERNAME>
 
 ## 準備されたVM
 
-2022 DEF CON 30 OpenSOC DFIR Challengeのエビデンスに対して使用できるデモ用VMを事前に構築しています。 (エビデンスは既にインポート済み。)
+[Recon InfoSec](https://www.reconinfosec.com/)主催の2022年のDEF CON 30 [OpenSOC](https://opensoc.io/) DFIR Challengeのエビデンスに対して使用できるデモ用VMを事前に構築しています。 (エビデンスは既にインポート済み。)
 [こちら](https://www.dropbox.com/s/3be3s5c2r22ux2z/Prebuilt-Timesketch.ova?dl=0)からダウンロードできます。
 このチャレンジの他のエビデンスは[こちら](https://docs.google.com/document/d/1XM4Gfdojt8fCn_9B8JKk9bcUTXZc0_hzWRUH4mEr7dw/mobilebasic)からダウンロードできます。
 問題は[こちら](https://docs.google.com/spreadsheets/d/1vKn8BgABuJsqH5WhhS9ebIGTBG4aoP-StINRi18abo4/htmlview)からダウンロードできます。
