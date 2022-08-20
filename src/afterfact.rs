@@ -249,7 +249,7 @@ fn emit_csv<W: std::io::Write>(
                     &disp_wtr,
                     get_writable_color(_get_output_color(
                         &color_map,
-                        LEVEL_ABBR
+                        LEVEL_FULL
                             .get(&detect_info.level)
                             .unwrap_or(&String::default()),
                     )),

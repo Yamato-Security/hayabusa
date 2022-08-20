@@ -1,6 +1,34 @@
 # Changes
 
-## v1.5.0 [2022/XX/XX]
+## v1.5.2 [2022/08/21]
+
+**New Features:**
+
+- Added output to JSON option (`-j` and `--json-timeline` )  (#654) (@hitenkoku)
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
+
+## v1.5.1 [2022/08/20]
+
+**Enhancements:**
+
+- Re-released v1.5.1 with an updated output profile that is compatible with Timesketch. (#668) (@YamatoSecurity)
+
+## v1.5.1 [2022/08/19]
+
+**Bug Fixes:**
+
+- Critical, medium and low level alerts were not being displayed in color. (#663) (@fukusuket)
+- Hayabusa would crash when an evtx file specified with `-f` did not exist. (#664) (@fukusuket)
+
+## v1.5.0 [2022/08/18]
 
 **New Features:**
 
@@ -10,16 +38,16 @@
 
 **Enhancements:**
 
-- Removed ./ from rule path when updating. (#642) (@hitenkoku)
-- Added new output alias for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
-- Organized menu when `-h` is used. (#651) (@YamatoSecurity and @hitenkoku)
+- Trimmed `./` from the rule path when updating. (#642) (@hitenkoku)
+- Added new output aliases for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
+- Organized the menu output when `-h` is used. (#651) (@YamatoSecurity and @hitenkoku)
 - Added commas to summary numbers to make them easier to read. (#649) (@hitenkoku)
 - Added output percentage of detections in Result Summary. (#658) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Fixed miscalculation of Data Reduction due to aggregation condition rule detection. (#640) (@hitenkoku)
-- Fixed race condition in detection. (#639) (@fukusuket)
+- Fixed a race condition bug where a few events (around 0.01%) would not be detected. (#639 #660) (@fukusuket)
 
 ## v1.4.3 [2022/08/03]
 

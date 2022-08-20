@@ -20,7 +20,7 @@
 
 # About Hayabusa
 
-Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon") in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac) to convert [Sigma](https://github.com/SigmaHQ/sigma) rules into Hayabusa rule format. The Sigma-compatible Hayabusa detection rules are written in YML in order to be as easily customizable and extensible as possible. Hayabusa can be run either on single running systems for live analysis, by gathering logs from single or multiple systems for offline analysis, or by running the [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) with [Velociraptor](https://docs.velociraptor.app/) for enterprise-wide threat hunting and incident response. The output will be consolidated into a single CSV timeline for easy analysis in Excel, [Timeline Explorer](https://ericzimmerman.github.io/#!index.md), or [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md).
+Hayabusa is a **Windows event log fast forensics timeline generator** and **threat hunting tool** created by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. Hayabusa means ["peregrine falcon"](https://en.wikipedia.org/wiki/Peregrine_falcon") in Japanese and was chosen as peregrine falcons are the fastest animal in the world, great at hunting and highly trainable. It is written in [Rust](https://www.rust-lang.org/) and supports multi-threading in order to be as fast as possible. We have provided a [tool](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac) to convert [Sigma](https://github.com/SigmaHQ/sigma) rules into Hayabusa rule format. The Sigma-compatible Hayabusa detection rules are written in YML in order to be as easily customizable and extensible as possible. Hayabusa can be run either on single running systems for live analysis, by gathering logs from single or multiple systems for offline analysis, or by running the [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/) with [Velociraptor](https://docs.velociraptor.app/) for enterprise-wide threat hunting and incident response. The output will be consolidated into a single CSV timeline for easy analysis in Excel, [Timeline Explorer](https://ericzimmerman.github.io/#!index.md), [Elastic Stack](doc/ElasticStackImport/ElasticStackImport-English.md), [Timesketch](https://timesketch.org/), etc...
 
 ## Table of Contents
 
@@ -38,6 +38,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
   - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
+  - [Analysis in Timesketch](#analysis-in-timesketch)
 - [Analyzing Sample Timeline Results](#analyzing-sample-timeline-results)
 - [Features](#features)
 - [Downloads](#downloads)
@@ -67,6 +68,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [3. `verbose` profile output](#3-verbose-profile-output)
     - [4. `verbose-all-field-info` profile output](#4-verbose-all-field-info-profile-output)
     - [5. `verbose-details-and-all-field-info` profile output](#5-verbose-details-and-all-field-info-profile-output)
+    - [6. `timesketch` profile output](#6-timesketch-profile-output)
     - [Profile Comparison](#profile-comparison)
     - [Profile Field Aliases](#profile-field-aliases)
   - [Level Abbrevations](#level-abbrevations)
@@ -98,7 +100,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting and Enterprise-wide DFIR
 
-Hayabusa currently has over 2400 Sigma rules and over 130 Hayabusa built-in detection rules with more rules being added regularly. It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/). By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment. You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
+Hayabusa currently has over 2600 Sigma rules and over 130 Hayabusa built-in detection rules with more rules being added regularly. It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/). By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment. You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
 
 ### Fast Forensics Timeline Generation
 
@@ -141,6 +143,10 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ![Elastic Stack Dashboard 2](doc/ElasticStackImport/18-HayabusaDashboard-2.png)
 
+## Analysis in Timesketch
+
+![Timesketch](screenshots/TimesketchAnalysis.png)
+
 # Analyzing Sample Timeline Results
 
 You can check out a sample CSV timeline [here](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results).
@@ -148,6 +154,8 @@ You can check out a sample CSV timeline [here](https://github.com/Yamato-Securit
 You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here](doc/CSV-AnalysisWithExcelAndTimelineExplorer-English.pdf).
 
 You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStackImport/ElasticStackImport-English.md).
+
+You can learn how to import CSV files into Timesketch [here](doc/TimesketchImport/TimesketchImport-English.md).
 
 # Features
 
@@ -186,7 +194,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -u
+hayabusa-1.5.1-win-x64.exe -u
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -291,20 +299,20 @@ You may experience slow runtime especially on the first run after a reboot due t
 
 In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.  
 
-Example: `hayabusa-1.5.0-windows-x64.exe`
+Example: `hayabusa-1.5.1-windows-x64.exe`
 
 ## Linux
 
 You first need to make the binary executable. 
 
 ```bash
-chmod +x ./hayabusa-1.5.0-linux-x64-gnu
+chmod +x ./hayabusa-1.5.1-linux-x64-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.5.0-linux-x64-gnu
+./hayabusa-1.5.1-linux-x64-gnu
 ```
 
 ## macOS
@@ -312,13 +320,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-1.5.0-mac-intel
+chmod +x ./hayabusa-1.5.1-mac-intel
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.5.0-mac-intel
+./hayabusa-1.5.1-mac-intel
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -332,7 +340,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-1.5.0-mac-intel
+./hayabusa-1.5.1-mac-intel
 ```
 
 The following warning will pop up, so please click "Open".
@@ -412,85 +420,85 @@ TIME-FORMAT:
 * Run hayabusa against one Windows event log file with default standard profile:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -f eventlog.evtx
+hayabusa-1.5.1-win-x64.exe -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `verbose-details-and-all-field-info` profile!):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -l -m low
+hayabusa-1.5.1-win-x64.exe -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.5.1-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * Print Event ID statistics:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -f Security.evtx -s
+hayabusa-1.5.1-win-x64.exe -f Security.evtx -s
 ```
 
 * Print logon summary:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -L -f Security.evtx -s
+hayabusa-1.5.1-win-x64.exe -L -f Security.evtx -s
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:
@@ -506,6 +514,12 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS
 4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s 
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+```
+
+* Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
+
+```bash
+hayabusa-1.5.1-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
 ```
 
 * Quiet error mode:
@@ -584,6 +598,12 @@ Instead of outputting the minimal `details` information, all field information i
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
+### 6. `timesketch` profile output
+
+The `verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
+
+`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+
 ### Profile Comparison
 
 The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
@@ -593,6 +613,7 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 | minimal | 16 minutes 18 seconds | 690 MB |
 | standard | 16 minutes 23 seconds | 710 MB |
 | verbose | 17 minutes | 990 MB |
+| timesketch | 17 minutes | 1015 MB |
 | verbose-all-field-info | 16 minutes 50 seconds | 1.6 GB |
 | verbose-details-and-all-field-info | 17 minutes 12 seconds | 2.1 GB |
 
@@ -762,7 +783,7 @@ You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignor
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.5.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.5.1-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:

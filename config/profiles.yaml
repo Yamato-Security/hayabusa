@@ -67,3 +67,21 @@ verbose-details-and-all-field-info:
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
     AllFieldInfo: "%RecordInformation%"
+
+#Output that is compatible to import the CSV into Timesketch
+timesketch:
+    datetime: "%Timestamp%"
+    timestamp_desc: "hayabusa"
+    message: "%RuleTitle%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
+    RecordID: "%RecordID%"
+    Details: "%Details%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
+    AllFieldInfo: "%RecordInformation%"

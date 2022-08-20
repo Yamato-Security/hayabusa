@@ -21,7 +21,7 @@
 
 # Hayabusa について
 
-Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。また、 [Velociraptor](https://docs.velociraptor.app/)と[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングとインシデントレスポンスにも活用できます。出力は一つのCSVタイムラインにまとめられ、Excel、[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)、[Elastic Stack](doc/ElasticStackImport/ElasticStackImport-Japanese.md)等で簡単に分析できるようになります。
+Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループによって作られた**Windowsイベントログのファストフォレンジックタイムライン生成**および**スレットハンティングツール**です。 Hayabusaは日本語で[「ハヤブサ」](https://en.wikipedia.org/wiki/Peregrine_falcon)を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。[Rust](https://www.rust-lang.org/) で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。[Sigma](https://github.com/SigmaHQ/Sigma)ルールをHayabusaルール形式に変換する[ツール](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac)も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。また、 [Velociraptor](https://docs.velociraptor.app/)と[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングとインシデントレスポンスにも活用できます。出力は一つのCSVタイムラインにまとめられ、Excel、[Timeline Explorer](https://ericzimmerman.github.io/#!index.md)、[Elastic Stack](doc/ElasticStackImport/ElasticStackImport-Japanese.md)、[Timesketch](https://timesketch.org/)等で簡単に分析できるようになります。
 
 ## 目次
 
@@ -39,6 +39,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Timeline Explorerでの解析](#timeline-explorerでの解析)
   - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
   - [Elastic Stackダッシュボードでの解析](#elastic-stackダッシュボードでの解析)
+  - [Timesketchでの解析](#timesketchでの解析)
 - [タイムラインのサンプル結果](#タイムラインのサンプル結果)
 - [特徴＆機能](#特徴機能)
 - [ダウンロード](#ダウンロード)
@@ -69,6 +70,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
     - [3. `verbose`プロファイルの出力](#3-verboseプロファイルの出力)
     - [4. `verbose-all-field-info`プロファイルの出力](#4-verbose-all-field-infoプロファイルの出力)
     - [5. `verbose-details-and-all-field-info`プロファイルの出力](#5-verbose-details-and-all-field-infoプロファイルの出力)
+    - [6. `timesketch`プロファイルの出力](#6-timesketchプロファイルの出力)
     - [プロファイルの比較](#プロファイルの比較)
     - [Profile Field Aliases](#profile-field-aliases)
   - [Levelの省略](#levelの省略)
@@ -100,7 +102,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 
 ### スレット(脅威)ハンティングと企業向けの広範囲なDFIR
 
-Hayabusaには現在、2300以上のSigmaルールと130以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
+Hayabusaには現在、2600以上のSigmaルールと130以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
 [Velociraptor](https://docs.velociraptor.app/)の[Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/)を用いることで企業向けの広範囲なスレットハンティングだけでなくDFIR(デジタルフォレンジックとインシデントレスポンス)にも無料で利用することが可能です。この2つのオープンソースを組み合わせることで、SIEMが設定されていない環境でも実質的に遡及してSIEMを再現することができます。具体的な方法は[Eric Capuano](https://twitter.com/eric_capuano)の[こちら](https://www.youtube.com/watch?v=Q1IoGX--814)の動画で学ぶことができます。
  最終的な目標はインシデントレスポンスや定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にインストールして、中央サーバーにアラートを返す仕組みを作ることです。
 
@@ -149,6 +151,10 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ![Elastic Stack Dashboard 2](doc/ElasticStackImport/18-HayabusaDashboard-2.png)
 
+## Timesketchでの解析
+
+![Timesketch](screenshots/TimesketchAnalysis.png)
+
 # タイムラインのサンプル結果
 
 CSVのタイムライン結果のサンプルは[こちら](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results)で確認できます。
@@ -156,6 +162,8 @@ CSVのタイムライン結果のサンプルは[こちら](https://github.com/Y
 CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こちら](doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf)で紹介しています。
 
 CSVのタイムラインをElastic Stackにインポートする方法は[こちら](doc/ElasticStackImport/ElasticStackImport-Japanese.md)で紹介しています。
+
+CSVのタイムラインをTimesketchにインポートする方法は[こちら](doc/TimesketchImport/TimesketchImport-Japanese.md)で紹介しています。
 
 # 特徴＆機能
 
@@ -194,7 +202,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -u
+hayabusa-1.5.1-win-x64.exe -u
 ```
 
 アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
@@ -299,20 +307,20 @@ Windows PC起動後の初回実行時に時間がかかる場合があります�
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 
-例: `hayabusa-1.5.0-windows-x64.exe`
+例: `hayabusa-1.5.1-windows-x64.exe`
 
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.5.0-linux-x64-gnu
+chmod +x ./hayabusa-1.5.1-linux-x64-gnu
 ```
 
 次に、Hayabusaのルートディレクトリから実行します：
 
 ```bash
-./hayabusa-1.5.0-linux-x64-gnu
+./hayabusa-1.5.1-linux-x64-gnu
 ```
 
 ## macOS
@@ -320,13 +328,13 @@ chmod +x ./hayabusa-1.5.0-linux-x64-gnu
 まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.5.0-mac-intel
+chmod +x ./hayabusa-1.5.1-mac-intel
 ```
 
 次に、Hayabusaのルートディレクトリから実行してみてください：
 
 ```bash
-./hayabusa-1.5.0-mac-intel
+./hayabusa-1.5.1-mac-intel
 ```
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
@@ -340,7 +348,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 その後、ターミナルからもう一回実行してみてください：
 
 ```bash
-./hayabusa-1.5.0-mac-intel
+./hayabusa-1.5.1-mac-intel
 ```
 
 以下の警告が出るので、「開く」をクリックしてください。
@@ -417,87 +425,87 @@ TIME-FORMAT:
 
 ## 使用例
 
-* １つのWindowsイベントログファイルに対してHayabusaを実行します:
+* １つのWindowsイベントログファイルに対してHayabusaを実行する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -f eventlog.evtx
+hayabusa-1.5.1-win-x64.exe -f eventlog.evtx
 ```
 
-* `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行します:
+* `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
-* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができます(注意: `verbose-details-and-all-field-info`プロファイルを使すると、出力するファイルのサイズがとても大きくなります！):
+* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: `verbose-details-and-all-field-info`プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P `verbose-details-and-all-field-info`
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P `verbose-details-and-all-field-info`
 ```
 
-* Hayabusaルールのみを実行します（デフォルトでは`-r .\rules`にあるすべてのルールが利用されます）:
+* Hayabusaルールのみを実行する（デフォルトでは`-r .\rules`にあるすべてのルールが利用される）:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
-* Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行します:
+* Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
-* Sysmonログに対してのみHayabusaルールを実行します:
+* Sysmonログに対してのみHayabusaルールを実行する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
-* Sigmaルールのみを実行します:
+* Sigmaルールのみを実行する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
-* 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にします:
+* 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にする:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
 ```
 
-* ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力します:
+* ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
-* 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知します:
+* 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -l -m low
+hayabusa-1.5.1-win-x64.exe -l -m low
 ```
 
-* criticalレベルのアラートからピボットキーワードの一覧を作成します(結果は結果毎に`keywords-Ip Address.txt`や`keywords-Users.txt`等に出力されます):
+* criticalレベルのアラートからピボットキーワードの一覧を作成する(結果は結果毎に`keywords-Ip Address.txt`や`keywords-Users.txt`等に出力される):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.5.1-win-x64.exe -l -m critical -p -o keywords
 ```
 
-* イベントIDの統計情報を出力します:
+* イベントIDの統計情報を出力する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -f Security.evtx -s
+hayabusa-1.5.1-win-x64.exe -f Security.evtx -s
 ```
-* ログオンサマリを出力します:
+* ログオンサマリを出力する:
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -L -f Security.evtx -s
+hayabusa-1.5.1-win-x64.exe -L -f Security.evtx -s
 ```
 
-* 詳細なメッセージを出力します(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
+* 詳細なメッセージを出力する(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 
 ```bash
-hayabusa-1.5.0-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
@@ -513,6 +521,12 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS
 4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s 
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+```
+
+* 結果を[Timesketch](https://timesketch.org/)にインポートできるCSV形式に保存する:
+
+```bash
+hayabusa-1.5.1-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
 ```
 
 * エラーログの出力をさせないようにする:
@@ -590,6 +604,12 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
+### 6. `timesketch`プロファイルの出力
+
+[Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
+
+`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+
 ### プロファイルの比較
 
 以下のベンチマークは、2018年製のマックブックプロ上で7.5GBのEVTXデータに対して実施されました。
@@ -599,6 +619,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 | minimal | 16分18秒 | 690 MB |
 | standard | 16分23秒 | 710 MB |
 | verbose | 17分 | 990 MB |
+| timesketch | 17分 | 1015 MB |
 | verbose-all-field-info | 16分50秒 | 1.6 GB |
 | verbose-details-and-all-field-info | 17分12秒 | 2.1 GB |
 
@@ -769,7 +790,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.5.0-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.5.1-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
 `./rules/config/level_tuning.txt`の例:
