@@ -1,5 +1,19 @@
 # Changes
 
+## v1.6.0 [2022/XX/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added top alert rules to results summary. (#667) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## v1.5.1 [2022/08/20]
 
 **Enhancements:**
