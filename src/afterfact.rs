@@ -250,6 +250,7 @@ fn emit_csv<W: std::io::Write>(
                 )
                 .unwrap_or(&0) as usize;
             let time_str_date = format_time(time, true);
+
             let mut detect_counts_by_date = detect_counts_by_date_and_level
                 .get(&detect_info.level.to_lowercase())
                 .unwrap_or_else(|| detect_counts_by_date_and_level.get("undefined").unwrap())
@@ -261,6 +262,7 @@ fn emit_csv<W: std::io::Write>(
                 detected_rule_files.insert(detect_info.rulepath.clone());
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
+
             let computer_rule_check_key =
                 format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
             if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {

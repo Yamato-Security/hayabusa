@@ -37,7 +37,7 @@ use super::message::LEVEL_ABBR;
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    pub evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
+    pub evtx_filepath: String, // イベントファイルのファイルパス ログで出力するときに使う
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
     pub key_2_value: HashMap<String, String>,
