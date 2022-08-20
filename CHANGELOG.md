@@ -1,5 +1,11 @@
 # Changes
 
+## v1.5.1 [2022/08/20]
+
+**Enhancements:**
+
+- Re-released v1.5.1 with an updated output profile that is compatible with Timesketch. (#668) (@YamatoSecurity)
+
 ## v1.5.1 [2022/08/19]
 
 **Bug Fixes:**
