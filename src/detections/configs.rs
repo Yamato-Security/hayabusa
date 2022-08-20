@@ -225,8 +225,8 @@ pub struct Config {
     pub set_default_profile: Option<String>,
 
     /// Output result in JSON format
-    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'j', long = "json-timeline", value_name = "FILE")]
-    pub json_timeline: Option<PathBuf>,
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'j', long = "json-timeline")]
+    pub json_timeline: bool,
 }
 
 impl ConfigReader<'_> {

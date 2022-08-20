@@ -154,22 +154,19 @@ pub fn after_fact(all_record_cnt: usize) {
                     process::exit(1);
                 }
             }
-        } else if let Some(json_path) = &configs::CONFIG.read().unwrap().args.json_timeline {
-            // output to file
-            match File::create(json_path) {
-                Ok(file) => Box::new(BufWriter::new(file)),
-                Err(err) => {
-                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
-                    process::exit(1);
-                }
-            }
         } else {
             displayflag = true;
             // stdoutput (termcolor crate color output is not csv writer)
             Box::new(BufWriter::new(io::stdout()))
         };
     let color_map = set_output_color();
-    if let Err(err) = emit_csv(&mut target, displayflag, color_map, all_record_cnt as u128, PROFILES.clone().unwrap_or_default()) {
+    if let Err(err) = emit_csv(
+        &mut target,
+        displayflag,
+        color_map,
+        all_record_cnt as u128,
+        PROFILES.clone().unwrap_or_default(),
+    ) {
         fn_emit_csv_err(Box::new(err));
     }
 }
@@ -179,11 +176,11 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<String, Color>,
     all_record_cnt: u128,
-    profile: LinkedHashMap<String, String>
+    profile: LinkedHashMap<String, String>,
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-    let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline.is_some();
+    let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
 
     let mut wtr = if json_output_flag {
         WriterBuilder::new()
@@ -651,23 +648,28 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
     }
 }
 
-/// JSONの出力フォーマットに合わせた文字列を出力sるう関数
-fn _create_json_output_format(key: &String, value: &str, concat_flag: bool) -> String {
+/// JSONの出力フォーマットに合わせた文字列を出力する関数
+fn _create_json_output_format(key: &String, value: &str, key_quote_exclude_flag: bool, concat_flag: bool) -> String {
+    let head = if key_quote_exclude_flag {
+        key.to_string()
+    } else {
+        format!("\"{}\"", key)
+    };
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
-        format!("    \"{}\": {}", key, i)
+        format!("    {}: {}", head, i)
     } else if let Ok(b) = bool::from_str(value) {
-        format!("    \"{}\": {}", key, b)
+        format!("    {}: {}", head, b)
     } else if concat_flag {
-        format!("    \"{}\": {}", key, value)
+        format!("    {}: {}", head, value)
     } else {
-        format!("    \"{}\": \"{}\"", key, value)
+        format!("    {}: \"{}\"", head, value)
     }
 }
 
 /// JSONの値に対して文字列の出力形式をJSON出力でエラーにならないようにするための変換を行う関数
 fn _convert_valid_json_str(input: &[&str]) -> String {
-    let tmp = if input.is_empty() {
+    let tmp = if input.len() == 1 {
         input[0].to_string()
     } else {
         input[1..].join(": ")
@@ -700,57 +702,71 @@ fn _convert_valid_json_str(input: &[&str]) -> String {
     }
 }
 
-
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(ext_field: &LinkedHashMap<String, String>, profile: &LinkedHashMap<String, String>) -> String {
+fn output_json_str(
+    ext_field: &LinkedHashMap<String, String>,
+    profile: &LinkedHashMap<String, String>,
+) -> String {
     let mut target: Vec<String> = vec![];
     for (k, v) in ext_field.iter() {
         let output_value_fmt = profile.get(k).unwrap();
         let vec_data = _get_json_vec(output_value_fmt, v);
         if vec_data.is_empty() {
-            target.push(_create_json_output_format(k, v, v.starts_with('\"')));
+            let tmp_val: Vec<&str> = v.split(": ").collect();
+            target.push(_create_json_output_format(
+                k,
+                &_convert_valid_json_str(&tmp_val),
+                k.starts_with('\"'),
+                v.starts_with('\"'),
+            ));
         } else if output_value_fmt.contains("%Details%") {
-            let mut tmp = String::default();
-            for (idx, detail_contents) in vec_data.iter().enumerate() {
-                let val: Vec<&str> = detail_contents.split(": ").collect();
-
-                // ': 'の記載が値の中にある場合があるため、追加予定の文面が存在するかを確認する
-                if !tmp.is_empty() {
-                    // 次の要素が確認できるかを確認する
-                    if idx != vec_data.len() - 1 {
-                        let space_split: Vec<&str> = vec_data[idx + 1].split(' ').collect();
-                        if !space_split[0].ends_with(':') {
-                            // 次の要素を確認してJSONのキー名がなかった場合は連結する
-                            let end_pos = if tmp.is_empty() { 0 } else { tmp.len() - 1 };
-                            tmp = tmp[..end_pos].to_string();
-                            tmp = [&tmp, val.join(": ").trim()].join(" | ");
-                        } else {
-                            // 次の要素がJSONのキー名に合致する箇所が存在した場合は現在の文字列を展開してJSONの要素として追加する
-                            // TODO: functionalize
-                            let tmp_val: Vec<&str> = tmp.split(": ").collect();
-                            let fmted_json_val = _convert_valid_json_str(&tmp_val);
-                            target.push(_create_json_output_format(
-                                &tmp_val[0].to_string(),
-                                &fmted_json_val,
-                                fmted_json_val.starts_with('\"'),
-                            ));
-                            tmp = "".to_string();
-                        }
+            let mut stocked_value = vec![];
+            let mut key_index_stock = vec![];
+            for detail_contents in vec_data.iter() {
+                // 分解してキーとなりえる箇所を抽出する
+                let space_split: Vec<&str> = detail_contents.split(' ').collect();
+                let mut tmp_stock = vec![];
+                for sp in space_split.iter() {
+                    if sp.ends_with(':') && sp != &":" && sp.len() != 2 {
+                        stocked_value.push(tmp_stock);
+                        tmp_stock = vec![];
+                        key_index_stock.push(sp.replace(':', "").to_owned());
                     } else {
-                        // 配列の一番最後の要素の場合、JSONのオブジェクトとして出力する
-                        // TODO: functionalize
-                        let tmp_val: Vec<&str> = tmp.split(": ").collect();
-                        let fmted_json_val = _convert_valid_json_str(&tmp_val);
-                        target.push(_create_json_output_format(
-                            &tmp_val[0].to_string(),
-                            &fmted_json_val,
-                            fmted_json_val.starts_with('\"'),
-                        ));
-                        tmp = String::default();
+                        tmp_stock.push(sp.to_owned());
                     }
-                } else {
-                    // JSONの出力町文字列がない場合は値を追加する
-                    tmp = format!("{}: {}", val[0], val[1..].join(": ").trim());
+                }
+                if !tmp_stock.is_empty() {
+                    stocked_value.push(tmp_stock);
+                }
+            }
+            let mut tmp = String::default();
+            let mut key_idx = 0;
+            let mut output_value_stock = String::default();
+            for (value_idx, value) in stocked_value.iter().enumerate() {
+                if value.is_empty()  {
+                    tmp = key_index_stock[key_idx].to_string();
+                    key_idx += 1;
+                    continue;
+                } else if value_idx == 0 {
+                    tmp = k.to_string();
+                }
+                if !output_value_stock.is_empty() {
+                    output_value_stock.push_str(" | ");
+                }
+                output_value_stock.push_str(&value.join(" "));
+                if value_idx < stocked_value.len() -1 && stocked_value[value_idx + 1].is_empty() {
+                    // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので主力処理を行う
+                    let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                    let output:Vec<&str> = output_tmp.split(": ").collect();
+                    let key = _convert_valid_json_str(&[output[0]]);
+                    let fmted_val = _convert_valid_json_str(&output);
+                    target.push(
+                        _create_json_output_format(
+                        &key, &fmted_val, key.starts_with('\"'),fmted_val.starts_with('\"')
+                        )
+                    );
+                    output_value_stock.clear();
+                    tmp = String::default();
                 }
             }
         }
