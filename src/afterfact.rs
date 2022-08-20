@@ -392,6 +392,9 @@ fn emit_csv<W: std::io::Write>(
     println!();
 
     _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
+    println!();
+
+    _print_detection_summary_by_rule(detect_counts_by_rule_and_level, &color_map);
 
     Ok(())
 }
@@ -583,6 +586,55 @@ fn _print_detection_summary_by_computer(
             &result_str
         )
         .ok();
+    }
+    buf_wtr.print(&wtr).ok();
+}
+
+/// 各レベルごとで検出数が多かったルールのタイトルを出力する関数
+fn _print_detection_summary_by_rule(
+    detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
+    color_map: &HashMap<String, Color>,
+) {
+    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+    let level_cnt = detect_counts_by_rule_and_level.len();
+    for (idx, level) in LEVEL_ABBR.values().enumerate() {
+        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
+        let detections_by_computer = detect_counts_by_rule_and_level.get(level).unwrap();
+        let mut result_vec: Vec<String> = Vec::new();
+        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
+
+        sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+
+        for x in sorted_detections.iter().take(5) {
+            result_vec.push(format!(
+                "{} ({})",
+                x.0,
+                x.1.to_formatted_string(&Locale::en)
+            ));
+        }
+        let result_str = if result_vec.is_empty() {
+            "None".to_string()
+        } else {
+            result_vec.join("\n")
+        };
+
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
+            color_map,
+            LEVEL_FULL.get(level.as_str()).unwrap(),
+        )))
+        .ok();
+        writeln!(
+            wtr,
+            "Top {} alerts:\n{}",
+            LEVEL_FULL.get(level.as_str()).unwrap(),
+            &result_str
+        )
+        .ok();
+        if idx != level_cnt - 1 {
+            writeln!(wtr).ok();
+        }
     }
     buf_wtr.print(&wtr).ok();
 }
