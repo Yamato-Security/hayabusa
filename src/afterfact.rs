@@ -649,7 +649,12 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
 }
 
 /// JSONの出力フォーマットに合わせた文字列を出力する関数
-fn _create_json_output_format(key: &String, value: &str, key_quote_exclude_flag: bool, concat_flag: bool) -> String {
+fn _create_json_output_format(
+    key: &String,
+    value: &str,
+    key_quote_exclude_flag: bool,
+    concat_flag: bool,
+) -> String {
     let head = if key_quote_exclude_flag {
         key.to_string()
     } else {
@@ -743,7 +748,7 @@ fn output_json_str(
             let mut key_idx = 0;
             let mut output_value_stock = String::default();
             for (value_idx, value) in stocked_value.iter().enumerate() {
-                if value.is_empty()  {
+                if value.is_empty() {
                     tmp = key_index_stock[key_idx].to_string();
                     key_idx += 1;
                     continue;
@@ -754,17 +759,18 @@ fn output_json_str(
                     output_value_stock.push_str(" | ");
                 }
                 output_value_stock.push_str(&value.join(" "));
-                if value_idx < stocked_value.len() -1 && stocked_value[value_idx + 1].is_empty() {
+                if value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty() {
                     // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので主力処理を行う
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
-                    let output:Vec<&str> = output_tmp.split(": ").collect();
+                    let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]]);
                     let fmted_val = _convert_valid_json_str(&output);
-                    target.push(
-                        _create_json_output_format(
-                        &key, &fmted_val, key.starts_with('\"'),fmted_val.starts_with('\"')
-                        )
-                    );
+                    target.push(_create_json_output_format(
+                        &key,
+                        &fmted_val,
+                        key.starts_with('\"'),
+                        fmted_val.starts_with('\"'),
+                    ));
                     output_value_stock.clear();
                     tmp = String::default();
                 }
