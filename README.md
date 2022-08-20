@@ -155,6 +155,8 @@ You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here]
 
 You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStackImport/ElasticStackImport-English.md).
 
+You can learn how to import CSV files into Timesketch [here](doc/TimesketchImport/TimesketchImport-English.md).
+
 # Features
 
 * Cross-platform support: Windows, Linux, macOS.

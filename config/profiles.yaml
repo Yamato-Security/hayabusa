@@ -84,3 +84,4 @@ timesketch:
     Details: "%Details%"
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
+    AllFieldInfo: "%RecordInformation%"

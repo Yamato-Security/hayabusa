@@ -163,6 +163,8 @@ CSVのタイムラインをExcelやTimeline Explorerで分析する方法は[こ
 
 CSVのタイムラインをElastic Stackにインポートする方法は[こちら](doc/ElasticStackImport/ElasticStackImport-Japanese.md)で紹介しています。
 
+CSVのタイムラインをTimesketchにインポートする方法は[こちら](doc/TimesketchImport/TimesketchImport-Japanese.md)で紹介しています。
+
 # 特徴＆機能
 
 * クロスプラットフォーム対応: Windows, Linux, macOS。
