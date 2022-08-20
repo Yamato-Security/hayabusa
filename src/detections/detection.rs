@@ -362,6 +362,7 @@ impl Detection {
 
         let detect_info = DetectInfo {
             rulepath: (&rule.rulepath).to_owned(),
+            ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
             level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
@@ -492,6 +493,7 @@ impl Detection {
 
         let detect_info = DetectInfo {
             rulepath: (&rule.rulepath).to_owned(),
+            ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
             level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),

@@ -184,12 +184,15 @@ fn emit_csv<W: std::io::Write>(
         HashMap::new();
     let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
+    let mut detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>> =
+        HashMap::new();
 
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
         detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
+        detect_counts_by_rule_and_level.insert(level_init.to_string(), HashMap::new());
     }
     if displayflag {
         println!();
@@ -276,6 +279,20 @@ fn emit_csv<W: std::io::Write>(
                 detect_counts_by_computer_and_level
                     .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
             }
+
+            let mut detect_counts_by_rules = detect_counts_by_rule_and_level
+                .get(&detect_info.level.to_lowercase())
+                .unwrap_or_else(|| {
+                    detect_counts_by_computer_and_level
+                        .get("undefined")
+                        .unwrap()
+                })
+                .clone();
+            *detect_counts_by_rules
+                .entry(Clone::clone(&detect_info.ruletitle))
+                .or_insert(0) += 1;
+            detect_counts_by_rule_and_level
+                .insert(detect_info.level.to_lowercase(), detect_counts_by_rules);
 
             total_detect_counts_by_level[level_suffix] += 1;
             detect_counts_by_date_and_level
@@ -663,6 +680,7 @@ mod tests {
                 output.to_string(),
                 DetectInfo {
                     rulepath: test_rulepath.to_string(),
+                    ruletitle: test_title.to_string(),
                     level: test_level.to_string(),
                     computername: test_computername.to_string(),
                     eventid: test_eventid.to_string(),

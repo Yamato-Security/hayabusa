@@ -24,6 +24,7 @@ use termcolor::{BufferWriter, ColorChoice};
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
     pub rulepath: String,
+    pub ruletitle: String,
     pub level: String,
     pub computername: String,
     pub eventid: String,
@@ -634,6 +635,7 @@ mod tests {
         for i in 1..2001 {
             let detect_info = DetectInfo {
                 rulepath: "".to_string(),
+                ruletitle: "".to_string(),
                 level: "".to_string(),
                 computername: "".to_string(),
                 eventid: i.to_string(),
