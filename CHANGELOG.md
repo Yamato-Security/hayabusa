@@ -9,7 +9,7 @@
 **Enhancements:**
 
 - Added top alerts to results summary. (#667) (@hitenkoku)
-- Added `--no-summary` option not display the results summary. (#672) (@hitenkoku)
+- Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
 
 **Bug Fixes:**
 
