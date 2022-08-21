@@ -184,12 +184,15 @@ fn emit_csv<W: std::io::Write>(
         HashMap::new();
     let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
+    let mut detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>> =
+        HashMap::new();
 
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
         detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
+        detect_counts_by_rule_and_level.insert(level_init.to_string(), HashMap::new());
     }
     if displayflag {
         println!();
@@ -247,6 +250,7 @@ fn emit_csv<W: std::io::Write>(
                 )
                 .unwrap_or(&0) as usize;
             let time_str_date = format_time(time, true);
+
             let mut detect_counts_by_date = detect_counts_by_date_and_level
                 .get(&detect_info.level.to_lowercase())
                 .unwrap_or_else(|| detect_counts_by_date_and_level.get("undefined").unwrap())
@@ -258,6 +262,7 @@ fn emit_csv<W: std::io::Write>(
                 detected_rule_files.insert(detect_info.rulepath.clone());
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
+
             let computer_rule_check_key =
                 format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
             if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
@@ -276,6 +281,20 @@ fn emit_csv<W: std::io::Write>(
                 detect_counts_by_computer_and_level
                     .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
             }
+
+            let mut detect_counts_by_rules = detect_counts_by_rule_and_level
+                .get(&detect_info.level.to_lowercase())
+                .unwrap_or_else(|| {
+                    detect_counts_by_computer_and_level
+                        .get("undefined")
+                        .unwrap()
+                })
+                .clone();
+            *detect_counts_by_rules
+                .entry(Clone::clone(&detect_info.ruletitle))
+                .or_insert(0) += 1;
+            detect_counts_by_rule_and_level
+                .insert(detect_info.level.to_lowercase(), detect_counts_by_rules);
 
             total_detect_counts_by_level[level_suffix] += 1;
             detect_counts_by_date_and_level
@@ -375,6 +394,9 @@ fn emit_csv<W: std::io::Write>(
     println!();
 
     _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
+    println!();
+
+    _print_detection_summary_by_rule(detect_counts_by_rule_and_level, &color_map);
 
     Ok(())
 }
@@ -570,6 +592,55 @@ fn _print_detection_summary_by_computer(
     buf_wtr.print(&wtr).ok();
 }
 
+/// 各レベルごとで検出数が多かったルールのタイトルを出力する関数
+fn _print_detection_summary_by_rule(
+    detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
+    color_map: &HashMap<String, Color>,
+) {
+    let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
+    let mut wtr = buf_wtr.buffer();
+    wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+    let level_cnt = detect_counts_by_rule_and_level.len();
+    for (idx, level) in LEVEL_ABBR.values().enumerate() {
+        // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
+        let detections_by_computer = detect_counts_by_rule_and_level.get(level).unwrap();
+        let mut result_vec: Vec<String> = Vec::new();
+        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
+
+        sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+
+        for x in sorted_detections.iter().take(5) {
+            result_vec.push(format!(
+                "{} ({})",
+                x.0,
+                x.1.to_formatted_string(&Locale::en)
+            ));
+        }
+        let result_str = if result_vec.is_empty() {
+            "None".to_string()
+        } else {
+            result_vec.join("\n")
+        };
+
+        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
+            color_map,
+            LEVEL_FULL.get(level.as_str()).unwrap(),
+        )))
+        .ok();
+        writeln!(
+            wtr,
+            "Top {} alerts:\n{}",
+            LEVEL_FULL.get(level.as_str()).unwrap(),
+            &result_str
+        )
+        .ok();
+        if idx != level_cnt - 1 {
+            writeln!(wtr).ok();
+        }
+    }
+    buf_wtr.print(&wtr).ok();
+}
+
 /// get timestamp to input datetime.
 fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
     if configs::CONFIG.read().unwrap().args.utc {
@@ -663,6 +734,7 @@ mod tests {
                 output.to_string(),
                 DetectInfo {
                     rulepath: test_rulepath.to_string(),
+                    ruletitle: test_title.to_string(),
                     level: test_level.to_string(),
                     computername: test_computername.to_string(),
                     eventid: test_eventid.to_string(),

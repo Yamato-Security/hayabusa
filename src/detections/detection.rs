@@ -37,7 +37,7 @@ use super::message::LEVEL_ABBR;
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
 pub struct EvtxRecordInfo {
-    pub evtx_filepath: String, // イベントファイルのファイルパス　ログで出力するときに使う
+    pub evtx_filepath: String, // イベントファイルのファイルパス ログで出力するときに使う
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
     pub key_2_value: HashMap<String, String>,
@@ -362,6 +362,7 @@ impl Detection {
 
         let detect_info = DetectInfo {
             rulepath: (&rule.rulepath).to_owned(),
+            ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
             level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
@@ -492,6 +493,7 @@ impl Detection {
 
         let detect_info = DetectInfo {
             rulepath: (&rule.rulepath).to_owned(),
+            ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
             level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
