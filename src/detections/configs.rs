@@ -223,6 +223,10 @@ pub struct Config {
     /// Set default output profile
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
+
+    /// Do not display result summary
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "no-summary")]
+    pub no_summary: bool,
 }
 
 impl ConfigReader<'_> {
