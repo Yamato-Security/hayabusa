@@ -4,11 +4,11 @@
 
 **New Features:**
 
-- Added output to JSON option (`-j` and `--json-timeline` )  (#654) (@hitenkoku)
+- You can now save the timeline to JSON files with the `-j, --json-timeline` option.  (#654) (@hitenkoku)
 
 **Enhancements:**
 
-- Added top alert rules to results summary. (#667) (@hitenkoku)
+- Added top alerts to the results summary. (#667) (@hitenkoku)
 
 **Bug Fixes:**
 
