@@ -406,13 +406,14 @@ FILTERING:
         --timeline-start <DATE>         解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 OTHER-ACTIONS:
-        --contributors           コントリビュータの一覧表示
-    -L, --logon-summary          成功と失敗したログオン情報の要約を出力する
+        --contributors                          コントリビュータの一覧表示
+    -j, --json-timeline                         タイムラインの出力をJSON形式保存する
+    -L, --logon-summary                         成功と失敗したログオン情報の要約を出力する
         --level-tuning [<FILE>]                 ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-    -p, --pivot-keywords-list    ピボットキーワードの一覧作成
-    -s, --statistics             イベントIDの統計情報を表示する
-        --set-default-profile <PROFILE>    デフォルトの出力コンフィグを設定する
-    -u, --update-rules           rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
+    -p, --pivot-keywords-list                   ピボットキーワードの一覧作成
+    -s, --statistics                            イベントIDの統計情報を表示する
+        --set-default-profile <PROFILE>         デフォルトの出力コンフィグを設定する
+    -u, --update-rules                          rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
 
 TIME-FORMAT:
         --European-time       ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)

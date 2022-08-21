@@ -399,6 +399,7 @@ FILTERING:
 
 OTHER-ACTIONS:
         --contributors                     Print the list of contributors
+    -j, --json-timeline                    Output result in JSON format
     -L, --logon-summary                    Print a summary of successful and failed logons
         --level-tuning [<FILE>]            Tune alert levels (default: ./rules/config/level_tuning.txt)
     -p, --pivot-keywords-list              Create a list of pivot keywords
