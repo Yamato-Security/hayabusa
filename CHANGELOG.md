@@ -8,7 +8,8 @@
 
 **Enhancements:**
 
-- Added top alert rules to results summary. (#667) (@hitenkoku)
+- Added top alerts to results summary. (#667) (@hitenkoku)
+- Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
 
 **Bug Fixes:**
 
