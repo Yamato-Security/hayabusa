@@ -377,15 +377,8 @@ fn emit_csv<W: std::io::Write>(
 
         _print_unique_results(
             total_detect_counts_by_level,
-            "Total".to_string(),
-            "detections".to_string(),
-            &color_map,
-        );
-        println!();
-
-        _print_unique_results(
             unique_detect_counts_by_level,
-            "Unique".to_string(),
+            "Total | Unique".to_string(),
             "detections".to_string(),
             &color_map,
         );
@@ -454,23 +447,27 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
 /// output info which unique detection count and all detection count information(devided by level and total) to stdout.
 fn _print_unique_results(
     mut counts_by_level: Vec<u128>,
+    mut unique_counts_by_level: Vec<u128>,
     head_word: String,
     tail_word: String,
     color_map: &HashMap<String, Color>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
+    unique_counts_by_level.reverse();
 
     let total_count = counts_by_level.iter().sum::<u128>();
+    let unique_total_count = unique_counts_by_level.iter().sum::<u128>();
     // output total results
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
         None,
         &format!(
-            "{} {}: {}",
+            "{} {}: {} | {}",
             head_word,
             tail_word,
             total_count.to_formatted_string(&Locale::en),
+            unique_total_count.to_formatted_string(&Locale::en)
         ),
         true,
     )
@@ -485,13 +482,20 @@ fn _print_unique_results(
         } else {
             (counts_by_level[i] as f64) / (total_count as f64) * 100.0
         };
+        let unique_percent = if unique_total_count == 0 {
+            0 as f64
+        } else {
+            (unique_counts_by_level[i] as f64) / (unique_total_count as f64) * 100.0
+        };
         let output_raw_str = format!(
-            "{} {} {}: {} ({:.2}%)",
+            "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
             head_word,
             level_name,
             tail_word,
             counts_by_level[i].to_formatted_string(&Locale::en),
-            percent
+            percent,
+            unique_counts_by_level[i].to_formatted_string(&Locale::en),
+            unique_percent
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
