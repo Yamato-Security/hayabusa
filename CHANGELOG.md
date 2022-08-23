@@ -8,11 +8,12 @@
 
 **Enhancements:**
 
-- Added top alerts to the results summary. (#667) (@hitenkoku)
+- Added top alerts to results summary. (#667) (@hitenkoku)
+- Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
 
 **Bug Fixes:**
 
-- XXX
+- Hayabusa would crash with `-L` option (logon summary option). (#674) (@hitenkoku)
 
 ## v1.5.1 [2022/08/20]
 

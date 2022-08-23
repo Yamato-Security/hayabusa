@@ -385,6 +385,7 @@ OUTPUT:
 
 DISPLAY-SETTINGS:
         --no-color              Disable color output
+        --no-summary            Do not display result summary
     -q, --quiet                 Quiet mode: do not display the launch banner
     -v, --verbose               Output verbose information
     -V, --visualize-timeline    Output event frequency timeline

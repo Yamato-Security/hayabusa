@@ -393,6 +393,7 @@ OUTPUT:
 
 DISPLAY-SETTINGS:
         --no-color              カラー出力を無効にする
+        --no-summary            結果概要を出力しない
     -q, --quiet                 Quietモード: 起動バナーを表示しない
     -v, --verbose               詳細な情報を出力する
     -V, --visualize-timeline    イベント頻度タイムラインを出力する

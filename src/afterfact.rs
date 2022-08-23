@@ -366,77 +366,79 @@ fn emit_csv<W: std::io::Write>(
         }
     };
 
-    disp_wtr_buf.clear();
-    write_color_buffer(
-        &disp_wtr,
-        get_writable_color(Some(Color::Rgb(0, 255, 0))),
-        "Results Summary:",
-        true,
-    )
-    .ok();
+    if !configs::CONFIG.read().unwrap().args.no_summary {
+        disp_wtr_buf.clear();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 0))),
+            "Results Summary:",
+            true,
+        )
+        .ok();
 
-    let terminal_width = match *TERM_SIZE {
-        Some((Width(w), _)) => w as usize,
-        None => 100,
-    };
-    println!();
-
-    if configs::CONFIG.read().unwrap().args.visualize_timeline {
-        _print_timeline_hist(timestamps, terminal_width, 3);
+        let terminal_width = match *TERM_SIZE {
+            Some((Width(w), _)) => w as usize,
+            None => 100,
+        };
         println!();
+
+        if configs::CONFIG.read().unwrap().args.visualize_timeline {
+            _print_timeline_hist(timestamps, terminal_width, 3);
+            println!();
+        }
+        let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
+        let reducted_percent = if all_record_cnt == 0 {
+            0 as f64
+        } else {
+            (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
+        };
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None),
+            &format!(
+                "Total events: {}",
+                all_record_cnt.to_formatted_string(&Locale::en)
+            ),
+            true,
+        )
+        .ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None),
+            &format!(
+                "Data reduction: {} events ({:.2}%)",
+                reducted_record_cnt.to_formatted_string(&Locale::en),
+                reducted_percent
+            ),
+            true,
+        )
+        .ok();
+        println!();
+
+        _print_unique_results(
+            total_detect_counts_by_level,
+            "Total".to_string(),
+            "detections".to_string(),
+            &color_map,
+        );
+        println!();
+
+        _print_unique_results(
+            unique_detect_counts_by_level,
+            "Unique".to_string(),
+            "detections".to_string(),
+            &color_map,
+        );
+        println!();
+
+        _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
+        println!();
+
+        _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
+        println!();
+
+        _print_detection_summary_by_rule(detect_counts_by_rule_and_level, &color_map);
     }
-    let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
-    let reducted_percent = if all_record_cnt == 0 {
-        0 as f64
-    } else {
-        (reducted_record_cnt as f64) / (all_record_cnt as f64) * 100.0
-    };
-    write_color_buffer(
-        &disp_wtr,
-        get_writable_color(None),
-        &format!(
-            "Total events: {}",
-            all_record_cnt.to_formatted_string(&Locale::en)
-        ),
-        true,
-    )
-    .ok();
-    write_color_buffer(
-        &disp_wtr,
-        get_writable_color(None),
-        &format!(
-            "Data reduction: {} events ({:.2}%)",
-            reducted_record_cnt.to_formatted_string(&Locale::en),
-            reducted_percent
-        ),
-        true,
-    )
-    .ok();
-    println!();
-
-    _print_unique_results(
-        total_detect_counts_by_level,
-        "Total".to_string(),
-        "detections".to_string(),
-        &color_map,
-    );
-    println!();
-
-    _print_unique_results(
-        unique_detect_counts_by_level,
-        "Unique".to_string(),
-        "detections".to_string(),
-        &color_map,
-    );
-    println!();
-
-    _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
-    println!();
-
-    _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
-    println!();
-
-    _print_detection_summary_by_rule(detect_counts_by_rule_and_level, &color_map);
 
     Ok(())
 }
