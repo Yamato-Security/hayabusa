@@ -854,38 +854,28 @@ fn output_json_str(
         {
             println!("k dbg | {} | v dbg | {:?}", k, v);
             let tmp_val: Vec<&str> = v.split(": ").collect();
-            println!(
-                "tmp_val dbg | {:?} | len dbg | {:?}",
-                tmp_val,
-                tmp_val.len()
-            );
 
             let key = _convert_valid_json_str(&[k.as_str()]);
-            let values = &tmp_val;
+            let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
             let mut value: Vec<String> = vec![];
-            let mut valid_data_cnt = 0;
-
-            if tmp_val.is_empty() {
-                value.push("[]".to_string());
+ 
+            if values.is_empty() {
+                value.push("[".to_string());
             }
             for (idx, tag_val) in values.iter().enumerate() {
                 if idx == 0 {
-                    value.push("[".to_string());
-                }
-                if tag_val == &"" {
-                    continue;
+                    value.push("[\n".to_string());
                 }
                 let insert_val = format!("        \"{}\"", tag_val.trim());
                 value.push(insert_val);
                 if idx != values.len() - 1 {
                     value.push(",\n".to_string());
                 }
-                valid_data_cnt += 1;
             }
-            if valid_data_cnt > 0 {
-                value.push("    ]".to_string());
-            } else {
+            if values.is_empty() {
                 value.push("]".to_string());
+            } else {
+                value.push("\n    ]".to_string());
             }
 
             let fmted_val = value.join("");
