@@ -848,19 +848,26 @@ fn output_json_str(
                     tmp = String::default();
                 }
             }
-        } else if output_value_fmt.contains("%MitreTags%") || output_value_fmt.contains("%MitreTactics%") || output_value_fmt.contains("%OtherTags%") {
+        } else if output_value_fmt.contains("%MitreTags%")
+            || output_value_fmt.contains("%MitreTactics%")
+            || output_value_fmt.contains("%OtherTags%")
+        {
             println!("k dbg | {} | v dbg | {:?}", k, v);
             let tmp_val: Vec<&str> = v.split(": ").collect();
-            println!("tmp_val dbg | {:?} | len dbg | {:?}", tmp_val, tmp_val.len());
+            println!(
+                "tmp_val dbg | {:?} | len dbg | {:?}",
+                tmp_val,
+                tmp_val.len()
+            );
 
             let key = _convert_valid_json_str(&[k.as_str()]);
             let values = &tmp_val;
-            let mut value:Vec<String> = vec![];
-            let mut valid_data_cnt =0;
+            let mut value: Vec<String> = vec![];
+            let mut valid_data_cnt = 0;
 
             if tmp_val.is_empty() {
                 value.push("[]".to_string());
-            } 
+            }
             for (idx, tag_val) in values.iter().enumerate() {
                 if idx == 0 {
                     value.push("[".to_string());
@@ -870,19 +877,24 @@ fn output_json_str(
                 }
                 let insert_val = format!("        \"{}\"", tag_val.trim());
                 value.push(insert_val);
-                if idx != values.len() - 1  {
+                if idx != values.len() - 1 {
                     value.push(",\n".to_string());
                 }
                 valid_data_cnt += 1;
             }
             if valid_data_cnt > 0 {
                 value.push("    ]".to_string());
-            } else  {
+            } else {
                 value.push("]".to_string());
             }
 
             let fmted_val = value.join("");
-            target.push(_create_json_output_format(&key, &fmted_val, key.starts_with('\"'), true));
+            target.push(_create_json_output_format(
+                &key,
+                &fmted_val,
+                key.starts_with('\"'),
+                true,
+            ));
         }
     }
     target.join(",\n")
