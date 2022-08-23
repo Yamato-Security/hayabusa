@@ -110,8 +110,21 @@ impl EventStatistics {
             if evtid.is_none() {
                 continue;
             }
+            let idnum: i64 = if evtid.unwrap().is_number() {
+                evtid.unwrap().as_i64().unwrap()
+            } else {
+                evtid
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+                    .parse::<i64>()
+                    .unwrap_or_default()
+            };
+            if !(idnum == 4624 || idnum == 4625) {
+                continue;
+            }
+
             let username = utils::get_event_value("TargetUserName", &record.record);
-            let idnum = evtid.unwrap().as_i64().unwrap();
             let countlist: [usize; 2] = [0, 0];
             if idnum == 4624 {
                 let count: &mut [usize; 2] = self
