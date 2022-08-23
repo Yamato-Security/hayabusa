@@ -833,7 +833,7 @@ fn output_json_str(
                 }
                 output_value_stock.push_str(&value.join(" "));
                 if value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty() {
-                    // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので主力処理を行う
+                    // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]]);
