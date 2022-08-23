@@ -858,7 +858,7 @@ fn output_json_str(
             let key = _convert_valid_json_str(&[k.as_str()]);
             let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
             let mut value: Vec<String> = vec![];
- 
+
             if values.is_empty() {
                 value.push("[".to_string());
             }
