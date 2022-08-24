@@ -859,7 +859,7 @@ fn output_json_str(
             let mut value: Vec<String> = vec![];
 
             if values.is_empty() {
-                value.push("[".to_string());
+                continue;
             }
             for (idx, tag_val) in values.iter().enumerate() {
                 if idx == 0 {
@@ -871,11 +871,7 @@ fn output_json_str(
                     value.push(",\n".to_string());
                 }
             }
-            if values.is_empty() {
-                value.push("]".to_string());
-            } else {
-                value.push("\n    ]".to_string());
-            }
+            value.push("\n    ]".to_string());
 
             let fmted_val = value.join("");
             target.push(_create_json_output_format(
