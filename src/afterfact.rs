@@ -517,7 +517,7 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    write!(wtr, "Dates with most total detections:\n").ok();
+    writeln!(wtr, "Dates with most total detections:").ok();
 
     for (idx, level) in LEVEL_ABBR.values().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
