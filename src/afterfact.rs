@@ -852,7 +852,6 @@ fn output_json_str(
             || output_value_fmt.contains("%MitreTactics%")
             || output_value_fmt.contains("%OtherTags%")
         {
-            println!("k dbg | {} | v dbg | {:?}", k, v);
             let tmp_val: Vec<&str> = v.split(": ").collect();
 
             let key = _convert_valid_json_str(&[k.as_str()]);
