@@ -444,7 +444,7 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
     }
 }
 
-/// output info which unique detection count and all detection count information(devided by level and total) to stdout.
+/// output info which unique detection count and all detection count information(separated by level and total) to stdout.
 fn _print_unique_results(
     mut counts_by_level: Vec<u128>,
     mut unique_counts_by_level: Vec<u128>,
@@ -516,7 +516,7 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    write!(wtr, "Most Total detections: ").ok();
+    write!(wtr, "Most total detections: ").ok();
 
     for (idx, level) in LEVEL_ABBR.values().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -541,7 +541,7 @@ fn _print_detection_summary_by_date(
         }
         write!(
             wtr,
-            "{} detections: {}",
+            "{}: {}",
             LEVEL_FULL.get(level.as_str()).unwrap(),
             &max_detect_str
         )
