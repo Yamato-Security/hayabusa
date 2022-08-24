@@ -516,7 +516,9 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    for level in LEVEL_ABBR.values() {
+    write!(wtr, "Most Total detections: ").ok();
+
+    for (idx, level) in LEVEL_ABBR.values().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
         let mut max_detect_str = String::default();
@@ -537,13 +539,18 @@ fn _print_detection_summary_by_date(
         if !exist_max_data {
             max_detect_str = "n/a".to_string();
         }
-        writeln!(
+        write!(
             wtr,
-            "Date with most total {} detections: {}",
+            "{} detections: {}",
             LEVEL_FULL.get(level.as_str()).unwrap(),
             &max_detect_str
         )
         .ok();
+        if idx != LEVEL_ABBR.len() - 1 {
+            wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
+            write!(wtr, ", ").ok();
+        }
     }
     buf_wtr.print(&wtr).ok();
 }
