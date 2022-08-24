@@ -386,6 +386,7 @@ fn emit_csv<W: std::io::Write>(
 
         _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
         println!();
+        println!();
 
         _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
         println!();
@@ -516,7 +517,7 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    write!(wtr, "Most total detections: ").ok();
+    write!(wtr, "Dates with most total detections:\n").ok();
 
     for (idx, level) in LEVEL_ABBR.values().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
