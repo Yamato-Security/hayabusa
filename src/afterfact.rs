@@ -7,6 +7,8 @@ use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
+use comfy_table::modifiers::UTF8_ROUND_CORNERS;
+use comfy_table::presets::UTF8_FULL;
 use csv::QuoteStyle;
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
@@ -15,6 +17,7 @@ use linked_hash_map::LinkedHashMap;
 
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
+use comfy_table::*;
 use std::cmp::min;
 use std::error::Error;
 
@@ -29,17 +32,22 @@ use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
 lazy_static! {
-    pub static ref OUTPUT_COLOR: HashMap<String, Color> = set_output_color();
+    pub static ref OUTPUT_COLOR: HashMap<String, Colors> = set_output_color();
+}
+
+pub struct Colors {
+    pub output_color: termcolor::Color,
+    pub table_color: comfy_table::Color,
 }
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn set_output_color() -> HashMap<String, Color> {
+pub fn set_output_color() -> HashMap<String, Colors> {
     let read_result = utils::read_csv(
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/level_color.txt")
             .to_str()
             .unwrap(),
     );
-    let mut color_map: HashMap<String, Color> = HashMap::new();
+    let mut color_map: HashMap<String, Colors> = HashMap::new();
     if configs::CONFIG.read().unwrap().args.no_color {
         return color_map;
     }
@@ -69,16 +77,31 @@ pub fn set_output_color() -> HashMap<String, Color> {
         }
         color_map.insert(
             level.to_lowercase(),
-            Color::Rgb(color_code[0], color_code[1], color_code[2]),
+            Colors {
+                output_color: termcolor::Color::Rgb(color_code[0], color_code[1], color_code[2]),
+                table_color: comfy_table::Color::Rgb{
+                    r: color_code[0],
+                    g: color_code[1],
+                    b: color_code[2]
+                }
+            }
         );
     });
     color_map
 }
 
-fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<Color> {
+fn _get_output_color(color_map: &HashMap<String, Colors>, level: &str) -> Option<Color> {
     let mut color = None;
     if let Some(c) = color_map.get(&level.to_lowercase()) {
-        color = Some(c.to_owned());
+        color = Some(c.output_color.to_owned());
+    }
+    color
+}
+
+fn _get_table_color(color_map: &HashMap<String, Colors>, level: &str) -> Option<comfy_table::Color> {
+    let mut color = None;
+    if let Some(c) = color_map.get(&level.to_lowercase()) {
+        color = Some(c.table_color.to_owned());
     }
     color
 }
@@ -166,7 +189,7 @@ pub fn after_fact(all_record_cnt: usize) {
 fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
-    color_map: HashMap<String, Color>,
+    color_map: HashMap<String, Colors>,
     all_record_cnt: u128,
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -391,7 +414,8 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
         println!();
 
-        _print_detection_summary_by_rule(detect_counts_by_rule_and_level, &color_map);
+        _print_detection_summary_tables(detect_counts_by_rule_and_level, &color_map);
+        println!();
     }
 
     Ok(())
@@ -451,7 +475,7 @@ fn _print_unique_results(
     mut unique_counts_by_level: Vec<u128>,
     head_word: String,
     tail_word: String,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
@@ -511,7 +535,7 @@ fn _print_unique_results(
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
     detect_counts_by_date: HashMap<String, HashMap<String, u128>>,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -606,53 +630,84 @@ fn _print_detection_summary_by_computer(
     buf_wtr.print(&wtr).ok();
 }
 
-/// 各レベルごとで検出数が多かったルールのタイトルを出力する関数
-fn _print_detection_summary_by_rule(
+/// 各レベルごとで検出数が多かったルールと日ごとの検知数を表形式で出力する関数
+fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-    let level_cnt = detect_counts_by_rule_and_level.len();
-    for (idx, level) in LEVEL_ABBR.values().enumerate() {
+    let mut output = vec![];
+    let mut col_color = vec![];
+    for level in LEVEL_ABBR.values() {
+        let mut col_output:Vec<String> = vec![];
+        col_output.push(format!("Top {} alerts:",
+        LEVEL_FULL.get(level.as_str()).unwrap()));
+
+        col_color.push(_get_table_color(
+            color_map,
+            LEVEL_FULL.get(level.as_str()).unwrap(),
+        ));
+
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_rule_and_level.get(level).unwrap();
-        let mut result_vec: Vec<String> = Vec::new();
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         for x in sorted_detections.iter().take(5) {
-            result_vec.push(format!(
+            col_output.push(format!(
                 "{} ({})",
                 x.0,
                 x.1.to_formatted_string(&Locale::en)
             ));
         }
-        let result_str = if result_vec.is_empty() {
-            "None".to_string()
+        let na_cnt = if sorted_detections.len() > 5 {
+            0
         } else {
-            result_vec.join("\n")
+            5-sorted_detections.len()
         };
-
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
-            color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
-        )))
-        .ok();
-        writeln!(
-            wtr,
-            "Top {} alerts:\n{}",
-            LEVEL_FULL.get(level.as_str()).unwrap(),
-            &result_str
-        )
-        .ok();
-        if idx != level_cnt - 1 {
-            writeln!(wtr).ok();
+        for _x in 0..na_cnt {
+            col_output.push("N/A".to_string());
         }
+        output.push(col_output);
     }
-    buf_wtr.print(&wtr).ok();
+    
+    let mut tb = Table::new();
+    tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS)
+    .set_content_arrangement(ContentArrangement::Dynamic)
+    .set_width(500);
+    for x in 0..2 {
+                tb.add_row(vec![
+                    Cell::new(&output[2*x][0]).fg(col_color[2*x].unwrap_or(comfy_table::Color::Reset)),
+                    Cell::new(&output[2*x+1][0]).fg(col_color[2*x +1].unwrap_or(comfy_table::Color::Reset))
+                ]);
+            
+                tb.add_row(
+                    vec![
+                        Cell::new(&output[2*x][1..].join("\n"))
+                        .fg(col_color[2*x].unwrap_or(comfy_table::Color::Reset)),
+                        Cell::new(&output[2*x+1][1..].join("\n"))
+                        .fg(col_color[2*x + 1].unwrap_or(comfy_table::Color::Reset)),
+
+                    ]
+                );
+    }
+    tb.add_row(
+        vec![
+            Cell::new(&output[4][0])
+            .fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        ]
+    );
+    tb.add_row(
+        vec![
+            Cell::new(&output[4][1..].join("\n"))
+            .fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        ]
+    );
+    println!("{tb}");
+    println!();
 }
 
 /// get timestamp to input datetime.
