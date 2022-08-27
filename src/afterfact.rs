@@ -813,9 +813,7 @@ fn output_json_str(
                         tmp_stock.push(sp.to_owned());
                     }
                 }
-                if !tmp_stock.is_empty() {
-                    stocked_value.push(tmp_stock);
-                }
+                stocked_value.push(tmp_stock);
             }
             let mut tmp = String::default();
             let mut key_idx = 0;
