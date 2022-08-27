@@ -15,9 +15,9 @@ use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 
+use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
-use comfy_table::*;
 use std::cmp::min;
 use std::error::Error;
 
@@ -79,12 +79,12 @@ pub fn set_output_color() -> HashMap<String, Colors> {
             level.to_lowercase(),
             Colors {
                 output_color: termcolor::Color::Rgb(color_code[0], color_code[1], color_code[2]),
-                table_color: comfy_table::Color::Rgb{
+                table_color: comfy_table::Color::Rgb {
                     r: color_code[0],
                     g: color_code[1],
-                    b: color_code[2]
-                }
-            }
+                    b: color_code[2],
+                },
+            },
         );
     });
     color_map
@@ -98,7 +98,10 @@ fn _get_output_color(color_map: &HashMap<String, Colors>, level: &str) -> Option
     color
 }
 
-fn _get_table_color(color_map: &HashMap<String, Colors>, level: &str) -> Option<comfy_table::Color> {
+fn _get_table_color(
+    color_map: &HashMap<String, Colors>,
+    level: &str,
+) -> Option<comfy_table::Color> {
     let mut color = None;
     if let Some(c) = color_map.get(&level.to_lowercase()) {
         color = Some(c.table_color.to_owned());
@@ -642,9 +645,11 @@ fn _print_detection_summary_tables(
     let mut output = vec![];
     let mut col_color = vec![];
     for level in LEVEL_ABBR.values() {
-        let mut col_output:Vec<String> = vec![];
-        col_output.push(format!("Top {} alerts:",
-        LEVEL_FULL.get(level.as_str()).unwrap()));
+        let mut col_output: Vec<String> = vec![];
+        col_output.push(format!(
+            "Top {} alerts:",
+            LEVEL_FULL.get(level.as_str()).unwrap()
+        ));
 
         col_color.push(_get_table_color(
             color_map,
@@ -667,46 +672,39 @@ fn _print_detection_summary_tables(
         let na_cnt = if sorted_detections.len() > 5 {
             0
         } else {
-            5-sorted_detections.len()
+            5 - sorted_detections.len()
         };
         for _x in 0..na_cnt {
             col_output.push("N/A".to_string());
         }
         output.push(col_output);
     }
-    
-    let mut tb = Table::new();
-    tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS)
-    .set_content_arrangement(ContentArrangement::Dynamic)
-    .set_width(500);
-    for x in 0..2 {
-                tb.add_row(vec![
-                    Cell::new(&output[2*x][0]).fg(col_color[2*x].unwrap_or(comfy_table::Color::Reset)),
-                    Cell::new(&output[2*x+1][0]).fg(col_color[2*x +1].unwrap_or(comfy_table::Color::Reset))
-                ]);
-            
-                tb.add_row(
-                    vec![
-                        Cell::new(&output[2*x][1..].join("\n"))
-                        .fg(col_color[2*x].unwrap_or(comfy_table::Color::Reset)),
-                        Cell::new(&output[2*x+1][1..].join("\n"))
-                        .fg(col_color[2*x + 1].unwrap_or(comfy_table::Color::Reset)),
 
-                    ]
-                );
+    let mut tb = Table::new();
+    tb.load_preset(UTF8_FULL)
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_width(500);
+    for x in 0..2 {
+        tb.add_row(vec![
+            Cell::new(&output[2 * x][0]).fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
+            Cell::new(&output[2 * x + 1][0])
+                .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
+        ]);
+
+        tb.add_row(vec![
+            Cell::new(&output[2 * x][1..].join("\n"))
+                .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
+            Cell::new(&output[2 * x + 1][1..].join("\n"))
+                .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
+        ]);
     }
-    tb.add_row(
-        vec![
-            Cell::new(&output[4][0])
-            .fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-        ]
-    );
-    tb.add_row(
-        vec![
-            Cell::new(&output[4][1..].join("\n"))
-            .fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-        ]
-    );
+    tb.add_row(vec![
+        Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset))
+    ]);
+    tb.add_row(vec![
+        Cell::new(&output[4][1..].join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset))
+    ]);
     println!("{tb}");
     println!();
 }
