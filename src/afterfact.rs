@@ -583,12 +583,13 @@ fn _print_detection_summary_by_date(
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
+    writeln!(wtr, "Top 5 computers with most unique detections:").ok();
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
@@ -621,7 +622,7 @@ fn _print_detection_summary_by_computer(
         .ok();
         writeln!(
             wtr,
-            "Top 5 computers with most unique {} detections: {}",
+            "{}: {}",
             LEVEL_FULL.get(level.as_str()).unwrap(),
             &result_str
         )
