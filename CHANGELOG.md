@@ -10,7 +10,7 @@
 
 - Added top alerts to results summary. (#667) (@hitenkoku)
 - Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
-- Condensed detection count results in the results summary. (#675) (@hitenkoku)
+- Made the results summary more compact. (#675) (@hitenkoku)
 
 **Bug Fixes:**
 
