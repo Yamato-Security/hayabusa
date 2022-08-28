@@ -382,17 +382,9 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None),
             &format!(
-                "Total events: {}",
-                all_record_cnt.to_formatted_string(&Locale::en)
-            ),
-            true,
-        )
-        .ok();
-        write_color_buffer(
-            &disp_wtr,
-            get_writable_color(None),
-            &format!(
-                "Data reduction: {} events ({:.2}%)",
+                "Detected events / Total events: {} / {} (reduced {} events ({:.2}%))",
+               (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
+                all_record_cnt.to_formatted_string(&Locale::en),
                 reducted_record_cnt.to_formatted_string(&Locale::en),
                 reducted_percent
             ),
