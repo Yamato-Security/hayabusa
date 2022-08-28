@@ -706,7 +706,6 @@ fn _print_detection_summary_tables(
         Cell::new(&output[4][1..].join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset))
     ]);
     println!("{tb}");
-    println!();
 }
 
 /// get timestamp to input datetime.
