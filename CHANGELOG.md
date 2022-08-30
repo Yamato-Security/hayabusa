@@ -1,20 +1,99 @@
 # Changes
 
-## v1.4 [2022/XX/XX]
+## v1.6.0 [2022/XX/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added top alerts to results summary. (#667) (@hitenkoku)
+- Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
+- Made the results summary more compact. (#675) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Hayabusa would crash with `-L` option (logon summary option). (#674) (@hitenkoku)
+
+## v1.5.1 [2022/08/20]
+
+**Enhancements:**
+
+- Re-released v1.5.1 with an updated output profile that is compatible with Timesketch. (#668) (@YamatoSecurity)
+
+## v1.5.1 [2022/08/19]
+
+**Bug Fixes:**
+
+- Critical, medium and low level alerts were not being displayed in color. (#663) (@fukusuket)
+- Hayabusa would crash when an evtx file specified with `-f` did not exist. (#664) (@fukusuket)
+
+## v1.5.0 [2022/08/18]
+
+**New Features:**
+
+- Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml`. (#165) (@hitenkoku)
+- Implemented the `null` keyword for rule detection. It is used to check if a target field exists or not. (#643) (@hitenkoku)
+
+**Enhancements:**
+
+- Trimmed `./` from the rule path when updating. (#642) (@hitenkoku)
+- Added new output aliases for MITRE ATT&CK tags and other tags. (#637) (@hitenkoku)
+- Organized the menu output when `-h` is used. (#651) (@YamatoSecurity and @hitenkoku)
+- Added commas to summary numbers to make them easier to read. (#649) (@hitenkoku)
+- Added output percentage of detections in Result Summary. (#658) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed miscalculation of Data Reduction due to aggregation condition rule detection. (#640) (@hitenkoku)
+- Fixed a race condition bug where a few events (around 0.01%) would not be detected. (#639 #660) (@fukusuket)
+
+## v1.4.3 [2022/08/03]
+
+**Bug Fixes:**
+
+- Hayabusa would not run on Windows 11 when the VC redistribute package was not installed but now everything is compiled statically. (#635) (@fukusuket)
+
+## v1.4.2 [2022/07/24]
+
+**Enhancements:**
+
+- You can now update rules to a custom directory by combining the `--update-rules` and `--rules` options. (#615) (@hitenkoku)
+- Improved speed with parallel processing by up to 20% with large files. (#479) (@kazuminn)
+- When saving files with `-o`, the `.yml` detection rule path column changed from `RulePath` to `RuleFile` and only the rule file name will be saved in order to decrease file size. (#623) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed a runtime error when hayabusa is run from a different path than the current directory. (#618) (@hitenkoku)
+
+## v1.4.1 [2022/06/30]
+
+**Enhancements:**
+
+- When no `details` field is defined in a rule nor in `./rules/config/default_details.txt`, all fields will be outputted to the `details` column. (#606) (@hitenkoku)
+- Added the `-D, --deep-scan` option. Now by default, events are filtered by Event IDs that there are detection rules for defined in `./rules/config/target_event_IDs.txt`. This should improve performance by 25~55% while still detecting almost everything. If you want to do a thorough scan on all events, you can disable the event ID filter with `-D, --deep-scan`. (#608) (@hitenkoku)
+- `channel_abbreviations.txt`, `statistics_event_info.txt` and `target_event_IDs.txt` have been moved from the `config` directory to the `rules/config` directory in order to provide updates with `-U, --update-rules`.
+
+## v1.4.0 [2022/06/26]
 
 **New Features:**
 
 - Added `--target-file-ext` option. You can specify additional file extensions to scan in addtition to the default `.evtx` files. For example, `--target-file-ext evtx_data` or multiple extensions with `--target-file-ext evtx1 evtx2`. (#586) (@hitenkoku)
+- Added `--exclude-status` option: You can ignore rules based on their `status`. (#596) (@hitenkoku)
 
 **Enhancements:**
 
+- Added default details output based on `rules/config/default_details.txt` when no `details` field in a rule is specified. (i.e. Sigma rules) (#359) (@hitenkoku)
 - Updated clap crate package to version 3. (#413) (@hitnekoku)
 - Updated the default usage and help menu. (#387) (@hitenkoku)
-- Added default details output based on `rules/config/default_details.txt` when no `details` field in a rule is specified. (i.e. Sigma rules) (#359) (@hitenkoku)
+- Hayabusa can be run from any directory, not just from the current directory. (#592) (@hitenkoku)
+- Added saved file size output when `output` is specified. (#595) (@hitenkoku)
 
 **Bug Fixes:**
 
-- XXX
+- Fixed output error and program termination when long output is displayed with color. (#603) (@hitenkoku)
+- Ignore loading yml files in `rules/tools/sigmac/testfiles` to fix `Excluded rules` count. (#602) (@hitenkoku)
 
 ## v1.3.2 [2022/06/13]
 
@@ -99,7 +178,7 @@
 
 **New Features:**
 
-- Specify config directory (`-C / --config`): When specifying a different rules directory, the rules config directory will still be the default `rules/config`, so this option is useful when you want to test rules and their config files in a different directory. (@hitenkoku) 
+- Specify config directory (`-C / --config`): When specifying a different rules directory, the rules config directory will still be the default `rules/config`, so this option is useful when you want to test rules and their config files in a different directory. (@hitenkoku)
 - `|equalsfield` aggregator: In order to write rules that compare if two fields are equal or not. (@hach1yon)
 - Pivot keyword list generator feature (`-p / --pivot-keywords-list`): Will generate a list of keywords to grep for to quickly identify compromised machines, suspicious usernames, files, etc... (@kazuminn)
 - `-F / --full-data` option: Will output all field information in addition to the fields defined in the rule’s `details`. (@hach1yon)
@@ -130,7 +209,7 @@
 
 - Can specify a single rule with the `-r / --rules` option. (Great for testing rules!) (@kazuminn)
 - Rule update option (`-u / --update-rules`): Update to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository. (@hitenkoku)
-- Live analysis option (`-l / --live-analysis`): Can easily perform live analysis on Windows machines without specifying the Windows event log directory. (@hitenkoku) 
+- Live analysis option (`-l / --live-analysis`): Can easily perform live analysis on Windows machines without specifying the Windows event log directory. (@hitenkoku)
 
 **Enhancements:**
 

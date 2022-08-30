@@ -1,20 +1,99 @@
 # 変更点
 
-## v1.4 [2022/XX/XX]
+## v1.6.0 [2022/XX/XX]
+
+**新機能:**
+
+- XXX
+
+**改善:**
+
+- 結果概要に各レベルで検知した上位5つのルールを表示するようにした。 (#667) (@hitenkoku)
+- 結果概要を出力しないようにするために `--no-summary` オプションを追加した。 (#672) (@hitenkoku)
+- 結果概要の表示を短縮させた。 (#675) (@hitenkoku)
+
+**バグ修正:**
+
+- ログオン情報の要約オプションを追加した場合に、Hayabusaがクラッシュしていたのを修正した。 (#674) (@hitenkoku)
+
+## v1.5.1 [2022/08/20]
+
+**改善:**
+
+- TimesketchにインポートできるCSV形式を出力するプロファイルを追加して、v1.5.1を再リリースした。 (#668) (@YamatoSecurity)
+
+## v1.5.1 [2022/08/19]
+
+**バグ修正:**
+
+- Critical, medium、lowレベルのアラートはカラーで出力されていなかった。 (#663) (@fukusuket)
+- `-f`で存在しないevtxファイルが指定された場合は、Hayabusaがクラッシュしていた。 (#664) (@fukusuket)
+
+## v1.5.0 [2022/08/18]
+
+**新機能:**
+
+- `config/profiles.yaml`と`config/default_profile.yaml`の設定ファイルで、出力内容をカスタマイズできる。 (#165) (@hitenkoku)
+- 対象のフィールドがレコード内に存在しないことを確認する `null` キーワードに対応した。 (#643) (@hitenkoku)
+
+**改善:**
+
+- ルールのアップデート機能のルールパスの出力から./を削除した。 (#642) (@hitenkoku)
+- MITRE ATT&CK関連のタグとその他タグを出力するための出力用のエイリアスを追加した。 (#637) (@hitenkoku)
+- 結果概要の数値をカンマをつけて見やすくした。 (#649) (@hitenkoku)
+- `-h`オプションでメニューを使いやすいようにグループ化した。 (#651) (@YamatoSecurity and @hitenkoku)
+- 結果概要内の検知数にパーセント表示を追加した。 (#658) (@hitenkoku)
+
+**バグ修正:**
+
+- aggregation conditionのルール検知が原因で検知しなかったイベント数の集計に誤りがあったので修正した。 (#640) (@hitenkoku)
+- 一部のイベント（0.01%程度）が検出されないレースコンディションの不具合を修正した。 (#639 #660) (@fukusuket)
+
+## v1.4.3 [2022/08/03]
+
+**バグ修正:**
+
+- VC再頒布パッケージがインストールされていない環境でエラーが発生している状態を修正した。 (#635) (@fukusuket)
+
+## v1.4.2 [2022/07/24]
+
+**改善:**
+
+- `--update-rules` オプションを利用する時に、更新対象のレポジトリを`--rules`オプションで指定できるようにした。 (#615) (@hitenkoku)
+- 並列処理の改善による高速化。 (#479) (@kazuminn)
+- `--output`オプションを利用したときのRulePathをRuleFileに変更した。RuleFileは出力するファイルの容量を低減させるためにファイル名のみを出力するようにした。 (#623) (@hitenkoku)
+
+**バグ修正:**
+
+- `cargo run`コマンドでhayabusaを実行するとconfigフォルダの読み込みエラーが発生する問題を修正した。 (#618) (@hitenkoku)
+
+## v1.4.1 [2022/06/30]
+
+**改善:**
+
+- ルールや`./rules/config/default_details.txt` に対応する`details`の記載がない場合、すべてのフィールド情報を結果の``Details`列に出力するようにした (#606) (@hitenkoku)
+- `--deep-scan`オプションの追加。 このオプションがない場合、`config/target_event_ids.txt`で指定されたイベントIDのみをスキャン対象とします。 このオプションをつけることですべてのイベントIDをスキャン対象とします。(#608) (@hitenkoku)
+- `-U, --update-rules`オプションで`channel_abbreviations.txt`、`statistics_event_info.txt`、`target_event_IDs.txt`を更新できるように、`config`ディレクトリから`rules/config`ディレクトリに移動した。
+
+## v1.4.0 [2022/06/26]
 
 **新機能:**
 
 - `--target-file-ext` オプションの追加。evtx以外の拡張子を指定する事ができます。ただし、ファイルの中身の形式はevtxファイル形式である必要があります。 (#586) (@hitenkoku)
+- `--exclude-status` オプションの追加。ルール内の`status`フィールドをもとに、読み込み対象から除外するフィルタを利用することができます。 (#596) (@hitenkoku)
 
 **改善:**
 
+- ルール内に`details`フィールドがないときに、`rules/config/default_details.txt`に設定されたデフォルトの出力を行えるようにした。 (#359) (@hitenkoku)
 - Clap Crateパッケージの更新 (#413) (@hitenkoku)
 - オプションの指定がないときに、`--help`と同じ画面出力を行うように変更した。(#387) (@hitenkoku)
-- ルール内に`details`フィールドがないときに、`rules/config/default_details.txt`に設定されたデフォルトの出力を行えるようにした。 (#359) (@hitenkoku)
+- hayabusa.exeをカレントワーキングディレクトリ以外から動作できるようにした。 (#592) (@hitenkoku)
+- `output` オプションで指定されファイルのサイズを出力するようにした。 (#595) (@hitenkoku)
 
 **バグ修正:**
 
-- XXX
+- カラー出力で長い出力があった場合にエラーが出て終了する問題を修正した。 (#603) (@hitenkoku)
+- `Excluded rules`の合計で`rules/tools/sigmac/testfiles`配下のテストルールも入っていたので、無視するようにした。 (#602) (@hitenkoku)
 
 ## v1.3.2 [2022/06/13]
 
@@ -35,6 +114,7 @@
 - `--rfc-3339` オプションの時刻表示形式を変更した。 (#574) (@hitenkoku)
 - `-R/ --display-record-id`オプションを`-R/ --hide-record-id`に変更。レコードIDはデフォルトで出力するようにして`-R`オプションを付けた際に表示しないように変更した。(#579) (@hitenkoku)
 - ルール読み込み時のメッセージを追加した。 (#583) (@hitenkoku)
+- `rules/tools/sigmac/testfiles`内のテスト用のymlファイルを読み込まないようにした. (#602) (@hitenkoku)
 
 **バグ修正:**
 
@@ -97,7 +177,7 @@
 
 **新機能:**
 
-- `-C / --config` オプションの追加。検知ルールのコンフィグを指定することが可能。(Windowsでのライブ調査に便利) (@hitenkoku) 
+- `-C / --config` オプションの追加。検知ルールのコンフィグを指定することが可能。(Windowsでのライブ調査に便利) (@hitenkoku)
 - `|equalsfield` と記載することでルール内で二つのフィールドの値が一致するかを記載に対応。 (@hach1yon)
 - `-p / --pivot-keywords-list` オプションの追加。攻撃されたマシン名や疑わしいユーザ名などの情報をピボットキーワードリストとして出力する。 (@kazuminn)
 - `-F / --full-data`オプションの追加。ルールの`details`で指定されたフィールドだけではなく、全フィールド情報を出力する。(@hach1yon)
@@ -128,7 +208,7 @@
 
 - `-r / --rules`オプションで一つのルール指定が可能。(ルールをテストする際に便利！) (@kazuminn)
 - ルール更新オプション (`-u / --update-rules`): [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)レポジトリにある最新のルールに更新できる。 (@hitenkoku)
-- ライブ調査オプション (`-l / --live-analysis`): Windowsイベントログディレクトリを指定しないで、楽にWindows端末でライブ調査ができる。(@hitenkoku) 
+- ライブ調査オプション (`-l / --live-analysis`): Windowsイベントログディレクトリを指定しないで、楽にWindows端末でライブ調査ができる。(@hitenkoku)
 
 **改善:**
 

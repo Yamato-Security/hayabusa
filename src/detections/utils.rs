@@ -3,6 +3,12 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs;
+use crate::detections::configs::CURRENT_EXE_PATH;
+use hashbrown::HashMap;
+use std::path::Path;
+use std::path::PathBuf;
+
+use chrono::Local;
 use termcolor::Color;
 
 use tokio::runtime::Builder;
@@ -66,7 +72,15 @@ pub fn value_to_string(value: &Value) -> Option<String> {
 }
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
-    let f = File::open(filename);
+    let filepath = if filename.starts_with("./") {
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename)
+            .to_str()
+            .unwrap()
+            .to_string()
+    } else {
+        filename.to_string()
+    };
+    let f = File::open(filepath);
     if f.is_err() {
         let errmsg = format!("Cannot open file. [file:{}]", filename);
         return Result::Err(errmsg);
@@ -206,8 +220,8 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
     // この処理を高速化するため、rec.key_2_valueというhashmapに"Event.System.EventID"というキーで値を設定しておく。
     // これなら、"Event.System.EventID"というキーを1回指定するだけで値を取得できるようになるので、高速化されるはず。
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
-    // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。
-    let mut key_2_values = hashbrown::HashMap::new();
+    // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。標準ライブラリがhashbrownを採用したためserde_jsonについても高速化した。
+    let mut key_2_values = HashMap::new();
     for key in keys {
         let val = get_event_value(key, &data);
         if val.is_none() {
@@ -224,11 +238,8 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
 
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
-    let rec_info = if configs::CONFIG.read().unwrap().args.full_data {
-        Option::Some(create_recordinfos(&data))
-    } else {
-        Option::None
-    };
+    let rec_info = Option::Some(create_recordinfos(&data));
+
     EvtxRecordInfo {
         evtx_filepath: path,
         record: data,
@@ -242,14 +253,28 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
  * 標準出力のカラー出力設定を指定した値に変更し画面出力を行う関数
  */
 pub fn write_color_buffer(
-    wtr: BufferWriter,
+    wtr: &BufferWriter,
     color: Option<Color>,
     output_str: &str,
+    newline_flag: bool,
 ) -> io::Result<()> {
     let mut buf = wtr.buffer();
     buf.set_color(ColorSpec::new().set_fg(color)).ok();
-    writeln!(buf, "{}", output_str).ok();
+    if newline_flag {
+        writeln!(buf, "{}", output_str).ok();
+    } else {
+        write!(buf, "{}", output_str).ok();
+    }
     wtr.print(&buf)
+}
+
+/// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
+pub fn get_writable_color(color: Option<Color>) -> Option<Color> {
+    if configs::CONFIG.read().unwrap().args.no_color {
+        None
+    } else {
+        color
+    }
 }
 
 /**
@@ -354,9 +379,72 @@ pub fn make_ascii_titlecase(s: &mut str) -> String {
     }
 }
 
+/// base_path/path が存在するかを確認し、存在しなければカレントディレクトリを参照するpathを返す関数
+pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
+    if base_path.join(path).exists() {
+        base_path.join(path)
+    } else {
+        Path::new(path).to_path_buf()
+    }
+}
+
+///タイムゾーンに合わせた情報を情報を取得する関数
+pub fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
+    if configs::CONFIG.read().unwrap().args.utc {
+        format_rfc(time, date_only)
+    } else {
+        format_rfc(&time.with_timezone(&Local), date_only)
+    }
+}
+
+/// return rfc time format string by option
+fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>, date_only: bool) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    let time_args = &configs::CONFIG.read().unwrap().args;
+    if time_args.rfc_2822 {
+        if date_only {
+            time.format("%a, %e %b %Y").to_string()
+        } else {
+            time.format("%a, %e %b %Y %H:%M:%S %:z").to_string()
+        }
+    } else if time_args.rfc_3339 {
+        if date_only {
+            time.format("%Y-%m-%d").to_string()
+        } else {
+            time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
+        }
+    } else if time_args.us_time {
+        if date_only {
+            time.format("%m-%d-%Y").to_string()
+        } else {
+            time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
+        }
+    } else if time_args.us_military_time {
+        if date_only {
+            time.format("%m-%d-%Y").to_string()
+        } else {
+            time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
+        }
+    } else if time_args.european_time {
+        if date_only {
+            time.format("%d-%m-%Y").to_string()
+        } else {
+            time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
+        }
+    } else if date_only {
+        time.format("%Y-%m-%d").to_string()
+    } else {
+        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::detections::utils::{self, make_ascii_titlecase};
+    use std::path::Path;
+
+    use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
     use regex::Regex;
     use serde_json::Value;
 
@@ -423,7 +511,7 @@ mod tests {
     #[test]
     fn test_check_regex() {
         let regexes: Vec<Regex> =
-            utils::read_txt("./rules/config/regex/detectlist_suspicous_services.txt")
+            utils::read_txt("./../../../rules/config/regex/detectlist_suspicous_services.txt")
                 .unwrap()
                 .into_iter()
                 .map(|regex_str| Regex::new(&regex_str).unwrap())
@@ -439,7 +527,7 @@ mod tests {
     fn test_check_allowlist() {
         let commandline = "\"C:\\Program Files\\Google\\Update\\GoogleUpdate.exe\"";
         let allowlist: Vec<Regex> =
-            utils::read_txt("./rules/config/regex/allowlist_legitimate_services.txt")
+            utils::read_txt("./../../../rules/config/regex/allowlist_legitimate_services.txt")
                 .unwrap()
                 .into_iter()
                 .map(|allow_str| Regex::new(&allow_str).unwrap())
@@ -517,5 +605,32 @@ mod tests {
             "I am Test"
         );
         assert_eq!(make_ascii_titlecase("β".to_string().as_mut()), "β");
+    }
+
+    #[test]
+    /// 与えられたパスからファイルの存在確認ができているかのテスト
+    fn test_check_setting_path() {
+        let exist_path = Path::new("./test_files").to_path_buf();
+        let not_exist_path = Path::new("not_exist_path").to_path_buf();
+        assert_eq!(
+            check_setting_path(&not_exist_path, "rules")
+                .to_str()
+                .unwrap(),
+            "rules"
+        );
+        assert_eq!(
+            check_setting_path(&not_exist_path, "fake")
+                .to_str()
+                .unwrap(),
+            "fake"
+        );
+        assert_eq!(
+            check_setting_path(&exist_path, "rules").to_str().unwrap(),
+            exist_path.join("rules").to_str().unwrap()
+        );
+        assert_eq!(
+            check_setting_path(&exist_path, "fake").to_str().unwrap(),
+            "fake"
+        );
     }
 }

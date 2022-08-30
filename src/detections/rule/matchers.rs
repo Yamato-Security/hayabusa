@@ -218,7 +218,7 @@ impl DefaultMatcher {
         });
     }
 
-    /// YEAのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
+    /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
     /// ワイルドカードの文字列を正規表現にする処理もこのメソッドに実装されています。patternにワイルドカードの文字列を指定して、pipesにPipeElement::Wildcardを指定すればOK!!
     fn from_pattern_to_regex_str(pattern: String, pipes: &[PipeElement]) -> String {
         // パターンをPipeで処理する。
@@ -346,6 +346,17 @@ impl LeafMatcher for DefaultMatcher {
             return false;
         }
 
+        // yamlにnullが設定されていた場合
+        if self.re.is_none() {
+            // レコード内に対象のフィールドが存在しなければ検知したものとして扱う
+            for v in self.key_list.iter() {
+                if recinfo.get_value(v).is_none() {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         if event_value.is_none() {
             return false;
         }
@@ -353,7 +364,7 @@ impl LeafMatcher for DefaultMatcher {
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
-            return self.re.as_ref().unwrap().is_match(event_value_str);
+            self.re.as_ref().unwrap().is_match(event_value_str)
         } else {
             // 通常の検索はこっち
             self.is_regex_fullmatch(event_value_str)
@@ -523,8 +534,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
-                    regexes: ./rules/config/regex/detectlist_suspicous_services.txt
-                    allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
+                    regexes: ./../../../rules/config/regex/detectlist_suspicous_services.txt
+                    allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
         falsepositives:
             - unknown
         level: medium
@@ -1111,7 +1122,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1145,7 +1156,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1179,7 +1190,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./rules/config/regex/allowlist_legitimate_services.txt
+                    - allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1254,6 +1265,48 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|startswith: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "TestAdministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_startswith_case_insensitive() {
+        // startswithが大文字小文字を区別しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|startswith: "ADMINISTRATORS"
         details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
@@ -1371,6 +1424,48 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_endswith_case_insensitive() {
+        // endswithが大文字小文字を区別せず検知するかを確認するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|endswith: "ADministRATORS"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "AdministratorsTest"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
     fn test_detect_contains1() {
         // containsが正しく検知できることを確認
         let rule_str = r#"
@@ -1422,6 +1517,48 @@ mod tests {
                 Channel: Security
                 EventID: 4732
                 TargetUserName|contains: "Administrators"
+        details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 4732,
+              "Channel": "Security"
+            },
+            "EventData": {
+              "TargetUserName": "Testministrators"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_contains_case_insensitive() {
+        // containsが大文字小文字を区別せずに検知することを確認するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 4732
+                TargetUserName|contains: "ADminIstraTOrS"
         details: 'user added to local Administrators UserName: %MemberName% SID: %MemberSid%'
         "#;
 
@@ -1855,6 +1992,67 @@ mod tests {
             }
             Err(_) => {
                 panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_eq_field_null() {
+        // 値でnullであった場合に対象のフィールドが存在しないことを確認
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 
+                    value: Security
+                Takoyaki: 
+                    value: null
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+    #[test]
+    fn test_eq_field_null_not_detect() {
+        // 値でnullであった場合に対象のフィールドが存在しないことを確認するテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: null
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(e) => {
+                panic!("Failed to parse json record.{:?}", e);
             }
         }
     }

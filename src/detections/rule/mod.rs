@@ -1,5 +1,4 @@
 extern crate regex;
-use crate::detections::print::Message;
 
 use chrono::{DateTime, Utc};
 

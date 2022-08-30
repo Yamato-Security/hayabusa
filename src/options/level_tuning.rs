@@ -2,7 +2,7 @@ use crate::detections::utils::write_color_buffer;
 use crate::detections::{configs, utils};
 use crate::filter::RuleExclude;
 use crate::yaml::ParseYaml;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use termcolor::{BufferWriter, ColorChoice};
@@ -59,9 +59,10 @@ impl LevelTuning {
         for (path, rule) in rulefile_loader.files {
             if let Some(new_level) = tuning_map.get(rule["id"].as_str().unwrap()) {
                 write_color_buffer(
-                    BufferWriter::stdout(ColorChoice::Always),
+                    &BufferWriter::stdout(ColorChoice::Always),
                     None,
                     &format!("path: {}", path),
+                    true,
                 )
                 .ok();
                 let mut content = match fs::read_to_string(&path) {
@@ -94,13 +95,14 @@ impl LevelTuning {
                 file.write_all(content.as_bytes()).unwrap();
                 file.flush().unwrap();
                 write_color_buffer(
-                    BufferWriter::stdout(ColorChoice::Always),
+                    &BufferWriter::stdout(ColorChoice::Always),
                     None,
                     &format!(
                         "level: {} -> {}",
                         rule["level"].as_str().unwrap(),
                         new_level
                     ),
+                    true,
                 )
                 .ok();
             }

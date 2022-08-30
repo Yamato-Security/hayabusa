@@ -3,41 +3,35 @@ extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
 
-#[cfg(target_os = "windows")]
-extern crate static_vcruntime;
-
 use bytesize::ByteSize;
-use chrono::{DateTime, Datelike, Local, TimeZone};
+use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
-use git2::Repository;
 use hashbrown::{HashMap, HashSet};
+use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::pivot::PivotKeyword;
-use hayabusa::detections::pivot::PIVOT_KEYWORD;
-use hayabusa::detections::print::{
+use hayabusa::detections::message::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG,
     QUIET_ERRORS_FLAG, STATISTICS_FLAG,
 };
+use hayabusa::detections::pivot::PivotKeyword;
+use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
-use hayabusa::options::level_tuning::LevelTuning;
-use hayabusa::yaml::ParseYaml;
+use hayabusa::options::profile::PROFILES;
+use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules};
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
 use pbr::ProgressBar;
 use serde_json::Value;
-use std::cmp::Ordering;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
-use std::fs::create_dir;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::Arc;
-use std::time::SystemTime;
 use std::{
     env,
     fs::{self, File},
@@ -82,9 +76,18 @@ impl App {
 
     fn exec(&mut self) {
         if *PIVOT_KEYWORD_LIST_FLAG {
-            load_pivot_keywords("config/pivot_keywords.txt");
+            load_pivot_keywords(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "config/pivot_keywords.txt",
+                )
+                .to_str()
+                .unwrap(),
+            );
         }
-
+        if PROFILES.is_none() {
+            return;
+        }
         let analysis_start_time: DateTime<Local> = Local::now();
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
@@ -113,13 +116,16 @@ impl App {
         }
 
         if configs::CONFIG.read().unwrap().args.update_rules {
-            match self.update_rules() {
+            match UpdateRules::update_rules(
+                configs::CONFIG.read().unwrap().args.rules.to_str().unwrap(),
+            ) {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
                         write_color_buffer(
-                            BufferWriter::stdout(ColorChoice::Always),
+                            &BufferWriter::stdout(ColorChoice::Always),
                             None,
                             "Rules updated successfully.",
+                            true,
                         )
                         .ok();
                     }
@@ -131,13 +137,24 @@ impl App {
             println!();
             return;
         }
-
-        if !Path::new("./config").exists() {
+        // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
+        if !CURRENT_EXE_PATH.join("config").exists() && !Path::new("./config").exists() {
             AlertMessage::alert(
-                "Hayabusa could not find the config directory.\nPlease run it from the Hayabusa root directory.\nExample: ./hayabusa-1.0.0-windows-x64.exe"
+                "Hayabusa could not find the config directory.\nPlease make sure that it is in the same directory as the hayabusa executable."
             )
             .ok();
             return;
+        }
+        // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG.read().unwrap().args.config == Path::new("./rules/config") {
+            configs::CONFIG.write().unwrap().args.config =
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules/config");
+        }
+
+        // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
+        if configs::CONFIG.read().unwrap().args.rules == Path::new("./rules") {
+            configs::CONFIG.write().unwrap().args.rules =
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules");
         }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
@@ -170,18 +187,20 @@ impl App {
 
         if *STATISTICS_FLAG {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Event ID Statistics",
+                true,
             )
             .ok();
             println!();
         }
         if *LOGONSUMMARY_FLAG {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 "Generating Logons Summary",
+                true,
             )
             .ok();
             println!();
@@ -194,6 +213,14 @@ impl App {
             }
             self.analysis_files(live_analysis_list.unwrap(), &time_filter);
         } else if let Some(filepath) = &configs::CONFIG.read().unwrap().args.filepath {
+            if !filepath.exists() {
+                AlertMessage::alert(&format!(
+                    " The file {} does not exist. Please specify a valid file path.",
+                    filepath.as_os_str().to_str().unwrap()
+                ))
+                .ok();
+                return;
+            }
             if !TARGET_EXTENSIONS.contains(
                 filepath
                     .extension()
@@ -226,18 +253,23 @@ impl App {
         } else if configs::CONFIG.read().unwrap().args.contributors {
             self.print_contributors();
             return;
-        } else if std::env::args()
-            .into_iter()
-            .any(|arg| arg.contains("level-tuning"))
-        {
-            let level_tuning_config_path = configs::CONFIG
+        } else if configs::CONFIG.read().unwrap().args.level_tuning.is_some() {
+            let level_tuning_val = &configs::CONFIG
                 .read()
                 .unwrap()
                 .args
                 .level_tuning
-                .as_path()
+                .clone()
+                .unwrap();
+            let level_tuning_config_path = match level_tuning_val {
+                Some(path) => path.to_owned(),
+                _ => utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "./rules/config/level_tuning.txt",
+                )
                 .display()
-                .to_string();
+                .to_string(),
+            };
 
             if Path::new(&level_tuning_config_path).exists() {
                 if let Err(err) = LevelTuning::run(
@@ -262,9 +294,10 @@ impl App {
             return;
         } else {
             write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
+                &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &configs::CONFIG.read().unwrap().headless_help,
+                true,
             )
             .ok();
             return;
@@ -272,11 +305,11 @@ impl App {
 
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        println!();
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
+            true,
         )
         .ok();
         println!();
@@ -329,17 +362,30 @@ impl App {
                     )
                     .ok();
                 });
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output,
+                    true,
+                )
+                .ok();
             } else {
                 //標準出力の場合
                 let output = "The following pivot keywords were found:".to_string();
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &output).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output,
+                    true,
+                )
+                .ok();
 
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                     write_color_buffer(
-                        BufferWriter::stdout(ColorChoice::Always),
+                        &BufferWriter::stdout(ColorChoice::Always),
                         None,
                         &create_output(String::default(), key, pivot_keyword),
+                        true,
                     )
                     .ok();
                 });
@@ -423,9 +469,18 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string("./contributors.txt") {
+        match fs::read_to_string(utils::check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "contributors.txt",
+        )) {
             Ok(contents) => {
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &contents).ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &contents,
+                    true,
+                )
+                .ok();
             }
             Err(err) => {
                 AlertMessage::alert(&format!("{}", err)).ok();
@@ -441,9 +496,10 @@ impl App {
             .min_level
             .to_uppercase();
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             None,
             &format!("Analyzing event files: {:?}", evtx_files.len()),
+            true,
         )
         .ok();
 
@@ -543,11 +599,17 @@ impl App {
                     continue;
                 }
 
-                // target_eventids.txtでフィルタする。
+                // target_eventids.txtでイベントIDベースでフィルタする。
                 let data = record_result.as_ref().unwrap().data.clone();
-                let timestamp = record_result.unwrap().timestamp;
+                if !self._is_target_event_id(&data)
+                    && !configs::CONFIG.read().unwrap().args.deep_scan
+                {
+                    continue;
+                }
 
-                if !self._is_target_event_id(&data) || !time_filter.is_target(&Some(timestamp)) {
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = record_result.unwrap().timestamp;
+                if !time_filter.is_target(&Some(timestamp)) {
                     continue;
                 }
 
@@ -659,7 +721,7 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = &"art/logo.txt".to_string();
+        let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt");
         let content = fs::read_to_string(fp).unwrap_or_default();
         let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
@@ -667,9 +729,10 @@ impl App {
             Some(Color::Green)
         };
         write_color_buffer(
-            BufferWriter::stdout(ColorChoice::Always),
+            &BufferWriter::stdout(ColorChoice::Always),
             output_color,
             &content,
+            true,
         )
         .ok();
     }
@@ -685,223 +748,16 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let content = fs::read_to_string(path).unwrap_or_default();
-                write_color_buffer(BufferWriter::stdout(ColorChoice::Always), None, &content).ok();
-            }
-        }
-    }
-
-    /// update rules(hayabusa-rules subrepository)
-    fn update_rules(&self) -> Result<String, git2::Error> {
-        let mut result;
-        let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
-        let mut prev_modified_rules: HashSet<String> = HashSet::default();
-        let hayabusa_repo = Repository::open(Path::new("."));
-        let hayabusa_rule_repo = Repository::open(Path::new("rules"));
-        if hayabusa_repo.is_err() && hayabusa_rule_repo.is_err() {
-            write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
-                None,
-                "Attempting to git clone the hayabusa-rules repository into the rules folder.",
-            )
-            .ok();
-            // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
-            result = self.clone_rules();
-        } else if hayabusa_rule_repo.is_ok() {
-            // case of exist hayabusa-rules repository
-            self._repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
-            // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
-            result = self.pull_repository(&hayabusa_rule_repo.unwrap());
-        } else {
-            // case of no exist hayabusa-rules repository in rules.
-            // execute update because submodule information exists if hayabusa repository exists submodule information.
-
-            prev_modified_time = fs::metadata("rules").unwrap().modified().unwrap();
-            let rules_path = Path::new("rules");
-            if !rules_path.exists() {
-                create_dir(rules_path).ok();
-            }
-            let hayabusa_repo = hayabusa_repo.unwrap();
-            let submodules = hayabusa_repo.submodules()?;
-            let mut is_success_submodule_update = true;
-            // submodule rules erase path is hard coding to avoid unintentional remove folder.
-            fs::remove_dir_all(".git/.submodule/rules").ok();
-            for mut submodule in submodules {
-                submodule.update(true, None)?;
-                let submodule_repo = submodule.open()?;
-                if let Err(e) = self.pull_repository(&submodule_repo) {
-                    AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
-                    is_success_submodule_update = false;
-                }
-            }
-            if is_success_submodule_update {
-                result = Ok("Successed submodule update".to_string());
-            } else {
-                result = Err(git2::Error::from_str(&String::default()));
-            }
-        }
-        if result.is_ok() {
-            let updated_modified_rules = self.get_updated_rules("rules", &prev_modified_time);
-            result =
-                self.print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
-        }
-        result
-    }
-
-    /// hard reset in main branch
-    fn _repo_main_reset_hard(&self, input_repo: &Repository) -> Result<(), git2::Error> {
-        let branch = input_repo
-            .find_branch("main", git2::BranchType::Local)
-            .unwrap();
-        let local_head = branch.get().target().unwrap();
-        let object = input_repo.find_object(local_head, None).unwrap();
-        match input_repo.reset(&object, git2::ResetType::Hard, None) {
-            Ok(()) => Ok(()),
-            _ => Err(git2::Error::from_str("Failed reset main branch in rules")),
-        }
-    }
-
-    /// Pull(fetch and fast-forward merge) repositoryto input_repo.
-    fn pull_repository(&self, input_repo: &Repository) -> Result<String, git2::Error> {
-        match input_repo
-            .find_remote("origin")?
-            .fetch(&["main"], None, None)
-            .map_err(|e| {
-                AlertMessage::alert(&format!("Failed git fetch to rules folder. {}", e)).ok();
-            }) {
-            Ok(it) => it,
-            Err(_err) => return Err(git2::Error::from_str(&String::default())),
-        };
-        let fetch_head = input_repo.find_reference("FETCH_HEAD")?;
-        let fetch_commit = input_repo.reference_to_annotated_commit(&fetch_head)?;
-        let analysis = input_repo.merge_analysis(&[&fetch_commit])?;
-        if analysis.0.is_up_to_date() {
-            Ok("Already up to date".to_string())
-        } else if analysis.0.is_fast_forward() {
-            let mut reference = input_repo.find_reference("refs/heads/main")?;
-            reference.set_target(fetch_commit.id(), "Fast-Forward")?;
-            input_repo.set_head("refs/heads/main")?;
-            input_repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
-            Ok("Finished fast forward merge.".to_string())
-        } else if analysis.0.is_normal() {
-            AlertMessage::alert(
-            "update-rules option is git Fast-Forward merge only. please check your rules folder."
-                ,
-            ).ok();
-            Err(git2::Error::from_str(&String::default()))
-        } else {
-            Err(git2::Error::from_str(&String::default()))
-        }
-    }
-
-    /// git clone でhauyabusa-rules レポジトリをrulesフォルダにgit cloneする関数
-    fn clone_rules(&self) -> Result<String, git2::Error> {
-        match Repository::clone(
-            "https://github.com/Yamato-Security/hayabusa-rules.git",
-            "rules",
-        ) {
-            Ok(_repo) => {
-                println!("Finished cloning the hayabusa-rules repository.");
-                Ok("Finished clone".to_string())
-            }
-            Err(e) => {
-                AlertMessage::alert(
-                    &format!(
-                        "Failed to git clone into the rules folder. Please rename your rules folder name. {}",
-                        e
-                    ),
+                let egg_path = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), path);
+                let content = fs::read_to_string(egg_path).unwrap_or_default();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &content,
+                    true,
                 )
                 .ok();
-                Err(git2::Error::from_str(&String::default()))
             }
-        }
-    }
-
-    /// Create rules folder files Hashset. Format is "[rule title in yaml]|[filepath]|[filemodified date]|[rule type in yaml]"
-    fn get_updated_rules(
-        &self,
-        rule_folder_path: &str,
-        target_date: &SystemTime,
-    ) -> HashSet<String> {
-        let mut rulefile_loader = ParseYaml::new();
-        // level in read_dir is hard code to check all rules.
-        rulefile_loader
-            .read_dir(
-                rule_folder_path,
-                "INFORMATIONAL",
-                &filter::RuleExclude::default(),
-            )
-            .ok();
-
-        let hash_set_keys: HashSet<String> = rulefile_loader
-            .files
-            .into_iter()
-            .filter_map(|(filepath, yaml)| {
-                let file_modified_date = fs::metadata(&filepath).unwrap().modified().unwrap();
-
-                if file_modified_date.cmp(target_date).is_gt() {
-                    let yaml_date = yaml["date"].as_str().unwrap_or("-");
-                    return Option::Some(format!(
-                        "{}|{}|{}|{}",
-                        yaml["title"].as_str().unwrap_or(&String::default()),
-                        yaml["modified"].as_str().unwrap_or(yaml_date),
-                        &filepath,
-                        yaml["ruletype"].as_str().unwrap_or("Other")
-                    ));
-                }
-                Option::None
-            })
-            .collect();
-        hash_set_keys
-    }
-
-    /// print updated rule files.
-    fn print_diff_modified_rule_dates(
-        &self,
-        prev_sets: HashSet<String>,
-        updated_sets: HashSet<String>,
-    ) -> Result<String, git2::Error> {
-        let diff = updated_sets.difference(&prev_sets);
-        let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
-        let mut latest_update_date = Local.timestamp(0, 0);
-        for diff_key in diff {
-            let tmp: Vec<&str> = diff_key.split('|').collect();
-            let file_modified_date = fs::metadata(&tmp[2]).unwrap().modified().unwrap();
-
-            let dt_local: DateTime<Local> = file_modified_date.into();
-
-            if latest_update_date.cmp(&dt_local) == Ordering::Less {
-                latest_update_date = dt_local;
-            }
-            *update_count_by_rule_type
-                .entry(tmp[3].to_string())
-                .or_insert(0b0) += 1;
-            write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
-                None,
-                &format!(
-                    "[Updated] {} (Modified: {} | Path: {})",
-                    tmp[0], tmp[1], tmp[2]
-                ),
-            )
-            .ok();
-        }
-        println!();
-        for (key, value) in &update_count_by_rule_type {
-            println!("Updated {} rules: {}", key, value);
-        }
-        if !&update_count_by_rule_type.is_empty() {
-            Ok("Rule updated".to_string())
-        } else {
-            write_color_buffer(
-                BufferWriter::stdout(ColorChoice::Always),
-                None,
-                "You currently have the latest rules.",
-            )
-            .ok();
-            Ok("You currently have the latest rules.".to_string())
         }
     }
 
@@ -925,7 +781,6 @@ impl App {
 #[cfg(test)]
 mod tests {
     use crate::App;
-    use std::time::SystemTime;
 
     #[test]
     fn test_collect_evtxfiles() {
@@ -941,21 +796,5 @@ mod tests {
                 });
             assert_eq!(is_contains, &true);
         })
-    }
-
-    #[test]
-    fn test_get_updated_rules() {
-        let app = App::new();
-
-        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
-
-        let prev_modified_rules =
-            app.get_updated_rules("test_files/rules/level_yaml", &prev_modified_time);
-        assert_eq!(prev_modified_rules.len(), 5);
-
-        let target_time: SystemTime = SystemTime::now();
-        let prev_modified_rules2 =
-            app.get_updated_rules("test_files/rules/level_yaml", &target_time);
-        assert_eq!(prev_modified_rules2.len(), 0);
     }
 }

@@ -6,3 +6,5 @@
 test_*
 .env
 /logs
+*.csv
+hayabusa*

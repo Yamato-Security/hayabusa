@@ -1,0 +1,87 @@
+#Standard profile minus MITRE ATT&CK Tactics and Record ID.
+minimal:
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
+
+standard:
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    MitreTactics: "%MitreTactics%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
+
+#Standard profile plus MitreTags(MITRE techniques, software and groups), rule filename and EVTX filename.
+verbose:
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
+
+#Verbose profile with all field information instead of the minimal fields defined in Details.
+verbose-all-field-info:
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    AllFieldInfo: "%RecordInformation%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
+
+#Verbose profile plus all field information. (Warning: this will more than double the output file size!)
+verbose-details-and-all-field-info:
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    Details: "%Details%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
+    AllFieldInfo: "%RecordInformation%"
+
+#Output that is compatible to import the CSV into Timesketch
+timesketch:
+    datetime: "%Timestamp%"
+    timestamp_desc: "hayabusa"
+    message: "%RuleTitle%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
+    RecordID: "%RecordID%"
+    Details: "%Details%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
+    AllFieldInfo: "%RecordInformation%"

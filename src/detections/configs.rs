@@ -1,13 +1,13 @@
+use crate::detections::message::AlertMessage;
 use crate::detections::pivot::PivotKeyword;
 use crate::detections::pivot::PIVOT_KEYWORD;
-use crate::detections::print::AlertMessage;
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
-use hashbrown::HashMap;
-use hashbrown::HashSet;
+use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::env::current_exe;
 use std::path::PathBuf;
 use std::sync::RwLock;
 use terminal_size::{terminal_size, Height, Width};
@@ -32,6 +32,10 @@ lazy_static! {
     pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
     pub static ref TARGET_EXTENSIONS: HashSet<String> =
         get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
+    pub static ref CURRENT_EXE_PATH: PathBuf =
+        current_exe().unwrap().parent().unwrap().to_path_buf();
+    pub static ref EXCLUDE_STATUS: HashSet<String> =
+        convert_option_vecs_to_hs(CONFIG.read().unwrap().args.exclude_status.as_ref());
 }
 
 pub struct ConfigReader<'a> {
@@ -51,78 +55,74 @@ impl Default for ConfigReader<'_> {
 #[derive(Parser)]
 #[clap(
     name = "Hayabusa",
-    usage = "hayabusa.exe -f file.evtx [OPTIONS] / hayabusa.exe -d evtx-directory [OPTIONS]",
+    usage = "hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+    help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n",
     version,
     term_width = 400
 )]
 pub struct Config {
     /// Directory of multiple .evtx files
-    #[clap(short = 'd', long, value_name = "DIRECTORY")]
+    #[clap(help_heading = Some("INPUT"), short = 'd', long, value_name = "DIRECTORY")]
     pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file
-    #[clap(short = 'f', long, value_name = "FILE_PATH")]
+    #[clap(help_heading = Some("INPUT"), short = 'f', long = "file", value_name = "FILE")]
     pub filepath: Option<PathBuf>,
 
-    /// Print all field information
-    #[clap(short = 'F', long = "full-data")]
-    pub full_data: bool,
-
-    /// Specify a rule directory or file (default: ./rules)
+    /// Specify a custom rule directory or file (default: ./rules)
     #[clap(
+        help_heading = Some("ADVANCED"), 
         short = 'r',
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "RULE_DIRECTORY/RULE_FILE"
+        value_name = "DIRECTORY/FILE"
     )]
     pub rules: PathBuf,
 
-    /// Specify custom rule config folder (default: ./rules/config)
+    /// Specify custom rule config directory (default: ./rules/config)
     #[clap(
+        help_heading = Some("ADVANCED"), 
         short = 'c',
-        long,
+        long = "rules-config",
         default_value = "./rules/config",
         hide_default_value = true,
-        value_name = "RULE_CONFIG_DIRECTORY"
+        value_name = "DIRECTORY"
     )]
     pub config: PathBuf,
 
     /// Save the timeline in CSV format (ex: results.csv)
-    #[clap(short = 'o', long, value_name = "CSV_TIMELINE")]
+    #[clap(help_heading = Some("OUTPUT"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
-    /// Output all tags when saving to a CSV file
-    #[clap(long = "all-tags")]
-    pub all_tags: bool,
-
-    /// Do not display EventRecordID numbers
-    #[clap(short = 'R', long = "hide-record-id")]
-    pub hide_record_id: bool,
-
     /// Output verbose information
-    #[clap(short = 'v', long)]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short = 'v', long)]
     pub verbose: bool,
 
     /// Output event frequency timeline
-    #[clap(short = 'V', long = "visualize-timeline")]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short = 'V', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
     /// Enable rules marked as deprecated
-    #[clap(short = 'D', long = "enable-deprecated-rules")]
+    #[clap(help_heading = Some("FILTERING"), long = "enable-deprecated-rules")]
     pub enable_deprecated_rules: bool,
 
+    /// Disable event ID filter to scan all events
+    #[clap(help_heading = Some("FILTERING"), short = 'D', long = "deep-scan")]
+    pub deep_scan: bool,
+
     /// Enable rules marked as noisy
-    #[clap(short = 'n', long = "enable-noisy-rules")]
+    #[clap(help_heading = Some("FILTERING"), short = 'n', long = "enable-noisy-rules")]
     pub enable_noisy_rules: bool,
 
     /// Update to the latest rules in the hayabusa-rules github repository
-    #[clap(short = 'u', long = "update-rules")]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'u', long = "update-rules")]
     pub update_rules: bool,
 
     /// Minimum level for rules (default: informational)
     #[clap(
+        help_heading = Some("FILTERING"), 
         short = 'm',
         long = "min-level",
         default_value = "informational",
@@ -132,85 +132,101 @@ pub struct Config {
     pub min_level: String,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[clap(short = 'l', long = "live-analysis")]
+    #[clap(help_heading = Some("INPUT"), short = 'l', long = "live-analysis")]
     pub live_analysis: bool,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[clap(long = "start-timeline", value_name = "START_TIMELINE")]
+    #[clap(help_heading = Some("FILTERING"), long = "timeline-start", value_name = "DATE")]
     pub start_timeline: Option<String>,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[clap(long = "end-timeline", value_name = "END_TIMELINE")]
+    #[clap(help_heading = Some("FILTERING"), long = "timeline-end", value_name = "DATE")]
     pub end_timeline: Option<String>,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[clap(long = "RFC-2822")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "RFC-2822")]
     pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[clap(long = "RFC-3339")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "RFC-3339")]
     pub rfc_3339: bool,
 
     /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[clap(long = "US-time")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "US-time")]
     pub us_time: bool,
 
     /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[clap(long = "US-military-time")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "US-military-time")]
     pub us_military_time: bool,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[clap(long = "European-time")]
+    #[clap(help_heading = Some("TIME-FORMAT"), long = "European-time")]
     pub european_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[clap(short = 'U', long = "UTC")]
+    #[clap(help_heading = Some("TIME-FORMAT"), short = 'U', long = "UTC")]
     pub utc: bool,
 
     /// Disable color output
-    #[clap(long = "no-color")]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "no-color")]
     pub no_color: bool,
 
     /// Thread number (default: optimal number for performance)
-    #[clap(short, long = "thread-number", value_name = "NUMBER")]
+    #[clap(help_heading = Some("ADVANCED"), short, long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
     /// Print statistics of event IDs
-    #[clap(short, long)]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short, long)]
     pub statistics: bool,
 
     /// Print a summary of successful and failed logons
-    #[clap(short = 'L', long = "logon-summary")]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'L', long = "logon-summary")]
     pub logon_summary: bool,
 
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[clap(
+        help_heading = Some("OTHER-ACTIONS"), 
         long = "level-tuning",
-        default_value = "./rules/config/level_tuning.txt",
         hide_default_value = true,
-        value_name = "LEVEL_TUNING_FILE"
+        value_name = "FILE"
     )]
-    pub level_tuning: PathBuf,
+    pub level_tuning: Option<Option<String>>,
 
     /// Quiet mode: do not display the launch banner
-    #[clap(short, long)]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short, long)]
     pub quiet: bool,
 
     /// Quiet errors mode: do not save error logs
-    #[clap(short = 'Q', long = "quiet-errors")]
+    #[clap(help_heading = Some("ADVANCED"), short = 'Q', long = "quiet-errors")]
     pub quiet_errors: bool,
 
     /// Create a list of pivot keywords
-    #[clap(short = 'p', long = "pivot-keywords-list")]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'p', long = "pivot-keywords-list")]
     pub pivot_keywords_list: bool,
 
     /// Print the list of contributors
-    #[clap(long)]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), long)]
     pub contributors: bool,
 
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-    #[clap(long = "target-file-ext", multiple_values = true)]
+    #[clap(help_heading = Some("ADVANCED"), long = "target-file-ext", multiple_values = true)]
     pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Ignore rules according to status (ex: experimental) (ex: stable test)
+    #[clap(help_heading = Some("FILTERING"), long = "exclude-status", multiple_values = true, value_name = "STATUS")]
+    pub exclude_status: Option<Vec<String>>,
+
+    /// Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+    #[clap(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
+    pub profile: Option<String>,
+
+    /// Set default output profile
+    #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
+    pub set_default_profile: Option<String>,
+
+    /// Do not display result summary
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "no-summary")]
+    pub no_summary: bool,
 }
 
 impl ConfigReader<'_> {
@@ -228,8 +244,22 @@ impl ConfigReader<'_> {
             app: build_cmd,
             args: parse,
             headless_help: String::default(),
-            event_timeline_config: load_eventcode_info("config/statistics_event_info.txt"),
-            target_eventids: load_target_ids("config/target_eventids.txt"),
+            event_timeline_config: load_eventcode_info(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/statistics_event_info.txt",
+                )
+                .to_str()
+                .unwrap(),
+            ),
+            target_eventids: load_target_ids(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/target_event_IDs.txt",
+                )
+                .to_str()
+                .unwrap(),
+            ),
         }
     }
 }
@@ -447,7 +477,7 @@ pub fn load_pivot_keywords(path: &str) {
             .write()
             .unwrap()
             .entry(map[0].to_string())
-            .or_insert(PivotKeyword::new());
+            .or_insert_with(PivotKeyword::new);
 
         PIVOT_KEYWORD
             .write()
@@ -461,10 +491,15 @@ pub fn load_pivot_keywords(path: &str) {
 
 /// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
 pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
-    let mut target_file_extensions: HashSet<String> =
-        arg.unwrap_or(&Vec::new()).iter().cloned().collect();
+    let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
     target_file_extensions.insert(String::from("evtx"));
     target_file_extensions
+}
+
+/// Option<Vec<String>>の内容をHashSetに変換する関数
+pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
+    let ret: HashSet<String> = arg.unwrap_or(&Vec::new()).iter().cloned().collect();
+    ret
 }
 
 #[derive(Debug, Clone)]

@@ -1,7 +1,7 @@
 use crate::detections::configs;
-use crate::detections::print::AlertMessage;
-use crate::detections::print::ERROR_LOG_STACK;
-use crate::detections::print::QUIET_ERRORS_FLAG;
+use crate::detections::message::AlertMessage;
+use crate::detections::message::ERROR_LOG_STACK;
+use crate::detections::message::QUIET_ERRORS_FLAG;
 use hashbrown::HashMap;
 use regex::Regex;
 use std::fs::File;
@@ -29,18 +29,16 @@ impl RuleExclude {
 pub fn exclude_ids() -> RuleExclude {
     let mut exclude_ids = RuleExclude::default();
 
-    if !configs::CONFIG.read().unwrap().args.enable_noisy_rules {
-        exclude_ids.insert_ids(&format!(
-            "{}/noisy_rules.txt",
-            configs::CONFIG
-                .read()
-                .unwrap()
-                .args
-                .config
-                .as_path()
-                .display()
-        ));
-    };
+    exclude_ids.insert_ids(&format!(
+        "{}/noisy_rules.txt",
+        configs::CONFIG
+            .read()
+            .unwrap()
+            .args
+            .config
+            .as_path()
+            .display()
+    ));
 
     exclude_ids.insert_ids(&format!(
         "{}/exclude_rules.txt",

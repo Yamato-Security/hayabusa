@@ -1,0 +1,10 @@
+---
+Timestamp: "%Timestamp%"
+Computer: "%Computer%"
+Channel: "%Channel%"
+EventID: "%EventID%"
+Level: "%Level%"
+MitreTactics: "%MitreTactics%"
+RecordID: "%RecordID%"
+RuleTitle: "%RuleTitle%"
+Details: "%Details%"
