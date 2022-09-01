@@ -382,7 +382,7 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None),
             &format!(
-                "Detected events / Total events: {} / {} (reduced {} events ({:.2}%))",
+                "Detected alerts and events / Total events: {} / {} (Data reduction: {} events ({:.2}%))",
                 (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
                 all_record_cnt.to_formatted_string(&Locale::en),
                 reducted_record_cnt.to_formatted_string(&Locale::en),
@@ -626,7 +626,7 @@ fn _print_detection_summary_by_computer(
     buf_wtr.print(&wtr).ok();
 }
 
-/// 各レベルごとで検出数が多かったルールと日ごとの検知数を表形式で出力する関数
+/// 各レベルごとで検出数が多かったルールを表形式で出力する関数
 fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
@@ -654,20 +654,26 @@ fn _print_detection_summary_tables(
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
-        for x in sorted_detections.iter().take(5) {
+        let take_cnt =
+            if LEVEL_FULL.get(level.as_str()).unwrap_or(&"-".to_string()) == "informational" {
+                10
+            } else {
+                5
+            };
+        for x in sorted_detections.iter().take(take_cnt) {
             col_output.push(format!(
                 "{} ({})",
                 x.0,
                 x.1.to_formatted_string(&Locale::en)
             ));
         }
-        let na_cnt = if sorted_detections.len() > 5 {
+        let na_cnt = if sorted_detections.len() > take_cnt {
             0
         } else {
-            5 - sorted_detections.len()
+            take_cnt - sorted_detections.len()
         };
         for _x in 0..na_cnt {
-            col_output.push("N/A".to_string());
+            col_output.push("n/a".to_string());
         }
         output.push(col_output);
     }
@@ -675,14 +681,19 @@ fn _print_detection_summary_tables(
     let mut tb = Table::new();
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_width(500);
-    for x in 0..2 {
+        .set_style(TableComponent::VerticalLines, ' ');
+    for x in 0..output.len() / 2 {
+        let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
+        let tbch = tb.style(TableComponent::TopBorder).unwrap();
+
         tb.add_row(vec![
             Cell::new(&output[2 * x][0]).fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
             Cell::new(&output[2 * x + 1][0])
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
-        ]);
+        ])
+        .set_style(TableComponent::MiddleIntersections, hlch)
+        .set_style(TableComponent::TopBorderIntersections, tbch)
+        .set_style(TableComponent::BottomBorderIntersections, hlch);
 
         tb.add_row(vec![
             Cell::new(&output[2 * x][1..].join("\n"))
@@ -691,11 +702,16 @@ fn _print_detection_summary_tables(
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
         ]);
     }
+
+    let odd_row = &output[4][1..6];
+    let even_row = &output[4][6..11];
     tb.add_row(vec![
-        Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset))
+        Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(""),
     ]);
     tb.add_row(vec![
-        Cell::new(&output[4][1..].join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset))
+        Cell::new(odd_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(even_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
     ]);
     println!("{tb}");
 }
