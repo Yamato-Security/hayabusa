@@ -382,7 +382,7 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None),
             &format!(
-                "Detected events / Total events: {} / {} (reduced {} events ({:.2}%))",
+                "Detected alerts and events / Total events: {} / {} (Data reduction: {} events ({:.2}%))",
                 (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
                 all_record_cnt.to_formatted_string(&Locale::en),
                 reducted_record_cnt.to_formatted_string(&Locale::en),
@@ -673,7 +673,7 @@ fn _print_detection_summary_tables(
             take_cnt - sorted_detections.len()
         };
         for _x in 0..na_cnt {
-            col_output.push("N/A".to_string());
+            col_output.push("n/a".to_string());
         }
         output.push(col_output);
     }
