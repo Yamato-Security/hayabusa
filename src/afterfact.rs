@@ -654,7 +654,7 @@ fn _print_detection_summary_tables(
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
-        let take_cnt = if LEVEL_FULL.get(level.as_str()).unwrap_or(&"-".to_string()) == "critical" {
+        let take_cnt = if LEVEL_FULL.get(level.as_str()).unwrap_or(&"-".to_string()) == "informational" {
             10
         } else {
             5
@@ -681,41 +681,39 @@ fn _print_detection_summary_tables(
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_style(TableComponent::VerticalLines, ' ');
-    for x in 0..3 {
-        if x == 0 {
-            let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
-            let tbch = tb.style(TableComponent::TopBorder).unwrap();
-            tb.add_row(vec![
-                Cell::new(&output[0][0]).fg(col_color[0].unwrap_or(comfy_table::Color::Reset)),
-                Cell::new(""),
-            ])
-            .set_style(TableComponent::MiddleIntersections, hlch)
-            .set_style(TableComponent::TopBorderIntersections, tbch)
-            .set_style(TableComponent::BottomBorderIntersections, hlch);
+    for x in 0..output.len() / 2 {
+        let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
+        let tbch = tb.style(TableComponent::TopBorder).unwrap();
+        
+        tb.add_row(vec![
+            Cell::new(&output[2 * x][0])
+                .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
+            Cell::new(&output[2 * x + 1][0])
+                .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
+        ]).set_style(TableComponent::MiddleIntersections, hlch)
+        .set_style(TableComponent::TopBorderIntersections, tbch)
+        .set_style(TableComponent::BottomBorderIntersections, hlch);
 
-            let odd_row = &mut output[0].iter().skip(1).step_by(2);
-            let even_row = &mut output[0].iter().step_by(2).skip(1);
-            tb.add_row(vec![
-                Cell::new(odd_row.join("\n")).fg(col_color[0].unwrap_or(comfy_table::Color::Reset)),
-                Cell::new(even_row.join("\n"))
-                    .fg(col_color[0].unwrap_or(comfy_table::Color::Reset)),
-            ]);
-        } else {
-            tb.add_row(vec![
-                Cell::new(&output[2 * x - 1][0])
-                    .fg(col_color[2 * x - 1].unwrap_or(comfy_table::Color::Reset)),
-                Cell::new(&output[2 * x][0])
-                    .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
-            ]);
-
-            tb.add_row(vec![
-                Cell::new(&output[2 * x - 1][1..].join("\n"))
-                    .fg(col_color[2 * x - 1].unwrap_or(comfy_table::Color::Reset)),
-                Cell::new(&output[2 * x][1..].join("\n"))
-                    .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
-            ]);
-        }
+        tb.add_row(vec![
+            Cell::new(&output[2 * x][1..].join("\n"))
+                .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
+            Cell::new(&output[2 * x + 1][1..].join("\n"))
+                .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
+        ]);
     }
+
+    let odd_row = &output[4][1..6];
+    let even_row = &output[4][6..11];
+    tb.add_row(vec![
+        Cell::new(&output[4][0])
+            .fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(""),
+    ]);
+    tb.add_row(vec![
+        Cell::new(odd_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(even_row.join("\n"))
+            .fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+    ]);
     println!("{tb}");
 }
 
