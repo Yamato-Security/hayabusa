@@ -150,14 +150,14 @@ impl App {
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
         if configs::CONFIG.read().unwrap().args.config == Path::new("./rules/config") {
             configs::CONFIG.write().unwrap().args.config =
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules/config", true)
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
                     .unwrap();
         }
 
         // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
         if configs::CONFIG.read().unwrap().args.rules == Path::new("./rules") {
             configs::CONFIG.write().unwrap().args.rules =
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules", true)
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true)
                     .unwrap();
         }
 
@@ -275,7 +275,7 @@ impl App {
                 .unwrap_or_else(|| {
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
-                        "./rules/config/level_tuning.txt",
+                        "rules/config/level_tuning.txt",
                         true,
                     )
                     .unwrap()
