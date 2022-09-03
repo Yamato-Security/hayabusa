@@ -734,8 +734,6 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        println!("dbg output start");
-        println!("dbg | {}", &CURRENT_EXE_PATH.to_path_buf().display());
         let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
             .unwrap();
         let content = fs::read_to_string(fp).unwrap_or_default();
