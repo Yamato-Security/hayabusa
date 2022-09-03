@@ -49,30 +49,32 @@ lazy_static! {
     pub static ref STATISTICS_FLAG: bool = configs::CONFIG.read().unwrap().args.statistics;
     pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
-        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt")
-            .to_str()
+        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
+            .unwrap().to_str()
             .unwrap(),
     );
     pub static ref CH_CONFIG: HashMap<String, String> = create_output_filter_config(
-        utils::check_setting_path(
-            &CURRENT_EXE_PATH.to_path_buf(),
-            "rules/config/channel_abbreviations.txt"
-        )
+        utils::check_setting_path(&configs::CONFIG.read().unwrap().args.config, "channel_abbreviations.txt", false).unwrap_or_else(|| {
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "rules/config/channel_abbreviations.txt", true
+            ).unwrap()
+            })
         .to_str()
         .unwrap(),
     );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
-    pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(&format!(
-        "{}/default_details.txt",
-        configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .config
-            .as_path()
-            .display()
-    ));
+    pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(
+        utils::check_setting_path(&configs::CONFIG.read().unwrap().args.config, "default_details.txt", false).unwrap_or_else(|| {
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "rules/config/default_details.txt", true
+            ).unwrap()
+        })
+        .to_str()
+        .unwrap()
+    );
     pub static ref LEVEL_ABBR: LinkedHashMap<String, String> = LinkedHashMap::from_iter([
         ("critical".to_string(), "crit".to_string()),
         ("high".to_string(), "high".to_string()),

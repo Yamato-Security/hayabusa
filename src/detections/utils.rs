@@ -73,7 +73,8 @@ pub fn value_to_string(value: &Value) -> Option<String> {
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     let filepath = if filename.starts_with("./") {
-        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename)
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
+            .unwrap()
             .to_str()
             .unwrap()
             .to_string()
@@ -380,11 +381,13 @@ pub fn make_ascii_titlecase(s: &mut str) -> String {
 }
 
 /// base_path/path が存在するかを確認し、存在しなければカレントディレクトリを参照するpathを返す関数
-pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
+pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Option<PathBuf> {
     if base_path.join(path).exists() {
-        base_path.join(path)
+        Some(base_path.join(path))
+    } else if ignore_err {
+        Some(Path::new(path).to_path_buf())
     } else {
-        Path::new(path).to_path_buf()
+        None
     }
 }
 
@@ -613,23 +616,31 @@ mod tests {
         let exist_path = Path::new("./test_files").to_path_buf();
         let not_exist_path = Path::new("not_exist_path").to_path_buf();
         assert_eq!(
-            check_setting_path(&not_exist_path, "rules")
+            check_setting_path(&not_exist_path, "rules", true)
+                .unwrap()
                 .to_str()
                 .unwrap(),
             "rules"
         );
         assert_eq!(
-            check_setting_path(&not_exist_path, "fake")
+            check_setting_path(&not_exist_path, "fake", true)
+                .unwrap()
                 .to_str()
                 .unwrap(),
             "fake"
         );
         assert_eq!(
-            check_setting_path(&exist_path, "rules").to_str().unwrap(),
+            check_setting_path(&exist_path, "rules", true)
+                .unwrap()
+                .to_str()
+                .unwrap(),
             exist_path.join("rules").to_str().unwrap()
         );
         assert_eq!(
-            check_setting_path(&exist_path, "fake").to_str().unwrap(),
+            check_setting_path(&exist_path, "fake", true)
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "fake"
         );
     }

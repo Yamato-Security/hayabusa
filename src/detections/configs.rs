@@ -52,7 +52,7 @@ impl Default for ConfigReader<'_> {
     }
 }
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 #[clap(
     name = "Hayabusa",
     usage = "hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]",
@@ -242,23 +242,33 @@ impl ConfigReader<'_> {
             .help_template("\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}");
         ConfigReader {
             app: build_cmd,
-            args: parse,
+            args: parse.clone(),
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "rules/config/statistics_event_info.txt",
-                )
-                .to_str()
-                .unwrap(),
+                utils::check_setting_path(&parse.config, "statistics_event_info.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/statistics_event_info.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
             ),
             target_eventids: load_target_ids(
-                utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "rules/config/target_event_IDs.txt",
-                )
-                .to_str()
-                .unwrap(),
+                utils::check_setting_path(&parse.config, "target_event_IDs.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/target_event_IDs.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
             ),
         }
     }
