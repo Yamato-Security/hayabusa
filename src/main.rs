@@ -157,8 +157,7 @@ impl App {
         // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
         if configs::CONFIG.read().unwrap().args.rules == Path::new("./rules") {
             configs::CONFIG.write().unwrap().args.rules =
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true)
-                    .unwrap();
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true).unwrap();
         }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
