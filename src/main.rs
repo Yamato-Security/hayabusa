@@ -587,6 +587,7 @@ impl App {
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
+
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -595,6 +596,7 @@ impl App {
                 if next_rec.is_none() {
                     break;
                 }
+                record_cnt += 1;
 
                 let record_result = next_rec.unwrap();
                 if record_result.is_err() {
@@ -635,8 +637,6 @@ impl App {
             if records_per_detect.is_empty() {
                 break;
             }
-
-            record_cnt += records_per_detect.len();
 
             let records_per_detect = self.rt.block_on(App::create_rec_infos(
                 records_per_detect,
