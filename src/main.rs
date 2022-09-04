@@ -569,8 +569,6 @@ impl App {
 
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
-        record_cnt += &parser.records_json_value().count();
-
         let mut records = parser.records_json_value();
 
         loop {
@@ -581,6 +579,7 @@ impl App {
                 if next_rec.is_none() {
                     break;
                 }
+                record_cnt += 1;
 
                 let record_result = next_rec.unwrap();
                 if record_result.is_err() {
