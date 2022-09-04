@@ -159,6 +159,11 @@ impl App {
             configs::CONFIG.write().unwrap().args.rules =
                 utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true).unwrap();
         }
+        // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
+        if let Err(e) = utils::check_rule_config() {
+            AlertMessage::alert(&e).ok();
+            return;
+        }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
             let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();

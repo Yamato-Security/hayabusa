@@ -391,6 +391,44 @@ pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Opt
     }
 }
 
+/// rule configのファイルの所在を確認する関数。
+pub fn check_rule_config() -> Result<(), String> {
+    
+    // rules/configのフォルダが存在するかを確認する
+    let exist_rule_config_folder = if configs::CONFIG.read().unwrap().args.config == CURRENT_EXE_PATH.to_path_buf() {
+        check_setting_path(&configs::CONFIG.read().unwrap().args.config, "rules/config", false).is_some()
+    } else {
+        check_setting_path(&configs::CONFIG.read().unwrap().args.config, "", false).is_some()
+    };
+    if !exist_rule_config_folder {
+        return Err("The required rules config files were not found. Please download them with --update-rules".to_string());
+    }
+
+    // 各種ファイルを確認する
+    let files = vec![
+        "channgel_abbrevations.txt",
+        "target_event_IDs.txt",
+        "default_details.txt",
+        "level_tuning.txt",
+        "statics_event_info.txt",
+        "eventkey_alias.txt",
+    ];
+    let mut not_exist_file = vec![];
+    for file in &files {
+        if check_setting_path(&configs::CONFIG.read().unwrap().args.config, file, false).is_none() {
+            not_exist_file.push(*file);
+        }
+    }
+
+    if !not_exist_file.is_empty(){
+        return Err(format!(
+            "Could not find the config file: {}¥nPlease specify a correct rules config directory",
+            not_exist_file.join(", ")
+        ));
+    }
+    Ok(())
+}
+
 ///タイムゾーンに合わせた情報を情報を取得する関数
 pub fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
     if configs::CONFIG.read().unwrap().args.utc {
