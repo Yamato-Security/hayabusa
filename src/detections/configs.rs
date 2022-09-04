@@ -23,10 +23,23 @@ lazy_static! {
         levelmap.insert("CRITICAL".to_owned(), 5);
         levelmap
     };
-    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(&format!(
-        "{}/eventkey_alias.txt",
-        CONFIG.read().unwrap().args.config.as_path().display()
-    ));
+    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(
+        utils::check_setting_path(
+            &CONFIG.read().unwrap().args.config,
+            "eventkey_alias.txt",
+            false
+        )
+        .unwrap_or_else(|| {
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "rules/config/eventkey_alias.txt",
+                true,
+            )
+            .unwrap()
+        })
+        .to_str()
+        .unwrap()
+    );
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
     pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
