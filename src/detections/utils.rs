@@ -411,11 +411,11 @@ pub fn check_rule_config() -> Result<(), String> {
 
     // 各種ファイルを確認する
     let files = vec![
-        "channgel_abbrevations.txt",
+        "channel_abbreviations.txt",
         "target_event_IDs.txt",
         "default_details.txt",
         "level_tuning.txt",
-        "statics_event_info.txt",
+        "statistics_event_info.txt",
         "eventkey_alias.txt",
     ];
     let mut not_exist_file = vec![];
@@ -427,7 +427,7 @@ pub fn check_rule_config() -> Result<(), String> {
 
     if !not_exist_file.is_empty() {
         return Err(format!(
-            "Could not find the config file: {}¥nPlease specify a correct rules config directory",
+            "Could not find the following config files: {}\nPlease specify a correct rules config directory.\n",
             not_exist_file.join(", ")
         ));
     }

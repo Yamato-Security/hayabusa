@@ -15,7 +15,7 @@
 **Bug Fixes:**
 
 - Hayabusa would crash with `-L` option (logon summary option). (#674) (@hitenkoku)
-- Fixed custom config directory does not load files. (#681) (@hitenkoku)
+- Hayabusa would continue to scan without the correct config files but now will print and error and gracefully terminate. (#681) (@hitenkoku)
 
 ## v1.5.1 [2022/08/20]
 
