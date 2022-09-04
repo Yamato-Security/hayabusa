@@ -393,13 +393,18 @@ pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Opt
 
 /// rule configのファイルの所在を確認する関数。
 pub fn check_rule_config() -> Result<(), String> {
-    
     // rules/configのフォルダが存在するかを確認する
-    let exist_rule_config_folder = if configs::CONFIG.read().unwrap().args.config == CURRENT_EXE_PATH.to_path_buf() {
-        check_setting_path(&configs::CONFIG.read().unwrap().args.config, "rules/config", false).is_some()
-    } else {
-        check_setting_path(&configs::CONFIG.read().unwrap().args.config, "", false).is_some()
-    };
+    let exist_rule_config_folder =
+        if configs::CONFIG.read().unwrap().args.config == CURRENT_EXE_PATH.to_path_buf() {
+            check_setting_path(
+                &configs::CONFIG.read().unwrap().args.config,
+                "rules/config",
+                false,
+            )
+            .is_some()
+        } else {
+            check_setting_path(&configs::CONFIG.read().unwrap().args.config, "", false).is_some()
+        };
     if !exist_rule_config_folder {
         return Err("The required rules config files were not found. Please download them with --update-rules".to_string());
     }
@@ -420,7 +425,7 @@ pub fn check_rule_config() -> Result<(), String> {
         }
     }
 
-    if !not_exist_file.is_empty(){
+    if !not_exist_file.is_empty() {
         return Err(format!(
             "Could not find the config file: {}¥nPlease specify a correct rules config directory",
             not_exist_file.join(", ")
