@@ -43,9 +43,14 @@ pub struct Colors {
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
 pub fn set_output_color() -> HashMap<String, Colors> {
     let read_result = utils::read_csv(
-        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/level_color.txt")
-            .to_str()
-            .unwrap(),
+        utils::check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "config/level_color.txt",
+            true,
+        )
+        .unwrap()
+        .to_str()
+        .unwrap(),
     );
     let mut color_map: HashMap<String, Colors> = HashMap::new();
     if configs::CONFIG.read().unwrap().args.no_color {

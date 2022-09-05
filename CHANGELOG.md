@@ -15,6 +15,7 @@
 **Bug Fixes:**
 
 - Hayabusa would crash with `-L` option (logon summary option). (#674) (@hitenkoku)
+- Hayabusa would continue to scan without the correct config files but now will print and error and gracefully terminate. (#681) (@hitenkoku)
 - Fixed total events from the number of scanned events to actual events in evtx. (#683) (@hitenkoku)
 
 ## v1.5.1 [2022/08/20]
