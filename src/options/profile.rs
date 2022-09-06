@@ -15,13 +15,20 @@ lazy_static! {
     pub static ref PROFILES: Option<LinkedHashMap<String, String>> = load_profile(
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
-            "config/default_profile.yaml"
+            "config/default_profile.yaml",
+            true
         )
+        .unwrap()
         .to_str()
         .unwrap(),
-        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/profiles.yaml")
-            .to_str()
-            .unwrap()
+        check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "config/profiles.yaml",
+            true
+        )
+        .unwrap()
+        .to_str()
+        .unwrap()
     );
     pub static ref LOAEDED_PROFILE_ALIAS: HashSet<String> = HashSet::from_iter(
         PROFILES

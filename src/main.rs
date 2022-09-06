@@ -7,8 +7,8 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
-use hayabusa::detections::configs::CURRENT_EXE_PATH;
 use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
+use hayabusa::detections::configs::{CONFIG, CURRENT_EXE_PATH};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG,
@@ -80,7 +80,9 @@ impl App {
                 utils::check_setting_path(
                     &CURRENT_EXE_PATH.to_path_buf(),
                     "config/pivot_keywords.txt",
+                    true,
                 )
+                .unwrap()
                 .to_str()
                 .unwrap(),
             );
@@ -148,13 +150,19 @@ impl App {
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
         if configs::CONFIG.read().unwrap().args.config == Path::new("./rules/config") {
             configs::CONFIG.write().unwrap().args.config =
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules/config");
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
+                    .unwrap();
         }
 
         // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
         if configs::CONFIG.read().unwrap().args.rules == Path::new("./rules") {
             configs::CONFIG.write().unwrap().args.rules =
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "./rules");
+                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true).unwrap();
+        }
+        // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
+        if let Err(e) = utils::check_rule_config() {
+            AlertMessage::alert(&e).ok();
+            return;
         }
 
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
@@ -264,9 +272,18 @@ impl App {
             let level_tuning_config_path = match level_tuning_val {
                 Some(path) => path.to_owned(),
                 _ => utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "./rules/config/level_tuning.txt",
+                    &CONFIG.read().unwrap().args.config,
+                    "level_tuning.txt",
+                    false,
                 )
+                .unwrap_or_else(|| {
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/level_tuning.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
                 .display()
                 .to_string(),
             };
@@ -469,10 +486,10 @@ impl App {
     }
 
     fn print_contributors(&self) {
-        match fs::read_to_string(utils::check_setting_path(
-            &CURRENT_EXE_PATH.to_path_buf(),
-            "contributors.txt",
-        )) {
+        match fs::read_to_string(
+            utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "contributors.txt", true)
+                .unwrap(),
+        ) {
             Ok(contents) => {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
@@ -570,6 +587,7 @@ impl App {
         let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
+
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -578,6 +596,7 @@ impl App {
                 if next_rec.is_none() {
                     break;
                 }
+                record_cnt += 1;
 
                 let record_result = next_rec.unwrap();
                 if record_result.is_err() {
@@ -618,8 +637,6 @@ impl App {
             if records_per_detect.is_empty() {
                 break;
             }
-
-            record_cnt += records_per_detect.len();
 
             let records_per_detect = self.rt.block_on(App::create_rec_infos(
                 records_per_detect,
@@ -721,7 +738,8 @@ impl App {
 
     /// output logo
     fn output_logo(&self) {
-        let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt");
+        let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
+            .unwrap();
         let content = fs::read_to_string(fp).unwrap_or_default();
         let output_color = if configs::CONFIG.read().unwrap().args.no_color {
             None
@@ -748,7 +766,8 @@ impl App {
         match eggs.get(exec_datestr) {
             None => {}
             Some(path) => {
-                let egg_path = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), path);
+                let egg_path =
+                    utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), path, true).unwrap();
                 let content = fs::read_to_string(egg_path).unwrap_or_default();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
