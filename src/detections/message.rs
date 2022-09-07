@@ -105,10 +105,10 @@ pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
             return;
         }
 
-        let tag_full_str = line[0].trim();
+        let tag_full_str = line[0].trim().to_ascii_lowercase();
         let tag_replace_str = line[1].trim();
 
-        ret.insert(tag_full_str.to_owned(), tag_replace_str.to_owned());
+        ret.insert(tag_full_str, tag_replace_str.to_owned());
     });
     ret
 }

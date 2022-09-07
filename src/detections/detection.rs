@@ -25,6 +25,7 @@ use crate::filter;
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
+use std::ascii::AsciiExt;
 use std::fmt::Write;
 use std::path::Path;
 
@@ -264,7 +265,10 @@ impl Detection {
                     "%Channel%" => {
                         profile_converter.insert(
                             "%Channel%".to_string(),
-                            CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
+                            CH_CONFIG
+                                .get(&ch_str.to_ascii_lowercase())
+                                .unwrap_or(ch_str)
+                                .to_string(),
                         );
                     }
                     "%Level%" => {
