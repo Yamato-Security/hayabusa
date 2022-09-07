@@ -599,7 +599,7 @@ mod tests {
         let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let expected: HashMap<String, String> = HashMap::from([
-            ("Security".to_string(), "Sec".to_string()),
+            ("security".to_string(), "Sec".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
         ]);
         _check_hashmap_element(&expected, actual);

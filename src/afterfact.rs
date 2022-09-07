@@ -795,7 +795,7 @@ mod tests {
                 (
                     "%Channel%".to_owned(),
                     mock_ch_filter
-                        .get("Security")
+                        .get("security")
                         .unwrap_or(&String::default())
                         .to_string(),
                 ),
