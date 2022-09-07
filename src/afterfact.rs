@@ -922,6 +922,18 @@ fn output_json_str(
                     ));
                     output_value_stock.clear();
                     tmp = String::default();
+                } 
+                if value_idx == stocked_value.len() -1 {
+                    let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                    let output: Vec<&str> = output_tmp.split(": ").collect();
+                    let key = _convert_valid_json_str(&[output[0]]);
+                    let fmted_val = _convert_valid_json_str(&output);
+                    target.push(_create_json_output_format(
+                        &key,
+                        &fmted_val,
+                        key.starts_with('\"'),
+                        fmted_val.starts_with('\"'),
+                    ));
                 }
             }
         } else if output_value_fmt.contains("%MitreTags%")
