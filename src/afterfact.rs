@@ -7,10 +7,10 @@ use crate::detections::utils::{get_writable_color, write_color_buffer};
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
-use core::cmp::max;
-use csv::{QuoteStyle, WriterBuilder};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
+use core::cmp::max;
+use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
@@ -922,8 +922,8 @@ fn output_json_str(
                     ));
                     output_value_stock.clear();
                     tmp = String::default();
-                } 
-                if value_idx == stocked_value.len() -1 {
+                }
+                if value_idx == stocked_value.len() - 1 {
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]]);
