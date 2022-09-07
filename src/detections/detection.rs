@@ -25,7 +25,6 @@ use crate::filter;
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
-use std::ascii::AsciiExt;
 use std::fmt::Write;
 use std::path::Path;
 
