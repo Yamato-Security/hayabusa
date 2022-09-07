@@ -923,6 +923,21 @@ fn output_json_str(
                     output_value_stock.clear();
                     tmp = String::default();
                 }
+                if value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty() {
+                    // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
+                    let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                    let output: Vec<&str> = output_tmp.split(": ").collect();
+                    let key = _convert_valid_json_str(&[output[0]]);
+                    let fmted_val = _convert_valid_json_str(&output);
+                    target.push(_create_json_output_format(
+                        &key,
+                        &fmted_val,
+                        key.starts_with('\"'),
+                        fmted_val.starts_with('\"'),
+                    ));
+                    output_value_stock.clear();
+                    tmp = String::default();
+                }
                 if value_idx == stocked_value.len() - 1 {
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
