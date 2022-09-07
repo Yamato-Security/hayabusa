@@ -38,6 +38,7 @@ hyper = "0.14.*"
 lock_api = "0.4.*"
 crossbeam-utils = "0.8.*"
 num-format = "*"
+comfy-table = "6.*"
 
 [build-dependencies]
 static_vcruntime = "2.*"

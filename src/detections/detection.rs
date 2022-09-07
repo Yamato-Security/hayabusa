@@ -264,7 +264,10 @@ impl Detection {
                     "%Channel%" => {
                         profile_converter.insert(
                             "%Channel%".to_string(),
-                            CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
+                            CH_CONFIG
+                                .get(&ch_str.to_ascii_lowercase())
+                                .unwrap_or(ch_str)
+                                .to_string(),
                         );
                     }
                     "%Level%" => {

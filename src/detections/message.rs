@@ -49,30 +49,32 @@ lazy_static! {
     pub static ref STATISTICS_FLAG: bool = configs::CONFIG.read().unwrap().args.statistics;
     pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
-        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt")
-            .to_str()
+        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
+            .unwrap().to_str()
             .unwrap(),
     );
     pub static ref CH_CONFIG: HashMap<String, String> = create_output_filter_config(
-        utils::check_setting_path(
-            &CURRENT_EXE_PATH.to_path_buf(),
-            "rules/config/channel_abbreviations.txt"
-        )
+        utils::check_setting_path(&configs::CONFIG.read().unwrap().args.config, "channel_abbreviations.txt", false).unwrap_or_else(|| {
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "rules/config/channel_abbreviations.txt", true
+            ).unwrap()
+            })
         .to_str()
         .unwrap(),
     );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
         configs::CONFIG.read().unwrap().args.pivot_keywords_list;
-    pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(&format!(
-        "{}/default_details.txt",
-        configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .config
-            .as_path()
-            .display()
-    ));
+    pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(
+        utils::check_setting_path(&configs::CONFIG.read().unwrap().args.config, "default_details.txt", false).unwrap_or_else(|| {
+            utils::check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "rules/config/default_details.txt", true
+            ).unwrap()
+        })
+        .to_str()
+        .unwrap()
+    );
     pub static ref LEVEL_ABBR: LinkedHashMap<String, String> = LinkedHashMap::from_iter([
         ("critical".to_string(), "crit".to_string()),
         ("high".to_string(), "high".to_string()),
@@ -103,10 +105,10 @@ pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
             return;
         }
 
-        let tag_full_str = line[0].trim();
+        let tag_full_str = line[0].trim().to_ascii_lowercase();
         let tag_replace_str = line[1].trim();
 
-        ret.insert(tag_full_str.to_owned(), tag_replace_str.to_owned());
+        ret.insert(tag_full_str, tag_replace_str.to_owned());
     });
     ret
 }
@@ -597,7 +599,7 @@ mod tests {
         let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let expected: HashMap<String, String> = HashMap::from([
-            ("Security".to_string(), "Sec".to_string()),
+            ("Security".to_ascii_lowercase(), "Sec".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
         ]);
         _check_hashmap_element(&expected, actual);

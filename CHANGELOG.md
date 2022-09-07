@@ -10,10 +10,14 @@
 
 - Added top alerts to results summary. (#667) (@hitenkoku)
 - Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
+- Made the results summary more compact. (#675 #678) (@hitenkoku)
+- Made Channel field in channel_abbreviations.txt case-insensitive. (#685) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Hayabusa would crash with `-L` option (logon summary option). (#674) (@hitenkoku)
+- Hayabusa would continue to scan without the correct config files but now will print and error and gracefully terminate. (#681) (@hitenkoku)
+- Fixed total events from the number of scanned events to actual events in evtx. (#683) (@hitenkoku)
 
 ## v1.5.1 [2022/08/20]
 

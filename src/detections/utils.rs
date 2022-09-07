@@ -73,7 +73,8 @@ pub fn value_to_string(value: &Value) -> Option<String> {
 
 pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
     let filepath = if filename.starts_with("./") {
-        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename)
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
+            .unwrap()
             .to_str()
             .unwrap()
             .to_string()
@@ -380,12 +381,57 @@ pub fn make_ascii_titlecase(s: &mut str) -> String {
 }
 
 /// base_path/path が存在するかを確認し、存在しなければカレントディレクトリを参照するpathを返す関数
-pub fn check_setting_path(base_path: &Path, path: &str) -> PathBuf {
+pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Option<PathBuf> {
     if base_path.join(path).exists() {
-        base_path.join(path)
+        Some(base_path.join(path))
+    } else if ignore_err {
+        Some(Path::new(path).to_path_buf())
     } else {
-        Path::new(path).to_path_buf()
+        None
     }
+}
+
+/// rule configのファイルの所在を確認する関数。
+pub fn check_rule_config() -> Result<(), String> {
+    // rules/configのフォルダが存在するかを確認する
+    let exist_rule_config_folder =
+        if configs::CONFIG.read().unwrap().args.config == CURRENT_EXE_PATH.to_path_buf() {
+            check_setting_path(
+                &configs::CONFIG.read().unwrap().args.config,
+                "rules/config",
+                false,
+            )
+            .is_some()
+        } else {
+            check_setting_path(&configs::CONFIG.read().unwrap().args.config, "", false).is_some()
+        };
+    if !exist_rule_config_folder {
+        return Err("The required rules config files were not found. Please download them with --update-rules".to_string());
+    }
+
+    // 各種ファイルを確認する
+    let files = vec![
+        "channel_abbreviations.txt",
+        "target_event_IDs.txt",
+        "default_details.txt",
+        "level_tuning.txt",
+        "statistics_event_info.txt",
+        "eventkey_alias.txt",
+    ];
+    let mut not_exist_file = vec![];
+    for file in &files {
+        if check_setting_path(&configs::CONFIG.read().unwrap().args.config, file, false).is_none() {
+            not_exist_file.push(*file);
+        }
+    }
+
+    if !not_exist_file.is_empty() {
+        return Err(format!(
+            "Could not find the following config files: {}\nPlease specify a correct rules config directory.\n",
+            not_exist_file.join(", ")
+        ));
+    }
+    Ok(())
 }
 
 ///タイムゾーンに合わせた情報を情報を取得する関数
@@ -613,23 +659,31 @@ mod tests {
         let exist_path = Path::new("./test_files").to_path_buf();
         let not_exist_path = Path::new("not_exist_path").to_path_buf();
         assert_eq!(
-            check_setting_path(&not_exist_path, "rules")
+            check_setting_path(&not_exist_path, "rules", true)
+                .unwrap()
                 .to_str()
                 .unwrap(),
             "rules"
         );
         assert_eq!(
-            check_setting_path(&not_exist_path, "fake")
+            check_setting_path(&not_exist_path, "fake", true)
+                .unwrap()
                 .to_str()
                 .unwrap(),
             "fake"
         );
         assert_eq!(
-            check_setting_path(&exist_path, "rules").to_str().unwrap(),
+            check_setting_path(&exist_path, "rules", true)
+                .unwrap()
+                .to_str()
+                .unwrap(),
             exist_path.join("rules").to_str().unwrap()
         );
         assert_eq!(
-            check_setting_path(&exist_path, "fake").to_str().unwrap(),
+            check_setting_path(&exist_path, "fake", true)
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "fake"
         );
     }

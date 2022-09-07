@@ -9,12 +9,15 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use core::cmp::max;
 use csv::{QuoteStyle, WriterBuilder};
+use comfy_table::modifiers::UTF8_ROUND_CORNERS;
+use comfy_table::presets::UTF8_FULL;
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 use std::str::FromStr;
 
+use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
 use num_format::{Locale, ToFormattedString};
 use std::cmp::min;
@@ -31,17 +34,27 @@ use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
 lazy_static! {
-    pub static ref OUTPUT_COLOR: HashMap<String, Color> = set_output_color();
+    pub static ref OUTPUT_COLOR: HashMap<String, Colors> = set_output_color();
+}
+
+pub struct Colors {
+    pub output_color: termcolor::Color,
+    pub table_color: comfy_table::Color,
 }
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn set_output_color() -> HashMap<String, Color> {
+pub fn set_output_color() -> HashMap<String, Colors> {
     let read_result = utils::read_csv(
-        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/level_color.txt")
-            .to_str()
-            .unwrap(),
+        utils::check_setting_path(
+            &CURRENT_EXE_PATH.to_path_buf(),
+            "config/level_color.txt",
+            true,
+        )
+        .unwrap()
+        .to_str()
+        .unwrap(),
     );
-    let mut color_map: HashMap<String, Color> = HashMap::new();
+    let mut color_map: HashMap<String, Colors> = HashMap::new();
     if configs::CONFIG.read().unwrap().args.no_color {
         return color_map;
     }
@@ -71,16 +84,34 @@ pub fn set_output_color() -> HashMap<String, Color> {
         }
         color_map.insert(
             level.to_lowercase(),
-            Color::Rgb(color_code[0], color_code[1], color_code[2]),
+            Colors {
+                output_color: termcolor::Color::Rgb(color_code[0], color_code[1], color_code[2]),
+                table_color: comfy_table::Color::Rgb {
+                    r: color_code[0],
+                    g: color_code[1],
+                    b: color_code[2],
+                },
+            },
         );
     });
     color_map
 }
 
-fn _get_output_color(color_map: &HashMap<String, Color>, level: &str) -> Option<Color> {
+fn _get_output_color(color_map: &HashMap<String, Colors>, level: &str) -> Option<Color> {
     let mut color = None;
     if let Some(c) = color_map.get(&level.to_lowercase()) {
-        color = Some(c.to_owned());
+        color = Some(c.output_color.to_owned());
+    }
+    color
+}
+
+fn _get_table_color(
+    color_map: &HashMap<String, Colors>,
+    level: &str,
+) -> Option<comfy_table::Color> {
+    let mut color = None;
+    if let Some(c) = color_map.get(&level.to_lowercase()) {
+        color = Some(c.table_color.to_owned());
     }
     color
 }
@@ -174,7 +205,7 @@ pub fn after_fact(all_record_cnt: usize) {
 fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
-    color_map: HashMap<String, Color>,
+    color_map: HashMap<String, Colors>,
     all_record_cnt: u128,
     profile: LinkedHashMap<String, String>,
 ) -> io::Result<()> {
@@ -396,17 +427,9 @@ fn emit_csv<W: std::io::Write>(
             &disp_wtr,
             get_writable_color(None),
             &format!(
-                "Total events: {}",
-                all_record_cnt.to_formatted_string(&Locale::en)
-            ),
-            true,
-        )
-        .ok();
-        write_color_buffer(
-            &disp_wtr,
-            get_writable_color(None),
-            &format!(
-                "Data reduction: {} events ({:.2}%)",
+                "Saved alerts and events / Total events analyzed: {} / {} (Data reduction: {} events ({:.2}%))",
+                (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
+                all_record_cnt.to_formatted_string(&Locale::en),
                 reducted_record_cnt.to_formatted_string(&Locale::en),
                 reducted_percent
             ),
@@ -417,15 +440,8 @@ fn emit_csv<W: std::io::Write>(
 
         _print_unique_results(
             total_detect_counts_by_level,
-            "Total".to_string(),
-            "detections".to_string(),
-            &color_map,
-        );
-        println!();
-
-        _print_unique_results(
             unique_detect_counts_by_level,
-            "Unique".to_string(),
+            "Total | Unique".to_string(),
             "detections".to_string(),
             &color_map,
         );
@@ -433,11 +449,13 @@ fn emit_csv<W: std::io::Write>(
 
         _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
         println!();
+        println!();
 
         _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
         println!();
 
-        _print_detection_summary_by_rule(detect_counts_by_rule_and_level, &color_map);
+        _print_detection_summary_tables(detect_counts_by_rule_and_level, &color_map);
+        println!();
     }
 
     Ok(())
@@ -491,26 +509,30 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
     }
 }
 
-/// output info which unique detection count and all detection count information(devided by level and total) to stdout.
+/// output info which unique detection count and all detection count information(separated by level and total) to stdout.
 fn _print_unique_results(
     mut counts_by_level: Vec<u128>,
+    mut unique_counts_by_level: Vec<u128>,
     head_word: String,
     tail_word: String,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
+    unique_counts_by_level.reverse();
 
     let total_count = counts_by_level.iter().sum::<u128>();
+    let unique_total_count = unique_counts_by_level.iter().sum::<u128>();
     // output total results
     write_color_buffer(
         &BufferWriter::stdout(ColorChoice::Always),
         None,
         &format!(
-            "{} {}: {}",
+            "{} {}: {} | {}",
             head_word,
             tail_word,
             total_count.to_formatted_string(&Locale::en),
+            unique_total_count.to_formatted_string(&Locale::en)
         ),
         true,
     )
@@ -525,13 +547,20 @@ fn _print_unique_results(
         } else {
             (counts_by_level[i] as f64) / (total_count as f64) * 100.0
         };
+        let unique_percent = if unique_total_count == 0 {
+            0 as f64
+        } else {
+            (unique_counts_by_level[i] as f64) / (unique_total_count as f64) * 100.0
+        };
         let output_raw_str = format!(
-            "{} {} {}: {} ({:.2}%)",
+            "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
             head_word,
             level_name,
             tail_word,
             counts_by_level[i].to_formatted_string(&Locale::en),
-            percent
+            percent,
+            unique_counts_by_level[i].to_formatted_string(&Locale::en),
+            unique_percent
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -546,13 +575,15 @@ fn _print_unique_results(
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
     detect_counts_by_date: HashMap<String, HashMap<String, u128>>,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    for level in LEVEL_ABBR.values() {
+    writeln!(wtr, "Dates with most total detections:").ok();
+
+    for (idx, level) in LEVEL_ABBR.values().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
         let mut max_detect_str = String::default();
@@ -573,13 +604,18 @@ fn _print_detection_summary_by_date(
         if !exist_max_data {
             max_detect_str = "n/a".to_string();
         }
-        writeln!(
+        write!(
             wtr,
-            "Date with most total {} detections: {}",
+            "{}: {}",
             LEVEL_FULL.get(level.as_str()).unwrap(),
             &max_detect_str
         )
         .ok();
+        if idx != LEVEL_ABBR.len() - 1 {
+            wtr.set_color(ColorSpec::new().set_fg(None)).ok();
+
+            write!(wtr, ", ").ok();
+        }
     }
     buf_wtr.print(&wtr).ok();
 }
@@ -587,12 +623,13 @@ fn _print_detection_summary_by_date(
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
+    writeln!(wtr, "Top 5 computers with most unique detections:").ok();
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
@@ -625,7 +662,7 @@ fn _print_detection_summary_by_computer(
         .ok();
         writeln!(
             wtr,
-            "Top 5 computers with most unique {} detections: {}",
+            "{}: {}",
             LEVEL_FULL.get(level.as_str()).unwrap(),
             &result_str
         )
@@ -634,53 +671,94 @@ fn _print_detection_summary_by_computer(
     buf_wtr.print(&wtr).ok();
 }
 
-/// 各レベルごとで検出数が多かったルールのタイトルを出力する関数
-fn _print_detection_summary_by_rule(
+/// 各レベルごとで検出数が多かったルールを表形式で出力する関数
+fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
-    color_map: &HashMap<String, Color>,
+    color_map: &HashMap<String, Colors>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-    let level_cnt = detect_counts_by_rule_and_level.len();
-    for (idx, level) in LEVEL_ABBR.values().enumerate() {
+    let mut output = vec![];
+    let mut col_color = vec![];
+    for level in LEVEL_ABBR.values() {
+        let mut col_output: Vec<String> = vec![];
+        col_output.push(format!(
+            "Top {} alerts:",
+            LEVEL_FULL.get(level.as_str()).unwrap()
+        ));
+
+        col_color.push(_get_table_color(
+            color_map,
+            LEVEL_FULL.get(level.as_str()).unwrap(),
+        ));
+
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_rule_and_level.get(level).unwrap();
-        let mut result_vec: Vec<String> = Vec::new();
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
-        for x in sorted_detections.iter().take(5) {
-            result_vec.push(format!(
+        let take_cnt =
+            if LEVEL_FULL.get(level.as_str()).unwrap_or(&"-".to_string()) == "informational" {
+                10
+            } else {
+                5
+            };
+        for x in sorted_detections.iter().take(take_cnt) {
+            col_output.push(format!(
                 "{} ({})",
                 x.0,
                 x.1.to_formatted_string(&Locale::en)
             ));
         }
-        let result_str = if result_vec.is_empty() {
-            "None".to_string()
+        let na_cnt = if sorted_detections.len() > take_cnt {
+            0
         } else {
-            result_vec.join("\n")
+            take_cnt - sorted_detections.len()
         };
-
-        wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
-            color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
-        )))
-        .ok();
-        writeln!(
-            wtr,
-            "Top {} alerts:\n{}",
-            LEVEL_FULL.get(level.as_str()).unwrap(),
-            &result_str
-        )
-        .ok();
-        if idx != level_cnt - 1 {
-            writeln!(wtr).ok();
+        for _x in 0..na_cnt {
+            col_output.push("n/a".to_string());
         }
+        output.push(col_output);
     }
-    buf_wtr.print(&wtr).ok();
+
+    let mut tb = Table::new();
+    tb.load_preset(UTF8_FULL)
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_style(TableComponent::VerticalLines, ' ');
+    for x in 0..output.len() / 2 {
+        let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
+        let tbch = tb.style(TableComponent::TopBorder).unwrap();
+
+        tb.add_row(vec![
+            Cell::new(&output[2 * x][0]).fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
+            Cell::new(&output[2 * x + 1][0])
+                .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
+        ])
+        .set_style(TableComponent::MiddleIntersections, hlch)
+        .set_style(TableComponent::TopBorderIntersections, tbch)
+        .set_style(TableComponent::BottomBorderIntersections, hlch);
+
+        tb.add_row(vec![
+            Cell::new(&output[2 * x][1..].join("\n"))
+                .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
+            Cell::new(&output[2 * x + 1][1..].join("\n"))
+                .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
+        ]);
+    }
+
+    let odd_row = &output[4][1..6];
+    let even_row = &output[4][6..11];
+    tb.add_row(vec![
+        Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(""),
+    ]);
+    tb.add_row(vec![
+        Cell::new(odd_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(even_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+    ]);
+    println!("{tb}");
 }
 
 /// get timestamp to input datetime.
@@ -947,7 +1025,7 @@ mod tests {
                 (
                     "%Channel%".to_owned(),
                     mock_ch_filter
-                        .get("Security")
+                        .get(&"Security".to_ascii_lowercase())
                         .unwrap_or(&String::default())
                         .to_string(),
                 ),
