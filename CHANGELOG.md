@@ -11,6 +11,7 @@
 - Added top alerts to results summary. (#667) (@hitenkoku)
 - Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
 - Made the results summary more compact. (#675 #678) (@hitenkoku)
+- Made Channel field in channel_abbreviations.txt case-insensitive. (#685) (@hitenkoku)
 
 **Bug Fixes:**
 

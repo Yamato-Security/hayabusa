@@ -105,10 +105,10 @@ pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
             return;
         }
 
-        let tag_full_str = line[0].trim();
+        let tag_full_str = line[0].trim().to_ascii_lowercase();
         let tag_replace_str = line[1].trim();
 
-        ret.insert(tag_full_str.to_owned(), tag_replace_str.to_owned());
+        ret.insert(tag_full_str, tag_replace_str.to_owned());
     });
     ret
 }
@@ -599,7 +599,7 @@ mod tests {
         let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let expected: HashMap<String, String> = HashMap::from([
-            ("Security".to_string(), "Sec".to_string()),
+            ("Security".to_ascii_lowercase(), "Sec".to_string()),
             ("xxx".to_string(), "yyy".to_string()),
         ]);
         _check_hashmap_element(&expected, actual);
