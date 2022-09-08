@@ -884,28 +884,28 @@ mod tests {
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details|RecordInformation\n";
+        let expect_header = "Timestamp‖Computer‖Channel‖EventID‖Level‖RecordID‖RuleTitle‖Details‖RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
             .clone()
             .format("%Y-%m-%d %H:%M:%S%.3f %:z")
             .to_string()
-            + " | "
+            + " ‖ "
             + test_computername
-            + " | "
+            + " ‖ "
             + test_channel
-            + " | "
+            + " ‖ "
             + test_eventid
-            + " | "
+            + " ‖ "
             + test_level
-            + " | "
+            + " ‖ "
             + test_recid
-            + " | "
+            + " ‖ "
             + test_title
-            + " | "
+            + " ‖ "
             + output
-            + " | "
+            + " ‖ "
             + test_recinfo
             + "\n";
         let mut data: LinkedHashMap<String, String> = LinkedHashMap::new();
