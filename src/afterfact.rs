@@ -457,7 +457,9 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
         .from_writer(vec![]);
 
     disp_serializer.write_record(ret).ok();
-    String::from_utf8(disp_serializer.into_inner().unwrap_or_default()).unwrap_or_default().replace('|', "‖")
+    String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
+        .unwrap_or_default()
+        .replace('|', "‖")
 }
 
 /// return str position in output file
