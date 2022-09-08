@@ -435,8 +435,14 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
     let data_length = &data.len();
     let mut ret: Vec<String> = vec![];
     if header {
-        for k in data.keys() {
-            ret.push(k.to_owned());
+        for (i, k) in data.keys().enumerate() {
+            if i == 0 {
+                ret.push(_format_cellpos(k, ColPos::First))
+            } else if i == data_length - 1 {
+                ret.push(_format_cellpos(k, ColPos::Last))
+            } else {
+                ret.push(_format_cellpos(k, ColPos::Other))
+            }
         }
     } else {
         for (i, (_, v)) in data.iter().enumerate() {
