@@ -481,11 +481,11 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
     } else {
         for (i, (_, v)) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(v, ColPos::First))
+                ret.push(_format_cellpos(v, ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(v, ColPos::Last))
+                ret.push(_format_cellpos(v, ColPos::Last).replace('|', "🦅"))
             } else {
-                ret.push(_format_cellpos(v, ColPos::Other))
+                ret.push(_format_cellpos(v, ColPos::Other).replace('|', "🦅"))
             }
         }
     }
@@ -499,7 +499,7 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
     disp_serializer.write_record(ret).ok();
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
         .unwrap_or_default()
-        .replace('|', "‖")
+        .replace('|', "‖").replace('🦅', "|")
 }
 
 /// return str position in output file
