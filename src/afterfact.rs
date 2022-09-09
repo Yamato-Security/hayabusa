@@ -385,12 +385,12 @@ fn emit_csv<W: std::io::Write>(
         };
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0))),
+            get_writable_color(Some(Color::Rgb(255, 255, 0))),
             "Saved alerts and events",
             false,
         )
         .ok();
-        write_color_buffer(&disp_wtr, get_writable_color(None), "/", false).ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(0, 255, 255))),
@@ -401,12 +401,12 @@ fn emit_csv<W: std::io::Write>(
         write_color_buffer(&disp_wtr, get_writable_color(None), ": ", false).ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0))),
+            get_writable_color(Some(Color::Rgb(255, 255, 0))),
             &(all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
             false,
         )
         .ok();
-        write_color_buffer(&disp_wtr, get_writable_color(None), "/", false).ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
 
         write_color_buffer(
             &disp_wtr,
@@ -415,10 +415,10 @@ fn emit_csv<W: std::io::Write>(
             false,
         )
         .ok();
-        write_color_buffer(&disp_wtr, get_writable_color(None), "(", false).ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " (", false).ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0))),
+            get_writable_color(Some(Color::Rgb(0, 255, 0))),
             &format!(
                 "Data reduction: {} events ({:.2}%)",
                 reducted_record_cnt.to_formatted_string(&Locale::en),
@@ -429,6 +429,7 @@ fn emit_csv<W: std::io::Write>(
         .ok();
 
         write_color_buffer(&disp_wtr, get_writable_color(None), ")", false).ok();
+        println!();
         println!();
 
         _print_unique_results(
