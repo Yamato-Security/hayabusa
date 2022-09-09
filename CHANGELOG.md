@@ -12,6 +12,8 @@
 - Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
 - Made the results summary more compact. (#675 #678) (@hitenkoku)
 - Made Channel field in channel_abbreviations.txt case-insensitive. (#685) (@hitenkoku)
+- Changed pipe separator character in output. (#687) (@hitenkoku)
+- Added color to Saved alerts and events / Total events analyzed. (#690) (@hitenkoku)
 
 **Bug Fixes:**
 

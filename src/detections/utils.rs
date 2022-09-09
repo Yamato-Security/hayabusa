@@ -297,15 +297,10 @@ fn create_recordinfos(record: &Value) -> String {
 
     let summary: Vec<String> = output
         .iter()
-        .map(|(key, value)| format!("{}:{}", key, value))
+        .map(|(key, value)| format!("{}: {}", key, value))
         .collect();
 
-    // 標準出力する時はセルがハイプ区切りになるので、パイプ区切りにしない
-    if configs::CONFIG.read().unwrap().args.output.is_some() {
-        summary.join(" | ")
-    } else {
-        summary.join(" ")
-    }
+    summary.join(" ¦ ")
 }
 
 /**
@@ -510,7 +505,7 @@ mod tests {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
-                let expected = "AccessMask:%%1369 Process:lsass.exe User:u1".to_string();
+                let expected = "AccessMask: %%1369 ¦ Process: lsass.exe ¦ User: u1".to_string();
                 assert_eq!(ret, expected);
             }
             Err(_) => {
@@ -544,7 +539,7 @@ mod tests {
             Ok(record) => {
                 let ret = utils::create_recordinfos(&record);
                 // Systemは除外される/属性(_attributesも除外される)/key順に並ぶ
-                let expected = "Binary:hogehoge Data: Data:Data1 Data:DataData2 Data:DataDataData3"
+                let expected = "Binary: hogehoge ¦ Data:  ¦ Data: Data1 ¦ Data: DataData2 ¦ Data: DataDataData3"
                     .to_string();
                 assert_eq!(ret, expected);
             }

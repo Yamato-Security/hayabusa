@@ -425,17 +425,51 @@ fn emit_csv<W: std::io::Write>(
         };
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None),
+            get_writable_color(Some(Color::Rgb(255, 255, 0))),
+            "Saved alerts and events",
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 255))),
+            "Total events analyzed",
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), ": ", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(255, 255, 0))),
+            &(all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
+
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 255))),
+            &all_record_cnt.to_formatted_string(&Locale::en),
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " (", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 0))),
             &format!(
-                "Saved alerts and events / Total events analyzed: {} / {} (Data reduction: {} events ({:.2}%))",
-                (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
-                all_record_cnt.to_formatted_string(&Locale::en),
+                "Data reduction: {} events ({:.2}%)",
                 reducted_record_cnt.to_formatted_string(&Locale::en),
                 reducted_percent
             ),
-            true,
+            false,
         )
         .ok();
+
+        write_color_buffer(&disp_wtr, get_writable_color(None), ")", false).ok();
+        println!();
         println!();
 
         _print_unique_results(
@@ -475,17 +509,23 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
     let data_length = &data.len();
     let mut ret: Vec<String> = vec![];
     if header {
-        for k in data.keys() {
-            ret.push(k.to_owned());
+        for (i, k) in data.keys().enumerate() {
+            if i == 0 {
+                ret.push(_format_cellpos(k, ColPos::First))
+            } else if i == data_length - 1 {
+                ret.push(_format_cellpos(k, ColPos::Last))
+            } else {
+                ret.push(_format_cellpos(k, ColPos::Other))
+            }
         }
     } else {
         for (i, (_, v)) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(v, ColPos::First))
+                ret.push(_format_cellpos(v, ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(v, ColPos::Last))
+                ret.push(_format_cellpos(v, ColPos::Last).replace('|', "🦅"))
             } else {
-                ret.push(_format_cellpos(v, ColPos::Other))
+                ret.push(_format_cellpos(v, ColPos::Other).replace('|', "🦅"))
             }
         }
     }
@@ -497,7 +537,10 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
         .from_writer(vec![]);
 
     disp_serializer.write_record(ret).ok();
-    String::from_utf8(disp_serializer.into_inner().unwrap_or_default()).unwrap_or_default()
+    String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
+        .unwrap_or_default()
+        .replace('|', "‖")
+        .replace('🦅', "|")
 }
 
 /// return str position in output file
@@ -1126,28 +1169,28 @@ mod tests {
         let test_timestamp = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_header = "Timestamp|Computer|Channel|EventID|Level|RecordID|RuleTitle|Details|RecordInformation\n";
+        let expect_header = "Timestamp ‖ Computer ‖ Channel ‖ EventID ‖ Level ‖ RecordID ‖ RuleTitle ‖ Details ‖ RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
             .clone()
             .format("%Y-%m-%d %H:%M:%S%.3f %:z")
             .to_string()
-            + " | "
+            + " ‖ "
             + test_computername
-            + " | "
+            + " ‖ "
             + test_channel
-            + " | "
+            + " ‖ "
             + test_eventid
-            + " | "
+            + " ‖ "
             + test_level
-            + " | "
+            + " ‖ "
             + test_recid
-            + " | "
+            + " ‖ "
             + test_title
-            + " | "
+            + " ‖ "
             + output
-            + " | "
+            + " ‖ "
             + test_recinfo
             + "\n";
         let mut data: LinkedHashMap<String, String> = LinkedHashMap::new();
