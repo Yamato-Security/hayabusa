@@ -300,7 +300,7 @@ fn create_recordinfos(record: &Value) -> String {
         .map(|(key, value)| format!("{}: {}", key, value))
         .collect();
 
-        summary.join(" ¦ ")
+    summary.join(" ¦ ")
 }
 
 /**
