@@ -7,4 +7,5 @@ test_*
 .env
 /logs
 *.csv
+*.json
 hayabusa*
