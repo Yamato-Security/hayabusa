@@ -499,7 +499,8 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
     disp_serializer.write_record(ret).ok();
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
         .unwrap_or_default()
-        .replace('|', "‖").replace('🦅', "|")
+        .replace('|', "‖")
+        .replace('🦅', "|")
 }
 
 /// return str position in output file
