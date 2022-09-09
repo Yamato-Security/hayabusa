@@ -385,17 +385,51 @@ fn emit_csv<W: std::io::Write>(
         };
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None),
+            get_writable_color(Some(Color::Rgb(255, 255, 0))),
+            "Saved alerts and events",
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 255))),
+            "Total events analyzed",
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), ": ", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(255, 255, 0))),
+            &(all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
+
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 255))),
+            &all_record_cnt.to_formatted_string(&Locale::en),
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " (", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 0))),
             &format!(
-                "Saved alerts and events / Total events analyzed: {} / {} (Data reduction: {} events ({:.2}%))",
-                (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
-                all_record_cnt.to_formatted_string(&Locale::en),
+                "Data reduction: {} events ({:.2}%)",
                 reducted_record_cnt.to_formatted_string(&Locale::en),
                 reducted_percent
             ),
-            true,
+            false,
         )
         .ok();
+
+        write_color_buffer(&disp_wtr, get_writable_color(None), ")", false).ok();
+        println!();
         println!();
 
         _print_unique_results(
