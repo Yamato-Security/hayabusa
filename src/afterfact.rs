@@ -786,7 +786,7 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
     } else if target_alias_context.contains("%Details%") {
         let ret: Vec<String> = target_data
             .to_owned()
-            .split(" | ")
+            .split(" ¦ ")
             .map(|x| x.to_string())
             .collect();
         if target_data == &ret[0] && !target_data.contains(": ") {
