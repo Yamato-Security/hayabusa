@@ -297,14 +297,14 @@ fn create_recordinfos(record: &Value) -> String {
 
     let summary: Vec<String> = output
         .iter()
-        .map(|(key, value)| format!("{}:{}", key, value))
+        .map(|(key, value)| format!("{}: {}", key, value))
         .collect();
 
     // 標準出力する時はセルがハイプ区切りになるので、パイプ区切りにしない
     if configs::CONFIG.read().unwrap().args.output.is_some() {
-        summary.join(" | ")
+        summary.join(" ‖ ")
     } else {
-        summary.join(" ")
+        summary.join("‖")
     }
 }
 
