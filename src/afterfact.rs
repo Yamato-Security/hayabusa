@@ -426,7 +426,7 @@ fn emit_csv<W: std::io::Write>(
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(255, 255, 0))),
-            "Saved alerts and events",
+            "Events with hits",
             false,
         )
         .ok();
@@ -434,7 +434,7 @@ fn emit_csv<W: std::io::Write>(
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(0, 255, 255))),
-            "Total events analyzed",
+            "Total events",
             false,
         )
         .ok();
