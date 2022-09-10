@@ -16,8 +16,8 @@
 [tag-7]: https://img.shields.io/badge/Twitter-00acee?logo=twitter&logoColor=white
 [tag-8]: https://img.shields.io/badge/CODE%20BLUE-2022%20Bluebox-blue
 
-![tag-1] ![tag-2] <a href="https://github.com/Yamato-Security/hayabusa/releases">![tag-3]</a> ![tag-4]
-<a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa">![tag-5]</a> ![tag-6]  <a href="https://twitter.com/SecurityYamato">![tag-7]</a> ![tag-8]
+![tag-1] ![tag-2] <a href="https://github.com/Yamato-Security/hayabusa/releases">![tag-3]</a> ![tag-4] ![tag-8] 
+<a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa">![tag-5]</a> ![tag-6]  <a href="https://twitter.com/SecurityYamato">![tag-7]</a>
 
 
 # Hayabusa について
