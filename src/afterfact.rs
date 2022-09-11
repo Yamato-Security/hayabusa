@@ -942,7 +942,10 @@ fn output_json_str(
                 let mut tmp = key_index_stock[key_idx].to_string();
                 if value_idx == 0 && !value.is_empty() {
                     tmp = k.to_string();
-                } else if value.is_empty() && value_idx >= 1 && !stocked_value[value_idx - 1].is_empty() {
+                } else if value.is_empty()
+                    && value_idx >= 1
+                    && !stocked_value[value_idx - 1].is_empty()
+                {
                     key_idx += 1;
                     continue;
                 }
