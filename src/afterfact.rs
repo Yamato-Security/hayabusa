@@ -912,11 +912,12 @@ fn output_json_str(
         let vec_data = _get_json_vec(output_value_fmt, v);
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = v.split(": ").collect();
+            let output_val = _convert_valid_json_str(&tmp_val);
             target.push(_create_json_output_format(
                 k,
-                &_convert_valid_json_str(&tmp_val),
+                &output_val,
                 k.starts_with('\"'),
-                v.starts_with('\"'),
+                output_val.starts_with('\"'),
             ));
         } else if output_value_fmt.contains("%Details%") {
             let mut stocked_value = vec![];
