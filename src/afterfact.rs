@@ -926,7 +926,7 @@ fn output_json_str(
                 let space_split: Vec<&str> = detail_contents.split(' ').collect();
                 let mut tmp_stock = vec![];
                 for sp in space_split.iter() {
-                    if sp.ends_with(':') && sp != &":" && sp.len() != 2 {
+                    if sp.ends_with(':') && sp != &":" {
                         stocked_value.push(tmp_stock);
                         tmp_stock = vec![];
                         key_index_stock.push(sp.replace(':', "").to_owned());
@@ -936,16 +936,15 @@ fn output_json_str(
                 }
                 stocked_value.push(tmp_stock);
             }
-            let mut tmp = String::default();
             let mut key_idx = 0;
             let mut output_value_stock = String::default();
             for (value_idx, value) in stocked_value.iter().enumerate() {
-                if value.is_empty() && value_idx >= 1 && !stocked_value[value_idx - 1].is_empty() {
-                    tmp = key_index_stock[key_idx].to_string();
+                let mut tmp = key_index_stock[key_idx].to_string();
+                if value_idx == 0 && !value.is_empty() {
+                    tmp = k.to_string();
+                } else if value.is_empty() && value_idx >= 1 && !stocked_value[value_idx - 1].is_empty() {
                     key_idx += 1;
                     continue;
-                } else if value_idx == 0 {
-                    tmp = k.to_string();
                 }
                 if !output_value_stock.is_empty() {
                     output_value_stock.push_str(" | ");
