@@ -11,6 +11,7 @@ use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use core::cmp::max;
 use csv::{QuoteStyle, WriterBuilder};
+use dashmap::Map;
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
@@ -263,7 +264,7 @@ fn emit_csv<W: std::io::Write>(
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
-        for detect_info in detect_infos {
+        for (info_idx, detect_info) in detect_infos.iter().enumerate() {
             if !detect_info.detail.starts_with("[condition]") {
                 detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
             }
@@ -294,10 +295,12 @@ fn emit_csv<W: std::io::Write>(
             } else if json_output_flag {
                 wtr.write_field("  {")?;
                 wtr.write_field(&output_json_str(&detect_info.ext_field, &profile))?;
-                if processed_message_cnt == message::MESSAGES.len() - 1 {
-                    wtr.write_field("  }")?;
-                } else {
+                if processed_message_cnt != message::MESSAGES._len() - 1
+                    || info_idx != detect_infos.len() - 1
+                {
                     wtr.write_field("  },")?;
+                } else {
+                    wtr.write_field("  }")?;
                 }
             } else {
                 // csv output format
