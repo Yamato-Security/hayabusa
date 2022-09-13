@@ -943,7 +943,11 @@ fn output_json_str(
             let mut key_idx = 0;
             let mut output_value_stock = String::default();
             for (value_idx, value) in stocked_value.iter().enumerate() {
-                let mut tmp = key_index_stock[key_idx].to_string();
+                let mut tmp = if key_idx >= key_index_stock.len() {
+                    String::default()
+                } else {
+                    key_index_stock[key_idx].to_string()
+                };
                 if value_idx == 0 && !value.is_empty() {
                     tmp = k.to_string();
                 } else if value.is_empty()
