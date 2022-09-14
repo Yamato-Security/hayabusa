@@ -875,7 +875,7 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
         input[0].to_string()
     } else if concat_flag {
         input.join(": ")
-    } else{
+    } else {
         input[1..].join(": ")
     };
     let char_cnt = tmp.char_indices().count();
@@ -917,7 +917,8 @@ fn output_json_str(
         let vec_data = _get_json_vec(output_value_fmt, v);
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = v.split(": ").collect();
-            let output_val = _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
+            let output_val =
+                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
             target.push(_create_json_output_format(
                 k,
                 &output_val,
