@@ -870,10 +870,12 @@ fn _create_json_output_format(
 }
 
 /// JSONの値に対して文字列の出力形式をJSON出力でエラーにならないようにするための変換を行う関数
-fn _convert_valid_json_str(input: &[&str]) -> String {
+fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     let tmp = if input.len() == 1 {
         input[0].to_string()
-    } else {
+    } else if concat_flag {
+        input.join(": ")
+    } else{
         input[1..].join(": ")
     };
     let char_cnt = tmp.char_indices().count();
@@ -915,7 +917,7 @@ fn output_json_str(
         let vec_data = _get_json_vec(output_value_fmt, v);
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = v.split(": ").collect();
-            let output_val = _convert_valid_json_str(&tmp_val);
+            let output_val = _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
             target.push(_create_json_output_format(
                 k,
                 &output_val,
@@ -965,8 +967,8 @@ fn output_json_str(
                     // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]]);
-                    let fmted_val = _convert_valid_json_str(&output);
+                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let fmted_val = _convert_valid_json_str(&output, false);
                     target.push(_create_json_output_format(
                         &key,
                         &fmted_val,
@@ -979,8 +981,8 @@ fn output_json_str(
                 if value_idx == stocked_value.len() - 1 {
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]]);
-                    let fmted_val = _convert_valid_json_str(&output);
+                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let fmted_val = _convert_valid_json_str(&output, false);
                     target.push(_create_json_output_format(
                         &key,
                         &fmted_val,
@@ -995,7 +997,7 @@ fn output_json_str(
         {
             let tmp_val: Vec<&str> = v.split(": ").collect();
 
-            let key = _convert_valid_json_str(&[k.as_str()]);
+            let key = _convert_valid_json_str(&[k.as_str()], false);
             let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
             let mut value: Vec<String> = vec![];
 
