@@ -380,6 +380,7 @@ ADVANCED:
         --target-file-ext <EVTX_FILE_EXT>...    Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
 
 OUTPUT:
+    -j, --json                 Save the timeline in JSON format (ex: -j -o results.json)
     -o, --output <FILE>        Save the timeline in CSV format (ex: results.csv)
     -P, --profile <PROFILE>    Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
@@ -434,7 +435,13 @@ hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `verbose-details-and-all-field-info` profile!):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+```
+
+* Save the timline in JSON format:
+
+```bash
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):

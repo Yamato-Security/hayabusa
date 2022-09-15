@@ -9,11 +9,14 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
-use csv::QuoteStyle;
+
+use csv::{QuoteStyle, WriterBuilder};
+use dashmap::Map;
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
+use std::str::FromStr;
 
 use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
@@ -189,7 +192,13 @@ pub fn after_fact(all_record_cnt: usize) {
             Box::new(BufWriter::new(io::stdout()))
         };
     let color_map = set_output_color();
-    if let Err(err) = emit_csv(&mut target, displayflag, color_map, all_record_cnt as u128) {
+    if let Err(err) = emit_csv(
+        &mut target,
+        displayflag,
+        color_map,
+        all_record_cnt as u128,
+        PROFILES.clone().unwrap_or_default(),
+    ) {
         fn_emit_csv_err(Box::new(err));
     }
 }
@@ -199,10 +208,21 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<String, Colors>,
     all_record_cnt: u128,
+    profile: LinkedHashMap<String, String>,
 ) -> io::Result<()> {
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-    let mut wtr = csv::WriterBuilder::new().from_writer(writer);
+    let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
+
+    let mut wtr = if json_output_flag {
+        WriterBuilder::new()
+            .delimiter(b'\n')
+            .double_quote(false)
+            .quote_style(QuoteStyle::Never)
+            .from_writer(writer)
+    } else {
+        WriterBuilder::new().from_writer(writer)
+    };
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
@@ -231,11 +251,20 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    for time in message::MESSAGES.clone().into_read_only().keys().sorted() {
+    if json_output_flag {
+        wtr.write_field("[")?;
+    }
+    for (processed_message_cnt, time) in message::MESSAGES
+        .clone()
+        .into_read_only()
+        .keys()
+        .sorted()
+        .enumerate()
+    {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
-        for detect_info in detect_infos {
+        for (info_idx, detect_info) in detect_infos.iter().enumerate() {
             if !detect_info.detail.starts_with("[condition]") {
                 detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
             }
@@ -245,7 +274,7 @@ fn emit_csv<W: std::io::Write>(
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None),
-                        &_get_serialized_disp_output(PROFILES.as_ref().unwrap(), true),
+                        &_get_serialized_disp_output(&profile, true),
                         false,
                     )
                     .ok();
@@ -263,6 +292,16 @@ fn emit_csv<W: std::io::Write>(
                     false,
                 )
                 .ok();
+            } else if json_output_flag {
+                wtr.write_field("  {")?;
+                wtr.write_field(&output_json_str(&detect_info.ext_field, &profile))?;
+                if processed_message_cnt != message::MESSAGES._len() - 1
+                    || info_idx != detect_infos.len() - 1
+                {
+                    wtr.write_field("  },")?;
+                } else {
+                    wtr.write_field("  }")?;
+                }
             } else {
                 // csv output format
                 if plus_header {
@@ -332,6 +371,10 @@ fn emit_csv<W: std::io::Write>(
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
     }
+    if json_output_flag {
+        wtr.write_field("]")?;
+    }
+
     if displayflag {
         println!();
     } else {
@@ -489,7 +532,7 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
             }
         }
     }
-    let mut disp_serializer = csv::WriterBuilder::new()
+    let mut disp_serializer = WriterBuilder::new()
         .double_quote(false)
         .quote_style(QuoteStyle::Never)
         .delimiter(b'|')
@@ -774,6 +817,235 @@ fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
     }
 }
 
+/// json出力の際に配列として対応させるdetails,MitreTactics,MitreTags,OtherTagsに該当する場合に配列を返す関数
+fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String> {
+    if target_alias_context.contains("%MitreTactics%")
+        || target_alias_context.contains("%OtherTags%")
+        || target_alias_context.contains("%MitreTags%")
+    {
+        let ret: Vec<String> = target_data
+            .to_owned()
+            .split(": ")
+            .map(|x| x.to_string())
+            .collect();
+        ret
+    } else if target_alias_context.contains("%Details%") {
+        let ret: Vec<String> = target_data
+            .to_owned()
+            .split(" ¦ ")
+            .map(|x| x.to_string())
+            .collect();
+        if target_data == &ret[0] && !target_data.contains(": ") {
+            vec![]
+        } else {
+            ret
+        }
+    } else {
+        vec![]
+    }
+}
+
+/// JSONの出力フォーマットに合わせた文字列を出力する関数
+fn _create_json_output_format(
+    key: &String,
+    value: &str,
+    key_quote_exclude_flag: bool,
+    concat_flag: bool,
+) -> String {
+    let head = if key_quote_exclude_flag {
+        key.to_string()
+    } else {
+        format!("\"{}\"", key)
+    };
+    // 4 space is json indent.
+    if let Ok(i) = i64::from_str(value) {
+        format!("    {}: {}", head, i)
+    } else if let Ok(b) = bool::from_str(value) {
+        format!("    {}: {}", head, b)
+    } else if concat_flag {
+        format!("    {}: {}", head, value)
+    } else {
+        format!("    {}: \"{}\"", head, value)
+    }
+}
+
+/// JSONの値に対して文字列の出力形式をJSON出力でエラーにならないようにするための変換を行う関数
+fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
+    let tmp = if input.len() == 1 {
+        input[0].to_string()
+    } else if concat_flag {
+        input.join(": ")
+    } else {
+        input[1..].join(": ")
+    };
+    let char_cnt = tmp.char_indices().count();
+    let con_val = tmp.as_str();
+    if char_cnt == 0 {
+        tmp
+    } else if con_val.starts_with('\"') {
+        let addition_header = if !con_val.starts_with('\"') { "\"" } else { "" };
+        let addition_quote = if !con_val.ends_with('\"') && concat_flag {
+            "\""
+        } else if !con_val.ends_with('\"') {
+            "\\\""
+        } else {
+            ""
+        };
+        [
+            addition_header,
+            con_val
+                .to_string()
+                .replace('\\', "\\\\")
+                .replace('\"', "\\\"")
+                .trim(),
+            addition_quote,
+        ]
+        .join("")
+    } else {
+        con_val
+            .replace('\\', "\\\\")
+            .replace('\"', "\\\"")
+            .trim()
+            .to_string()
+    }
+}
+
+/// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
+fn output_json_str(
+    ext_field: &LinkedHashMap<String, String>,
+    profile: &LinkedHashMap<String, String>,
+) -> String {
+    let mut target: Vec<String> = vec![];
+    for (k, v) in ext_field.iter() {
+        let output_value_fmt = profile.get(k).unwrap();
+        let vec_data = _get_json_vec(output_value_fmt, v);
+        if vec_data.is_empty() {
+            let tmp_val: Vec<&str> = v.split(": ").collect();
+            let output_val =
+                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
+            target.push(_create_json_output_format(
+                k,
+                &output_val,
+                k.starts_with('\"'),
+                output_val.starts_with('\"'),
+            ));
+        } else if output_value_fmt.contains("%Details%") {
+            let mut stocked_value = vec![];
+            let mut key_index_stock = vec![];
+            for detail_contents in vec_data.iter() {
+                // 分解してキーとなりえる箇所を抽出する
+                let space_split: Vec<&str> = detail_contents.split(' ').collect();
+                let mut tmp_stock = vec![];
+                for sp in space_split.iter() {
+                    if sp.ends_with(':') && sp != &":" {
+                        stocked_value.push(tmp_stock);
+                        tmp_stock = vec![];
+                        key_index_stock.push(sp.replace(':', "").to_owned());
+                    } else {
+                        tmp_stock.push(sp.to_owned());
+                    }
+                }
+                stocked_value.push(tmp_stock);
+            }
+            let mut key_idx = 0;
+            let mut output_value_stock = String::default();
+            for (value_idx, value) in stocked_value.iter().enumerate() {
+                let mut tmp = if key_idx >= key_index_stock.len() {
+                    String::default()
+                } else if value_idx == 0 && !value.is_empty() {
+                    k.to_string()
+                } else {
+                    key_index_stock[key_idx].to_string()
+                };
+                if !output_value_stock.is_empty() {
+                    output_value_stock.push_str(" | ");
+                }
+                output_value_stock.push_str(&value.join(" "));
+                //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
+                let is_remain_split_stock = if key_idx == key_index_stock.len() - 2
+                    && value_idx < stocked_value.len() - 1
+                    && !output_value_stock.is_empty()
+                {
+                    let mut ret = true;
+                    for remain_value in stocked_value[value_idx + 1..].iter() {
+                        if remain_value.is_empty() {
+                            ret = false;
+                            break;
+                        }
+                    }
+                    ret
+                } else {
+                    false
+                };
+                if (value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty())
+                    || is_remain_split_stock
+                {
+                    // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
+                    let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                    let output: Vec<&str> = output_tmp.split(": ").collect();
+                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let fmted_val = _convert_valid_json_str(&output, false);
+                    target.push(_create_json_output_format(
+                        &key,
+                        &fmted_val,
+                        key.starts_with('\"'),
+                        fmted_val.starts_with('\"'),
+                    ));
+                    output_value_stock.clear();
+                    tmp = String::default();
+                    key_idx += 1;
+                }
+                if value_idx == stocked_value.len() - 1 {
+                    let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                    let output: Vec<&str> = output_tmp.split(": ").collect();
+                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let fmted_val = _convert_valid_json_str(&output, false);
+                    target.push(_create_json_output_format(
+                        &key,
+                        &fmted_val,
+                        key.starts_with('\"'),
+                        fmted_val.starts_with('\"'),
+                    ));
+                    key_idx += 1;
+                }
+            }
+        } else if output_value_fmt.contains("%MitreTags%")
+            || output_value_fmt.contains("%MitreTactics%")
+            || output_value_fmt.contains("%OtherTags%")
+        {
+            let tmp_val: Vec<&str> = v.split(": ").collect();
+
+            let key = _convert_valid_json_str(&[k.as_str()], false);
+            let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
+            let mut value: Vec<String> = vec![];
+
+            if values.is_empty() {
+                continue;
+            }
+            for (idx, tag_val) in values.iter().enumerate() {
+                if idx == 0 {
+                    value.push("[\n".to_string());
+                }
+                let insert_val = format!("        \"{}\"", tag_val.trim());
+                value.push(insert_val);
+                if idx != values.len() - 1 {
+                    value.push(",\n".to_string());
+                }
+            }
+            value.push("\n    ]".to_string());
+
+            let fmted_val = value.join("");
+            target.push(_create_json_output_format(
+                &key,
+                &fmted_val,
+                key.starts_with('\"'),
+                true,
+            ));
+        }
+    }
+    target.join(",\n")
+}
+
 #[cfg(test)]
 mod tests {
     use crate::afterfact::_get_serialized_disp_output;
@@ -863,7 +1135,7 @@ mod tests {
                     eventid: test_eventid.to_string(),
                     detail: String::default(),
                     record_information: Option::Some(test_recinfo.to_string()),
-                    ext_field: output_profile,
+                    ext_field: output_profile.clone(),
                 },
                 expect_time,
                 &mut profile_converter,
@@ -903,7 +1175,7 @@ mod tests {
                 + test_attack
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::new(), 1).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::new(), 1, output_profile).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {

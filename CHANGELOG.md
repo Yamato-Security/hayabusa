@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- XXX
+- You can now save the timeline to JSON files with the `-j, --json-timeline` option.  (#654) (@hitenkoku)
 
 **Enhancements:**
 
@@ -40,6 +40,7 @@
 
 - Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml`. (#165) (@hitenkoku)
 - Implemented the `null` keyword for rule detection. It is used to check if a target field exists or not. (#643) (@hitenkoku)
+- Added output to JSON option (`-j` and `--json-timeline` )  (#654) (@hitenkoku)
 
 **Enhancements:**
 

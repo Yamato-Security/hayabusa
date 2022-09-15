@@ -388,6 +388,7 @@ ADVANCED:
         --target-file-ext <EVTX_FILE_EXT>...    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
 
 OUTPUT:
+    -j, --json                             タイムラインの出力をJSON形式で保存する（例: -j -o results.json）
     -o, --output <FILE>                    タイムラインをCSV形式で保存する (例: results.csv)
     -P, --profile <PROFILE>                利用する出力プロファイル名を指定する (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
@@ -408,13 +409,13 @@ FILTERING:
         --timeline-start <DATE>         解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 OTHER-ACTIONS:
-        --contributors           コントリビュータの一覧表示
-    -L, --logon-summary          成功と失敗したログオン情報の要約を出力する
+        --contributors                          コントリビュータの一覧表示
+    -L, --logon-summary                         成功と失敗したログオン情報の要約を出力する
         --level-tuning [<FILE>]                 ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-    -p, --pivot-keywords-list    ピボットキーワードの一覧作成
-    -s, --statistics             イベントIDの統計情報を表示する
-        --set-default-profile <PROFILE>    デフォルトの出力コンフィグを設定する
-    -u, --update-rules           rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
+    -p, --pivot-keywords-list                   ピボットキーワードの一覧作成
+    -s, --statistics                            イベントIDの統計情報を表示する
+        --set-default-profile <PROFILE>         デフォルトの出力コンフィグを設定する
+    -u, --update-rules                          rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
 
 TIME-FORMAT:
         --European-time       ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
@@ -442,7 +443,13 @@ hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 * 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: `verbose-details-and-all-field-info`プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P `verbose-details-and-all-field-info`
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+```
+
+* タイムラインをJSON形式で保存する:
+
+```bash
+hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
 ```
 
 * Hayabusaルールのみを実行する（デフォルトでは`-r .\rules`にあるすべてのルールが利用される）:
