@@ -5,6 +5,7 @@
 **New Features:**
 
 - You can now save the timeline to JSON files with the `-j, --json-timeline` option.  (#654) (@hitenkoku)
+- You can now save the timeline to JSONL files with the `-J, --jsonl` option.  (#694) (@hitenkoku)
 
 **Enhancements:**
 
