@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>README-Japanese.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<div align="center">
+ <p>
+    <img alt="Hayabusa Logo" src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/logo.png" width="50%">
+ </p>
+  [<a href="README.md">English</a>] | [<b>&#x65E5;&#x672C;&#x8A9E;</b>]
+</div>
+<hr>
+<p><img src="https://img.shields.io/github/downloads/Yamato-Security/hayabusa/total?style=plastic&amp;label=GitHub%F0%9F%A6%85Downloads" alt="tag-1"> <img src="https://img.shields.io/github/stars/Yamato-Security/hayabusa?style=plastic&amp;label=GitHub%F0%9F%A6%85Stars" alt="tag-2"> <a href="https://github.com/Yamato-Security/hayabusa/releases"><img src="https://img.shields.io/github/v/release/Yamato-Security/hayabusa?display_name=tag&amp;label=latest-version&amp;style=plastic" alt="tag-3"></a> <img src="https://github.com/toolswatch/badges/blob/master/arsenal/asia/2022.svg" alt="tag-4"> <img src="https://img.shields.io/badge/CODE%20BLUE%20Bluebox-2022-blue" alt="tag-8">
+<a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa"><img src="https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa" alt="tag-5"></a> <img src="https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg" alt="tag-6">  <a href="https://twitter.com/SecurityYamato"><img src="https://img.shields.io/badge/Twitter-00acee?logo=twitter&amp;logoColor=white" alt="tag-7"></a></p>
+<h1 id="hayabusa-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">Hayabusa について</h1>
+<p>Hayabusaは、日本の<a href="https://yamatosecurity.connpass.com/">Yamato Security</a>グループによって作られた<strong>Windowsイベントログのファストフォレンジックタイムライン生成</strong>および<strong>スレットハンティングツール</strong>です。 Hayabusaは日本語で<a href="https://en.wikipedia.org/wiki/Peregrine_falcon">「ハヤブサ」</a>を意味し、ハヤブサが世界で最も速く、狩猟(hunting)に優れ、とても訓練しやすい動物であることから選ばれました。<a href="https://www.rust-lang.org/">Rust</a> で開発され、マルチスレッドに対応し、可能な限り高速に動作するよう配慮されています。<a href="https://github.com/SigmaHQ/Sigma">Sigma</a>ルールをHayabusaルール形式に変換する<a href="https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac">ツール</a>も提供しています。Hayabusaの検知ルールもSigmaと同様にYML形式であり、カスタマイズ性や拡張性に優れます。稼働中のシステムで実行してライブ調査することも、複数のシステムからログを収集してオフライン調査することも可能です。また、 <a href="https://docs.velociraptor.app/">Velociraptor</a>と<a href="https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/">Hayabusa artifact</a>を用いることで企業向けの広範囲なスレットハンティングとインシデントレスポンスにも活用できます。出力は一つのCSVタイムラインにまとめられ、Excel、<a href="https://ericzimmerman.github.io/#!index.md">Timeline Explorer</a>、<a href="doc/ElasticStackImport/ElasticStackImport-Japanese.md">Elastic Stack</a>、<a href="https://timesketch.org/">Timesketch</a>等で簡単に分析できるようになります。</p>
+<h2 id="%E7%9B%AE%E6%AC%A1">目次</h2>
+<ul>
+<li><a href="#hayabusa-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">Hayabusa について</a>
+<ul>
+<li><a href="#%E7%9B%AE%E6%AC%A1">目次</a></li>
+<li><a href="#%E4%B8%BB%E3%81%AA%E7%9B%AE%E7%9A%84">主な目的</a>
+<ul>
+<li><a href="#%E3%82%B9%E3%83%AC%E3%83%83%E3%83%88%E8%84%85%E5%A8%81%E3%83%8F%E3%83%B3%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0%E3%81%A8%E4%BC%81%E6%A5%AD%E5%90%91%E3%81%91%E3%81%AE%E5%BA%83%E7%AF%84%E5%9B%B2%E3%81%AAdfir">スレット(脅威)ハンティングと企業向けの広範囲なDFIR</a></li>
+<li><a href="#%E3%83%95%E3%82%A9%E3%83%AC%E3%83%B3%E3%82%B8%E3%83%83%E3%82%AF%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3%E3%81%AE%E9%AB%98%E9%80%9F%E7%94%9F%E6%88%90">フォレンジックタイムラインの高速生成</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88">スクリーンショット</a>
+<ul>
+<li><a href="#%E8%B5%B7%E5%8B%95%E7%94%BB%E9%9D%A2">起動画面</a></li>
+<li><a href="#%E3%82%BF%E3%83%BC%E3%83%9F%E3%83%8A%E3%83%AB%E5%87%BA%E5%8A%9B%E7%94%BB%E9%9D%A2">ターミナル出力画面</a></li>
+<li><a href="#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E9%A0%BB%E5%BA%A6%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3%E5%87%BA%E5%8A%9B%E7%94%BB%E9%9D%A2--v%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3">イベント頻度タイムライン出力画面 (<code>-V</code>オプション)</a></li>
+<li><a href="#%E7%B5%90%E6%9E%9C%E3%82%B5%E3%83%9E%E3%83%AA%E7%94%BB%E9%9D%A2">結果サマリ画面</a></li>
+<li><a href="#excel%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Excelでの解析</a></li>
+<li><a href="#timeline-explorer%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Timeline Explorerでの解析</a></li>
+<li><a href="#critical%E3%82%A2%E3%83%A9%E3%83%BC%E3%83%88%E3%81%AE%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF%E3%83%AA%E3%83%B3%E3%82%B0%E3%81%A8%E3%82%B3%E3%83%B3%E3%83%94%E3%83%A5%E3%83%BC%E3%82%BF%E3%81%94%E3%81%A8%E3%81%AE%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%94%E3%83%B3%E3%82%B0">Criticalアラートのフィルタリングとコンピュータごとのグルーピング</a></li>
+<li><a href="#elastic-stack%E3%83%80%E3%83%83%E3%82%B7%E3%83%A5%E3%83%9C%E3%83%BC%E3%83%89%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Elastic Stackダッシュボードでの解析</a></li>
+<li><a href="#timesketch%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Timesketchでの解析</a></li>
+</ul>
+</li>
+<li><a href="#%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3%E3%81%AE%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E7%B5%90%E6%9E%9C">タイムラインのサンプル結果</a></li>
+<li><a href="#%E7%89%B9%E5%BE%B4%E6%A9%9F%E8%83%BD">特徴＆機能</a></li>
+<li><a href="#%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89">ダウンロード</a></li>
+<li><a href="#git%E3%82%AF%E3%83%AD%E3%83%BC%E3%83%B3">Gitクローン</a></li>
+<li><a href="#%E3%82%A2%E3%83%89%E3%83%90%E3%83%B3%E3%82%B9-%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E3%81%8B%E3%82%89%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E4%BB%BB%E6%84%8F">アドバンス: ソースコードからのコンパイル（任意）</a>
+<ul>
+<li><a href="#rust%E3%83%91%E3%83%83%E3%82%B1%E3%83%BC%E3%82%B8%E3%81%AE%E6%9B%B4%E6%96%B0">Rustパッケージの更新</a></li>
+<li><a href="#32%E3%83%93%E3%83%83%E3%83%88windows%E3%83%90%E3%82%A4%E3%83%8A%E3%83%AA%E3%81%AE%E3%82%AF%E3%83%AD%E3%82%B9%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB">32ビットWindowsバイナリのクロスコンパイル</a></li>
+<li><a href="#macos%E3%81%A7%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9">macOSでのコンパイルの注意点</a></li>
+<li><a href="#linux%E3%81%A7%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9">Linuxでのコンパイルの注意点</a></li>
+<li><a href="#linux%E3%81%AEmusl%E3%83%90%E3%82%A4%E3%83%8A%E3%83%AA%E3%81%AE%E3%82%AF%E3%83%AD%E3%82%B9%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB">LinuxのMUSLバイナリのクロスコンパイル</a></li>
+<li><a href="#linux%E3%81%A7%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9-1">Linuxでのコンパイルの注意点</a></li>
+</ul>
+</li>
+<li><a href="#hayabusa%E3%81%AE%E5%AE%9F%E8%A1%8C">Hayabusaの実行</a>
+<ul>
+<li><a href="#%E6%B3%A8%E6%84%8F-%E3%82%A2%E3%83%B3%E3%83%81%E3%82%A6%E3%82%A3%E3%83%AB%E3%82%B9edr%E3%81%AE%E8%AA%A4%E6%A4%9C%E7%9F%A5%E3%81%A8%E9%81%85%E3%81%84%E5%88%9D%E5%9B%9E%E5%AE%9F%E8%A1%8C">注意: アンチウィルス/EDRの誤検知と遅い初回実行</a></li>
+<li><a href="#windows">Windows</a></li>
+<li><a href="#linux">Linux</a></li>
+<li><a href="#macos">macOS</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95">使用方法</a>
+<ul>
+<li><a href="#%E4%B8%BB%E3%81%AA%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89">主なコマンド</a></li>
+<li><a href="#%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89%E3%83%A9%E3%82%A4%E3%83%B3%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3">コマンドラインオプション</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8%E4%BE%8B">使用例</a></li>
+<li><a href="#%E3%83%94%E3%83%9C%E3%83%83%E3%83%88%E3%82%AD%E3%83%BC%E3%83%AF%E3%83%BC%E3%83%89%E3%81%AE%E4%BD%9C%E6%88%90">ピボットキーワードの作成</a></li>
+<li><a href="#%E3%83%AD%E3%82%B0%E3%82%AA%E3%83%B3%E6%83%85%E5%A0%B1%E3%81%AE%E8%A6%81%E7%B4%84">ログオン情報の要約</a></li>
+</ul>
+</li>
+<li><a href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%ABevtx%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%A7hayabusa%E3%82%92%E3%83%86%E3%82%B9%E3%83%88%E3%81%99%E3%82%8B">サンプルevtxファイルでHayabusaをテストする</a></li>
+<li><a href="#hayabusa%E3%81%AE%E5%87%BA%E5%8A%9B">Hayabusaの出力</a>
+<ul>
+<li><a href="#%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB">プロファイル</a>
+<ul>
+<li><a href="#1-minimal%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">1. <code>minimal</code>プロファイルの出力</a></li>
+<li><a href="#2-standard%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">2. <code>standard</code>プロファイルの出力</a></li>
+<li><a href="#3-verbose%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">3. <code>verbose</code>プロファイルの出力</a></li>
+<li><a href="#4-all-field-info%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">4. <code>all-field-info</code>プロファイルの出力</a></li>
+<li><a href="#5-all-field-info-verbose%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">5. <code>all-field-info-verbose</code>プロファイルの出力</a></li>
+<li><a href="#6-super-verbose%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">6. <code>super-verbose</code>プロファイルの出力</a></li>
+<li><a href="#7-timesketch%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">7. <code>timesketch</code>プロファイルの出力</a></li>
+<li><a href="#8-timesketch%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">8. <code>timesketch</code>プロファイルの出力</a></li>
+<li><a href="#%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E6%AF%94%E8%BC%83">プロファイルの比較</a></li>
+<li><a href="#profile-field-aliases">Profile Field Aliases</a></li>
+</ul>
+</li>
+<li><a href="#level%E3%81%AE%E7%9C%81%E7%95%A5">Levelの省略</a></li>
+<li><a href="#mitre-attck%E6%88%A6%E8%A1%93%E3%81%AE%E7%9C%81%E7%95%A5">MITRE ATT&amp;CK戦術の省略</a></li>
+<li><a href="#channel%E6%83%85%E5%A0%B1%E3%81%AE%E7%9C%81%E7%95%A5">Channel情報の省略</a></li>
+</ul>
+</li>
+<li><a href="#%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AE%E3%81%AE%E7%9C%81%E7%95%A5">その他のの省略</a>
+<ul>
+<li><a href="#%E3%83%97%E3%83%AD%E3%82%B0%E3%83%AC%E3%82%B9%E3%83%90%E3%83%BC">プログレスバー</a></li>
+<li><a href="#%E6%A8%99%E6%BA%96%E5%87%BA%E5%8A%9B%E3%81%B8%E3%81%AE%E3%82%AB%E3%83%A9%E3%83%BC%E8%A8%AD%E5%AE%9A">標準出力へのカラー設定</a></li>
+<li><a href="#%E7%B5%90%E6%9E%9C%E3%81%AE%E3%82%B5%E3%83%9E%E3%83%AA">結果のサマリ</a>
+<ul>
+<li><a href="#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E9%A0%BB%E5%BA%A6%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3">イベント頻度タイムライン</a></li>
+<li><a href="#%E6%9C%80%E5%A4%9A%E6%A4%9C%E7%9F%A5%E6%97%A5%E3%81%AE%E5%87%BA%E5%8A%9B">最多検知日の出力</a></li>
+<li><a href="#%E6%9C%80%E5%A4%9A%E6%A4%9C%E7%9F%A5%E7%AB%AF%E6%9C%AB%E5%90%8D%E3%81%AE%E5%87%BA%E5%8A%9B">最多検知端末名の出力</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#hayabusa%E3%83%AB%E3%83%BC%E3%83%AB">Hayabusaルール</a>
+<ul>
+<li><a href="#hayabusa-vs-%E5%A4%89%E6%8F%9B%E3%81%95%E3%82%8C%E3%81%9Fsigma%E3%83%AB%E3%83%BC%E3%83%AB">Hayabusa v.s. 変換されたSigmaルール</a></li>
+<li><a href="#%E6%A4%9C%E7%9F%A5%E3%83%AB%E3%83%BC%E3%83%AB%E3%81%AE%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0">検知ルールのチューニング</a></li>
+<li><a href="#%E6%A4%9C%E7%9F%A5%E3%83%AC%E3%83%99%E3%83%AB%E3%81%AElevel%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0">検知レベルのlevelチューニング</a></li>
+<li><a href="#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88id%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF%E3%83%AA%E3%83%B3%E3%82%B0">イベントIDフィルタリング</a></li>
+</ul>
+</li>
+<li><a href="#%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AEwindows%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%83%AD%E3%82%B0%E8%A7%A3%E6%9E%90%E3%83%84%E3%83%BC%E3%83%AB%E3%81%8A%E3%82%88%E3%81%B3%E9%96%A2%E9%80%A3%E3%83%AA%E3%82%BD%E3%83%BC%E3%82%B9">その他のWindowsイベントログ解析ツールおよび関連リソース</a></li>
+<li><a href="#windows%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%83%AD%E3%82%B0%E8%A8%AD%E5%AE%9A%E3%81%AE%E3%82%B9%E3%82%B9%E3%83%A1">Windowsイベントログ設定のススメ</a></li>
+<li><a href="#sysmon%E9%96%A2%E4%BF%82%E3%81%AE%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">Sysmon関係のプロジェクト</a></li>
+<li><a href="#%E3%82%B3%E3%83%9F%E3%83%A5%E3%83%8B%E3%83%86%E3%82%A3%E3%81%AB%E3%82%88%E3%82%8B%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3">コミュニティによるドキュメンテーション</a>
+<ul>
+<li><a href="#%E8%8B%B1%E8%AA%9E">英語</a></li>
+<li><a href="#%E6%97%A5%E6%9C%AC%E8%AA%9E">日本語</a></li>
+</ul>
+</li>
+<li><a href="#%E8%B2%A2%E7%8C%AE">貢献</a></li>
+<li><a href="#%E3%83%90%E3%82%B0%E3%81%AE%E5%A0%B1%E5%91%8A">バグの報告</a></li>
+<li><a href="#%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9">ライセンス</a></li>
+<li><a href="#twitter">Twitter</a></li>
+</ul>
+<h2 id="%E4%B8%BB%E3%81%AA%E7%9B%AE%E7%9A%84">主な目的</h2>
+<h3 id="%E3%82%B9%E3%83%AC%E3%83%83%E3%83%88%E8%84%85%E5%A8%81%E3%83%8F%E3%83%B3%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0%E3%81%A8%E4%BC%81%E6%A5%AD%E5%90%91%E3%81%91%E3%81%AE%E5%BA%83%E7%AF%84%E5%9B%B2%E3%81%AAdfir">スレット(脅威)ハンティングと企業向けの広範囲なDFIR</h3>
+<p>Hayabusaには現在、2600以上のSigmaルールと130以上のHayabusa検知ルールがあり、定期的にルールが追加されています。
+<a href="https://docs.velociraptor.app/">Velociraptor</a>の<a href="https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/">Hayabusa artifact</a>を用いることで企業向けの広範囲なスレットハンティングだけでなくDFIR(デジタルフォレンジックとインシデントレスポンス)にも無料で利用することが可能です。この2つのオープンソースを組み合わせることで、SIEMが設定されていない環境でも実質的に遡及してSIEMを再現することができます。具体的な方法は<a href="https://twitter.com/eric_capuano">Eric Capuano</a>の<a href="https://www.youtube.com/watch?v=Q1IoGX--814">こちら</a>の動画で学ぶことができます。
+最終的な目標はインシデントレスポンスや定期的なスレットハンティングのために、HayabusaエージェントをすべてのWindows端末にインストールして、中央サーバーにアラートを返す仕組みを作ることです。</p>
+<h3 id="%E3%83%95%E3%82%A9%E3%83%AC%E3%83%B3%E3%82%B8%E3%83%83%E3%82%AF%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3%E3%81%AE%E9%AB%98%E9%80%9F%E7%94%9F%E6%88%90">フォレンジックタイムラインの高速生成</h3>
+<p>Windowsのイベントログは、
+1）解析が困難なデータ形式であること
+2）データの大半がノイズであり調査に有用でないこと
+から、従来は非常に長い時間と手間がかかる解析作業となっていました。 Hayabusa は、有用なデータのみを抽出し、専門的なトレーニングを受けた分析者だけでなく、Windowsのシステム管理者であれば誰でも利用できる読みやすい形式で提示することを主な目的としています。
+Hayabusaは従来のWindowsイベントログ分析解析と比較して、分析者が20%の時間で80%の作業を行えるようにすることを目指しています。</p>
+<h1 id="%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88">スクリーンショット</h1>
+<h2 id="%E8%B5%B7%E5%8B%95%E7%94%BB%E9%9D%A2">起動画面</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/Hayabusa-Startup.png" alt="Hayabusa 起動画面"></p>
+<h2 id="%E3%82%BF%E3%83%BC%E3%83%9F%E3%83%8A%E3%83%AB%E5%87%BA%E5%8A%9B%E7%94%BB%E9%9D%A2">ターミナル出力画面</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/Hayabusa-Results.png" alt="Hayabusa ターミナル出力画面"></p>
+<h2 id="%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E9%A0%BB%E5%BA%A6%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3%E5%87%BA%E5%8A%9B%E7%94%BB%E9%9D%A2--v%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3">イベント頻度タイムライン出力画面 (<code>-V</code>オプション)</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/HayabusaEventFrequencyTimeline.png" alt="Hayabusa イベント頻度タイムライン出力画面"></p>
+<h2 id="%E7%B5%90%E6%9E%9C%E3%82%B5%E3%83%9E%E3%83%AA%E7%94%BB%E9%9D%A2">結果サマリ画面</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/HayabusaResultsSummary.png" alt="Hayabusa 結果サマリ画面"></p>
+<h2 id="excel%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Excelでの解析</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/ExcelScreenshot.png" alt="Hayabusa Excelでの解析"></p>
+<h2 id="timeline-explorer%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Timeline Explorerでの解析</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/TimelineExplorer-ColoredTimeline.png" alt="Hayabusa Timeline Explorerでの解析"></p>
+<h2 id="critical%E3%82%A2%E3%83%A9%E3%83%BC%E3%83%88%E3%81%AE%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF%E3%83%AA%E3%83%B3%E3%82%B0%E3%81%A8%E3%82%B3%E3%83%B3%E3%83%94%E3%83%A5%E3%83%BC%E3%82%BF%E3%81%94%E3%81%A8%E3%81%AE%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%94%E3%83%B3%E3%82%B0">Criticalアラートのフィルタリングとコンピュータごとのグルーピング</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/TimelineExplorer-CriticalAlerts-ComputerGrouping.png" alt="Timeline ExplorerでCriticalアラートのフィルタリングとコンピュータグルーピング"></p>
+<h2 id="elastic-stack%E3%83%80%E3%83%83%E3%82%B7%E3%83%A5%E3%83%9C%E3%83%BC%E3%83%89%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Elastic Stackダッシュボードでの解析</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/doc/ElasticStackImport/17-HayabusaDashboard-1.png" alt="Elastic Stack Dashboard 1"></p>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/doc/ElasticStackImport/18-HayabusaDashboard-2.png" alt="Elastic Stack Dashboard 2"></p>
+<h2 id="timesketch%E3%81%A7%E3%81%AE%E8%A7%A3%E6%9E%90">Timesketchでの解析</h2>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/TimesketchAnalysis.png" alt="Timesketch"></p>
+<h1 id="%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3%E3%81%AE%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E7%B5%90%E6%9E%9C">タイムラインのサンプル結果</h1>
+<p>CSVのタイムライン結果のサンプルは<a href="https://github.com/Yamato-Security/hayabusa/tree/main/sample-results">こちら</a>で確認できます。</p>
+<p>CSVのタイムラインをExcelやTimeline Explorerで分析する方法は<a href="doc/CSV-AnalysisWithExcelAndTimelineExplorer-Japanese.pdf">こちら</a>で紹介しています。</p>
+<p>CSVのタイムラインをElastic Stackにインポートする方法は<a href="doc/ElasticStackImport/ElasticStackImport-Japanese.md">こちら</a>で紹介しています。</p>
+<p>CSVのタイムラインをTimesketchにインポートする方法は<a href="doc/TimesketchImport/TimesketchImport-Japanese.md">こちら</a>で紹介しています。</p>
+<h1 id="%E7%89%B9%E5%BE%B4%EF%BC%86%E6%A9%9F%E8%83%BD">特徴＆機能</h1>
+<ul>
+<li>クロスプラットフォーム対応: Windows, Linux, macOS。</li>
+<li>Rustで開発され、メモリセーフでハヤブサよりも高速です！</li>
+<li>マルチスレッド対応により、最大5倍のスピードアップを実現。</li>
+<li>フォレンジック調査やインシデントレスポンスのために、分析しやすいCSVタイムラインを作成します。</li>
+<li>読みやすい/作成/編集可能なYMLベースのHayabusaルールで作成されたIoCシグネチャに基づくスレット。</li>
+<li>SigmaルールをHayabusaルールに変換するためのSigmaルールのサポートがされています。</li>
+<li>現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルールにも対応しています。</li>
+<li>イベントログの統計。(どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。)</li>
+<li>不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。</li>
+<li>MITRE ATT&amp;CKとのマッピング (CSVの出力ファイルのみ)。</li>
+<li>ルールレベルのチューニング。</li>
+<li>イベントログから不審なユーザやファイルを素早く特定するためのピボットキーワードの一覧作成。</li>
+<li>詳細な調査のために全フィールド情報の出力。</li>
+<li>成功と失敗したユーザログオンの要約。</li>
+<li><a href="https://docs.velociraptor.app/">Velociraptor</a>と組み合わせた企業向けの広範囲なすべてのエンドポイントに対するスレットハンティングとDFIR。</li>
+</ul>
+<h1 id="%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89">ダウンロード</h1>
+<p><a href="https://github.com/Yamato-Security/hayabusa/releases">Releases</a>ページからHayabusaの安定したバージョンでコンパイルされたバイナリが含まれている最新版もしくはソースコードをダウンロードできます。</p>
+<h1 id="git%E3%82%AF%E3%83%AD%E3%83%BC%E3%83%B3">Gitクローン</h1>
+<p>以下の<code>git clone</code>コマンドでレポジトリをダウンロードし、ソースコードからコンパイルして使用することも可能です：</p>
+<pre class="hljs"><code><div>git <span class="hljs-built_in">clone</span> https://github.com/Yamato-Security/hayabusa.git --recursive
+</div></code></pre>
+<p><strong>注意：</strong> mainブランチは開発中のバージョンです。まだ正式にリリースされていない新機能が使えるかもしれないが、バグがある可能性もあるので、テスト版だと思って下さい。</p>
+<p>※ <code>--recursive</code>をつけ忘れた場合、サブモジュールとして管理されている<code>rules</code>フォルダ内のファイルはダウンロードされません。</p>
+<p><code>git pull --recurse-submodules</code>コマンド、もしくは以下のコマンドで<code>rules</code>フォルダを同期し、Hayabusaの最新のルールを更新することができます:</p>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -u
+</div></code></pre>
+<p>アップデートが失敗した場合は、<code>rules</code>フォルダの名前を変更してから、もう一回アップデートしてみて下さい。</p>
+<blockquote>
+<blockquote>
+<p>注意: アップデートを実行する際に <code>rules</code> フォルダは <a href="https://github.com/Yamato-Security/hayabusa-rules">hayabusa-rules</a> レポジトリの最新のルールとコンフィグファイルに置き換えられます
+既存ファイルへの修正はすべて上書きされますので、アップデート実行前に編集したファイルのバックアップをおすすめします。
+もし、<code>--level-tuning</code> を行っているのであれば、アップデート後にルールファイルの再調整をしてください
+<code>rules</code>フォルダ内に新しく追加したルールは、アップデート時に上書きもしくは削除は行われません。</p>
+</blockquote>
+</blockquote>
+<h1 id="%E3%82%A2%E3%83%89%E3%83%90%E3%83%B3%E3%82%B9-%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E3%81%8B%E3%82%89%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E4%BB%BB%E6%84%8F">アドバンス: ソースコードからのコンパイル（任意）</h1>
+<p>Rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:</p>
+<pre class="hljs"><code><div>cargo build --release
+</div></code></pre>
+<p>以下のコマンドで定期的にRustをアップデートしてください：</p>
+<pre class="hljs"><code><div>rustup update stable
+</div></code></pre>
+<p>コンパイルされたバイナリは<code>target/release</code>フォルダ配下で作成されます。</p>
+<h2 id="rust%E3%83%91%E3%83%83%E3%82%B1%E3%83%BC%E3%82%B8%E3%81%AE%E6%9B%B4%E6%96%B0">Rustパッケージの更新</h2>
+<p>コンパイル前に最新のRust crateにアップデートすることで、最新のライブラリを利用することができます:</p>
+<pre class="hljs"><code><div>cargo update
+</div></code></pre>
+<p>※ アップデート後、何か不具合がありましたらお知らせください。</p>
+<h2 id="32%E3%83%93%E3%83%83%E3%83%88windows%E3%83%90%E3%82%A4%E3%83%8A%E3%83%AA%E3%81%AE%E3%82%AF%E3%83%AD%E3%82%B9%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB">32ビットWindowsバイナリのクロスコンパイル</h2>
+<p>以下のコマンドで64ビットのWindows端末で32ビットのバイナリをクロスコンパイルできます:</p>
+<pre class="hljs"><code><div>rustup install stable-i686-pc-windows-msvc
+rustup target add i686-pc-windows-msvc
+rustup run stable-i686-pc-windows-msvc cargo build --release
+</div></code></pre>
+<h2 id="macos%E3%81%A7%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9">macOSでのコンパイルの注意点</h2>
+<p>opensslについてのコンパイルエラーが表示される場合は、<a href="https://brew.sh/">Homebrew</a>をインストールしてから、以下のパッケージをインストールする必要があります：</p>
+<pre class="hljs"><code><div>brew install pkg-config
+brew install openssl
+</div></code></pre>
+<h2 id="linux%E3%81%A7%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9">Linuxでのコンパイルの注意点</h2>
+<p>opensslについてのコンパイルエラーが表示される場合は、以下のパッケージをインストールする必要があります。</p>
+<p>Ubuntu系のディストロ:</p>
+<pre class="hljs"><code><div>sudo apt install libssl-dev
+</div></code></pre>
+<p>Fedora系のディストロ:</p>
+<pre class="hljs"><code><div>sudo yum install openssl-devel
+</div></code></pre>
+<h2 id="linux%E3%81%AEmusl%E3%83%90%E3%82%A4%E3%83%8A%E3%83%AA%E3%81%AE%E3%82%AF%E3%83%AD%E3%82%B9%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB">LinuxのMUSLバイナリのクロスコンパイル</h2>
+<p>まず、Linux OSでターゲットをインストールします。</p>
+<pre class="hljs"><code><div>rustup install stable-x86_64-unknown-linux-musl
+rustup target add x86_64-unknown-linux-musl
+</div></code></pre>
+<p>以下のようにコンパイルします:</p>
+<pre class="hljs"><code><div>cargo build --release --target=x86_64-unknown-linux-musl
+</div></code></pre>
+<p>MUSLバイナリは<code>./target/x86_64-unknown-linux-musl/release/</code>ディレクトリ配下に作成されます。
+MUSLバイナリはGNUバイナリより約15％遅いです。</p>
+<h2 id="linux%E3%81%A7%E3%81%AE%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9">Linuxでのコンパイルの注意点</h2>
+<h1 id="hayabusa%E3%81%AE%E5%AE%9F%E8%A1%8C">Hayabusaの実行</h1>
+<h2 id="%E6%B3%A8%E6%84%8F-%E3%82%A2%E3%83%B3%E3%83%81%E3%82%A6%E3%82%A3%E3%83%AB%E3%82%B9edr%E3%81%AE%E8%AA%A4%E6%A4%9C%E7%9F%A5%E3%81%A8%E9%81%85%E3%81%84%E5%88%9D%E5%9B%9E%E5%AE%9F%E8%A1%8C">注意: アンチウィルス/EDRの誤検知と遅い初回実行</h2>
+<p>Hayabusa実行する際や、<code>.yml</code>ルールのダウンロードや実行時にルール内でdetectionに不審なPowerShellコマンドや<code>mimikatz</code>のようなキーワードが書かれている際に、アンチウィルスやEDRにブロックされる可能性があります。
+誤検知のため、セキュリティ対策の製品がHayabusaを許可するように設定する必要があります。
+マルウェア感染が心配であれば、ソースコードを確認した上で、自分でバイナリをコンパイルして下さい。</p>
+<p>Windows PC起動後の初回実行時に時間がかかる場合があります。これはWindows Defenderのリアルタイムスキャンが行われていることが原因です。リアルタイムスキャンを無効にするかHayabusaのディレクトリをアンチウィルススキャンから除外することでこの現象は解消しますが、設定を変える前にセキュリティリスクを十分ご考慮ください。</p>
+<h2 id="windows">Windows</h2>
+<p>コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。</p>
+<p>例: <code>hayabusa-1.6.0-windows-x64.exe</code></p>
+<h2 id="linux">Linux</h2>
+<p>まず、バイナリに実行権限を与える必要があります。</p>
+<pre class="hljs"><code><div>chmod +x ./hayabusa-1.6.0-linux-x64-gnu
+</div></code></pre>
+<p>次に、Hayabusaのルートディレクトリから実行します：</p>
+<pre class="hljs"><code><div>./hayabusa-1.6.0-linux-x64-gnu
+</div></code></pre>
+<h2 id="macos">macOS</h2>
+<p>まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。</p>
+<pre class="hljs"><code><div>chmod +x ./hayabusa-1.6.0-mac-intel
+</div></code></pre>
+<p>次に、Hayabusaのルートディレクトリから実行してみてください：</p>
+<pre class="hljs"><code><div>./hayabusa-1.6.0-mac-intel
+</div></code></pre>
+<p>macOSの最新版では、以下のセキュリティ警告が出る可能性があります：</p>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/MacOS-RunError-1-JP.png" alt="Mac Error 1 JP"></p>
+<p>macOSの環境設定から「セキュリティとプライバシー」を開き、「一般」タブから「このまま許可」ボタンをクリックしてください。</p>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/MacOS-RunError-2-JP.png" alt="Mac Error 2 JP"></p>
+<p>その後、ターミナルからもう一回実行してみてください：</p>
+<pre class="hljs"><code><div>./hayabusa-1.6.0-mac-intel
+</div></code></pre>
+<p>以下の警告が出るので、「開く」をクリックしてください。</p>
+<p><img src="file:///Users/reguser/Documents/YamatoSecurity/hayabusa/screenshots/MacOS-RunError-3-JP.png" alt="Mac Error 3 JP"></p>
+<p>これで実行できるようになります。</p>
+<h1 id="%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95">使用方法</h1>
+<h2 id="%E4%B8%BB%E3%81%AA%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89">主なコマンド</h2>
+<ul>
+<li>デフォルト: ファストフォレンジックタイムラインの作成。</li>
+<li><code>--level-tuning</code>: アラート<code>level</code>のカスタムチューニング</li>
+<li><code>-L, --logon-summary</code>: ログオンイベントのサマリを出力する。</li>
+<li><code>-P, --pivot-keywords-list</code>: ピボットする不審なキーワードのリスト作成。</li>
+<li><code>-s, --statistics</code>: イベントIDに基づくイベントの合計と割合の集計を出力する。</li>
+<li><code>--set-default-profile</code>: デフォルトプロファイルを変更する。</li>
+<li><code>-u, --update</code>: GitHubの<a href="https://github.com/Yamato-Security/hayabusa-rules">hayabusa-rules</a>リポジトリにある最新のルールに同期させる。</li>
+</ul>
+<h2 id="%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89%E3%83%A9%E3%82%A4%E3%83%B3%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3">コマンドラインオプション</h2>
+<pre class="hljs"><code><div>USAGE:
+    hayabusa.exe &lt;INPUT&gt; [OTHER-ACTIONS] [OPTIONS]
+
+INPUT:
+    -d, --directory &lt;DIRECTORY&gt;    .evtxファイルを持つディレクトリのパス
+    -f, --file &lt;FILE&gt;              1つの.evtxファイルに対して解析を行う
+    -l, --live-analysis            ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+
+ADVANCED:
+    -c, --rules-config &lt;DIRECTORY&gt;              ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+    -Q, --quiet-errors                          Quiet errorsモード: エラーログを保存しない
+    -r, --rules &lt;DIRECTORY/FILE&gt;                ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+    -t, --thread-number &lt;NUMBER&gt;                スレッド数 (デフォルト: パフォーマンスに最適な数値)
+        --target-file-ext &lt;EVTX_FILE_EXT&gt;...    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
+
+OUTPUT:
+    -j, --json                             タイムラインの出力をJSON形式で保存する（例: -j -o results.json）
+    -o, --output &lt;FILE&gt;                    タイムラインをCSV形式で保存する (例: results.csv)
+    -P, --profile &lt;PROFILE&gt;                利用する出力プロファイル名を指定する (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+
+DISPLAY-SETTINGS:
+        --no-color              カラー出力を無効にする
+        --no-summary            結果概要を出力しない
+    -q, --quiet                 Quietモード: 起動バナーを表示しない
+    -v, --verbose               詳細な情報を出力する
+    -V, --visualize-timeline    イベント頻度タイムラインを出力する
+
+FILTERING:
+    -D, --deep-scan                     すべてのイベントIDを対象にしたスキャンを行う（遅くなる）
+        --enable-deprecated-rules       Deprecatedルールを有効にする
+        --exclude-status &lt;STATUS&gt;...    読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
+    -m, --min-level &lt;LEVEL&gt;             結果出力をするルールの最低レベル (デフォルト: informational)
+    -n, --enable-noisy-rules            Noisyルールを有効にする
+        --timeline-end &lt;DATE&gt;           解析対象とするイベントログの終了時刻 (例: &quot;2022-02-22 23:59:59 +09:00&quot;)
+        --timeline-start &lt;DATE&gt;         解析対象とするイベントログの開始時刻 (例: &quot;2020-02-22 00:00:00 +09:00&quot;)
+
+OTHER-ACTIONS:
+        --contributors                          コントリビュータの一覧表示
+    -L, --logon-summary                         成功と失敗したログオン情報の要約を出力する
+        --level-tuning [&lt;FILE&gt;]                 ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+    -p, --pivot-keywords-list                   ピボットキーワードの一覧作成
+    -s, --statistics                            イベントIDの統計情報を表示する
+        --set-default-profile &lt;PROFILE&gt;         デフォルトの出力コンフィグを設定する
+    -u, --update-rules                          rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
+
+TIME-FORMAT:
+        --European-time       ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+        --RFC-2822            RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+        --RFC-3339            RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+        --US-military-time    24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+        --US-time             アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+    -U, --UTC                 UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+</div></code></pre>
+<h2 id="%E4%BD%BF%E7%94%A8%E4%BE%8B">使用例</h2>
+<ul>
+<li>１つのWindowsイベントログファイルに対してHayabusaを実行する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -f eventlog.evtx
+</div></code></pre>
+<ul>
+<li><code>verbose</code>プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
+</div></code></pre>
+<ul>
+<li>全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: <code>verbose-details-and-all-field-info</code>プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+</div></code></pre>
+<ul>
+<li>タイムラインをJSON形式で保存する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
+</div></code></pre>
+<ul>
+<li>Hayabusaルールのみを実行する（デフォルトでは<code>-r .\rules</code>にあるすべてのルールが利用される）:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+</div></code></pre>
+<ul>
+<li>Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+</div></code></pre>
+<ul>
+<li>Sysmonログに対してのみHayabusaルールを実行する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+</div></code></pre>
+<ul>
+<li>Sigmaルールのみを実行する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+</div></code></pre>
+<ul>
+<li>廃棄(deprecated)されたルール(<code>status</code>が<code>deprecated</code>になっているルール)とノイジールール(<code>.\rules\config\noisy_rules.txt</code>にルールIDが書かれているルール)を有効にする:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx --<span class="hljs-built_in">enable</span>-deprecated-rules --<span class="hljs-built_in">enable</span>-noisy-rules -o results.csv
+</div></code></pre>
+<ul>
+<li>ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+</div></code></pre>
+<ul>
+<li>起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -l -m low
+</div></code></pre>
+<ul>
+<li>criticalレベルのアラートからピボットキーワードの一覧を作成する(結果は結果毎に<code>keywords-Ip Address.txt</code>や<code>keywords-Users.txt</code>等に出力される):</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -l -m critical -p -o keywords
+</div></code></pre>
+<ul>
+<li>イベントIDの統計情報を出力する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -f Security.evtx -s
+</div></code></pre>
+<ul>
+<li>ログオンサマリを出力する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -L -f Security.evtx -s
+</div></code></pre>
+<ul>
+<li>詳細なメッセージを出力する(処理に時間がかかるファイル、パースエラー等を特定するのに便利):</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -v
+</div></code></pre>
+<ul>
+<li>Verbose出力の例:</li>
+</ul>
+<pre class="hljs"><code><div>Checking target evtx FilePath: <span class="hljs-string">"./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"</span>
+1 / 509 [&gt;-------------------------------------------------------------------------------------------------------------------------------------------] 0.20 % 1s 
+Checking target evtx FilePath: <span class="hljs-string">"./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"</span>
+2 / 509 [&gt;-------------------------------------------------------------------------------------------------------------------------------------------] 0.39 % 1s 
+Checking target evtx FilePath: <span class="hljs-string">"./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"</span>
+3 / 509 [&gt;-------------------------------------------------------------------------------------------------------------------------------------------] 0.59 % 1s 
+Checking target evtx FilePath: <span class="hljs-string">"./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"</span>
+4 / 509 [=&gt;------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s 
+Checking target evtx FilePath: <span class="hljs-string">"./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"</span>
+5 / 509 [=&gt;------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+</div></code></pre>
+<ul>
+<li>結果を<a href="https://timesketch.org/">Timesketch</a>にインポートできるCSV形式に保存する:</li>
+</ul>
+<pre class="hljs"><code><div>hayabusa-1.6.0-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
+</div></code></pre>
+<ul>
+<li>エラーログの出力をさせないようにする:
+デフォルトでは、Hayabusaはエラーメッセージをエラーログに保存します。
+エラーメッセージを保存したくない場合は、<code>-Q</code>を追加してください。</li>
+</ul>
+<h2 id="%E3%83%94%E3%83%9C%E3%83%83%E3%83%88%E3%82%AD%E3%83%BC%E3%83%AF%E3%83%BC%E3%83%89%E3%81%AE%E4%BD%9C%E6%88%90">ピボットキーワードの作成</h2>
+<p><code>-p</code>もしくは<code>--pivot-keywords-list</code>オプションを使うことで不審なユーザやホスト名、プロセスなどを一覧で出力することができ、イベントログから素早く特定することができます。
+ピボットキーワードのカスタマイズは<code>./config/pivot_keywords.txt</code>を変更することで行うことができます。以下はデフォルトの設定になります:</p>
+<pre class="hljs"><code><div>Users.SubjectUserName
+Users.TargetUserName
+Users.User
+Logon IDs.SubjectLogonId
+Logon IDs.TargetLogonId
+Workstation Names.WorkstationName
+Ip Addresses.IpAddress
+Processes.Image
+</div></code></pre>
+<p>形式は<code>KeywordName.FieldName</code>となっています。例えばデフォルトの設定では、<code>Users</code>というリストは検知したイベントから<code>SubjectUserName</code>、 <code>TargetUserName</code> 、 <code>User</code>のフィールドの値が一覧として出力されます。hayabusaのデフォルトでは検知したすべてのイベントから結果を出力するため、<code>--pivot-keyword-list</code>オプションを使うときには <code>-m</code> もしくは <code>--min-level</code> オプションを併せて使って検知するイベントのレベルを指定することをおすすめします。まず<code>-m critical</code>を指定して、最も高い<code>critical</code>レベルのアラートのみを対象として、レベルを必要に応じて下げていくとよいでしょう。結果に正常なイベントにもある共通のキーワードが入っている可能性が高いため、手動で結果を確認してから、不審なイベントにありそうなキーワードリストを１つのファイルに保存し、<code>grep -f keywords.txt timeline.csv</code>等のコマンドで不審なアクティビティに絞ったタイムラインを作成することができます。</p>
+<h2 id="%E3%83%AD%E3%82%B0%E3%82%AA%E3%83%B3%E6%83%85%E5%A0%B1%E3%81%AE%E8%A6%81%E7%B4%84">ログオン情報の要約</h2>
+<p><code>-L</code> または <code>--logon-summary</code> オプションを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。単体のevtxファイルを解析したい場合は<code>-f</code>オプションを利用してください。複数のevtxファイルを対象としたい場合は <code>-d</code> オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。</p>
+<h1 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%ABevtx%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%A7hayabusa%E3%82%92%E3%83%86%E3%82%B9%E3%83%88%E3%81%99%E3%82%8B">サンプルevtxファイルでHayabusaをテストする</h1>
+<p>Hayabusaをテストしたり、新しいルールを作成したりするためのサンプルevtxファイルをいくつか提供しています: <a href="https://github.com/Yamato-Security/Hayabusa-sample-evtx">https://github.com/Yamato-Security/Hayabusa-sample-evtx</a></p>
+<p>以下のコマンドで、サンプルのevtxファイルを新しいサブディレクトリ <code>hayabusa-sample-evtx</code> にダウンロードすることができます:</p>
+<pre class="hljs"><code><div>git <span class="hljs-built_in">clone</span> https://github.com/Yamato-Security/hayabusa-sample-evtx.git
+</div></code></pre>
+<h1 id="hayabusa%E3%81%AE%E5%87%BA%E5%8A%9B">Hayabusaの出力</h1>
+<h2 id="%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB">プロファイル</h2>
+<p>Hayabusaの<code>config/profiles.yaml</code>設定ファイルでは、５つのプロファイルが定義されています:</p>
+<ol>
+<li><code>minimal</code></li>
+<li><code>standard</code> (デフォルト)</li>
+<li><code>verbose</code></li>
+<li><code>all-field-info</code></li>
+<li><code>all-field-info-verbose</code></li>
+<li><code>super-verbose</code></li>
+<li><code>timesketch-minimal</code></li>
+<li><code>timesketch-verbose</code></li>
+</ol>
+<p>このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
+<code>--set-default-profile &lt;profile&gt;</code>オプションでデフォルトのプロファイルを変更することもできます。</p>
+<h3 id="1-minimal%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">1. <code>minimal</code>プロファイルの出力</h3>
+<p><code>%Timestamp%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%RuleTitle%</code>, <code>%Details%</code></p>
+<h3 id="2-standard%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">2. <code>standard</code>プロファイルの出力</h3>
+<p><code>%Timestamp%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%RecordID%</code>, <code>%RuleTitle%</code>, <code>%Details%</code></p>
+<h3 id="3-verbose%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">3. <code>verbose</code>プロファイルの出力</h3>
+<p><code>%Timestamp%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%MitreTactics</code>, <code>%MitreTags%</code>, <code>%OtherTags%</code>, <code>%RecordID%</code>, <code>%RuleTitle%</code>, <code>%Details%</code>, <code>%RuleFile%</code>, <code>%EvtxFile%</code></p>
+<h3 id="4-all-field-info%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">4. <code>all-field-info</code>プロファイルの出力</h3>
+<p>最小限の<code>details</code>情報を出力する代わりに、イベントにあるすべての<code>EventData</code>フィールド情報が出力されます。</p>
+<p><code>%Timestamp%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%RecordID%</code>, <code>%RuleTitle%</code>, <code>%AllFieldInfo%</code>, <code>%RuleFile%</code>, <code>%EvtxFile%</code></p>
+<h3 id="5-all-field-info-verbose%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">5. <code>all-field-info-verbose</code>プロファイルの出力</h3>
+<p><code>all-field-info</code>とタグ情報が出力されます。</p>
+<p><code>%Timestamp%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%MitreTactics</code>, <code>%MitreTags%</code>, <code>%OtherTags%</code>, <code>%RecordID%</code>, <code>%RuleTitle%</code>, <code>%AllFieldInfo%</code>, <code>%RuleFile%</code>, <code>%EvtxFile%</code></p>
+<h3 id="6-super-verbose%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">6. <code>super-verbose</code>プロファイルの出力</h3>
+<p><code>verbose</code>プロファイルで出力される情報とイベントにあるすべての<code>EventData</code>フィールド情報が出力されます。
+(注意: 出力ファイルサイズは2倍になります！)</p>
+<p><code>%Timestamp%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%MitreTactics</code>, <code>%MitreTags%</code>, <code>%OtherTags%</code>, <code>%RecordID%</code>, <code>%RuleTitle%</code>, <code>%Details%</code>, <code>%RuleFile%</code>, <code>%EvtxFile%</code>, <code>%AllFieldInfo%</code></p>
+<h3 id="7-timesketch%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">7. <code>timesketch</code>プロファイルの出力</h3>
+<p><a href="https://timesketch.org/">Timesketch</a>にインポートできる<code>verbose</code>プロファイル。</p>
+<p><code>%Timestamp%</code>, <code>hayabusa</code>, <code>%RuleTitle%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%MitreTactics</code>, <code>%MitreTags%</code>, <code>%OtherTags%</code>, <code>%RecordID%</code>, <code>%Details%</code>, <code>%RuleFile%</code>, <code>%EvtxFile%</code></p>
+<h3 id="8-timesketch%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%87%BA%E5%8A%9B">8. <code>timesketch</code>プロファイルの出力</h3>
+<p><a href="https://timesketch.org/">Timesketch</a>にインポートできる<code>verbose</code>プロファイル。</p>
+<p><code>%Timestamp%</code>, <code>hayabusa</code>, <code>%RuleTitle%</code>, <code>%Computer%</code>, <code>%Channel%</code>, <code>%EventID%</code>, <code>%Level%</code>, <code>%MitreTactics</code>, <code>%MitreTags%</code>, <code>%OtherTags%</code>, <code>%RecordID%</code>, <code>%Details%</code>, <code>%RuleFile%</code>, <code>%EvtxFile%</code>, <code>%AllFieldInfo%</code></p>
+<h3 id="%E3%83%97%E3%83%AD%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E6%AF%94%E8%BC%83">プロファイルの比較</h3>
+<p>以下のベンチマークは、2018年製のマックブックプロ上で7.5GBのEVTXデータに対して実施されました。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">プロファイル</th>
+<th style="text-align:center">処理時間</th>
+<th style="text-align:center">結果のファイルサイズ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">minimal</td>
+<td style="text-align:center">16分18秒</td>
+<td style="text-align:center">690 MB</td>
+</tr>
+<tr>
+<td style="text-align:center">standard</td>
+<td style="text-align:center">16分23秒</td>
+<td style="text-align:center">710 MB</td>
+</tr>
+<tr>
+<td style="text-align:center">verbose</td>
+<td style="text-align:center">17分</td>
+<td style="text-align:center">990 MB</td>
+</tr>
+<tr>
+<td style="text-align:center">timesketch-minimal</td>
+<td style="text-align:center">17分</td>
+<td style="text-align:center">1015 MB</td>
+</tr>
+<tr>
+<td style="text-align:center">all-field-info-verbose</td>
+<td style="text-align:center">16分50秒</td>
+<td style="text-align:center">1.6 GB</td>
+</tr>
+<tr>
+<td style="text-align:center">super-verbose</td>
+<td style="text-align:center">17分12秒</td>
+<td style="text-align:center">2.1 GB</td>
+</tr>
+</tbody>
+</table>
+<h3 id="profile-field-aliases">Profile Field Aliases</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">エイリアス名</th>
+<th style="text-align:left">Hayabusaの出力情報</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">%Timestamp%</td>
+<td style="text-align:left">デフォルトでは<code>YYYY-MM-DD HH:mm:ss.sss +hh:mm</code>形式になっている。イベントログの<code>&lt;Event&gt;&lt;System&gt;&lt;TimeCreated SystemTime&gt;</code>フィールドから来ている。デフォルトのタイムゾーンはローカルのタイムゾーンになるが、<code>--UTC</code>オプションでUTCに変更することができる。</td>
+</tr>
+<tr>
+<td style="text-align:left">%Computer%</td>
+<td style="text-align:left">イベントログの<code>&lt;Event&gt;&lt;System&gt;&lt;Computer&gt;</code>フィールド。</td>
+</tr>
+<tr>
+<td style="text-align:left">%Channel%</td>
+<td style="text-align:left">ログ名。イベントログの<code>&lt;Event&gt;&lt;System&gt;&lt;EventID&gt;</code>フィールド。</td>
+</tr>
+<tr>
+<td style="text-align:left">%EventID%</td>
+<td style="text-align:left">イベントログの<code>&lt;Event&gt;&lt;System&gt;&lt;EventID&gt;</code>フィールド。</td>
+</tr>
+<tr>
+<td style="text-align:left">%Level%</td>
+<td style="text-align:left">YML検知ルールの<code>level</code>フィールド。(例：<code>informational</code>、<code>low</code>、<code>medium</code>、<code>high</code>、<code>critical</code>)</td>
+</tr>
+<tr>
+<td style="text-align:left">%MitreTactics%</td>
+<td style="text-align:left">MITRE ATT&amp;CKの<a href="https://attack.mitre.org/tactics/enterprise/">戦術</a> (例: Initial Access、Lateral Movement等々）</td>
+</tr>
+<tr>
+<td style="text-align:left">%MitreTags%</td>
+<td style="text-align:left">MITRE ATT&amp;CKの戦術以外の情報。attack.g(グループ)、attack.t(技術)、attack.s(ソフトウェア)の情報を出力する。</td>
+</tr>
+<tr>
+<td style="text-align:left">%OtherTags%</td>
+<td style="text-align:left">YML検知ルールの<code>tags</code>フィールドから<code>MitreTactics</code>、<code>MitreTags</code>以外のキーワードを出力する。</td>
+</tr>
+<tr>
+<td style="text-align:left">%RecordID%</td>
+<td style="text-align:left"><code>&lt;Event&gt;&lt;System&gt;&lt;EventRecordID&gt;</code>フィールドのイベントレコードID。</td>
+</tr>
+<tr>
+<td style="text-align:left">%RuleTitle%</td>
+<td style="text-align:left">YML検知ルールの<code>title</code>フィールド。</td>
+</tr>
+<tr>
+<td style="text-align:left">%Details%</td>
+<td style="text-align:left">YML検知ルールの<code>details</code>フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は<code>n/a</code> (not available)と記載されます。YML検知ルールに<code>details</code>フィールドが存在しない時のdetailsのメッセージを<code>./rules/config/default_details.txt</code>で設定できます。<code>default_details.txt</code>では<code>Provider Name</code>、<code>EventID</code>、<code>details</code>の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。</td>
+</tr>
+<tr>
+<td style="text-align:left">%AllFieldInfo%</td>
+<td style="text-align:left">すべてのフィールド情報。</td>
+</tr>
+<tr>
+<td style="text-align:left">%RuleFile%</td>
+<td style="text-align:left">アラートまたはイベントを生成した検知ルールのファイル名。</td>
+</tr>
+<tr>
+<td style="text-align:left">%EvtxFile%</td>
+<td style="text-align:left">アラートまたはイベントを起こしたevtxファイルへのパス。</td>
+</tr>
+</tbody>
+</table>
+<p>これらのエイリアスは、出力プロファイルで使用することができます。また、他の<a href="https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9">イベントキーアライズ</a>を定義し、他のフィールドを出力することもできます。</p>
+<h2 id="level%E3%81%AE%E7%9C%81%E7%95%A5">Levelの省略</h2>
+<p>簡潔に出力するためにLevelを以下のように省略し出力しています。</p>
+<ul>
+<li><code>crit</code>: <code>critical</code></li>
+<li><code>high</code>: <code>high</code></li>
+<li><code>med </code>: <code>med</code></li>
+<li><code>low </code>: <code>low</code></li>
+<li><code>info</code>: <code>informational</code></li>
+</ul>
+<h2 id="mitre-attck%E6%88%A6%E8%A1%93%E3%81%AE%E7%9C%81%E7%95%A5">MITRE ATT&amp;CK戦術の省略</h2>
+<p>簡潔に出力するためにMITRE ATT&amp;CKの戦術を以下のように省略しています。
+<code>./config/output_tag.txt</code>の設定ファイルで自由に編集できます。
+検知したデータの戦術を全て出力したい場合は、<code>--all-tags</code>オプションをつけてください。</p>
+<ul>
+<li><code>Recon</code> : Reconnaissance (偵察)</li>
+<li><code>ResDev</code> : Resource Development (リソース開発)</li>
+<li><code>InitAccess</code> : Initial Access (初期アクセス)</li>
+<li><code>Exec</code> : Execution (実行)</li>
+<li><code>Persis</code> : Persistence (永続化)</li>
+<li><code>PrivEsc</code> : Privilege Escalation (権限昇格)</li>
+<li><code>Evas</code> : Defense Evasion (防御回避)</li>
+<li><code>CredAccess</code> : Credential Access (認証情報アクセス)</li>
+<li><code>Disc</code> : Discovery (探索)</li>
+<li><code>LatMov</code> : Lateral Movement (横展開)</li>
+<li><code>Collect</code> : Collection (収集)</li>
+<li><code>C2</code> : Command and Control (遠隔操作)</li>
+<li><code>Exfil</code> : Exfiltration (持ち出し)</li>
+<li><code>Impact</code> : Impact (影響)</li>
+</ul>
+<h2 id="channel%E6%83%85%E5%A0%B1%E3%81%AE%E7%9C%81%E7%95%A5">Channel情報の省略</h2>
+<p>簡潔に出力するためにChannelの表示を以下のように省略しています。
+<code>./rules/config/channel_abbreviations.txt</code>の設定ファイルで自由に編集できます。</p>
+<ul>
+<li><code>App</code> : <code>Application</code></li>
+<li><code>AppLocker</code> : <code>Microsoft-Windows-AppLocker/*</code></li>
+<li><code>BitsCli</code> : <code>Microsoft-Windows-Bits-Client/Operational</code></li>
+<li><code>CodeInteg</code> : <code>Microsoft-Windows-CodeIntegrity/Operational</code></li>
+<li><code>Defender</code> : <code>Microsoft-Windows-Windows Defender/Operational</code></li>
+<li><code>DHCP-Svr</code> : <code>Microsoft-Windows-DHCP-Server/Operational</code></li>
+<li><code>DNS-Svr</code> : <code>DNS Server</code></li>
+<li><code>DvrFmwk</code> : <code>Microsoft-Windows-DriverFrameworks-UserMode/Operational</code></li>
+<li><code>Exchange</code> : <code>MSExchange Management</code></li>
+<li><code>Firewall</code> : <code>Microsoft-Windows-Windows Firewall With Advanced Security/Firewall</code></li>
+<li><code>KeyMgtSvc</code> : <code>Key Management Service</code></li>
+<li><code>LDAP-Cli</code> : <code>Microsoft-Windows-LDAP-Client/Debug</code></li>
+<li><code>NTLM</code> <code>Microsoft-Windows-NTLM/Operational</code></li>
+<li><code>OpenSSH</code> : <code>OpenSSH/Operational</code></li>
+<li><code>PrintAdm</code> : <code>Microsoft-Windows-PrintService/Admin</code></li>
+<li><code>PrintOp</code> : <code>Microsoft-Windows-PrintService/Operational</code></li>
+<li><code>PwSh</code> : <code>Microsoft-Windows-PowerShell/Operational</code></li>
+<li><code>PwShClassic</code> : <code>Windows PowerShell</code></li>
+<li><code>RDP-Client</code> : <code>Microsoft-Windows-TerminalServices-RDPClient/Operational</code></li>
+<li><code>Sec</code> : <code>Security</code></li>
+<li><code>SecMitig</code> : <code>Microsoft-Windows-Security-Mitigations/*</code></li>
+<li><code>SmbCliSec</code> : <code>Microsoft-Windows-SmbClient/Security</code></li>
+<li><code>SvcBusCli</code> : <code>Microsoft-ServiceBus-Client</code></li>
+<li><code>Sys</code> : <code>System</code></li>
+<li><code>Sysmon</code> : <code>Microsoft-Windows-Sysmon/Operational</code></li>
+<li><code>TaskSch</code> : <code>Microsoft-Windows-TaskScheduler/Operational</code></li>
+<li><code>WinRM</code> : <code>Microsoft-Windows-WinRM/Operational</code></li>
+<li><code>WMI</code> : <code>Microsoft-Windows-WMI-Activity/Operational</code></li>
+</ul>
+<h1 id="%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AE%E3%81%AE%E7%9C%81%E7%95%A5">その他のの省略</h1>
+<p>できるだけ簡潔にするために、以下の略語を使用しています:</p>
+<ul>
+<li><code>Acct</code> -&gt; Account</li>
+<li><code>Addr</code> -&gt; Address</li>
+<li><code>Auth</code> -&gt; Authentication</li>
+<li><code>Cli</code> -&gt; Client</li>
+<li><code>Cmd</code> -&gt; Command</li>
+<li><code>Comp</code> -&gt; Computer</li>
+<li><code>Conn</code> -&gt; Connection</li>
+<li><code>Dir</code> -&gt; Directory</li>
+<li><code>Dst</code> -&gt; Destination</li>
+<li><code>Exec</code> -&gt; Execution</li>
+<li><code>Grp</code> -&gt; Group</li>
+<li><code>LID</code> -&gt; Logon ID</li>
+<li><code>Net</code> -&gt; Network</li>
+<li><code>Obj</code> -&gt; Object</li>
+<li><code>Proto</code> -&gt; Protocol</li>
+<li><code>Sig</code> -&gt; Signature</li>
+<li><code>Susp</code> -&gt; Suspicious</li>
+<li><code>Src</code> -&gt; Source</li>
+<li><code>Svc</code> -&gt; Service</li>
+<li><code>Svr</code> -&gt; Server</li>
+<li><code>Tgt</code> -&gt; Target</li>
+<li><code>Op</code> -&gt; Operation</li>
+<li><code>Pkg</code> -&gt; Package</li>
+<li><code>Priv</code> -&gt; Privilege</li>
+<li><code>Proc</code> -&gt; Process</li>
+<li><code>PID</code> -&gt; Process ID</li>
+<li><code>PGUID</code> -&gt; Process GUID (Global Unique ID)</li>
+<li><code>Ver</code> -&gt; Version</li>
+</ul>
+<h2 id="%E3%83%97%E3%83%AD%E3%82%B0%E3%83%AC%E3%82%B9%E3%83%90%E3%83%BC">プログレスバー</h2>
+<p>プログレス・バーは、複数のevtxファイルに対してのみ機能します。
+解析したevtxファイルの数と割合をリアルタイムで表示します。</p>
+<h2 id="%E6%A8%99%E6%BA%96%E5%87%BA%E5%8A%9B%E3%81%B8%E3%81%AE%E3%82%AB%E3%83%A9%E3%83%BC%E8%A8%AD%E5%AE%9A">標準出力へのカラー設定</h2>
+<p>Hayabusaの結果は<code>level</code>毎に文字色が変わります。
+<code>./config/level_color.txt</code>の値を変更することで文字色を変えることができます。
+形式は<code>level名,(6桁のRGBのカラーhex)</code>です。
+カラー出力をしないようにしたい場合は<code>--no-color</code>オプションをご利用ください。</p>
+<h2 id="%E7%B5%90%E6%9E%9C%E3%81%AE%E3%82%B5%E3%83%9E%E3%83%AA">結果のサマリ</h2>
+<h3 id="%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E9%A0%BB%E5%BA%A6%E3%82%BF%E3%82%A4%E3%83%A0%E3%83%A9%E3%82%A4%E3%83%B3">イベント頻度タイムライン</h3>
+<p><code>-V</code>または<code>--visualize-timeline</code>オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
+マーカーの数は最大10個です。デフォルトのCommand PromptとPowerShell Promptでは文字化けがでるので、Windows TerminalやiTerm2等のターミナルをご利用ください。</p>
+<h3 id="%E6%9C%80%E5%A4%9A%E6%A4%9C%E7%9F%A5%E6%97%A5%E3%81%AE%E5%87%BA%E5%8A%9B">最多検知日の出力</h3>
+<p>各レベルで最も検知された日付を画面に出力します。</p>
+<h3 id="%E6%9C%80%E5%A4%9A%E6%A4%9C%E7%9F%A5%E7%AB%AF%E6%9C%AB%E5%90%8D%E3%81%AE%E5%87%BA%E5%8A%9B">最多検知端末名の出力</h3>
+<p>各レベルで多く検知されたユニークなイベントが多い端末名上位5つを画面に出力します。</p>
+<h1 id="hayabusa%E3%83%AB%E3%83%BC%E3%83%AB">Hayabusaルール</h1>
+<p>Hayabusa検知ルールはSigmaのようなYML形式で記述されています。<code>rules</code>ディレクトリに入っていますが、将来的には<a href="https://github.com/Yamato-Security/hayabusa-rules">https://github.com/Yamato-Security/hayabusa-rules</a>のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。</p>
+<p>ルールの作成方法については、<a href="https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md">hayabusa-rulesレポジトリのREADME</a> をお読みください。</p>
+<p><a href="https://github.com/Yamato-Security/hayabusa-rules">hayabusa-rulesレポジトリ</a>にあるすべてのルールは、<code>rules</code>フォルダに配置する必要があります。</p>
+<p><code>level</code>がinformationのルールは <code>events</code> とみなされ、<code>low</code> 以上は <code>alerts</code> とみなされます。</p>
+<p>Hayabusaルールのディレクトリ構造は、3つのディレクトリに分かれています。</p>
+<ul>
+<li><code>default</code>: Windows OSでデフォルトで記録されるログ</li>
+<li><code>non-default</code>: グループポリシーやセキュリティベースラインの適用でオンにする必要があるログ</li>
+<li><code>sysmon</code>: <a href="https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon">sysmon</a>によって生成されるログ。</li>
+<li><code>testing</code>: 現在テストしているルールを配置するための一時ディレクトリ</li>
+</ul>
+<p>ルールはさらにログタイプ（例：Security、Systemなど）によってディレクトリに分けられ、次の形式で名前が付けられます。</p>
+<ul>
+<li>アラート形式: <code>&lt;イベントID&gt;_&lt;イベントの説明&gt;_&lt;リスクの説明&gt;.yml</code></li>
+<li>アラート例: <code>1102_SecurityLogCleared_PossibleAntiForensics.yml</code></li>
+<li>イベント形式: <code>&lt;イベントID&gt;_&lt;イベントの説明&gt;.yml</code></li>
+<li>イベント例: <code>4776_NTLM-LogonToLocalAccount.yml</code></li>
+</ul>
+<p>現在のルールをご確認いただき、新規作成時のテンプレートとして、また検知ロジックの確認用としてご利用ください。</p>
+<h2 id="hayabusa-vs-%E5%A4%89%E6%8F%9B%E3%81%95%E3%82%8C%E3%81%9Fsigma%E3%83%AB%E3%83%BC%E3%83%AB">Hayabusa v.s. 変換されたSigmaルール</h2>
+<p>Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は<a href="https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md">ここ</a>で説明されています。
+殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
+Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:</p>
+<ol>
+<li>ログの有用なフィールドのみから抽出された追加情報を表示するための <code>details</code>フィールドを追加しています。</li>
+<li>Hayabusaルールはすべてサンプルログに対してテストされ、検知することが確認されています。
+<blockquote>
+<p>変換処理のバグ、サポートされていない機能、実装の違い(正規表現など)により、一部のSigmaルールは意図したとおりに動作しない可能性があります。</p>
+</blockquote>
+</li>
+<li>Sigmaルール仕様にない集計式(例：<code>|equalsfield</code>)の利用。</li>
+</ol>
+<p><strong>制限事項</strong>: 私たちの知る限り、Hayabusa はオープンソースの Windows イベントログ解析ツールの中でSigmaルールを最も多くサポートしていますが、まだサポートされていないルールもあります。</p>
+<ol>
+<li><a href="https://docs.rs/regex/1.5.4/regex/">Rust正規表現クレート</a>では機能しない正規表現を使用するルール。</li>
+<li><a href="https://github.com/SigmaHQ/Sigma/wiki/Specification">Sigmaルール仕様</a>の<code>count</code>以外の集計式。</li>
+<li><code>|near</code>を使用するルール。</li>
+</ol>
+<h2 id="%E6%A4%9C%E7%9F%A5%E3%83%AB%E3%83%BC%E3%83%AB%E3%81%AE%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0">検知ルールのチューニング</h2>
+<p>ファイアウォールやIDSと同様に、シグネチャベースのツールは、環境に合わせて調整が必要になるため、特定のルールを永続的または一時的に除外する必要がある場合があります。</p>
+<p>ルールID(例: <code>4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6</code>) を <code>./rules/config/exclude_rules.txt</code>に追加すると、不要なルールや利用できないルールを無視することができます。</p>
+<p>ルールIDを <code>./rules/config/noisy_rules.txt</code>に追加して、デフォルトでルールを無視することもできますが、<code>-n</code>または <code>--enable-noisy-rules</code>オプションを指定してルールを使用することもできます。</p>
+<h2 id="%E6%A4%9C%E7%9F%A5%E3%83%AC%E3%83%99%E3%83%AB%E3%81%AElevel%E3%83%81%E3%83%A5%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0">検知レベルのlevelチューニング</h2>
+<p>Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
+ユーザが独自のリスクレベルに設定するには<code>./rules/config/level_tuning.txt</code>に変換情報を書き、<code>hayabusa-1.6.0-win-x64.exe --level-tuning</code>を実行することでルールファイルが書き換えられます。
+ルールファイルが直接書き換えられることに注意して使用してください。</p>
+<p><code>./rules/config/level_tuning.txt</code>の例:</p>
+<pre class="hljs"><code><div>id,new_level
+00000000-0000-0000-0000-000000000000,informational # sample level tuning line
+</div></code></pre>
+<p>ルールディレクトリ内で<code>id</code>が<code>00000000-0000-0000-0000-000000000000</code>のルールのリスクレベルが<code>informational</code>に書き換えられます。</p>
+<h2 id="%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88id%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF%E3%83%AA%E3%83%B3%E3%82%B0">イベントIDフィルタリング</h2>
+<p>デフォルトではパフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを無視しています。
+<code>./rules/config/target_event_IDs.txt</code>で定義されたIDがスキャンされます。
+すべてのイベントをスキャンしたい場合は、<code>-D, --deep-scan</code>オプションを使用してください。</p>
+<h1 id="%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AEwindows%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%83%AD%E3%82%B0%E8%A7%A3%E6%9E%90%E3%83%84%E3%83%BC%E3%83%AB%E3%81%8A%E3%82%88%E3%81%B3%E9%96%A2%E9%80%A3%E3%83%AA%E3%82%BD%E3%83%BC%E3%82%B9">その他のWindowsイベントログ解析ツールおよび関連リソース</h1>
+<p>「すべてを統治する1つのツール」というものはなく、それぞれにメリットがあるため、これらの他の優れたツールやプロジェクトをチェックして、どれが気に入ったかを確認することをお勧めします。</p>
+<ul>
+<li><a href="https://github.com/ahmedkhlief/APT-Hunter">APT-Hunter</a> - Pythonで開発された攻撃検知ツール。</li>
+<li><a href="https://github.com/stuhli/awesome-event-ids">Awesome Event IDs</a> -  フォレンジック調査とインシデント対応に役立つイベントIDのリソース。</li>
+<li><a href="https://github.com/countercept/chainsaw">Chainsaw</a> - Rustで開発されたSigmaベースの攻撃検知ツール。</li>
+<li><a href="https://github.com/sans-blue-team/DeepBlueCLI">DeepBlueCLI</a> - <a href="https://twitter.com/eric_conrad">Eric Conrad</a> によってPowershellで開発された攻撃検知ツール。</li>
+<li><a href="https://github.com/jurelou/epagneul">Epagneul</a> - Windowsイベントログの可視化ツール。</li>
+<li><a href="https://github.com/miriamxyra/EventList/">EventList</a> - <a href="https://github.com/miriamxyra">Miriam Wiesner</a>によるセキュリティベースラインの有効なイベントIDをMITRE ATT&amp;CKにマッピングするPowerShellツール。</li>
+<li><a href="https://www.socinvestigation.com/mapping-mitre-attck-with-window-event-log-ids/">MITRE ATT&amp;CKとWindowイベントログIDのマッピング</a> - 作者：<a href="https://twitter.com/mdecrevoisier">Michel de CREVOISIER</a></li>
+<li><a href="https://github.com/EricZimmerman/evtx">EvtxECmd</a> - <a href="https://twitter.com/ericrzimmerman">Eric Zimmerman</a>によるEvtxパーサー。</li>
+<li><a href="https://github.com/williballenthin/EVTXtract">EVTXtract</a> - 未使用領域やメモリダンプからEVTXファイルを復元するツール。</li>
+<li><a href="https://www.dragos.com/blog/industry-news/evtxtoelk-a-python-module-to-load-windows-event-logs-into-elasticsearch/">EvtxToElk</a> - Elastic StackにEvtxデータを送信するPythonツール。</li>
+<li><a href="https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES">EVTX ATTACK Samples</a> - <a href="https://twitter.com/SBousseaden">SBousseaden</a> によるEVTX攻撃サンプルイベントログファイル。</li>
+<li><a href="https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack">EVTX-to-MITRE-Attack</a> - <a href="https://twitter.com/mdecrevoisier">Michel de CREVOISIER</a>によるATT&amp;CKにマッピングされたEVTX攻撃サンプルログのレポジトリ。</li>
+<li><a href="https://github.com/omerbenamram/evtx">EVTX parser</a> - <a href="https://twitter.com/obenamram">@OBenamram</a> によって書かれた、Hayabusaが使用しているRustライブラリ。</li>
+<li><a href="https://github.com/lucky-luk3/Grafiki">Grafiki</a> - SysmonとPowerShellログの可視化ツール。</li>
+<li><a href="https://github.com/JPCERTCC/LogonTracer">LogonTracer</a> - <a href="https://twitter.com/jpcert">JPCERTCC</a> による、横方向の動きを検知するためにログオンを視覚化するグラフィカルなインターフェース。</li>
+<li><a href="https://github.com/Yamato-Security/RustyBlue">RustyBlue</a> - 大和セキュリティによるDeepBlueCLIのRust版。</li>
+<li><a href="https://github.com/SigmaHQ/Sigma">Sigma</a> - コミュニティベースの汎用SIEMルール。</li>
+<li><a href="https://github.com/philhagen/sof-elk">SOF-ELK</a> - <a href="https://twitter.com/philhagen">Phil Hagen</a> によるDFIR解析用のElastic Stack VM。</li>
+<li><a href="https://docs.securityonion.net/en/2.3/so-import-evtx.html">so-import-evtx</a> - evtxファイルをSecurityOnionにインポートするツール。</li>
+<li><a href="https://github.com/nshalabi/SysmonTools">SysmonTools</a> - Sysmonの設定とオフライン可視化ツール。</li>
+<li><a href="https://ericzimmerman.github.io/#!index.md">Timeline Explorer</a> - <a href="https://twitter.com/ericrzimmerman">Eric Zimmerman</a> による最高のCSVタイムラインアナライザ。</li>
+<li><a href="https://www.forwarddefense.com/media/attachments/2021/05/15/windows-event-log-analyst-reference.pdf">Windows Event Log Analysis - Analyst Reference</a> - Forward DefenseのSteve AnsonによるWindowsイベントログ解析の参考資料。</li>
+<li><a href="https://github.com/Yamato-Security/WELA/">WELA (Windows Event Log Analyzer)</a> - <a href="https://github.com/Yamato-Security/">Yamato Security</a>によるWindowsイベントログ解析のマルチツール。</li>
+<li><a href="https://github.com/wagga40/Zircolite">Zircolite</a> - Pythonで書かれたSigmaベースの攻撃検知ツール。</li>
+</ul>
+<h1 id="windows%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%83%AD%E3%82%B0%E8%A8%AD%E5%AE%9A%E3%81%AE%E3%82%B9%E3%82%B9%E3%83%A1">Windowsイベントログ設定のススメ</h1>
+<p>Windows機での悪性な活動を検知する為には、デフォルトのログ設定を改善することが必要です。
+以下のサイトを閲覧することをおすすめします。:</p>
+<ul>
+<li><a href="https://github.com/JSCU-NL/logging-essentials">JSCU-NL (Joint Sigint Cyber Unit Netherlands) Logging Essentials</a></li>
+<li><a href="https://www.cyber.gov.au/acsc/view-all-content/publications/windows-event-logging-and-forwarding">ACSC (Australian Cyber Security Centre) Logging and Fowarding Guide</a></li>
+<li><a href="https://www.malwarearchaeology.com/cheat-sheets">Malware Archaeology Cheat Sheets</a></li>
+</ul>
+<h1 id="sysmon%E9%96%A2%E4%BF%82%E3%81%AE%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">Sysmon関係のプロジェクト</h1>
+<p>フォレンジックに有用な証拠を作り、高い精度で検知をさせるためには、sysmonをインストールする必要があります。以下のサイトを参考に設定することをおすすめします。:</p>
+<ul>
+<li><a href="https://github.com/olafhartong/sysmon-modular">Sysmon Modular</a></li>
+<li><a href="https://github.com/trustedsec/SysmonCommunityGuide">TrustedSec Sysmon Community Guide</a></li>
+<li><a href="https://github.com/SwiftOnSecurity/sysmon-config">SwiftOnSecurityのSysmon設定ファイル</a></li>
+<li><a href="https://github.com/Neo23x0/sysmon-config">Neo23x0によるSwiftOnSecurityのSysmon設定ファイルのフォーク</a></li>
+<li><a href="https://github.com/ion-storm/sysmon-config">ion-stormによるSwiftOnSecurityのSysmon設定ファイルのフォーク</a></li>
+</ul>
+<h1 id="%E3%82%B3%E3%83%9F%E3%83%A5%E3%83%8B%E3%83%86%E3%82%A3%E3%81%AB%E3%82%88%E3%82%8B%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3">コミュニティによるドキュメンテーション</h1>
+<h2 id="%E8%8B%B1%E8%AA%9E">英語</h2>
+<ul>
+<li>2022/06/19 <a href="https://www.youtube.com/watch?v=Q1IoGX--814">VelociraptorチュートリアルとHayabusaの統合方法</a> by <a href="https://twitter.com/eric_capuano">Eric Capuano</a></li>
+<li>2022/01/24 <a href="https://www.youtube.com/watch?v=7sQqz2ek-ko">Hayabusa結果をneo4jで可視化する方法</a> by Matthew Seyer (<a href="https://twitter.com/forensic_matt">@forensic_matt</a>)</li>
+</ul>
+<h2 id="%E6%97%A5%E6%9C%AC%E8%AA%9E">日本語</h2>
+<ul>
+<li>2022/01/22 <a href="https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749">Hayabusa結果をElastic Stackで可視化する方法</a> by <a href="https://qiita.com/kzzzzo2">@kzzzzo2</a></li>
+<li>2021/12/31 <a href="https://itib.hatenablog.com/entry/2021/12/31/222946">Windowsイベントログ解析ツール「Hayabusa」を使ってみる</a> by itiB (<a href="https://twitter.com/itiB_S144">@itiB_S144</a>)</li>
+<li>2021/12/27 <a href="https://kazuminkun.hatenablog.com/entry/2021/12/27/190535">Hayabusaの中身</a> by Kazuminn (<a href="https://twitter.com/k47_um1n">@k47_um1n</a>)</li>
+</ul>
+<h1 id="%E8%B2%A2%E7%8C%AE">貢献</h1>
+<p>どのような形でも構いませんので、ご協力をお願いします。プルリクエスト、ルール作成、evtxログのサンプルなどがベストですが、機能リクエスト、バグの通知なども大歓迎です。</p>
+<p>少なくとも、私たちのツールを気に入っていただけたなら、Githubで星を付けて、あなたのサポートを表明してください。</p>
+<h1 id="%E3%83%90%E3%82%B0%E3%81%AE%E5%A0%B1%E5%91%8A">バグの報告</h1>
+<p>見つけたバグを<a href="https://github.com/Yamato-Security/hayabusa/issues/new?assignees=&amp;labels=bug&amp;template=bug_report.md&amp;title=%5Bbug%5D">こちら</a>でご連絡ください。報告されたバグを喜んで修正します！</p>
+<h1 id="%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9">ライセンス</h1>
+<p>Hayabusaは<a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GPLv3</a>で公開され、すべてのルールは<a href="https://github.com/SigmaHQ/sigma/blob/master/LICENSE.Detection.Rules.md">Detection Rule License (DRL) 1.1</a>で公開されています。</p>
+<h1 id="twitter">Twitter</h1>
+<p><a href="https://twitter.com/SecurityYamato">@SecurityYamato</a>でHayabusa、ルール更新、その他の大和セキュリティツール等々について情報を提供しています。</p>
+
+</body>
+</html>
