@@ -4,7 +4,7 @@
 
 **新機能:**
 
-- 解析結果をJSONに出力する機能を追加した (`-j`  と `--json-timeline` )。 (#654) (@hitenkoku)
+- 解析結果をJSON形式で出力する機能を追加した (`-j`  と `--json` )。 (#654) (@hitenkoku)
 - 解析結果をJSONL形式で出力する機能を追加した (`-J`  と `--jsonl` )。 (#694) (@hitenkoku)
 
 **改善:**
