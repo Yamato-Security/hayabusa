@@ -9,7 +9,7 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
-use core::cmp::max;
+
 use csv::{QuoteStyle, WriterBuilder};
 use dashmap::Map;
 use itertools::Itertools;
@@ -883,17 +883,17 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     if char_cnt == 0 {
         tmp
     } else if con_val.starts_with('\"') {
-        let (head, _) = tmp.char_indices().nth(min(1, char_cnt - 1)).unwrap();
-        let (tail, _) = tmp.char_indices().nth(max(0, char_cnt - 1)).unwrap();
-        let addition_quote = if !con_val.ends_with('\"') { "\"" } else { "" };
+        let addition_header = if !con_val.starts_with('\"') {"\""} else {""};
+        let addition_quote = if !con_val.ends_with('\"') && concat_flag { "\"" } else if !con_val.ends_with('\"') {
+            "\\\""
+        } else { "" };
         [
-            &con_val[..head],
-            con_val[head..tail]
+            addition_header,
+            con_val
                 .to_string()
                 .replace('\\', "\\\\")
                 .replace('\"', "\\\"")
                 .trim(),
-            &con_val[tail..],
             addition_quote,
         ]
         .join("")
@@ -945,26 +945,39 @@ fn output_json_str(
             }
             let mut key_idx = 0;
             let mut output_value_stock = String::default();
+            println!("kis dbg | {:?}", key_index_stock);
+            println!("stv dbg | {:?}", stocked_value);
             for (value_idx, value) in stocked_value.iter().enumerate() {
                 let mut tmp = if key_idx >= key_index_stock.len() {
                     String::default()
+                } else if value_idx == 0 && !value.is_empty(){
+                    k.to_string()
                 } else {
                     key_index_stock[key_idx].to_string()
                 };
-                if value_idx == 0 && !value.is_empty() {
-                    tmp = k.to_string();
-                } else if value.is_empty()
-                    && value_idx >= 1
-                    && !stocked_value[value_idx - 1].is_empty()
-                {
-                    key_idx += 1;
-                    continue;
-                }
+                // if value.is_empty()
+                //     && value_idx >= 1
+                //     && !stocked_value[value_idx - 1].is_empty()
+                // {
+                //     key_idx += 1;
+                //     continue;
+                // }
                 if !output_value_stock.is_empty() {
                     output_value_stock.push_str(" | ");
                 }
                 output_value_stock.push_str(&value.join(" "));
-                if value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty() {
+                //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
+                let is_remain_split_stock = if key_idx == key_index_stock.len() - 2 && value_idx < stocked_value.len() - 1 && !output_value_stock.is_empty() {
+                    let mut ret = true;
+                    for remain_value in stocked_value[value_idx + 1 ..].iter() {
+                        println!("|dbg rv {:?}|", remain_value);
+                        if remain_value.is_empty() { ret = false;break;}
+                    }
+                    ret
+                } else {
+                    false
+                };
+                if (value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty()) || is_remain_split_stock {
                     // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
@@ -978,6 +991,7 @@ fn output_json_str(
                     ));
                     output_value_stock.clear();
                     tmp = String::default();
+                    key_idx += 1;
                 }
                 if value_idx == stocked_value.len() - 1 {
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
@@ -990,6 +1004,7 @@ fn output_json_str(
                         key.starts_with('\"'),
                         fmted_val.starts_with('\"'),
                     ));
+                    key_idx += 1;
                 }
             }
         } else if output_value_fmt.contains("%MitreTags%")
