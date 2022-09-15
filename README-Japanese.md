@@ -389,6 +389,7 @@ ADVANCED:
 
 OUTPUT:
     -j, --json                             タイムラインの出力をJSON形式で保存する（例: -j -o results.json）
+    -J, --jsonl                            タイムラインの出力をJSONL形式で保存する (例: -J -o results.jsonl)
     -o, --output <FILE>                    タイムラインをCSV形式で保存する (例: results.csv)
     -P, --profile <PROFILE>                利用する出力プロファイル名を指定する (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
