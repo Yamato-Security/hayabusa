@@ -949,8 +949,6 @@ fn output_json_str(
             }
             let mut key_idx = 0;
             let mut output_value_stock = String::default();
-            println!("kis dbg | {:?}", key_index_stock);
-            println!("stv dbg | {:?}", stocked_value);
             for (value_idx, value) in stocked_value.iter().enumerate() {
                 let mut tmp = if key_idx >= key_index_stock.len() {
                     String::default()
@@ -959,13 +957,6 @@ fn output_json_str(
                 } else {
                     key_index_stock[key_idx].to_string()
                 };
-                // if value.is_empty()
-                //     && value_idx >= 1
-                //     && !stocked_value[value_idx - 1].is_empty()
-                // {
-                //     key_idx += 1;
-                //     continue;
-                // }
                 if !output_value_stock.is_empty() {
                     output_value_stock.push_str(" | ");
                 }
@@ -977,7 +968,6 @@ fn output_json_str(
                 {
                     let mut ret = true;
                     for remain_value in stocked_value[value_idx + 1..].iter() {
-                        println!("|dbg rv {:?}|", remain_value);
                         if remain_value.is_empty() {
                             ret = false;
                             break;
