@@ -883,10 +883,14 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
     if char_cnt == 0 {
         tmp
     } else if con_val.starts_with('\"') {
-        let addition_header = if !con_val.starts_with('\"') {"\""} else {""};
-        let addition_quote = if !con_val.ends_with('\"') && concat_flag { "\"" } else if !con_val.ends_with('\"') {
+        let addition_header = if !con_val.starts_with('\"') { "\"" } else { "" };
+        let addition_quote = if !con_val.ends_with('\"') && concat_flag {
+            "\""
+        } else if !con_val.ends_with('\"') {
             "\\\""
-        } else { "" };
+        } else {
+            ""
+        };
         [
             addition_header,
             con_val
@@ -950,7 +954,7 @@ fn output_json_str(
             for (value_idx, value) in stocked_value.iter().enumerate() {
                 let mut tmp = if key_idx >= key_index_stock.len() {
                     String::default()
-                } else if value_idx == 0 && !value.is_empty(){
+                } else if value_idx == 0 && !value.is_empty() {
                     k.to_string()
                 } else {
                     key_index_stock[key_idx].to_string()
@@ -967,17 +971,25 @@ fn output_json_str(
                 }
                 output_value_stock.push_str(&value.join(" "));
                 //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                let is_remain_split_stock = if key_idx == key_index_stock.len() - 2 && value_idx < stocked_value.len() - 1 && !output_value_stock.is_empty() {
+                let is_remain_split_stock = if key_idx == key_index_stock.len() - 2
+                    && value_idx < stocked_value.len() - 1
+                    && !output_value_stock.is_empty()
+                {
                     let mut ret = true;
-                    for remain_value in stocked_value[value_idx + 1 ..].iter() {
+                    for remain_value in stocked_value[value_idx + 1..].iter() {
                         println!("|dbg rv {:?}|", remain_value);
-                        if remain_value.is_empty() { ret = false;break;}
+                        if remain_value.is_empty() {
+                            ret = false;
+                            break;
+                        }
                     }
                     ret
                 } else {
                     false
                 };
-                if (value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty()) || is_remain_split_stock {
+                if (value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty())
+                    || is_remain_split_stock
+                {
                     // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
