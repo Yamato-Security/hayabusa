@@ -296,7 +296,11 @@ fn emit_csv<W: std::io::Write>(
             } else if json_output_flag {
                 // JSON output
                 wtr.write_field("  {")?;
-                wtr.write_field(&output_json_str(&detect_info.ext_field, &profile, jsonl_output_flag))?;
+                wtr.write_field(&output_json_str(
+                    &detect_info.ext_field,
+                    &profile,
+                    jsonl_output_flag,
+                ))?;
                 if processed_message_cnt != message::MESSAGES._len() - 1
                     || info_idx != detect_infos.len() - 1
                 {
@@ -306,7 +310,10 @@ fn emit_csv<W: std::io::Write>(
                 }
             } else if jsonl_output_flag {
                 // JSONL output format
-                wtr.write_field(format!("{{ {} }}", &output_json_str(&detect_info.ext_field, &profile, jsonl_output_flag)))?;
+                wtr.write_field(format!(
+                    "{{ {} }}",
+                    &output_json_str(&detect_info.ext_field, &profile, jsonl_output_flag)
+                ))?;
             } else {
                 // csv output format
                 if plus_header {
@@ -927,7 +934,8 @@ fn output_json_str(
         let vec_data = _get_json_vec(output_value_fmt, v);
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = v.split(": ").collect();
-            let output_val = _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
+            let output_val =
+                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
             target.push(_create_json_output_format(
                 k,
                 &output_val,
@@ -989,9 +997,7 @@ fn output_json_str(
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]], false);
-                    let fmted_val = 
-                        _convert_valid_json_str(&output, false)
-                    ;
+                    let fmted_val = _convert_valid_json_str(&output, false);
                     target.push(_create_json_output_format(
                         &key,
                         &fmted_val,
@@ -1006,9 +1012,7 @@ fn output_json_str(
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]], false);
-                    let fmted_val =
-                        _convert_valid_json_str(&output, false)
-                    ;
+                    let fmted_val = _convert_valid_json_str(&output, false);
                     target.push(_create_json_output_format(
                         &key,
                         &fmted_val,
