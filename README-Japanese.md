@@ -186,6 +186,7 @@ CSVのタイムラインをTimesketchにインポートする方法は[こちら
 * 詳細な調査のために全フィールド情報の出力。
 * 成功と失敗したユーザログオンの要約。
 * [Velociraptor](https://docs.velociraptor.app/)と組み合わせた企業向けの広範囲なすべてのエンドポイントに対するスレットハンティングとDFIR。
+* CSV、JSON、JSONLの出力。
 
 # ダウンロード
 
@@ -362,6 +363,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 これで実行できるようになります。
 
 # 使用方法
+
 ## 主なコマンド
 
 * デフォルト: ファストフォレンジックタイムラインの作成。
@@ -392,6 +394,7 @@ ADVANCED:
 
 OUTPUT:
     -j, --json                             タイムラインの出力をJSON形式で保存する（例: -j -o results.json）
+    -J, --jsonl                            タイムラインの出力をJSONL形式で保存する (例: -J -o results.jsonl)
     -o, --output <FILE>                    タイムラインをCSV形式で保存する (例: results.csv)
     -P, --profile <PROFILE>                利用する出力プロファイル名を指定する (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 

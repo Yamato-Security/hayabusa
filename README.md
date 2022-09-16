@@ -172,12 +172,13 @@ You can learn how to import CSV files into Timesketch [here](doc/TimesketchImpor
 * Currently it supports the most sigma rules compared to other similar tools and even supports count rules and new aggregators such as `|equalsfield`.
 * Event log statistics. (Useful for getting a picture of what types of events there are and for tuning your log settings.)
 * Rule tuning configuration by excluding unneeded or noisy rules.
-* MITRE ATT&CK mapping of tactics (only in saved CSV files).
+* MITRE ATT&CK mapping of tactics.
 * Rule level tuning.
 * Create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 * Output all fields for more thorough investigations.
 * Successful and failed logon summary.
 * Enterprise-wide threat hunting and DFIR on all endpoints with [Velociraptor](https://docs.velociraptor.app/).
+* Output to CSV, JSON or JSONL.
 
 # Downloads
 
@@ -384,6 +385,7 @@ ADVANCED:
 
 OUTPUT:
     -j, --json                 Save the timeline in JSON format (ex: -j -o results.json)
+    -J, --jsonl                Save the timeline in JSONL format (ex: -J -o results.jsonl)
     -o, --output <FILE>        Save the timeline in CSV format (ex: results.csv)
     -P, --profile <PROFILE>    Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
