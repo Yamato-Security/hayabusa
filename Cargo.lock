@@ -568,7 +568,7 @@ dependencies = [
  "indoc",
  "jemallocator",
  "log",
- "quick-xml 0.23.1",
+ "quick-xml",
  "rayon",
  "rpmalloc",
  "serde",
@@ -749,7 +749,7 @@ dependencies = [
  "openssl",
  "pbr",
  "prettytable-rs",
- "quick-xml 0.25.0",
+ "quick-xml",
  "rand",
  "regex",
  "serde",
@@ -1429,15 +1429,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11bafc859c6815fbaffbbbf4229ecb767ac913fecb27f9ad4343662e9ef099ea"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "quick-xml"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58e21a144a0ffb5fad7b464babcdab934a325ad69b7c0373bcfef5cbd9799ca9"
-dependencies = [
- "memchr",
  "serde",
 ]
 
@@ -1924,9 +1915,9 @@ dependencies = [
 
 [[package]]
 name = "textwrap"
-version = "0.15.0"
+version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
+checksum = "949517c0cf1bf4ee812e2e07e08ab448e3ae0d23472aee8a06c985f0c8815b16"
 
 [[package]]
 name = "thiserror"
