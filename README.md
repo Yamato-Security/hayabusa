@@ -381,6 +381,7 @@ ADVANCED:
 
 OUTPUT:
     -j, --json                 Save the timeline in JSON format (ex: -j -o results.json)
+    -J, --jsonl                Save the timeline in JSONL format (ex: -J -o results.jsonl)
     -o, --output <FILE>        Save the timeline in CSV format (ex: results.csv)
     -P, --profile <PROFILE>    Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 

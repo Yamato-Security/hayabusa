@@ -241,6 +241,10 @@ pub struct Config {
     #[clap(help_heading = Some("OUTPUT"), short = 'j', long = "json", requires = "output")]
     pub json_timeline: bool,
 
+    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
+    #[clap(help_heading = Some("OUTPUT"), short = 'J', long = "jsonl", requires = "output")]
+    pub jsonl_timeline: bool,
+
     /// Do not display result summary
     #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "no-summary")]
     pub no_summary: bool,
