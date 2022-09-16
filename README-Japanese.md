@@ -69,14 +69,17 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
     - [1. `minimal`プロファイルの出力](#1-minimalプロファイルの出力)
     - [2. `standard`プロファイルの出力](#2-standardプロファイルの出力)
     - [3. `verbose`プロファイルの出力](#3-verboseプロファイルの出力)
-    - [4. `verbose-all-field-info`プロファイルの出力](#4-verbose-all-field-infoプロファイルの出力)
-    - [5. `verbose-details-and-all-field-info`プロファイルの出力](#5-verbose-details-and-all-field-infoプロファイルの出力)
-    - [6. `timesketch`プロファイルの出力](#6-timesketchプロファイルの出力)
+    - [4. `all-field-info`プロファイルの出力](#4-all-field-infoプロファイルの出力)
+    - [5. `all-field-info-verbose`プロファイルの出力](#5-all-field-info-verboseプロファイルの出力)
+    - [6. `super-verbose`プロファイルの出力](#6-super-verboseプロファイルの出力)
+    - [7. `timesketch`プロファイルの出力](#7-timesketchプロファイルの出力)
+    - [8. `timesketch`プロファイルの出力](#8-timesketchプロファイルの出力)
     - [プロファイルの比較](#プロファイルの比較)
     - [Profile Field Aliases](#profile-field-aliases)
   - [Levelの省略](#levelの省略)
   - [MITRE ATT&CK戦術の省略](#mitre-attck戦術の省略)
   - [Channel情報の省略](#channel情報の省略)
+- [その他のの省略](#その他のの省略)
   - [プログレスバー](#プログレスバー)
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
   - [結果のサマリ](#結果のサマリ)
@@ -183,6 +186,7 @@ CSVのタイムラインをTimesketchにインポートする方法は[こちら
 * 詳細な調査のために全フィールド情報の出力。
 * 成功と失敗したユーザログオンの要約。
 * [Velociraptor](https://docs.velociraptor.app/)と組み合わせた企業向けの広範囲なすべてのエンドポイントに対するスレットハンティングとDFIR。
+* CSV、JSON、JSONLの出力。
 
 # ダウンロード
 
@@ -203,7 +207,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -u
+hayabusa-1.6.0-win-x64.exe -u
 ```
 
 アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
@@ -308,20 +312,20 @@ Windows PC起動後の初回実行時に時間がかかる場合があります�
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 
-例: `hayabusa-1.5.1-windows-x64.exe`
+例: `hayabusa-1.6.0-windows-x64.exe`
 
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.5.1-linux-x64-gnu
+chmod +x ./hayabusa-1.6.0-linux-x64-gnu
 ```
 
 次に、Hayabusaのルートディレクトリから実行します：
 
 ```bash
-./hayabusa-1.5.1-linux-x64-gnu
+./hayabusa-1.6.0-linux-x64-gnu
 ```
 
 ## macOS
@@ -329,13 +333,13 @@ chmod +x ./hayabusa-1.5.1-linux-x64-gnu
 まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.5.1-mac-intel
+chmod +x ./hayabusa-1.6.0-mac-intel
 ```
 
 次に、Hayabusaのルートディレクトリから実行してみてください：
 
 ```bash
-./hayabusa-1.5.1-mac-intel
+./hayabusa-1.6.0-mac-intel
 ```
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
@@ -349,7 +353,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 その後、ターミナルからもう一回実行してみてください：
 
 ```bash
-./hayabusa-1.5.1-mac-intel
+./hayabusa-1.6.0-mac-intel
 ```
 
 以下の警告が出るので、「開く」をクリックしてください。
@@ -433,90 +437,90 @@ TIME-FORMAT:
 * １つのWindowsイベントログファイルに対してHayabusaを実行する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -f eventlog.evtx
+hayabusa-1.6.0-win-x64.exe -f eventlog.evtx
 ```
 
 * `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
 * 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: `verbose-details-and-all-field-info`プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
 ```
 
 * タイムラインをJSON形式で保存する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
 ```
 
 * Hayabusaルールのみを実行する（デフォルトでは`-r .\rules`にあるすべてのルールが利用される）:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Sigmaルールのみを実行する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にする:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
 ```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -l -m low
+hayabusa-1.6.0-win-x64.exe -l -m low
 ```
 
 * criticalレベルのアラートからピボットキーワードの一覧を作成する(結果は結果毎に`keywords-Ip Address.txt`や`keywords-Users.txt`等に出力される):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.6.0-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * イベントIDの統計情報を出力する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -f Security.evtx -s
 ```
 * ログオンサマリを出力する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -L -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -L -f Security.evtx -s
 ```
 
 * 詳細なメッセージを出力する(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
@@ -537,7 +541,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 * 結果を[Timesketch](https://timesketch.org/)にインポートできるCSV形式に保存する:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
+hayabusa-1.6.0-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
 ```
 
 * エラーログの出力をさせないようにする:
@@ -584,8 +588,11 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 1. `minimal`
 2. `standard` (デフォルト)
 3. `verbose`
-4. `verbose-all-field-info`
-5. `verbose-details-and-all-field-info`
+4. `all-field-info`
+5. `all-field-info-verbose`
+6. `super-verbose`
+7. `timesketch-minimal`
+8. `timesketch-verbose`
 
 このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
 `--set-default-profile <profile>`オプションでデフォルトのプロファイルを変更することもできます。
@@ -596,30 +603,42 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 ### 2. `standard`プロファイルの出力
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
 
 ### 3. `verbose`プロファイルの出力
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
 
-### 4. `verbose-all-field-info`プロファイルの出力
+### 4. `all-field-info`プロファイルの出力
 
 最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報が出力されます。
 
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+
+### 5. `all-field-info-verbose`プロファイルの出力
+
+`all-field-info`とタグ情報が出力されます。
+
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
 
-### 5. `verbose-details-and-all-field-info`プロファイルの出力
+### 6. `super-verbose`プロファイルの出力
 
 `verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報が出力されます。
 (注意: 出力ファイルサイズは2倍になります！)
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
-### 6. `timesketch`プロファイルの出力
+### 7. `timesketch`プロファイルの出力
 
 [Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
 
 `%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+
+### 8. `timesketch`プロファイルの出力
+
+[Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
+
+`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
 ### プロファイルの比較
 
@@ -630,9 +649,9 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 | minimal | 16分18秒 | 690 MB |
 | standard | 16分23秒 | 710 MB |
 | verbose | 17分 | 990 MB |
-| timesketch | 17分 | 1015 MB |
-| verbose-all-field-info | 16分50秒 | 1.6 GB |
-| verbose-details-and-all-field-info | 17分12秒 | 2.1 GB |
+| timesketch-minimal | 17分 | 1015 MB |
+| all-field-info-verbose | 16分50秒 | 1.6 GB |
+| super-verbose | 17分12秒 | 2.1 GB |
 
 ### Profile Field Aliases
 
@@ -720,6 +739,39 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 * `WinRM` : `Microsoft-Windows-WinRM/Operational`
 * `WMI` : `Microsoft-Windows-WMI-Activity/Operational`
 
+# その他のの省略
+
+できるだけ簡潔にするために、以下の略語を使用しています:
+
+- `Acct` -> Account
+- `Addr` -> Address
+- `Auth` -> Authentication
+- `Cli` -> Client
+- `Cmd` -> Command
+- `Comp` -> Computer
+- `Conn` -> Connection
+- `Dir` -> Directory
+- `Dst` -> Destination
+- `Exec` -> Execution
+- `Grp` -> Group
+- `LID` -> Logon ID
+- `Net` -> Network
+- `Obj` -> Object
+- `Proto` -> Protocol
+- `Sig` -> Signature
+- `Susp` -> Suspicious
+- `Src` -> Source
+- `Svc` -> Service
+- `Svr` -> Server
+- `Tgt` -> Target
+- `Op` -> Operation
+- `Pkg` -> Package
+- `Priv` -> Privilege
+- `Proc` -> Process
+- `PID` -> Process ID
+- `PGUID` -> Process GUID (Global Unique ID)
+- `Ver` -> Version
+
 ## プログレスバー
 
 プログレス・バーは、複数のevtxファイルに対してのみ機能します。
@@ -801,7 +853,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.5.1-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.6.0-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
 `./rules/config/level_tuning.txt`の例:
@@ -834,7 +886,7 @@ id,new_level
 * [EvtxToElk](https://www.dragos.com/blog/industry-news/evtxtoelk-a-python-module-to-load-windows-event-logs-into-elasticsearch/) - Elastic StackにEvtxデータを送信するPythonツール。
 * [EVTX ATTACK Samples](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) - [SBousseaden](https://twitter.com/SBousseaden) によるEVTX攻撃サンプルイベントログファイル。
 * [EVTX-to-MITRE-Attack](https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack) - [Michel de CREVOISIER](https://twitter.com/mdecrevoisier)によるATT&CKにマッピングされたEVTX攻撃サンプルログのレポジトリ。
-* [EVTX parser](https://github.com/omerbenamram/evtx) - [@OBenamram](https://twitter.com/obenamram) によって書かれた、私たちが使用したRustライブラリ。
+* [EVTX parser](https://github.com/omerbenamram/evtx) - [@OBenamram](https://twitter.com/obenamram) によって書かれた、Hayabusaが使用しているRustライブラリ。
 * [Grafiki](https://github.com/lucky-luk3/Grafiki) - SysmonとPowerShellログの可視化ツール。
 * [LogonTracer](https://github.com/JPCERTCC/LogonTracer) - [JPCERTCC](https://twitter.com/jpcert) による、横方向の動きを検知するためにログオンを視覚化するグラフィカルなインターフェース。
 * [RustyBlue](https://github.com/Yamato-Security/RustyBlue) - 大和セキュリティによるDeepBlueCLIのRust版。
@@ -860,12 +912,15 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 フォレンジックに有用な証拠を作り、高い精度で検知をさせるためには、sysmonをインストールする必要があります。以下のサイトを参考に設定することをおすすめします。:
 * [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
 * [TrustedSec Sysmon Community Guide](https://github.com/trustedsec/SysmonCommunityGuide)
+* [SwiftOnSecurityのSysmon設定ファイル](https://github.com/SwiftOnSecurity/sysmon-config)
+* [Neo23x0によるSwiftOnSecurityのSysmon設定ファイルのフォーク](https://github.com/Neo23x0/sysmon-config)
+* [ion-stormによるSwiftOnSecurityのSysmon設定ファイルのフォーク](https://github.com/ion-storm/sysmon-config)
 
 # コミュニティによるドキュメンテーション
 
 ## 英語
 
-* 2022/06/19 [VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Cupuano](https://twitter.com/eric_capuano)
+* 2022/06/19 [VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Hayabusa結果をneo4jで可視化する方法](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
 
 ## 日本語

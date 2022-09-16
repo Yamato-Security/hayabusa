@@ -1,6 +1,6 @@
 # Changes
 
-## v1.6.0 [2022/XX/XX]
+## v1.6.0 [2022/09/16]
 
 **New Features:**
 
@@ -15,6 +15,8 @@
 - Made Channel field in channel_abbreviations.txt case-insensitive. (#685) (@hitenkoku)
 - Changed pipe separator character in output from `|` to `‖`. (#687) (@hitenkoku)
 - Added color to Saved alerts and events / Total events analyzed. (#690) (@hitenkoku)
+- Updated evtx crate to 0.8.0. (better handling when headers or date values are invalid.)
+- Updated output profiles. (@YamatoSecurity)
 
 **Bug Fixes:**
 
