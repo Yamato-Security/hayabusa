@@ -213,8 +213,9 @@ fn emit_csv<W: std::io::Write>(
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
+    let jsonl_output_flag = configs::CONFIG.read().unwrap().args.jsonl_timeline;
 
-    let mut wtr = if json_output_flag {
+    let mut wtr = if json_output_flag || jsonl_output_flag {
         WriterBuilder::new()
             .delimiter(b'\n')
             .double_quote(false)
@@ -293,8 +294,13 @@ fn emit_csv<W: std::io::Write>(
                 )
                 .ok();
             } else if json_output_flag {
+                // JSON output
                 wtr.write_field("  {")?;
-                wtr.write_field(&output_json_str(&detect_info.ext_field, &profile))?;
+                wtr.write_field(&output_json_str(
+                    &detect_info.ext_field,
+                    &profile,
+                    jsonl_output_flag,
+                ))?;
                 if processed_message_cnt != message::MESSAGES._len() - 1
                     || info_idx != detect_infos.len() - 1
                 {
@@ -302,6 +308,12 @@ fn emit_csv<W: std::io::Write>(
                 } else {
                     wtr.write_field("  }")?;
                 }
+            } else if jsonl_output_flag {
+                // JSONL output format
+                wtr.write_field(format!(
+                    "{{ {} }}",
+                    &output_json_str(&detect_info.ext_field, &profile, jsonl_output_flag)
+                ))?;
             } else {
                 // csv output format
                 if plus_header {
@@ -914,6 +926,7 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 fn output_json_str(
     ext_field: &LinkedHashMap<String, String>,
     profile: &LinkedHashMap<String, String>,
+    jsonl_output_flag: bool,
 ) -> String {
     let mut target: Vec<String> = vec![];
     for (k, v) in ext_field.iter() {
@@ -1034,7 +1047,11 @@ fn output_json_str(
             }
             value.push("\n    ]".to_string());
 
-            let fmted_val = value.join("");
+            let fmted_val = if jsonl_output_flag {
+                value.iter().map(|x| x.replace('\n', "")).join("")
+            } else {
+                value.join("")
+            };
             target.push(_create_json_output_format(
                 &key,
                 &fmted_val,
@@ -1043,7 +1060,13 @@ fn output_json_str(
             ));
         }
     }
-    target.join(",\n")
+    if jsonl_output_flag {
+        // JSONL output
+        target.into_iter().map(|x| x.replace("  ", "")).join(",")
+    } else {
+        // JSON format output
+        target.join(",\n")
+    }
 }
 
 #[cfg(test)]
