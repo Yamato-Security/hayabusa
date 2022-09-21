@@ -32,8 +32,23 @@ jobs:
         with:
           args: --all-targets -- -D warnings
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
+      - name: Setup Cross Compile Environment
+        run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin 
+        x86_64-apple-darwin
+      - name: Linux gnu Build
         run: cargo build --verbose
+      - name: Linux musl Build
+        run: cargo check --verbose --target x86_64-unknown-linux-musl
+      - name: x86-64-windows(msvc) Build
+        run: cargo check --verbose --target x86_64-pc-windows-msvc
+      - name: m1 mac Build
+        run: cargo check --verbose --target aarch64-apple-darwin
+      - name: Intel mac Build
+        run: cargo check --verbose --target x86_64-apple-darwin
+      - name: i686-windows(msvc) Build
+        run: cargo check --verbose --target i686-pc-windows-msvc
       - name: Run tests
+        # env:
+        #   RUST_TESTS_THREADS: 1
         run: cargo test --verbose
 
