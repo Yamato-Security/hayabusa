@@ -14,7 +14,6 @@ standard:
     Channel: "%Channel%"
     EventID: "%EventID%"
     Level: "%Level%"
-    MitreTactics: "%MitreTactics%"
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
     Details: "%Details%"
@@ -35,8 +34,21 @@ verbose:
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
 
-#Verbose profile with all field information instead of the minimal fields defined in Details.
-verbose-all-field-info:
+#Verbose profile with all field information instead of the minimal fields defined in the Details field.
+all-field-info:
+    Timestamp: "%Timestamp%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    RecordID: "%RecordID%"
+    RuleTitle: "%RuleTitle%"
+    AllFieldInfo: "%RecordInformation%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
+
+#Verbose profile with all field information and tags.
+all-field-info-verbose:
     Timestamp: "%Timestamp%"
     Computer: "%Computer%"
     Channel: "%Channel%"
@@ -52,7 +64,7 @@ verbose-all-field-info:
     EvtxFile: "%EvtxFile%"
 
 #Verbose profile plus all field information. (Warning: this will more than double the output file size!)
-verbose-details-and-all-field-info:
+super-verbose:
     Timestamp: "%Timestamp%"
     Computer: "%Computer%"
     Channel: "%Channel%"
@@ -69,7 +81,24 @@ verbose-details-and-all-field-info:
     AllFieldInfo: "%RecordInformation%"
 
 #Output that is compatible to import the CSV into Timesketch
-timesketch:
+timesketch-minimal:
+    datetime: "%Timestamp%"
+    timestamp_desc: "hayabusa"
+    message: "%RuleTitle%"
+    Computer: "%Computer%"
+    Channel: "%Channel%"
+    EventID: "%EventID%"
+    Level: "%Level%"
+    MitreTactics: "%MitreTactics%"
+    MitreTags: "%MitreTags%"
+    OtherTags: "%OtherTags%"
+    RecordID: "%RecordID%"
+    Details: "%Details%"
+    RuleFile: "%RuleFile%"
+    EvtxFile: "%EvtxFile%"
+
+#Output that is compatible to import the CSV into Timesketch
+timesketch-verbose:
     datetime: "%Timestamp%"
     timestamp_desc: "hayabusa"
     message: "%RuleTitle%"

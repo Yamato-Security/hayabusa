@@ -1,16 +1,22 @@
 # Changes
 
-## v1.6.0 [2022/XX/XX]
+## v1.6.0 [2022/09/16]
 
 **New Features:**
 
-- XXX
+- You can now save the timeline to JSON files with the `-j, --json` option.  (#654) (@hitenkoku)
+- You can now save the timeline to JSONL files with the `-J, --jsonl` option.  (#694) (@hitenkoku)
 
 **Enhancements:**
 
 - Added top alerts to results summary. (#667) (@hitenkoku)
 - Added `--no-summary` option to not display the results summary. (#672) (@hitenkoku)
 - Made the results summary more compact. (#675 #678) (@hitenkoku)
+- Made Channel field in channel_abbreviations.txt case-insensitive. (#685) (@hitenkoku)
+- Changed pipe separator character in output from `|` to `‖`. (#687) (@hitenkoku)
+- Added color to Saved alerts and events / Total events analyzed. (#690) (@hitenkoku)
+- Updated evtx crate to 0.8.0. (better handling when headers or date values are invalid.)
+- Updated output profiles. (@YamatoSecurity)
 
 **Bug Fixes:**
 
@@ -37,6 +43,7 @@
 
 - Customizable output of fields defined at `config/profiles.yaml` and `config/default_profile.yaml`. (#165) (@hitenkoku)
 - Implemented the `null` keyword for rule detection. It is used to check if a target field exists or not. (#643) (@hitenkoku)
+- Added output to JSON option (`-j` and `--json-timeline` )  (#654) (@hitenkoku)
 
 **Enhancements:**
 

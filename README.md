@@ -14,8 +14,9 @@
 [tag-5]: https://rust-reportcard.xuri.me/badge/github.com/Yamato-Security/hayabusa
 [tag-6]: https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg
 [tag-7]: https://img.shields.io/badge/Twitter-00acee?logo=twitter&logoColor=white
+[tag-8]: https://img.shields.io/badge/CODE%20BLUE%20Bluebox-2022-blue
 
-![tag-1] ![tag-2] <a href="https://github.com/Yamato-Security/hayabusa/releases">![tag-3]</a> ![tag-4]
+![tag-1] ![tag-2] <a href="https://github.com/Yamato-Security/hayabusa/releases">![tag-3]</a> ![tag-4] ![tag-8] 
 <a href="https://rust-reportcard.xuri.me/report/github.com/Yamato-Security/hayabusa">![tag-5]</a> ![tag-6]  <a href="https://twitter.com/SecurityYamato">![tag-7]</a>
 
 # About Hayabusa
@@ -66,14 +67,17 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [1. `minimal` profile output](#1-minimal-profile-output)
     - [2. `standard` profile output](#2-standard-profile-output)
     - [3. `verbose` profile output](#3-verbose-profile-output)
-    - [4. `verbose-all-field-info` profile output](#4-verbose-all-field-info-profile-output)
-    - [5. `verbose-details-and-all-field-info` profile output](#5-verbose-details-and-all-field-info-profile-output)
-    - [6. `timesketch` profile output](#6-timesketch-profile-output)
+    - [4. `all-field-info` profile output](#4-all-field-info-profile-output)
+    - [5. `all-field-info-verbose` profile output](#5-all-field-info-verbose-profile-output)
+    - [6. `super-verbose` profile output](#6-super-verbose-profile-output)
+    - [7. `timesketch-minimal` profile output](#7-timesketch-minimal-profile-output)
+    - [8. `timesketch-verbose` profile output](#8-timesketch-verbose-profile-output)
     - [Profile Comparison](#profile-comparison)
     - [Profile Field Aliases](#profile-field-aliases)
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
+- [Other Abbreviations](#other-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
   - [Results Summary](#results-summary-1)
@@ -168,12 +172,13 @@ You can learn how to import CSV files into Timesketch [here](doc/TimesketchImpor
 * Currently it supports the most sigma rules compared to other similar tools and even supports count rules and new aggregators such as `|equalsfield`.
 * Event log statistics. (Useful for getting a picture of what types of events there are and for tuning your log settings.)
 * Rule tuning configuration by excluding unneeded or noisy rules.
-* MITRE ATT&CK mapping of tactics (only in saved CSV files).
+* MITRE ATT&CK mapping of tactics.
 * Rule level tuning.
 * Create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 * Output all fields for more thorough investigations.
 * Successful and failed logon summary.
 * Enterprise-wide threat hunting and DFIR on all endpoints with [Velociraptor](https://docs.velociraptor.app/).
+* Output to CSV, JSON or JSONL.
 
 # Downloads
 
@@ -194,7 +199,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -u
+hayabusa-1.6.0-win-x64.exe -u
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -299,20 +304,20 @@ You may experience slow runtime especially on the first run after a reboot due t
 
 In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.  
 
-Example: `hayabusa-1.5.1-windows-x64.exe`
+Example: `hayabusa-1.6.0-windows-x64.exe`
 
 ## Linux
 
 You first need to make the binary executable. 
 
 ```bash
-chmod +x ./hayabusa-1.5.1-linux-x64-gnu
+chmod +x ./hayabusa-1.6.0-linux-x64-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.5.1-linux-x64-gnu
+./hayabusa-1.6.0-linux-x64-gnu
 ```
 
 ## macOS
@@ -320,13 +325,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-1.5.1-mac-intel
+chmod +x ./hayabusa-1.6.0-mac-intel
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.5.1-mac-intel
+./hayabusa-1.6.0-mac-intel
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -340,7 +345,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-1.5.1-mac-intel
+./hayabusa-1.6.0-mac-intel
 ```
 
 The following warning will pop up, so please click "Open".
@@ -379,6 +384,8 @@ ADVANCED:
         --target-file-ext <EVTX_FILE_EXT>...    Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
 
 OUTPUT:
+    -j, --json                 Save the timeline in JSON format (ex: -j -o results.json)
+    -J, --jsonl                Save the timeline in JSONL format (ex: -J -o results.jsonl)
     -o, --output <FILE>        Save the timeline in CSV format (ex: results.csv)
     -P, --profile <PROFILE>    Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
@@ -421,85 +428,91 @@ TIME-FORMAT:
 * Run hayabusa against one Windows event log file with default standard profile:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -f eventlog.evtx
+hayabusa-1.6.0-win-x64.exe -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `verbose-details-and-all-field-info` profile!):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -F
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+```
+
+* Save the timline in JSON format:
+
+```bash
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -l -m low
+hayabusa-1.6.0-win-x64.exe -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.6.0-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * Print Event ID statistics:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -f Security.evtx -s
 ```
 
 * Print logon summary:
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -L -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -L -f Security.evtx -s
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.6.0-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:
@@ -520,7 +533,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 * Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
 
 ```bash
-hayabusa-1.5.1-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
+hayabusa-1.6.0-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
 ```
 
 * Quiet error mode:
@@ -569,8 +582,11 @@ Hayabusa has 5 pre-defined profiles to use in `config/profiles.yaml`:
 1. `minimal`
 2. `standard` (default)
 3. `verbose`
-4. `verbose-all-field-info`
-5. `verbose-details-and-all-field-info`
+4. `all-field-info`
+5. `all-field-info-verbose`
+6. `super-verbose`
+7. `timesketch-minimal`
+8. `timesketch-verbose`
 
 You can easily customize or add your own profiles by editing this file.
 You can also easily change the default profile with `--set-default-profile <profile>`.
@@ -581,29 +597,41 @@ You can also easily change the default profile with `--set-default-profile <prof
 
 ### 2. `standard` profile output
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%Details%`
 
 ### 3. `verbose` profile output
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
 
-### 4. `verbose-all-field-info` profile output
+### 4. `all-field-info` profile output
 
 Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted.
 
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+
+### 5. `all-field-info-verbose` profile output
+
+`all-field-info` profile plus tag information.
+
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
 
-### 5. `verbose-details-and-all-field-info` profile output
+### 6. `super-verbose` profile output
 
 `verbose` profile plus all field information. (Warning: this will usually double the output file size!)
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
-### 6. `timesketch` profile output
+### 7. `timesketch-minimal` profile output
 
 The `verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
 
 `%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
+
+### 8. `timesketch-verbose` profile output
+
+The `super-verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
+
+`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
 ### Profile Comparison
 
@@ -614,9 +642,9 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 | minimal | 16 minutes 18 seconds | 690 MB |
 | standard | 16 minutes 23 seconds | 710 MB |
 | verbose | 17 minutes | 990 MB |
-| timesketch | 17 minutes | 1015 MB |
-| verbose-all-field-info | 16 minutes 50 seconds | 1.6 GB |
-| verbose-details-and-all-field-info | 17 minutes 12 seconds | 2.1 GB |
+| timesketch-minimal | 17 minutes | 1015 MB |
+| all-field-info-verbose | 16 minutes 50 seconds | 1.6 GB |
+| super-verbose | 17 minutes 12 seconds | 2.1 GB |
 
 ### Profile Field Aliases
 
@@ -704,6 +732,39 @@ You can freely edit these abbreviations in the `./rules/config/channel_abbreviat
 * `WinRM` : `Microsoft-Windows-WinRM/Operational`
 * `WMI` : `Microsoft-Windows-WMI-Activity/Operational`
 
+# Other Abbreviations
+
+The following abbreviations are used in rules in order to make the output as concise as possible:
+
+- `Acct` -> Account
+- `Addr` -> Address
+- `Auth` -> Authentication
+- `Cli` -> Client
+- `Cmd` -> Command
+- `Comp` -> Computer
+- `Conn` -> Connection
+- `Dir` -> Directory
+- `Dst` -> Destination
+- `Exec` -> Execution
+- `Grp` -> Group
+- `LID` -> Logon ID
+- `Net` -> Network
+- `Obj` -> Object
+- `Proto` -> Protocol
+- `Sig` -> Signature
+- `Susp` -> Suspicious
+- `Src` -> Source
+- `Svc` -> Service
+- `Svr` -> Server
+- `Tgt` -> Target
+- `Op` -> Operation
+- `Pkg` -> Package
+- `Priv` -> Privilege
+- `Proc` -> Process
+- `PID` -> Process ID
+- `PGUID` -> Process GUID (Global Unique ID)
+- `Ver` -> Version
+
 ## Progress Bar
 
 The progress bar will only work with multiple evtx files.
@@ -784,7 +845,7 @@ You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignor
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.5.1-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.6.0-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:
@@ -818,7 +879,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 * [EvtxToElk](https://www.dragos.com/blog/industry-news/evtxtoelk-a-python-module-to-load-windows-event-logs-into-elasticsearch/) - Python tool to send Evtx data to Elastic Stack.
 * [EVTX ATTACK Samples](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES) - EVTX attack sample event log files by [SBousseaden](https://twitter.com/SBousseaden).
 * [EVTX-to-MITRE-Attack](https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack) - EVTX attack sample event log files mapped to ATT&CK by [Michel de CREVOISIER](https://twitter.com/mdecrevoisier)
-* [EVTX parser](https://github.com/omerbenamram/evtx) - the Rust library we used written by [@OBenamram](https://twitter.com/obenamram).
+* [EVTX parser](https://github.com/omerbenamram/evtx) - the Rust evtx library we use written by [@OBenamram](https://twitter.com/obenamram).
 * [Grafiki](https://github.com/lucky-luk3/Grafiki) - Sysmon and PowerShell log visualizer.
 * [LogonTracer](https://github.com/JPCERTCC/LogonTracer) - A graphical interface to visualize logons to detect lateral movement by [JPCERTCC](https://twitter.com/jpcert_en).
 * [RustyBlue](https://github.com/Yamato-Security/RustyBlue) - Rust port of DeepBlueCLI by Yamato Security.
@@ -840,15 +901,18 @@ In order to properly detect malicious activity on Windows machines, you will nee
 
 # Sysmon Related Projects
 
-To create the most forensic evidence and detect with the highest accuracy, you need to install sysmon. We recommend the following sites:
-* [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
+To create the most forensic evidence and detect with the highest accuracy, you need to install sysmon. We recommend the following sites and config files:
 * [TrustedSec Sysmon Community Guide](https://github.com/trustedsec/SysmonCommunityGuide)
+* [Sysmon Modular](https://github.com/olafhartong/sysmon-modular)
+* [SwiftOnSecurity Sysmon Config](https://github.com/SwiftOnSecurity/sysmon-config)
+* [SwiftOnSecurity Sysmon Config fork by Neo23x0](https://github.com/Neo23x0/sysmon-config)
+* [SwiftOnSecurity Sysmon Config fork by ion-storm](https://github.com/ion-storm/sysmon-config)
 
 # Community Documentation
 
 ## English
 
-* 2022/06/19 [Velociraptor Walkthrough and Hayabusa Integration](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Cupuano](https://twitter.com/eric_capuano)
+* 2022/06/19 [Velociraptor Walkthrough and Hayabusa Integration](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Graphing Hayabusa results in neo4j](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
 
 ## Japanese

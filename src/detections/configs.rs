@@ -237,6 +237,14 @@ pub struct Config {
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 
+    /// Save the timeline in JSON format (ex: -j -o results.json)
+    #[clap(help_heading = Some("OUTPUT"), short = 'j', long = "json", requires = "output")]
+    pub json_timeline: bool,
+
+    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
+    #[clap(help_heading = Some("OUTPUT"), short = 'J', long = "jsonl", requires = "output")]
+    pub jsonl_timeline: bool,
+
     /// Do not display result summary
     #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "no-summary")]
     pub no_summary: bool,

@@ -264,7 +264,10 @@ impl Detection {
                     "%Channel%" => {
                         profile_converter.insert(
                             "%Channel%".to_string(),
-                            CH_CONFIG.get(ch_str).unwrap_or(ch_str).to_string(),
+                            CH_CONFIG
+                                .get(&ch_str.to_ascii_lowercase())
+                                .unwrap_or(ch_str)
+                                .to_string(),
                         );
                     }
                     "%Level%" => {
@@ -323,7 +326,7 @@ impl Detection {
                             .filter(|x| TAGS_CONFIG.values().contains(x))
                             .map(|y| y.to_owned())
                             .collect();
-                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
+                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" ¦ "));
                     }
                     "%MitreTags%" => {
                         let techniques: &Vec<String> = &tag_info
@@ -339,7 +342,7 @@ impl Detection {
                                 make_ascii_titlecase(&mut replaced_tag)
                             })
                             .collect();
-                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" : "));
+                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
                     }
                     "%OtherTags%" => {
                         let tags: &Vec<String> = &tag_info
@@ -352,7 +355,7 @@ impl Detection {
                             })
                             .map(|y| y.to_owned())
                             .collect();
-                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" : "));
+                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" ¦ "));
                     }
 
                     _ => {}
@@ -455,7 +458,7 @@ impl Detection {
                             .filter(|x| TAGS_CONFIG.values().contains(x))
                             .map(|y| y.to_owned())
                             .collect();
-                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" : "));
+                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" ¦ "));
                     }
                     "%MitreTags%" => {
                         let techniques: &Vec<String> = &tag_info
@@ -471,7 +474,7 @@ impl Detection {
                                 make_ascii_titlecase(&mut replaced_tag)
                             })
                             .collect();
-                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" : "));
+                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
                     }
                     "%OtherTags%" => {
                         let tags: &Vec<String> = &tag_info
@@ -484,7 +487,7 @@ impl Detection {
                             })
                             .map(|y| y.to_owned())
                             .collect();
-                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" : "));
+                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" ¦ "));
                     }
                     _ => {}
                 }
