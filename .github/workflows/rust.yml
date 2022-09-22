@@ -36,8 +36,6 @@ jobs:
         run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin
       - name: Linux gnu Build
         run: cargo build --verbose
-      - name: Linux musl Build
-        run: cargo check --verbose --target x86_64-unknown-linux-musl
       - name: x86-64-windows(msvc) Build
         run: cargo check --verbose --target x86_64-pc-windows-msvc
       - name: m1 mac Build
@@ -46,5 +44,9 @@ jobs:
         run: cargo check --verbose --target x86_64-apple-darwin
       - name: i686-windows(msvc) Build
         run: cargo check --verbose --target i686-pc-windows-msvc
+      - name: musl build prepare
+        run: sudo apt install musl-gcc
+      - name: Linux musl Build
+        run: cargo check --verbose --target x86_64-unknown-linux-musl
       - name: Run tests
         run: RUST_TEST_THREADS=1 cargo test --verbose
