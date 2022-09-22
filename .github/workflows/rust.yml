@@ -10,37 +10,69 @@ env:
 
 jobs:
   build:
+    runs-on: ${{ matrix.info.os }}
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
-        os: [ubuntu-latest, macos-latest, windows-latest]
-      runs-on: ${{ matrix.os }}
-      steps:
-        - uses: actions/checkout@v2
-          with:
-            submodules: recursive
-        - uses: actions-rs/toolchain@v1
-          with:
-            toolchain: stable
-            profile: minimal
-            components: rustfmt
-            override: true
-        - name: Fmt Check
-          run: cargo fmt -- --check
-        - name: Prepare Clippy
-          run: rustup component add clippy
-        - name: Run clippy action to produce annotations
-          uses: actions-rs/clippy-check@v1
-          with:
-            args: --all-targets -- -D warnings
-            token: ${{ secrets.GITHUB_TOKEN }}
-        - name: Setup Cross Compile Crate
-          run: cargo install cross
-        - name: Setup Cross Compile Environment
-          run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin
-        - name: Linux gnu Build
-          run: cargo build --verbose
-        - name: Run tests
-          env:
-            RUST_TEST_THREADS: 1
-          run: cargo test --verbose
+        info:
+          - {
+              os: "ubuntu-latest",
+              target: "x86_64-unknown-linux-gnu",
+              cross: false,
+            }
+          - {
+              os: "ubuntu-latest",
+              target: "aarch64-unknown-linux-gnu",
+              cross: true,
+            }
+          - { os: "macOS-latest", target: "x86_64-apple-darwin", cross: false }
+          - {
+              os: "windows-2019",
+              target: "x86_64-pc-windows-msvc",
+              cross: false,
+            }
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Set up Rust toolchain
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: dtolnay/rust-toolchain@88e7c2e1da2693cf72d58fce9416206818e61dea # https://github.com/dtolnay/rust-toolchain/commit/88e7c2e1da2693cf72d58fce9416206818e61dea
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+          target: ${{ matrix.info.target }}
+      - name: Enable Rust cache
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # 1.4.0
+      - name: Fmt Check
+        run: cargo fmt -- --check
+      - name: Run clippy action to produce annotations
+        uses: actions-rs/clippy-check@v1
+        with:
+          args: --all-targets -- -D warnings
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Cross Compile Environment
+        run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin
+      - name: Linux gnu Build
+        run: cargo build --verbose
+      - name: m1 mac Build
+        run: cargo build --verbose --target aarch64-apple-darwin
+      - name: Intel mac Build
+        uses: Shogan/rust-musl-action@v1.0.2
+        with:
+          args: cargo build --verbose --target x86_64-apple-darwin
+      # - name: Setup build lib
+      #   run: sudo apt install -y mingw-w64
+      # - name: x86-64-windows(msvc) Build
+      #   run: cargo build --verbose --target x86_64-pc-windows-msvc
+      # - name: i686-windows(msvc) Build
+      #   run: cargo build --verbose --target i686-pc-windows-msvc
+      - name: Linux musl Build
+        uses: Shogan/rust-musl-action@v1.0.2
+        with:
+          run: cross build --verbose --target x86_64-unknown-linux-musl
+      - name: Run tests
+        env:
+          RUST_TEST_THREADS: 1
+        run: cargo test --verbose
