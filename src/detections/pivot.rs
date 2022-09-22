@@ -91,9 +91,9 @@ mod tests {
     use crate::detections::pivot::PIVOT_KEYWORD;
     use serde_json;
 
-    //PIVOT_KEYWORDはグローバルなので、他の関数の影響も考慮する必要がある。
     #[test]
     fn insert_pivot_keyword_local_ip4() {
+        PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
@@ -119,6 +119,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_ip4() {
+        PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
@@ -144,6 +145,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_ip_empty() {
+        PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
@@ -169,6 +171,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_local_ip6() {
+        PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
@@ -194,6 +197,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_infomational() {
+        PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
@@ -219,6 +223,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_low() {
+        PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
@@ -244,6 +249,7 @@ mod tests {
 
     #[test]
     fn insert_pivot_keyword_level_none() {
+        PIVOT_KEYWORD.write().unwrap().clear();
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
