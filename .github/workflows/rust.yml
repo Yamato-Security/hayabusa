@@ -51,4 +51,6 @@ jobs:
       - name: Linux musl Build
         run: cross build --verbose --target x86_64-unknown-linux-musl
       - name: Run tests
-        run: RUST_TEST_THREADS=1 cargo test --verbose
+        env:
+          RUST_TEST_THREADS: 1
+        run: cargo test --verbose
