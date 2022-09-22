@@ -625,7 +625,6 @@ mod tests {
         }
     }
 
-    #[ignore]
     #[test]
     fn test_insert_message_race_condition() {
         MESSAGES.clear();
