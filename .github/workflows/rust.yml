@@ -38,16 +38,16 @@ jobs:
         run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin
       - name: Linux gnu Build
         run: cargo build --verbose
-      - name: x86-64-windows(msvc) Build
-        run: cross build --verbose --target x86_64-pc-windows-msvc
       - name: m1 mac Build
         run: cross build --verbose --target aarch64-apple-darwin
       - name: Intel mac Build
         run: cross build --verbose --target x86_64-apple-darwin
+      - name: Setup build lib
+        run: sudo apt install musl-gcc && mingw-w64
+      - name: x86-64-windows(msvc) Build
+        run: cross build --verbose --target x86_64-pc-windows-msvc
       - name: i686-windows(msvc) Build
         run: cross build --verbose --target i686-pc-windows-msvc
-      - name: musl build prepare
-        run: sudo apt install musl-gcc
       - name: Linux musl Build
         run: cross build --verbose --target x86_64-unknown-linux-musl
       - name: Run tests
