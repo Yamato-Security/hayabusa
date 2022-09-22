@@ -52,7 +52,7 @@ jobs:
         with:
           args: --all-targets -- -D warnings
           token: ${{ secrets.GITHUB_TOKEN }}
-            - name: Build tests
+      - name: Build tests
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
         uses: ClementTsang/cargo-action@v0.0.2
         with:
