@@ -52,27 +52,17 @@ jobs:
         with:
           args: --all-targets -- -D warnings
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup Cross Compile Environment
-        run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin
-      - name: Linux gnu Build
-        run: cargo build --verbose
-      - name: m1 mac Build
-        run: cargo build --verbose --target aarch64-apple-darwin
-      - name: Intel mac Build
-        uses: Shogan/rust-musl-action@v1.0.2
+            - name: Build tests
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: ClementTsang/cargo-action@v0.0.2
         with:
-          args: cargo build --verbose --target x86_64-apple-darwin
-      # - name: Setup build lib
-      #   run: sudo apt install -y mingw-w64
-      # - name: x86-64-windows(msvc) Build
-      #   run: cargo build --verbose --target x86_64-pc-windows-msvc
-      # - name: i686-windows(msvc) Build
-      #   run: cargo build --verbose --target i686-pc-windows-msvc
-      - name: Linux musl Build
-        uses: Shogan/rust-musl-action@v1.0.2
-        with:
-          run: cross build --verbose --target x86_64-unknown-linux-musl
-      - name: Run tests
+          command: test
+          args: --no-run --locked ${{ matrix.features }} --target=${{ matrix.info.target }}
+          use-cross: ${{ matrix.info.cross }}
+          cross-version: 0.2.4
+        env:
+          RUST_BACKTRACE: full
+       - name: Run tests
         env:
           RUST_TEST_THREADS: 1
         run: cargo test --verbose
