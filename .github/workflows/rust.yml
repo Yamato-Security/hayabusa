@@ -32,10 +32,10 @@ jobs:
         with:
           args: --all-targets -- -D warnings
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Cross Compile Crate
+        run: cargo install cross
       - name: Setup Cross Compile Environment
-        run: |
-        cargo install cross
-        rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin
+        run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin
       - name: Linux gnu Build
         run: cargo build --verbose
       - name: x86-64-windows(msvc) Build
