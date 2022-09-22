@@ -43,7 +43,7 @@ jobs:
       # - name: Intel mac Build
       #   run: cross build --verbose --target x86_64-apple-darwin
       - name: Setup build lib
-        run: sudo apt install musl-gcc && mingw-w64
+        run: sudo apt install -y musl-gcc && mingw-w64
       - name: x86-64-windows(msvc) Build
         run: cross build --verbose --target x86_64-pc-windows-msvc
       - name: i686-windows(msvc) Build
