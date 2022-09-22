@@ -42,12 +42,12 @@ jobs:
       #   run: cross build --verbose --target aarch64-apple-darwin
       # - name: Intel mac Build
       #   run: cross build --verbose --target x86_64-apple-darwin
-      - name: Setup build lib
-        run: sudo apt install -y mingw-w64
-      - name: x86-64-windows(msvc) Build
-        run: cargo build --verbose --target x86_64-pc-windows-msvc
-      - name: i686-windows(msvc) Build
-        run: cargo build --verbose --target i686-pc-windows-msvc
+      # - name: Setup build lib
+      #   run: sudo apt install -y mingw-w64
+      # - name: x86-64-windows(msvc) Build
+      #   run: cargo build --verbose --target x86_64-pc-windows-msvc
+      # - name: i686-windows(msvc) Build
+      #   run: cargo build --verbose --target i686-pc-windows-msvc
       # - name: Linux musl Build
       #   run: cross build --verbose --target x86_64-unknown-linux-musl
       - name: Run tests
