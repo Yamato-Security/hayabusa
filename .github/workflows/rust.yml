@@ -47,7 +47,5 @@ jobs:
       - name: i686-windows(msvc) Build
         run: cargo check --verbose --target i686-pc-windows-msvc
       - name: Run tests
-        env:
-          RUST_TESTS_THREADS: 1
         run: cargo test --verbose
 
