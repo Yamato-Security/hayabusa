@@ -749,6 +749,7 @@ dependencies = [
  "openssl",
  "pbr",
  "prettytable-rs",
+ "pulldown-cmark",
  "quick-xml",
  "rand",
  "regex",
