@@ -10,7 +10,6 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ matrix.info.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +30,7 @@ jobs:
               target: "x86_64-pc-windows-msvc",
               cross: false,
             }
+    runs-on: ${{ matrix.info.os }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -62,7 +62,7 @@ jobs:
           cross-version: 0.2.4
         env:
           RUST_BACKTRACE: full
-       - name: Run tests
+      - name: Run tests
         env:
           RUST_TEST_THREADS: 1
         run: cargo test --verbose
