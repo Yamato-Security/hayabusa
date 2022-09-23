@@ -47,6 +47,8 @@ jobs:
         uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # 1.4.0
       - name: Fmt Check
         run: cargo fmt -- --check
+      - name: Prepare Clippy
+        run: rustup component add clippy
       - name: Run clippy action to produce annotations
         uses: actions-rs/clippy-check@v1
         with:
