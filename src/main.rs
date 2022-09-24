@@ -18,7 +18,7 @@ use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
-use hayabusa::options::htmlreport::HTML_REPORTER;
+use hayabusa::options::htmlreport::{HTML_REPORTER, self};
 use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules};
 use hayabusa::{afterfact::after_fact, detections::utils};
@@ -505,7 +505,6 @@ impl App {
             }
         }
     }
-
     fn analysis_files(&mut self, evtx_files: Vec<PathBuf>, time_filter: &TargetEventTime) {
         let level = configs::CONFIG
             .read()
@@ -533,16 +532,8 @@ impl App {
         println!();
 
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            let mut html_report_data = HTML_REPORTER
-                .write()
-                .unwrap().md_datas.clone();
-            let entry = html_report_data
-                .entry("General Overview".to_string())
-                .or_insert(Vec::new());
-            entry.push(format!("- Analyzed event files: {:?}", evtx_files.len()));
-            entry.push("".to_string());
-            entry.push(format!("- {}", total_size_output));
-            HTML_REPORTER.write().unwrap().md_datas = html_report_data;
+            let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
+            htmlreport::add_md_data(html_report_data, "General Overview".to_string(),format!("- Analyzed event files: {}", evtx_files.len()));
         }
 
         let rule_files = detection::Detection::parse_rule_files(
