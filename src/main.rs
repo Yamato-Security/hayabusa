@@ -18,6 +18,7 @@ use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
+use hayabusa::options::htmlreport::HTML_REPORTER;
 use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules};
 use hayabusa::{afterfact::after_fact, detections::utils};
@@ -525,10 +526,24 @@ impl App {
             let meta = fs::metadata(file_path).ok();
             total_file_size += ByteSize::b(meta.unwrap().len());
         }
-        println!("Total file size: {}", total_file_size.to_string_as(false));
+        let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
+        println!("{}", total_size_output);
         println!();
         println!("Loading detections rules. Please wait.");
         println!();
+
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            let mut html_report_data = HTML_REPORTER
+                .write()
+                .unwrap().md_datas.clone();
+            let entry = html_report_data
+                .entry("General Overview".to_string())
+                .or_insert(Vec::new());
+            entry.push(format!("- Analyzed event files: {:?}", evtx_files.len()));
+            entry.push("".to_string());
+            entry.push(format!("- {}", total_size_output));
+            HTML_REPORTER.write().unwrap().md_datas = html_report_data;
+        }
 
         let rule_files = detection::Detection::parse_rule_files(
             level,
