@@ -532,8 +532,15 @@ impl App {
         println!();
 
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
-            htmlreport::add_md_data(html_report_data, "General Overview".to_string(),format!("- Analyzed event files: {}", evtx_files.len()));
+            let output_data = vec![
+                format!("- Analyzed event files: {}", evtx_files.len()),
+                format!("- {}", total_size_output),
+                "".to_string(),
+            ];
+            for output in output_data {
+                let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
+                htmlreport::add_md_data(html_report_data, "General Overview".to_string(),output);
+            }
         }
 
         let rule_files = detection::Detection::parse_rule_files(
