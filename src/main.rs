@@ -323,15 +323,22 @@ impl App {
 
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
+        let elapsed_output_str = format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
-            true,
+            &elapsed_output_str,
+            true
         )
         .ok();
         println!();
-
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            let output_data = vec![
+                format!("- {}", elapsed_output_str),
+                "".to_string(),
+            ];
+            htmlreport::add_md_data( "General Overview".to_string(), output_data);
+        }
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
@@ -537,10 +544,7 @@ impl App {
                 format!("- {}", total_size_output),
                 "".to_string(),
             ];
-            for output in output_data {
-                let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
-                htmlreport::add_md_data(html_report_data, "General Overview".to_string(), output);
-            }
+            htmlreport::add_md_data("General Overview".to_string(), output_data);
         }
 
         let rule_files = detection::Detection::parse_rule_files(

@@ -624,7 +624,7 @@ impl Detection {
                 );
                 println!("{}", output_str);
                 if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-                    html_report_stock.push(output_str);
+                    html_report_stock.push(format!("- {}", output_str));
                 }
             }
         });
@@ -666,7 +666,8 @@ impl Detection {
                 )
                 .ok();
                 if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-                    html_report_stock.push(output_str);
+                    html_report_stock.push(format!(
+                        "- {}", output_str));
                 }
             }
         });
@@ -684,7 +685,7 @@ impl Detection {
             )
             .ok();
             if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-                html_report_stock.push(output_str);
+                html_report_stock.push(format!("- {}", output_str));
             }
         });
 
@@ -693,17 +694,13 @@ impl Detection {
         println!("{}", tmp_total_detect_output);
         println!();
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            html_report_stock.push(tmp_total_detect_output);
+            html_report_stock.push(format!("- {}", tmp_total_detect_output));
         }
         if !html_report_stock.is_empty() {
-            for report_row in html_report_stock {
-                let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
-                htmlreport::add_md_data(
-                    html_report_data,
-                    "General Overview".to_string(),
-                    format!("- Analyzed event files: {}", report_row),
-                );
-            }
+            htmlreport::add_md_data(
+                "General Overview".to_string(),
+                html_report_stock
+            );
         }
     }
 }
