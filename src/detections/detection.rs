@@ -27,6 +27,7 @@ use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
+use crate::options::htmlreport::{self, HTML_REPORTER};
 
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
@@ -605,6 +606,7 @@ impl Detection {
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let args = &configs::CONFIG.read().unwrap().args;
+        let mut html_report_stock = Vec::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
@@ -614,12 +616,16 @@ impl Detection {
                     ""
                 };
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
+                let output_str = format!(                    "{} rules: {}{}",
+                make_ascii_titlecase(key.clone().as_mut()),
+                value,
+                disable_flag);
                 println!(
-                    "{} rules: {}{}",
-                    make_ascii_titlecase(key.clone().as_mut()),
-                    value,
-                    disable_flag,
+                    "{}", output_str
                 );
+                if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                    html_report_stock.push(output_str);
+                }
             }
         });
         if err_rc != &0_u128 {
@@ -644,20 +650,24 @@ impl Detection {
                 } else {
                     ""
                 };
+                let output_str = format!(
+                    "{} rules: {} ({:.2}%){}",
+                    make_ascii_titlecase(key.clone().as_mut()),
+                    value,
+                    rate,
+                    deprecated_flag
+                );
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &format!(
-                        "{} rules: {} ({:.2}%){}",
-                        make_ascii_titlecase(key.clone().as_mut()),
-                        value,
-                        rate,
-                        deprecated_flag
-                    ),
+                    &output_str,
                     true,
                 )
                 .ok();
+                if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                    html_report_stock.push(output_str);
+                }
             }
         });
         println!();
@@ -665,17 +675,31 @@ impl Detection {
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
+            let output_str = format!("{} rules: {}", key, value);
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &format!("{} rules: {}", key, value),
+                &output_str,
                 true,
             )
             .ok();
+            if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                html_report_stock.push(output_str);
+            }
         });
 
-        println!("Total enabled detection rules: {}", total_loaded_rule_cnt);
+        let tmp_total_detect_output = format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
+        println!("{}", tmp_total_detect_output);
         println!();
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            html_report_stock.push(tmp_total_detect_output);
+        }
+        if !html_report_stock.is_empty() {
+            for report_row in html_report_stock {
+                let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
+                htmlreport::add_md_data(html_report_data, "General Overview".to_string(),format!("- Analyzed event files: {}", report_row));
+        }
+    }
     }
 }
 
