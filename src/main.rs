@@ -18,7 +18,7 @@ use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
-use hayabusa::options::htmlreport::{HTML_REPORTER, self};
+use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules};
 use hayabusa::{afterfact::after_fact, detections::utils};
@@ -539,7 +539,7 @@ impl App {
             ];
             for output in output_data {
                 let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
-                htmlreport::add_md_data(html_report_data, "General Overview".to_string(),output);
+                htmlreport::add_md_data(html_report_data, "General Overview".to_string(), output);
             }
         }
 

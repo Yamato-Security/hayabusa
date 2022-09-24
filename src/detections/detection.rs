@@ -22,12 +22,12 @@ use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
+use crate::options::htmlreport::{self, HTML_REPORTER};
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
-use crate::options::htmlreport::{self, HTML_REPORTER};
 
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
@@ -616,13 +616,13 @@ impl Detection {
                     ""
                 };
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
-                let output_str = format!(                    "{} rules: {}{}",
-                make_ascii_titlecase(key.clone().as_mut()),
-                value,
-                disable_flag);
-                println!(
-                    "{}", output_str
+                let output_str = format!(
+                    "{} rules: {}{}",
+                    make_ascii_titlecase(key.clone().as_mut()),
+                    value,
+                    disable_flag
                 );
+                println!("{}", output_str);
                 if configs::CONFIG.read().unwrap().args.html_report.is_some() {
                     html_report_stock.push(output_str);
                 }
@@ -688,7 +688,8 @@ impl Detection {
             }
         });
 
-        let tmp_total_detect_output = format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
+        let tmp_total_detect_output =
+            format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
         println!("{}", tmp_total_detect_output);
         println!();
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
@@ -697,9 +698,13 @@ impl Detection {
         if !html_report_stock.is_empty() {
             for report_row in html_report_stock {
                 let html_report_data = HTML_REPORTER.write().unwrap().md_datas.clone();
-                htmlreport::add_md_data(html_report_data, "General Overview".to_string(),format!("- Analyzed event files: {}", report_row));
+                htmlreport::add_md_data(
+                    html_report_data,
+                    "General Overview".to_string(),
+                    format!("- Analyzed event files: {}", report_row),
+                );
+            }
         }
-    }
     }
 }
 
