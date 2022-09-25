@@ -14,7 +14,7 @@ use crate::detections::message::DetectInfo;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::message::{CH_CONFIG, DEFAULT_DETAILS, TAGS_CONFIG};
 use crate::detections::message::{
-    LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, METRICS_FLAG,
+    LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
 };
 use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule;
