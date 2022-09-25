@@ -19,6 +19,17 @@ use termcolor::{BufferWriter, ColorChoice};
 pub struct Update {}
 
 impl Update {
+
+    /// get latest hayabusa version number.
+    pub fn get_latest_hayabusa_version() -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let res = reqwest::blocking::get("https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest")?.json::<std::collections::HashMap<String, String>>()?;
+        if let Some(o) = res.get("tag_name") {
+            Ok(Some(o.to_owned()))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// update rules(hayabusa-rules subrepository)
     pub fn update_rules(rule_path: &str) -> Result<String, git2::Error> {
         let mut result;

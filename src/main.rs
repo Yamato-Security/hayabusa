@@ -19,7 +19,7 @@ use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
 use hayabusa::options::profile::PROFILES;
-use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules};
+use hayabusa::options::{level_tuning::LevelTuning, update::Update};
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -118,7 +118,31 @@ impl App {
         }
 
         if configs::CONFIG.read().unwrap().args.update_rules {
-            match UpdateRules::update_rules(
+            // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
+            let latest_version_data =  if let Ok(data) = Update::get_latest_hayabusa_version(){
+                data
+            } else {
+                None
+            };
+            let now_version = configs::CONFIG.read().unwrap().app.get_version().unwrap();
+            if latest_version_data.is_some() && now_version != latest_version_data.as_ref().unwrap_or(&now_version.to_string()) {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &format!("There is a new version of Hayabusa: {}", latest_version_data.unwrap()),
+                    true,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
+                    true,
+                )
+                .ok();
+            }
+            
+            match Update::update_rules(
                 configs::CONFIG.read().unwrap().args.rules.to_str().unwrap(),
             ) {
                 Ok(output) => {
