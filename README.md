@@ -384,10 +384,11 @@ ADVANCED:
         --target-file-ext <EVTX_FILE_EXT>...    Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
 
 OUTPUT:
-    -j, --json                 Save the timeline in JSON format (ex: -j -o results.json)
-    -J, --jsonl                Save the timeline in JSONL format (ex: -J -o results.jsonl)
-    -o, --output <FILE>        Save the timeline in CSV format (ex: results.csv)
-    -P, --profile <PROFILE>    Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+    -H, --html-report <FILE>    Save detail Results Summary in html (ex: results.html)
+    -j, --json                  Save the timeline in JSON format (ex: -j -o results.json)
+    -J, --jsonl                 Save the timeline in JSONL format (ex: -J -o results.jsonl)
+    -o, --output <FILE>         Save the timeline in CSV format (ex: results.csv)
+    -P, --profile <PROFILE>     Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
 
 DISPLAY-SETTINGS:
         --no-color              Disable color output
