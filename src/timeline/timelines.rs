@@ -2,7 +2,7 @@ use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use prettytable::{Cell, Row, Table};
 
-use super::statistics::EventMetrics;
+use super::metrics::EventMetrics;
 use hashbrown::HashMap;
 
 #[derive(Debug)]
