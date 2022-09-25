@@ -189,7 +189,7 @@ pub struct Config {
     pub thread_number: Option<usize>,
 
     /// Print metrics of event IDs
-    #[clap(help_heading = Some("OTHER-ACTIONS"), short, long)]
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short='M', long)]
     pub metrics: bool,
 
     /// Print a summary of successful and failed logons
