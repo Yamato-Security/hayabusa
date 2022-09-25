@@ -16,9 +16,9 @@ use std::fs::create_dir;
 
 use termcolor::{BufferWriter, ColorChoice};
 
-pub struct UpdateRules {}
+pub struct Update {}
 
-impl UpdateRules {
+impl Update {
     /// update rules(hayabusa-rules subrepository)
     pub fn update_rules(rule_path: &str) -> Result<String, git2::Error> {
         let mut result;
@@ -35,14 +35,14 @@ impl UpdateRules {
             )
             .ok();
             // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
-            result = UpdateRules::clone_rules(Path::new(rule_path));
+            result = Update::clone_rules(Path::new(rule_path));
         } else if hayabusa_rule_repo.is_ok() {
             // case of exist hayabusa-rules repository
-            UpdateRules::_repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
+            Update::_repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = UpdateRules::get_updated_rules(rule_path, &prev_modified_time);
+            prev_modified_rules = Update::get_updated_rules(rule_path, &prev_modified_time);
             prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
-            result = UpdateRules::pull_repository(&hayabusa_rule_repo.unwrap());
+            result = Update::pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
             // case of no exist hayabusa-rules repository in rules.
             // execute update because submodule information exists if hayabusa repository exists submodule information.
@@ -61,7 +61,7 @@ impl UpdateRules {
                 for mut submodule in submodules {
                     submodule.update(true, None)?;
                     let submodule_repo = submodule.open()?;
-                    if let Err(e) = UpdateRules::pull_repository(&submodule_repo) {
+                    if let Err(e) = Update::pull_repository(&submodule_repo) {
                         AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
                         is_success_submodule_update = false;
                     }
@@ -80,13 +80,13 @@ impl UpdateRules {
                 )
                 .ok();
                 // execution git clone of hayabusa-rules repository when failed open hayabusa repository.
-                result = UpdateRules::clone_rules(rules_path);
+                result = Update::clone_rules(rules_path);
             }
         }
         if result.is_ok() {
             let updated_modified_rules =
-                UpdateRules::get_updated_rules(rule_path, &prev_modified_time);
-            result = UpdateRules::print_diff_modified_rule_dates(
+                Update::get_updated_rules(rule_path, &prev_modified_time);
+            result = Update::print_diff_modified_rule_dates(
                 prev_modified_rules,
                 updated_modified_rules,
             );
@@ -254,7 +254,7 @@ impl UpdateRules {
 
 #[cfg(test)]
 mod tests {
-    use crate::options::update_rules::UpdateRules;
+    use crate::options::update::Update;
     use std::time::SystemTime;
 
     #[test]
@@ -262,12 +262,12 @@ mod tests {
         let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
 
         let prev_modified_rules =
-            UpdateRules::get_updated_rules("test_files/rules/level_yaml", &prev_modified_time);
+            Update::get_updated_rules("test_files/rules/level_yaml", &prev_modified_time);
         assert_eq!(prev_modified_rules.len(), 5);
 
         let target_time: SystemTime = SystemTime::now();
         let prev_modified_rules2 =
-            UpdateRules::get_updated_rules("test_files/rules/level_yaml", &target_time);
+            Update::get_updated_rules("test_files/rules/level_yaml", &target_time);
         assert_eq!(prev_modified_rules2.len(), 0);
     }
 }
