@@ -1,10 +1,10 @@
-use serde_json::Value;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::write_color_buffer;
 use crate::filter;
 use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone};
 use git2::Repository;
+use serde_json::Value;
 use std::fs::{self};
 use std::path::Path;
 
@@ -22,19 +22,19 @@ pub struct Update {}
 impl Update {
     /// get latest hayabusa version number.
     pub fn get_latest_hayabusa_version() -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let res = reqwest::blocking::Client::new().get(
-            "https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest",
-        ).header("User-Agent", "HayabusaUpdateChecker")
-        .header("Accept", "application/vnd.github.v3+json").send()?;
+        let res = reqwest::blocking::Client::new()
+            .get("https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest")
+            .header("User-Agent", "HayabusaUpdateChecker")
+            .header("Accept", "application/vnd.github.v3+json")
+            .send()?;
         let text = res.text()?;
-        let json_res:Value =  serde_json::from_str(&text)?;
+        let json_res: Value = serde_json::from_str(&text)?;
 
         if json_res["tag_name"].is_null() {
             Ok(None)
-         } else {
+        } else {
             Ok(Some(json_res["tag_name"].to_string()))
         }
-        
     }
 
     /// update rules(hayabusa-rules subrepository)
