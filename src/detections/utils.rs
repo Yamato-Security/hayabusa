@@ -410,7 +410,7 @@ pub fn check_rule_config() -> Result<(), String> {
         "target_event_IDs.txt",
         "default_details.txt",
         "level_tuning.txt",
-        "statistics_event_info.txt",
+        "event_id_info.txt",
         "eventkey_alias.txt",
     ];
     let mut not_exist_file = vec![];
