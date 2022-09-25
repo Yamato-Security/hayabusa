@@ -124,19 +124,19 @@ impl App {
             } else {
                 None
             };
-            let now_version = configs::CONFIG.read().unwrap().app.get_version().unwrap();
+            let now_version = &format!("v{}",configs::CONFIG.read().unwrap().app.get_version().unwrap());
             if latest_version_data.is_some()
                 && now_version
                     != latest_version_data
                         .as_ref()
-                        .unwrap_or(&now_version.to_string())
+                        .unwrap_or(now_version)
             {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
                     &format!(
                         "There is a new version of Hayabusa: {}",
-                        latest_version_data.unwrap()
+                        latest_version_data.unwrap().replace('\"',"")
                     ),
                     true,
                 )
