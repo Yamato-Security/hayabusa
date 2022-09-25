@@ -495,9 +495,12 @@ fn emit_csv<W: std::io::Write>(
         println!();
 
         if html_output_flag {
-            html_output_stock.push(format!("Saved alerts and events: {}", &saved_alerts_output));
-            html_output_stock.push(format!("Total events analyzed: {}", &all_record_output));
-            html_output_stock.push(reduction_output);
+            html_output_stock.push(format!(
+                "- Saved alerts and events: {}",
+                &saved_alerts_output
+            ));
+            html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
+            html_output_stock.push(format!("- {}", reduction_output));
         }
 
         _print_unique_results(
@@ -678,7 +681,7 @@ fn _print_detection_summary_by_date(
     let output_header = "Dates with most total detections:";
     writeln!(wtr, "{}", output_header).ok();
     if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-        html_output_stock.push(output_header.to_string());
+        html_output_stock.push(format!("- {}", output_header));
     }
     for (idx, level) in LEVEL_ABBR.values().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -709,11 +712,10 @@ fn _print_detection_summary_by_date(
         write!(wtr, "{}", output_str).ok();
         if idx != LEVEL_ABBR.len() - 1 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-
             write!(wtr, ", ").ok();
         }
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            html_output_stock.push(output_str);
+            html_output_stock.push(format!("    - {}", output_str));
         }
     }
     buf_wtr.print(&wtr).ok();
@@ -731,7 +733,7 @@ fn _print_detection_summary_by_computer(
 
     writeln!(wtr, "Top 5 computers with most unique detections:").ok();
     if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-        html_output_stock.push("Computers with most unique critical detections:".to_string());
+        html_output_stock.push("### Computers with most unique critical detections:".to_string());
     }
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -749,7 +751,7 @@ fn _print_detection_summary_by_computer(
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
-                    "{} ({})",
+                    "- {} ({})",
                     x.0,
                     x.1.to_formatted_string(&Locale::en)
                 ));
@@ -814,10 +816,10 @@ fn _print_detection_summary_tables(
 
         // html出力の場合はすべての内容を出力するようにする
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            html_output_stock.push(header_output.to_string());
+            html_output_stock.push(format!("### {}", header_output));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
-                    "{} ({})",
+                    "- {} ({})",
                     x.0,
                     x.1.to_formatted_string(&Locale::en)
                 ));
