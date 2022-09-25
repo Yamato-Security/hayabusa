@@ -119,17 +119,25 @@ impl App {
 
         if configs::CONFIG.read().unwrap().args.update_rules {
             // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
-            let latest_version_data =  if let Ok(data) = Update::get_latest_hayabusa_version(){
+            let latest_version_data = if let Ok(data) = Update::get_latest_hayabusa_version() {
                 data
             } else {
                 None
             };
             let now_version = configs::CONFIG.read().unwrap().app.get_version().unwrap();
-            if latest_version_data.is_some() && now_version != latest_version_data.as_ref().unwrap_or(&now_version.to_string()) {
+            if latest_version_data.is_some()
+                && now_version
+                    != latest_version_data
+                        .as_ref()
+                        .unwrap_or(&now_version.to_string())
+            {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &format!("There is a new version of Hayabusa: {}", latest_version_data.unwrap()),
+                    &format!(
+                        "There is a new version of Hayabusa: {}",
+                        latest_version_data.unwrap()
+                    ),
                     true,
                 )
                 .ok();
@@ -141,10 +149,9 @@ impl App {
                 )
                 .ok();
             }
-            
-            match Update::update_rules(
-                configs::CONFIG.read().unwrap().args.rules.to_str().unwrap(),
-            ) {
+
+            match Update::update_rules(configs::CONFIG.read().unwrap().args.rules.to_str().unwrap())
+            {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
                         write_color_buffer(
