@@ -197,7 +197,7 @@ impl App {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                "Generating Event ID Statistics",
+                "Generating Event ID Metrics",
                 true,
             )
             .ok();

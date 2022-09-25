@@ -98,7 +98,7 @@ impl Timeline {
                 .event_timeline_config
                 .get_event_id(*event_id)
                 .is_some();
-            // statistics_event_info.txtに登録あるものは情報設定
+            // event_id_info.txtに登録あるものは情報設定
             if conf {
                 // 出力メッセージ1行作成
                 msges.push(format!(

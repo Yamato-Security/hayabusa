@@ -170,7 +170,7 @@ You can learn how to import CSV files into Timesketch [here](doc/TimesketchImpor
 * Threat hunting based on IoC signatures written in easy to read/create/edit YML based hayabusa rules.
 * Sigma rule support to convert sigma rules to hayabusa rules.
 * Currently it supports the most sigma rules compared to other similar tools and even supports count rules and new aggregators such as `|equalsfield`.
-* Event log statistics. (Useful for getting a picture of what types of events there are and for tuning your log settings.)
+* Event ID metrics. (Useful for getting a picture of what types of events there are and for tuning your log settings.)
 * Rule tuning configuration by excluding unneeded or noisy rules.
 * MITRE ATT&CK mapping of tactics.
 * Rule level tuning.
@@ -361,7 +361,7 @@ You should now be able to run hayabusa.
 * `--level-tuning`: Custom tune the alerts' `level`.
 * `-L, --logon-summary`: Print a summary of logon events.
 * `-P, --pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
-* `-M, --metrics`: Print metrics of the count and percentage of events based on Event ID.
+* `-M, --metrics`: Print metrics of the number and percentage of events based on Event ID.
 * `--set-default-profile`: Change the default profile.
 * `-u, --update`: Sync the rules to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) GitHub repository.
 
@@ -409,7 +409,7 @@ OTHER-ACTIONS:
         --contributors                     Print the list of contributors
     -L, --logon-summary                    Print a summary of successful and failed logons
         --level-tuning [<FILE>]            Tune alert levels (default: ./rules/config/level_tuning.txt)
-    -M, --metrics                          Print metrics of event IDs
+    -M, --metrics                          Print event ID metrics
     -p, --pivot-keywords-list              Create a list of pivot keywords
         --set-default-profile <PROFILE>    Set default output profile
     -u, --update-rules                     Update to the latest rules in the hayabusa-rules github repository
@@ -497,7 +497,7 @@ hayabusa-1.6.0-win-x64.exe -l -m low
 hayabusa-1.6.0-win-x64.exe -l -m critical -p -o keywords
 ```
 
-* Print Event ID statistics:
+* Print Event ID metrics:
 
 ```bash
 hayabusa-1.6.0-win-x64.exe -f Security.evtx -M
