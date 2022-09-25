@@ -1,13 +1,13 @@
-use crate::detections::message::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
+use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use prettytable::{Cell, Row, Table};
 
-use super::statistics::EventStatistics;
+use super::statistics::EventMetrics;
 use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct Timeline {
-    pub stats: EventStatistics,
+    pub stats: EventMetrics,
 }
 
 impl Default for Timeline {
@@ -26,7 +26,7 @@ impl Timeline {
         let statsloginlst = HashMap::new();
 
         let statistic =
-            EventStatistics::new(totalcnt, filepath, starttm, endtm, statslst, statsloginlst);
+            EventMetrics::new(totalcnt, filepath, starttm, endtm, statslst, statsloginlst);
         Timeline { stats: statistic }
     }
 
@@ -36,7 +36,7 @@ impl Timeline {
     }
 
     pub fn tm_stats_dsp_msg(&mut self) {
-        if !*STATISTICS_FLAG {
+        if !*METRICS_FLAG {
             return;
         }
         // 出力メッセージ作成

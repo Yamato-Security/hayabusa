@@ -12,7 +12,7 @@ use hayabusa::detections::configs::{CONFIG, CURRENT_EXE_PATH};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG,
-    QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+    QUIET_ERRORS_FLAG, METRICS_FLAG,
 };
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
@@ -193,7 +193,7 @@ impl App {
             return;
         }
 
-        if *STATISTICS_FLAG {
+        if *METRICS_FLAG {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -565,7 +565,7 @@ impl App {
         }
         println!();
         detection.add_aggcondition_msges(&self.rt);
-        if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
+        if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
             after_fact(total_records);
         }
     }
@@ -647,7 +647,7 @@ impl App {
             // timeline機能の実行
             tl.start(&records_per_detect);
 
-            if !(*STATISTICS_FLAG || *LOGONSUMMARY_FLAG) {
+            if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG) {
                 // ruleファイルの検知
                 detection = detection.start(&self.rt, records_per_detect);
             }

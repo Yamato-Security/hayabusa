@@ -188,9 +188,9 @@ pub struct Config {
     #[clap(help_heading = Some("ADVANCED"), short, long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
-    /// Print statistics of event IDs
+    /// Print metrics of event IDs
     #[clap(help_heading = Some("OTHER-ACTIONS"), short, long)]
-    pub statistics: bool,
+    pub metrics: bool,
 
     /// Print a summary of successful and failed logons
     #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'L', long = "logon-summary")]
