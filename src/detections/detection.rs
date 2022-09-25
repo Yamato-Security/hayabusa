@@ -22,7 +22,7 @@ use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
-use crate::options::htmlreport::{self, HTML_REPORTER};
+use crate::options::htmlreport::{self};
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
