@@ -1,10 +1,12 @@
 # Changes
 
-## 1.x.x [2022/XX/XX]
+## 1.7.0 [2022/XX/XX]
 
 **New Features:**
 
 **Enhancements:**
+
+- Added display new version of Hayabusa when updating. (#710) (@hitenkoku)
 
 **Bug Fixes:**
 
