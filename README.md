@@ -361,7 +361,7 @@ You should now be able to run hayabusa.
 * `--level-tuning`: Custom tune the alerts' `level`.
 * `-L, --logon-summary`: Print a summary of logon events.
 * `-P, --pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
-* `-s, --statistics`: Print metrics of the count and percentage of events based on Event ID.
+* `-M, --metrics`: Print metrics of the count and percentage of events based on Event ID.
 * `--set-default-profile`: Change the default profile.
 * `-u, --update`: Sync the rules to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) GitHub repository.
 
@@ -500,13 +500,13 @@ hayabusa-1.6.0-win-x64.exe -l -m critical -p -o keywords
 * Print Event ID statistics:
 
 ```bash
-hayabusa-1.6.0-win-x64.exe -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -f Security.evtx -M
 ```
 
 * Print logon summary:
 
 ```bash
-hayabusa-1.6.0-win-x64.exe -L -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -L -f Security.evtx -M
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
