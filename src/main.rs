@@ -328,16 +328,13 @@ impl App {
             &BufferWriter::stdout(ColorChoice::Always),
             None,
             &elapsed_output_str,
-            true
+            true,
         )
         .ok();
         println!();
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            let output_data = vec![
-                format!("- {}", elapsed_output_str),
-                "".to_string(),
-            ];
-            htmlreport::add_md_data( "General Overview".to_string(), output_data);
+            let output_data = vec![format!("- {}", elapsed_output_str), "".to_string()];
+            htmlreport::add_md_data("General Overview".to_string(), output_data);
         }
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
