@@ -6,6 +6,9 @@
 
 **Enhancements:**
 
+- Changed Event ID Statistics option to Event ID Metrics option. (`-s, --statistics`  -> `-M, --metrics`) (#706) (@hitenkoku)
+  (Note: `statistics_event_info.txt` was changed to `event_id_info.txt`.)
+
 **Bug Fixes:**
 
 ## v1.6.0 [2022/09/16]
