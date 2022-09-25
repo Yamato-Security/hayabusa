@@ -1,8 +1,10 @@
 # Changes
 
-## 1.x.x [2022/XX/XX]
+## 1.7.0 [2022/XX/XX]
 
 **New Features:**
+
+- Added html summary output. (``-H, --html-report`  option) (#689) (@hitenkoku)
 
 **Enhancements:**
 
