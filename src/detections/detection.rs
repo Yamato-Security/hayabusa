@@ -666,8 +666,7 @@ impl Detection {
                 )
                 .ok();
                 if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-                    html_report_stock.push(format!(
-                        "- {}", output_str));
+                    html_report_stock.push(format!("- {}", output_str));
                 }
             }
         });
@@ -697,10 +696,7 @@ impl Detection {
             html_report_stock.push(format!("- {}", tmp_total_detect_output));
         }
         if !html_report_stock.is_empty() {
-            htmlreport::add_md_data(
-                "General Overview".to_string(),
-                html_report_stock
-            );
+            htmlreport::add_md_data("General Overview".to_string(), html_report_stock);
         }
     }
 }

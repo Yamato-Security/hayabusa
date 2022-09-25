@@ -4,6 +4,7 @@ use crate::detections::message::{self, LEVEL_ABBR};
 use crate::detections::message::{AlertMessage, LEVEL_FULL};
 use crate::detections::utils::{self, format_time};
 use crate::detections::utils::{get_writable_color, write_color_buffer};
+use crate::options::htmlreport;
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
@@ -210,6 +211,8 @@ fn emit_csv<W: std::io::Write>(
     all_record_cnt: u128,
     profile: LinkedHashMap<String, String>,
 ) -> io::Result<()> {
+    let mut html_output_stock: Vec<String> = vec![];
+    let html_output_flag = configs::CONFIG.read().unwrap().args.html_report.is_some();
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
@@ -454,31 +457,35 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(&disp_wtr, get_writable_color(None), ": ", false).ok();
+        let saved_alerts_output =
+            (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(255, 255, 0))),
-            &(all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en),
+            &saved_alerts_output,
             false,
         )
         .ok();
         write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
 
+        let all_record_output = all_record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(0, 255, 255))),
-            &all_record_cnt.to_formatted_string(&Locale::en),
+            &all_record_output,
             false,
         )
         .ok();
         write_color_buffer(&disp_wtr, get_writable_color(None), " (", false).ok();
+        let reduction_output = format!(
+            "Data reduction: {} events ({:.2}%)",
+            reducted_record_cnt.to_formatted_string(&Locale::en),
+            reducted_percent
+        );
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(0, 255, 0))),
-            &format!(
-                "Data reduction: {} events ({:.2}%)",
-                reducted_record_cnt.to_formatted_string(&Locale::en),
-                reducted_percent
-            ),
+            &reduction_output,
             false,
         )
         .ok();
@@ -486,6 +493,12 @@ fn emit_csv<W: std::io::Write>(
         write_color_buffer(&disp_wtr, get_writable_color(None), ")", false).ok();
         println!();
         println!();
+
+        if html_output_flag {
+            html_output_stock.push(format!("Saved alerts and events: {}", &saved_alerts_output));
+            html_output_stock.push(format!("Total events analyzed: {}", &all_record_output));
+            html_output_stock.push(reduction_output);
+        }
 
         _print_unique_results(
             total_detect_counts_by_level,
@@ -496,17 +509,40 @@ fn emit_csv<W: std::io::Write>(
         );
         println!();
 
-        _print_detection_summary_by_date(detect_counts_by_date_and_level, &color_map);
+        _print_detection_summary_by_date(
+            detect_counts_by_date_and_level,
+            &color_map,
+            &mut html_output_stock,
+        );
         println!();
         println!();
+        if html_output_flag {
+            html_output_stock.push("".to_string());
+        }
 
-        _print_detection_summary_by_computer(detect_counts_by_computer_and_level, &color_map);
+        _print_detection_summary_by_computer(
+            detect_counts_by_computer_and_level,
+            &color_map,
+            &mut html_output_stock,
+        );
         println!();
+        if html_output_flag {
+            html_output_stock.push("".to_string());
+        }
 
-        _print_detection_summary_tables(detect_counts_by_rule_and_level, &color_map);
+        _print_detection_summary_tables(
+            detect_counts_by_rule_and_level,
+            &color_map,
+            &mut html_output_stock,
+        );
         println!();
+        if html_output_flag {
+            html_output_stock.push("".to_string());
+        }
     }
-
+    if html_output_flag {
+        htmlreport::add_md_data("Results Summary".to_string(), html_output_stock);
+    }
     Ok(())
 }
 
@@ -634,13 +670,16 @@ fn _print_unique_results(
 fn _print_detection_summary_by_date(
     detect_counts_by_date: HashMap<String, HashMap<String, u128>>,
     color_map: &HashMap<String, Colors>,
+    html_output_stock: &mut Vec<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
-
-    writeln!(wtr, "Dates with most total detections:").ok();
-
+    let output_header = "Dates with most total detections:";
+    writeln!(wtr, "{}", output_header).ok();
+    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        html_output_stock.push(output_header.to_string());
+    }
     for (idx, level) in LEVEL_ABBR.values().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
@@ -662,32 +701,38 @@ fn _print_detection_summary_by_date(
         if !exist_max_data {
             max_detect_str = "n/a".to_string();
         }
-        write!(
-            wtr,
+        let output_str = format!(
             "{}: {}",
             LEVEL_FULL.get(level.as_str()).unwrap(),
             &max_detect_str
-        )
-        .ok();
+        );
+        write!(wtr, "{}", output_str).ok();
         if idx != LEVEL_ABBR.len() - 1 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
             write!(wtr, ", ").ok();
         }
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            html_output_stock.push(output_str);
+        }
     }
     buf_wtr.print(&wtr).ok();
 }
 
-/// 各レベル毎で最も高い検知数を出した日付を出力する
+/// 各レベル毎で最も高い検知数を出したコンピュータ名を出力する
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
+    html_output_stock: &mut Vec<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
     writeln!(wtr, "Top 5 computers with most unique detections:").ok();
+    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        html_output_stock.push("Computers with most unique critical detections:".to_string());
+    }
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
@@ -700,6 +745,17 @@ fn _print_detection_summary_by_computer(
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
+        // html出力は各種すべてのコンピュータ名を表示するようにする
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            for x in sorted_detections.iter() {
+                html_output_stock.push(format!(
+                    "{} ({})",
+                    x.0,
+                    x.1.to_formatted_string(&Locale::en)
+                ));
+            }
+            html_output_stock.push("".to_string());
+        }
         for x in sorted_detections.iter().take(5) {
             result_vec.push(format!(
                 "{} ({})",
@@ -733,6 +789,7 @@ fn _print_detection_summary_by_computer(
 fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
+    html_output_stock: &mut Vec<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -741,10 +798,8 @@ fn _print_detection_summary_tables(
     let mut col_color = vec![];
     for level in LEVEL_ABBR.values() {
         let mut col_output: Vec<String> = vec![];
-        col_output.push(format!(
-            "Top {} alerts:",
-            LEVEL_FULL.get(level.as_str()).unwrap()
-        ));
+        let header_output = &format!("Top {} alerts:", LEVEL_FULL.get(level.as_str()).unwrap());
+        col_output.push(header_output.to_owned());
 
         col_color.push(_get_table_color(
             color_map,
@@ -756,6 +811,19 @@ fn _print_detection_summary_tables(
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+
+        // html出力の場合はすべての内容を出力するようにする
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            html_output_stock.push(header_output.to_string());
+            for x in sorted_detections.iter() {
+                html_output_stock.push(format!(
+                    "{} ({})",
+                    x.0,
+                    x.1.to_formatted_string(&Locale::en)
+                ));
+            }
+            html_output_stock.push("".to_string());
+        }
 
         let take_cnt =
             if LEVEL_FULL.get(level.as_str()).unwrap_or(&"-".to_string()) == "informational" {
