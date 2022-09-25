@@ -415,8 +415,19 @@ impl App {
         }
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
             let html_str = HTML_REPORTER.read().unwrap().clone().create_html();
-            htmlreport::create_html_file(html_str, configs::CONFIG.read().unwrap().args.html_report.as_ref().unwrap().to_str().unwrap_or("").to_string())
-
+            htmlreport::create_html_file(
+                html_str,
+                configs::CONFIG
+                    .read()
+                    .unwrap()
+                    .args
+                    .html_report
+                    .as_ref()
+                    .unwrap()
+                    .to_str()
+                    .unwrap_or("")
+                    .to_string(),
+            )
         }
     }
 
