@@ -6,6 +6,8 @@
 
 **Enhancements:**
 
+- Changed Event ID Statistics option to metrics option. (old: -s -> new: -M) (#706) (@hitenkoku)
+
 **Bug Fixes:**
 
 ## v1.6.0 [2022/09/16]
