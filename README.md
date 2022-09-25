@@ -409,8 +409,8 @@ OTHER-ACTIONS:
         --contributors                     Print the list of contributors
     -L, --logon-summary                    Print a summary of successful and failed logons
         --level-tuning [<FILE>]            Tune alert levels (default: ./rules/config/level_tuning.txt)
+    -M, --metrics                          Print metrics of event IDs
     -p, --pivot-keywords-list              Create a list of pivot keywords
-    -s, --statistics                       Print statistics of event IDs
         --set-default-profile <PROFILE>    Set default output profile
     -u, --update-rules                     Update to the latest rules in the hayabusa-rules github repository
 
