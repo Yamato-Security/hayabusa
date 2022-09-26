@@ -241,7 +241,7 @@ fn emit_csv<W: std::io::Write>(
         HashMap::new();
     let mut detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
-
+    let mut rule_title_path_map:HashMap<String, String> = HashMap::new();
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
@@ -375,6 +375,7 @@ fn emit_csv<W: std::io::Write>(
                         .unwrap()
                 })
                 .clone();
+            rule_title_path_map.insert(detect_info.ruletitle.clone(), detect_info.rulepath.clone());
             *detect_counts_by_rules
                 .entry(Clone::clone(&detect_info.ruletitle))
                 .or_insert(0) += 1;
@@ -536,6 +537,7 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_tables(
             detect_counts_by_rule_and_level,
             &color_map,
+            rule_title_path_map,
             &mut html_output_stock,
         );
         println!();
@@ -789,6 +791,7 @@ fn _print_detection_summary_by_computer(
 fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
+    rule_title_path_map: HashMap<String, String>,
     html_output_stock: &mut Vec<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -818,7 +821,7 @@ fn _print_detection_summary_tables(
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- {} ({})",
-                    x.0,
+                    rule_title_path_map.get(x.0).unwrap_or(&"<Not Found Path>".to_string()),
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
