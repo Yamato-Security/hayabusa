@@ -128,27 +128,6 @@ impl App {
                 "v{}",
                 configs::CONFIG.read().unwrap().app.get_version().unwrap()
             );
-            if latest_version_data.is_some()
-                && now_version != latest_version_data.as_ref().unwrap_or(now_version)
-            {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &format!(
-                        "There is a new version of Hayabusa: {}",
-                        latest_version_data.unwrap().replace('\"', "")
-                    ),
-                    true,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
-                    true,
-                )
-                .ok();
-            }
 
             match Update::update_rules(configs::CONFIG.read().unwrap().args.rules.to_str().unwrap())
             {
@@ -168,6 +147,33 @@ impl App {
                 }
             }
             println!();
+            if latest_version_data.is_some()
+                && now_version
+                    != &latest_version_data
+                        .as_ref()
+                        .unwrap_or(now_version)
+                        .replace('\"', "")
+            {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &format!(
+                        "There is a new version of Hayabusa: {}",
+                        latest_version_data.unwrap().replace('\"', "")
+                    ),
+                    true,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
+                    true,
+                )
+                .ok();
+            }
+            println!();
+
             return;
         }
         // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
