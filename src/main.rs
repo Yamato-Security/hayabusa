@@ -222,6 +222,13 @@ impl App {
             println!();
         }
 
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &format!("Start time: {}\n", analysis_start_time.format("%Y/%m/%d %H:%M")),
+            true,
+        )
+        .ok();
         if configs::CONFIG.read().unwrap().args.live_analysis {
             let live_analysis_list = self.collect_liveanalysis_files();
             if live_analysis_list.is_none() {
