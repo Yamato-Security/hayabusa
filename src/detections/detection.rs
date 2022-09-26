@@ -14,7 +14,7 @@ use crate::detections::message::DetectInfo;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::message::{CH_CONFIG, DEFAULT_DETAILS, TAGS_CONFIG};
 use crate::detections::message::{
-    LOGONSUMMARY_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, STATISTICS_FLAG,
+    LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
 };
 use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule;
@@ -364,7 +364,7 @@ impl Detection {
         }
 
         let detect_info = DetectInfo {
-            rulepath: (&rule.rulepath).to_owned(),
+            rulepath: rule.rulepath.to_owned(),
             ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
             level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
@@ -495,7 +495,7 @@ impl Detection {
         }
 
         let detect_info = DetectInfo {
-            rulepath: (&rule.rulepath).to_owned(),
+            rulepath: rule.rulepath.to_owned(),
             ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
             level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
             computername: "-".to_owned(),
@@ -599,7 +599,7 @@ impl Detection {
         st_rc: &HashMap<String, u128>,
         err_rc: &u128,
     ) {
-        if *STATISTICS_FLAG {
+        if *METRICS_FLAG {
             return;
         }
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();

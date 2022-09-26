@@ -1,8 +1,9 @@
-use crate::detections::message::{LOGONSUMMARY_FLAG, STATISTICS_FLAG};
+use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 
 #[derive(Debug)]
+<<<<<<< HEAD:src/timeline/statistics.rs
 pub struct LogEventInfo {
     pub channel: String,
     pub eventid: String,
@@ -16,6 +17,9 @@ impl LogEventInfo {
 
 #[derive(Debug)]
 pub struct EventStatistics {
+=======
+pub struct EventMetrics {
+>>>>>>> ebe89905b51b332817d753847e22758d4b511d5c:src/timeline/metrics.rs
     pub total: usize,
     pub filepath: String,
     pub start_time: String,
@@ -26,7 +30,7 @@ pub struct EventStatistics {
 /**
 * Windows Event Logの統計情報を出力する
 */
-impl EventStatistics {
+impl EventMetrics {
     pub fn new(
         total: usize,
         filepath: String,
@@ -34,8 +38,8 @@ impl EventStatistics {
         end_time: String,
         stats_list: HashMap<String, usize>,
         stats_login_list: HashMap<String, [usize; 2]>,
-    ) -> EventStatistics {
-        EventStatistics {
+    ) -> EventMetrics {
+        EventMetrics {
             total,
             filepath,
             start_time,
@@ -46,8 +50,8 @@ impl EventStatistics {
     }
 
     pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo]) {
-        // 引数でstatisticsオプションが指定されている時だけ、統計情報を出力する。
-        if !*STATISTICS_FLAG {
+        // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
+        if !*METRICS_FLAG {
             return;
         }
 

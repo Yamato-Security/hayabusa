@@ -51,7 +51,7 @@ As shown below, click on `Advanced` and perform the following settings before cl
 
 1. Title the `Index name` as `evtxlogs-hayabusa`.
 2. Under `Index settings`, add `, "number_of_replicas": 0` so that the index health status does not turn yellow.
-3. Under `Mappings`, change the `RuleTitle` type of `text` to `keyword` so that we can do statistics on the rule titles and change the `EventID` type of `long` to `keyword` in order to import without errors.
+3. Under `Mappings`, change the `RuleTitle` type of `text` to `keyword` so that we can calculate metrics on the rule titles and change the `EventID` type of `long` to `keyword` in order to import without errors.
 4. Under `Ingest pipeline`, add `, "field": "Timestamp"` under the `remove` section. Timestamps will be displayed as `@timestamp` so this duplicate field is not needed. Also, delete the following in order to import without errors:
    ```
     {
