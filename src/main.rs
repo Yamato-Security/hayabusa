@@ -94,7 +94,10 @@ impl App {
         let analysis_start_time: DateTime<Local> = Local::now();
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
             let output_data = vec![
-                format!("- Start time: {}", analysis_start_time.format("%Y/%m/%d %H:%M")),
+                format!(
+                    "- Start time: {}",
+                    analysis_start_time.format("%Y/%m/%d %H:%M")
+                ),
                 "".to_string(),
             ];
             htmlreport::add_md_data("General Overview".to_string(), output_data);
@@ -225,7 +228,10 @@ impl App {
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &format!("Start time: {}\n", analysis_start_time.format("%Y/%m/%d %H:%M")),
+            &format!(
+                "Start time: {}\n",
+                analysis_start_time.format("%Y/%m/%d %H:%M")
+            ),
             true,
         )
         .ok();

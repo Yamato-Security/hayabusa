@@ -241,7 +241,7 @@ fn emit_csv<W: std::io::Write>(
         HashMap::new();
     let mut detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
-    let mut rule_title_path_map:HashMap<String, String> = HashMap::new();
+    let mut rule_title_path_map: HashMap<String, String> = HashMap::new();
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
@@ -748,7 +748,10 @@ fn _print_detection_summary_by_computer(
 
         // html出力は各種すべてのコンピュータ名を表示するようにする
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            html_output_stock.push(format!("### Computers with most unique {} detections:", LEVEL_FULL.get(level.as_str()).unwrap()));
+            html_output_stock.push(format!(
+                "### Computers with most unique {} detections:",
+                LEVEL_FULL.get(level.as_str()).unwrap()
+            ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- {} ({})",
@@ -821,7 +824,9 @@ fn _print_detection_summary_tables(
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- {} ({})",
-                    rule_title_path_map.get(x.0).unwrap_or(&"<Not Found Path>".to_string()),
+                    rule_title_path_map
+                        .get(x.0)
+                        .unwrap_or(&"<Not Found Path>".to_string()),
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
