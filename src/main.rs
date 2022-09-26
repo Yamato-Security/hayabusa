@@ -92,6 +92,14 @@ impl App {
             return;
         }
         let analysis_start_time: DateTime<Local> = Local::now();
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            let output_data = vec![
+                format!("- Start time: {}", analysis_start_time.format("%Y/%m/%d %H:%M")),
+                "".to_string(),
+            ];
+            htmlreport::add_md_data("General Overview".to_string(), output_data);
+        }
+
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
             self.output_logo();
@@ -108,7 +116,6 @@ impl App {
                 &analysis_start_time.day().to_owned()
             ));
         }
-
         if !self.is_matched_architecture_and_binary() {
             AlertMessage::alert(
                 "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
