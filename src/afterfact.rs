@@ -732,9 +732,6 @@ fn _print_detection_summary_by_computer(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
     writeln!(wtr, "Top 5 computers with most unique detections:").ok();
-    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-        html_output_stock.push("### Computers with most unique critical detections:".to_string());
-    }
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
@@ -749,6 +746,7 @@ fn _print_detection_summary_by_computer(
 
         // html出力は各種すべてのコンピュータ名を表示するようにする
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            html_output_stock.push(format!("### Computers with most unique {} detections:", LEVEL_FULL.get(level.as_str()).unwrap()));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- {} ({})",
