@@ -32,6 +32,9 @@ impl HtmlReporter {
     pub fn create_html(self) -> String {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_TABLES);
+        options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
+        options.insert(Options::ENABLE_FOOTNOTES);
+
         let mut md_data = vec![];
         for section_name in self.section_order {
             if let Some(v) = self.md_datas.get(&section_name) {
@@ -43,7 +46,7 @@ impl HtmlReporter {
                 }
             }
         }
-        let md_str = md_data.join("");
+        let md_str = md_data.join("\n");
         let parser = Parser::new_ext(&md_str, options);
 
         let mut ret = String::new();
@@ -62,8 +65,8 @@ impl Default for HtmlReporter {
 fn get_init_md_data_map() -> (Vec<String>, HashMap<String, Vec<String>>) {
     let mut ret = HashMap::new();
     let section_order = vec![
-        "General Overview".to_string(),
-        "Results Summary".to_string(),
+        "General Overview {#general_overview}".to_string(),
+        "Results Summary {#results_summary}".to_string(),
     ];
     for section in section_order.iter() {
         ret.insert(section.to_owned(), vec![]);
@@ -132,7 +135,7 @@ mod tests {
         ];
         html_reporter
             .md_datas
-            .insert("General Overview".to_string(), general_data.clone());
+            .insert("General Overview {#general_overview}".to_string(), general_data.clone());
         let general_overview_str = format!(
             "<ul>\n<li>{}</li>\n</ul>",
             general_data[..general_data.len() - 1]
@@ -140,7 +143,7 @@ mod tests {
                 .replace("- ", "")
         );
         let expect_str = format!(
-            "<h2>General Overview</h2>\n{}\n<h2>Results Summary</h2>\n<p>not found data.</p>\n",
+            "<h2 id=\"general_overview\">General Overview</h2>\n{}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n",
             general_overview_str
         );
 

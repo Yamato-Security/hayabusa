@@ -98,9 +98,8 @@ impl App {
                     "- Start time: {}",
                     analysis_start_time.format("%Y/%m/%d %H:%M")
                 ),
-                "".to_string(),
             ];
-            htmlreport::add_md_data("General Overview".to_string(), output_data);
+            htmlreport::add_md_data("General Overview {#general_overview}".to_string(), output_data);
         }
 
         // Show usage when no arguments.
@@ -353,8 +352,8 @@ impl App {
         .ok();
         println!();
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            let output_data = vec![format!("- {}", elapsed_output_str), "".to_string()];
-            htmlreport::add_md_data("General Overview".to_string(), output_data);
+            let output_data = vec![format!("- {}", elapsed_output_str)];
+            htmlreport::add_md_data("General Overview {#general_overview}".to_string(), output_data);
         }
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
@@ -575,9 +574,8 @@ impl App {
             let output_data = vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {}", total_size_output),
-                "".to_string(),
             ];
-            htmlreport::add_md_data("General Overview".to_string(), output_data);
+            htmlreport::add_md_data("General Overview #{general_overview}".to_string(), output_data);
         }
 
         let rule_files = detection::Detection::parse_rule_files(

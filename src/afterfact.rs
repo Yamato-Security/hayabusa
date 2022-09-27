@@ -546,7 +546,7 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if html_output_flag {
-        htmlreport::add_md_data("Results Summary".to_string(), html_output_stock);
+        htmlreport::add_md_data("Results Summary {#results_summary}".to_string(), html_output_stock);
     }
     Ok(())
 }
@@ -749,7 +749,8 @@ fn _print_detection_summary_by_computer(
         // html出力は各種すべてのコンピュータ名を表示するようにする
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
             html_output_stock.push(format!(
-                "### Computers with most unique {} detections:",
+                "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
+                LEVEL_FULL.get(level.as_str()).unwrap(),
                 LEVEL_FULL.get(level.as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
@@ -804,7 +805,7 @@ fn _print_detection_summary_tables(
     let mut col_color = vec![];
     for level in LEVEL_ABBR.values() {
         let mut col_output: Vec<String> = vec![];
-        let header_output = &format!("Top {} alerts:", LEVEL_FULL.get(level.as_str()).unwrap());
+        let header_output = &format!("Top {} alerts: {{#top_{}_alerts}}", LEVEL_FULL.get(level.as_str()).unwrap(), LEVEL_FULL.get(level.as_str()).unwrap());
         col_output.push(header_output.to_owned());
 
         col_color.push(_get_table_color(
