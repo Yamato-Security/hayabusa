@@ -19,7 +19,7 @@ use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
 use hayabusa::options::profile::PROFILES;
-use hayabusa::options::{level_tuning::LevelTuning, update_rules::UpdateRules};
+use hayabusa::options::{level_tuning::LevelTuning, update::Update};
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
@@ -118,9 +118,19 @@ impl App {
         }
 
         if configs::CONFIG.read().unwrap().args.update_rules {
-            match UpdateRules::update_rules(
-                configs::CONFIG.read().unwrap().args.rules.to_str().unwrap(),
-            ) {
+            // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
+            let latest_version_data = if let Ok(data) = Update::get_latest_hayabusa_version() {
+                data
+            } else {
+                None
+            };
+            let now_version = &format!(
+                "v{}",
+                configs::CONFIG.read().unwrap().app.get_version().unwrap()
+            );
+
+            match Update::update_rules(configs::CONFIG.read().unwrap().args.rules.to_str().unwrap())
+            {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
                         write_color_buffer(
@@ -137,6 +147,33 @@ impl App {
                 }
             }
             println!();
+            if latest_version_data.is_some()
+                && now_version
+                    != &latest_version_data
+                        .as_ref()
+                        .unwrap_or(now_version)
+                        .replace('\"', "")
+            {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &format!(
+                        "There is a new version of Hayabusa: {}",
+                        latest_version_data.unwrap().replace('\"', "")
+                    ),
+                    true,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
+                    true,
+                )
+                .ok();
+            }
+            println!();
+
             return;
         }
         // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
