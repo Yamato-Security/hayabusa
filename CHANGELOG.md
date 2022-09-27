@@ -4,6 +4,8 @@
 
 **New Features:**
 
+- Added html summary output. (``-H, --html-report`  option) (#689) (@hitenkoku)
+
 **Enhancements:**
 
 - Changed Event ID Statistics option to Event ID Metrics option. (`-s, --statistics`  -> `-M, --metrics`) (#706) (@hitenkoku)

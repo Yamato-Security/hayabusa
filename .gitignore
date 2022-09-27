@@ -10,3 +10,6 @@ test_*
 *.json
 *.jsonl
 hayabusa*
+*.html
+*.htm
+*.css

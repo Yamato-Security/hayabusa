@@ -393,6 +393,7 @@ ADVANCED:
         --target-file-ext <EVTX_FILE_EXT>...    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
 
 OUTPUT:
+    -H, --html-report <FILE>               HTML形式で詳細な結果を出力する (例: results.html)
     -j, --json                             タイムラインの出力をJSON形式で保存する（例: -j -o results.json）
     -J, --jsonl                            タイムラインの出力をJSONL形式で保存する (例: -J -o results.jsonl)
     -o, --output <FILE>                    タイムラインをCSV形式で保存する (例: results.csv)

@@ -769,6 +769,7 @@ dependencies = [
  "hashbrown",
  "hex",
  "hhmmss",
+ "horrorshow",
  "hyper",
  "is_elevated",
  "itertools",
@@ -781,6 +782,7 @@ dependencies = [
  "openssl",
  "pbr",
  "prettytable-rs",
+ "pulldown-cmark",
  "quick-xml",
  "rand",
  "regex",
@@ -825,6 +827,12 @@ dependencies = [
  "chrono",
  "time 0.2.27",
 ]
+
+[[package]]
+name = "horrorshow"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8371fb981840150b1a54f7cb117bf6699f7466a1d4861daac33bc6fe2b5abea0"
 
 [[package]]
 name = "http"

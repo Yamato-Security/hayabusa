@@ -39,7 +39,9 @@ lock_api = "0.4.*"
 crossbeam-utils = "0.8.*"
 num-format = "*"
 comfy-table = "6.*"
+pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
 reqwest = {version = "0.11.*", features = ["blocking", "json"]}
+horrorshow = "0.8.*"
 
 [build-dependencies]
 static_vcruntime = "2.*"

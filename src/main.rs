@@ -18,6 +18,7 @@ use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::omikuji::Omikuji;
+use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
 use hayabusa::{afterfact::after_fact, detections::utils};
@@ -91,6 +92,17 @@ impl App {
             return;
         }
         let analysis_start_time: DateTime<Local> = Local::now();
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            let output_data = vec![format!(
+                "- Start time: {}",
+                analysis_start_time.format("%Y/%m/%d %H:%M")
+            )];
+            htmlreport::add_md_data(
+                "General Overview {#general_overview}".to_string(),
+                output_data,
+            );
+        }
+
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
             self.output_logo();
@@ -107,7 +119,6 @@ impl App {
                 &analysis_start_time.day().to_owned()
             ));
         }
-
         if !self.is_matched_architecture_and_binary() {
             AlertMessage::alert(
                 "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
@@ -251,6 +262,28 @@ impl App {
             println!();
         }
 
+        if let Some(path) = &configs::CONFIG.read().unwrap().args.html_report {
+            // if already exists same html report file. output alert message and exit
+            if path.exists() {
+                AlertMessage::alert(&format!(
+                    " The file {} already exists. Please specify a different filename.",
+                    path.to_str().unwrap()
+                ))
+                .ok();
+                return;
+            }
+        }
+
+        write_color_buffer(
+            &BufferWriter::stdout(ColorChoice::Always),
+            None,
+            &format!(
+                "Start time: {}\n",
+                analysis_start_time.format("%Y/%m/%d %H:%M")
+            ),
+            true,
+        )
+        .ok();
         if configs::CONFIG.read().unwrap().args.live_analysis {
             let live_analysis_list = self.collect_liveanalysis_files();
             if live_analysis_list.is_none() {
@@ -359,15 +392,22 @@ impl App {
 
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
+        let elapsed_output_str = format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx()),
+            &elapsed_output_str,
             true,
         )
         .ok();
         println!();
-
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            let output_data = vec![format!("- {}", elapsed_output_str)];
+            htmlreport::add_md_data(
+                "General Overview {#general_overview}".to_string(),
+                output_data,
+            );
+        }
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
@@ -444,6 +484,22 @@ impl App {
                     .ok();
                 });
             }
+        }
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            let html_str = HTML_REPORTER.read().unwrap().clone().create_html();
+            htmlreport::create_html_file(
+                html_str,
+                configs::CONFIG
+                    .read()
+                    .unwrap()
+                    .args
+                    .html_report
+                    .as_ref()
+                    .unwrap()
+                    .to_str()
+                    .unwrap_or("")
+                    .to_string(),
+            )
         }
     }
 
@@ -541,7 +597,6 @@ impl App {
             }
         }
     }
-
     fn analysis_files(&mut self, evtx_files: Vec<PathBuf>, time_filter: &TargetEventTime) {
         let level = configs::CONFIG
             .read()
@@ -562,10 +617,22 @@ impl App {
             let meta = fs::metadata(file_path).ok();
             total_file_size += ByteSize::b(meta.unwrap().len());
         }
-        println!("Total file size: {}", total_file_size.to_string_as(false));
+        let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
+        println!("{}", total_size_output);
         println!();
         println!("Loading detections rules. Please wait.");
         println!();
+
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            let output_data = vec![
+                format!("- Analyzed event files: {}", evtx_files.len()),
+                format!("- {}", total_size_output),
+            ];
+            htmlreport::add_md_data(
+                "General Overview #{general_overview}".to_string(),
+                output_data,
+            );
+        }
 
         let rule_files = detection::Detection::parse_rule_files(
             level,
