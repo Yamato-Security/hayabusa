@@ -1,4 +1,3 @@
-use crate::detections::message::AlertMessage;
 use hashbrown::HashMap;
 use horrorshow::helper::doctype;
 use horrorshow::prelude::*;
