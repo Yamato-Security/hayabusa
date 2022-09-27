@@ -808,12 +808,10 @@ fn _print_detection_summary_tables(
     let mut col_color = vec![];
     for level in LEVEL_ABBR.values() {
         let mut col_output: Vec<String> = vec![];
-        let header_output = &format!(
-            "Top {} alerts: {{#top_{}_alerts}}",
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+        col_output.push(format!(
+            "Top {} alerts:",
             LEVEL_FULL.get(level.as_str()).unwrap()
-        );
-        col_output.push(header_output.to_owned());
+        ));
 
         col_color.push(_get_table_color(
             color_map,
@@ -828,7 +826,11 @@ fn _print_detection_summary_tables(
 
         // html出力の場合はすべての内容を出力するようにする
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-            html_output_stock.push(format!("### {}", header_output));
+            html_output_stock.push(format!(
+                "### Top {} alerts: {{#top_{}_alerts}}",
+                LEVEL_FULL.get(level.as_str()).unwrap(),
+                LEVEL_FULL.get(level.as_str()).unwrap()
+            ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- [{}]({}) ({})",
