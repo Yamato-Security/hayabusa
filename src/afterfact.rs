@@ -824,10 +824,11 @@ fn _print_detection_summary_tables(
             html_output_stock.push(format!("### {}", header_output));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
-                    "- {} ({})",
-                    rule_title_path_map
+                    "- [{}]({}) ({})",
+                    x.0
+                    ,rule_title_path_map
                         .get(x.0)
-                        .unwrap_or(&"<Not Found Path>".to_string()),
+                        .unwrap_or(&"<Not Found Path>".to_string()).replace('\\', "/"),
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
