@@ -188,9 +188,9 @@ pub struct Config {
     #[clap(help_heading = Some("ADVANCED"), short, long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
-    /// Print statistics of event IDs
-    #[clap(help_heading = Some("OTHER-ACTIONS"), short, long)]
-    pub statistics: bool,
+    /// Print event ID metrics
+    #[clap(help_heading = Some("OTHER-ACTIONS"), short='M', long)]
+    pub metrics: bool,
 
     /// Print a summary of successful and failed logons
     #[clap(help_heading = Some("OTHER-ACTIONS"), short = 'L', long = "logon-summary")]
@@ -270,11 +270,11 @@ impl ConfigReader<'_> {
             args: parse.clone(),
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(&parse.config, "statistics_event_info.txt", false)
+                utils::check_setting_path(&parse.config, "event_id_info.txt", false)
                     .unwrap_or_else(|| {
                         utils::check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/statistics_event_info.txt",
+                            "rules/config/event_id_info.txt",
                             true,
                         )
                         .unwrap()
@@ -585,7 +585,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         return config;
     }
 
-    // statistics_event_infoが読み込めなかったらエラーで終了とする。
+    // event_id_info.txtが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
         if line.len() != 2 {
             return;

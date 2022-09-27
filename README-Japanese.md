@@ -370,7 +370,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * `--level-tuning`: アラート`level`のカスタムチューニング
 * `-L, --logon-summary`: ログオンイベントのサマリを出力する。
 * `-P, --pivot-keywords-list`: ピボットする不審なキーワードのリスト作成。 
-* `-s, --statistics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
+* `-M, --metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `--set-default-profile`: デフォルトプロファイルを変更する。
 * `-u, --update`: GitHubの[hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)リポジトリにある最新のルールに同期させる。
 
@@ -419,8 +419,8 @@ OTHER-ACTIONS:
         --contributors                          コントリビュータの一覧表示
     -L, --logon-summary                         成功と失敗したログオン情報の要約を出力する
         --level-tuning [<FILE>]                 ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+    -M, --metrics                               イベントIDの統計情報を表示する
     -p, --pivot-keywords-list                   ピボットキーワードの一覧作成
-    -s, --statistics                            イベントIDの統計情報を表示する
         --set-default-profile <PROFILE>         デフォルトの出力コンフィグを設定する
     -u, --update-rules                          rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
 
@@ -510,12 +510,13 @@ hayabusa-1.6.0-win-x64.exe -l -m critical -p -o keywords
 * イベントIDの統計情報を出力する:
 
 ```bash
-hayabusa-1.6.0-win-x64.exe -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -f Security.evtx -M
 ```
+
 * ログオンサマリを出力する:
 
 ```bash
-hayabusa-1.6.0-win-x64.exe -L -f Security.evtx -s
+hayabusa-1.6.0-win-x64.exe -L -f Security.evtx -M
 ```
 
 * 詳細なメッセージを出力する(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
