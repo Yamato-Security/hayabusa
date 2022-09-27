@@ -95,15 +95,6 @@ pub fn create_html_file(input_html: String, path_str: String) {
         create_dir(path.parent().unwrap()).ok();
     }
 
-    // if already exists same html report file. output alert message and exit
-    if path.exists() {
-        AlertMessage::alert(&format!(
-            " The file {} already exists. Please specify a different filename.",
-            &path_str
-        ))
-        .ok();
-        return;
-    }
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
     let html_data = format!(
         "{}",

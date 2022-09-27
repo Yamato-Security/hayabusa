@@ -262,6 +262,18 @@ impl App {
             println!();
         }
 
+        if let Some(path) = &configs::CONFIG.read().unwrap().args.html_report {
+            // if already exists same html report file. output alert message and exit
+            if path.exists() {
+                AlertMessage::alert(&format!(
+                    " The file {} already exists. Please specify a different filename.",
+                    path.to_str().unwrap()
+                ))
+                .ok();
+                return;
+            }
+        }
+
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
