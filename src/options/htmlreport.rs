@@ -1,5 +1,7 @@
 use crate::detections::message::AlertMessage;
 use hashbrown::HashMap;
+use horrorshow::helper::doctype;
+use horrorshow::prelude::*;
 use lazy_static::lazy_static;
 use pulldown_cmark::{html, Options, Parser};
 use std::fs::create_dir;
@@ -8,8 +10,6 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
 use std::sync::RwLock;
-use horrorshow::prelude::*;
-use horrorshow::helper::doctype;
 
 lazy_static! {
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
@@ -105,18 +105,21 @@ pub fn create_html_file(input_html: String, path_str: String) {
         return;
     }
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
-    let html_data = format!("{}", html! {
-        : doctype::HTML;
-        html {
-            head {
-                meta(charset="UTF-8");
-                link(rel="stylesheet", type="text/css", href="./hayabusa_report.css");
+    let html_data = format!(
+        "{}",
+        html! {
+            : doctype::HTML;
+            html {
+                head {
+                    meta(charset="UTF-8");
+                    link(rel="stylesheet", type="text/css", href="./hayabusa_report.css");
+                }
+                body : Raw(input_html.clone().as_str())
             }
-            body : Raw(input_html.clone().as_str())
         }
-    });
+    );
 
-    writeln!(html_writer,"{}", html_data).ok();
+    writeln!(html_writer, "{}", html_data).ok();
     println!(
         "HTML Report was generated. Please check {} for details.",
         path_str
@@ -146,9 +149,10 @@ mod tests {
             "- Elapsed Time: 00:00:29.035".to_string(),
             "".to_string(),
         ];
-        html_reporter
-            .md_datas
-            .insert("General Overview {#general_overview}".to_string(), general_data.clone());
+        html_reporter.md_datas.insert(
+            "General Overview {#general_overview}".to_string(),
+            general_data.clone(),
+        );
         let general_overview_str = format!(
             "<ul>\n<li>{}</li>\n</ul>",
             general_data[..general_data.len() - 1]

@@ -696,7 +696,10 @@ impl Detection {
             html_report_stock.push(format!("- {}", tmp_total_detect_output));
         }
         if !html_report_stock.is_empty() {
-            htmlreport::add_md_data("General Overview {#general_overview}".to_string(), html_report_stock);
+            htmlreport::add_md_data(
+                "General Overview {#general_overview}".to_string(),
+                html_report_stock,
+            );
         }
     }
 }

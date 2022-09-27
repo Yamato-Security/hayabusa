@@ -546,7 +546,10 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if html_output_flag {
-        htmlreport::add_md_data("Results Summary {#results_summary}".to_string(), html_output_stock);
+        htmlreport::add_md_data(
+            "Results Summary {#results_summary}".to_string(),
+            html_output_stock,
+        );
     }
     Ok(())
 }
@@ -805,7 +808,11 @@ fn _print_detection_summary_tables(
     let mut col_color = vec![];
     for level in LEVEL_ABBR.values() {
         let mut col_output: Vec<String> = vec![];
-        let header_output = &format!("Top {} alerts: {{#top_{}_alerts}}", LEVEL_FULL.get(level.as_str()).unwrap(), LEVEL_FULL.get(level.as_str()).unwrap());
+        let header_output = &format!(
+            "Top {} alerts: {{#top_{}_alerts}}",
+            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(level.as_str()).unwrap()
+        );
         col_output.push(header_output.to_owned());
 
         col_color.push(_get_table_color(
@@ -825,10 +832,11 @@ fn _print_detection_summary_tables(
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
                     "- [{}]({}) ({})",
-                    x.0
-                    ,rule_title_path_map
+                    x.0,
+                    rule_title_path_map
                         .get(x.0)
-                        .unwrap_or(&"<Not Found Path>".to_string()).replace('\\', "/"),
+                        .unwrap_or(&"<Not Found Path>".to_string())
+                        .replace('\\', "/"),
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
