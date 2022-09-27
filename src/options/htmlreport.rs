@@ -8,6 +8,8 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
 use std::sync::RwLock;
+use horrorshow::prelude::*;
+use horrorshow::helper::doctype;
 
 lazy_static! {
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
@@ -103,7 +105,18 @@ pub fn create_html_file(input_html: String, path_str: String) {
         return;
     }
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
-    writeln!(html_writer, "{}", input_html).ok();
+    let html_data = format!("{}", html! {
+        : doctype::HTML;
+        html {
+            head {
+                meta(charset="UTF-8");
+                link(rel="stylesheet", type="text/css", href="./hayabusa_report.css");
+            }
+            body : Raw(input_html.clone().as_str())
+        }
+    });
+
+    writeln!(html_writer,"{}", html_data).ok();
     println!(
         "HTML Report was generated. Please check {} for details.",
         path_str
