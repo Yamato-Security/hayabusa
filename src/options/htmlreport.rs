@@ -113,6 +113,7 @@ pub fn create_html_file(input_html: String, path_str: String) {
                 head {
                     meta(charset="UTF-8");
                     link(rel="stylesheet", type="text/css", href="./hayabusa_report.css");
+                    link(rel="icon", type="image/png", href="./favicon.png");
                 }
                 body : Raw(input_html.clone().as_str())
             }
