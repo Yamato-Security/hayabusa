@@ -480,6 +480,15 @@ where
     }
 }
 
+/// Check file path exist. If path is existed, output alert message.
+pub fn check_file_expect_not_exist(path: &Path, exist_alert_str: String) -> bool {
+    let ret = path.exists();
+    if ret {
+        AlertMessage::alert(&exist_alert_str).ok();
+    }
+    ret
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;

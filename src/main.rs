@@ -219,20 +219,21 @@ impl App {
             pivot_key_unions.iter().for_each(|(key, _)| {
                 let keywords_file_name =
                     csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                if Path::new(&keywords_file_name).exists() {
-                    AlertMessage::alert(&format!(
+                utils::check_file_expect_not_exist(
+                    Path::new(&keywords_file_name),
+                    format!(
                         " The file {} already exists. Please specify a different filename.",
                         &keywords_file_name
-                    ))
-                    .ok();
-                }
+                    ),
+                );
             });
-            if csv_path.exists() {
-                AlertMessage::alert(&format!(
+            if utils::check_file_expect_not_exist(
+                csv_path,
+                format!(
                     " The file {} already exists. Please specify a different filename.",
                     csv_path.as_os_str().to_str().unwrap()
-                ))
-                .ok();
+                ),
+            ) {
                 return;
             }
         }
@@ -263,14 +264,15 @@ impl App {
             println!();
         }
 
-        if let Some(path) = &configs::CONFIG.read().unwrap().args.html_report {
+        if let Some(html_path) = &configs::CONFIG.read().unwrap().args.html_report {
             // if already exists same html report file. output alert message and exit
-            if path.exists() {
-                AlertMessage::alert(&format!(
+            if utils::check_file_expect_not_exist(
+                html_path.as_path(),
+                format!(
                     " The file {} already exists. Please specify a different filename.",
-                    path.to_str().unwrap()
-                ))
-                .ok();
+                    html_path.to_str().unwrap()
+                ),
+            ) {
                 return;
             }
         }
