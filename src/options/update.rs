@@ -5,15 +5,13 @@ use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone};
 use git2::Repository;
 use serde_json::Value;
-use std::fs::{self};
+use std::fs::{self, create_dir};
 use std::path::Path;
 
 use hashbrown::{HashMap, HashSet};
 use std::cmp::Ordering;
 
 use std::time::SystemTime;
-
-use std::fs::create_dir;
 
 use termcolor::{BufferWriter, ColorChoice};
 

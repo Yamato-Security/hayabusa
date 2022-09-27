@@ -7,8 +7,9 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
-use hayabusa::detections::configs::{load_pivot_keywords, TargetEventTime, TARGET_EXTENSIONS};
-use hayabusa::detections::configs::{CONFIG, CURRENT_EXE_PATH};
+use hayabusa::detections::configs::{
+    load_pivot_keywords, TargetEventTime, CONFIG, CURRENT_EXE_PATH, TARGET_EXTENSIONS,
+};
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{
     AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG,

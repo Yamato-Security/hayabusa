@@ -1,9 +1,6 @@
-use crate::detections::configs;
-use crate::detections::configs::{CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::message::{self, LEVEL_ABBR};
-use crate::detections::message::{AlertMessage, LEVEL_FULL};
-use crate::detections::utils::{self, format_time};
-use crate::detections::utils::{get_writable_color, write_color_buffer};
+use crate::detections::configs::{self, CURRENT_EXE_PATH, TERM_SIZE};
+use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL};
+use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport;
 use crate::options::profile::PROFILES;
 use bytesize::ByteSize;
@@ -25,12 +22,9 @@ use num_format::{Locale, ToFormattedString};
 use std::cmp::min;
 use std::error::Error;
 
-use std::fs::File;
-use std::io;
-use std::io::BufWriter;
-use std::io::Write;
+use std::io::{self, BufWriter, Write};
 
-use std::fs;
+use std::fs::{self, File};
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;

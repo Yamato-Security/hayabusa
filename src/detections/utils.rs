@@ -2,17 +2,15 @@ extern crate base64;
 extern crate csv;
 extern crate regex;
 
-use crate::detections::configs;
-use crate::detections::configs::CURRENT_EXE_PATH;
+use crate::detections::configs::{self, CURRENT_EXE_PATH};
+
 use hashbrown::HashMap;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use chrono::Local;
 use termcolor::Color;
 
-use tokio::runtime::Builder;
-use tokio::runtime::Runtime;
+use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
@@ -28,6 +26,7 @@ use std::vec;
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
 use super::detection::EvtxRecordInfo;
+use super::message::AlertMessage;
 
 pub fn concat_selection_key(key_list: &[String]) -> String {
     return key_list
