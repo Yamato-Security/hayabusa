@@ -27,8 +27,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::message;
-use super::message::LEVEL_ABBR;
+use super::message::{self, LEVEL_ABBR};
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
