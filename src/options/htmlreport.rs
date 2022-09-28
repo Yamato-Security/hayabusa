@@ -93,6 +93,7 @@ pub fn create_html_file(input_html: String, path_str: String) {
     }
 
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
+
     let html_data = format!(
         "{}",
         html! {
@@ -104,8 +105,10 @@ pub fn create_html_file(input_html: String, path_str: String) {
                     link(rel="icon", type="image/png", href="./favicon.png");
                 }
                 body {
-                    img(id="logo", src = "./logo.png");
-                    : Raw(input_html.clone().as_str());
+                    section {
+                        img(id="logo", src = "./logo.png");
+                        : Raw(input_html.as_str());
+                    }
                 }
 
             }

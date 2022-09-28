@@ -2,3 +2,10 @@ h2 {
     background-color: blue;
     color: white;
 }
+
+img#logo {
+    width: 25%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
