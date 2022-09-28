@@ -4,7 +4,7 @@
 
 **新機能:**
 
-- HTMLレポート機能 (`-H, --html-report`)の追加。 (#689) (@hitenkoku)
+- HTMLレポート機能 (`-H, --html-report`)の追加。 (#689) (@hitenkoku, @nishikawaakira)
 
 **改善:**
 
