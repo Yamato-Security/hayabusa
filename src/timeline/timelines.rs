@@ -131,7 +131,8 @@ impl Timeline {
         msges.push("---------------------------------------".to_string());
         msges
     }
-    // ユーザ毎のログイン統計情報出力メッセージ生成
+
+    /// ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self) {
         println!("Logon Summary");
         if self.stats.stats_login_list.is_empty() {
