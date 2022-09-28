@@ -213,7 +213,7 @@ impl Timeline {
             }
 
             let mut logins_stats_tb = Table::new();
-            logins_stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS)
+            logins_stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS);
             logins_stats_tb.set_header(&header);
             // 集計件数でソート
             let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
