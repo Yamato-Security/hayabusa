@@ -50,8 +50,7 @@ impl Timeline {
         sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
         
         let mut stats_tb = Table::new();
-        stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS)
-        .set_style(TableComponent::VerticalLines, ' ');
+        stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS);
         stats_tb.set_header(vec!["Count", "Percent", "ID", "Event"]);
 
 
