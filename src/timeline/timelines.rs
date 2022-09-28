@@ -48,22 +48,25 @@ impl Timeline {
         sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
         sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
         sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        sammsges.push("Count (Percent)\tID\tEvent\t".to_string());
-        sammsges.push("--------------- ------- ---------------".to_string());
+        
+        let mut stats_tb = Table::new();
+        stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS)
+        .set_style(TableComponent::VerticalLines, ' ');
+        stats_tb.set_header(vec!["Count", "Percent", "ID", "Event"]);
+
 
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
         // イベントID毎の出力メッセージ生成
-        let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted);
+        let stats_msges: Vec<Vec<String>> = self.tm_stats_set_msg(mapsorted);
 
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-        for msgprint in stats_msges.iter() {
-            println!("{}", msgprint);
-        }
+        stats_tb.add_rows(stats_msges);
+        println!("{stats_tb}");
     }
 
     pub fn tm_logon_stats_dsp_msg(&mut self) {
@@ -86,8 +89,8 @@ impl Timeline {
     }
 
     // イベントID毎の出力メッセージ生成
-    fn tm_stats_set_msg(&self, mapsorted: Vec<(&std::string::String, &usize)>) -> Vec<String> {
-        let mut msges: Vec<String> = Vec::new();
+    fn tm_stats_set_msg(&self, mapsorted: Vec<(&std::string::String, &usize)>) -> Vec<Vec<String>> {
+        let mut msges: Vec<Vec<String>> = Vec::new();
 
         for (event_id, event_cnt) in mapsorted.iter() {
             // 件数の割合を算出
@@ -101,34 +104,31 @@ impl Timeline {
                 .get_event_id(*event_id)
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
+            // 出力メッセージ1行作成
             if conf {
-                // 出力メッセージ1行作成
-                msges.push(format!(
-                    "{0} ({1:.1}%)\t{2}\t{3}",
-                    event_cnt,
-                    (rate * 1000.0).round() / 10.0,
-                    event_id,
-                    &CONFIG
+                msges.push(vec!
+                    [event_cnt.to_string(),
+                    format!("{:.1}%", (rate * 1000.0).round() / 10.0),
+                    event_id.to_string(),
+                    CONFIG
                         .read()
                         .unwrap()
                         .event_timeline_config
                         .get_event_id(*event_id)
                         .unwrap()
-                        .evttitle,
-                ));
+                        .evttitle.to_string(),
+                    ]
+                );
             } else {
-                // 出力メッセージ1行作成
-                msges.push(format!(
-                    "{0} ({1:.1}%)\t{2}\t{3}",
-                    event_cnt,
-                    (rate * 1000.0).round() / 10.0,
-                    event_id,
-                    "Unknown",
-                ));
+                msges.push(
+                    vec![
+                    event_cnt.to_string(),
+                    format!("{:.1}%", (rate * 1000.0).round() / 10.0),
+                    event_id.to_string(),
+                    "Unknown".to_string(),
+                ]);
             }
         }
-
-        msges.push("---------------------------------------".to_string());
         msges
     }
 
