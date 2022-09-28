@@ -101,12 +101,12 @@ pub fn create_html_file(input_html: String, path_str: String) {
             html {
                 head {
                     meta(charset="UTF-8");
-                    link(rel="stylesheet", type="text/css", href="./hayabusa_report.css");
-                    link(rel="icon", type="image/png", href="./favicon.png");
+                    link(rel="stylesheet", type="text/css", href="./config/html_report/hayabusa_report.css");
+                    link(rel="icon", type="image/png", href="./config/html_report/favicon.png");
                 }
                 body {
                     section {
-                        img(id="logo", src = "./logo.png");
+                        img(id="logo", src = "./config/html_report/logo.png");
                         : Raw(input_html.as_str());
                     }
                 }
