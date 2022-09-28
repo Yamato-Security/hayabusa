@@ -1,4 +1,9 @@
-use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG, CH_CONFIG};
+use std::io::BufWriter;
+use std::fs::File;
+
+use csv::WriterBuilder;
+use downcast_rs::__std::process;
+use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG, CH_CONFIG, AlertMessage};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use comfy_table::*;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -53,9 +58,31 @@ impl Timeline {
             sammsges.push(total_event_record);
         }
         
+        let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
+        let target;
+        let mut wtr= 
+        if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
+            // output to file
+            match File::create(csv_path) {
+                Ok(file) => {
+                    target = Box::new(BufWriter::new(file));
+                    Some(WriterBuilder::new().from_writer(target))
+                },
+                Err(err) => {
+                AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                    process::exit(1);
+                }
+            }
+        } else { 
+            None 
+        };
+        if let Some(ref mut w) = wtr {
+            w.write_record(&header).ok();
+        }
+
         let mut stats_tb = Table::new();
         stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS);
-        stats_tb.set_header(vec!["Count", "Percent", "Channel", "ID", "Event"]);
+        stats_tb.set_header(header);
 
 
         // 集計件数でソート
@@ -67,6 +94,14 @@ impl Timeline {
 
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
+        }
+        if CONFIG.read().unwrap().args.output.is_some() {
+            for msg in stats_msges.iter(){
+                if let Some(ref mut w) = wtr {
+                    w.write_record(msg).ok();
+                }
+    
+            }
         }
         stats_tb.add_rows(stats_msges);
         println!("{stats_tb}");
@@ -153,11 +188,33 @@ impl Timeline {
             for msgprint in loginmsges.iter() {
                 println!("{}", msgprint);
             }
-        } else {
+        } else { 
+            
+            let header = vec!["User", "Failed", "Successful"];
+            let target;
+            let mut wtr= 
+            if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
+                // output to file
+                match File::create(csv_path) {
+                    Ok(file) => {
+                        target = Box::new(BufWriter::new(file));
+                        Some(WriterBuilder::new().from_writer(target))
+                    },
+                    Err(err) => {
+                        AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                        process::exit(1);
+                    }
+                }
+            } else { 
+                None 
+            };
+            if let Some(ref mut w) = wtr {
+                w.write_record(&header).ok();
+            }
+
             let mut logins_stats_tb = Table::new();
             logins_stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS)
-            .set_style(TableComponent::VerticalLines, ' ');
-            logins_stats_tb.set_header(vec!["User", "Failed", "Successful"]);
+            logins_stats_tb.set_header(&header);
             // 集計件数でソート
             let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
             mapsorted.sort_by(|x, y| x.0.cmp(y.0));
@@ -166,11 +223,16 @@ impl Timeline {
                 let mut username: String = key.to_string();
                 username.pop();
                 username.remove(0);
-                logins_stats_tb.add_row(vec![
-                    Cell::new(&username),
-                    Cell::new(&values[1].to_string()),
-                    Cell::new(&values[0].to_string()),
-                ]);
+                let record_data = vec![
+                    username,
+                    values[1].to_string(),
+                    values[0].to_string(),
+                ];
+                if let Some(ref mut w) = wtr {
+                    w.write_record(&record_data).ok();
+                }    
+                logins_stats_tb.add_row(record_data);
+
             }
             println!("{logins_stats_tb}");
             println!();
