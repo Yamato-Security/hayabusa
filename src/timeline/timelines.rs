@@ -1,13 +1,13 @@
-use std::io::BufWriter;
 use std::fs::File;
+use std::io::BufWriter;
 
-use csv::WriterBuilder;
-use downcast_rs::__std::process;
-use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG, CH_CONFIG, AlertMessage};
+use crate::detections::message::{AlertMessage, CH_CONFIG, LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
-use comfy_table::*;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
+use comfy_table::*;
+use csv::WriterBuilder;
+use downcast_rs::__std::process;
 
 use super::metrics::EventMetrics;
 use hashbrown::HashMap;
@@ -57,33 +57,33 @@ impl Timeline {
         } else {
             sammsges.push(total_event_record);
         }
-        
+
         let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
         let target;
-        let mut wtr= 
-        if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
+        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => {
                     target = Box::new(BufWriter::new(file));
                     Some(WriterBuilder::new().from_writer(target))
-                },
+                }
                 Err(err) => {
-                AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
                     process::exit(1);
                 }
             }
-        } else { 
-            None 
+        } else {
+            None
         };
         if let Some(ref mut w) = wtr {
             w.write_record(&header).ok();
         }
 
         let mut stats_tb = Table::new();
-        stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS);
+        stats_tb
+            .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS);
         stats_tb.set_header(header);
-
 
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
@@ -96,11 +96,10 @@ impl Timeline {
             println!("{}", msgprint);
         }
         if CONFIG.read().unwrap().args.output.is_some() {
-            for msg in stats_msges.iter(){
+            for msg in stats_msges.iter() {
                 if let Some(ref mut w) = wtr {
                     w.write_record(msg).ok();
                 }
-    
             }
         }
         stats_tb.add_rows(stats_msges);
@@ -130,7 +129,10 @@ impl Timeline {
     }
 
     // イベントID毎の出力メッセージ生成
-    fn tm_stats_set_msg(&self, mapsorted: Vec<(&(std::string::String, std::string::String), &usize)>) -> Vec<Vec<String>> {
+    fn tm_stats_set_msg(
+        &self,
+        mapsorted: Vec<(&(std::string::String, std::string::String), &usize)>,
+    ) -> Vec<Vec<String>> {
         let mut msges: Vec<Vec<String>> = Vec::new();
 
         for ((event_id, channel), event_cnt) in mapsorted.iter() {
@@ -147,10 +149,13 @@ impl Timeline {
             // event_id_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
             let fmted_channel = channel.replace('\"', "");
-            let ch = CH_CONFIG.get(fmted_channel.to_lowercase().as_str()).unwrap_or(&fmted_channel).to_string();
+            let ch = CH_CONFIG
+                .get(fmted_channel.to_lowercase().as_str())
+                .unwrap_or(&fmted_channel)
+                .to_string();
             if conf {
-                msges.push(vec!
-                    [event_cnt.to_string(),
+                msges.push(vec![
+                    event_cnt.to_string(),
                     format!("{:.1}%", (rate * 1000.0).round() / 10.0),
                     ch,
                     event_id.to_string(),
@@ -160,12 +165,11 @@ impl Timeline {
                         .event_timeline_config
                         .get_event_id(event_id)
                         .unwrap()
-                        .evttitle.to_string(),
-                    ]
-                );
+                        .evttitle
+                        .to_string(),
+                ]);
             } else {
-                msges.push(
-                    vec![
+                msges.push(vec![
                     event_cnt.to_string(),
                     format!("{:.1}%", (rate * 1000.0).round() / 10.0),
                     ch,
@@ -188,32 +192,32 @@ impl Timeline {
             for msgprint in loginmsges.iter() {
                 println!("{}", msgprint);
             }
-        } else { 
-            
+        } else {
             let header = vec!["User", "Failed", "Successful"];
             let target;
-            let mut wtr= 
-            if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
+            let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
                 // output to file
                 match File::create(csv_path) {
                     Ok(file) => {
                         target = Box::new(BufWriter::new(file));
                         Some(WriterBuilder::new().from_writer(target))
-                    },
+                    }
                     Err(err) => {
                         AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
                         process::exit(1);
                     }
                 }
-            } else { 
-                None 
+            } else {
+                None
             };
             if let Some(ref mut w) = wtr {
                 w.write_record(&header).ok();
             }
 
             let mut logins_stats_tb = Table::new();
-            logins_stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS);
+            logins_stats_tb
+                .load_preset(UTF8_FULL)
+                .apply_modifier(UTF8_ROUND_CORNERS);
             logins_stats_tb.set_header(&header);
             // 集計件数でソート
             let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
@@ -223,16 +227,11 @@ impl Timeline {
                 let mut username: String = key.to_string();
                 username.pop();
                 username.remove(0);
-                let record_data = vec![
-                    username,
-                    values[1].to_string(),
-                    values[0].to_string(),
-                ];
+                let record_data = vec![username, values[1].to_string(), values[0].to_string()];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
-                }    
+                }
                 logins_stats_tb.add_row(record_data);
-
             }
             println!("{logins_stats_tb}");
             println!();

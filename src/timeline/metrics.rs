@@ -71,7 +71,8 @@ impl EventMetrics {
                 "Event.System.TimeCreated_attributes.SystemTime",
                 &record.record,
             )
-            .map(|evt_value| evt_value.to_string()) {
+            .map(|evt_value| evt_value.to_string())
+            {
                 if self.start_time.is_empty() || evttime < self.start_time {
                     self.start_time = evttime.to_string();
                 }
@@ -93,30 +94,27 @@ impl EventMetrics {
                 "-".to_string()
             };
             if let Some(idnum) = utils::get_event_value("EventID", &record.record) {
-                let count: &mut usize = self.stats_list.entry((idnum.to_string(), channel)).or_insert(0);
+                let count: &mut usize = self
+                    .stats_list
+                    .entry((idnum.to_string(), channel))
+                    .or_insert(0);
                 *count += 1;
             };
-
         }
     }
     // Login event
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
         for record in records.iter() {
             if let Some(evtid) = utils::get_event_value("EventID", &record.record) {
-
                 let idnum: i64 = if evtid.is_number() {
                     evtid.as_i64().unwrap()
                 } else {
-                    evtid
-                        .as_str()
-                        .unwrap()
-                        .parse::<i64>()
-                        .unwrap_or_default()
+                    evtid.as_str().unwrap().parse::<i64>().unwrap_or_default()
                 };
                 if !(idnum == 4624 || idnum == 4625) {
                     continue;
                 }
-    
+
                 let username = utils::get_event_value("TargetUserName", &record.record);
                 let countlist: [usize; 2] = [0, 0];
                 if idnum == 4624 {

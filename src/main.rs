@@ -662,13 +662,14 @@ impl App {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) = self.analysis_file(evtx_file, detection, time_filter, tl.clone());
+            (detection, cnt_tmp, tl) =
+                self.analysis_file(evtx_file, detection, time_filter, tl.clone());
             total_records += cnt_tmp;
             pb.inc();
         }
         if *METRICS_FLAG {
             tl.tm_stats_dsp_msg();
-        } 
+        }
         if *LOGONSUMMARY_FLAG {
             tl.tm_logon_stats_dsp_msg();
         }
@@ -690,7 +691,7 @@ impl App {
         evtx_filepath: PathBuf,
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
-        mut tl: Timeline
+        mut tl: Timeline,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(evtx_filepath.clone());
