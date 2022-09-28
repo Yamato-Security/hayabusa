@@ -3,10 +3,8 @@ use horrorshow::helper::doctype;
 use horrorshow::prelude::*;
 use lazy_static::lazy_static;
 use pulldown_cmark::{html, Options, Parser};
-use std::fs::create_dir;
-use std::fs::File;
-use std::io::BufWriter;
-use std::io::Write;
+use std::fs::{create_dir, File};
+use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
 
@@ -105,7 +103,11 @@ pub fn create_html_file(input_html: String, path_str: String) {
                     link(rel="stylesheet", type="text/css", href="./hayabusa_report.css");
                     link(rel="icon", type="image/png", href="./favicon.png");
                 }
-                body : Raw(input_html.clone().as_str())
+                body {
+                    img(id="logo", src = "./logo.png");
+                    : Raw(input_html.clone().as_str());
+                }
+
             }
         }
     );

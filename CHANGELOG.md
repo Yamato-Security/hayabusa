@@ -1,18 +1,17 @@
 # Changes
 
-## 1.7.0 [2022/XX/XX]
+## 1.7.0 [2022/09/29]
 
 **New Features:**
 
-- Added html summary output. (``-H, --html-report`  option) (#689) (@hitenkoku)
+- Added html summary output. (`-H, --html-report` option) (#689) (@hitenkoku)
 
 **Enhancements:**
 
 - Changed Event ID Statistics option to Event ID Metrics option. (`-s, --statistics`  -> `-M, --metrics`) (#706) (@hitenkoku)
   (Note: `statistics_event_info.txt` was changed to `event_id_info.txt`.)
-- Added display new version of Hayabusa when updating. (#710) (@hitenkoku)
-
-**Bug Fixes:**
+- Display new version of Hayabusa link when updating if there is a newer version. (#710) (@hitenkoku)
+- Added logo in HTML summary output. (#714) (@hitenkoku)
 
 ## v1.6.0 [2022/09/16]
 

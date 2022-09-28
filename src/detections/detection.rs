@@ -9,17 +9,12 @@ use chrono::{TimeZone, Utc};
 use itertools::Itertools;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
-use crate::detections::message::AlertMessage;
-use crate::detections::message::DetectInfo;
-use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::message::{CH_CONFIG, DEFAULT_DETAILS, TAGS_CONFIG};
 use crate::detections::message::{
-    LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
+    AlertMessage, DetectInfo, CH_CONFIG, DEFAULT_DETAILS, ERROR_LOG_STACK, LOGONSUMMARY_FLAG,
+    METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, TAGS_CONFIG,
 };
 use crate::detections::pivot::insert_pivot_keyword;
-use crate::detections::rule;
-use crate::detections::rule::AggResult;
-use crate::detections::rule::RuleNode;
+use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
 use crate::options::htmlreport::{self};
@@ -32,8 +27,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::message;
-use super::message::LEVEL_ABBR;
+use super::message::{self, LEVEL_ABBR};
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
