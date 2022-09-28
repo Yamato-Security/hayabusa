@@ -78,12 +78,15 @@ impl Timeline {
         }
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
-        sammsges.push("---------------------------------------".to_string());
-        sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-        sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
-        sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-        sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        sammsges.push("---------------------------------------".to_string());
+        let total_event_record = format!("\nTotal Event Records: {}\n", self.stats.total);
+        if CONFIG.read().unwrap().args.filepath.is_some() {
+            sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+            sammsges.push(total_event_record);
+            sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+            sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+        } else {
+            sammsges.push(total_event_record);
+        }
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
