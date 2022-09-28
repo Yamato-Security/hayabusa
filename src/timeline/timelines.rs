@@ -1,4 +1,4 @@
-use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
+use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG, CH_CONFIG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use comfy_table::*;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -55,7 +55,7 @@ impl Timeline {
         
         let mut stats_tb = Table::new();
         stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS);
-        stats_tb.set_header(vec!["Count", "Percent", "ID", "Event"]);
+        stats_tb.set_header(vec!["Count", "Percent", "Channel", "ID", "Event"]);
 
 
         // 集計件数でソート
@@ -92,10 +92,10 @@ impl Timeline {
     }
 
     // イベントID毎の出力メッセージ生成
-    fn tm_stats_set_msg(&self, mapsorted: Vec<(&std::string::String, &usize)>) -> Vec<Vec<String>> {
+    fn tm_stats_set_msg(&self, mapsorted: Vec<(&(std::string::String, std::string::String), &usize)>) -> Vec<Vec<String>> {
         let mut msges: Vec<Vec<String>> = Vec::new();
 
-        for (event_id, event_cnt) in mapsorted.iter() {
+        for ((event_id, channel), event_cnt) in mapsorted.iter() {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
 
@@ -104,20 +104,23 @@ impl Timeline {
                 .read()
                 .unwrap()
                 .event_timeline_config
-                .get_event_id(*event_id)
+                .get_event_id(event_id)
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
+            let fmted_channel = channel.replace('\"', "");
+            let ch = CH_CONFIG.get(fmted_channel.to_lowercase().as_str()).unwrap_or(&fmted_channel).to_string();
             if conf {
                 msges.push(vec!
                     [event_cnt.to_string(),
                     format!("{:.1}%", (rate * 1000.0).round() / 10.0),
+                    ch,
                     event_id.to_string(),
                     CONFIG
                         .read()
                         .unwrap()
                         .event_timeline_config
-                        .get_event_id(*event_id)
+                        .get_event_id(event_id)
                         .unwrap()
                         .evttitle.to_string(),
                     ]
@@ -127,7 +130,8 @@ impl Timeline {
                     vec![
                     event_cnt.to_string(),
                     format!("{:.1}%", (rate * 1000.0).round() / 10.0),
-                    event_id.to_string(),
+                    ch,
+                    event_id.replace('\"', ""),
                     "Unknown".to_string(),
                 ]);
             }
@@ -157,8 +161,6 @@ impl Timeline {
 
             for (key, values) in &mapsorted {
                 let mut username: String = key.to_string();
-                //key.to_string().retain(|c| c != '\"');
-                //key.to_string().pop();
                 username.pop();
                 username.remove(0);
                 logins_stats_tb.add_row(vec![

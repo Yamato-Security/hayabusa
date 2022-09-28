@@ -8,7 +8,7 @@ pub struct EventMetrics {
     pub filepath: String,
     pub start_time: String,
     pub end_time: String,
-    pub stats_list: HashMap<String, usize>,
+    pub stats_list: HashMap<(String, String), usize>,
     pub stats_login_list: HashMap<String, [usize; 2]>,
 }
 /**
@@ -20,7 +20,7 @@ impl EventMetrics {
         filepath: String,
         start_time: String,
         end_time: String,
-        stats_list: HashMap<String, usize>,
+        stats_list: HashMap<(String, String), usize>,
         stats_login_list: HashMap<String, [usize; 2]>,
     ) -> EventMetrics {
         EventMetrics {
@@ -87,8 +87,13 @@ impl EventMetrics {
     fn stats_eventid(&mut self, records: &[EvtxRecordInfo]) {
         //        let mut evtstat_map = HashMap::new();
         for record in records.iter() {
+            let channel = if let Some(ch) = utils::get_event_value("Channel", &record.record) {
+                ch.to_string()
+            } else {
+                "-".to_string()
+            };
             if let Some(idnum) = utils::get_event_value("EventID", &record.record) {
-                let count: &mut usize = self.stats_list.entry(idnum.to_string()).or_insert(0);
+                let count: &mut usize = self.stats_list.entry((idnum.to_string(), channel)).or_insert(0);
                 *count += 1;
             };
 
