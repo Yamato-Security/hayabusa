@@ -9,7 +9,7 @@ section {
   background-image: none;
   background-color:white;
   margin: 0 auto;
-  width:50%;
+  max-width:860px;
 	box-shadow: 10px 10px 25px 10px rgba(0, 0, 0, .5);
 }
 
