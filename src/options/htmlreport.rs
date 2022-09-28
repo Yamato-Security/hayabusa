@@ -93,6 +93,8 @@ pub fn create_html_file(input_html: String, path_str: String) {
     }
 
     let mut html_writer = BufWriter::new(File::create(path).unwrap());
+    let result_contents = format!("<section>{}</section>", input_html);
+
     let html_data = format!(
         "{}",
         html! {
@@ -105,7 +107,7 @@ pub fn create_html_file(input_html: String, path_str: String) {
                 }
                 body {
                     img(id="logo", src = "./logo.png");
-                    : Raw(input_html.clone().as_str());
+                    : Raw(result_contents.as_str());
                 }
 
             }
