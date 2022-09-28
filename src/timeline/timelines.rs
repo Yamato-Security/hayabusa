@@ -1,6 +1,8 @@
 use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
-use prettytable::{Cell, Row, Table};
+use comfy_table::*;
+use comfy_table::modifiers::UTF8_ROUND_CORNERS;
+use comfy_table::presets::UTF8_FULL;
 
 use super::metrics::EventMetrics;
 use hashbrown::HashMap;
@@ -142,7 +144,9 @@ impl Timeline {
             }
         } else {
             let mut logins_stats_tb = Table::new();
-            logins_stats_tb.set_titles(row!["User", "Failed", "Successful"]);
+            logins_stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS)
+            .set_style(TableComponent::VerticalLines, ' ');
+            logins_stats_tb.set_header(vec!["User", "Failed", "Successful"]);
             // 集計件数でソート
             let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
             mapsorted.sort_by(|x, y| x.0.cmp(y.0));
@@ -153,13 +157,13 @@ impl Timeline {
                 //key.to_string().pop();
                 username.pop();
                 username.remove(0);
-                logins_stats_tb.add_row(Row::new(vec![
+                logins_stats_tb.add_row(vec![
                     Cell::new(&username),
                     Cell::new(&values[1].to_string()),
                     Cell::new(&values[0].to_string()),
-                ]));
+                ]);
             }
-            logins_stats_tb.printstd();
+            println!("{logins_stats_tb}");
             println!();
         }
     }
