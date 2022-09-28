@@ -12,6 +12,12 @@
   (Note: `statistics_event_info.txt` was changed to `event_id_info.txt`.)
 - Display new version of Hayabusa link when updating if there is a newer version. (#710) (@hitenkoku)
 - Added logo in HTML summary output. (#714) (@hitenkoku)
+- Unified output one table of -M or -L option with -d option. (#707) (@hitenkoku)
+- Added Channel column to metrics output. (#707) (@hitenkoku)
+- Removed First Timestamp and Last Timestamp of -M and -L option with -d option. (#707) (@hitenkoku)
+- Added csv output option(`-o --output`) when -M and -L option is used. (#707) (@hitenkoku)
+- Separated Count and Percent columns in metric output. (#707) (@hitenkoku)
+- Changed output table format of metric option and logon information crate from prettytable-rs to comfy_table. (#707) (@hitenkoku)
 
 ## v1.6.0 [2022/09/16]
 
