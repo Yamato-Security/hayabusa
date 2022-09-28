@@ -656,14 +656,21 @@ impl App {
         self.rule_keys = self.get_all_keys(&rule_files);
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
+        let mut tl = Timeline::new();
         for evtx_file in evtx_files {
             if configs::CONFIG.read().unwrap().args.verbose {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
-            (detection, cnt_tmp) = self.analysis_file(evtx_file, detection, time_filter);
+            (detection, cnt_tmp, tl) = self.analysis_file(evtx_file, detection, time_filter, tl.clone());
             total_records += cnt_tmp;
             pb.inc();
+        }
+        if *METRICS_FLAG {
+            tl.tm_stats_dsp_msg();
+        } 
+        if *LOGONSUMMARY_FLAG {
+            tl.tm_logon_stats_dsp_msg();
         }
         if configs::CONFIG.read().unwrap().args.output.is_some() {
             println!();
@@ -683,15 +690,15 @@ impl App {
         evtx_filepath: PathBuf,
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
-    ) -> (detection::Detection, usize) {
+        mut tl: Timeline
+    ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(evtx_filepath.clone());
         let mut record_cnt = 0;
         if parser.is_none() {
-            return (detection, record_cnt);
+            return (detection, record_cnt, tl);
         }
 
-        let mut tl = Timeline::new();
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
 
@@ -760,10 +767,7 @@ impl App {
             }
         }
 
-        tl.tm_stats_dsp_msg();
-        tl.tm_logon_stats_dsp_msg();
-
-        (detection, record_cnt)
+        (detection, record_cnt, tl)
     }
 
     async fn create_rec_infos(

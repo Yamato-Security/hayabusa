@@ -7,7 +7,7 @@ use comfy_table::presets::UTF8_FULL;
 use super::metrics::EventMetrics;
 use hashbrown::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Timeline {
     pub stats: EventMetrics,
 }

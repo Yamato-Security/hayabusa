@@ -2,7 +2,7 @@ use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EventMetrics {
     pub total: usize,
     pub filepath: String,
