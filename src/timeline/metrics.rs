@@ -93,7 +93,6 @@ impl EventMetrics {
             };
 
         }
-        //        return evtstat_map;
     }
     // Login event
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {

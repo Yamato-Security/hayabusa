@@ -43,11 +43,15 @@ impl Timeline {
         }
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
-        sammsges.push("---------------------------------------".to_string());
-        sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-        sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
-        sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-        sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+        let total_event_record = format!("\nTotal Event Records: {}\n", self.stats.total);
+        if CONFIG.read().unwrap().args.filepath.is_some() {
+            sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+            sammsges.push(total_event_record);
+            sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+            sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+        } else {
+            sammsges.push(total_event_record);
+        }
         
         let mut stats_tb = Table::new();
         stats_tb.load_preset(UTF8_FULL).apply_modifier(UTF8_ROUND_CORNERS);
