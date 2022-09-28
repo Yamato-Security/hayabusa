@@ -18,6 +18,7 @@
 - Added csv output option(`-o --output`) when -M and -L option is used. (#707) (@hitenkoku)
 - Separated Count and Percent columns in metric output. (#707) (@hitenkoku)
 - Changed output table format of metric option and logon information crate from prettytable-rs to comfy_table. (#707) (@hitenkoku)
+- Added favicon.png in HTML summary output. (#722) (@hitenkoku)
 
 ## v1.6.0 [2022/09/16]
 
