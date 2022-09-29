@@ -3,7 +3,6 @@ use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 
 #[derive(Debug)]
-<<<<<<< HEAD:src/timeline/statistics.rs
 pub struct LogEventInfo {
     pub channel: String,
     pub eventid: String,
@@ -16,10 +15,7 @@ impl LogEventInfo {
 }
 
 #[derive(Debug)]
-pub struct EventStatistics {
-=======
 pub struct EventMetrics {
->>>>>>> ebe89905b51b332817d753847e22758d4b511d5c:src/timeline/metrics.rs
     pub total: usize,
     pub filepath: String,
     pub start_time: String,
@@ -118,7 +114,8 @@ impl EventMetrics {
             }
             let ch = channel.unwrap().to_string();
             let id = evtid.unwrap().to_string();
-            let chandid = ch + "," + &id;
+            let mut chandid = ch + "," + &id;
+            chandid.retain(|c| c != '"');
             //let logdata = LogEventInfo::new(ch , id);
             //println!("{:?},{:?}", logdata.channel, logdata.eventid);
             let count: &mut usize = self.stats_list.entry(chandid).or_insert(0);

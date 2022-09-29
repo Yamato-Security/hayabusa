@@ -46,22 +46,16 @@ impl Timeline {
         sammsges.push(format!("Total Event Records: {}\n", self.stats.total));
         sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
         sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        sammsges.push("Count (Percent)\tID\tEvent\t".to_string());
-        sammsges.push("--------------- ------- ---------------".to_string());
 
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
-        // イベントID毎の出力メッセージ生成
-        let stats_msges: Vec<String> = self.tm_stats_set_msg(mapsorted);
-
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-        for msgprint in stats_msges.iter() {
-            println!("{}", msgprint);
-        }
+        // イベントID毎の出力メッセージ生成
+        self.tm_stats_set_msg(mapsorted);
     }
 
     pub fn tm_logon_stats_dsp_msg(&mut self) {
@@ -84,12 +78,20 @@ impl Timeline {
     }
 
     // イベントID毎の出力メッセージ生成
-    fn tm_stats_set_msg(&self, mapsorted: Vec<(&std::string::String, &usize)>) -> Vec<String> {
-        let mut msges: Vec<String> = Vec::new();
+    fn tm_stats_set_msg(&self, mapsorted: Vec<(&std::string::String, &usize)>) {
+        let mut eid_metrics_tb = Table::new();
+        eid_metrics_tb.set_header(vec!["Count", "Percent(%)", "channel,ID", "Eventtitle"]);
 
         for (event_id, event_cnt) in mapsorted.iter() {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
+
+            // channelとIDを分割
+            let ch_id = event_id.split(',').fold(Vec::new(), |mut s, i| {
+                s.push(i.to_string());
+                s
+            });
+            println!("{:?}", ch_id);
 
             // イベント情報取得(eventtitleなど)
             let conf = CONFIG
@@ -100,34 +102,32 @@ impl Timeline {
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
             if conf {
-                // 出力メッセージ1行作成
-                msges.push(format!(
-                    "{0} ({1:.1}%)\t{2}\t{3}",
-                    event_cnt,
-                    (rate * 1000.0).round() / 10.0,
-                    event_id,
-                    &CONFIG
-                        .read()
-                        .unwrap()
-                        .event_timeline_config
-                        .get_event_id(*event_id)
-                        .unwrap()
-                        .evttitle,
-                ));
+                eid_metrics_tb.add_row(vec![
+                    Cell::new(&event_cnt),
+                    Cell::new(&rate),
+                    Cell::new(&event_id),
+                    Cell::new(
+                        &CONFIG
+                            .read()
+                            .unwrap()
+                            .event_timeline_config
+                            .get_event_id(*event_id)
+                            .unwrap()
+                            .evttitle,
+                    ),
+                ]);
             } else {
                 // 出力メッセージ1行作成
-                msges.push(format!(
-                    "{0} ({1:.1}%)\t{2}\t{3}",
-                    event_cnt,
-                    (rate * 1000.0).round() / 10.0,
-                    event_id,
-                    "Unknown",
-                ));
+                eid_metrics_tb.add_row(vec![
+                    Cell::new(&event_cnt),
+                    Cell::new(&rate),
+                    Cell::new(&event_id),
+                    Cell::new(&"Unknown".to_string()),
+                ]);
             }
         }
-
-        msges.push("---------------------------------------".to_string());
-        msges
+        println!("{eid_metrics_tb}");
+        println!();
     }
     // ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self) {
