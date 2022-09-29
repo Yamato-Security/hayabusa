@@ -9,19 +9,15 @@ use chrono::{TimeZone, Utc};
 use itertools::Itertools;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
-use crate::detections::message::AlertMessage;
-use crate::detections::message::DetectInfo;
-use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::message::{CH_CONFIG, DEFAULT_DETAILS, TAGS_CONFIG};
 use crate::detections::message::{
-    LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
+    AlertMessage, DetectInfo, CH_CONFIG, DEFAULT_DETAILS, ERROR_LOG_STACK, LOGONSUMMARY_FLAG,
+    METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, TAGS_CONFIG,
 };
 use crate::detections::pivot::insert_pivot_keyword;
-use crate::detections::rule;
-use crate::detections::rule::AggResult;
-use crate::detections::rule::RuleNode;
+use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
+use crate::options::htmlreport::{self};
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
@@ -31,8 +27,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::message;
-use super::message::LEVEL_ABBR;
+use super::message::{self, LEVEL_ABBR};
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -605,6 +600,7 @@ impl Detection {
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let args = &configs::CONFIG.read().unwrap().args;
+        let mut html_report_stock = Vec::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
@@ -614,12 +610,16 @@ impl Detection {
                     ""
                 };
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
-                println!(
+                let output_str = format!(
                     "{} rules: {}{}",
                     make_ascii_titlecase(key.clone().as_mut()),
                     value,
-                    disable_flag,
+                    disable_flag
                 );
+                println!("{}", output_str);
+                if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                    html_report_stock.push(format!("- {}", output_str));
+                }
             }
         });
         if err_rc != &0_u128 {
@@ -644,20 +644,24 @@ impl Detection {
                 } else {
                     ""
                 };
+                let output_str = format!(
+                    "{} rules: {} ({:.2}%){}",
+                    make_ascii_titlecase(key.clone().as_mut()),
+                    value,
+                    rate,
+                    deprecated_flag
+                );
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &format!(
-                        "{} rules: {} ({:.2}%){}",
-                        make_ascii_titlecase(key.clone().as_mut()),
-                        value,
-                        rate,
-                        deprecated_flag
-                    ),
+                    &output_str,
                     true,
                 )
                 .ok();
+                if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                    html_report_stock.push(format!("- {}", output_str));
+                }
             }
         });
         println!();
@@ -665,17 +669,32 @@ impl Detection {
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
+            let output_str = format!("{} rules: {}", key, value);
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &format!("{} rules: {}", key, value),
+                &output_str,
                 true,
             )
             .ok();
+            if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                html_report_stock.push(format!("- {}", output_str));
+            }
         });
 
-        println!("Total enabled detection rules: {}", total_loaded_rule_cnt);
+        let tmp_total_detect_output =
+            format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
+        println!("{}", tmp_total_detect_output);
         println!();
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            html_report_stock.push(format!("- {}", tmp_total_detect_output));
+        }
+        if !html_report_stock.is_empty() {
+            htmlreport::add_md_data(
+                "General Overview {#general_overview}".to_string(),
+                html_report_stock,
+            );
+        }
     }
 }
 

@@ -2,25 +2,13 @@ use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use hashbrown::HashMap;
 
-#[derive(Debug)]
-pub struct LogEventInfo {
-    pub channel: String,
-    pub eventid: String,
-}
-
-impl LogEventInfo {
-    pub fn new(channel: String, eventid: String) -> LogEventInfo {
-        LogEventInfo { channel, eventid }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EventMetrics {
     pub total: usize,
     pub filepath: String,
     pub start_time: String,
     pub end_time: String,
-    pub stats_list: HashMap<String, usize>,
+    pub stats_list: HashMap<(String, String), usize>,
     pub stats_login_list: HashMap<String, [usize; 2]>,
 }
 /**
@@ -32,7 +20,7 @@ impl EventMetrics {
         filepath: String,
         start_time: String,
         end_time: String,
-        stats_list: HashMap<String, usize>,
+        stats_list: HashMap<(String, String), usize>,
         stats_login_list: HashMap<String, [usize; 2]>,
     ) -> EventMetrics {
         EventMetrics {
@@ -78,87 +66,71 @@ impl EventMetrics {
         self.filepath = records[0].evtx_filepath.as_str().to_owned();
         // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
         // sortしないことにより計算量が改善されています。
-        // もうちょっと感じに書けるといえば書けます。
         for record in records.iter() {
-            let evttime = utils::get_event_value(
+            if let Some(evttime) = utils::get_event_value(
                 "Event.System.TimeCreated_attributes.SystemTime",
                 &record.record,
             )
-            .map(|evt_value| evt_value.to_string());
-            if evttime.is_none() {
-                continue;
-            }
-
-            let evttime = evttime.unwrap();
-            if self.start_time.is_empty() || evttime < self.start_time {
-                self.start_time = evttime.to_string();
-            }
-            if self.end_time.is_empty() || evttime > self.end_time {
-                self.end_time = evttime;
-            }
+            .map(|evt_value| evt_value.to_string())
+            {
+                if self.start_time.is_empty() || evttime < self.start_time {
+                    self.start_time = evttime.to_string();
+                }
+                if self.end_time.is_empty() || evttime > self.end_time {
+                    self.end_time = evttime;
+                }
+            };
         }
         self.total += records.len();
     }
 
-    // EventIDで集計
+    /// EventID`で集計
     fn stats_eventid(&mut self, records: &[EvtxRecordInfo]) {
         //        let mut evtstat_map = HashMap::new();
         for record in records.iter() {
-            let channel = utils::get_event_value("Channel", &record.record);
-            let evtid = utils::get_event_value("EventID", &record.record);
-            if channel.is_none() {
-                continue;
-            }
-            if evtid.is_none() {
-                continue;
-            }
-            let ch = channel.unwrap().to_string();
-            let id = evtid.unwrap().to_string();
-            let mut chandid = ch + "," + &id;
-            chandid.retain(|c| c != '"');
-            //let logdata = LogEventInfo::new(ch , id);
-            //println!("{:?},{:?}", logdata.channel, logdata.eventid);
-            let count: &mut usize = self.stats_list.entry(chandid).or_insert(0);
-            *count += 1;
+            let channel = if let Some(ch) = utils::get_event_value("Channel", &record.record) {
+                ch.to_string()
+            } else {
+                "-".to_string()
+            };
+            if let Some(idnum) = utils::get_event_value("EventID", &record.record) {
+                let count: &mut usize = self
+                    .stats_list
+                    .entry((idnum.to_string(), channel))
+                    .or_insert(0);
+                *count += 1;
+            };
         }
-        //        return evtstat_map;
     }
     // Login event
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
         for record in records.iter() {
-            let evtid = utils::get_event_value("EventID", &record.record);
-            if evtid.is_none() {
-                continue;
-            }
-            let idnum: i64 = if evtid.unwrap().is_number() {
-                evtid.unwrap().as_i64().unwrap()
-            } else {
-                evtid
-                    .unwrap()
-                    .as_str()
-                    .unwrap()
-                    .parse::<i64>()
-                    .unwrap_or_default()
-            };
-            if !(idnum == 4624 || idnum == 4625) {
-                continue;
-            }
+            if let Some(evtid) = utils::get_event_value("EventID", &record.record) {
+                let idnum: i64 = if evtid.is_number() {
+                    evtid.as_i64().unwrap()
+                } else {
+                    evtid.as_str().unwrap().parse::<i64>().unwrap_or_default()
+                };
+                if !(idnum == 4624 || idnum == 4625) {
+                    continue;
+                }
 
-            let username = utils::get_event_value("TargetUserName", &record.record);
-            let countlist: [usize; 2] = [0, 0];
-            if idnum == 4624 {
-                let count: &mut [usize; 2] = self
-                    .stats_login_list
-                    .entry(username.unwrap().to_string())
-                    .or_insert(countlist);
-                count[0] += 1;
-            } else if idnum == 4625 {
-                let count: &mut [usize; 2] = self
-                    .stats_login_list
-                    .entry(username.unwrap().to_string())
-                    .or_insert(countlist);
-                count[1] += 1;
-            }
+                let username = utils::get_event_value("TargetUserName", &record.record);
+                let countlist: [usize; 2] = [0, 0];
+                if idnum == 4624 {
+                    let count: &mut [usize; 2] = self
+                        .stats_login_list
+                        .entry(username.unwrap().to_string())
+                        .or_insert(countlist);
+                    count[0] += 1;
+                } else if idnum == 4625 {
+                    let count: &mut [usize; 2] = self
+                        .stats_login_list
+                        .entry(username.unwrap().to_string())
+                        .or_insert(countlist);
+                    count[1] += 1;
+                }
+            };
         }
     }
 }

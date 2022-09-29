@@ -1,15 +1,24 @@
 # Changes
 
-## 1.x.x [2022/XX/XX]
+## 1.7.0 [2022/09/29]
 
 **New Features:**
+
+- Added a HTML summary report output option (`-H, --html-report`). (#689) (@hitenkoku, @nishikawaakira)
 
 **Enhancements:**
 
 - Changed Event ID Statistics option to Event ID Metrics option. (`-s, --statistics`  -> `-M, --metrics`) (#706) (@hitenkoku)
   (Note: `statistics_event_info.txt` was changed to `event_id_info.txt`.)
-
-**Bug Fixes:**
+- Display new version of Hayabusa link when updating rules if there is a newer version. (#710) (@hitenkoku)
+- Added logo in HTML summary output. (#714) (@hitenkoku)
+- Unified output to one table when using `-M` or `-L` with the `-d` option. (#707) (@hitenkoku)
+- Added Channel column to metrics output. (#707) (@hitenkoku)
+- Removed First Timestamp and Last Timestamp of `-M` and `-L` option with the `-d` option. (#707) (@hitenkoku)
+- Added csv output option(`-o --output`) when `-M` or `-L` option is used. (#707) (@hitenkoku)
+- Separated Count and Percent columns in metric output. (#707) (@hitenkoku)
+- Changed output table format of the metric option and logon information crate from prettytable-rs to comfy_table. (#707) (@hitenkoku)
+- Added favicon.png in HTML summary output. (#722) (@hitenkoku)
 
 ## v1.6.0 [2022/09/16]
 

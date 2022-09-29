@@ -1,6 +1,5 @@
 use crate::detections::message::AlertMessage;
-use crate::detections::pivot::PivotKeyword;
-use crate::detections::pivot::PIVOT_KEYWORD;
+use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
@@ -248,6 +247,10 @@ pub struct Config {
     /// Do not display result summary
     #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "no-summary")]
     pub no_summary: bool,
+
+    /// Save detail Results Summary in html (ex: results.html)
+    #[clap(help_heading = Some("OUTPUT"), short = 'H', long="html-report", value_name = "FILE")]
+    pub html_report: Option<PathBuf>,
 }
 
 impl ConfigReader<'_> {

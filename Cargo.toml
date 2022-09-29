@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "1.7.0-dev"
+version = "1.7.0"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 
@@ -30,7 +30,6 @@ hashbrown = "0.12.*"
 hex = "0.4.*"
 git2 = "0.*"
 termcolor = "*"
-prettytable-rs = "0.*"
 krapslog = "*"
 terminal_size = "*"
 bytesize = "1.*"
@@ -39,6 +38,9 @@ lock_api = "0.4.*"
 crossbeam-utils = "0.8.*"
 num-format = "*"
 comfy-table = "6.*"
+pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
+reqwest = {version = "0.11.*", features = ["blocking", "json"]}
+horrorshow = "0.8.*"
 
 [build-dependencies]
 static_vcruntime = "2.*"

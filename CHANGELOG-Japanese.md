@@ -1,14 +1,23 @@
 # 変更点
 
-## 1.x.x [2022/XX/XX]
+## 1.7.0 [2022/09/29]
 
 **新機能:**
 
+- HTMLレポート機能 (`-H, --html-report`)の追加。 (#689) (@hitenkoku, @nishikawaakira)
+
 **改善:**
 
-- EventID解析のオプションをmetricsオプションに変更した。(旧: -s -> 新: -M) (#706) (@hitenkoku)
-
-**バグ修正:**
+- EventID解析のオプションをmetricsオプションに変更した。(旧: `-s, --statistics` -> 新: `-M, --metrics`) (#706) (@hitenkoku)
+- ルール更新オプション(`-u`)を利用したときにHayabusaの新バージョンがないかを確認し、表示するようにした。 (#710) (@hitenkoku)
+- HTMLレポート内にロゴを追加した。 (#714) (@hitenkoku)
+- メトリクスオプション(`-M --metrics`)もしくはログオン情報(`-L --logon-summary`)と`-d`オプションを利用した場合に1つのテーブルで表示されるように修正した。 (#707) (@hitenkoku)
+- メトリクスオプションの結果出力にチャンネル列を追加した。 (#707) (@hitenkoku)
+- メトリクスオプション(`-M --metrics`)もしくはログオン情報(`-L --logon-summary`)と`-d`オプションを利用した場合に「First Timestamp」と「Last Timestamp」の出力を行わないように修正した。 (#707) (@hitenkoku)
+- メトリクスオプションとログオン情報オプションに対してcsv出力機能(`-o --output`)を追加した。 (#707) (@hitenkoku)
+- メトリクスオプションの出力を検出回数と全体の割合が1つのセルで表示されていた箇所を2つの列に分けた。 (#707) (@hitenkoku)
+- メトリクスオプションとログオン情報の画面出力に利用していたprettytable-rsクレートをcomfy_tableクレートに修正した. (#707) (@hitenkoku)
+- HTMLレポート内にfavicon.pngを追加した。 (#722) (@hitenkoku)
 
 ## v1.6.0 [2022/09/16]
 

@@ -1,0 +1,94 @@
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image:url(./background_image.jpg);
+}
+
+section {
+  background-image: none;
+  background-color:white;
+  margin: 0 auto;
+  max-width:860px;
+	box-shadow: 10px 10px 25px 10px rgba(0, 0, 0, .5);
+}
+
+h2 {
+  padding:0.25em 0.5em;
+  color:#494949;
+  background:#f4faff;
+  border-left : solid 5px  #000000;
+	margin: 16px;
+}
+
+h3 {
+  background-color: rgb(0, 0, 0);
+  padding:3px;
+	margin: 16px;
+}
+
+#computers_with_most_unique_critical_detections {
+  color: #ff0000;
+  border-bottom: solid 3px #ff0000;
+}
+
+#top_critical_alerts {
+  color: #ff0000;
+  border-bottom: solid 3px #ff0000;
+}
+
+#computers_with_most_unique_high_detections {
+  color: #ffff00;
+  border-bottom: solid 3px #ffff00;
+}
+
+#top_high_alerts {
+  color: #ffff00;
+  border-bottom: solid 3px #ffff00;
+}
+
+#computers_with_most_unique_medium_detections {
+  color: #00ffff;
+  border-bottom: solid 3px #00ffff;
+}
+
+#top_medium_alerts {
+  color: #00ffff;
+  border-bottom: solid 3px #00ffff;
+}
+
+#computers_with_most_unique_low_detections {
+  color: #00ff00;
+  border-bottom: solid 3px #00ff00;
+}
+
+#top_low_alerts {
+  color: #00ff00;
+  border-bottom: solid 3px #00ff00;
+}
+
+#computers_with_most_unique_informational_detections {
+  color: #ffffff;
+  border-bottom: solid 3px #ffffff;
+}
+
+#top_informational_alerts {
+  color: #ffffff;
+  border-bottom: solid 3px #ffffff;
+}
+
+
+li {
+  padding: 5px;
+	margin: 16px;
+}
+li:nth-child(odd){
+  background-color: #f4faff
+}
+
+img#logo {
+  width: 300px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
