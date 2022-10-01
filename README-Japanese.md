@@ -194,7 +194,7 @@ CSVのタイムラインをTimesketchにインポートする方法は[こちら
 * 成功と失敗したユーザログオンの要約。
 * [Velociraptor](https://docs.velociraptor.app/)と組み合わせた企業向けの広範囲なすべてのエンドポイントに対するスレットハンティングとDFIR。
 * CSV、JSON、JSONL形式とHTML結果サマリの出力。
-* 毎日のSimgaルール更新。
+* 毎日のSigmaルール更新。
 
 # ダウンロード
 
