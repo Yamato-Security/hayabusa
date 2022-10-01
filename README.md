@@ -35,12 +35,12 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Terminal Output](#terminal-output)
   - [Event Fequency Timeline (`-V` option)](#event-fequency-timeline--v-option)
   - [Results Summary](#results-summary)
+  - [HTML Results Summary (`-H` option)](#html-results-summary--h-option)
   - [Analysis in Excel](#analysis-in-excel)
   - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
   - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
   - [Analysis in Timesketch](#analysis-in-timesketch)
-  - [HTML Results Summary](#html-results-summary)
 - [Analyzing Sample Timeline Results](#analyzing-sample-timeline-results)
 - [Features](#features)
 - [Downloads](#downloads)
@@ -130,6 +130,14 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ![Hayabusa results summary](screenshots/HayabusaResultsSummary.png)
 
+## HTML Results Summary (`-H` option)
+
+<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-1.png" width="90%">
+
+<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-2.png" width="90%">
+
+<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-3.png" width="90%">
+
 ## Analysis in Excel
 
 ![Hayabusa analysis in Excel](screenshots/ExcelScreenshot.png)
@@ -151,10 +159,6 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 ## Analysis in Timesketch
 
 ![Timesketch](screenshots/TimesketchAnalysis.png)
-
-## HTML Results Summary
-
-![HTMLResultsSummary](screenshots/HTML-ResultsSummary.png)
 
 # Analyzing Sample Timeline Results
 
@@ -293,7 +297,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
 The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/release/` directory.
-MUSL binaries are are about 15% slower than the GNU binaries.
+MUSL binaries are are about 15% slower than the GNU binaries, however, they are more portable accross different versions and distributions of linux.
 
 # Running Hayabusa
 
@@ -837,7 +841,7 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 
 1. Rules that use regular expressions that do not work with the [Rust regex crate](https://docs.rs/regex/1.5.4/regex/)
 2. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma/wiki/Specification).
-3. Rules that use `|near`.
+3. Rules that use `|near` or `|base64offset|contains`.
 
 ## Detection Rule Tuning
 

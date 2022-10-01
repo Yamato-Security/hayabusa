@@ -36,12 +36,12 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ターミナル出力画面](#ターミナル出力画面)
   - [イベント頻度タイムライン出力画面 (`-V`オプション)](#イベント頻度タイムライン出力画面--vオプション)
   - [結果サマリ画面](#結果サマリ画面)
+  - [HTMLの結果サマリ (`-H`オプション)](#htmlの結果サマリ--hオプション)
   - [Excelでの解析](#excelでの解析)
   - [Timeline Explorerでの解析](#timeline-explorerでの解析)
   - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
   - [Elastic Stackダッシュボードでの解析](#elastic-stackダッシュボードでの解析)
   - [Timesketchでの解析](#timesketchでの解析)
-  - [HTMLの結果サマリ](#htmlの結果サマリ)
 - [タイムラインのサンプル結果](#タイムラインのサンプル結果)
 - [特徴＆機能](#特徴機能)
 - [ダウンロード](#ダウンロード)
@@ -137,6 +137,14 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ![Hayabusa 結果サマリ画面](screenshots/HayabusaResultsSummary.png)
 
+## HTMLの結果サマリ (`-H`オプション)
+
+<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-1.png" width="90%">
+
+<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-2.png" width="90%">
+
+<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-3.png" width="90%">
+
 ## Excelでの解析
 
 ![Hayabusa Excelでの解析](screenshots/ExcelScreenshot.png)
@@ -159,10 +167,6 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 ## Timesketchでの解析
 
 ![Timesketch](screenshots/TimesketchAnalysis.png)
-
-## HTMLの結果サマリ
-
-![HTMLResultsSummary](screenshots/HTML-ResultsSummary.png)
 
 # タイムラインのサンプル結果
 
@@ -298,7 +302,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
 MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクトリ配下に作成されます。
-MUSLバイナリはGNUバイナリより約15％遅いです。
+MUSLバイナリはGNUバイナリより約15％遅いですが、より多くのLinuxバージョンとディストロで実行できます。
 
 ## Linuxでのコンパイルの注意点
 
@@ -847,7 +851,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 
 1. [Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルール。
 2. [Sigmaルール仕様](https://github.com/SigmaHQ/Sigma/wiki/Specification)の`count`以外の集計式。
-3. `|near`を使用するルール。
+3. `|near`または`|base64offset|contains`を使用するルール。
 
 ## 検知ルールのチューニング
 
