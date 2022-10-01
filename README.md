@@ -187,7 +187,8 @@ You can learn how to import CSV files into Timesketch [here](doc/TimesketchImpor
 * Output all fields for more thorough investigations.
 * Successful and failed logon summary.
 * Enterprise-wide threat hunting and DFIR on all endpoints with [Velociraptor](https://docs.velociraptor.app/).
-* Output to CSV, JSON or JSONL.
+* Output to CSV, JSON or JSONL and HTML Summary Reports.
+* Daily Sigma rule updates.
 
 # Downloads
 
