@@ -83,8 +83,6 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Color Output](#color-output)
   - [Results Summary](#results-summary-1)
     - [Event Fequency Timeline](#event-fequency-timeline)
-    - [Dates with most total detections](#dates-with-most-total-detections)
-    - [Top 5 computers with most unique detections](#top-5-computers-with-most-unique-detections)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -789,18 +787,12 @@ If you want to disable color output, you can use `--no-color` option.
 
 ## Results Summary
 
+Total events, the number of events with hits, data reduction metrics, total and unique detections, dates with the most detections, top computers with detections and top alerts are displayed after every scan.
+
 ### Event Fequency Timeline
 
 If you add `-V` or `--visualize-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events. Also, the characters will not render correctly on the default Command Prompt or PowerShell Prompt, so please use a terminal like Windows Terminal, iTerm2, etc...
-
-### Dates with most total detections
-
-A summary of the dates with the most total detections categorized by level (`critical`, `high`, etc...).
-
-### Top 5 computers with most unique detections
-
-The top 5 computers with the most unique detections categorized by level (`critical`, `high`, etc...).
 
 # Hayabusa Rules
 
