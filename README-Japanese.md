@@ -137,11 +137,11 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ## HTMLの結果サマリ (`-H`オプション)
 
-<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-1.png" width="90%">
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-1.png)
 
-<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-2.png" width="90%">
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-2.png)
 
-<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-3.png" width="90%">
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-3.png)
 
 ## Excelでの解析
 

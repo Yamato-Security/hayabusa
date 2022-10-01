@@ -130,11 +130,11 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ## HTML Results Summary (`-H` option)
 
-<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-1.png" width="90%">
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-1.png)
 
-<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-2.png" width="90%">
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-2.png)
 
-<img alt="HTML Results Summary" src="screenshots/HTML-ResultsSummary-3.png" width="90%">
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-3.png)
 
 ## Analysis in Excel
 
