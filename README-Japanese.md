@@ -36,12 +36,12 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [ターミナル出力画面](#ターミナル出力画面)
   - [イベント頻度タイムライン出力画面 (`-V`オプション)](#イベント頻度タイムライン出力画面--vオプション)
   - [結果サマリ画面](#結果サマリ画面)
+  - [HTMLの結果サマリ (`-H`オプション)](#htmlの結果サマリ--hオプション)
   - [Excelでの解析](#excelでの解析)
   - [Timeline Explorerでの解析](#timeline-explorerでの解析)
   - [Criticalアラートのフィルタリングとコンピュータごとのグルーピング](#criticalアラートのフィルタリングとコンピュータごとのグルーピング)
   - [Elastic Stackダッシュボードでの解析](#elastic-stackダッシュボードでの解析)
   - [Timesketchでの解析](#timesketchでの解析)
-  - [HTMLの結果サマリ](#htmlの結果サマリ)
 - [タイムラインのサンプル結果](#タイムラインのサンプル結果)
 - [特徴＆機能](#特徴機能)
 - [ダウンロード](#ダウンロード)
@@ -85,8 +85,6 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [標準出力へのカラー設定](#標準出力へのカラー設定)
   - [結果のサマリ](#結果のサマリ)
     - [イベント頻度タイムライン](#イベント頻度タイムライン)
-    - [最多検知日の出力](#最多検知日の出力)
-    - [最多検知端末名の出力](#最多検知端末名の出力)
 - [Hayabusaルール](#hayabusaルール)
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
   - [検知ルールのチューニング](#検知ルールのチューニング)
@@ -137,6 +135,14 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ![Hayabusa 結果サマリ画面](screenshots/HayabusaResultsSummary.png)
 
+## HTMLの結果サマリ (`-H`オプション)
+
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-1.png)
+
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-2.png)
+
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-3.png)
+
 ## Excelでの解析
 
 ![Hayabusa Excelでの解析](screenshots/ExcelScreenshot.png)
@@ -159,10 +165,6 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 ## Timesketchでの解析
 
 ![Timesketch](screenshots/TimesketchAnalysis.png)
-
-## HTMLの結果サマリ
-
-![HTMLResultsSummary](screenshots/HTML-ResultsSummary.png)
 
 # タイムラインのサンプル結果
 
@@ -191,7 +193,8 @@ CSVのタイムラインをTimesketchにインポートする方法は[こちら
 * 詳細な調査のために全フィールド情報の出力。
 * 成功と失敗したユーザログオンの要約。
 * [Velociraptor](https://docs.velociraptor.app/)と組み合わせた企業向けの広範囲なすべてのエンドポイントに対するスレットハンティングとDFIR。
-* CSV、JSON、JSONLの出力。
+* CSV、JSON、JSONL形式とHTML結果サマリの出力。
+* 毎日のSigmaルール更新。
 
 # ダウンロード
 
@@ -298,7 +301,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
 MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクトリ配下に作成されます。
-MUSLバイナリはGNUバイナリより約15％遅いです。
+MUSLバイナリはGNUバイナリより約15％遅いですが、より多くのLinuxバージョンとディストロで実行できます。
 
 ## Linuxでのコンパイルの注意点
 
@@ -793,18 +796,12 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 
 ## 結果のサマリ
 
+元々のイベント数、検知したイベント数、データ削減の統計、検知数情報、最多検知日、最多検知端末名、最多アラート等の情報がスキャン後に出力されます。
+
 ### イベント頻度タイムライン
 
 `-V`または`--visualize-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
 マーカーの数は最大10個です。デフォルトのCommand PromptとPowerShell Promptでは文字化けがでるので、Windows TerminalやiTerm2等のターミナルをご利用ください。
-
-### 最多検知日の出力
-
-各レベルで最も検知された日付を画面に出力します。
-
-### 最多検知端末名の出力
-
-各レベルで多く検知されたユニークなイベントが多い端末名上位5つを画面に出力します。
 
 # Hayabusaルール
 
@@ -847,7 +844,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 
 1. [Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルール。
 2. [Sigmaルール仕様](https://github.com/SigmaHQ/Sigma/wiki/Specification)の`count`以外の集計式。
-3. `|near`を使用するルール。
+3. `|near`または`|base64offset|contains`を使用するルール。
 
 ## 検知ルールのチューニング
 
