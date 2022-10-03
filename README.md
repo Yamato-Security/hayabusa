@@ -35,12 +35,12 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Terminal Output](#terminal-output)
   - [Event Fequency Timeline (`-V` option)](#event-fequency-timeline--v-option)
   - [Results Summary](#results-summary)
+  - [HTML Results Summary (`-H` option)](#html-results-summary--h-option)
   - [Analysis in Excel](#analysis-in-excel)
   - [Analysis in Timeline Explorer](#analysis-in-timeline-explorer)
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
   - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
   - [Analysis in Timesketch](#analysis-in-timesketch)
-  - [HTML Results Summary](#html-results-summary)
 - [Analyzing Sample Timeline Results](#analyzing-sample-timeline-results)
 - [Features](#features)
 - [Downloads](#downloads)
@@ -83,8 +83,6 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Color Output](#color-output)
   - [Results Summary](#results-summary-1)
     - [Event Fequency Timeline](#event-fequency-timeline)
-    - [Dates with most total detections](#dates-with-most-total-detections)
-    - [Top 5 computers with most unique detections](#top-5-computers-with-most-unique-detections)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
   - [Detection Rule Tuning](#detection-rule-tuning)
@@ -130,6 +128,14 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ![Hayabusa results summary](screenshots/HayabusaResultsSummary.png)
 
+## HTML Results Summary (`-H` option)
+
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-1.png)
+
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-2.png)
+
+![Hayabusa results summary](screenshots/HTML-ResultsSummary-3.png)
+
 ## Analysis in Excel
 
 ![Hayabusa analysis in Excel](screenshots/ExcelScreenshot.png)
@@ -151,10 +157,6 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 ## Analysis in Timesketch
 
 ![Timesketch](screenshots/TimesketchAnalysis.png)
-
-## HTML Results Summary
-
-![HTMLResultsSummary](screenshots/HTML-ResultsSummary.png)
 
 # Analyzing Sample Timeline Results
 
@@ -183,7 +185,8 @@ You can learn how to import CSV files into Timesketch [here](doc/TimesketchImpor
 * Output all fields for more thorough investigations.
 * Successful and failed logon summary.
 * Enterprise-wide threat hunting and DFIR on all endpoints with [Velociraptor](https://docs.velociraptor.app/).
-* Output to CSV, JSON or JSONL.
+* Output to CSV, JSON or JSONL and HTML Summary Reports.
+* Daily Sigma rule updates.
 
 # Downloads
 
@@ -293,7 +296,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
 The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/release/` directory.
-MUSL binaries are are about 15% slower than the GNU binaries.
+MUSL binaries are are about 15% slower than the GNU binaries, however, they are more portable accross different versions and distributions of linux.
 
 # Running Hayabusa
 
@@ -784,18 +787,12 @@ If you want to disable color output, you can use `--no-color` option.
 
 ## Results Summary
 
+Total events, the number of events with hits, data reduction metrics, total and unique detections, dates with the most detections, top computers with detections and top alerts are displayed after every scan.
+
 ### Event Fequency Timeline
 
 If you add `-V` or `--visualize-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events. Also, the characters will not render correctly on the default Command Prompt or PowerShell Prompt, so please use a terminal like Windows Terminal, iTerm2, etc...
-
-### Dates with most total detections
-
-A summary of the dates with the most total detections categorized by level (`critical`, `high`, etc...).
-
-### Top 5 computers with most unique detections
-
-The top 5 computers with the most unique detections categorized by level (`critical`, `high`, etc...).
 
 # Hayabusa Rules
 
@@ -837,7 +834,7 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 
 1. Rules that use regular expressions that do not work with the [Rust regex crate](https://docs.rs/regex/1.5.4/regex/)
 2. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma/wiki/Specification).
-3. Rules that use `|near`.
+3. Rules that use `|near` or `|base64offset|contains`.
 
 ## Detection Rule Tuning
 
