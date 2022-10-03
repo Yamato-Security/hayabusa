@@ -139,23 +139,19 @@ impl Timeline {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
 
-            // channelとIDを分割
-            let ch_id = event_id.split(',').fold(Vec::new(), |mut s, i| {
-                s.push(i.to_string());
-                s
-            });
-            println!("{:?}", ch_id);
+            let fmted_channel = channel.replace('\"', "");
+            println!("{:?}", fmted_channel);
+            println!("{:?}", event_id);
 
             // イベント情報取得(eventtitleなど)
             let conf = CONFIG
                 .read()
                 .unwrap()
                 .event_timeline_config
-                .get_event_id(event_id)
+                .get_event_id(&fmted_channel, event_id)
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
-            let fmted_channel = channel.replace('\"', "");
             let ch = CH_CONFIG
                 .get(fmted_channel.to_lowercase().as_str())
                 .unwrap_or(&fmted_channel)
@@ -170,7 +166,7 @@ impl Timeline {
                         .read()
                         .unwrap()
                         .event_timeline_config
-                        .get_event_id(event_id)
+                        .get_event_id(&fmted_channel, event_id)
                         .unwrap()
                         .evttitle
                         .to_string(),
