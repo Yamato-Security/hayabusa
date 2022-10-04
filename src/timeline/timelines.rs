@@ -140,8 +140,6 @@ impl Timeline {
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
 
             let fmted_channel = channel.replace('\"', "");
-            println!("{:?}", fmted_channel);
-            println!("{:?}", event_id);
 
             // イベント情報取得(eventtitleなど)
             let conf = CONFIG

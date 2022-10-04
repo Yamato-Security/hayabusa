@@ -269,11 +269,11 @@ impl ConfigReader<'_> {
             args: parse.clone(),
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(&parse.config, "event_id_info.txt", false)
+                utils::check_setting_path(&parse.config, "channel_eid_info.txt", false)
                     .unwrap_or_else(|| {
                         utils::check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/event_id_info.txt",
+                            "rules/config/channel_eid_info.txt",
                             true,
                         )
                         .unwrap()
