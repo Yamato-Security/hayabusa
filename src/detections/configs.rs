@@ -2,7 +2,7 @@ use crate::detections::message::AlertMessage;
 use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{App, CommandFactory, Parser};
+use clap::{Command, CommandFactory, Parser};
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -12,7 +12,7 @@ use std::sync::RwLock;
 use terminal_size::{terminal_size, Height, Width};
 
 lazy_static! {
-    pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
+    pub static ref CONFIG: RwLock<ConfigReader> = RwLock::new(ConfigReader::new());
     pub static ref LEVELMAP: HashMap<String, u128> = {
         let mut levelmap = HashMap::new();
         levelmap.insert("INFORMATIONAL".to_owned(), 1);
@@ -50,15 +50,15 @@ lazy_static! {
         convert_option_vecs_to_hs(CONFIG.read().unwrap().args.exclude_status.as_ref());
 }
 
-pub struct ConfigReader<'a> {
-    pub app: App<'a>,
+pub struct ConfigReader {
+    pub app: Command,
     pub args: Config,
     pub headless_help: String,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
 
-impl Default for ConfigReader<'_> {
+impl Default for ConfigReader {
     fn default() -> Self {
         Self::new()
     }
@@ -67,12 +67,12 @@ impl Default for ConfigReader<'_> {
 #[derive(Parser, Clone)]
 #[clap(
     name = "Hayabusa",
-    usage = "hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n",
     version,
     term_width = 400
 )]
+#[command(override_usage = "hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]")]
 pub struct Config {
     /// Directory of multiple .evtx files
     #[clap(help_heading = Some("INPUT"), short = 'd', long, value_name = "DIRECTORY")]
@@ -221,11 +221,11 @@ pub struct Config {
     pub contributors: bool,
 
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-    #[clap(help_heading = Some("ADVANCED"), long = "target-file-ext", multiple_values = true)]
+    #[clap(help_heading = Some("ADVANCED"), long = "target-file-ext")]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable test)
-    #[clap(help_heading = Some("FILTERING"), long = "exclude-status", multiple_values = true, value_name = "STATUS")]
+    #[clap(help_heading = Some("FILTERING"), long = "exclude-status", value_name = "STATUS")]
     pub exclude_status: Option<Vec<String>>,
 
     /// Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
@@ -253,7 +253,7 @@ pub struct Config {
     pub html_report: Option<PathBuf>,
 }
 
-impl ConfigReader<'_> {
+impl ConfigReader {
     pub fn new() -> Self {
         let parse = Config::parse();
         let help_term_width = if let Some((Width(w), _)) = *TERM_SIZE {

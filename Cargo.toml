@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 itertools = "*"
 dashmap = "*"
-clap = { version = "3.*", features = ["derive", "cargo"]}
+clap = { version = "4.*", features = ["derive", "cargo"]}
 evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "95b1c6a" }
 quick-xml = {version = "0.23.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
