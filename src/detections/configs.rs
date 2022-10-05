@@ -269,11 +269,11 @@ impl ConfigReader<'_> {
             args: parse.clone(),
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(&parse.config, "event_id_info.txt", false)
+                utils::check_setting_path(&parse.config, "channel_eid_info.txt", false)
                     .unwrap_or_else(|| {
                         utils::check_setting_path(
                             &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/event_id_info.txt",
+                            "rules/config/channel_eid_info.txt",
                             true,
                         )
                         .unwrap()
@@ -555,7 +555,7 @@ impl EventInfo {
 }
 #[derive(Debug, Clone)]
 pub struct EventInfoConfig {
-    eventinfo: HashMap<String, EventInfo>,
+    eventinfo: HashMap<(String, String), EventInfo>,
 }
 
 impl Default for EventInfoConfig {
@@ -570,8 +570,9 @@ impl EventInfoConfig {
             eventinfo: HashMap::new(),
         }
     }
-    pub fn get_event_id(&self, eventid: &str) -> Option<&EventInfo> {
-        self.eventinfo.get(eventid)
+    pub fn get_event_id(&self, channel: &str, eventid: &str) -> Option<&EventInfo> {
+        self.eventinfo
+            .get(&(channel.to_string(), eventid.to_string()))
     }
 }
 
@@ -586,19 +587,21 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
 
     // event_id_info.txtが読み込めなかったらエラーで終了とする。
     read_result.unwrap().into_iter().for_each(|line| {
-        if line.len() != 2 {
+        if line.len() != 3 {
             return;
         }
 
         let empty = &"".to_string();
-        let eventcode = line.get(0).unwrap_or(empty);
-        let event_title = line.get(1).unwrap_or(empty);
+        let channel = line.get(0).unwrap_or(empty);
+        let eventcode = line.get(1).unwrap_or(empty);
+        let event_title = line.get(2).unwrap_or(empty);
         infodata = EventInfo {
             evttitle: event_title.to_string(),
         };
-        config
-            .eventinfo
-            .insert(eventcode.to_owned(), infodata.to_owned());
+        config.eventinfo.insert(
+            (channel.to_owned(), eventcode.to_owned()),
+            infodata.to_owned(),
+        );
     });
     config
 }

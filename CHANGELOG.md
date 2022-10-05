@@ -1,5 +1,11 @@
 # Changes
 
+## 1.7.1 [2022/xx/xx]
+
+**Bug Fixes:**
+
+- Hayabusa now checks Channel and EID information based on `rules/config/channel_eid_info.txt` to provide more accurate results. (#463) (@garigariganzy)
+
 ## 1.7.0 [2022/09/29]
 
 **New Features:**
