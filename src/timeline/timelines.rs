@@ -48,7 +48,7 @@ impl Timeline {
         }
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
-        let total_event_record = format!("\nTotal Event Records: {}\n", self.stats.total);
+        let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
         if CONFIG.read().unwrap().args.filepath.is_some() {
             sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
             sammsges.push(total_event_record);
@@ -112,7 +112,7 @@ impl Timeline {
         }
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
-        let total_event_record = format!("\nTotal Event Records: {}\n", self.stats.total);
+        let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
         if CONFIG.read().unwrap().args.filepath.is_some() {
             sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
             sammsges.push(total_event_record);
@@ -184,7 +184,7 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self) {
-        println!("Logon Summary");
+        println!(" Logon Summary:");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
             loginmsges.push("-----------------------------------------".to_string());
@@ -235,7 +235,6 @@ impl Timeline {
                 logins_stats_tb.add_row(record_data);
             }
             println!("{logins_stats_tb}");
-            println!();
         }
     }
 }
