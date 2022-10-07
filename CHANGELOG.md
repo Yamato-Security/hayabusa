@@ -2,6 +2,10 @@
 
 ## 1.7.1 [2022/xx/xx]
 
+**Enhancements:**
+
+- Fixed Display contents with no use detection rule option. (`-M` and `-L` ) (#730) (@hitenkoku)
+
 **Bug Fixes:**
 
 - Hayabusa now checks Channel and EID information based on `rules/config/channel_eid_info.txt` to provide more accurate results. (#463) (@garigariganzy)
