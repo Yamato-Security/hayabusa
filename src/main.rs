@@ -623,7 +623,9 @@ impl App {
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{}", total_size_output);
         println!();
-        if !(configs::CONFIG.read().unwrap().args.metrics || configs::CONFIG.read().unwrap().args.logon_summary) {
+        if !(configs::CONFIG.read().unwrap().args.metrics
+            || configs::CONFIG.read().unwrap().args.logon_summary)
+        {
             println!("Loading detections rules. Please wait.");
             println!();
         }
