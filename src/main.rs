@@ -257,7 +257,7 @@ impl App {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                "Generating Logons Summary",
+                "Generating Logon Summary",
                 true,
             )
             .ok();
