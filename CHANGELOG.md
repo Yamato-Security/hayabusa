@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-- Fixed Display contents with no use detection rule option. (`-M` and `-L` ) (#730) (@hitenkoku)
+- Do not display a message about loading detection rules when using the `-M` or `-L` options. (#730) (@hitenkoku)
 
 **Bug Fixes:**
 
