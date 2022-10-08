@@ -423,11 +423,20 @@ fn emit_csv<W: std::io::Write>(
         &disp_wtr,
         get_writable_color(Some(Color::Rgb(0, 255, 0))),
         "Rules brought to you by:",
+        false,
+    )
+    .ok();
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(None),
+        " ",
         true,
     )
     .ok();
 
+    println!();
     output_detected_rule_authors(rule_author_counter);
+    println!();
 
     if !configs::CONFIG.read().unwrap().args.no_summary {
         disp_wtr_buf.clear();
@@ -1183,22 +1192,29 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
         sorted_authors.len()/4
     };
     
-    for x in 0..div {
+    for x in 0..4 {
         let mut tmp = Vec::new();
-        for y in 0..4 {
-            tmp.push(format!("{}({})", sorted_authors[x*4 + y].0, sorted_authors[x*4 + y].1));
+        for y in 0..div {
+            if y*4 + x < sorted_authors.len() {
+                tmp.push(format!("{}({})", sorted_authors[y*4 + x].0, sorted_authors[y*4 + x].1));
+            }
         }
         output.push(tmp);
     }
     let mut tbrows = vec![];
     for c in output.iter() {
-        tbrows.push(Cell::new(c.join("\n")));
+        tbrows.push(Cell::new(c.join("\n")).fg(comfy_table::Color::Reset));
     }
     let mut tb = Table::new();
+    let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
+    let tbch = tb.style(TableComponent::TopBorder).unwrap();
+
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_style(TableComponent::VerticalLines, ' ');
-    tb.add_row(tbrows);
+    tb.add_row(tbrows).set_style(TableComponent::MiddleIntersections, hlch)
+    .set_style(TableComponent::TopBorderIntersections, tbch)
+    .set_style(TableComponent::BottomBorderIntersections, hlch);
     println!("{tb}");
 }
 
@@ -1218,16 +1234,26 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
     }
     for yaml in YamlLoader::load_from_str(&contents.unwrap()).unwrap_or_default().into_iter() {
         if let Some(author) = yaml["author"].as_str() {
-            return author.to_string().split(',').into_iter().map(|s| {
+            let authors_vec: Vec<String> = author.to_string().split(',').into_iter().map(|s| {
                 // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
                 let tmp:Vec<&str> = s.split('(').collect();
                 // データの中にdouble quote と single quoteが入っているためここで除外する
-                tmp[0].to_string().replace('"', "").replace('\'', "")
+                tmp[0].to_string()
+            }).collect();
+            let mut ret: Vec<&str> = Vec::new();
+            for author in &authors_vec {
+                ret.extend(author.split(';'));
+            }
+
+            return ret.iter().map(|r| {
+                r.split('/').map(|p| {
+                    p.to_string().replace('"', "").replace('\'', "").trim().to_owned()
+                }).collect()
             }).collect();
         };
     }
     // ここまで来た場合は要素がない場合なので空配列を返す
-    return vec![];
+    vec![]
 }
 
 #[cfg(test)]
