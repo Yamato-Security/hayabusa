@@ -3,7 +3,7 @@ use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport;
 use crate::options::profile::PROFILES;
-use crate::yaml::{ParseYaml};
+use crate::yaml::ParseYaml;
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -15,9 +15,9 @@ use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
-use yaml_rust::YamlLoader;
 use std::path::Path;
 use std::str::FromStr;
+use yaml_rust::YamlLoader;
 
 use comfy_table::*;
 use hashbrown::{HashMap, HashSet};
@@ -426,13 +426,7 @@ fn emit_csv<W: std::io::Write>(
         false,
     )
     .ok();
-    write_color_buffer(
-        &disp_wtr,
-        get_writable_color(None),
-        " ",
-        true,
-    )
-    .ok();
+    write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
 
     println!();
     output_detected_rule_authors(rule_author_counter);
@@ -1180,23 +1174,25 @@ fn output_json_str(
 }
 
 fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
-    let mut sorted_authors: Vec<(&String, &i128)> = rule_author_counter
-    .iter()
-    .collect();
+    let mut sorted_authors: Vec<(&String, &i128)> = rule_author_counter.iter().collect();
 
     sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
     let mut output = Vec::new();
-    let div = if sorted_authors.len()%4 != 0{
-        sorted_authors.len()/4 + 1
+    let div = if sorted_authors.len() % 4 != 0 {
+        sorted_authors.len() / 4 + 1
     } else {
-        sorted_authors.len()/4
+        sorted_authors.len() / 4
     };
-    
+
     for x in 0..4 {
         let mut tmp = Vec::new();
         for y in 0..div {
-            if y*4 + x < sorted_authors.len() {
-                tmp.push(format!("{}({})", sorted_authors[y*4 + x].0, sorted_authors[y*4 + x].1));
+            if y * 4 + x < sorted_authors.len() {
+                tmp.push(format!(
+                    "{}({})",
+                    sorted_authors[y * 4 + x].0,
+                    sorted_authors[y * 4 + x].1
+                ));
             }
         }
         output.push(tmp);
@@ -1212,9 +1208,10 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_style(TableComponent::VerticalLines, ' ');
-    tb.add_row(tbrows).set_style(TableComponent::MiddleIntersections, hlch)
-    .set_style(TableComponent::TopBorderIntersections, tbch)
-    .set_style(TableComponent::BottomBorderIntersections, hlch);
+    tb.add_row(tbrows)
+        .set_style(TableComponent::MiddleIntersections, hlch)
+        .set_style(TableComponent::TopBorderIntersections, tbch)
+        .set_style(TableComponent::BottomBorderIntersections, hlch);
     println!("{tb}");
 }
 
@@ -1232,24 +1229,41 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
         // 対象のファイルが存在しなかった場合は空配列を返す(検知しているルールに対して行うため、ここは通る想定はないが、ファイルが検知途中で削除された場合などを考慮して追加)
         return vec![];
     }
-    for yaml in YamlLoader::load_from_str(&contents.unwrap()).unwrap_or_default().into_iter() {
+    for yaml in YamlLoader::load_from_str(&contents.unwrap())
+        .unwrap_or_default()
+        .into_iter()
+    {
         if let Some(author) = yaml["author"].as_str() {
-            let authors_vec: Vec<String> = author.to_string().split(',').into_iter().map(|s| {
-                // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
-                let tmp:Vec<&str> = s.split('(').collect();
-                // データの中にdouble quote と single quoteが入っているためここで除外する
-                tmp[0].to_string()
-            }).collect();
+            let authors_vec: Vec<String> = author
+                .to_string()
+                .split(',')
+                .into_iter()
+                .map(|s| {
+                    // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
+                    let tmp: Vec<&str> = s.split('(').collect();
+                    // データの中にdouble quote と single quoteが入っているためここで除外する
+                    tmp[0].to_string()
+                })
+                .collect();
             let mut ret: Vec<&str> = Vec::new();
             for author in &authors_vec {
                 ret.extend(author.split(';'));
             }
 
-            return ret.iter().map(|r| {
-                r.split('/').map(|p| {
-                    p.to_string().replace('"', "").replace('\'', "").trim().to_owned()
-                }).collect()
-            }).collect();
+            return ret
+                .iter()
+                .map(|r| {
+                    r.split('/')
+                        .map(|p| {
+                            p.to_string()
+                                .replace('"', "")
+                                .replace('\'', "")
+                                .trim()
+                                .to_owned()
+                        })
+                        .collect()
+                })
+                .collect();
         };
     }
     // ここまで来た場合は要素がない場合なので空配列を返す
