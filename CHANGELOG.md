@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Do not display a message about loading detection rules when using the `-M` or `-L` options. (#730) (@hitenkoku)
+- Added output of detected rule authors in standard output. (#724) (@hitenkoku)
 
 **Bug Fixes:**
 
