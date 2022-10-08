@@ -214,6 +214,7 @@ impl App {
             return;
         }
 
+        // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
         if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
             let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
             pivot_key_unions.iter().for_each(|(key, _)| {
