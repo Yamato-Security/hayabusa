@@ -5,10 +5,10 @@
 **Enhancements:**
 
 - Do not display a message about loading detection rules when using the `-M` or `-L` options. (#730) (@hitenkoku)
+- Hayabusa now checks Channel and EID information based on `rules/config/channel_eid_info.txt` to provide more accurate results. (#463) (@garigariganzy)
 
 **Bug Fixes:**
 
-- Hayabusa now checks Channel and EID information based on `rules/config/channel_eid_info.txt` to provide more accurate results. (#463) (@garigariganzy)
 
 ## 1.7.0 [2022/09/29]
 
