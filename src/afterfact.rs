@@ -422,7 +422,7 @@ fn emit_csv<W: std::io::Write>(
     write_color_buffer(
         &disp_wtr,
         get_writable_color(Some(Color::Rgb(0, 255, 0))),
-        "Rules brought to you by:",
+        "Rule Authors:",
         false,
     )
     .ok();
@@ -1189,7 +1189,7 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
         for y in 0..div {
             if y * 4 + x < sorted_authors.len() {
                 tmp.push(format!(
-                    "{}({})",
+                    "{} ({})",
                     sorted_authors[y * 4 + x].0,
                     sorted_authors[y * 4 + x].1
                 ));
