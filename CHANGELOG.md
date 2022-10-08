@@ -9,6 +9,7 @@
 
 **Bug Fixes:**
 
+- Fixed duplicate event outputted with metric option due to sum up of event IDs key name. (#729) (@hitenkoku)
 
 ## 1.7.0 [2022/09/29]
 
