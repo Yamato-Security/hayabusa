@@ -96,7 +96,7 @@ impl EventMetrics {
             if let Some(idnum) = utils::get_event_value("EventID", &record.record) {
                 let count: &mut usize = self
                     .stats_list
-                    .entry((idnum.to_string(), channel))
+                    .entry((idnum.to_string().replace('\"', ""), channel))
                     .or_insert(0);
                 *count += 1;
             };
