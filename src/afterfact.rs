@@ -3,6 +3,7 @@ use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport;
 use crate::options::profile::PROFILES;
+use crate::yaml::{ParseYaml};
 use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -14,6 +15,8 @@ use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
+use yaml_rust::YamlLoader;
+use std::path::Path;
 use std::str::FromStr;
 
 use comfy_table::*;
@@ -236,6 +239,8 @@ fn emit_csv<W: std::io::Write>(
     let mut detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
     let mut rule_title_path_map: HashMap<String, String> = HashMap::new();
+    let mut rule_author_counter: HashMap<String, i128> = HashMap::new();
+
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
@@ -339,6 +344,9 @@ fn emit_csv<W: std::io::Write>(
                 .or_insert(0) += 1;
             if !detected_rule_files.contains(&detect_info.rulepath) {
                 detected_rule_files.insert(detect_info.rulepath.clone());
+                for author in extract_author_name(detect_info.rulepath.clone()) {
+                    *rule_author_counter.entry(author).or_insert(1) += 1;
+                }
                 unique_detect_counts_by_level[level_suffix] += 1;
             }
 
@@ -409,6 +417,17 @@ fn emit_csv<W: std::io::Write>(
             println!();
         }
     };
+
+    disp_wtr_buf.clear();
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(Some(Color::Rgb(0, 255, 0))),
+        "Rules brought to you by:",
+        true,
+    )
+    .ok();
+
+    output_detected_rule_authors(rule_author_counter);
 
     if !configs::CONFIG.read().unwrap().args.no_summary {
         disp_wtr_buf.clear();
@@ -1149,6 +1168,66 @@ fn output_json_str(
         // JSON format output
         target.join(",\n")
     }
+}
+
+fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
+    let mut sorted_authors: Vec<(&String, &i128)> = rule_author_counter
+    .iter()
+    .collect();
+
+    sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
+    let mut output = Vec::new();
+    let div = if sorted_authors.len()%4 != 0{
+        sorted_authors.len()/4 + 1
+    } else {
+        sorted_authors.len()/4
+    };
+    
+    for x in 0..div {
+        let mut tmp = Vec::new();
+        for y in 0..4 {
+            tmp.push(format!("{}({})", sorted_authors[x*4 + y].0, sorted_authors[x*4 + y].1));
+        }
+        output.push(tmp);
+    }
+    let mut tbrows = vec![];
+    for c in output.iter() {
+        tbrows.push(Cell::new(c.join("\n")));
+    }
+    let mut tb = Table::new();
+    tb.load_preset(UTF8_FULL)
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_style(TableComponent::VerticalLines, ' ');
+    tb.add_row(tbrows);
+    println!("{tb}");
+}
+
+/// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
+fn extract_author_name(yaml_path: String) -> Vec<String> {
+    let parser = ParseYaml::new();
+    let contents = match parser.read_file(Path::new(&yaml_path).to_path_buf()) {
+        Ok(yaml) => Some(yaml),
+        Err(e) => {
+            AlertMessage::alert(&e).ok();
+            None
+        }
+    };
+    if contents.is_none() {
+        // 対象のファイルが存在しなかった場合は空配列を返す(検知しているルールに対して行うため、ここは通る想定はないが、ファイルが検知途中で削除された場合などを考慮して追加)
+        return vec![];
+    }
+    for yaml in YamlLoader::load_from_str(&contents.unwrap()).unwrap_or_default().into_iter() {
+        if let Some(author) = yaml["author"].as_str() {
+            return author.to_string().split(',').into_iter().map(|s| {
+                // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
+                let tmp:Vec<&str> = s.split('(').collect();
+                // データの中にdouble quote と single quoteが入っているためここで除外する
+                tmp[0].to_string().replace('"', "").replace('\'', "")
+            }).collect();
+        };
+    }
+    // ここまで来た場合は要素がない場合なので空配列を返す
+    return vec![];
 }
 
 #[cfg(test)]
