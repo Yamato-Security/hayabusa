@@ -738,9 +738,9 @@ impl App {
                     continue;
                 }
 
-                // target_eventids.txtでイベントIDベースでフィルタする。
                 let data = record_result.as_ref().unwrap().data.clone();
-                if !self._is_target_event_id(&data)
+                // channelがnullである場合もしくは、target_eventids.txtでイベントIDベースでフィルタする。
+                if !self._is_valid_channel(&data) | !self._is_target_event_id(&data)
                     && !configs::CONFIG.read().unwrap().args.deep_scan
                 {
                     continue;
@@ -826,6 +826,18 @@ impl App {
             Value::String(s) => utils::is_target_event_id(&s.replace('\"', "")),
             Value::Number(n) => utils::is_target_event_id(&n.to_string().replace('\"', "")),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
+        }
+    }
+
+    /// レコードのチャンネルの値が正しい(Stringの形でありnullでないもの)ことを判定する関数
+    fn _is_valid_channel(&self, data: &Value) -> bool {
+        let channel = utils::get_event_value("Event.System.Channel", data);
+        if channel.is_none() {
+            return false;
+        }
+        match channel.unwrap() {
+            Value::String(s) => s != "null",
+            _ => false, // channelの値は文字列を想定しているため、それ以外のデータが来た場合はfalseを返す
         }
     }
 
