@@ -7,6 +7,7 @@
 - Hayabusa now checks Channel and EID information based on `rules/config/channel_eid_info.txt` to provide more accurate results. (#463) (@garigariganzy)
 - Do not display a message about loading detection rules when using the `-M` or `-L` options. (#730) (@hitenkoku)
 - Added a table of rule authors to standard output. (#724) (@hitenkoku)
+- Ignore event records when the channel name is `null` (ETW events) when scanning and performing metrics. (#727) (@hitenkoku)
 
 **Bug Fixes:**
 
