@@ -4,12 +4,13 @@
 
 **Enhancements:**
 
-- Do not display a message about loading detection rules when using the `-M` or `-L` options. (#730) (@hitenkoku)
 - Hayabusa now checks Channel and EID information based on `rules/config/channel_eid_info.txt` to provide more accurate results. (#463) (@garigariganzy)
+- Do not display a message about loading detection rules when using the `-M` or `-L` options. (#730) (@hitenkoku)
+- Added a table of rule authors to standard output. (#724) (@hitenkoku)
 
 **Bug Fixes:**
 
-- Fixed duplicate event outputted with metric option due to sum up of event IDs key name. (#729) (@hitenkoku)
+- Fixed a bug where the same Channel and EID would be counted seperately with the `-M` option. (#729) (@hitenkoku)
 
 ## 1.7.0 [2022/09/29]
 
