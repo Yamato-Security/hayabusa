@@ -823,8 +823,8 @@ impl App {
         }
 
         match eventid.unwrap() {
-            Value::String(s) => utils::is_target_event_id(s),
-            Value::Number(n) => utils::is_target_event_id(&n.to_string()),
+            Value::String(s) => utils::is_target_event_id(&s.replace('\"', "")),
+            Value::Number(n) => utils::is_target_event_id(&n.to_string().replace('\"', "")),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
         }
     }
