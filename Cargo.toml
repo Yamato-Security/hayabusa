@@ -8,7 +8,7 @@ edition = "2021"
 itertools = "*"
 dashmap = "*"
 clap = { version = "3.*", features = ["derive", "cargo"]}
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "5b0884d" } #0.8.3
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "95b1c6a" } #0.8.2. Using the older version as the newer versions won't compile on windows 32-bit.
 quick-xml = {version = "0.23.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
