@@ -11,7 +11,7 @@
 
 **Bug Fixes:**
 
-- Fixed a bug where the same Channel and EID would be counted seperately with the `-M` option. (#729) (@hitenkoku)
+- Fixed a bug where the same Channel and EID would be counted separately with the `-M` option. (#729) (@hitenkoku)
 
 ## 1.7.0 [2022/09/29]
 
