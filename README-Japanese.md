@@ -260,6 +260,8 @@ rustup target add i686-pc-windows-msvc
 rustup run stable-i686-pc-windows-msvc cargo build --release
 ```
 
+> **注意: Rust の新しい安定版が出たときには必ず`rustup install stable-i686-pc-windows-msvc`を実行してください。`rustup update stable` はクロスコンパイル用のコンパイラを更新しないので、ビルドエラーが発生することがあります。**
+
 ## macOSでのコンパイルの注意点
 
 opensslについてのコンパイルエラーが表示される場合は、[Homebrew](https://brew.sh/)をインストールしてから、以下のパッケージをインストールする必要があります：
