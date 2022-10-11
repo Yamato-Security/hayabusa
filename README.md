@@ -160,8 +160,6 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 # Analyzing Sample Timeline Results
 
-You can check out a sample CSV timeline [here](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results).
-
 You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here](doc/CSV-AnalysisWithExcelAndTimelineExplorer-English.pdf).
 
 You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStackImport/ElasticStackImport-English.md).
@@ -254,6 +252,8 @@ rustup install stable-i686-pc-windows-msvc
 rustup target add i686-pc-windows-msvc
 rustup run stable-i686-pc-windows-msvc cargo build --release
 ```
+
+> **Warning: Be sure to run `rustup install stable-i686-pc-windows-msvc` whenever there is a new stable version of Rust as `rustup update stable` will not update the compiler for cross compiling and you may receive build errors.**
 
 ## macOS Compiling Notes
 
