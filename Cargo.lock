@@ -609,7 +609,7 @@ dependencies = [
  "indoc",
  "jemallocator",
  "log",
- "quick-xml 0.25.0",
+ "quick-xml",
  "rayon",
  "rpmalloc",
  "serde",
@@ -825,7 +825,7 @@ dependencies = [
  "openssl",
  "pbr",
  "pulldown-cmark",
- "quick-xml 0.23.1",
+ "quick-xml",
  "rand",
  "regex",
  "reqwest",
@@ -1525,21 +1525,12 @@ checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 
 [[package]]
 name = "quick-xml"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11bafc859c6815fbaffbbbf4229ecb767ac913fecb27f9ad4343662e9ef099ea"
-dependencies = [
- "memchr",
- "serde",
-]
-
-[[package]]
-name = "quick-xml"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58e21a144a0ffb5fad7b464babcdab934a325ad69b7c0373bcfef5cbd9799ca9"
 dependencies = [
  "memchr",
+ "serde",
 ]
 
 [[package]]
