@@ -160,8 +160,6 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 # Analyzing Sample Timeline Results
 
-You can check out a sample CSV timeline [here](https://github.com/Yamato-Security/hayabusa/tree/main/sample-results).
-
 You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here](doc/CSV-AnalysisWithExcelAndTimelineExplorer-English.pdf).
 
 You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStackImport/ElasticStackImport-English.md).
