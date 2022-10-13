@@ -228,7 +228,7 @@ pub struct Config {
     #[clap(help_heading = Some("FILTERING"), long = "exclude-status", multiple_values = true, value_name = "STATUS")]
     pub exclude_status: Option<Vec<String>>,
 
-    /// Specify output profile (minimal, standard, verbose, all-field-info, all-field-info-verbose, super-verbose, timesketch-minimal, timesketch-verbose)
+    /// Specify output profile (minimal, standard, verbose, all-field-info, etc...)
     #[clap(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
     pub profile: Option<String>,
 
