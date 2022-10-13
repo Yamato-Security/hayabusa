@@ -18,7 +18,6 @@ use hayabusa::detections::message::{
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
-use hayabusa::omikuji::Omikuji;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
@@ -857,12 +856,6 @@ impl App {
                 Option::None
             }
         }
-    }
-
-    fn _output_with_omikuji(&self, omikuji: Omikuji) {
-        let fp = &format!("art/omikuji/{}", omikuji);
-        let content = fs::read_to_string(fp).unwrap();
-        println!("{}", content);
     }
 
     /// output logo
