@@ -135,7 +135,7 @@ impl App {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &format!(
-                    "List of available profiles\n- {}",
+                    "List of available profiles:\n- {}",
                     profile_names.join("\n- ")
                 ),
                 true,
