@@ -254,6 +254,7 @@ mod tests {
         test_load_profile_without_profile_option();
         test_load_profile_no_exist_profile_files();
         test_load_profile_with_profile_option();
+        test_get_profile_names();
     }
 
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
@@ -337,5 +338,16 @@ mod tests {
                 "test_files/config/profiles.yaml"
             )
         );
+    }
+
+    /// yamlファイル内のプロファイル名一覧を取得する機能のテスト
+    fn test_get_profile_names() {
+        let expect = vec![
+            "minimal",
+            "standard",
+            "verbose-1",
+            "verbose-2",
+        ];
+        assert_eq!(expect, get_profile_names("test_files/config/profiles.yaml"));
     }
 }
