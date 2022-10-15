@@ -71,7 +71,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     }
 }
 
-/// プロファイル情報`を読み込む関数
+/// プロファイル情報を読み込む関数
 pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
