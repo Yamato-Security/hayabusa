@@ -1,5 +1,19 @@
 # Changes
 
+## 1.8.0 [2022/XX/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
 ## 1.7.1 [2022/10/10]
 
 **Enhancements:**
