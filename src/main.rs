@@ -18,6 +18,7 @@ use hayabusa::detections::message::{
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
+use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
@@ -125,6 +126,21 @@ impl App {
             )
             .ok();
             println!();
+            return;
+        }
+
+        if configs::CONFIG.read().unwrap().args.list_profile {
+            let profile_names = options::profile::get_profile_names("config/profiles.yaml");
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                &format!(
+                    "List of available profiles\n- {}",
+                    profile_names.join("\n- ")
+                ),
+                true,
+            )
+            .ok();
             return;
         }
 

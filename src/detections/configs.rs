@@ -236,6 +236,10 @@ pub struct Config {
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 
+    /// List the output profiles
+    #[clap(help_heading = Some("OTHER-ACTIONS"), long = "list-profiles")]
+    pub list_profile: bool,
+
     /// Save the timeline in JSON format (ex: -j -o results.json)
     #[clap(help_heading = Some("OUTPUT"), short = 'j', long = "json", requires = "output")]
     pub json_timeline: bool,

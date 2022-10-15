@@ -216,12 +216,37 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
     }
 }
 
+/// Get profile name list in yaml file.
+pub fn get_profile_names(profile_path: &str) -> Vec<String> {
+    let ymls = match read_profile_data(check_setting_path(
+        &CURRENT_EXE_PATH.to_path_buf(),
+        profile_path,
+        true
+    )
+    .unwrap()
+    .to_str()
+    .unwrap()) {
+        Ok(data) => data,
+        Err(e) => {
+            AlertMessage::alert(&e).ok();
+            vec![]
+        }
+    };
+    let mut ret:Vec<String> = vec![];
+    for yml in ymls.iter() {
+        for k in yml.as_hash().unwrap().keys() {
+            ret.push(k.as_str().unwrap().to_string());
+        }
+    }
+    ret
+}
+
 #[cfg(test)]
 mod tests {
     use linked_hash_map::LinkedHashMap;
 
     use crate::detections::configs;
-    use crate::options::profile::load_profile;
+    use crate::options::profile::{load_profile, get_profile_names};
 
     #[test]
     ///オプションの設定が入ると値の冪等性が担保できないためテストを逐次的に処理する
