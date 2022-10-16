@@ -1192,7 +1192,7 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
                 let filter_author = if sorted_authors[y * 4 + x].0.len() <= 40 {
                     sorted_authors[y * 4 + x].0.to_string()
                 } else {
-                    format!("{}...", &sorted_authors[y * 4 + x].0[0..40])
+                    format!("{}...", &sorted_authors[y * 4 + x].0[0..37])
                 };
                 tmp.push(format!(
                     "{} ({})",
