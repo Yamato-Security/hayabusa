@@ -1188,9 +1188,14 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
         let mut tmp = Vec::new();
         for y in 0..div {
             if y * 4 + x < sorted_authors.len() {
+                let filter_author = if sorted_authors[y * 4 + x].0.len() <= 40 {
+                    sorted_authors[y * 4 + x].0.to_string()
+                } else {
+                    format!("{}...", &sorted_authors[y * 4 + x].0[0..40])
+                };
                 tmp.push(format!(
                     "{} ({})",
-                    sorted_authors[y * 4 + x].0,
+                    filter_author,
                     sorted_authors[y * 4 + x].1
                 ));
             }
