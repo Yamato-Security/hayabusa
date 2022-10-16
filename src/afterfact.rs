@@ -1054,7 +1054,7 @@ fn output_json_str(
                 let space_split: Vec<&str> = detail_contents.split(' ').collect();
                 let mut tmp_stock = vec![];
                 for sp in space_split.iter() {
-                    if sp.ends_with(':') && sp != &":" {
+                    if sp.ends_with(':') && sp.len() > 2 {
                         stocked_value.push(tmp_stock);
                         tmp_stock = vec![];
                         key_index_stock.push(sp.replace(':', "").to_owned());
