@@ -1,6 +1,6 @@
 <div align="center">
  <p>
-    <img alt="Hayabusa Logo" src="logo.png" width="50%">
+    <img alt="Hayabusa Logo" src="logo.png" width="60%">
  </p>
   [<a href="README.md">English</a>] | [<b>日本語</b>]
 </div>
@@ -213,7 +213,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -u
+hayabusa-1.7.2-win-x64.exe -u
 ```
 
 アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
@@ -320,20 +320,20 @@ Windows PC起動後の初回実行時に時間がかかる場合があります�
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 
-例: `hayabusa-1.7.1-windows-x64.exe`
+例: `hayabusa-1.7.2-windows-x64.exe`
 
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.7.1-linux-x64-gnu
+chmod +x ./hayabusa-1.7.2-linux-x64-gnu
 ```
 
 次に、Hayabusaのルートディレクトリから実行します：
 
 ```bash
-./hayabusa-1.7.1-linux-x64-gnu
+./hayabusa-1.7.2-linux-x64-gnu
 ```
 
 ## macOS
@@ -341,13 +341,13 @@ chmod +x ./hayabusa-1.7.1-linux-x64-gnu
 まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.7.1-mac-intel
+chmod +x ./hayabusa-1.7.2-mac-intel
 ```
 
 次に、Hayabusaのルートディレクトリから実行してみてください：
 
 ```bash
-./hayabusa-1.7.1-mac-intel
+./hayabusa-1.7.2-mac-intel
 ```
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
@@ -361,7 +361,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 その後、ターミナルからもう一回実行してみてください：
 
 ```bash
-./hayabusa-1.7.1-mac-intel
+./hayabusa-1.7.2-mac-intel
 ```
 
 以下の警告が出るので、「開く」をクリックしてください。
@@ -447,91 +447,91 @@ TIME-FORMAT:
 * １つのWindowsイベントログファイルに対してHayabusaを実行する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -f eventlog.evtx
+hayabusa-1.7.2-win-x64.exe -f eventlog.evtx
 ```
 
 * `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
 * 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: `verbose-details-and-all-field-info`プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
 ```
 
 * タイムラインをJSON形式で保存する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.json -j
 ```
 
 * Hayabusaルールのみを実行する（デフォルトでは`-r .\rules`にあるすべてのルールが利用される）:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Sigmaルールのみを実行する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にする:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules --enable-noisy-rules -o results.csv
 ```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -l -m low
+hayabusa-1.7.2-win-x64.exe -l -m low
 ```
 
 * criticalレベルのアラートからピボットキーワードの一覧を作成する(結果は結果毎に`keywords-Ip Address.txt`や`keywords-Users.txt`等に出力される):
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -l -m critical -p -o keywords
+hayabusa-1.7.2-win-x64.exe -l -m critical -p -o keywords
 ```
 
 * イベントIDの統計情報を出力する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -f Security.evtx -M
+hayabusa-1.7.2-win-x64.exe -f Security.evtx -M
 ```
 
 * ログオンサマリを出力する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -L -f Security.evtx -M
+hayabusa-1.7.2-win-x64.exe -L -f Security.evtx -M
 ```
 
 * 詳細なメッセージを出力する(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d .\hayabusa-sample-evtx -v
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
@@ -552,7 +552,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 * 結果を[Timesketch](https://timesketch.org/)にインポートできるCSV形式に保存する:
 
 ```bash
-hayabusa-1.7.1-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
+hayabusa-1.7.2-win-x64.exe -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
 ```
 
 * エラーログの出力をさせないようにする:
@@ -607,6 +607,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
 `--set-default-profile <profile>`オプションでデフォルトのプロファイルを変更することもできます。
+利用可能なプロファイルとそのフィールド情報を表示するには、`--list-profiles`オプションを使用してください。
 
 ### 1. `minimal`プロファイルの出力
 
@@ -833,6 +834,7 @@ Hayabusaルールのディレクトリ構造は、3つのディレクトリに�
 ## Hayabusa v.s. 変換されたSigmaルール
 
 Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
+Hayabusaルールは`|contains|all`、`1 of selection*`、PCRE正規表現をデフォルトで対応していないため、コンバータが必要です。
 殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
 Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 
@@ -844,8 +846,8 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 **制限事項**: 私たちの知る限り、Hayabusa はオープンソースの Windows イベントログ解析ツールの中でSigmaルールを最も多くサポートしていますが、まだサポートされていないルールもあります。
 
 1. [Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルール。
-2. [Sigmaルール仕様](https://github.com/SigmaHQ/Sigma/wiki/Specification)の`count`以外の集計式。
-3. `|near`または`|base64offset|contains`を使用するルール。
+2. [Sigmaルール仕様](https://github.com/SigmaHQ/sigma-specification)の`count`以外の集計式。
+3. `|near`、`|base64offset|contains`を使用するルール。
 
 ## 検知ルールのチューニング
 
@@ -858,7 +860,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.7.1-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.7.2-win-x64.exe --level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
 `./rules/config/level_tuning.txt`の例:
