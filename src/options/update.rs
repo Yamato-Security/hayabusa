@@ -238,10 +238,7 @@ impl Update {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &format!(
-                    " - {} (Modified: {} | Path: {})",
-                    tmp[0], tmp[1], path_str
-                ),
+                &format!(" - {} (Modified: {} | Path: {})", tmp[0], tmp[1], path_str),
                 true,
             )
             .ok();

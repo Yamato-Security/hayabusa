@@ -431,7 +431,7 @@ fn emit_csv<W: std::io::Write>(
             println!();
         }
     };
-    
+
     if !configs::CONFIG.read().unwrap().args.no_summary {
         disp_wtr_buf.clear();
         write_color_buffer(
