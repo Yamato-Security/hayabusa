@@ -399,6 +399,20 @@ fn emit_csv<W: std::io::Write>(
         wtr.flush()?;
     }
 
+    disp_wtr_buf.clear();
+    write_color_buffer(
+        &disp_wtr,
+        get_writable_color(Some(Color::Rgb(0, 255, 0))),
+        "Rule Authors:",
+        false,
+    )
+    .ok();
+    write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
+
+    println!();
+    output_detected_rule_authors(rule_author_counter);
+    println!();
+
     let output_path = &configs::CONFIG.read().unwrap().args.output;
     if let Some(path) = output_path {
         if let Ok(metadata) = fs::metadata(path) {
@@ -417,21 +431,7 @@ fn emit_csv<W: std::io::Write>(
             println!();
         }
     };
-
-    disp_wtr_buf.clear();
-    write_color_buffer(
-        &disp_wtr,
-        get_writable_color(Some(Color::Rgb(0, 255, 0))),
-        "Rule Authors:",
-        false,
-    )
-    .ok();
-    write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
-
-    println!();
-    output_detected_rule_authors(rule_author_counter);
-    println!();
-
+    
     if !configs::CONFIG.read().unwrap().args.no_summary {
         disp_wtr_buf.clear();
         write_color_buffer(

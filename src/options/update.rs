@@ -239,7 +239,7 @@ impl Update {
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
                 &format!(
-                    "[Updated] {} (Modified: {} | Path: {})",
+                    " - {} (Modified: {} | Path: {})",
                     tmp[0], tmp[1], path_str
                 ),
                 true,
