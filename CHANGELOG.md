@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Added `--list-profiles` option to print a list of output profiles. (#746) (@hitenkoku)
+- Limited rule author names of detected alerts to 40 characters. (#751) (@hitenkoku)
 
 **Bug Fixes:**
 
