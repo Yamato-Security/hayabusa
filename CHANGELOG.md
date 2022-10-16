@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- Fixed fields get moved over in JSON/JSONL output when driveletter in the field. (#748) (@hitenkoku)
+- Fixed fields get moved over in JSON/JSONL output when drive letter in the field. (#748) (@hitenkoku)
 
 ## 1.7.1 [2022/10/10]
 
