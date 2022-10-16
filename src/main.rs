@@ -134,7 +134,7 @@ impl App {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                "List of available profiles",
+                "List of available profiles:",
                 true,
             )
             .ok();

@@ -236,7 +236,7 @@ pub struct Config {
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 
-    /// Print list the output profiles
+    /// List the output profiles
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "list-profiles")]
     pub list_profile: bool,
 
