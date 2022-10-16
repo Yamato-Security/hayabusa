@@ -71,7 +71,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
     }
 }
 
-/// プロファイル情報`を読み込む関数
+/// プロファイル情報を読み込む関数
 pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
@@ -216,12 +216,44 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
     }
 }
 
+/// Get profile name and tag list in yaml file.
+pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
+    let ymls = match read_profile_data(
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), profile_path, true)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+    ) {
+        Ok(data) => data,
+        Err(e) => {
+            AlertMessage::alert(&e).ok();
+            vec![]
+        }
+    };
+    let mut ret = vec![];
+    for yml in ymls.iter() {
+        for (k, v) in yml.as_hash().unwrap() {
+            let mut row = vec![];
+            row.push(k.as_str().unwrap().to_string());
+            let tmp: Vec<String> = v
+                .as_hash()
+                .unwrap()
+                .values()
+                .map(|contents| contents.as_str().unwrap().to_string())
+                .collect();
+            row.push(tmp.join(", "));
+            ret.push(row);
+        }
+    }
+    ret
+}
+
 #[cfg(test)]
 mod tests {
     use linked_hash_map::LinkedHashMap;
 
     use crate::detections::configs;
-    use crate::options::profile::load_profile;
+    use crate::options::profile::{get_profile_list, load_profile};
 
     #[test]
     ///オプションの設定が入ると値の冪等性が担保できないためテストを逐次的に処理する
@@ -229,6 +261,7 @@ mod tests {
         test_load_profile_without_profile_option();
         test_load_profile_no_exist_profile_files();
         test_load_profile_with_profile_option();
+        test_get_profile_names();
     }
 
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
@@ -312,5 +345,17 @@ mod tests {
                 "test_files/config/profiles.yaml"
             )
         );
+    }
+
+    /// yamlファイル内のプロファイル名一覧を取得する機能のテスト
+    fn test_get_profile_names() {
+        let expect = vec![vec![
+            "minimal", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %Details%"
+         ],
+         vec!["standard", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%"],
+         vec!["verbose-1", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%"],
+         vec!["verbose-2", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RecordInformation%"],
+         ];
+        assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }
 }

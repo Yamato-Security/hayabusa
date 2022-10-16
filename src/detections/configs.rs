@@ -228,13 +228,17 @@ pub struct Config {
     #[clap(help_heading = Some("FILTERING"), long = "exclude-status", multiple_values = true, value_name = "STATUS")]
     pub exclude_status: Option<Vec<String>>,
 
-    /// Specify output profile (minimal, standard, verbose, all-field-info, etc...)
+    /// Specify output profile
     #[clap(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
     pub profile: Option<String>,
 
     /// Set default output profile
     #[clap(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
+
+    /// List the output profiles
+    #[clap(help_heading = Some("OTHER-ACTIONS"), long = "list-profiles")]
+    pub list_profile: bool,
 
     /// Save the timeline in JSON format (ex: -j -o results.json)
     #[clap(help_heading = Some("OUTPUT"), short = 'j', long = "json", requires = "output")]
