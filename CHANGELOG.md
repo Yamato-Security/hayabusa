@@ -9,7 +9,8 @@
 **Enhancements:**
 
 - Added `--list-profiles` option to print a list of output profiles. (#746) (@hitenkoku)
-- Moved saved file line and changed update option output. (#754) (@YamatoSecurity)
+- Moved the saved file line and shortened the update option output. (#754) (@YamatoSecurity)
+- Limited rule author names of detected alerts to 40 characters. (#751) (@hitenkoku)
 
 **Bug Fixes:**
 
