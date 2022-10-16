@@ -216,8 +216,8 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
     }
 }
 
-/// Get profile name list in yaml file.
-pub fn get_profile_names(profile_path: &str) -> Vec<String> {
+/// Get profile name and tag list in yaml file.
+pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
     let ymls = match read_profile_data(
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), profile_path, true)
             .unwrap()
@@ -230,10 +230,19 @@ pub fn get_profile_names(profile_path: &str) -> Vec<String> {
             vec![]
         }
     };
-    let mut ret: Vec<String> = vec![];
+    let mut ret = vec![];
     for yml in ymls.iter() {
-        for k in yml.as_hash().unwrap().keys() {
-            ret.push(k.as_str().unwrap().to_string());
+        for (k, v) in yml.as_hash().unwrap() {
+            let mut row = vec![];
+            row.push(k.as_str().unwrap().to_string());
+            let tmp: Vec<String> = v
+                .as_hash()
+                .unwrap()
+                .values()
+                .map(|contents| contents.as_str().unwrap().to_string())
+                .collect();
+            row.push(tmp.join(", "));
+            ret.push(row);
         }
     }
     ret
@@ -244,7 +253,7 @@ mod tests {
     use linked_hash_map::LinkedHashMap;
 
     use crate::detections::configs;
-    use crate::options::profile::{get_profile_names, load_profile};
+    use crate::options::profile::{get_profile_list, load_profile};
 
     #[test]
     ///オプションの設定が入ると値の冪等性が担保できないためテストを逐次的に処理する
@@ -340,7 +349,13 @@ mod tests {
 
     /// yamlファイル内のプロファイル名一覧を取得する機能のテスト
     fn test_get_profile_names() {
-        let expect = vec!["minimal", "standard", "verbose-1", "verbose-2"];
-        assert_eq!(expect, get_profile_names("test_files/config/profiles.yaml"));
+        let expect = vec![vec![
+            "minimal", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %Details%"
+         ],
+         vec!["standard", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%"],
+         vec!["verbose-1", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%"],
+         vec!["verbose-2", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RecordInformation%"],
+         ];
+        assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }
 }

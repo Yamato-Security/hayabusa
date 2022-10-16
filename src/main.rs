@@ -130,17 +130,31 @@ impl App {
         }
 
         if configs::CONFIG.read().unwrap().args.list_profile {
-            let profile_names = options::profile::get_profile_names("config/profiles.yaml");
+            let profile_list = options::profile::get_profile_list("config/profiles.yaml");
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &format!(
-                    "List of available profiles\n- {}",
-                    profile_names.join("\n- ")
-                ),
+                "List of available profiles",
                 true,
             )
             .ok();
+            for profile in &profile_list {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    Some(Color::Green),
+                    &format!("- {:<25}", &format!("{}:", profile[0])),
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &profile[1],
+                    true,
+                )
+                .ok();
+                println!();
+            }
             return;
         }
 
