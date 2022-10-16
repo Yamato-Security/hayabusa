@@ -396,7 +396,7 @@ OUTPUT:
     -j, --json                  Save the timeline in JSON format (ex: -j -o results.json)
     -J, --jsonl                 Save the timeline in JSONL format (ex: -J -o results.jsonl)
     -o, --output <FILE>         Save the timeline in CSV format (ex: results.csv)
-    -P, --profile <PROFILE>     Specify output profile (minimal, standard, verbose, verbose-all-field-info, verbose-details-and-all-field-info)
+    -P, --profile <PROFILE>     Specify output profile
 
 DISPLAY-SETTINGS:
         --no-color              Disable color output
@@ -418,6 +418,7 @@ OTHER-ACTIONS:
         --contributors                     Print the list of contributors
     -L, --logon-summary                    Print a summary of successful and failed logons
         --level-tuning [<FILE>]            Tune alert levels (default: ./rules/config/level_tuning.txt)
+        --list-profiles                    List the output profiles
     -M, --metrics                          Print event ID metrics
     -p, --pivot-keywords-list              Create a list of pivot keywords
         --set-default-profile <PROFILE>    Set default output profile

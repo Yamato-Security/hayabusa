@@ -18,6 +18,7 @@ use hayabusa::detections::message::{
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
+use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
 use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
@@ -124,6 +125,35 @@ impl App {
                 "The hayabusa version you ran does not match your PC architecture.\nPlease use the correct architecture. (Binary ending in -x64.exe for 64-bit and -x86.exe for 32-bit.)",
             )
             .ok();
+            println!();
+            return;
+        }
+
+        if configs::CONFIG.read().unwrap().args.list_profile {
+            let profile_list = options::profile::get_profile_list("config/profiles.yaml");
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "List of available profiles:",
+                true,
+            )
+            .ok();
+            for profile in &profile_list {
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    Some(Color::Green),
+                    &format!("- {:<25}", &format!("{}:", profile[0])),
+                    false,
+                )
+                .ok();
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &profile[1],
+                    true,
+                )
+                .ok();
+            }
             println!();
             return;
         }
