@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed a bug where field information would get moved over in JSON/JSONL output when a drive letter (ex: `c:`) was in the field. (#748) (@hitenkoku)
 
 ## 1.7.1 [2022/10/10]
 
