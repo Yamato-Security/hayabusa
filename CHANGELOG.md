@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Added `--list-profiles` option to print a list of output profiles. (#746) (@hitenkoku)
+- Moved saved file line and changed update option output. (#754) (@YamatoSecurity)
 
 **Bug Fixes:**
 
