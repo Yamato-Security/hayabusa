@@ -153,8 +153,8 @@ impl App {
                     true,
                 )
                 .ok();
-                println!();
             }
+            println!();
             return;
         }
 
