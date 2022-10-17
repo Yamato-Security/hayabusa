@@ -73,8 +73,8 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
     - [4. `all-field-info`プロファイルの出力](#4-all-field-infoプロファイルの出力)
     - [5. `all-field-info-verbose`プロファイルの出力](#5-all-field-info-verboseプロファイルの出力)
     - [6. `super-verbose`プロファイルの出力](#6-super-verboseプロファイルの出力)
-    - [7. `timesketch`プロファイルの出力](#7-timesketchプロファイルの出力)
-    - [8. `timesketch`プロファイルの出力](#8-timesketchプロファイルの出力)
+    - [7. `timesketch-minimal`プロファイルの出力](#7-timesketch-minimalプロファイルの出力)
+    - [8. `timesketch-verbose`プロファイルの出力](#8-timesketch-verboseプロファイルの出力)
     - [プロファイルの比較](#プロファイルの比較)
     - [Profile Field Aliases](#profile-field-aliases)
   - [Levelの省略](#levelの省略)
@@ -300,6 +300,8 @@ rustup target add x86_64-unknown-linux-musl
 cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
+> **注意: Rust の新しい安定版が出たときには必ず`rustup install stable-x86_64-unknown-linux-musl`を実行してください。`rustup update stable` はクロスコンパイル用のコンパイラを更新しないので、ビルドエラーが発生することがあります。**
+
 MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクトリ配下に作成されます。
 MUSLバイナリはGNUバイナリより約15％遅いですが、より多くのLinuxバージョンとディストロで実行できます。
 
@@ -456,10 +458,10 @@ hayabusa-1.7.2-win-x64.exe -f eventlog.evtx
 hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
-* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: `verbose-details-and-all-field-info`プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):
+* 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: `super-verbose`プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):
 
 ```bash
-hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P super-verbose
 ```
 
 * タイムラインをJSON形式で保存する:
@@ -477,7 +479,7 @@ hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o resu
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行する:
 
 ```bash
-hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行する:
@@ -501,7 +503,7 @@ hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx --enable-deprecated-rules -
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力する:
 
 ```bash
-hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知する:
@@ -623,34 +625,35 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 ### 4. `all-field-info`プロファイルの出力
 
-最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報が出力されます。
+最小限の`details`情報を出力する代わりに、イベントにあるすべての`EventData`フィールド情報(`%RecordInformation%`)が出力されます。
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%RecordInformation%`, `%RuleFile%`, `%EvtxFile%`
 
 ### 5. `all-field-info-verbose`プロファイルの出力
 
 `all-field-info`とタグ情報が出力されます。
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RecordInformation%`, `%RuleFile%`, `%EvtxFile%`
 
 ### 6. `super-verbose`プロファイルの出力
 
-`verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報が出力されます。
-(注意: 出力ファイルサイズは2倍になります！)
+`verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報(`%RecordInformation%`)の**両方**が出力されます。
+**(注意: 出力ファイルサイズは約2倍になります！)**
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
 
-### 7. `timesketch`プロファイルの出力
+### 7. `timesketch-minimal`プロファイルの出力
 
 [Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
 
 `%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`
 
-### 8. `timesketch`プロファイルの出力
+### 8. `timesketch-verbose`プロファイルの出力
 
 [Timesketch](https://timesketch.org/)にインポートできる`verbose`プロファイル。
+**(注意: 出力ファイルサイズは約2倍になります！)**
 
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
 
 ### プロファイルの比較
 
@@ -680,7 +683,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 |%RecordID% | `<Event><System><EventRecordID>`フィールドのイベントレコードID。 |
 |%RuleTitle% | YML検知ルールの`title`フィールド。 |
 |%Details% | YML検知ルールの`details`フィールドから来ていますが、このフィールドはHayabusaルールにしかありません。このフィールドはアラートとイベントに関する追加情報を提供し、ログのフィールドから有用なデータを抽出することができます。イベントキーのマッピングが間違っている場合、もしくはフィールドが存在しない場合で抽出ができなかった箇所は`n/a` (not available)と記載されます。YML検知ルールに`details`フィールドが存在しない時のdetailsのメッセージを`./rules/config/default_details.txt`で設定できます。`default_details.txt`では`Provider Name`、`EventID`、`details`の組み合わせで設定することができます。default_details.txt`やYML検知ルールに対応するルールが記載されていない場合はすべてのフィールド情報を出力します。 |
-|%AllFieldInfo% | すべてのフィールド情報。 |
+|%RecordInformation% | すべてのフィールド情報。 |
 |%RuleFile% | アラートまたはイベントを生成した検知ルールのファイル名。 |
 |%EvtxFile% | アラートまたはイベントを起こしたevtxファイルへのパス。 |
 
@@ -700,7 +703,6 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 簡潔に出力するためにMITRE ATT&CKの戦術を以下のように省略しています。
 `./config/output_tag.txt`の設定ファイルで自由に編集できます。
-検知したデータの戦術を全て出力したい場合は、`--all-tags`オプションをつけてください。
 
 * `Recon` : Reconnaissance (偵察)
 * `ResDev` : Resource Development (リソース開発)
@@ -759,24 +761,48 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 - `Addr` -> Address
 - `Auth` -> Authentication
 - `Cli` -> Client
+- `Chan` -> Channel
 - `Cmd` -> Command
+- `Cnt` -> Count
 - `Comp` -> Computer
-- `Conn` -> Connection
+- `Conn` -> Connection/Connected
+- `Creds` -> Credentials
+- `Crit` -> Critical
+- `Disconn` -> Disconnection/Disconnected
 - `Dir` -> Directory
+- `Drv` -> Driver
 - `Dst` -> Destination
+- `EID` -> Event ID
+- `Err` -> Error
 - `Exec` -> Execution
+- `FW` -> Firewall
 - `Grp` -> Group
+- `Img` -> Image
+- `Inj` -> Injection
+- `Kbr` -> Kerberos
 - `LID` -> Logon ID
+- `Med` -> Medium
 - `Net` -> Network
 - `Obj` -> Object
+- `Op` -> Operational/Operation
 - `Proto` -> Protocol
+- `PW` -> Password
+- `Reconn` -> Reconnection
+- `Req` -> Request
+- `Rsp` -> Response
+- `Sess` -> Session
 - `Sig` -> Signature
 - `Susp` -> Suspicious
 - `Src` -> Source
 - `Svc` -> Service
 - `Svr` -> Server
+- `Temp` -> Temporary
+- `Term` -> Termination/Terminated
+- `Tkt` -> Ticket
 - `Tgt` -> Target
-- `Op` -> Operation
+- `Unkwn` -> Unknown
+- `Usr` -> User
+- `Perm` -> Permament
 - `Pkg` -> Package
 - `Priv` -> Privilege
 - `Proc` -> Process
@@ -807,34 +833,27 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 
 # Hayabusaルール
 
-Hayabusa検知ルールはSigmaのようなYML形式で記述されています。`rules`ディレクトリに入っていますが、将来的には[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理する予定なので、ルールのissueとpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
+Hayabusa検知ルールはSigmaのようなYML形式で記述され、`rules`ディレクトリに入っています。
+[https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)のレポジトリで管理しているので、ルールのissueやpull requestはhayabusaのレポジトリではなく、ルールレポジトリへお願いします。
 
 ルールの作成方法については、[hayabusa-rulesレポジトリのREADME](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md) をお読みください。
 
 [hayabusa-rulesレポジトリ](https://github.com/Yamato-Security/hayabusa-rules)にあるすべてのルールは、`rules`フォルダに配置する必要があります。
+`level`がinformationのルールは`イベント`とみなされ、`low`以上は`アラート`とみなされます。
 
-`level`がinformationのルールは `events` とみなされ、`low` 以上は `alerts` とみなされます。
+Hayabusaルールのディレクトリ構造は、2つのディレクトリに分かれています:
 
-Hayabusaルールのディレクトリ構造は、3つのディレクトリに分かれています。
-
-* `default`: Windows OSでデフォルトで記録されるログ
-* `non-default`: グループポリシーやセキュリティベースラインの適用でオンにする必要があるログ
+* `builtin`: Windowsの組み込み機能で生成できるログ。
 * `sysmon`: [sysmon](https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon)によって生成されるログ。
-* `testing`: 現在テストしているルールを配置するための一時ディレクトリ
 
 ルールはさらにログタイプ（例：Security、Systemなど）によってディレクトリに分けられ、次の形式で名前が付けられます。
-
-* アラート形式: `<イベントID>_<イベントの説明>_<リスクの説明>.yml`
-* アラート例: `1102_SecurityLogCleared_PossibleAntiForensics.yml`
-* イベント形式: `<イベントID>_<イベントの説明>.yml`
-* イベント例: `4776_NTLM-LogonToLocalAccount.yml`
 
 現在のルールをご確認いただき、新規作成時のテンプレートとして、また検知ロジックの確認用としてご利用ください。
 
 ## Hayabusa v.s. 変換されたSigmaルール
 
 Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
-Hayabusaルールは`|contains|all`、`1 of selection*`、PCRE正規表現をデフォルトで対応していないため、コンバータが必要です。
+Hayabusaルールは`|contains|all`、`1 of selection*`、`all of selection*`、[Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルールをデフォルトで対応していないため、コンバータが必要です。
 殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
 Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 
@@ -845,9 +864,8 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 
 **制限事項**: 私たちの知る限り、Hayabusa はオープンソースの Windows イベントログ解析ツールの中でSigmaルールを最も多くサポートしていますが、まだサポートされていないルールもあります。
 
-1. [Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルール。
-2. [Sigmaルール仕様](https://github.com/SigmaHQ/sigma-specification)の`count`以外の集計式。
-3. `|near`、`|base64offset|contains`を使用するルール。
+1. [Sigmaルール仕様](https://github.com/SigmaHQ/sigma-specification)の`count`以外の集計式。
+2. `|near`、`|base64offset|contains`を使用するルール。
 
 ## 検知ルールのチューニング
 

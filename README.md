@@ -295,6 +295,8 @@ Compile with:
 cargo build --release --target=x86_64-unknown-linux-musl
 ```
 
+> **Warning: Be sure to run `rustup install stable-x86_64-unknown-linux-musl` whenever there is a new stable version of Rust as `rustup update stable` will not update the compiler for cross compiling and you may receive build errors.**
+
 The MUSL binary will be created in the `./target/x86_64-unknown-linux-musl/release/` directory.
 MUSL binaries are are about 15% slower than the GNU binaries, however, they are more portable accross different versions and distributions of linux.
 
@@ -447,10 +449,10 @@ hayabusa-1.7.2-win-x64.exe -f eventlog.evtx
 hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -P verbose
 ```
 
-* Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `verbose-details-and-all-field-info` profile!):
+* Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `super-verbose` profile!):
 
 ```bash
-hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P verbose-details-and-all-field-info
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -o results.csv -P super-verbose
 ```
 
 * Save the timline in JSON format:
@@ -468,7 +470,7 @@ hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o resu
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```bash
-hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
@@ -492,7 +494,7 @@ hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx --enable-noisy-rules --enab
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```bash
-hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\default\events\Security\Logons -U -o results.csv
+hayabusa-1.7.2-win-x64.exe -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
@@ -618,19 +620,19 @@ Use the `--list-profiles` option to show the available profiles and their field 
 
 Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted.
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%RecordInformation%`, `%RuleFile%`, `%EvtxFile%`
 
 ### 5. `all-field-info-verbose` profile output
 
 `all-field-info` profile plus tag information.
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RecordInformation%`, `%RuleFile%`, `%EvtxFile%`
 
 ### 6. `super-verbose` profile output
 
-`verbose` profile plus all field information. (Warning: this will usually double the output file size!)
+`verbose` profile plus all field information (`%RecordInformation%`). **(Warning: this will usually double the output file size!)**
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
 
 ### 7. `timesketch-minimal` profile output
 
@@ -641,8 +643,9 @@ The `verbose` profile that is compatible with importing into [Timesketch](https:
 ### 8. `timesketch-verbose` profile output
 
 The `super-verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
+**(Warning: this will usually double the output file size!)**
 
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
+`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
 
 ### Profile Comparison
 
@@ -672,7 +675,7 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 |%RecordID% | The Event Record ID from `<Event><System><EventRecordID>` field. |
 |%RuleTitle% | The `title` field in the YML detection rule. |
 |%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider　Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
-|%AllFieldInfo% | All field information. |
+|%RecordInformation% | All field information. |
 |%RuleFile% | The filename of the detection rule that generated the alert or event. |
 |%EvtxFile% | The evtx filename that caused the alert or event. |
 
@@ -692,7 +695,6 @@ In order to save space, we use the following abbrevations when displaying the al
 
 In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactic tags.
 You can freely edit these abbreviations in the `./config/output_tag.txt` configuration file.
-If you want to output all the tags defined in a rule, please specify the `--all-tags` option.
 
 * `Recon` : Reconnaissance
 * `ResDev` : Resource Development
@@ -751,24 +753,48 @@ The following abbreviations are used in rules in order to make the output as con
 - `Addr` -> Address
 - `Auth` -> Authentication
 - `Cli` -> Client
+- `Chan` -> Channel
 - `Cmd` -> Command
+- `Cnt` -> Count
 - `Comp` -> Computer
-- `Conn` -> Connection
+- `Conn` -> Connection/Connected
+- `Creds` -> Credentials
+- `Crit` -> Critical
+- `Disconn` -> Disconnection/Disconnected
 - `Dir` -> Directory
+- `Drv` -> Driver
 - `Dst` -> Destination
+- `EID` -> Event ID
+- `Err` -> Error
 - `Exec` -> Execution
+- `FW` -> Firewall
 - `Grp` -> Group
+- `Img` -> Image
+- `Inj` -> Injection
+- `Kbr` -> Kerberos
 - `LID` -> Logon ID
+- `Med` -> Medium
 - `Net` -> Network
 - `Obj` -> Object
+- `Op` -> Operational/Operation
 - `Proto` -> Protocol
+- `PW` -> Password
+- `Reconn` -> Reconnection
+- `Req` -> Request
+- `Rsp` -> Response
+- `Sess` -> Session
 - `Sig` -> Signature
 - `Susp` -> Suspicious
 - `Src` -> Source
 - `Svc` -> Service
 - `Svr` -> Server
+- `Temp` -> Temporary
+- `Term` -> Termination/Terminated
+- `Tkt` -> Ticket
 - `Tgt` -> Target
-- `Op` -> Operation
+- `Unkwn` -> Unknown
+- `Usr` -> User
+- `Perm` -> Permament
 - `Pkg` -> Package
 - `Priv` -> Privilege
 - `Proc` -> Process
@@ -798,33 +824,27 @@ Note: There needs to be more than 5 events. Also, the characters will not render
 
 # Hayabusa Rules
 
-Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder. In the future, we plan to host the rules at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
+Hayabusa detection rules are written in a sigma-like YML format and are located in the `rules` folder.
+The rules are hosted at [https://github.com/Yamato-Security/hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) so please send any issues and pull requests for rules there instead of the main hayabusa repository.
 
 Please read [the hayabusa-rules repository README](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md) to understand about the rule format and how to create rules.
 
 All of the rules from the hayabusa-rules repository should be placed in the `rules` folder.
 `informational` level rules are considered `events`, while anything with a `level` of `low` and higher are considered `alerts`.
 
-The hayabusa rule directory structure is separated into 3 directories:
+The hayabusa rule directory structure is separated into 2 directories:
 
-* `default`: logs that are turned on in Windows by default.
-* `non-default`: logs that need to be turned on through group policy, security baselines, etc...
+* `builtin`: logs that can be generated by Windows built-in functionality.
 * `sysmon`: logs that are generated by [sysmon](https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon).
-* `testing`: a temporary directory to put rules that you are currently testing.
 
 Rules are further seperated into directories by log type (Example: Security, System, etc...) and are named in the following format: 
-
-* Alert format: `<EventID>_<EventDescription>_<AttackDescription>.yml`
-* Alert example: `1102_SecurityLogCleared_PossibleAntiForensics.yml`
-* Event format: `<EventID>_<EventDescription>.yml`
-* Event example: `4776_NTLM-LogonToLocalAccount.yml`
 
 Please check out the current rules to use as a template in creating new ones or for checking the detection logic.
 
 ## Hayabusa v.s. Converted Sigma Rules
 
 Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
-A converter is needed as hayabusa rules do not support `|contains|all`, `1 of selection*` and PCRE regular expressions by default.
+A converter is needed as hayabusa rules do not support `|contains|all`, `1 of selection*`, `all of selection*` and regular expressions that do not work with the [Rust regex crate](https://docs.rs/regex/1.5.4/regex/) by default.
 Almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
 Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
 
@@ -835,9 +855,8 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 
 **Limitations**: To our knowledge, hayabusa provides the greatest support for sigma rules out of any open source Windows event log analysis tool, however, there are still rules that are not supported:
 
-1. Rules that use regular expressions that do not work with the [Rust regex crate](https://docs.rs/regex/1.5.4/regex/)
-2. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification).
-3. Rules that use `|near` or `|base64offset|contains`.
+1. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification).
+2. Rules that use `|near` or `|base64offset|contains`.
 
 ## Detection Rule Tuning
 
