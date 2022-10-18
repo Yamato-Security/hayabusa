@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Turn off Event ID filtering by default. If you want to filter by Event ID, you would use `-e, --eid-filter` option. (#759) (@hitenkoku)
 
 **Bug Fixes:**
 
