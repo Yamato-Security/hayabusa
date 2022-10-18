@@ -769,7 +769,9 @@ impl App {
 
                 let data = record_result.as_ref().unwrap().data.clone();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(&data) || (configs::CONFIG.read().unwrap().args.eid_filter && !self._is_target_event_id(&data))
+                if !self._is_valid_channel(&data)
+                    || (configs::CONFIG.read().unwrap().args.eid_filter
+                        && !self._is_target_event_id(&data))
                 {
                     continue;
                 }
