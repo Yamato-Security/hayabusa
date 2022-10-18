@@ -843,7 +843,7 @@ impl App {
         ret
     }
 
-    // target_eventids.txtの設定を元にフィルタする。
+    /// target_eventids.txtの設定を元にフィルタする。 trueであれば検知確認対象のEventIDであることを意味する。
     fn _is_target_event_id(&self, data: &Value) -> bool {
         let eventid = utils::get_event_value(&utils::get_event_id_key(), data);
         if eventid.is_none() {
