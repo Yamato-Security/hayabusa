@@ -417,7 +417,7 @@ DISPLAY-SETTINGS:
     -V, --visualize-timeline    Output event frequency timeline
 
 FILTERING:
-    -D, --deep-scan                     Disable event ID filter to scan all events (slower)
+    -e, --eid-filter                    Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
         --enable-deprecated-rules       Enable rules marked as deprecated
         --exclude-status <STATUS>...    Ignore rules according to status (ex: experimental) (ex: stable test)
     -m, --min-level <LEVEL>             Minimum level for rules (default: informational)
@@ -893,9 +893,9 @@ In this case, the risk level of the rule with an `id` of `00000000-0000-0000-000
 
 ## Event ID Filtering
 
-By default, events are filtered by ID to improve performance by ignorning events that have no detection rules.
+By default, hayabusa scan all events.
+If you want to improve performance, Please use the `-e, --eid-filter` option. By ignorning events that have no detection rules.
 The IDs defined in `./rules/config/target_event_IDs.txt` will be scanned.
-If you want to scan all events, please use the `-D, --deep-scan` option.
 
 # Other Windows Event Log Analyzers and Related Resources
 

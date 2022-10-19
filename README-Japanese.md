@@ -425,7 +425,7 @@ DISPLAY-SETTINGS:
     -V, --visualize-timeline    イベント頻度タイムラインを出力する
 
 FILTERING:
-    -D, --deep-scan                     すべてのイベントIDを対象にしたスキャンを行う（遅くなる）
+    -e, --eid-filter                    イベントIDによるフィルタリングを行う(コンフィグファイル: ./rules/config/target_event_IDs.txt`)
         --enable-deprecated-rules       Deprecatedルールを有効にする
         --exclude-status <STATUS>...    読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
     -m, --min-level <LEVEL>             結果出力をするルールの最低レベル (デフォルト: informational)
@@ -899,9 +899,9 @@ id,new_level
 
 ## イベントIDフィルタリング
 
-デフォルトではパフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを無視しています。
+デフォルトでは、すべてのイベントに対してスキャンを行います。
+パフォーマンスを上げるために、検知ルールでイベントIDが定義されていないイベントを`-e, --eid-filter`オプションで無視することができます。
 `./rules/config/target_event_IDs.txt`で定義されたIDがスキャンされます。
-すべてのイベントをスキャンしたい場合は、`-D, --deep-scan`オプションを使用してください。
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
 

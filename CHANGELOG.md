@@ -1,5 +1,19 @@
 # Changes
 
+## 1.8.0 [2022/XX/XX]
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Event ID filtering is now turned off by default. Use the `-e, --eid-filter` option to filter by Event ID. (#759) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## 1.7.2 [2022/10/17]
 
 **New Features:**

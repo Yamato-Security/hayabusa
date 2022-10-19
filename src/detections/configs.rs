@@ -120,9 +120,9 @@ pub struct Config {
     #[clap(help_heading = Some("FILTERING"), long = "enable-deprecated-rules")]
     pub enable_deprecated_rules: bool,
 
-    /// Disable event ID filter to scan all events
-    #[clap(help_heading = Some("FILTERING"), short = 'D', long = "deep-scan")]
-    pub deep_scan: bool,
+    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+    #[clap(help_heading = Some("FILTERING"), short = 'e', long = "eid-filter")]
+    pub eid_filter: bool,
 
     /// Enable rules marked as noisy
     #[clap(help_heading = Some("FILTERING"), short = 'n', long = "enable-noisy-rules")]
