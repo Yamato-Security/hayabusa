@@ -526,6 +526,7 @@ fn emit_csv<W: std::io::Write>(
             "Total | Unique".to_string(),
             "detections".to_string(),
             &color_map,
+            &mut html_output_stock
         );
         println!();
 
@@ -634,6 +635,7 @@ fn _print_unique_results(
     head_word: String,
     tail_word: String,
     color_map: &HashMap<String, Colors>,
+    html_output_stock: &mut Vec<String>
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
@@ -656,6 +658,9 @@ fn _print_unique_results(
     )
     .ok();
 
+    let mut total_detect_md = vec!["- Total detections:".to_string()];
+    let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
+    
     for (i, level_name) in LEVEL_ABBR.keys().enumerate() {
         if "undefined" == *level_name {
             continue;
@@ -670,6 +675,10 @@ fn _print_unique_results(
         } else {
             (unique_counts_by_level[i] as f64) / (unique_total_count as f64) * 100.0
         };
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            total_detect_md.push(format!("    - {}: {} ({:.2}%)", level_name, counts_by_level[i].to_formatted_string(&Locale::en), percent));
+            unique_detect_md.push(format!("    - {}: {} ({:.2}%)", level_name, unique_counts_by_level[i].to_formatted_string(&Locale::en), unique_percent));
+        }
         let output_raw_str = format!(
             "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
             head_word,
@@ -687,6 +696,10 @@ fn _print_unique_results(
             true,
         )
         .ok();
+    }
+    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        html_output_stock.append(&mut total_detect_md);
+        html_output_stock.append(&mut unique_detect_md);
     }
 }
 
