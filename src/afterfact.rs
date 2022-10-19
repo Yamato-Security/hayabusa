@@ -1,7 +1,7 @@
 use crate::detections::configs::{self, CURRENT_EXE_PATH, TERM_SIZE};
 use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
-use crate::options::htmlreport;
+use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::options::profile::PROFILES;
 use crate::yaml::ParseYaml;
 use bytesize::ByteSize;
@@ -209,7 +209,7 @@ fn emit_csv<W: std::io::Write>(
     profile: LinkedHashMap<String, String>,
 ) -> io::Result<()> {
     let mut html_output_stock: Vec<String> = vec![];
-    let html_output_flag = configs::CONFIG.read().unwrap().args.html_report.is_some();
+    let html_output_flag = *HTML_REPORT_FLAG;
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
@@ -714,7 +714,7 @@ fn _print_detection_summary_by_date(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
     let output_header = "Dates with most total detections:";
     writeln!(wtr, "{}", output_header).ok();
-    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+    if *HTML_REPORT_FLAG {
         html_output_stock.push(format!("- {}", output_header));
     }
     for (idx, level) in LEVEL_ABBR.values().enumerate() {
@@ -748,7 +748,7 @@ fn _print_detection_summary_by_date(
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             html_output_stock.push(format!("    - {}", output_str));
         }
     }
@@ -779,7 +779,7 @@ fn _print_detection_summary_by_computer(
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         // html出力は各種すべてのコンピュータ名を表示するようにする
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
                 LEVEL_FULL.get(level.as_str()).unwrap(),
@@ -854,7 +854,7 @@ fn _print_detection_summary_tables(
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         // html出力の場合はすべての内容を出力するようにする
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
                 LEVEL_FULL.get(level.as_str()).unwrap(),

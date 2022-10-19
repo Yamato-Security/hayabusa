@@ -8,7 +8,10 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
 
+use crate::detections::configs;
+
 lazy_static! {
+    pub static ref HTML_REPORT_FLAG: bool = configs::CONFIG.read().unwrap().args.html_report.is_some();
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
 }
 

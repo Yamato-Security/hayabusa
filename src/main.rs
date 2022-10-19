@@ -3,6 +3,7 @@ extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
 
+use crate::htmlreport::HTML_REPORT_FLAG;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
@@ -93,7 +94,7 @@ impl App {
             return;
         }
         let analysis_start_time: DateTime<Local> = Local::now();
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             let output_data = vec![format!(
                 "- Start time: {}",
                 analysis_start_time.format("%Y/%m/%d %H:%M")
@@ -434,7 +435,7 @@ impl App {
         )
         .ok();
         println!();
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             let output_data = vec![format!("- {}", elapsed_output_str)];
             htmlreport::add_md_data(
                 "General Overview {#general_overview}".to_string(),
@@ -518,7 +519,7 @@ impl App {
                 });
             }
         }
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             let html_str = HTML_REPORTER.read().unwrap().clone().create_html();
             htmlreport::create_html_file(
                 html_str,
@@ -660,7 +661,7 @@ impl App {
             println!();
         }
 
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             let output_data = vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {}", total_size_output),
