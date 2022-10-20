@@ -446,16 +446,18 @@ impl App {
         let output_path = &configs::CONFIG.read().unwrap().args.output;
         if let Some(path) = output_path {
             if let Ok(metadata) = fs::metadata(path) {
-                let output_saved_str = format!("Saved file: {} ({})",
-                configs::CONFIG
-                    .read()
-                    .unwrap()
-                    .args
-                    .output
-                    .as_ref()
-                    .unwrap()
-                    .display(),
-                ByteSize::b(metadata.len()).to_string_as(false));
+                let output_saved_str = format!(
+                    "Saved file: {} ({})",
+                    configs::CONFIG
+                        .read()
+                        .unwrap()
+                        .args
+                        .output
+                        .as_ref()
+                        .unwrap()
+                        .display(),
+                    ByteSize::b(metadata.len()).to_string_as(false)
+                );
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
