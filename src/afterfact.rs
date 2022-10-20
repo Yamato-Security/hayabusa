@@ -493,7 +493,7 @@ fn emit_csv<W: std::io::Write>(
 
         if html_output_flag {
             html_output_stock.push(format!(
-                "- Saved alerts and events: {}",
+                "- Events with hits: {}",
                 &saved_alerts_output
             ));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
