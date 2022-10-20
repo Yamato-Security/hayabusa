@@ -121,10 +121,9 @@ pub fn create_html_file(input_html: String, path_str: String) {
 
     writeln!(html_writer, "{}", html_data).ok();
     println!(
-        "HTML Report was generated. Please check {} for details.",
+        "HTML report: {}",
         path_str
     );
-    println!();
 }
 
 #[cfg(test)]
@@ -146,7 +145,7 @@ mod tests {
             "- Hayabusa rules: 138".to_string(),
             "- Sigma rules: 2795".to_string(),
             "- Total enabled detection rules: 2933".to_string(),
-            "- Elapsed Time: 00:00:29.035".to_string(),
+            "- Elapsed time: 00:00:29.035".to_string(),
             "".to_string(),
         ];
         html_reporter.md_datas.insert(

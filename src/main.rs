@@ -426,7 +426,7 @@ impl App {
 
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        let elapsed_output_str = format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
+        let elapsed_output_str = format!("Elapsed time: {}", &analysis_duration.hhmmssxxx());
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
@@ -434,7 +434,7 @@ impl App {
             true,
         )
         .ok();
-        println!();
+
         if *HTML_REPORT_FLAG {
             let output_data = vec![format!("- {}", elapsed_output_str)];
             htmlreport::add_md_data(
@@ -465,7 +465,7 @@ impl App {
                     true,
                 )
                 .ok();
-                println!();
+
                 if *HTML_REPORT_FLAG {
                     let output_data = vec![format!("- {}", output_saved_str)];
                     htmlreport::add_md_data(
@@ -569,6 +569,7 @@ impl App {
                     .to_string(),
             )
         }
+        println!();
     }
 
     #[cfg(not(target_os = "windows"))]
