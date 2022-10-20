@@ -159,6 +159,9 @@ impl App {
         }
 
         if configs::CONFIG.read().unwrap().args.update_rules {
+            if !self.can_update_rules() {
+                return;
+            }
             // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
             let latest_version_data = if let Ok(data) = Update::get_latest_hayabusa_version() {
                 data
@@ -534,6 +537,24 @@ impl App {
                     .to_string(),
             )
         }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    fn can_update_rules(&self) -> bool {
+        true
+    }
+
+    #[cfg(target_os = "windows")]
+    fn can_update_rules(&self) -> bool {
+        if is_elevated() {
+            AlertMessage::alert(
+                "-u / --update-rules needs to be run as non-Administrator on Windows.",
+            )
+            .ok();
+            println!();
+            return false;
+        }
+        true
     }
 
     #[cfg(not(target_os = "windows"))]
