@@ -4,7 +4,6 @@ use crate::detections::utils::{self, format_time, get_writable_color, write_colo
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::options::profile::PROFILES;
 use crate::yaml::ParseYaml;
-use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -27,7 +26,7 @@ use std::error::Error;
 
 use std::io::{self, BufWriter, Write};
 
-use std::fs::{self, File};
+use std::fs::File;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
@@ -412,25 +411,6 @@ fn emit_csv<W: std::io::Write>(
     println!();
     output_detected_rule_authors(rule_author_counter);
     println!();
-
-    let output_path = &configs::CONFIG.read().unwrap().args.output;
-    if let Some(path) = output_path {
-        if let Ok(metadata) = fs::metadata(path) {
-            println!(
-                "Saved file: {} ({})",
-                configs::CONFIG
-                    .read()
-                    .unwrap()
-                    .args
-                    .output
-                    .as_ref()
-                    .unwrap()
-                    .display(),
-                ByteSize::b(metadata.len()).to_string_as(false)
-            );
-            println!();
-        }
-    };
 
     if !configs::CONFIG.read().unwrap().args.no_summary {
         disp_wtr_buf.clear();

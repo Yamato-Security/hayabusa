@@ -442,6 +442,38 @@ impl App {
                 output_data,
             );
         }
+
+        let output_path = &configs::CONFIG.read().unwrap().args.output;
+        if let Some(path) = output_path {
+            if let Ok(metadata) = fs::metadata(path) {
+                let output_saved_str = format!("Saved file: {} ({})",
+                configs::CONFIG
+                    .read()
+                    .unwrap()
+                    .args
+                    .output
+                    .as_ref()
+                    .unwrap()
+                    .display(),
+                ByteSize::b(metadata.len()).to_string_as(false));
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output_saved_str,
+                    true,
+                )
+                .ok();
+                println!();
+                if *HTML_REPORT_FLAG {
+                    let output_data = vec![format!("- {}", output_saved_str)];
+                    htmlreport::add_md_data(
+                        "General Overview {#general_overview}".to_string(),
+                        output_data,
+                    );
+                }
+            }
+        };
+
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
