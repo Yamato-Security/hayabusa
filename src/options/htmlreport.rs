@@ -8,7 +8,11 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
 
+use crate::detections::configs;
+
 lazy_static! {
+    pub static ref HTML_REPORT_FLAG: bool =
+        configs::CONFIG.read().unwrap().args.html_report.is_some();
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
 }
 
@@ -116,11 +120,7 @@ pub fn create_html_file(input_html: String, path_str: String) {
     );
 
     writeln!(html_writer, "{}", html_data).ok();
-    println!(
-        "HTML Report was generated. Please check {} for details.",
-        path_str
-    );
-    println!();
+    println!("HTML report: {}", path_str);
 }
 
 #[cfg(test)]
@@ -142,7 +142,7 @@ mod tests {
             "- Hayabusa rules: 138".to_string(),
             "- Sigma rules: 2795".to_string(),
             "- Total enabled detection rules: 2933".to_string(),
-            "- Elapsed Time: 00:00:29.035".to_string(),
+            "- Elapsed time: 00:00:29.035".to_string(),
             "".to_string(),
         ];
         html_reporter.md_datas.insert(

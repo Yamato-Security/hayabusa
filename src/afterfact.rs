@@ -1,10 +1,9 @@
 use crate::detections::configs::{self, CURRENT_EXE_PATH, TERM_SIZE};
 use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
-use crate::options::htmlreport;
+use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::options::profile::PROFILES;
 use crate::yaml::ParseYaml;
-use bytesize::ByteSize;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -26,7 +25,7 @@ use std::error::Error;
 
 use std::io::{self, BufWriter, Write};
 
-use std::fs::{self, File};
+use std::fs::File;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
@@ -208,7 +207,7 @@ fn emit_csv<W: std::io::Write>(
     profile: LinkedHashMap<String, String>,
 ) -> io::Result<()> {
     let mut html_output_stock: Vec<String> = vec![];
-    let html_output_flag = configs::CONFIG.read().unwrap().args.html_report.is_some();
+    let html_output_flag = *HTML_REPORT_FLAG;
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
@@ -401,25 +400,6 @@ fn emit_csv<W: std::io::Write>(
     output_detected_rule_authors(rule_author_counter);
     println!();
 
-    let output_path = &configs::CONFIG.read().unwrap().args.output;
-    if let Some(path) = output_path {
-        if let Ok(metadata) = fs::metadata(path) {
-            println!(
-                "Saved file: {} ({})",
-                configs::CONFIG
-                    .read()
-                    .unwrap()
-                    .args
-                    .output
-                    .as_ref()
-                    .unwrap()
-                    .display(),
-                ByteSize::b(metadata.len()).to_string_as(false)
-            );
-            println!();
-        }
-    };
-
     if !configs::CONFIG.read().unwrap().args.no_summary {
         disp_wtr_buf.clear();
         write_color_buffer(
@@ -500,10 +480,7 @@ fn emit_csv<W: std::io::Write>(
         println!();
 
         if html_output_flag {
-            html_output_stock.push(format!(
-                "- Saved alerts and events: {}",
-                &saved_alerts_output
-            ));
+            html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
             html_output_stock.push(format!("- {}", reduction_output));
         }
@@ -514,6 +491,7 @@ fn emit_csv<W: std::io::Write>(
             "Total | Unique".to_string(),
             "detections".to_string(),
             &color_map,
+            &mut html_output_stock,
         );
         println!();
 
@@ -622,6 +600,7 @@ fn _print_unique_results(
     head_word: String,
     tail_word: String,
     color_map: &HashMap<String, Colors>,
+    html_output_stock: &mut Vec<String>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
@@ -644,6 +623,9 @@ fn _print_unique_results(
     )
     .ok();
 
+    let mut total_detect_md = vec!["- Total detections:".to_string()];
+    let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
+
     for (i, level_name) in LEVEL_ABBR.keys().enumerate() {
         if "undefined" == *level_name {
             continue;
@@ -658,6 +640,20 @@ fn _print_unique_results(
         } else {
             (unique_counts_by_level[i] as f64) / (unique_total_count as f64) * 100.0
         };
+        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            total_detect_md.push(format!(
+                "    - {}: {} ({:.2}%)",
+                level_name,
+                counts_by_level[i].to_formatted_string(&Locale::en),
+                percent
+            ));
+            unique_detect_md.push(format!(
+                "    - {}: {} ({:.2}%)",
+                level_name,
+                unique_counts_by_level[i].to_formatted_string(&Locale::en),
+                unique_percent
+            ));
+        }
         let output_raw_str = format!(
             "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
             head_word,
@@ -676,6 +672,10 @@ fn _print_unique_results(
         )
         .ok();
     }
+    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        html_output_stock.append(&mut total_detect_md);
+        html_output_stock.append(&mut unique_detect_md);
+    }
 }
 
 /// 各レベル毎で最も高い検知数を出した日付を出力する
@@ -689,7 +689,7 @@ fn _print_detection_summary_by_date(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
     let output_header = "Dates with most total detections:";
     writeln!(wtr, "{}", output_header).ok();
-    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+    if *HTML_REPORT_FLAG {
         html_output_stock.push(format!("- {}", output_header));
     }
     for (idx, level) in LEVEL_ABBR.values().enumerate() {
@@ -723,7 +723,7 @@ fn _print_detection_summary_by_date(
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             html_output_stock.push(format!("    - {}", output_str));
         }
     }
@@ -754,7 +754,7 @@ fn _print_detection_summary_by_computer(
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         // html出力は各種すべてのコンピュータ名を表示するようにする
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
                 LEVEL_FULL.get(level.as_str()).unwrap(),
@@ -829,7 +829,7 @@ fn _print_detection_summary_tables(
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         // html出力の場合はすべての内容を出力するようにする
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
                 LEVEL_FULL.get(level.as_str()).unwrap(),

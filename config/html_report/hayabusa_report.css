@@ -80,11 +80,20 @@ h3 {
 
 li {
   padding: 5px;
-	margin: 16px;
+	margin-top: 16px;
+  margin-right: 16px;
 }
+ul ul li{
+  margin-right: -6px;
+}
+
 li:nth-child(odd){
   background-color: #f4faff
 }
+li:nth-child(even){
+  background-color: #ffffff
+}
+
 
 img#logo {
   width: 300px;

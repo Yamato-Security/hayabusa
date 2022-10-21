@@ -3,6 +3,7 @@ extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
 
+use crate::htmlreport::HTML_REPORT_FLAG;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
@@ -93,7 +94,7 @@ impl App {
             return;
         }
         let analysis_start_time: DateTime<Local> = Local::now();
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             let output_data = vec![format!(
                 "- Start time: {}",
                 analysis_start_time.format("%Y/%m/%d %H:%M")
@@ -184,7 +185,11 @@ impl App {
                     }
                 }
                 Err(e) => {
-                    AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
+                    if e.message().is_empty() {
+                        AlertMessage::alert("Failed to update rules.").ok();
+                    } else {
+                        AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
+                    }
                 }
             }
             println!();
@@ -425,7 +430,7 @@ impl App {
 
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        let elapsed_output_str = format!("Elapsed Time: {}", &analysis_duration.hhmmssxxx());
+        let elapsed_output_str = format!("Elapsed time: {}", &analysis_duration.hhmmssxxx());
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
@@ -433,14 +438,48 @@ impl App {
             true,
         )
         .ok();
-        println!();
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+
+        if *HTML_REPORT_FLAG {
             let output_data = vec![format!("- {}", elapsed_output_str)];
             htmlreport::add_md_data(
                 "General Overview {#general_overview}".to_string(),
                 output_data,
             );
         }
+
+        let output_path = &configs::CONFIG.read().unwrap().args.output;
+        if let Some(path) = output_path {
+            if let Ok(metadata) = fs::metadata(path) {
+                let output_saved_str = format!(
+                    "Saved file: {} ({})",
+                    configs::CONFIG
+                        .read()
+                        .unwrap()
+                        .args
+                        .output
+                        .as_ref()
+                        .unwrap()
+                        .display(),
+                    ByteSize::b(metadata.len()).to_string_as(false)
+                );
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    &output_saved_str,
+                    true,
+                )
+                .ok();
+
+                if *HTML_REPORT_FLAG {
+                    let output_data = vec![format!("- {}", output_saved_str)];
+                    htmlreport::add_md_data(
+                        "General Overview {#general_overview}".to_string(),
+                        output_data,
+                    );
+                }
+            }
+        };
+
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
             AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
@@ -518,7 +557,7 @@ impl App {
                 });
             }
         }
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             let html_str = HTML_REPORTER.read().unwrap().clone().create_html();
             htmlreport::create_html_file(
                 html_str,
@@ -534,6 +573,7 @@ impl App {
                     .to_string(),
             )
         }
+        println!();
     }
 
     #[cfg(not(target_os = "windows"))]
@@ -660,7 +700,7 @@ impl App {
             println!();
         }
 
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             let output_data = vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {}", total_size_output),
