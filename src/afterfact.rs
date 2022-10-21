@@ -252,7 +252,7 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    
+
     for (_, time) in message::MESSAGES
         .clone()
         .into_read_only()
