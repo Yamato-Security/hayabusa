@@ -10,7 +10,6 @@ use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 
 use csv::{QuoteStyle, WriterBuilder};
-use dashmap::Map;
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
@@ -254,10 +253,8 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    if json_output_flag {
-        wtr.write_field("[")?;
-    }
-    for (processed_message_cnt, time) in message::MESSAGES
+    
+    for (_, time) in message::MESSAGES
         .clone()
         .into_read_only()
         .keys()
@@ -267,7 +264,7 @@ fn emit_csv<W: std::io::Write>(
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
-        for (info_idx, detect_info) in detect_infos.iter().enumerate() {
+        for (_, detect_info) in detect_infos.iter().enumerate() {
             if !detect_info.detail.starts_with("[condition]") {
                 detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
             }
@@ -297,19 +294,13 @@ fn emit_csv<W: std::io::Write>(
                 .ok();
             } else if json_output_flag {
                 // JSON output
-                wtr.write_field("  {")?;
+                wtr.write_field("{")?;
                 wtr.write_field(&output_json_str(
                     &detect_info.ext_field,
                     &profile,
                     jsonl_output_flag,
                 ))?;
-                if processed_message_cnt != message::MESSAGES._len() - 1
-                    || info_idx != detect_infos.len() - 1
-                {
-                    wtr.write_field("  },")?;
-                } else {
-                    wtr.write_field("  }")?;
-                }
+                wtr.write_field("}")?;
             } else if jsonl_output_flag {
                 // JSONL output format
                 wtr.write_field(format!(
@@ -388,9 +379,6 @@ fn emit_csv<W: std::io::Write>(
             detect_counts_by_date_and_level
                 .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
-    }
-    if json_output_flag {
-        wtr.write_field("]")?;
     }
 
     if displayflag {
