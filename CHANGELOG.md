@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Event ID filtering is now turned off by default. Use the `-e, --eid-filter` option to filter by Event ID. (#759) (@hitenkoku)
+- Print an easy to understand error message when a user tries to download new rules with a different user account. (#758) (@fukusuket)
 - Added total and unique detecion count information in the HTML Report. (#762) (@hitenkoku)
 
 **Bug Fixes:**
