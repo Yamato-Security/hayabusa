@@ -649,7 +649,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 `verbose`プロファイルで出力される情報とイベントにあるすべての`EventData`フィールド情報(`%RecordInformation%`)の**両方**が出力されます。
 **(注意: 出力ファイルサイズは約2倍になります！)**
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
 
 ### 7. `timesketch-minimal`プロファイルの出力
 
