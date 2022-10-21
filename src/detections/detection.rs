@@ -368,7 +368,14 @@ impl Detection {
                         };
                         profile_converter.insert("%RuleCreationDate%".to_string(), date);
                     }
-                    
+                    "%RuleModifiedDate%" =>{
+                        let modified_date = if let Some(md) = rule.yaml["modified"].as_str(){
+                            md.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%RuleCreationDate%".to_string(), modified_date);
+                    }
 
                     _ => {}
                 }
