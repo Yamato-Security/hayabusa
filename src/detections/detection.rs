@@ -376,6 +376,14 @@ impl Detection {
                         };
                         profile_converter.insert("%RuleModifiedDate%".to_string(), modified_date);
                     }
+                    "%Status%" =>{
+                        let status = if let Some(s) = rule.yaml["modified"].as_str(){
+                            s.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%Status%".to_string(), status);
+                    }
 
                     _ => {}
                 }
