@@ -184,7 +184,11 @@ impl App {
                     }
                 }
                 Err(e) => {
-                    AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
+                    if e.message().is_empty() {
+                        AlertMessage::alert("Failed to update rules.").ok();
+                    } else {
+                        AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
+                    }
                 }
             }
             println!();

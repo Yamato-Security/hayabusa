@@ -3,7 +3,7 @@ use crate::detections::utils::write_color_buffer;
 use crate::filter;
 use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone};
-use git2::Repository;
+use git2::{ErrorCode, Repository};
 use serde_json::Value;
 use std::fs::{self, create_dir};
 use std::path::Path;
@@ -164,14 +164,17 @@ impl Update {
                 Ok("Finished clone".to_string())
             }
             Err(e) => {
-                AlertMessage::alert(
-                    &format!(
-                        "Failed to git clone into the rules folder. Please rename your rules folder name. {}",
-                        e
-                    ),
-                )
-                .ok();
-                Err(git2::Error::from_str(&String::default()))
+                if e.code() == ErrorCode::Exists {
+                    AlertMessage::alert(
+                        "You need to update the rules as the user that you downloaded Hayabusa with.\nYou can also move or delete the current rules folder to sync to the latest rules."
+                    )
+                        .ok();
+                } else {
+                    AlertMessage::alert(
+                        "Failed to git clone into the rules folder. Please rename your rules folder name." )
+                        .ok();
+                }
+                Err(e)
             }
         }
     }
