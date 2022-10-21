@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Event ID filtering is now turned off by default. Use the `-e, --eid-filter` option to filter by Event ID. (#759) (@hitenkoku)
+- Added total and unique detecion count information in the HTML Report. (#762) (@hitenkoku)
 
 **Bug Fixes:**
 

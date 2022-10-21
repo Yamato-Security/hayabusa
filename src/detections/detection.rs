@@ -17,7 +17,7 @@ use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
-use crate::options::htmlreport::{self};
+use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
@@ -617,7 +617,7 @@ impl Detection {
                     disable_flag
                 );
                 println!("{}", output_str);
-                if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                if *HTML_REPORT_FLAG {
                     html_report_stock.push(format!("- {}", output_str));
                 }
             }
@@ -659,7 +659,7 @@ impl Detection {
                     true,
                 )
                 .ok();
-                if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+                if *HTML_REPORT_FLAG {
                     html_report_stock.push(format!("- {}", output_str));
                 }
             }
@@ -677,7 +677,7 @@ impl Detection {
                 true,
             )
             .ok();
-            if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+            if *HTML_REPORT_FLAG {
                 html_report_stock.push(format!("- {}", output_str));
             }
         });
@@ -686,7 +686,7 @@ impl Detection {
             format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
         println!("{}", tmp_total_detect_output);
         println!();
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if *HTML_REPORT_FLAG {
             html_report_stock.push(format!("- {}", tmp_total_detect_output));
         }
         if !html_report_stock.is_empty() {
