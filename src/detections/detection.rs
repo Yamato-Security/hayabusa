@@ -352,6 +352,14 @@ impl Detection {
                             .collect();
                         profile_converter.insert("%OtherTags%".to_string(), tags.join(" ¦ "));
                     }
+                    "%RuleAuthor%" =>{
+                        let author = if let Some(a) = rule.yaml["author"].as_str(){
+                            a.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%RuleAuthor%".to_string(), author);
+                    }
 
                     _ => {}
                 }
