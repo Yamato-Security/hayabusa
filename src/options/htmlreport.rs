@@ -120,10 +120,7 @@ pub fn create_html_file(input_html: String, path_str: String) {
     );
 
     writeln!(html_writer, "{}", html_data).ok();
-    println!(
-        "HTML report: {}",
-        path_str
-    );
+    println!("HTML report: {}", path_str);
 }
 
 #[cfg(test)]
