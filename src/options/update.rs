@@ -166,7 +166,7 @@ impl Update {
             Err(e) => {
                 if e.code() == ErrorCode::Exists {
                     AlertMessage::alert(
-                        "You need to update the rules as the user that you downloaded Hayabusa with.\nYou can also move or delete the current rules folder to sync to the latest rules."
+                        "You need to update the rules as the user that you downloaded Hayabusa with.\n        You can also move or delete the current rules folder to sync to the latest rules."
                     )
                         .ok();
                 } else {
