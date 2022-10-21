@@ -360,6 +360,15 @@ impl Detection {
                         };
                         profile_converter.insert("%RuleAuthor%".to_string(), author);
                     }
+                    "%RuleCreationDate%" =>{
+                        let date = if let Some(d) = rule.yaml["date"].as_str(){
+                            d.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%RuleCreationDate%".to_string(), date);
+                    }
+                    
 
                     _ => {}
                 }
