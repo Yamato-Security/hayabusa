@@ -374,7 +374,7 @@ impl Detection {
                         } else {
                             "-".to_string()
                         };
-                        profile_converter.insert("%RuleCreationDate%".to_string(), modified_date);
+                        profile_converter.insert("%RuleModifiedDate%".to_string(), modified_date);
                     }
 
                     _ => {}
