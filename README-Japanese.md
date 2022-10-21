@@ -602,6 +602,7 @@ git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
 
 # Hayabusaの出力
+
 ## プロファイル
 
 Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロファイルが定義されています:
@@ -694,9 +695,13 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 |%RecordInformation% | すべてのフィールド情報。 |
 |%RuleFile% | アラートまたはイベントを生成した検知ルールのファイル名。 |
 |%EvtxFile% | アラートまたはイベントを起こしたevtxファイルへのパス。 |
+|%RuleAuthor% | YML検知ルールの `author` フィールド。 |
+|%RuleCreationDate% | YML検知ルールの `date` フィールド。 |
+|%RuleModifiedDate% | YML検知ルールの `modified` フィールド。 |
+|%Status% | YML検知ルールの `status` フィールド。 |
 
 これらのエイリアスは、出力プロファイルで使用することができます。また、他の[イベントキーアライズ](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、他のフィールドを出力することもできます。
- 
+
 ## Levelの省略
 
 簡潔に出力するためにLevelを以下のように省略し出力しています。

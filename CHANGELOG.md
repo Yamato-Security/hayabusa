@@ -12,6 +12,7 @@
 - Print an easy to understand error message when a user tries to download new rules with a different user account. (#758) (@fukusuket)
 - Added total and unique detecion count information in the HTML Report. (#762) (@hitenkoku)
 - Removed unnecessary array structure in the JSON output. (#766)(@hitenkoku)
+- Added rule author(`%RuleAuthor%`), rule create date(`%RuleCreationDate%`), rule modified date(`%RuleModifiedDate%`), and rule status(`%Status%`) in output profile. (#761) (@hitenkoku)
 
 **Bug Fixes:**
 
