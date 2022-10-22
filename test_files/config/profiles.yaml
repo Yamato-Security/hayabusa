@@ -41,4 +41,4 @@ verbose-2:
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
     Details: "%Details%"
-    AllFieldInfo: "%RecordInformation%"
+    AllFieldInfo: "%AllFieldInfo%"

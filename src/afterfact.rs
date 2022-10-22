@@ -1027,7 +1027,7 @@ fn output_json_str(
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = v.split(": ").collect();
             let output_val =
-                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
+                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%AllFieldInfo%"));
             target.push(_create_json_output_format(
                 k,
                 &output_val,
@@ -1337,7 +1337,7 @@ mod tests {
                 ("%MitreAttack%".to_owned(), test_attack.to_string()),
                 ("%RecordID%".to_owned(), test_record_id.to_string()),
                 ("%RuleTitle%".to_owned(), test_title.to_owned()),
-                ("%RecordInformation%".to_owned(), test_recinfo.to_owned()),
+                ("%AllFieldInfo%".to_owned(), test_recinfo.to_owned()),
                 ("%RuleFile%".to_owned(), test_rulepath.to_string()),
                 ("%EvtxFile%".to_owned(), test_filepath.to_string()),
                 ("%Tags%".to_owned(), test_attack.to_string()),
