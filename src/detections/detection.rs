@@ -352,6 +352,38 @@ impl Detection {
                             .collect();
                         profile_converter.insert("%OtherTags%".to_string(), tags.join(" ¦ "));
                     }
+                    "%RuleAuthor%" => {
+                        let author = if let Some(a) = rule.yaml["author"].as_str() {
+                            a.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%RuleAuthor%".to_string(), author);
+                    }
+                    "%RuleCreationDate%" => {
+                        let date = if let Some(d) = rule.yaml["date"].as_str() {
+                            d.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%RuleCreationDate%".to_string(), date);
+                    }
+                    "%RuleModifiedDate%" => {
+                        let modified_date = if let Some(md) = rule.yaml["modified"].as_str() {
+                            md.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%RuleModifiedDate%".to_string(), modified_date);
+                    }
+                    "%Status%" => {
+                        let status = if let Some(s) = rule.yaml["status"].as_str() {
+                            s.to_string()
+                        } else {
+                            "-".to_string()
+                        };
+                        profile_converter.insert("%Status%".to_string(), status);
+                    }
 
                     _ => {}
                 }
