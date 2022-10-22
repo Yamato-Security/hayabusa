@@ -832,7 +832,6 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "static_vcruntime",
  "termcolor",
  "terminal_size 0.2.1",
  "tokio",
@@ -1954,12 +1953,6 @@ checksum = "e113fb6f3de07a243d434a56ec6f186dfd51cb08448239fe7bcae73f87ff28ff"
 dependencies = [
  "version_check",
 ]
-
-[[package]]
-name = "static_vcruntime"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "954e3e877803def9dc46075bf4060147c55cd70db97873077232eae0269dc89b"
 
 [[package]]
 name = "stdweb"
