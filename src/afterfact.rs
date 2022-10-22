@@ -955,6 +955,7 @@ fn _create_json_output_format(
     value: &str,
     key_quote_exclude_flag: bool,
     concat_flag: bool,
+    space_cnt: usize,
 ) -> String {
     let head = if key_quote_exclude_flag {
         key.to_string()
@@ -963,13 +964,13 @@ fn _create_json_output_format(
     };
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
-        format!("    {}: {}", head, i)
+        format!("{}{}: {}", " ".repeat(space_cnt), head, i)
     } else if let Ok(b) = bool::from_str(value) {
-        format!("    {}: {}", head, b)
+        format!("{}{}: {}", " ".repeat(space_cnt), head, b)
     } else if concat_flag {
-        format!("    {}: {}", head, value)
+        format!("{}{}: {}", " ".repeat(space_cnt), head, value)
     } else {
-        format!("    {}: \"{}\"", head, value)
+        format!("{}{}: \"{}\"", " ".repeat(space_cnt), head, value)
     }
 }
 
@@ -1033,8 +1034,11 @@ fn output_json_str(
                 &output_val,
                 k.starts_with('\"'),
                 output_val.starts_with('\"'),
+                4,
             ));
         } else if output_value_fmt.contains("%Details%") {
+            let mut output_stock: Vec<String> = vec![];
+            output_stock.push(format!("    \"{}\": {{", k));
             let mut stocked_value = vec![];
             let mut key_index_stock = vec![];
             for detail_contents in vec_data.iter() {
@@ -1090,11 +1094,15 @@ fn output_json_str(
                     let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]], false);
                     let fmted_val = _convert_valid_json_str(&output, false);
-                    target.push(_create_json_output_format(
-                        &key,
-                        &fmted_val,
-                        key.starts_with('\"'),
-                        fmted_val.starts_with('\"'),
+                    output_stock.push(format!(
+                        "{},",
+                        _create_json_output_format(
+                            &key,
+                            &fmted_val,
+                            key.starts_with('\"'),
+                            fmted_val.starts_with('\"'),
+                            8
+                        )
                     ));
                     output_value_stock.clear();
                     tmp = String::default();
@@ -1105,15 +1113,18 @@ fn output_json_str(
                     let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]], false);
                     let fmted_val = _convert_valid_json_str(&output, false);
-                    target.push(_create_json_output_format(
+                    output_stock.push(_create_json_output_format(
                         &key,
                         &fmted_val,
                         key.starts_with('\"'),
                         fmted_val.starts_with('\"'),
+                        8,
                     ));
                     key_idx += 1;
                 }
             }
+            output_stock.push("    }".to_string());
+            target.push(output_stock.join("\n"));
         } else if output_value_fmt.contains("%MitreTags%")
             || output_value_fmt.contains("%MitreTactics%")
             || output_value_fmt.contains("%OtherTags%")
@@ -1149,6 +1160,7 @@ fn output_json_str(
                 &fmted_val,
                 key.starts_with('\"'),
                 true,
+                4,
             ));
         }
     }

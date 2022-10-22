@@ -1,9 +1,3 @@
----
-name: Pull Request Template 
-about: Create a pull-request to help us improve
-assignees: ''
----
-
 **What Changed**
 
 - Changed 1
