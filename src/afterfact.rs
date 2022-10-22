@@ -1034,7 +1034,7 @@ fn output_json_str(
                 &output_val,
                 k.starts_with('\"'),
                 output_val.starts_with('\"'),
-                4
+                4,
             ));
         } else if output_value_fmt.contains("%Details%") {
             let mut output_stock: Vec<String> = vec![];
@@ -1094,13 +1094,16 @@ fn output_json_str(
                     let output: Vec<&str> = output_tmp.split(": ").collect();
                     let key = _convert_valid_json_str(&[output[0]], false);
                     let fmted_val = _convert_valid_json_str(&output, false);
-                    output_stock.push(format!("{},",_create_json_output_format(
-                        &key,
-                        &fmted_val,
-                        key.starts_with('\"'),
-                        fmted_val.starts_with('\"'),
-                        8
-                    )));
+                    output_stock.push(format!(
+                        "{},",
+                        _create_json_output_format(
+                            &key,
+                            &fmted_val,
+                            key.starts_with('\"'),
+                            fmted_val.starts_with('\"'),
+                            8
+                        )
+                    ));
                     output_value_stock.clear();
                     tmp = String::default();
                     key_idx += 1;
@@ -1115,7 +1118,7 @@ fn output_json_str(
                         &fmted_val,
                         key.starts_with('\"'),
                         fmted_val.starts_with('\"'),
-                        8
+                        8,
                     ));
                     key_idx += 1;
                 }
@@ -1157,7 +1160,7 @@ fn output_json_str(
                 &fmted_val,
                 key.starts_with('\"'),
                 true,
-                4
+                4,
             ));
         }
     }
