@@ -14,6 +14,7 @@
 - Removed unnecessary array structure in the JSON output. (#766)(@hitenkoku)
 - Added rule authors (`%RuleAuthor%`), rule creation date (`%RuleCreationDate%`), rule modified date (`%RuleModifiedDate%`), and rule status (`%Status%`) fields to output profiles. (#761) (@hitenkoku)
 - Changed Details field in JSON output to object. (#773) (@hitenkoku)
+- Replaced %RecordInformation% alias in profile to %AllFieldInfo%, and changed AllFieldInfo field in JSON output to object. (#750) (@hitenkoku)
 
 **Bug Fixes:**
 

@@ -14,6 +14,7 @@
 - JSONの出力の中にある各検知内容のオブジェクトを持つ不要な配列の構造を削除した。 (#766)(@hitenkoku)
 - プロファイルで出力できる情報にルール作成者(`%RuleAuthor%`)、 ルール作成日(`%RuleCreationDate%`)、 ルール修正日(`%RuleModifiedDate%`)、ルールステータス(`%Status%`)を追加した。 (#761) (@hitenkoku)
 - JSON出力のDetailsフィールドをオブジェクト形式で出力するように変更した。 (#773) (@hitenkoku)
+- プロファイルの`%RecordInformation%` エイリアスを `%AllFieldInfo%` に変更した。 AllFieldInfoフィールドをJSONオブジェクト形式で出力するように変更した。 (#750) (@hitenkoku)
 
 **バグ修正:**
 
