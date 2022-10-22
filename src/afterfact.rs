@@ -933,7 +933,7 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
             .map(|x| x.to_string())
             .collect();
         ret
-    } else if target_alias_context.contains("%Details%") {
+    } else if target_alias_context.contains("%Details%") || target_alias_context.contains("%AllFieldInfo%") {
         let ret: Vec<String> = target_data
             .to_owned()
             .split(" ¦ ")
