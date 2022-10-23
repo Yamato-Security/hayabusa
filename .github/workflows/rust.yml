@@ -34,7 +34,7 @@ jobs:
           - {
               os: "windows-latest",
               target: "i686-pc-windows-msvc",
-              cross: false,
+              cross: true,
             }
     runs-on: ${{ matrix.info.os }}
     steps:
