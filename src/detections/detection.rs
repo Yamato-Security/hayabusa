@@ -229,7 +229,7 @@ impl Detection {
             Some(str) => str.to_owned(),
             None => recinfo.as_ref().unwrap_or(&"-".to_string()).to_string(),
         };
-        let opt_record_info = if LOAEDED_PROFILE_ALIAS.contains("%RecordInformation%") {
+        let opt_record_info = if LOAEDED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
             recinfo
         } else {
             None
@@ -286,9 +286,9 @@ impl Detection {
                             rule.yaml["title"].as_str().unwrap_or("").to_string(),
                         );
                     }
-                    "%RecordInformation%" => {
+                    "%AllFieldInfo%" => {
                         profile_converter.insert(
-                            "%RecordInformation%".to_string(),
+                            "%AllFieldInfo%".to_string(),
                             opt_record_info
                                 .as_ref()
                                 .unwrap_or(&"-".to_string())
@@ -419,7 +419,7 @@ impl Detection {
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
         let tag_info: &Vec<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
-        let rec_info = if LOAEDED_PROFILE_ALIAS.contains("%RecordInformation%") {
+        let rec_info = if LOAEDED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
             Option::Some(String::default())
         } else {
             Option::None
@@ -462,8 +462,8 @@ impl Detection {
                             rule.yaml["title"].as_str().unwrap_or("").to_string(),
                         );
                     }
-                    "%RecordInformation%" => {
-                        profile_converter.insert("%RecordInformation%".to_string(), "-".to_owned());
+                    "%AllFieldInfo%" => {
+                        profile_converter.insert("%AllFieldInfo%".to_string(), "-".to_owned());
                     }
                     "%RuleFile%" => {
                         profile_converter.insert(

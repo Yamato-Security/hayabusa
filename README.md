@@ -629,19 +629,19 @@ Use the `--list-profiles` option to show the available profiles and their field 
 
 Instead of outputting the minimal `details` information, all field information in the `EventData` section will be outputted.
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%RecordInformation%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
 
 ### 5. `all-field-info-verbose` profile output
 
 `all-field-info` profile plus tag information.
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RecordInformation%`, `%RuleFile%`, `%EvtxFile%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%AllFieldInfo%`, `%RuleFile%`, `%EvtxFile%`
 
 ### 6. `super-verbose` profile output
 
-`verbose` profile plus all field information (`%RecordInformation%`). **(Warning: this will usually double the output file size!)**
+`verbose` profile plus all field information (`%AllFieldInfo%`). **(Warning: this will usually double the output file size!)**
 
-`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
+`%Timestamp%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
 ### 7. `timesketch-minimal` profile output
 
@@ -654,7 +654,7 @@ The `verbose` profile that is compatible with importing into [Timesketch](https:
 The `super-verbose` profile that is compatible with importing into [Timesketch](https://timesketch.org/).
 **(Warning: this will usually double the output file size!)**
 
-`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%RecordInformation%`
+`%Timestamp%`, `hayabusa`, `%RuleTitle%`, `%Computer%`, `%Channel%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
 ### Profile Comparison
 
@@ -684,7 +684,7 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 |%RecordID% | The Event Record ID from `<Event><System><EventRecordID>` field. |
 |%RuleTitle% | The `title` field in the YML detection rule. |
 |%Details% | The `details` field in the YML detection rule, however, only hayabusa rules have this field. This field gives extra information about the alert or event and can extract useful data from the fields in event logs. For example, usernames, command line information, process information, etc... When a placeholder points to a field that does not exist or there is an incorrect alias mapping, it will be outputted as `n/a` (not available). If the `details` field is not specified (i.e. sigma rules), default `details` messages to extract fields defined in `./rules/config/default_details.txt` will be outputted. You can add more default `details` messages by adding the `Provider Name`, `EventID` and `details` message you want to output in `default_details.txt`. When no `details` field is defined in a rule nor in `default_details.txt`, all fields will be outputted to the `details` column. |
-|%RecordInformation% | All field information. |
+|%AllFieldInfo% | All field information. |
 |%RuleFile% | The filename of the detection rule that generated the alert or event. |
 |%EvtxFile% | The evtx filename that caused the alert or event. |
 |%RuleAuthor% | The `author` field in the YML detection rule. |
