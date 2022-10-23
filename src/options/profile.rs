@@ -281,10 +281,7 @@ mod tests {
         expect.insert("RecordID".to_owned(), "%RecordID%".to_owned());
         expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
         expect.insert("Details".to_owned(), "%Details%".to_owned());
-        expect.insert(
-            "RecordInformation".to_owned(),
-            "%AllFieldInfo%".to_owned(),
-        );
+        expect.insert("RecordInformation".to_owned(), "%AllFieldInfo%".to_owned());
         expect.insert("RuleFile".to_owned(), "%RuleFile%".to_owned());
         expect.insert("EvtxFile".to_owned(), "%EvtxFile%".to_owned());
         expect.insert("Tags".to_owned(), "%MitreAttack%".to_owned());
