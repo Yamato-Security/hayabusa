@@ -15,6 +15,7 @@
 - プロファイルで出力できる情報にルール作成者(`%RuleAuthor%`)、 ルール作成日(`%RuleCreationDate%`)、 ルール修正日(`%RuleModifiedDate%`)、ルールステータス(`%Status%`)を追加した。 (#761) (@hitenkoku)
 - JSON出力のDetailsフィールドをオブジェクト形式で出力するように変更した。 (#773) (@hitenkoku)
 - `build.rs`を削除し、メモリアロケータをmimallocに変更した。Intel系OSでは20-30%の速度向上が見込める。 (#657) (@fukusuket)
+- プロファイルの`%RecordInformation%` エイリアスを `%AllFieldInfo%` に変更した。 AllFieldInfoフィールドをJSONオブジェクト形式で出力するように変更した。 (#750) (@hitenkoku)
 
 **バグ修正:**
 

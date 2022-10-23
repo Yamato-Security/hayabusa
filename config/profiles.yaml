@@ -43,7 +43,7 @@ all-field-info:
     Level: "%Level%"
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
-    AllFieldInfo: "%RecordInformation%"
+    AllFieldInfo: "%AllFieldInfo%"
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
 
@@ -59,7 +59,7 @@ all-field-info-verbose:
     OtherTags: "%OtherTags%"
     RecordID: "%RecordID%"
     RuleTitle: "%RuleTitle%"
-    AllFieldInfo: "%RecordInformation%"
+    AllFieldInfo: "%AllFieldInfo%"
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
 
@@ -82,7 +82,7 @@ super-verbose:
     Details: "%Details%"
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
-    AllFieldInfo: "%RecordInformation%"
+    AllFieldInfo: "%AllFieldInfo%"
 
 #Output that is compatible to import the CSV into Timesketch
 timesketch-minimal:
@@ -117,4 +117,4 @@ timesketch-verbose:
     Details: "%Details%"
     RuleFile: "%RuleFile%"
     EvtxFile: "%EvtxFile%"
-    AllFieldInfo: "%RecordInformation%"
+    AllFieldInfo: "%AllFieldInfo%"

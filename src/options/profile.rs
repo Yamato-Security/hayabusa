@@ -45,7 +45,7 @@ lazy_static! {
         "%EventID%",
         "%RecordID%",
         "%RuleTitle%",
-        "%RecordInformation%",
+        "%AllFieldInfo%",
         "%RuleFile%",
         "%EvtxFile%",
         "%MitreTactics%",
@@ -281,10 +281,7 @@ mod tests {
         expect.insert("RecordID".to_owned(), "%RecordID%".to_owned());
         expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
         expect.insert("Details".to_owned(), "%Details%".to_owned());
-        expect.insert(
-            "RecordInformation".to_owned(),
-            "%RecordInformation%".to_owned(),
-        );
+        expect.insert("RecordInformation".to_owned(), "%AllFieldInfo%".to_owned());
         expect.insert("RuleFile".to_owned(), "%RuleFile%".to_owned());
         expect.insert("EvtxFile".to_owned(), "%EvtxFile%".to_owned());
         expect.insert("Tags".to_owned(), "%MitreAttack%".to_owned());
@@ -358,7 +355,7 @@ mod tests {
          ],
          vec!["standard", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%"],
          vec!["verbose-1", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%"],
-         vec!["verbose-2", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RecordInformation%"],
+         vec!["verbose-2", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%"],
          ];
         assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }

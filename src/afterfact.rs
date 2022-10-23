@@ -933,7 +933,9 @@ fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String
             .map(|x| x.to_string())
             .collect();
         ret
-    } else if target_alias_context.contains("%Details%") {
+    } else if target_alias_context.contains("%Details%")
+        || target_alias_context.contains("%AllFieldInfo%")
+    {
         let ret: Vec<String> = target_data
             .to_owned()
             .split(" ¦ ")
@@ -1028,7 +1030,7 @@ fn output_json_str(
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = v.split(": ").collect();
             let output_val =
-                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%RecordInformation%"));
+                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%AllFieldInfo%"));
             target.push(_create_json_output_format(
                 k,
                 &output_val,
@@ -1036,7 +1038,9 @@ fn output_json_str(
                 output_val.starts_with('\"'),
                 4,
             ));
-        } else if output_value_fmt.contains("%Details%") {
+        } else if output_value_fmt.contains("%Details%")
+            || output_value_fmt.contains("%AllFieldInfo%")
+        {
             let mut output_stock: Vec<String> = vec![];
             output_stock.push(format!("    \"{}\": {{", k));
             let mut stocked_value = vec![];
@@ -1086,13 +1090,18 @@ fn output_json_str(
                 } else {
                     false
                 };
+                let prefix_flag = output_value_fmt.contains("%AllFieldInfo%");
                 if (value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty())
                     || is_remain_split_stock
                 {
                     // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let key = if prefix_flag {
+                        format!("HBFI-{}", _convert_valid_json_str(&[output[0]], false))
+                    } else {
+                        _convert_valid_json_str(&[output[0]], false)
+                    };
                     let fmted_val = _convert_valid_json_str(&output, false);
                     output_stock.push(format!(
                         "{},",
@@ -1111,7 +1120,11 @@ fn output_json_str(
                 if value_idx == stocked_value.len() - 1 {
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let key = if prefix_flag {
+                        format!("HBFI-{}", _convert_valid_json_str(&[output[0]], false))
+                    } else {
+                        _convert_valid_json_str(&[output[0]], false)
+                    };
                     let fmted_val = _convert_valid_json_str(&output, false);
                     output_stock.push(_create_json_output_format(
                         &key,
@@ -1349,7 +1362,7 @@ mod tests {
                 ("%MitreAttack%".to_owned(), test_attack.to_string()),
                 ("%RecordID%".to_owned(), test_record_id.to_string()),
                 ("%RuleTitle%".to_owned(), test_title.to_owned()),
-                ("%RecordInformation%".to_owned(), test_recinfo.to_owned()),
+                ("%AllFieldInfo%".to_owned(), test_recinfo.to_owned()),
                 ("%RuleFile%".to_owned(), test_rulepath.to_string()),
                 ("%EvtxFile%".to_owned(), test_filepath.to_string()),
                 ("%Tags%".to_owned(), test_attack.to_string()),
