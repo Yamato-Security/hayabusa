@@ -27,6 +27,7 @@ use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
+use mimalloc::MiMalloc;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::ffi::{OsStr, OsString};
@@ -48,6 +49,9 @@ use tokio::task::JoinHandle;
 
 #[cfg(target_os = "windows")]
 use is_elevated::is_elevated;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 // 一度にtimelineやdetectionを実行する行数
 const MAX_DETECT_RECORDS: usize = 5000;
