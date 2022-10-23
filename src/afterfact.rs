@@ -1036,7 +1036,7 @@ fn output_json_str(
                 output_val.starts_with('\"'),
                 4,
             ));
-        } else if output_value_fmt.contains("%Details%") {
+        } else if output_value_fmt.contains("%Details%") || output_value_fmt.contains("%AllFieldInfo%") {
             let mut output_stock: Vec<String> = vec![];
             output_stock.push(format!("    \"{}\": {{", k));
             let mut stocked_value = vec![];
@@ -1086,13 +1086,18 @@ fn output_json_str(
                 } else {
                     false
                 };
+                let prefix_flag = output_value_fmt.contains("%AllFieldInfo%");
                 if (value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty())
                     || is_remain_split_stock
                 {
                     // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let key = if prefix_flag{
+                        format!("HBFI-{}", _convert_valid_json_str(&[output[0]], false))
+                    } else {
+                        _convert_valid_json_str(&[output[0]], false)
+                    };
                     let fmted_val = _convert_valid_json_str(&output, false);
                     output_stock.push(format!(
                         "{},",
@@ -1111,7 +1116,11 @@ fn output_json_str(
                 if value_idx == stocked_value.len() - 1 {
                     let output_tmp = format!("{}: {}", tmp, output_value_stock);
                     let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]], false);
+                    let key = if prefix_flag{
+                        format!("HBFI-{}", _convert_valid_json_str(&[output[0]], false))
+                    } else {
+                        _convert_valid_json_str(&[output[0]], false)
+                    };
                     let fmted_val = _convert_valid_json_str(&output, false);
                     output_stock.push(_create_json_output_format(
                         &key,
