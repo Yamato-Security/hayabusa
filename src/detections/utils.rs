@@ -360,7 +360,7 @@ fn _collect_recordinfo<'a>(
 /**
  * 最初の文字を大文字にする関数
  */
-pub fn make_ascii_titlecase(s: &mut str) -> String {
+pub fn make_ascii_titlecase(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {
         None => String::new(),

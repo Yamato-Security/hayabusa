@@ -30,6 +30,7 @@ use hhmmss::Hhmmss;
 use mimalloc::MiMalloc;
 use pbr::ProgressBar;
 use serde_json::Value;
+use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -379,7 +380,7 @@ impl App {
                 .unwrap()
                 .args
                 .level_tuning
-                .clone()
+                .to_owned()
                 .unwrap();
             let level_tuning_config_path = match level_tuning_val {
                 Some(path) => path.to_owned(),
@@ -562,7 +563,7 @@ impl App {
             }
         }
         if *HTML_REPORT_FLAG {
-            let html_str = HTML_REPORTER.read().unwrap().clone().create_html();
+            let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
             htmlreport::create_html_file(
                 html_str,
                 configs::CONFIG
@@ -741,7 +742,7 @@ impl App {
             }
             let cnt_tmp: usize;
             (detection, cnt_tmp, tl) =
-                self.analysis_file(evtx_file, detection, time_filter, tl.clone());
+                self.analysis_file(evtx_file, detection, time_filter, tl.to_owned());
             total_records += cnt_tmp;
             pb.inc();
         }
@@ -759,7 +760,9 @@ impl App {
         println!();
         detection.add_aggcondition_msges(&self.rt);
         if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
+            println!("dbg after fact start");
             after_fact(total_records);
+            println!("dbg after fact end");
         }
     }
 
@@ -772,7 +775,7 @@ impl App {
         mut tl: Timeline,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
-        let parser = self.evtx_to_jsons(evtx_filepath.clone());
+        let parser = self.evtx_to_jsons(&evtx_filepath);
         let mut record_cnt = 0;
         if parser.is_none() {
             return (detection, record_cnt, tl);
@@ -811,22 +814,22 @@ impl App {
                     continue;
                 }
 
-                let data = record_result.as_ref().unwrap().data.clone();
+                let data = record_result.as_ref().unwrap().data.borrow();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(&data)
+                if !self._is_valid_channel(data)
                     || (configs::CONFIG.read().unwrap().args.eid_filter
-                        && !self._is_target_event_id(&data))
+                        && !self._is_target_event_id(data))
                 {
                     continue;
                 }
 
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                let timestamp = record_result.unwrap().timestamp;
+                let timestamp = record_result.as_ref().unwrap().timestamp;
                 if !time_filter.is_target(&Some(timestamp)) {
                     continue;
                 }
 
-                records_per_detect.push(data);
+                records_per_detect.push(data.to_owned());
             }
             if records_per_detect.is_empty() {
                 break;
@@ -835,7 +838,7 @@ impl App {
             let records_per_detect = self.rt.block_on(App::create_rec_infos(
                 records_per_detect,
                 &path,
-                self.rule_keys.clone(),
+                self.rule_keys.to_owned(),
             ));
 
             // timeline機能の実行
@@ -915,7 +918,7 @@ impl App {
         }
     }
 
-    fn evtx_to_jsons(&self, evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {
+    fn evtx_to_jsons(&self, evtx_filepath: &PathBuf) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更

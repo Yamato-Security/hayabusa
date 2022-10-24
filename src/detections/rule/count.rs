@@ -171,21 +171,20 @@ pub struct TimeFrameInfo {
 
 impl TimeFrameInfo {
     /// timeframeの文字列をパースし、構造体を返す関数
-    pub fn parse_tframe(value: String) -> TimeFrameInfo {
+    pub fn parse_tframe(mut value: String) -> TimeFrameInfo {
         let mut ttype: String = "".to_string();
-        let mut tnum = value.clone();
         if value.contains('s') {
             ttype = "s".to_owned();
-            tnum.retain(|c| c != 's');
+            value.retain(|c| c != 's');
         } else if value.contains('m') {
             ttype = "m".to_owned();
-            tnum.retain(|c| c != 'm');
+            value.retain(|c| c != 'm')
         } else if value.contains('h') {
             ttype = "h".to_owned();
-            tnum.retain(|c| c != 'h');
+            value.retain(|c| c != 'h');
         } else if value.contains('d') {
             ttype = "d".to_owned();
-            tnum.retain(|c| c != 'd');
+            value.retain(|c| c != 'd');
         } else {
             let errmsg = format!("Timeframe is invalid. Input value:{}", value);
             if configs::CONFIG.read().unwrap().args.verbose {
@@ -200,7 +199,7 @@ impl TimeFrameInfo {
         }
         TimeFrameInfo {
             timetype: ttype,
-            timenum: tnum.parse::<i64>(),
+            timenum: value.parse::<i64>(),
         }
     }
 }

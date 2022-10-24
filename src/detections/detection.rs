@@ -333,8 +333,8 @@ impl Detection {
                                         || x.starts_with("attack.s"))
                             })
                             .map(|y| {
-                                let mut replaced_tag = y.replace("attack.", "");
-                                make_ascii_titlecase(&mut replaced_tag)
+                                let replaced_tag = y.replace("attack.", "");
+                                make_ascii_titlecase(&replaced_tag)
                             })
                             .collect();
                         profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
@@ -497,8 +497,8 @@ impl Detection {
                                         || x.starts_with("attack.s"))
                             })
                             .map(|y| {
-                                let mut replaced_tag = y.replace("attack.", "");
-                                make_ascii_titlecase(&mut replaced_tag)
+                                let replaced_tag = y.replace("attack.", "");
+                                make_ascii_titlecase(&replaced_tag)
                             })
                             .collect();
                         profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
@@ -644,7 +644,7 @@ impl Detection {
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 let output_str = format!(
                     "{} rules: {}{}",
-                    make_ascii_titlecase(key.clone().as_mut()),
+                    make_ascii_titlecase(key),
                     value,
                     disable_flag
                 );
@@ -678,7 +678,7 @@ impl Detection {
                 };
                 let output_str = format!(
                     "{} rules: {} ({:.2}%){}",
-                    make_ascii_titlecase(key.clone().as_mut()),
+                    make_ascii_titlecase(key),
                     value,
                     rate,
                     deprecated_flag

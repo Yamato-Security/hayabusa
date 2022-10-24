@@ -79,10 +79,10 @@ fn get_init_md_data_map() -> (Vec<String>, HashMap<String, Vec<String>>) {
 }
 
 pub fn add_md_data(section_name: String, data: Vec<String>) {
-    let mut md_with_section_data = HTML_REPORTER.write().unwrap().md_datas.clone();
+    let mut md_with_section_data = HTML_REPORTER.write().unwrap().md_datas.to_owned();
     for c in data {
         let entry = md_with_section_data
-            .entry(section_name.clone())
+            .entry(section_name.to_owned())
             .or_insert(Vec::new());
         entry.push(c);
     }
@@ -147,7 +147,7 @@ mod tests {
         ];
         html_reporter.md_datas.insert(
             "General Overview {#general_overview}".to_string(),
-            general_data.clone(),
+            general_data.to_owned(),
         );
         let general_overview_str = format!(
             "<ul>\n<li>{}</li>\n</ul>",

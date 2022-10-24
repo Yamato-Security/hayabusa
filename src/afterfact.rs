@@ -193,7 +193,7 @@ pub fn after_fact(all_record_cnt: usize) {
         displayflag,
         color_map,
         all_record_cnt as u128,
-        PROFILES.clone().unwrap_or_default(),
+        PROFILES.to_owned().unwrap_or_default(),
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -254,7 +254,7 @@ fn emit_csv<W: std::io::Write>(
     let mut detected_record_idset: HashSet<String> = HashSet::new();
 
     for (_, time) in message::MESSAGES
-        .clone()
+        .to_owned()
         .into_read_only()
         .keys()
         .sorted()
@@ -328,13 +328,13 @@ fn emit_csv<W: std::io::Write>(
             let mut detect_counts_by_date = detect_counts_by_date_and_level
                 .get(&detect_info.level.to_lowercase())
                 .unwrap_or_else(|| detect_counts_by_date_and_level.get("undefined").unwrap())
-                .clone();
+                .to_owned();
             *detect_counts_by_date
                 .entry(time_str_date.to_string())
                 .or_insert(0) += 1;
             if !detected_rule_files.contains(&detect_info.rulepath) {
-                detected_rule_files.insert(detect_info.rulepath.clone());
-                for author in extract_author_name(detect_info.rulepath.clone()) {
+                detected_rule_files.insert(detect_info.rulepath.to_owned());
+                for author in extract_author_name(detect_info.rulepath.to_owned()) {
                     *rule_author_counter.entry(author).or_insert(1) += 1;
                 }
                 unique_detect_counts_by_level[level_suffix] += 1;
@@ -351,7 +351,7 @@ fn emit_csv<W: std::io::Write>(
                             .get("undefined")
                             .unwrap()
                     })
-                    .clone();
+                    .to_owned();
                 *detect_counts_by_computer
                     .entry(Clone::clone(&detect_info.computername))
                     .or_insert(0) += 1;
@@ -366,9 +366,9 @@ fn emit_csv<W: std::io::Write>(
                         .get("undefined")
                         .unwrap()
                 })
-                .clone();
-            rule_title_path_map.insert(detect_info.ruletitle.clone(), detect_info.rulepath.clone());
-            *detect_counts_by_rules
+                .to_owned();
+                rule_title_path_map.insert(detect_info.ruletitle.to_owned(), detect_info.rulepath.to_owned());
+                *detect_counts_by_rules
                 .entry(Clone::clone(&detect_info.ruletitle))
                 .or_insert(0) += 1;
             detect_counts_by_rule_and_level
@@ -1378,7 +1378,7 @@ mod tests {
                     eventid: test_eventid.to_string(),
                     detail: String::default(),
                     record_information: Option::Some(test_recinfo.to_string()),
-                    ext_field: output_profile.clone(),
+                    ext_field: output_profile.to_owned(),
                 },
                 expect_time,
                 &mut profile_converter,
@@ -1389,7 +1389,7 @@ mod tests {
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
                 + &expect_tz
-                    .clone()
+                    .to_owned()
                     .format("%Y-%m-%d %H:%M:%S%.3f %:z")
                     .to_string()
                 + ","
@@ -1446,7 +1446,7 @@ mod tests {
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
-            .clone()
+            .to_owned()
             .format("%Y-%m-%d %H:%M:%S%.3f %:z")
             .to_string()
             + " ‖ "

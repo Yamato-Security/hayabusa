@@ -159,7 +159,7 @@ impl DetectionNode {
             cond_str.to_string()
         } else {
             // conditionが指定されていない場合、selectionが一つだけならそのselectionを採用することにする。
-            let mut keys = self.name_to_selection.keys().clone();
+            let mut keys = self.name_to_selection.keys();
             if keys.len() >= 2 {
                 return Result::Err(vec![
                     "There is no condition node under detection.".to_string()
@@ -291,7 +291,7 @@ impl DetectionNode {
             // 連想配列と配列以外は末端ノード
             Box::new(selectionnodes::LeafSelectionNode::new(
                 key_list,
-                yaml.clone(),
+                yaml.to_owned(),
             ))
         }
     }
