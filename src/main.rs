@@ -760,9 +760,7 @@ impl App {
         println!();
         detection.add_aggcondition_msges(&self.rt);
         if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
-            println!("dbg after fact start");
             after_fact(total_records);
-            println!("dbg after fact end");
         }
     }
 
