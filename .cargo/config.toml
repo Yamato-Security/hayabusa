@@ -1,0 +1,31 @@
+[target.'cfg(all(target_os="windows", target_env = "msvc", target_arch = "x86_64"))']
+rustflags = [
+    "-L", "link-search=native=./cargo/msvcrt.lib",
+    "-C", "link-arg=/NODEFAULTLIB:libvcruntimed.lib",
+    "-C", "link-arg=/NODEFAULTLIB:vcruntime.lib",
+    "-C", "link-arg=/NODEFAULTLIB:vcruntimed.lib",
+    "-C", "link-arg=/NODEFAULTLIB:libcmtd.lib",
+    "-C", "link-arg=/NODEFAULTLIB:msvcrt.lib",
+    "-C", "link-arg=/NODEFAULTLIB:msvcrtd.lib",
+    "-C", "link-arg=/NODEFAULTLIB:libucrt.lib",
+    "-C", "link-arg=/NODEFAULTLIB:libucrtd.lib",
+    "-C", "link-arg=/DEFAULTLIB:libcmt.lib",
+    "-C", "link-arg=/DEFAULTLIB:libvcruntime.lib",
+    "-C", "link-arg=/DEFAULTLIB:ucrt.lib",
+]
+
+[target.'cfg(all(target_os="windows", target_env = "msvc", target_arch = "x86"))']
+rustflags = [
+    "-C", "target-feature=+crt-static",
+    "-C", "link-arg=/NODEFAULTLIB:libvcruntimed.lib",
+    "-C", "link-arg=/NODEFAULTLIB:vcruntime.lib",
+    "-C", "link-arg=/NODEFAULTLIB:vcruntimed.lib",
+    "-C", "link-arg=/NODEFAULTLIB:libcmtd.lib",
+    "-C", "link-arg=/NODEFAULTLIB:msvcrt.lib",
+    "-C", "link-arg=/NODEFAULTLIB:msvcrtd.lib",
+    "-C", "link-arg=/NODEFAULTLIB:libucrt.lib",
+    "-C", "link-arg=/NODEFAULTLIB:libucrtd.lib",
+    "-C", "link-arg=/DEFAULTLIB:libcmt.lib",
+    "-C", "link-arg=/DEFAULTLIB:libvcruntime.lib",
+    "-C", "link-arg=/DEFAULTLIB:ucrt.lib",
+]
