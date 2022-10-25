@@ -212,6 +212,7 @@ fn emit_csv<W: std::io::Write>(
     let mut disp_wtr_buf = disp_wtr.buffer();
     let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
     let jsonl_output_flag = configs::CONFIG.read().unwrap().args.jsonl_timeline;
+    let is_no_summary = configs::CONFIG.read().unwrap().args.no_summary;
 
     let mut wtr = if json_output_flag || jsonl_output_flag {
         WriterBuilder::new()
@@ -230,7 +231,7 @@ fn emit_csv<W: std::io::Write>(
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<String> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<String> = HashSet::new();
-    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, u128>> =
+    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
     let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
@@ -315,68 +316,52 @@ fn emit_csv<W: std::io::Write>(
                 wtr.write_record(detect_info.ext_field.values().map(|x| x.trim()))?;
             }
 
-            let level_suffix = *configs::LEVELMAP
-                .get(
-                    &LEVEL_FULL
-                        .get(&detect_info.level)
-                        .unwrap_or(&"undefined".to_string())
-                        .to_uppercase(),
-                )
-                .unwrap_or(&0) as usize;
-            let time_str_date = format_time(time, true);
+            // 各種集計作業
+            if !is_no_summary {
+                let level_suffix = *configs::LEVELMAP
+                    .get(
+                        &LEVEL_FULL
+                            .get(&detect_info.level)
+                            .unwrap_or(&"undefined".to_string())
+                            .to_uppercase(),
+                    )
+                    .unwrap_or(&0) as usize;
+                let time_str_date = format_time(time, true);
 
-            let mut detect_counts_by_date = detect_counts_by_date_and_level
-                .get(&detect_info.level.to_lowercase())
-                .unwrap_or_else(|| detect_counts_by_date_and_level.get("undefined").unwrap())
-                .to_owned();
-            *detect_counts_by_date
-                .entry(time_str_date.to_string())
-                .or_insert(0) += 1;
-            if !detected_rule_files.contains(&detect_info.rulepath) {
-                detected_rule_files.insert(detect_info.rulepath.to_owned());
-                for author in extract_author_name(detect_info.rulepath.to_owned()) {
-                    *rule_author_counter.entry(author).or_insert(1) += 1;
+                if !detected_rule_files.contains(&detect_info.rulepath) {
+                    detected_rule_files.insert(detect_info.rulepath.to_owned());
+                    for author in extract_author_name(detect_info.rulepath.to_owned()) {
+                        *rule_author_counter.entry(author).or_insert(1) += 1;
+                    }
+                    unique_detect_counts_by_level[level_suffix] += 1;
                 }
-                unique_detect_counts_by_level[level_suffix] += 1;
+
+                let computer_rule_check_key =
+                    format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
+                if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
+                    detected_computer_and_rule_names.insert(computer_rule_check_key);
+                    countup_aggregation(
+                        &mut detect_counts_by_computer_and_level,
+                        &detect_info.level,
+                        &detect_info.computername,
+                    );
+                }
+                rule_title_path_map.insert(
+                    detect_info.ruletitle.to_owned(),
+                    detect_info.rulepath.to_owned(),
+                );
+                countup_aggregation(
+                    &mut detect_counts_by_date_and_level,
+                    &detect_info.level,
+                    &time_str_date,
+                );
+                countup_aggregation(
+                    &mut detect_counts_by_rule_and_level,
+                    &detect_info.level,
+                    &detect_info.ruletitle,
+                );
+                total_detect_counts_by_level[level_suffix] += 1;
             }
-
-            let computer_rule_check_key =
-                format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
-            if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
-                detected_computer_and_rule_names.insert(computer_rule_check_key);
-                let mut detect_counts_by_computer = detect_counts_by_computer_and_level
-                    .get(&detect_info.level.to_lowercase())
-                    .unwrap_or_else(|| {
-                        detect_counts_by_computer_and_level
-                            .get("undefined")
-                            .unwrap()
-                    })
-                    .to_owned();
-                *detect_counts_by_computer
-                    .entry(Clone::clone(&detect_info.computername))
-                    .or_insert(0) += 1;
-                detect_counts_by_computer_and_level
-                    .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
-            }
-
-            let mut detect_counts_by_rules = detect_counts_by_rule_and_level
-                .get(&detect_info.level.to_lowercase())
-                .unwrap_or_else(|| {
-                    detect_counts_by_computer_and_level
-                        .get("undefined")
-                        .unwrap()
-                })
-                .to_owned();
-                rule_title_path_map.insert(detect_info.ruletitle.to_owned(), detect_info.rulepath.to_owned());
-                *detect_counts_by_rules
-                .entry(Clone::clone(&detect_info.ruletitle))
-                .or_insert(0) += 1;
-            detect_counts_by_rule_and_level
-                .insert(detect_info.level.to_lowercase(), detect_counts_by_rules);
-
-            total_detect_counts_by_level[level_suffix] += 1;
-            detect_counts_by_date_and_level
-                .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
     }
 
@@ -400,7 +385,7 @@ fn emit_csv<W: std::io::Write>(
     output_detected_rule_authors(rule_author_counter);
     println!();
 
-    if !configs::CONFIG.read().unwrap().args.no_summary {
+    if !is_no_summary {
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
@@ -534,6 +519,21 @@ fn emit_csv<W: std::io::Write>(
         );
     }
     Ok(())
+}
+
+fn countup_aggregation(
+    count_map: &mut HashMap<String, HashMap<String, i128>>,
+    key: &str,
+    entry_key: &str,
+) {
+    let mut detect_counts_by_rules = count_map
+        .get(&key.to_lowercase())
+        .unwrap_or_else(|| count_map.get("undefined").unwrap())
+        .to_owned();
+    *detect_counts_by_rules
+        .entry(entry_key.to_string())
+        .or_insert(0) += 1;
+    count_map.insert(key.to_lowercase(), detect_counts_by_rules);
 }
 
 /// columnt position. in cell
@@ -680,7 +680,7 @@ fn _print_unique_results(
 
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
-    detect_counts_by_date: HashMap<String, HashMap<String, u128>>,
+    detect_counts_by_date: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
     html_output_stock: &mut Vec<String>,
 ) {
@@ -696,7 +696,7 @@ fn _print_detection_summary_by_date(
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
         let mut max_detect_str = String::default();
-        let mut tmp_cnt: u128 = 0;
+        let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
