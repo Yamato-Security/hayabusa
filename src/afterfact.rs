@@ -242,10 +242,12 @@ fn emit_csv<W: std::io::Write>(
 
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
-    for level_init in levels {
-        detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
-        detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
-        detect_counts_by_rule_and_level.insert(level_init.to_string(), HashMap::new());
+    if is_no_summary {
+        for level_init in levels {
+            detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
+            detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
+            detect_counts_by_rule_and_level.insert(level_init.to_string(), HashMap::new());
+        }
     }
     if displayflag {
         println!();
