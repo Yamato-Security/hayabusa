@@ -821,6 +821,7 @@ dependencies = [
  "linked-hash-map",
  "lock_api",
  "mimalloc",
+ "nested",
  "num-format",
  "num_cpus",
  "openssl",
@@ -1293,6 +1294,12 @@ dependencies = [
  "security-framework-sys",
  "tempfile",
 ]
+
+[[package]]
+name = "nested"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca2b420f638f07fe83056b55ea190bb815f609ec5a35e7017884a10f78839c9e"
 
 [[package]]
 name = "num-derive"

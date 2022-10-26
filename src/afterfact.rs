@@ -13,6 +13,7 @@ use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
+use nested::Nested;
 use std::path::Path;
 use std::str::FromStr;
 use yaml_rust::YamlLoader;
@@ -206,7 +207,7 @@ fn emit_csv<W: std::io::Write>(
     all_record_cnt: u128,
     profile: LinkedHashMap<String, String>,
 ) -> io::Result<()> {
-    let mut html_output_stock: Vec<String> = vec![];
+    let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
@@ -242,12 +243,10 @@ fn emit_csv<W: std::io::Write>(
 
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
-    if is_no_summary {
-        for level_init in levels {
-            detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
-            detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
-            detect_counts_by_rule_and_level.insert(level_init.to_string(), HashMap::new());
-        }
+    for level_init in levels {
+        detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
+        detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
+        detect_counts_by_rule_and_level.insert(level_init.to_string(), HashMap::new());
     }
     if displayflag {
         println!();
@@ -490,7 +489,7 @@ fn emit_csv<W: std::io::Write>(
         println!();
         println!();
         if html_output_flag {
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
 
         _print_detection_summary_by_computer(
@@ -500,7 +499,7 @@ fn emit_csv<W: std::io::Write>(
         );
         println!();
         if html_output_flag {
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
 
         _print_detection_summary_tables(
@@ -511,7 +510,7 @@ fn emit_csv<W: std::io::Write>(
         );
         println!();
         if html_output_flag {
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
     }
     if html_output_flag {
@@ -550,7 +549,7 @@ enum ColPos {
 
 fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: bool) -> String {
     let data_length = &data.len();
-    let mut ret: Vec<String> = vec![];
+    let mut ret = Nested::<String>::new();
     if header {
         for (i, k) in data.keys().enumerate() {
             if i == 0 {
@@ -579,7 +578,7 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
         .has_headers(false)
         .from_writer(vec![]);
 
-    disp_serializer.write_record(ret).ok();
+    disp_serializer.write_record(ret.iter().collect::<Vec<_>>()).ok();
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
         .unwrap_or_default()
         .replace('|', "‖")
@@ -602,7 +601,7 @@ fn _print_unique_results(
     head_word: String,
     tail_word: String,
     color_map: &HashMap<String, Colors>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
@@ -675,8 +674,8 @@ fn _print_unique_results(
         .ok();
     }
     if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-        html_output_stock.append(&mut total_detect_md);
-        html_output_stock.append(&mut unique_detect_md);
+        html_output_stock.extend(total_detect_md.iter());
+        html_output_stock.extend(unique_detect_md.iter());
     }
 }
 
@@ -684,7 +683,7 @@ fn _print_unique_results(
 fn _print_detection_summary_by_date(
     detect_counts_by_date: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -736,7 +735,7 @@ fn _print_detection_summary_by_date(
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -746,7 +745,7 @@ fn _print_detection_summary_by_computer(
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
-        let mut result_vec: Vec<String> = Vec::new();
+        let mut result_vec = Nested::<String>::new();
         //computer nameで-となっているものは除外して集計する
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer
             .iter()
@@ -769,7 +768,7 @@ fn _print_detection_summary_by_computer(
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
         for x in sorted_detections.iter().take(5) {
             result_vec.push(format!(
@@ -781,7 +780,7 @@ fn _print_detection_summary_by_computer(
         let result_str = if result_vec.is_empty() {
             "n/a".to_string()
         } else {
-            result_vec.join(", ")
+            result_vec.iter().collect::<Vec<_>>().join(", ")
         };
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
@@ -805,7 +804,7 @@ fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
     rule_title_path_map: HashMap<String, String>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -848,7 +847,7 @@ fn _print_detection_summary_tables(
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
 
         let take_cnt =
