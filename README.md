@@ -330,13 +330,13 @@ Example: `hayabusa-1.7.2-windows-x64.exe`
 You first need to make the binary executable. 
 
 ```bash
-chmod +x ./hayabusa-1.7.2-lin-x64-gnu
+chmod +x ./hayabusa-1.7.2-lin-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-1.7.2-lin-x64-gnu
+./hayabusa-1.7.2-lin-gnu
 ```
 
 ## macOS
