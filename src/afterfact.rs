@@ -258,7 +258,7 @@ fn emit_csv<W: std::io::Write>(
         .to_owned()
         .into_read_only()
         .keys()
-        .sorted()
+        .sorted_unstable()
         .enumerate()
     {
         let multi = message::MESSAGES.get(time).unwrap();
