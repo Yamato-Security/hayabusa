@@ -1,4 +1,5 @@
 extern crate lazy_static;
+use hashbrown::HashSet;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::PROFILES;
@@ -33,6 +34,7 @@ pub struct AlertMessage {}
 lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
     pub static ref MESSAGES: DashMap<DateTime<Utc>, Vec<DetectInfo>> = DashMap::new();
+    pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref ERROR_LOG_PATH: String = format!(
@@ -110,6 +112,7 @@ pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
 
 /// メッセージの設定を行う関数。aggcondition対応のためrecordではなく出力をする対象時間がDatetime形式での入力としている
 pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
+    MESSAGEKEYS.lock().unwrap().insert(event_time);
     let mut v = MESSAGES.entry(event_time).or_default();
     let (_, info) = v.pair_mut();
     info.push(detect_info);

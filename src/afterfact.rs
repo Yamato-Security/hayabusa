@@ -1,5 +1,5 @@
 use crate::detections::configs::{self, CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL};
+use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::options::profile::PROFILES;
@@ -254,13 +254,8 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-
-    for (_, time) in message::MESSAGES
-        .to_owned()
-        .into_read_only()
-        .keys()
-        .sorted_unstable()
-        .enumerate()
+    
+    for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable()
     {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
