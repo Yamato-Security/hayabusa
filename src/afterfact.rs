@@ -194,7 +194,7 @@ pub fn after_fact(all_record_cnt: usize) {
         displayflag,
         color_map,
         all_record_cnt as u128,
-        PROFILES.to_owned().unwrap_or_default(),
+        PROFILES.as_ref().unwrap(),
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -205,7 +205,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<String, Colors>,
     all_record_cnt: u128,
-    profile: LinkedHashMap<String, String>,
+    profile: &LinkedHashMap<String, String>,
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
@@ -275,7 +275,7 @@ fn emit_csv<W: std::io::Write>(
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None),
-                        &_get_serialized_disp_output(&profile, true),
+                        &_get_serialized_disp_output(profile, true),
                         false,
                     )
                     .ok();
@@ -298,7 +298,7 @@ fn emit_csv<W: std::io::Write>(
                 wtr.write_field("{")?;
                 wtr.write_field(&output_json_str(
                     &detect_info.ext_field,
-                    &profile,
+                    profile,
                     jsonl_output_flag,
                 ))?;
                 wtr.write_field("}")?;
@@ -306,7 +306,7 @@ fn emit_csv<W: std::io::Write>(
                 // JSONL output format
                 wtr.write_field(format!(
                     "{{ {} }}",
-                    &output_json_str(&detect_info.ext_field, &profile, jsonl_output_flag)
+                    &output_json_str(&detect_info.ext_field, profile, jsonl_output_flag)
                 ))?;
             } else {
                 // csv output format
@@ -1419,7 +1419,7 @@ mod tests {
                 + test_attack
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::new(), 1, output_profile).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::new(), 1, &output_profile).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
