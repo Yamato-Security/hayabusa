@@ -254,9 +254,8 @@ fn emit_csv<W: std::io::Write>(
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
-    
-    for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable()
-    {
+
+    for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
@@ -574,7 +573,9 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
         .has_headers(false)
         .from_writer(vec![]);
 
-    disp_serializer.write_record(ret.iter().collect::<Vec<_>>()).ok();
+    disp_serializer
+        .write_record(ret.iter().collect::<Vec<_>>())
+        .ok();
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
         .unwrap_or_default()
         .replace('|', "‖")
@@ -1261,7 +1262,7 @@ fn extract_author_name(yaml_path: &str) -> Nested<String> {
                     tmp[0].to_string()
                 })
                 .collect();
-            let mut ret= Nested::<String>::new();
+            let mut ret = Nested::<String>::new();
             for author in authors_vec.iter() {
                 ret.extend(author.split(';'));
             }
@@ -1276,8 +1277,10 @@ fn extract_author_name(yaml_path: &str) -> Nested<String> {
                                 .replace('\'', "")
                                 .trim()
                                 .to_string()
-                        }).collect::<String>()
-                }).collect();
+                        })
+                        .collect::<String>()
+                })
+                .collect();
         };
     }
     // ここまで来た場合は要素がない場合なので空配列を返す

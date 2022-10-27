@@ -888,7 +888,7 @@ impl App {
         let mut key_set = HashSet::new();
         for rule in rules {
             let keys = get_detection_keys(rule);
-            key_set.extend(keys.iter().map(|x|x.to_string()).collect::<Vec<String>>());
+            key_set.extend(keys.iter().map(|x| x.to_string()).collect::<Vec<String>>());
         }
 
         key_set.into_iter().collect::<Nested<String>>()

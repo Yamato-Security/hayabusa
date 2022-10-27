@@ -1,11 +1,11 @@
 extern crate lazy_static;
-use hashbrown::HashSet;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::PROFILES;
 use chrono::{DateTime, Local, Utc};
 use dashmap::DashMap;
 use hashbrown::HashMap;
+use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
 use regex::Regex;
