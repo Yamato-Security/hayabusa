@@ -325,9 +325,10 @@ fn emit_csv<W: std::io::Write>(
                 let time_str_date = format_time(time, true);
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
-                    detected_rule_files.insert(detect_info.rulepath.to_owned());
-                    for author in extract_author_name(detect_info.rulepath.to_owned()) {
-                        *rule_author_counter.entry(author).or_insert(1) += 1;
+                    detected_rule_files.insert(detect_info.rulepath.to_string());
+                    let tmp = extract_author_name(&detect_info.rulepath);
+                    for author in tmp.iter() {
+                        *rule_author_counter.entry(author.to_string()).or_insert(1) += 1;
                     }
                     unique_detect_counts_by_level[level_suffix] += 1;
                 }
@@ -1231,7 +1232,7 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
 }
 
 /// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
-fn extract_author_name(yaml_path: String) -> Vec<String> {
+fn extract_author_name(yaml_path: &str) -> Nested<String> {
     let parser = ParseYaml::new();
     let contents = match parser.read_file(Path::new(&yaml_path).to_path_buf()) {
         Ok(yaml) => Some(yaml),
@@ -1242,14 +1243,14 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
     };
     if contents.is_none() {
         // 対象のファイルが存在しなかった場合は空配列を返す(検知しているルールに対して行うため、ここは通る想定はないが、ファイルが検知途中で削除された場合などを考慮して追加)
-        return vec![];
+        return Nested::new();
     }
     for yaml in YamlLoader::load_from_str(&contents.unwrap())
         .unwrap_or_default()
         .into_iter()
     {
         if let Some(author) = yaml["author"].as_str() {
-            let authors_vec: Vec<String> = author
+            let authors_vec: Nested<String> = author
                 .to_string()
                 .split(',')
                 .into_iter()
@@ -1260,8 +1261,8 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
                     tmp[0].to_string()
                 })
                 .collect();
-            let mut ret: Vec<&str> = Vec::new();
-            for author in &authors_vec {
+            let mut ret= Nested::<String>::new();
+            for author in authors_vec.iter() {
                 ret.extend(author.split(';'));
             }
 
@@ -1274,15 +1275,13 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
                                 .replace('"', "")
                                 .replace('\'', "")
                                 .trim()
-                                .to_owned()
-                        })
-                        .collect()
-                })
-                .collect();
+                                .to_string()
+                        }).collect::<String>()
+                }).collect();
         };
     }
     // ここまで来た場合は要素がない場合なので空配列を返す
-    vec![]
+    Nested::new()
 }
 
 #[cfg(test)]
