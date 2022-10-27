@@ -7,6 +7,7 @@ use crate::options::profile::{
 };
 use chrono::{TimeZone, Utc};
 use itertools::Itertools;
+use nested::Nested;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::{
@@ -632,7 +633,7 @@ impl Detection {
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let args = &configs::CONFIG.read().unwrap().args;
-        let mut html_report_stock = Vec::new();
+        let mut html_report_stock = Nested::<String>::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {

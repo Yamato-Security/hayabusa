@@ -28,6 +28,7 @@ use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
 use mimalloc::MiMalloc;
+use nested::Nested;
 use pbr::ProgressBar;
 use serde_json::Value;
 use std::borrow::Borrow;
@@ -65,7 +66,7 @@ fn main() {
 
 pub struct App {
     rt: Runtime,
-    rule_keys: Vec<String>,
+    rule_keys: Nested<String>,
 }
 
 impl Default for App {
@@ -78,7 +79,7 @@ impl App {
     pub fn new() -> App {
         App {
             rt: utils::create_tokio_runtime(),
-            rule_keys: Vec::new(),
+            rule_keys: Nested::<String>::new(),
         }
     }
 
@@ -100,10 +101,11 @@ impl App {
         }
         let analysis_start_time: DateTime<Local> = Local::now();
         if *HTML_REPORT_FLAG {
-            let output_data = vec![format!(
+            let mut output_data = Nested::<String>::new();
+            output_data.extend(vec![format!(
                 "- Start time: {}",
                 analysis_start_time.format("%Y/%m/%d %H:%M")
-            )];
+            )]);
             htmlreport::add_md_data(
                 "General Overview {#general_overview}".to_string(),
                 output_data,
@@ -445,7 +447,8 @@ impl App {
         .ok();
 
         if *HTML_REPORT_FLAG {
-            let output_data = vec![format!("- {}", elapsed_output_str)];
+            let mut output_data = Nested::<String>::new();
+            output_data.extend(vec![format!("- {}", elapsed_output_str)]);
             htmlreport::add_md_data(
                 "General Overview {#general_overview}".to_string(),
                 output_data,
@@ -476,7 +479,8 @@ impl App {
                 .ok();
 
                 if *HTML_REPORT_FLAG {
-                    let output_data = vec![format!("- {}", output_saved_str)];
+                    let mut output_data = Nested::<String>::new();
+                    output_data.extend(vec![format!("- {}", output_saved_str)]);
                     htmlreport::add_md_data(
                         "General Overview {#general_overview}".to_string(),
                         output_data,
@@ -706,10 +710,11 @@ impl App {
         }
 
         if *HTML_REPORT_FLAG {
-            let output_data = vec![
+            let mut output_data = Nested::<String>::new();
+            output_data.extend(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {}", total_size_output),
-            ];
+            ]);
             htmlreport::add_md_data(
                 "General Overview #{general_overview}".to_string(),
                 output_data,
@@ -854,7 +859,7 @@ impl App {
     async fn create_rec_infos(
         records_per_detect: Vec<Value>,
         path: &dyn Display,
-        rule_keys: Vec<String>,
+        rule_keys: Nested<String>,
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
@@ -879,15 +884,14 @@ impl App {
         ret
     }
 
-    fn get_all_keys(&self, rules: &[RuleNode]) -> Vec<String> {
+    fn get_all_keys(&self, rules: &[RuleNode]) -> Nested<String> {
         let mut key_set = HashSet::new();
         for rule in rules {
             let keys = get_detection_keys(rule);
-            key_set.extend(keys);
+            key_set.extend(keys.iter().map(|x|x.to_string()).collect::<Vec<String>>());
         }
 
-        let ret: Vec<String> = key_set.into_iter().collect();
-        ret
+        key_set.into_iter().collect::<Nested<String>>()
     }
 
     /// target_eventids.txtの設定を元にフィルタする。 trueであれば検知確認対象のEventIDであることを意味する。

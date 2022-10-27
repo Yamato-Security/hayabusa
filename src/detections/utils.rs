@@ -5,6 +5,7 @@ extern crate regex;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 
 use hashbrown::HashMap;
+use nested::Nested;
 use std::path::{Path, PathBuf};
 
 use chrono::Local;
@@ -213,7 +214,7 @@ pub fn create_tokio_runtime() -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecordInfo {
+pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> EvtxRecordInfo {
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -222,7 +223,7 @@ pub fn create_rec_info(data: Value, path: String, keys: &[String]) -> EvtxRecord
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
     // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。標準ライブラリがhashbrownを採用したためserde_jsonについても高速化した。
     let mut key_2_values = HashMap::new();
-    for key in keys {
+    for key in keys.iter() {
         let val = get_event_value(key, &data);
         if val.is_none() {
             continue;

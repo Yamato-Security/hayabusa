@@ -3,6 +3,7 @@ extern crate regex;
 use chrono::{DateTime, Utc};
 
 use hashbrown::HashMap;
+use nested::Nested;
 use std::{fmt::Debug, sync::Arc, vec};
 
 use yaml_rust::Yaml;
@@ -99,8 +100,8 @@ impl RuleNode {
 }
 
 // RuleNodeのdetectionに定義されているキーの一覧を取得する。
-pub fn get_detection_keys(node: &RuleNode) -> Vec<String> {
-    let mut ret = vec![];
+pub fn get_detection_keys(node: &RuleNode) -> Nested<String> {
+    let mut ret = Nested::<String>::new();
     let detection = &node.detection;
     for key in detection.name_to_selection.keys() {
         let selection = &detection.name_to_selection[key];
