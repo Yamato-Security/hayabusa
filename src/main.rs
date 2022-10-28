@@ -28,8 +28,10 @@ use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
 use mimalloc::MiMalloc;
+use nested::Nested;
 use pbr::ProgressBar;
 use serde_json::Value;
+use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
 use std::fmt::Write as _;
@@ -64,7 +66,7 @@ fn main() {
 
 pub struct App {
     rt: Runtime,
-    rule_keys: Vec<String>,
+    rule_keys: Nested<String>,
 }
 
 impl Default for App {
@@ -77,7 +79,7 @@ impl App {
     pub fn new() -> App {
         App {
             rt: utils::create_tokio_runtime(),
-            rule_keys: Vec::new(),
+            rule_keys: Nested::<String>::new(),
         }
     }
 
@@ -99,10 +101,11 @@ impl App {
         }
         let analysis_start_time: DateTime<Local> = Local::now();
         if *HTML_REPORT_FLAG {
-            let output_data = vec![format!(
+            let mut output_data = Nested::<String>::new();
+            output_data.extend(vec![format!(
                 "- Start time: {}",
                 analysis_start_time.format("%Y/%m/%d %H:%M")
-            )];
+            )]);
             htmlreport::add_md_data(
                 "General Overview {#general_overview}".to_string(),
                 output_data,
@@ -379,7 +382,7 @@ impl App {
                 .unwrap()
                 .args
                 .level_tuning
-                .clone()
+                .to_owned()
                 .unwrap();
             let level_tuning_config_path = match level_tuning_val {
                 Some(path) => path.to_owned(),
@@ -444,7 +447,8 @@ impl App {
         .ok();
 
         if *HTML_REPORT_FLAG {
-            let output_data = vec![format!("- {}", elapsed_output_str)];
+            let mut output_data = Nested::<String>::new();
+            output_data.extend(vec![format!("- {}", elapsed_output_str)]);
             htmlreport::add_md_data(
                 "General Overview {#general_overview}".to_string(),
                 output_data,
@@ -475,7 +479,8 @@ impl App {
                 .ok();
 
                 if *HTML_REPORT_FLAG {
-                    let output_data = vec![format!("- {}", output_saved_str)];
+                    let mut output_data = Nested::<String>::new();
+                    output_data.extend(vec![format!("- {}", output_saved_str)]);
                     htmlreport::add_md_data(
                         "General Overview {#general_overview}".to_string(),
                         output_data,
@@ -562,7 +567,7 @@ impl App {
             }
         }
         if *HTML_REPORT_FLAG {
-            let html_str = HTML_REPORTER.read().unwrap().clone().create_html();
+            let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
             htmlreport::create_html_file(
                 html_str,
                 configs::CONFIG
@@ -705,10 +710,11 @@ impl App {
         }
 
         if *HTML_REPORT_FLAG {
-            let output_data = vec![
+            let mut output_data = Nested::<String>::new();
+            output_data.extend(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {}", total_size_output),
-            ];
+            ]);
             htmlreport::add_md_data(
                 "General Overview #{general_overview}".to_string(),
                 output_data,
@@ -741,7 +747,7 @@ impl App {
             }
             let cnt_tmp: usize;
             (detection, cnt_tmp, tl) =
-                self.analysis_file(evtx_file, detection, time_filter, tl.clone());
+                self.analysis_file(evtx_file, detection, time_filter, tl.to_owned());
             total_records += cnt_tmp;
             pb.inc();
         }
@@ -772,7 +778,7 @@ impl App {
         mut tl: Timeline,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
-        let parser = self.evtx_to_jsons(evtx_filepath.clone());
+        let parser = self.evtx_to_jsons(&evtx_filepath);
         let mut record_cnt = 0;
         if parser.is_none() {
             return (detection, record_cnt, tl);
@@ -811,22 +817,22 @@ impl App {
                     continue;
                 }
 
-                let data = record_result.as_ref().unwrap().data.clone();
+                let data = record_result.as_ref().unwrap().data.borrow();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(&data)
+                if !self._is_valid_channel(data)
                     || (configs::CONFIG.read().unwrap().args.eid_filter
-                        && !self._is_target_event_id(&data))
+                        && !self._is_target_event_id(data))
                 {
                     continue;
                 }
 
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                let timestamp = record_result.unwrap().timestamp;
+                let timestamp = record_result.as_ref().unwrap().timestamp;
                 if !time_filter.is_target(&Some(timestamp)) {
                     continue;
                 }
 
-                records_per_detect.push(data);
+                records_per_detect.push(data.to_owned());
             }
             if records_per_detect.is_empty() {
                 break;
@@ -835,7 +841,7 @@ impl App {
             let records_per_detect = self.rt.block_on(App::create_rec_infos(
                 records_per_detect,
                 &path,
-                self.rule_keys.clone(),
+                self.rule_keys.to_owned(),
             ));
 
             // timeline機能の実行
@@ -853,7 +859,7 @@ impl App {
     async fn create_rec_infos(
         records_per_detect: Vec<Value>,
         path: &dyn Display,
-        rule_keys: Vec<String>,
+        rule_keys: Nested<String>,
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
@@ -878,15 +884,14 @@ impl App {
         ret
     }
 
-    fn get_all_keys(&self, rules: &[RuleNode]) -> Vec<String> {
+    fn get_all_keys(&self, rules: &[RuleNode]) -> Nested<String> {
         let mut key_set = HashSet::new();
         for rule in rules {
             let keys = get_detection_keys(rule);
-            key_set.extend(keys);
+            key_set.extend(keys.iter().map(|x| x.to_string()).collect::<Vec<String>>());
         }
 
-        let ret: Vec<String> = key_set.into_iter().collect();
-        ret
+        key_set.into_iter().collect::<Nested<String>>()
     }
 
     /// target_eventids.txtの設定を元にフィルタする。 trueであれば検知確認対象のEventIDであることを意味する。
@@ -915,7 +920,7 @@ impl App {
         }
     }
 
-    fn evtx_to_jsons(&self, evtx_filepath: PathBuf) -> Option<EvtxParser<File>> {
+    fn evtx_to_jsons(&self, evtx_filepath: &PathBuf) -> Option<EvtxParser<File>> {
         match EvtxParser::from_path(evtx_filepath) {
             Ok(evtx_parser) => {
                 // parserのデフォルト設定を変更

@@ -1,5 +1,5 @@
 use crate::detections::configs::{self, CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL};
+use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::options::profile::PROFILES;
@@ -13,6 +13,7 @@ use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
 use linked_hash_map::LinkedHashMap;
+use nested::Nested;
 use std::path::Path;
 use std::str::FromStr;
 use yaml_rust::YamlLoader;
@@ -193,7 +194,7 @@ pub fn after_fact(all_record_cnt: usize) {
         displayflag,
         color_map,
         all_record_cnt as u128,
-        PROFILES.clone().unwrap_or_default(),
+        PROFILES.as_ref().unwrap(),
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -204,14 +205,15 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<String, Colors>,
     all_record_cnt: u128,
-    profile: LinkedHashMap<String, String>,
+    profile: &LinkedHashMap<String, String>,
 ) -> io::Result<()> {
-    let mut html_output_stock: Vec<String> = vec![];
+    let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
     let jsonl_output_flag = configs::CONFIG.read().unwrap().args.jsonl_timeline;
+    let is_no_summary = configs::CONFIG.read().unwrap().args.no_summary;
 
     let mut wtr = if json_output_flag || jsonl_output_flag {
         WriterBuilder::new()
@@ -230,7 +232,7 @@ fn emit_csv<W: std::io::Write>(
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<String> = HashSet::new();
     let mut detected_computer_and_rule_names: HashSet<String> = HashSet::new();
-    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, u128>> =
+    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
     let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
         HashMap::new();
@@ -253,13 +255,7 @@ fn emit_csv<W: std::io::Write>(
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<String> = HashSet::new();
 
-    for (_, time) in message::MESSAGES
-        .clone()
-        .into_read_only()
-        .keys()
-        .sorted()
-        .enumerate()
-    {
+    for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
@@ -273,7 +269,7 @@ fn emit_csv<W: std::io::Write>(
                     write_color_buffer(
                         &disp_wtr,
                         get_writable_color(None),
-                        &_get_serialized_disp_output(&profile, true),
+                        &_get_serialized_disp_output(profile, true),
                         false,
                     )
                     .ok();
@@ -296,7 +292,7 @@ fn emit_csv<W: std::io::Write>(
                 wtr.write_field("{")?;
                 wtr.write_field(&output_json_str(
                     &detect_info.ext_field,
-                    &profile,
+                    profile,
                     jsonl_output_flag,
                 ))?;
                 wtr.write_field("}")?;
@@ -304,7 +300,7 @@ fn emit_csv<W: std::io::Write>(
                 // JSONL output format
                 wtr.write_field(format!(
                     "{{ {} }}",
-                    &output_json_str(&detect_info.ext_field, &profile, jsonl_output_flag)
+                    &output_json_str(&detect_info.ext_field, profile, jsonl_output_flag)
                 ))?;
             } else {
                 // csv output format
@@ -315,68 +311,53 @@ fn emit_csv<W: std::io::Write>(
                 wtr.write_record(detect_info.ext_field.values().map(|x| x.trim()))?;
             }
 
-            let level_suffix = *configs::LEVELMAP
-                .get(
-                    &LEVEL_FULL
-                        .get(&detect_info.level)
-                        .unwrap_or(&"undefined".to_string())
-                        .to_uppercase(),
-                )
-                .unwrap_or(&0) as usize;
-            let time_str_date = format_time(time, true);
+            // 各種集計作業
+            if !is_no_summary {
+                let level_suffix = *configs::LEVELMAP
+                    .get(
+                        &LEVEL_FULL
+                            .get(&detect_info.level)
+                            .unwrap_or(&"undefined".to_string())
+                            .to_uppercase(),
+                    )
+                    .unwrap_or(&0) as usize;
+                let time_str_date = format_time(time, true);
 
-            let mut detect_counts_by_date = detect_counts_by_date_and_level
-                .get(&detect_info.level.to_lowercase())
-                .unwrap_or_else(|| detect_counts_by_date_and_level.get("undefined").unwrap())
-                .clone();
-            *detect_counts_by_date
-                .entry(time_str_date.to_string())
-                .or_insert(0) += 1;
-            if !detected_rule_files.contains(&detect_info.rulepath) {
-                detected_rule_files.insert(detect_info.rulepath.clone());
-                for author in extract_author_name(detect_info.rulepath.clone()) {
-                    *rule_author_counter.entry(author).or_insert(1) += 1;
+                if !detected_rule_files.contains(&detect_info.rulepath) {
+                    detected_rule_files.insert(detect_info.rulepath.to_string());
+                    let tmp = extract_author_name(&detect_info.rulepath);
+                    for author in tmp.iter() {
+                        *rule_author_counter.entry(author.to_string()).or_insert(1) += 1;
+                    }
+                    unique_detect_counts_by_level[level_suffix] += 1;
                 }
-                unique_detect_counts_by_level[level_suffix] += 1;
+
+                let computer_rule_check_key =
+                    format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
+                if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
+                    detected_computer_and_rule_names.insert(computer_rule_check_key);
+                    countup_aggregation(
+                        &mut detect_counts_by_computer_and_level,
+                        &detect_info.level,
+                        &detect_info.computername,
+                    );
+                }
+                rule_title_path_map.insert(
+                    detect_info.ruletitle.to_owned(),
+                    detect_info.rulepath.to_owned(),
+                );
+                countup_aggregation(
+                    &mut detect_counts_by_date_and_level,
+                    &detect_info.level,
+                    &time_str_date,
+                );
+                countup_aggregation(
+                    &mut detect_counts_by_rule_and_level,
+                    &detect_info.level,
+                    &detect_info.ruletitle,
+                );
+                total_detect_counts_by_level[level_suffix] += 1;
             }
-
-            let computer_rule_check_key =
-                format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
-            if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
-                detected_computer_and_rule_names.insert(computer_rule_check_key);
-                let mut detect_counts_by_computer = detect_counts_by_computer_and_level
-                    .get(&detect_info.level.to_lowercase())
-                    .unwrap_or_else(|| {
-                        detect_counts_by_computer_and_level
-                            .get("undefined")
-                            .unwrap()
-                    })
-                    .clone();
-                *detect_counts_by_computer
-                    .entry(Clone::clone(&detect_info.computername))
-                    .or_insert(0) += 1;
-                detect_counts_by_computer_and_level
-                    .insert(detect_info.level.to_lowercase(), detect_counts_by_computer);
-            }
-
-            let mut detect_counts_by_rules = detect_counts_by_rule_and_level
-                .get(&detect_info.level.to_lowercase())
-                .unwrap_or_else(|| {
-                    detect_counts_by_computer_and_level
-                        .get("undefined")
-                        .unwrap()
-                })
-                .clone();
-            rule_title_path_map.insert(detect_info.ruletitle.clone(), detect_info.rulepath.clone());
-            *detect_counts_by_rules
-                .entry(Clone::clone(&detect_info.ruletitle))
-                .or_insert(0) += 1;
-            detect_counts_by_rule_and_level
-                .insert(detect_info.level.to_lowercase(), detect_counts_by_rules);
-
-            total_detect_counts_by_level[level_suffix] += 1;
-            detect_counts_by_date_and_level
-                .insert(detect_info.level.to_lowercase(), detect_counts_by_date);
         }
     }
 
@@ -387,20 +368,19 @@ fn emit_csv<W: std::io::Write>(
     }
 
     disp_wtr_buf.clear();
-    write_color_buffer(
-        &disp_wtr,
-        get_writable_color(Some(Color::Rgb(0, 255, 0))),
-        "Rule Authors:",
-        false,
-    )
-    .ok();
-    write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
+    if !is_no_summary {
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 0))),
+            "Rule Authors:",
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
 
-    println!();
-    output_detected_rule_authors(rule_author_counter);
-    println!();
-
-    if !configs::CONFIG.read().unwrap().args.no_summary {
+        println!();
+        output_detected_rule_authors(rule_author_counter);
+        println!();
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
@@ -503,7 +483,7 @@ fn emit_csv<W: std::io::Write>(
         println!();
         println!();
         if html_output_flag {
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
 
         _print_detection_summary_by_computer(
@@ -513,7 +493,7 @@ fn emit_csv<W: std::io::Write>(
         );
         println!();
         if html_output_flag {
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
 
         _print_detection_summary_tables(
@@ -524,7 +504,7 @@ fn emit_csv<W: std::io::Write>(
         );
         println!();
         if html_output_flag {
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
     }
     if html_output_flag {
@@ -534,6 +514,21 @@ fn emit_csv<W: std::io::Write>(
         );
     }
     Ok(())
+}
+
+fn countup_aggregation(
+    count_map: &mut HashMap<String, HashMap<String, i128>>,
+    key: &str,
+    entry_key: &str,
+) {
+    let mut detect_counts_by_rules = count_map
+        .get(&key.to_lowercase())
+        .unwrap_or_else(|| count_map.get("undefined").unwrap())
+        .to_owned();
+    *detect_counts_by_rules
+        .entry(entry_key.to_string())
+        .or_insert(0) += 1;
+    count_map.insert(key.to_lowercase(), detect_counts_by_rules);
 }
 
 /// columnt position. in cell
@@ -548,7 +543,7 @@ enum ColPos {
 
 fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: bool) -> String {
     let data_length = &data.len();
-    let mut ret: Vec<String> = vec![];
+    let mut ret = Nested::<String>::new();
     if header {
         for (i, k) in data.keys().enumerate() {
             if i == 0 {
@@ -577,7 +572,9 @@ fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: boo
         .has_headers(false)
         .from_writer(vec![]);
 
-    disp_serializer.write_record(ret).ok();
+    disp_serializer
+        .write_record(ret.iter().collect::<Vec<_>>())
+        .ok();
     String::from_utf8(disp_serializer.into_inner().unwrap_or_default())
         .unwrap_or_default()
         .replace('|', "‖")
@@ -600,7 +597,7 @@ fn _print_unique_results(
     head_word: String,
     tail_word: String,
     color_map: &HashMap<String, Colors>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
@@ -673,16 +670,16 @@ fn _print_unique_results(
         .ok();
     }
     if configs::CONFIG.read().unwrap().args.html_report.is_some() {
-        html_output_stock.append(&mut total_detect_md);
-        html_output_stock.append(&mut unique_detect_md);
+        html_output_stock.extend(total_detect_md.iter());
+        html_output_stock.extend(unique_detect_md.iter());
     }
 }
 
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
-    detect_counts_by_date: HashMap<String, HashMap<String, u128>>,
+    detect_counts_by_date: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -696,7 +693,7 @@ fn _print_detection_summary_by_date(
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(level).unwrap();
         let mut max_detect_str = String::default();
-        let mut tmp_cnt: u128 = 0;
+        let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
@@ -734,7 +731,7 @@ fn _print_detection_summary_by_date(
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -744,7 +741,7 @@ fn _print_detection_summary_by_computer(
     for level in LEVEL_ABBR.values() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
-        let mut result_vec: Vec<String> = Vec::new();
+        let mut result_vec = Nested::<String>::new();
         //computer nameで-となっているものは除外して集計する
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer
             .iter()
@@ -767,7 +764,7 @@ fn _print_detection_summary_by_computer(
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
         for x in sorted_detections.iter().take(5) {
             result_vec.push(format!(
@@ -779,7 +776,7 @@ fn _print_detection_summary_by_computer(
         let result_str = if result_vec.is_empty() {
             "n/a".to_string()
         } else {
-            result_vec.join(", ")
+            result_vec.iter().collect::<Vec<_>>().join(", ")
         };
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
@@ -803,7 +800,7 @@ fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
     rule_title_path_map: HashMap<String, String>,
-    html_output_stock: &mut Vec<String>,
+    html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -846,7 +843,7 @@ fn _print_detection_summary_tables(
                     x.1.to_formatted_string(&Locale::en)
                 ));
             }
-            html_output_stock.push("".to_string());
+            html_output_stock.push("");
         }
 
         let take_cnt =
@@ -1235,7 +1232,7 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
 }
 
 /// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
-fn extract_author_name(yaml_path: String) -> Vec<String> {
+fn extract_author_name(yaml_path: &str) -> Nested<String> {
     let parser = ParseYaml::new();
     let contents = match parser.read_file(Path::new(&yaml_path).to_path_buf()) {
         Ok(yaml) => Some(yaml),
@@ -1246,14 +1243,14 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
     };
     if contents.is_none() {
         // 対象のファイルが存在しなかった場合は空配列を返す(検知しているルールに対して行うため、ここは通る想定はないが、ファイルが検知途中で削除された場合などを考慮して追加)
-        return vec![];
+        return Nested::new();
     }
     for yaml in YamlLoader::load_from_str(&contents.unwrap())
         .unwrap_or_default()
         .into_iter()
     {
         if let Some(author) = yaml["author"].as_str() {
-            let authors_vec: Vec<String> = author
+            let authors_vec: Nested<String> = author
                 .to_string()
                 .split(',')
                 .into_iter()
@@ -1264,8 +1261,8 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
                     tmp[0].to_string()
                 })
                 .collect();
-            let mut ret: Vec<&str> = Vec::new();
-            for author in &authors_vec {
+            let mut ret = Nested::<String>::new();
+            for author in authors_vec.iter() {
                 ret.extend(author.split(';'));
             }
 
@@ -1278,15 +1275,15 @@ fn extract_author_name(yaml_path: String) -> Vec<String> {
                                 .replace('"', "")
                                 .replace('\'', "")
                                 .trim()
-                                .to_owned()
+                                .to_string()
                         })
-                        .collect()
+                        .collect::<String>()
                 })
                 .collect();
         };
     }
     // ここまで来た場合は要素がない場合なので空配列を返す
-    vec![]
+    Nested::new()
 }
 
 #[cfg(test)]
@@ -1378,7 +1375,7 @@ mod tests {
                     eventid: test_eventid.to_string(),
                     detail: String::default(),
                     record_information: Option::Some(test_recinfo.to_string()),
-                    ext_field: output_profile.clone(),
+                    ext_field: output_profile.to_owned(),
                 },
                 expect_time,
                 &mut profile_converter,
@@ -1389,7 +1386,7 @@ mod tests {
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
                 + &expect_tz
-                    .clone()
+                    .to_owned()
                     .format("%Y-%m-%d %H:%M:%S%.3f %:z")
                     .to_string()
                 + ","
@@ -1418,7 +1415,7 @@ mod tests {
                 + test_attack
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::new(), 1, output_profile).is_ok());
+        assert!(emit_csv(&mut file, false, HashMap::new(), 1, &output_profile).is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -1446,7 +1443,7 @@ mod tests {
         let expect_tz = test_timestamp.with_timezone(&Local);
 
         let expect_no_header = expect_tz
-            .clone()
+            .to_owned()
             .format("%Y-%m-%d %H:%M:%S%.3f %:z")
             .to_string()
             + " ‖ "

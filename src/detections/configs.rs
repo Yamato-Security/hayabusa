@@ -270,7 +270,7 @@ impl ConfigReader<'_> {
             .help_template("\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}");
         ConfigReader {
             app: build_cmd,
-            args: parse.clone(),
+            args: parse.to_owned(),
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
                 utils::check_setting_path(&parse.config, "channel_eid_info.txt", false)

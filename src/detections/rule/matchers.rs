@@ -1,3 +1,4 @@
+use nested::Nested;
 use regex::Regex;
 use std::{cmp::Ordering, collections::VecDeque};
 use yaml_rust::Yaml;
@@ -191,7 +192,7 @@ impl LeafMatcher for AllowlistFileMatcher {
 pub struct DefaultMatcher {
     re: Option<Regex>,
     pipes: Vec<PipeElement>,
-    key_list: Vec<String>,
+    key_list: Nested<String>,
     eqfield_key: Option<String>,
 }
 
@@ -200,7 +201,7 @@ impl DefaultMatcher {
         DefaultMatcher {
             re: Option::None,
             pipes: Vec::new(),
-            key_list: Vec::new(),
+            key_list: Nested::<String>::new(),
             eqfield_key: Option::None,
         }
     }
@@ -238,7 +239,9 @@ impl LeafMatcher for DefaultMatcher {
     }
 
     fn init(&mut self, key_list: &[String], select_value: &Yaml) -> Result<(), Vec<String>> {
-        self.key_list = key_list.to_vec();
+        let mut tmp_key_list = Nested::<String>::new();
+        tmp_key_list.extend(key_list.to_vec());
+        self.key_list = tmp_key_list;
         if select_value.is_null() {
             return Result::Ok(());
         }

@@ -16,6 +16,8 @@
 - JSON出力のDetailsフィールドをオブジェクト形式で出力するように変更した。 (#773) (@hitenkoku)
 - `build.rs`を削除し、メモリアロケータをmimallocに変更した。Intel系OSでは20-30%の速度向上が見込める。 (#657) (@fukusuket)
 - プロファイルの`%RecordInformation%` エイリアスを `%AllFieldInfo%` に変更した。 AllFieldInfoフィールドをJSONオブジェクト形式で出力するように変更した。 (#750) (@hitenkoku)
+- `--no-summary`  オプションを使用したときに、表示しないルール作者および検知回数の集計を省略した。 (#780) (@hitenkoku)
+- メモリ使用量を少なくし、処理速度を改善した。 (#778) (@hitenkoku)
 
 **バグ修正:**
 

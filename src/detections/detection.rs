@@ -7,6 +7,7 @@ use crate::options::profile::{
 };
 use chrono::{TimeZone, Utc};
 use itertools::Itertools;
+use nested::Nested;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::{
@@ -333,8 +334,8 @@ impl Detection {
                                         || x.starts_with("attack.s"))
                             })
                             .map(|y| {
-                                let mut replaced_tag = y.replace("attack.", "");
-                                make_ascii_titlecase(&mut replaced_tag)
+                                let replaced_tag = y.replace("attack.", "");
+                                make_ascii_titlecase(&replaced_tag)
                             })
                             .collect();
                         profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
@@ -497,8 +498,8 @@ impl Detection {
                                         || x.starts_with("attack.s"))
                             })
                             .map(|y| {
-                                let mut replaced_tag = y.replace("attack.", "");
-                                make_ascii_titlecase(&mut replaced_tag)
+                                let replaced_tag = y.replace("attack.", "");
+                                make_ascii_titlecase(&replaced_tag)
                             })
                             .collect();
                         profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
@@ -632,7 +633,7 @@ impl Detection {
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let args = &configs::CONFIG.read().unwrap().args;
-        let mut html_report_stock = Vec::new();
+        let mut html_report_stock = Nested::<String>::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
@@ -644,7 +645,7 @@ impl Detection {
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 let output_str = format!(
                     "{} rules: {}{}",
-                    make_ascii_titlecase(key.clone().as_mut()),
+                    make_ascii_titlecase(key),
                     value,
                     disable_flag
                 );
@@ -678,7 +679,7 @@ impl Detection {
                 };
                 let output_str = format!(
                     "{} rules: {} ({:.2}%){}",
-                    make_ascii_titlecase(key.clone().as_mut()),
+                    make_ascii_titlecase(key),
                     value,
                     rate,
                     deprecated_flag
