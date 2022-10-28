@@ -377,7 +377,7 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
         write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
-    
+
         println!();
         output_detected_rule_authors(rule_author_counter);
         println!();
