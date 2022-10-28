@@ -368,20 +368,19 @@ fn emit_csv<W: std::io::Write>(
     }
 
     disp_wtr_buf.clear();
-    write_color_buffer(
-        &disp_wtr,
-        get_writable_color(Some(Color::Rgb(0, 255, 0))),
-        "Rule Authors:",
-        false,
-    )
-    .ok();
-    write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
-
-    println!();
-    output_detected_rule_authors(rule_author_counter);
-    println!();
-
     if !is_no_summary {
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 0))),
+            "Rule Authors:",
+            false,
+        )
+        .ok();
+        write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
+    
+        println!();
+        output_detected_rule_authors(rule_author_counter);
+        println!();
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
