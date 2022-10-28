@@ -16,6 +16,8 @@
 - Changed Details field in JSON output to object. (#773) (@hitenkoku)
 - Removed `build.rs` and changed the memory allocator to mimalloc for a speed increase of 20-30% on Intel-based OSes. (#657) (@fukusuket)
 - Replaced %RecordInformation% alias in profile to %AllFieldInfo%, and changed AllFieldInfo field in JSON output to object. (#750) (@hitenkoku)
+- Skipped rule author, detect counts aggregation when --no-summary option is used. (#780) (@hitenkoku)
+- Reduced Memory usage and improved speed performance. (#778) (@hitenkoku)
 
 **Bug Fixes:**
 
