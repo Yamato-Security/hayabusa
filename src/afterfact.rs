@@ -327,7 +327,7 @@ fn emit_csv<W: std::io::Write>(
                     detected_rule_files.insert(detect_info.rulepath.to_string());
                     let tmp = extract_author_name(&detect_info.rulepath);
                     for author in tmp.iter() {
-                        *rule_author_counter.entry(author.to_string()).or_insert(1) += 1;
+                        *rule_author_counter.entry(author.to_string()).or_insert(0) += 1;
                     }
                     unique_detect_counts_by_level[level_suffix] += 1;
                 }
@@ -874,10 +874,9 @@ fn _print_detection_summary_tables(
     tb.load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_style(TableComponent::VerticalLines, ' ');
+    let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
+    let tbch = tb.style(TableComponent::TopBorder).unwrap();
     for x in 0..output.len() / 2 {
-        let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
-        let tbch = tb.style(TableComponent::TopBorder).unwrap();
-
         tb.add_row(vec![
             Cell::new(&output[2 * x][0]).fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
             Cell::new(&output[2 * x + 1][0])
@@ -1188,13 +1187,19 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
     let mut sorted_authors: Vec<(&String, &i128)> = rule_author_counter.iter().collect();
 
     sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
-    let mut output = Vec::new();
     let div = if sorted_authors.len() % 4 != 0 {
         sorted_authors.len() / 4 + 1
     } else {
         sorted_authors.len() / 4
     };
 
+    let mut tb = Table::new();
+    tb.load_preset(UTF8_FULL)
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_style(TableComponent::VerticalLines, ' ');
+    let mut stored_by_column = vec![];
+    let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
+    let tbch = tb.style(TableComponent::TopBorder).unwrap();
     for x in 0..4 {
         let mut tmp = Vec::new();
         for y in 0..div {
@@ -1211,23 +1216,20 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
                 ));
             }
         }
-        output.push(tmp);
+        if !tmp.is_empty() {
+            stored_by_column.push(tmp);
+        }
     }
-    let mut tbrows = vec![];
-    for c in output.iter() {
-        tbrows.push(Cell::new(c.join("\n")).fg(comfy_table::Color::Reset));
+    let mut output = vec![];
+    for col_data in stored_by_column {
+        output.push(col_data.join("\n"));
     }
-    let mut tb = Table::new();
-    let hlch = tb.style(TableComponent::HorizontalLines).unwrap();
-    let tbch = tb.style(TableComponent::TopBorder).unwrap();
-
-    tb.load_preset(UTF8_FULL)
-        .apply_modifier(UTF8_ROUND_CORNERS)
-        .set_style(TableComponent::VerticalLines, ' ');
-    tb.add_row(tbrows)
-        .set_style(TableComponent::MiddleIntersections, hlch)
-        .set_style(TableComponent::TopBorderIntersections, tbch)
-        .set_style(TableComponent::BottomBorderIntersections, hlch);
+    if !output.is_empty() {
+        tb.add_row(output)
+            .set_style(TableComponent::MiddleIntersections, hlch)
+            .set_style(TableComponent::TopBorderIntersections, tbch)
+            .set_style(TableComponent::BottomBorderIntersections, hlch);
+    }
     println!("{tb}");
 }
 
