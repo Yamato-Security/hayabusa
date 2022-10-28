@@ -327,7 +327,7 @@ fn emit_csv<W: std::io::Write>(
                     detected_rule_files.insert(detect_info.rulepath.to_string());
                     let tmp = extract_author_name(&detect_info.rulepath);
                     for author in tmp.iter() {
-                        *rule_author_counter.entry(author.to_string()).or_insert(1) += 1;
+                        *rule_author_counter.entry(author.to_string()).or_insert(0) += 1;
                     }
                     unique_detect_counts_by_level[level_suffix] += 1;
                 }
