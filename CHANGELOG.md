@@ -21,7 +21,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed rule author aggregation wrong count. (#783) (@hitenkoku)
 
 ## 1.7.2 [2022/10/17]
 
