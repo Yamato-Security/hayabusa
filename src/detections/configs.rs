@@ -167,7 +167,7 @@ pub struct Config {
     #[clap(help_heading = Some("TIME-FORMAT"), long = "US-time")]
     pub us_time: bool,
 
-    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.123456789Z) (Always UTC)
+    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
     #[clap(help_heading = Some("TIME-FORMAT"), long = "ISO-8601")]
     pub iso_8601: bool,
 
