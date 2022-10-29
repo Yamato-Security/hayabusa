@@ -431,7 +431,7 @@ pub fn check_rule_config() -> Result<(), String> {
 
 ///タイムゾーンに合わせた情報を情報を取得する関数
 pub fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
-    if configs::CONFIG.read().unwrap().args.utc {
+    if configs::CONFIG.read().unwrap().args.utc || configs::CONFIG.read().unwrap().args.iso_8601 {
         format_rfc(time, date_only)
     } else {
         format_rfc(&time.with_timezone(&Local), date_only)
@@ -473,6 +473,12 @@ where
             time.format("%d-%m-%Y").to_string()
         } else {
             time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
+        }
+    } else if time_args.iso_8601 {
+        if date_only {
+            time.format("%Y-%m-%d").to_string()
+        } else {
+            time.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
         }
     } else if date_only {
         time.format("%Y-%m-%d").to_string()
