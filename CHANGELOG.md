@@ -4,25 +4,24 @@
 
 **New Features:**
 
-- XXX
+- Added the `--ISO-8601` output time format option. This good to use when importing to Elastic Stack. It is exactly the same as what is in the original log.  (#767) (@hitenkoku)
 
 **Enhancements:**
 
-- Event ID filtering is now turned off by default. Use the `-e, --eid-filter` option to filter by Event ID. (#759) (@hitenkoku)
+- Event ID filtering is now turned off by default. Use the `-e, --eid-filter` option to filter by Event ID. (Will usually be 10%+ faster but with a small chance of false negatives.) (#759) (@hitenkoku)
 - Print an easy to understand error message when a user tries to download new rules with a different user account. (#758) (@fukusuket)
 - Added total and unique detecion count information in the HTML Report. (#762) (@hitenkoku)
 - Removed unnecessary array structure in the JSON output. (#766)(@hitenkoku)
 - Added rule authors (`%RuleAuthor%`), rule creation date (`%RuleCreationDate%`), rule modified date (`%RuleModifiedDate%`), and rule status (`%Status%`) fields to output profiles. (#761) (@hitenkoku)
-- Changed Details field in JSON output to object. (#773) (@hitenkoku)
+- Changed Details field in JSON output to an object. (#773) (@hitenkoku)
 - Removed `build.rs` and changed the memory allocator to mimalloc for a speed increase of 20-30% on Intel-based OSes. (#657) (@fukusuket)
-- Replaced %RecordInformation% alias in profile to %AllFieldInfo%, and changed AllFieldInfo field in JSON output to object. (#750) (@hitenkoku)
-- Skipped rule author, detect counts aggregation when --no-summary option is used. (#780) (@hitenkoku)
-- Reduced Memory usage and improved speed performance. (#778) (@hitenkoku)
-- Added new output time format options. (`--ISO-8601`) (#767) (@hitenkoku)
+- Replaced `%RecordInformation%` alias in output profiles to `%AllFieldInfo%`, and changed the `AllFieldInfo` field in JSON output to an object. (#750) (@hitenkoku)
+- Don't display result summary, etc... when `--no-summary` option is used. (This is good to use when using as a Velociraptor agent, etc... It will usually be 10% faster.) (#780) (@hitenkoku)
+- Reduced memory usage and improved speed performance. (#778) (@hitenkoku)
 
 **Bug Fixes:**
 
-- Fixed rule author aggregation wrong count. (#783) (@hitenkoku)
+- Fixed rule author unique rule count. (It was displaying one extra.) (#783) (@hitenkoku)
 
 ## 1.7.2 [2022/10/17]
 
