@@ -437,6 +437,7 @@ OTHER-ACTIONS:
 
 TIME-FORMAT:
         --European-time       Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+        --ISO-8601            Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
         --RFC-2822            Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
         --RFC-3339            Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
         --US-military-time    Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
