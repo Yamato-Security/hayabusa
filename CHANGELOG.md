@@ -18,6 +18,7 @@
 - Replaced %RecordInformation% alias in profile to %AllFieldInfo%, and changed AllFieldInfo field in JSON output to object. (#750) (@hitenkoku)
 - Skipped rule author, detect counts aggregation when --no-summary option is used. (#780) (@hitenkoku)
 - Reduced Memory usage and improved speed performance. (#778) (@hitenkoku)
+- Added new output time format options. (`--ISO-8601`) (#767) (@hitenkoku)
 
 **Bug Fixes:**
 
