@@ -321,7 +321,6 @@ fn emit_csv<W: std::io::Write>(
                             .to_uppercase(),
                     )
                     .unwrap_or(&0) as usize;
-                let time_str_date = format_time(time, true);
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_string());
@@ -349,7 +348,7 @@ fn emit_csv<W: std::io::Write>(
                 countup_aggregation(
                     &mut detect_counts_by_date_and_level,
                     &detect_info.level,
-                    &time_str_date,
+                    &format_time(time, true),
                 );
                 countup_aggregation(
                     &mut detect_counts_by_rule_and_level,
@@ -909,7 +908,7 @@ fn _print_detection_summary_tables(
 
 /// get timestamp to input datetime.
 fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
-    if configs::CONFIG.read().unwrap().args.utc {
+    if configs::CONFIG.read().unwrap().args.utc || configs::CONFIG.read().unwrap().args.iso_8601 {
         time.timestamp()
     } else {
         let offset_sec = Local.timestamp(0, 0).offset().local_minus_utc();
