@@ -701,7 +701,7 @@ In order to save space, we use the following abbrevations when displaying the al
 
 * `crit`: `critical`
 * `high`: `high`
-* `med `: `med`
+* `med `: `medium`
 * `low `: `low`
 * `info`: `informational`
 
@@ -967,7 +967,7 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 We would love any form of contribution. Pull requests, rule creation and sample evtx logs are the best but feature requests, notifying us of bugs, etc... are also very welcome.
 
-At the least, if you like our tool then please give us a star on Github and show your support!
+At the least, if you like our tool then please give us a star on GitHub and show your support!
 
 # Bug Submission
 
