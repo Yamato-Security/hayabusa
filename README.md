@@ -785,7 +785,7 @@ The following abbreviations are used in rules in order to make the output as con
 - `Grp` -> Group
 - `Img` -> Image
 - `Inj` -> Injection
-- `Kbr` -> Kerberos
+- `Krb` -> Kerberos
 - `LID` -> Logon ID
 - `Med` -> Medium
 - `Net` -> Network
