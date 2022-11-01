@@ -60,6 +60,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
   - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
   - [LinuxのMUSLバイナリのクロスコンパイル](#linuxのmuslバイナリのクロスコンパイル)
+- [Hayabusaの実行](#hayabusaの実行)
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
   - [Linux](#linux)
@@ -311,7 +312,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
 MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクトリ配下に作成されます。
 MUSLバイナリはGNUバイナリより約15％遅いですが、より多くのLinuxバージョンとディストロで実行できます。
 
-****# Hayabusaの実行
+# Hayabusaの実行
 
 ## 注意: アンチウィルス/EDRの誤検知と遅い初回実行
 
