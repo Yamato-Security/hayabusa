@@ -60,7 +60,6 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [macOSでのコンパイルの注意点](#macosでのコンパイルの注意点)
   - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点)
   - [LinuxのMUSLバイナリのクロスコンパイル](#linuxのmuslバイナリのクロスコンパイル)
-  - [Linuxでのコンパイルの注意点](#linuxでのコンパイルの注意点-1)
 - [Hayabusaの実行](#hayabusaの実行)
   - [注意: アンチウィルス/EDRの誤検知と遅い初回実行](#注意-アンチウィルスedrの誤検知と遅い初回実行)
   - [Windows](#windows)
@@ -312,9 +311,6 @@ cargo build --release --target=x86_64-unknown-linux-musl
 
 MUSLバイナリは`./target/x86_64-unknown-linux-musl/release/`ディレクトリ配下に作成されます。
 MUSLバイナリはGNUバイナリより約15％遅いですが、より多くのLinuxバージョンとディストロで実行できます。
-
-## Linuxでのコンパイルの注意点
-
 
 # Hayabusaの実行
 
@@ -709,7 +705,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 
 * `crit`: `critical`
 * `high`: `high`
-* `med `: `med`
+* `med `: `medium`
 * `low `: `low`
 * `info`: `informational`
 
@@ -974,7 +970,7 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 どのような形でも構いませんので、ご協力をお願いします。プルリクエスト、ルール作成、evtxログのサンプルなどがベストですが、機能リクエスト、バグの通知なども大歓迎です。
 
-少なくとも、私たちのツールを気に入っていただけたなら、Githubで星を付けて、あなたのサポートを表明してください。
+少なくとも、私たちのツールを気に入っていただけたなら、GitHubで星を付けて、あなたのサポートを表明してください。
 
 # バグの報告
 
