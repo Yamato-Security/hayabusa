@@ -250,6 +250,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "compressed_string"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3191fb9cd59eb0195c223d4f1d8894d2078957ee44f4940f059d11060a6d0e7"
+dependencies = [
+ "flate2",
+]
+
+[[package]]
 name = "console"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -802,6 +811,7 @@ dependencies = [
  "chrono",
  "clap",
  "comfy-table",
+ "compressed_string",
  "crossbeam-utils",
  "csv",
  "dashmap",
