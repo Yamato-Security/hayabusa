@@ -10,7 +10,7 @@ use regex::Regex;
 use std::env::current_exe;
 use std::path::PathBuf;
 use std::sync::RwLock;
-use terminal_size::{terminal_size, Height, Width};
+use terminal_size::{terminal_size, Width};
 
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
@@ -42,7 +42,6 @@ lazy_static! {
     );
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
-    pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
     pub static ref TARGET_EXTENSIONS: HashSet<String> =
         get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
     pub static ref CURRENT_EXE_PATH: PathBuf =
@@ -265,7 +264,7 @@ pub struct Config {
 impl ConfigReader<'_> {
     pub fn new() -> Self {
         let parse = Config::parse();
-        let help_term_width = if let Some((Width(w), _)) = *TERM_SIZE {
+        let help_term_width = if let Some((Width(w), _)) = terminal_size() {
             w as usize
         } else {
             400

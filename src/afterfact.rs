@@ -1,4 +1,5 @@
-use crate::detections::configs::{self, CURRENT_EXE_PATH, TERM_SIZE};
+use terminal_size::terminal_size;
+use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
@@ -388,7 +389,7 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
 
-        let terminal_width = match *TERM_SIZE {
+        let terminal_width = match terminal_size() {
             Some((Width(w), _)) => w as usize,
             None => 100,
         };
