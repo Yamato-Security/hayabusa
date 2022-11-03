@@ -2,6 +2,7 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::yaml;
+use compressed_string::ComprString;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use nested::Nested;
@@ -12,7 +13,7 @@ use std::path::Path;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 lazy_static! {
-    pub static ref PROFILES: Option<Nested<Vec<String>>> = load_profile(
+    pub static ref PROFILES: Option<Nested<Vec<ComprString>>> = load_profile(
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
             "config/default_profile.yaml",
@@ -33,7 +34,7 @@ lazy_static! {
     pub static ref LOAEDED_PROFILE_ALIAS: HashSet<String> = HashSet::from_iter(
         PROFILES
             .as_ref()
-            .unwrap_or(&Nested::<Vec<String>>::new())
+            .unwrap_or(&Nested::<Vec<ComprString>>::new())
             .iter()
             .map(|x| x[1].to_string())
     );
@@ -76,7 +77,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
 }
 
 /// プロファイル情報を読み込む関数
-pub fn load_profile(default_profile_path: &str, profile_path: &str) -> Option<Nested<Vec<String>>> {
+pub fn load_profile(default_profile_path: &str, profile_path: &str) -> Option<Nested<Vec<ComprString>>> {
     let conf = &configs::CONFIG.read().unwrap().args;
     if conf.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
@@ -108,7 +109,7 @@ pub fn load_profile(default_profile_path: &str, profile_path: &str) -> Option<Ne
         return None;
     }
     let profile_data = &profile_all[0];
-    let mut ret: Nested<Vec<String>> = Nested::<Vec<String>>::new();
+    let mut ret: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
     if let Some(profile_name) = &conf.profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
@@ -118,8 +119,8 @@ pub fn load_profile(default_profile_path: &str, profile_path: &str) -> Option<Ne
                 .into_iter()
                 .for_each(|(k, v)| {
                     ret.push(vec![
-                        k.as_str().unwrap().to_string(),
-                        v.as_str().unwrap().to_string(),
+                        ComprString::new(k.as_str().unwrap()),
+                        ComprString::new(v.as_str().unwrap()),
                     ]);
                 });
             Some(ret)
@@ -145,8 +146,8 @@ pub fn load_profile(default_profile_path: &str, profile_path: &str) -> Option<Ne
             .into_iter()
             .for_each(|(k, v)| {
                 ret.push(vec![
-                    k.as_str().unwrap().to_string(),
-                    v.as_str().unwrap().to_string(),
+                    ComprString::new(k.as_str().unwrap()),
+                    ComprString::new(v.as_str().unwrap()),
                 ]);
             });
         Some(ret)
@@ -251,6 +252,7 @@ pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
+    use compressed_string::ComprString;
     use nested::Nested;
 
     use crate::detections::configs;
@@ -268,23 +270,23 @@ mod tests {
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
     fn test_load_profile_without_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = None;
-        let mut expect: Nested<Vec<String>> = Nested::<Vec<String>>::new();
-        expect.push(vec!["Timestamp".to_owned(), "%Timestamp%".to_owned()]);
-        expect.push(vec!["Computer".to_owned(), "%Computer%".to_owned()]);
-        expect.push(vec!["Channel".to_owned(), "%Channel%".to_owned()]);
-        expect.push(vec!["Level".to_owned(), "%Level%".to_owned()]);
-        expect.push(vec!["EventID".to_owned(), "%EventID%".to_owned()]);
-        expect.push(vec!["MitreAttack".to_owned(), "%MitreAttack%".to_owned()]);
-        expect.push(vec!["RecordID".to_owned(), "%RecordID%".to_owned()]);
-        expect.push(vec!["RuleTitle".to_owned(), "%RuleTitle%".to_owned()]);
-        expect.push(vec!["Details".to_owned(), "%Details%".to_owned()]);
+        let mut expect: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
+        expect.push(vec![ComprString::new("Timestamp"), ComprString::new("%Timestamp%")]);
+        expect.push(vec![ComprString::new("Computer"), ComprString::new("%Computer%")]);
+        expect.push(vec![ComprString::new("Channel"), ComprString::new("%Channel%")]);
+        expect.push(vec![ComprString::new("Level"), ComprString::new("%Level%")]);
+        expect.push(vec![ComprString::new("EventID"), ComprString::new("%EventID%")]);
+        expect.push(vec![ComprString::new("MitreAttack"), ComprString::new("%MitreAttack%")]);
+        expect.push(vec![ComprString::new("RecordID"), ComprString::new("%RecordID%")]);
+        expect.push(vec![ComprString::new("RuleTitle"), ComprString::new("%RuleTitle%")]);
+        expect.push(vec![ComprString::new("Details"), ComprString::new("%Details%")]);
         expect.push(vec![
-            "RecordInformation".to_owned(),
-            "%AllFieldInfo%".to_owned(),
+            ComprString::new("RecordInformation"),
+            ComprString::new("%AllFieldInfo%"),
         ]);
-        expect.push(vec!["RuleFile".to_owned(), "%RuleFile%".to_owned()]);
-        expect.push(vec!["EvtxFile".to_owned(), "%EvtxFile%".to_owned()]);
-        expect.push(vec!["Tags".to_owned(), "%MitreAttack%".to_owned()]);
+        expect.push(vec![ComprString::new("RuleFile"), ComprString::new("%RuleFile%")]);
+        expect.push(vec![ComprString::new("EvtxFile"), ComprString::new("%EvtxFile%")]);
+        expect.push(vec![ComprString::new("Tags"), ComprString::new("%MitreAttack%")]);
 
         assert_eq!(
             Some(expect),
@@ -298,14 +300,14 @@ mod tests {
     /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
     fn test_load_profile_with_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = Some("minimal".to_string());
-        let mut expect: Nested<Vec<String>> = Nested::new();
-        expect.push(vec!["Timestamp".to_owned(), "%Timestamp%".to_owned()]);
-        expect.push(vec!["Computer".to_owned(), "%Computer%".to_owned()]);
-        expect.push(vec!["Channel".to_owned(), "%Channel%".to_owned()]);
-        expect.push(vec!["EventID".to_owned(), "%EventID%".to_owned()]);
-        expect.push(vec!["Level".to_owned(), "%Level%".to_owned()]);
-        expect.push(vec!["RuleTitle".to_owned(), "%RuleTitle%".to_owned()]);
-        expect.push(vec!["Details".to_owned(), "%Details%".to_owned()]);
+        let mut expect: Nested<Vec<ComprString>> = Nested::new();
+        expect.push(vec![ComprString::new("Timestamp"), ComprString::new("%Timestamp%")]);
+        expect.push(vec![ComprString::new("Computer"), ComprString::new("%Computer%")]);
+        expect.push(vec![ComprString::new("Channel"), ComprString::new("%Channel%")]);
+        expect.push(vec![ComprString::new("EventID"), ComprString::new("%EventID%")]);
+        expect.push(vec![ComprString::new("Level"), ComprString::new("%Level%")]);
+        expect.push(vec![ComprString::new("RuleTitle"), ComprString::new("%RuleTitle%")]);
+        expect.push(vec![ComprString::new("Details"), ComprString::new("%Details%")]);
 
         assert_eq!(
             Some(expect),
