@@ -261,7 +261,14 @@ fn emit_csv<W: std::io::Write>(
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
         for (_, detect_info) in detect_infos.iter().enumerate() {
-            if !detect_info.detail.starts_with("[condition]") {
+            let [computername, detail, level, rule_title, rule_path] = [
+                detect_info.computername.to_string(),
+                detect_info.detail.to_string(),
+                detect_info.level.to_string(),
+                detect_info.ruletitle.to_string(),
+                detect_info.rulepath.to_string(),
+            ];
+            if !detail.starts_with("[condition]") {
                 detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
             }
             if displayflag {
@@ -281,7 +288,7 @@ fn emit_csv<W: std::io::Write>(
                     get_writable_color(_get_output_color(
                         &color_map,
                         LEVEL_FULL
-                            .get(&detect_info.level)
+                            .get(&detect_info.level.to_string())
                             .unwrap_or(&String::default()),
                     )),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
@@ -334,15 +341,15 @@ fn emit_csv<W: std::io::Write>(
                 let level_suffix = *level_map
                     .get(
                         &LEVEL_FULL
-                            .get(&detect_info.level)
+                            .get(&level)
                             .unwrap_or(&"undefined".to_string())
                             .to_uppercase(),
                     )
                     .unwrap_or(&0) as usize;
 
-                if !detected_rule_files.contains(&detect_info.rulepath) {
-                    detected_rule_files.insert(detect_info.rulepath.to_string());
-                    let tmp = extract_author_name(&detect_info.rulepath);
+                if !detected_rule_files.contains(&rule_path) {
+                    detected_rule_files.insert(rule_path.to_string());
+                    let tmp = extract_author_name(&rule_path);
                     for author in tmp.iter() {
                         *rule_author_counter.entry(author.to_string()).or_insert(0) += 1;
                     }
@@ -355,24 +362,17 @@ fn emit_csv<W: std::io::Write>(
                     detected_computer_and_rule_names.insert(computer_rule_check_key);
                     countup_aggregation(
                         &mut detect_counts_by_computer_and_level,
-                        &detect_info.level,
-                        &detect_info.computername,
+                        &level,
+                        &computername,
                     );
                 }
-                rule_title_path_map.insert(
-                    detect_info.ruletitle.to_owned(),
-                    detect_info.rulepath.to_owned(),
-                );
                 countup_aggregation(
                     &mut detect_counts_by_date_and_level,
-                    &detect_info.level,
+                    &level,
                     &format_time(time, true),
                 );
-                countup_aggregation(
-                    &mut detect_counts_by_rule_and_level,
-                    &detect_info.level,
-                    &detect_info.ruletitle,
-                );
+                countup_aggregation(&mut detect_counts_by_rule_and_level, &level, &rule_title);
+                rule_title_path_map.insert(rule_title, rule_path);
                 total_detect_counts_by_level[level_suffix] += 1;
             }
         }
@@ -1408,13 +1408,13 @@ mod tests {
                 &event,
                 output.to_string(),
                 DetectInfo {
-                    rulepath: test_rulepath.to_string(),
-                    ruletitle: test_title.to_string(),
-                    level: test_level.to_string(),
-                    computername: test_computername.to_string(),
-                    eventid: test_eventid.to_string(),
-                    detail: String::default(),
-                    record_information: Option::Some(test_recinfo.to_string()),
+                    rulepath: ComprString::new(test_rulepath),
+                    ruletitle: ComprString::new(test_title),
+                    level: ComprString::new(test_level),
+                    computername: ComprString::new(test_computername),
+                    eventid: ComprString::new(test_eventid),
+                    detail: ComprString::new(""),
+                    record_information: Option::Some(ComprString::new(test_recinfo)),
                     ext_field: output_profile.to_owned(),
                 },
                 expect_time,

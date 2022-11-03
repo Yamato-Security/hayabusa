@@ -6,6 +6,7 @@ use crate::options::profile::{
     LOAEDED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES,
 };
 use chrono::{TimeZone, Utc};
+use compressed_string::ComprString;
 use itertools::Itertools;
 use nested::Nested;
 use termcolor::{BufferWriter, Color, ColorChoice};
@@ -231,7 +232,9 @@ impl Detection {
             None => recinfo.as_ref().unwrap_or(&"-".to_string()).to_string(),
         };
         let opt_record_info = if LOAEDED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
-            recinfo
+            Some(ComprString::new(
+                &recinfo.unwrap_or_else(|| "-".to_string()),
+            ))
         } else {
             None
         };
@@ -295,8 +298,8 @@ impl Detection {
                             "%AllFieldInfo%".to_string(),
                             opt_record_info
                                 .as_ref()
-                                .unwrap_or(&"-".to_string())
-                                .to_owned(),
+                                .unwrap_or(&ComprString::new("-"))
+                                .to_string(),
                         );
                     }
                     "%RuleFile%" => {
@@ -385,14 +388,16 @@ impl Detection {
         }
 
         let detect_info = DetectInfo {
-            rulepath: rule.rulepath.to_owned(),
-            ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
-            level: LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
-            computername: record_info.record["Event"]["System"]["Computer"]
-                .to_string()
-                .replace('\"', ""),
-            eventid: eid,
-            detail: String::default(),
+            rulepath: ComprString::new(&rule.rulepath),
+            ruletitle: ComprString::new(rule.yaml["title"].as_str().unwrap_or("-")),
+            level: ComprString::new(LEVEL_ABBR_MAP.get(&level).unwrap_or(&level)),
+            computername: ComprString::new(
+                &record_info.record["Event"]["System"]["Computer"]
+                    .to_string()
+                    .replace('\"', ""),
+            ),
+            eventid: ComprString::new(&eid),
+            detail: ComprString::new(""),
             record_information: opt_record_info,
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
         };
@@ -414,7 +419,7 @@ impl Detection {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
         let rec_info = if LOAEDED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
-            Option::Some(String::default())
+            Option::Some(ComprString::new(""))
         } else {
             Option::None
         };
@@ -517,12 +522,12 @@ impl Detection {
         }
 
         let detect_info = DetectInfo {
-            rulepath: rule.rulepath.to_owned(),
-            ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
-            level: LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
-            computername: "-".to_owned(),
-            eventid: "-".to_owned(),
-            detail: output,
+            rulepath: ComprString::new(&rule.rulepath),
+            ruletitle: ComprString::new(rule.yaml["title"].as_str().unwrap_or("-")),
+            level: ComprString::new(LEVEL_ABBR_MAP.get(&level).unwrap_or(&level)),
+            computername: ComprString::new("-"),
+            eventid: ComprString::new("-"),
+            detail: ComprString::new(&output),
             record_information: rec_info,
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
         };
