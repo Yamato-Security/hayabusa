@@ -87,11 +87,9 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
-    Result::Ok(
-        Nested::from_iter(reader
-            .lines()
-            .map(|line| line.unwrap_or_default())),
-    )
+    Result::Ok(Nested::from_iter(
+        reader.lines().map(|line| line.unwrap_or_default()),
+    ))
 }
 
 pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {

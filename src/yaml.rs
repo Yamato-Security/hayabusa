@@ -41,7 +41,9 @@ impl ParseYaml {
             ]),
             rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
             errorrule_count: 0,
-            exclude_status: configs::convert_option_vecs_to_hs(configs::CONFIG.read().unwrap().args.exclude_status.as_ref()),
+            exclude_status: configs::convert_option_vecs_to_hs(
+                configs::CONFIG.read().unwrap().args.exclude_status.as_ref(),
+            ),
             level_map: HashMap::from([
                 ("INFORMATIONAL".to_owned(), 1),
                 ("LOW".to_owned(), 2),

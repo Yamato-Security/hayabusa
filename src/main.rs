@@ -13,8 +13,8 @@ use hayabusa::detections::configs::{
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{
-    AlertMessage, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG,
-    PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
+    AlertMessage, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG,
+    QUIET_ERRORS_FLAG,
 };
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
@@ -329,7 +329,8 @@ impl App {
             true,
         )
         .ok();
-        let target_extensions = configs::get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
+        let target_extensions =
+            configs::get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
 
         if configs::CONFIG.read().unwrap().args.live_analysis {
             let live_analysis_list = self.collect_liveanalysis_files(&target_extensions);
@@ -369,7 +370,8 @@ impl App {
             }
             self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
         } else if let Some(directory) = &configs::CONFIG.read().unwrap().args.directory {
-            let evtx_files = self.collect_evtxfiles(directory.as_os_str().to_str().unwrap(), &target_extensions);
+            let evtx_files =
+                self.collect_evtxfiles(directory.as_os_str().to_str().unwrap(), &target_extensions);
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
@@ -588,7 +590,10 @@ impl App {
     }
 
     #[cfg(not(target_os = "windows"))]
-    fn collect_liveanalysis_files(&self, target_extensions: &HashSet<String>) -> Option<Vec<PathBuf>> {
+    fn collect_liveanalysis_files(
+        &self,
+        target_extensions: &HashSet<String>,
+    ) -> Option<Vec<PathBuf>> {
         AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
             .ok();
         println!();
@@ -596,11 +601,16 @@ impl App {
     }
 
     #[cfg(target_os = "windows")]
-    fn collect_liveanalysis_files(&self, target_extensions: &HashSet<String>) -> Option<Vec<PathBuf>> {
+    fn collect_liveanalysis_files(
+        &self,
+        target_extensions: &HashSet<String>,
+    ) -> Option<Vec<PathBuf>> {
         if is_elevated() {
             let log_dir = env::var("windir").expect("windir is not found");
-            let evtx_files =
-                self.collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"), target_extensions);
+            let evtx_files = self.collect_evtxfiles(
+                &[log_dir, "System32\\winevt\\Logs".to_string()].join("/"),
+                target_extensions,
+            );
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return None;
@@ -614,7 +624,11 @@ impl App {
         }
     }
 
-    fn collect_evtxfiles(&self, dirpath: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
+    fn collect_evtxfiles(
+        &self,
+        dirpath: &str,
+        target_extensions: &HashSet<String>,
+    ) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
@@ -1003,8 +1017,8 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use hashbrown::HashSet;
     use crate::App;
+    use hashbrown::HashSet;
 
     #[test]
     fn test_collect_evtxfiles() {

@@ -322,7 +322,7 @@ impl Detection {
                             .iter()
                             .filter(|x| tags_config_values.contains(&x.to_string()))
                             .join(" ¦ ");
-                            
+
                         profile_converter.insert("%MitreTactics%".to_string(), tactics.to_string());
                     }
                     "%MitreTags%" => {
@@ -337,7 +337,8 @@ impl Detection {
                             .map(|y| {
                                 let replaced_tag = y.replace("attack.", "");
                                 make_ascii_titlecase(&replaced_tag)
-                            }).join(" ¦ ");
+                            })
+                            .join(" ¦ ");
                         profile_converter.insert("%MitreTags%".to_string(), techniques.to_string());
                     }
                     "%OtherTags%" => {
@@ -348,20 +349,33 @@ impl Detection {
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
-                            }).join(" ¦ ");
+                            })
+                            .join(" ¦ ");
                         profile_converter.insert("%OtherTags%".to_string(), tags.to_string());
                     }
                     "%RuleAuthor%" => {
-                        profile_converter.insert("%RuleAuthor%".to_string(), rule.yaml["author"].as_str().unwrap_or("-").to_string());
+                        profile_converter.insert(
+                            "%RuleAuthor%".to_string(),
+                            rule.yaml["author"].as_str().unwrap_or("-").to_string(),
+                        );
                     }
                     "%RuleCreationDate%" => {
-                        profile_converter.insert("%RuleCreationDate%".to_string(), rule.yaml["date"].as_str().unwrap_or("-").to_string());
+                        profile_converter.insert(
+                            "%RuleCreationDate%".to_string(),
+                            rule.yaml["date"].as_str().unwrap_or("-").to_string(),
+                        );
                     }
                     "%RuleModifiedDate%" => {
-                        profile_converter.insert("%RuleModifiedDate%".to_string(), rule.yaml["modified"].as_str().unwrap_or("-").to_string());
+                        profile_converter.insert(
+                            "%RuleModifiedDate%".to_string(),
+                            rule.yaml["modified"].as_str().unwrap_or("-").to_string(),
+                        );
                     }
                     "%Status%" => {
-                        profile_converter.insert("%Status%".to_string(), rule.yaml["status"].as_str().unwrap_or("-").to_string());
+                        profile_converter.insert(
+                            "%Status%".to_string(),
+                            rule.yaml["status"].as_str().unwrap_or("-").to_string(),
+                        );
                     }
                     _ => {}
                 }
@@ -522,28 +536,33 @@ impl Detection {
     /// rule内のtagsの内容を配列として返却する関数
     fn get_tag_info(rule: &RuleNode) -> Nested<String> {
         match TAGS_CONFIG.is_empty() {
-            false => Nested::from_iter(rule.yaml["tags"]
-                .as_vec()
-                .unwrap_or(&Vec::default())
-                .iter()
-                .map(|info| {
-                    if let Some(tag) = TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default()))
-                    {
-                        tag.to_owned()
-                    } else {
-                        info.as_str().unwrap_or(&String::default()).to_owned()
-                    }
-                })),
-            true => Nested::from_iter(rule.yaml["tags"]
-                .as_vec()
-                .unwrap_or(&Vec::default())
-                .iter()
-                .map(
-                    |info| match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
-                        Some(s) => s.to_owned(),
-                        _ => info.as_str().unwrap_or("").to_string(),
-                    },
-                )),
+            false => Nested::from_iter(
+                rule.yaml["tags"]
+                    .as_vec()
+                    .unwrap_or(&Vec::default())
+                    .iter()
+                    .map(|info| {
+                        if let Some(tag) =
+                            TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default()))
+                        {
+                            tag.to_owned()
+                        } else {
+                            info.as_str().unwrap_or(&String::default()).to_owned()
+                        }
+                    }),
+            ),
+            true => Nested::from_iter(
+                rule.yaml["tags"]
+                    .as_vec()
+                    .unwrap_or(&Vec::default())
+                    .iter()
+                    .map(|info| {
+                        match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
+                            Some(s) => s.to_owned(),
+                            _ => info.as_str().unwrap_or("").to_string(),
+                        }
+                    }),
+            ),
         }
     }
 

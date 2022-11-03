@@ -317,7 +317,10 @@ impl AlertMessage {
             .write_all(
                 format!(
                     "user input: {:?}\n",
-                    format_args!("{}", env::args().collect::<Nested<String>>().iter().join(" "))
+                    format_args!(
+                        "{}",
+                        env::args().collect::<Nested<String>>().iter().join(" ")
+                    )
                 )
                 .as_bytes(),
             )

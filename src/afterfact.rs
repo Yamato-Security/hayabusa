@@ -1,4 +1,3 @@
-use terminal_size::terminal_size;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
@@ -8,6 +7,7 @@ use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
+use terminal_size::terminal_size;
 
 use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
@@ -313,7 +313,7 @@ fn emit_csv<W: std::io::Write>(
 
             // 各種集計作業
             if !is_no_summary {
-                let level_map:HashMap<String, u128> =  HashMap::from([
+                let level_map: HashMap<String, u128> = HashMap::from([
                     ("INFORMATIONAL".to_owned(), 1),
                     ("LOW".to_owned(), 2),
                     ("MEDIUM".to_owned(), 3),
@@ -375,13 +375,16 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
     if !is_no_summary {
-        let level_abbr:Nested<Vec<String>> = Nested::from_iter(vec![
-            ["critical".to_string(), "crit".to_string()].to_vec(),
-            ["high".to_string(), "high".to_string()].to_vec(),
-            ["medium".to_string(), "med ".to_string()].to_vec(),
-            ["low".to_string(), "low ".to_string()].to_vec(),
-            ["informational".to_string(), "info".to_string()].to_vec(),
-        ].iter());
+        let level_abbr: Nested<Vec<String>> = Nested::from_iter(
+            vec![
+                ["critical".to_string(), "crit".to_string()].to_vec(),
+                ["high".to_string(), "high".to_string()].to_vec(),
+                ["medium".to_string(), "med ".to_string()].to_vec(),
+                ["low".to_string(), "low ".to_string()].to_vec(),
+                ["informational".to_string(), "info".to_string()].to_vec(),
+            ]
+            .iter(),
+        );
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(0, 255, 0))),

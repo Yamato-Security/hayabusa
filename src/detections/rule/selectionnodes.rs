@@ -380,7 +380,11 @@ impl SelectionNode for LeafSelectionNode {
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        let match_key_list = self.key_list.iter().map(|x| x.to_string()).collect::<Vec<String>>();
+        let match_key_list = self
+            .key_list
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
         let matchers = self.get_matchers();
         self.matcher = matchers
             .into_iter()
