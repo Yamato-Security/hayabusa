@@ -42,8 +42,6 @@ lazy_static! {
     );
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
-    pub static ref TARGET_EXTENSIONS: HashSet<String> =
-        get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
 }
