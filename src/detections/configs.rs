@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
+use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
 use std::path::PathBuf;
@@ -341,11 +342,11 @@ fn load_target_ids(path: &str) -> TargetEventIds {
         return ret;
     }
 
-    for line in lines.unwrap() {
+    for line in lines.unwrap_or_else(|_| Nested::<String>::new()).iter() {
         if line.is_empty() {
             continue;
         }
-        ret.ids.insert(line);
+        ret.ids.insert(line.to_string());
     }
 
     ret
@@ -477,7 +478,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         return config;
     }
 
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }
@@ -508,7 +509,7 @@ pub fn load_pivot_keywords(path: &str) {
         AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
     }
 
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         let map: Vec<&str> = line.split('.').collect();
         if map.len() != 2 {
             return;
@@ -594,7 +595,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     }
 
     // event_id_info.txtが読み込めなかったらエラーで終了とする。
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         if line.len() != 3 {
             return;
         }

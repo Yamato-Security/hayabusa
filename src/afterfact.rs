@@ -60,7 +60,7 @@ pub fn set_output_color() -> HashMap<String, Colors> {
         AlertMessage::warn(read_result.as_ref().unwrap_err()).ok();
         return color_map;
     }
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }

@@ -18,7 +18,7 @@ impl LevelTuning {
 
         // Read Tuning files
         let mut tuning_map: HashMap<String, String> = HashMap::new();
-        read_result.unwrap().into_iter().try_for_each(|line| -> Result<(), String> {
+        read_result.unwrap().iter().try_for_each(|line| -> Result<(), String> {
             let id = match line.get(0) {
                 Some(_id) => {
                     if !configs::IDS_REGEX.is_match(_id) {
