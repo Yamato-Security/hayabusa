@@ -76,10 +76,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
 }
 
 /// プロファイル情報を読み込む関数
-pub fn load_profile(
-    default_profile_path: &str,
-    profile_path: &str,
-) -> Option<Nested<Vec<String>>> {
+pub fn load_profile(default_profile_path: &str, profile_path: &str) -> Option<Nested<Vec<String>>> {
     let conf = &configs::CONFIG.read().unwrap().args;
     if conf.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
@@ -120,12 +117,10 @@ pub fn load_profile(
                 .unwrap()
                 .into_iter()
                 .for_each(|(k, v)| {
-                    ret.push(
-                        vec![
-                            k.as_str().unwrap().to_string(),
-                            v.as_str().unwrap().to_string(),
-                        ]
-                    );
+                    ret.push(vec![
+                        k.as_str().unwrap().to_string(),
+                        v.as_str().unwrap().to_string(),
+                    ]);
                 });
             Some(ret)
         } else {
@@ -149,12 +144,10 @@ pub fn load_profile(
             .unwrap()
             .into_iter()
             .for_each(|(k, v)| {
-                ret.push(
-                    vec![
-                        k.as_str().unwrap().to_string(),
-                        v.as_str().unwrap().to_string(),
-                    ]
-                );
+                ret.push(vec![
+                    k.as_str().unwrap().to_string(),
+                    v.as_str().unwrap().to_string(),
+                ]);
             });
         Some(ret)
     }
@@ -285,7 +278,10 @@ mod tests {
         expect.push(vec!["RecordID".to_owned(), "%RecordID%".to_owned()]);
         expect.push(vec!["RuleTitle".to_owned(), "%RuleTitle%".to_owned()]);
         expect.push(vec!["Details".to_owned(), "%Details%".to_owned()]);
-        expect.push(vec!["RecordInformation".to_owned(), "%AllFieldInfo%".to_owned()]);
+        expect.push(vec![
+            "RecordInformation".to_owned(),
+            "%AllFieldInfo%".to_owned(),
+        ]);
         expect.push(vec!["RuleFile".to_owned(), "%RuleFile%".to_owned()]);
         expect.push(vec!["EvtxFile".to_owned(), "%EvtxFile%".to_owned()]);
         expect.push(vec!["Tags".to_owned(), "%MitreAttack%".to_owned()]);

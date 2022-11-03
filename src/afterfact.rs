@@ -542,7 +542,7 @@ enum ColPos {
 fn _get_serialized_disp_output(data: &Nested<Vec<String>>, header: bool) -> String {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
-    let mut remove_unnecessary_title:HashSet<&String> = HashSet::new();
+    let mut remove_unnecessary_title: HashSet<&String> = HashSet::new();
     if header {
         for (i, d) in data.iter().enumerate() {
             if remove_unnecessary_title.contains(&d[0]) {
@@ -558,7 +558,7 @@ fn _get_serialized_disp_output(data: &Nested<Vec<String>>, header: bool) -> Stri
             remove_unnecessary_title.insert(&d[0]);
         }
     } else {
-        for (i,d) in data.iter().enumerate() {
+        for (i, d) in data.iter().enumerate() {
             if d[0] != "Timestamp" && !remove_unnecessary_title.contains(&d[0]) {
                 remove_unnecessary_title.insert(&d[0]);
                 continue;
@@ -853,12 +853,11 @@ fn _print_detection_summary_tables(
             html_output_stock.push("");
         }
 
-        let take_cnt =
-            if LEVEL_FULL.get(&level[1]).unwrap_or(&"-".to_string()) == "informational" {
-                10
-            } else {
-                5
-            };
+        let take_cnt = if LEVEL_FULL.get(&level[1]).unwrap_or(&"-".to_string()) == "informational" {
+            10
+        } else {
+            5
+        };
         for x in sorted_detections.iter().take(take_cnt) {
             col_output.push(format!(
                 "{} ({})",
@@ -1027,7 +1026,8 @@ fn output_json_str(
     jsonl_output_flag: bool,
 ) -> String {
     let mut target: Vec<String> = vec![];
-    let profile_map:HashMap<String, String> = HashMap::from_iter(profile.iter().map(|p| (p[0].to_string(), p[1].to_string())));
+    let profile_map: HashMap<String, String> =
+        HashMap::from_iter(profile.iter().map(|p| (p[0].to_string(), p[1].to_string())));
     for ef in ext_field.iter() {
         let output_value_fmt = profile_map.get(&ef[0]).unwrap();
         let vec_data = _get_json_vec(output_value_fmt, &ef[1]);
@@ -1474,7 +1474,10 @@ mod tests {
             + test_recinfo
             + "\n";
         let mut data: Nested<Vec<String>> = Nested::<Vec<String>>::new();
-        data.push(vec!["Timestamp".to_owned(), format_time(&test_timestamp, false)]);
+        data.push(vec![
+            "Timestamp".to_owned(),
+            format_time(&test_timestamp, false),
+        ]);
         data.push(vec!["Computer".to_owned(), test_computername.to_owned()]);
         data.push(vec!["Channel".to_owned(), test_channel.to_owned()]);
         data.push(vec!["EventID".to_owned(), test_eventid.to_owned()]);
@@ -1482,7 +1485,10 @@ mod tests {
         data.push(vec!["RecordID".to_owned(), test_recid.to_owned()]);
         data.push(vec!["RuleTitle".to_owned(), test_title.to_owned()]);
         data.push(vec!["Details".to_owned(), output.to_owned()]);
-        data.push(vec!["RecordInformation".to_owned(), test_recinfo.to_owned()]);
+        data.push(vec![
+            "RecordInformation".to_owned(),
+            test_recinfo.to_owned(),
+        ]);
 
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
