@@ -205,7 +205,7 @@ impl Detection {
 
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
-        let tag_info: &Vec<String> = &Detection::get_tag_info(rule);
+        let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let recinfo = record_info
             .record_information
             .as_ref()
@@ -418,7 +418,7 @@ impl Detection {
 
     /// insert aggregation condition detection message to output stack
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
-        let tag_info: &Vec<String> = &Detection::get_tag_info(rule);
+        let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
         let rec_info = if LOAEDED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
             Option::Some(String::default())
@@ -544,9 +544,9 @@ impl Detection {
     }
 
     /// rule内のtagsの内容を配列として返却する関数
-    fn get_tag_info(rule: &RuleNode) -> Vec<String> {
+    fn get_tag_info(rule: &RuleNode) -> Nested<String> {
         match TAGS_CONFIG.is_empty() {
-            false => rule.yaml["tags"]
+            false => Nested::from_iter(rule.yaml["tags"]
                 .as_vec()
                 .unwrap_or(&Vec::default())
                 .iter()
@@ -557,9 +557,8 @@ impl Detection {
                     } else {
                         info.as_str().unwrap_or(&String::default()).to_owned()
                     }
-                })
-                .collect(),
-            true => rule.yaml["tags"]
+                })),
+            true => Nested::from_iter(rule.yaml["tags"]
                 .as_vec()
                 .unwrap_or(&Vec::default())
                 .iter()
@@ -568,8 +567,7 @@ impl Detection {
                         Some(s) => s.to_owned(),
                         _ => info.as_str().unwrap_or("").to_string(),
                     },
-                )
-                .collect(),
+                )),
         }
     }
 
