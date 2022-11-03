@@ -69,13 +69,6 @@ lazy_static! {
         .to_str()
         .unwrap()
     );
-    pub static ref LEVEL_ABBR:Nested<Vec<String>> = Nested::from_iter(vec![
-        ["critical".to_string(), "crit".to_string()].to_vec(),
-        ["high".to_string(), "high".to_string()].to_vec(),
-        ["medium".to_string(), "med ".to_string()].to_vec(),
-        ["low".to_string(), "low ".to_string()].to_vec(),
-        ["informational".to_string(), "info".to_string()].to_vec(),
-    ].iter());
     pub static ref LEVEL_ABBR_MAP:HashMap<String, String> = HashMap::from_iter(vec![
         ("critical".to_string(), "crit".to_string()),
         ("high".to_string(), "high".to_string()),

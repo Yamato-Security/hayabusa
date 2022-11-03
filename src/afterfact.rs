@@ -1,6 +1,6 @@
 use terminal_size::terminal_size;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
-use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL, MESSAGEKEYS};
+use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::options::profile::PROFILES;
@@ -368,6 +368,13 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
     if !is_no_summary {
+        let level_abbr:Nested<Vec<String>> = Nested::from_iter(vec![
+            ["critical".to_string(), "crit".to_string()].to_vec(),
+            ["high".to_string(), "high".to_string()].to_vec(),
+            ["medium".to_string(), "med ".to_string()].to_vec(),
+            ["low".to_string(), "low ".to_string()].to_vec(),
+            ["informational".to_string(), "info".to_string()].to_vec(),
+        ].iter());
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(0, 255, 0))),
@@ -470,6 +477,7 @@ fn emit_csv<W: std::io::Write>(
             "Total | Unique".to_string(),
             "detections".to_string(),
             &color_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -477,6 +485,7 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_by_date(
             detect_counts_by_date_and_level,
             &color_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -488,6 +497,7 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_by_computer(
             detect_counts_by_computer_and_level,
             &color_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -499,6 +509,7 @@ fn emit_csv<W: std::io::Write>(
             detect_counts_by_rule_and_level,
             &color_map,
             rule_title_path_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -596,6 +607,7 @@ fn _print_unique_results(
     head_word: String,
     tail_word: String,
     color_map: &HashMap<String, Colors>,
+    level_abbr: &Nested<Vec<String>>,
     html_output_stock: &mut Nested<String>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
@@ -622,7 +634,7 @@ fn _print_unique_results(
     let mut total_detect_md = vec!["- Total detections:".to_string()];
     let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
 
-    for (i, level_name) in LEVEL_ABBR.iter().enumerate() {
+    for (i, level_name) in level_abbr.iter().enumerate() {
         if "undefined" == level_name[0] {
             continue;
         }
@@ -678,6 +690,7 @@ fn _print_unique_results(
 fn _print_detection_summary_by_date(
     detect_counts_by_date: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
+    level_abbr: &Nested<Vec<String>>,
     html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -688,7 +701,7 @@ fn _print_detection_summary_by_date(
     if *HTML_REPORT_FLAG {
         html_output_stock.push(format!("- {}", output_header));
     }
-    for (idx, level) in LEVEL_ABBR.iter().enumerate() {
+    for (idx, level) in level_abbr.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(&level[1]).unwrap();
         let mut max_detect_str = String::default();
@@ -715,7 +728,7 @@ fn _print_detection_summary_by_date(
             &max_detect_str
         );
         write!(wtr, "{}", output_str).ok();
-        if idx != LEVEL_ABBR.len() - 1 {
+        if idx != level_abbr.len() - 1 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
@@ -730,6 +743,7 @@ fn _print_detection_summary_by_date(
 fn _print_detection_summary_by_computer(
     detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
+    level_abbr: &Nested<Vec<String>>,
     html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -737,7 +751,7 @@ fn _print_detection_summary_by_computer(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
     writeln!(wtr, "Top 5 computers with most unique detections:").ok();
-    for level in LEVEL_ABBR.iter() {
+    for level in level_abbr.iter() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_computer = detect_counts_by_computer.get(&level[1]).unwrap();
         let mut result_vec = Nested::<String>::new();
@@ -799,6 +813,7 @@ fn _print_detection_summary_tables(
     detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
     color_map: &HashMap<String, Colors>,
     rule_title_path_map: HashMap<String, String>,
+    level_abbr: &Nested<Vec<String>>,
     html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -806,7 +821,7 @@ fn _print_detection_summary_tables(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
     let mut output = vec![];
     let mut col_color = vec![];
-    for level in LEVEL_ABBR.iter() {
+    for level in level_abbr.iter() {
         let mut col_output: Vec<String> = vec![];
         col_output.push(format!(
             "Top {} alerts:",
