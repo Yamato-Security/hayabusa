@@ -316,8 +316,6 @@ impl ParseYaml {
 #[cfg(test)]
 mod tests {
 
-    use crate::detections::message::AlertMessage;
-    use crate::detections::message::ERROR_LOG_PATH;
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
@@ -327,8 +325,6 @@ mod tests {
 
     #[test]
     fn test_read_file_yaml() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude::default();
         let _ = &yaml.read_dir(
@@ -341,8 +337,6 @@ mod tests {
 
     #[test]
     fn test_read_dir_yaml() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude {
             no_use_rule: HashMap::new(),
@@ -426,8 +420,6 @@ mod tests {
     }
     #[test]
     fn test_all_exclude_rules_file() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
@@ -435,8 +427,6 @@ mod tests {
     }
     #[test]
     fn test_all_noisy_rules_file() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
@@ -444,8 +434,6 @@ mod tests {
     }
     #[test]
     fn test_none_exclude_rules_file() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         let exclude_ids = RuleExclude::default();

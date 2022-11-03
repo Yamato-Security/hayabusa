@@ -13,7 +13,7 @@ use hayabusa::detections::configs::{
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{
-    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG,
+    AlertMessage, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG,
     PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
 };
 use hayabusa::detections::pivot::PivotKeyword;
@@ -491,7 +491,7 @@ impl App {
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
-            AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+            AlertMessage::create_error_log();
         }
 
         if *PIVOT_KEYWORD_LIST_FLAG {

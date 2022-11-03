@@ -38,10 +38,6 @@ lazy_static! {
     pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
-    pub static ref ERROR_LOG_PATH: String = format!(
-        "./logs/errorlog-{}.log",
-        Local::now().format("%Y%m%d_%H%M%S")
-    );
     pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().args.quiet_errors;
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
     pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().args.metrics;
@@ -311,11 +307,15 @@ pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
 
 impl AlertMessage {
     ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
-    pub fn create_error_log(path_str: String) {
+    pub fn create_error_log() {
         if *QUIET_ERRORS_FLAG {
             return;
         }
-        let path = Path::new(&path_str);
+        let file_path = format!(
+            "./logs/errorlog-{}.log",
+            Local::now().format("%Y%m%d_%H%M%S")
+        );
+        let path = Path::new(&file_path);
         if !path.parent().unwrap().exists() {
             create_dir(path.parent().unwrap()).ok();
         }
@@ -335,7 +335,7 @@ impl AlertMessage {
         });
         println!(
             "Errors were generated. Please check {} for details.",
-            *ERROR_LOG_PATH
+            file_path
         );
         println!();
     }
