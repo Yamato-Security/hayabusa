@@ -43,7 +43,7 @@ lazy_static! {
         Local::now().format("%Y%m%d_%H%M%S")
     );
     pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().args.quiet_errors;
-    pub static ref ERROR_LOG_STACK: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
     pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().args.metrics;
     pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
