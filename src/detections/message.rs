@@ -6,6 +6,7 @@ use chrono::{DateTime, Local, Utc};
 use dashmap::DashMap;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
@@ -266,7 +267,7 @@ pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
         Ok(lines) => {
             let mut ret: HashMap<String, String> = HashMap::new();
             lines
-                .into_iter()
+                .iter()
                 .try_for_each(|line| -> Result<(), String> {
                     let provider = match line.get(0) {
                         Some(_provider) => _provider.trim(),
@@ -323,7 +324,7 @@ impl AlertMessage {
             .write_all(
                 format!(
                     "user input: {:?}\n",
-                    format_args!("{}", env::args().collect::<Vec<String>>().join(" "))
+                    format_args!("{}", env::args().collect::<Nested<String>>().iter().join(" "))
                 )
                 .as_bytes(),
             )

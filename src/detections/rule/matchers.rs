@@ -115,8 +115,8 @@ impl LeafMatcher for RegexesFileMatcher {
         }
         let regexes_strs = regexes_strs.unwrap();
         self.regexes = regexes_strs
-            .into_iter()
-            .map(|regex_str| Regex::new(&regex_str).unwrap())
+            .iter()
+            .map(|regex_str| Regex::new(regex_str).unwrap())
             .collect();
 
         Result::Ok(())
@@ -172,8 +172,8 @@ impl LeafMatcher for AllowlistFileMatcher {
         }
         self.regexes = regexes_strs
             .unwrap()
-            .into_iter()
-            .map(|regex_str| Regex::new(&regex_str).unwrap())
+            .iter()
+            .map(|regex_str| Regex::new(regex_str).unwrap())
             .collect();
 
         Result::Ok(())
