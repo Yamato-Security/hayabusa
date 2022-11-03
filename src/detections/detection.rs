@@ -241,6 +241,7 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
         let mut profile_converter: HashMap<String, String> = HashMap::new();
+        let mut tags_config_values = TAGS_CONFIG.values();
         for p in PROFILES.as_ref().unwrap().iter() {
             let tmp = p[1].as_str();
             for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
@@ -317,18 +318,18 @@ impl Detection {
                         );
                     }
                     "%MitreTactics%" => {
-                        let tactics: &Vec<String> = &tag_info
+                        let tactics: &String = &tag_info
                             .iter()
-                            .filter(|x| TAGS_CONFIG.values().contains(x))
-                            .map(|y| y.to_owned())
-                            .collect();
-                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" ¦ "));
+                            .filter(|x| tags_config_values.contains(&x.to_string()))
+                            .join(" ¦ ");
+                            
+                        profile_converter.insert("%MitreTactics%".to_string(), tactics.to_string());
                     }
                     "%MitreTags%" => {
-                        let techniques: &Vec<String> = &tag_info
+                        let techniques: &String = &tag_info
                             .iter()
                             .filter(|x| {
-                                !TAGS_CONFIG.values().contains(x)
+                                !tags_config_values.contains(&x.to_string())
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -336,56 +337,32 @@ impl Detection {
                             .map(|y| {
                                 let replaced_tag = y.replace("attack.", "");
                                 make_ascii_titlecase(&replaced_tag)
-                            })
-                            .collect();
-                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
+                            }).join(" ¦ ");
+                        profile_converter.insert("%MitreTags%".to_string(), techniques.to_string());
                     }
                     "%OtherTags%" => {
-                        let tags: &Vec<String> = &tag_info
+                        let tags: &String = &tag_info
                             .iter()
                             .filter(|x| {
-                                !(TAGS_CONFIG.values().contains(x)
+                                !(TAGS_CONFIG.values().contains(&x.to_string())
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
-                            })
-                            .map(|y| y.to_owned())
-                            .collect();
-                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" ¦ "));
+                            }).join(" ¦ ");
+                        profile_converter.insert("%OtherTags%".to_string(), tags.to_string());
                     }
                     "%RuleAuthor%" => {
-                        let author = if let Some(a) = rule.yaml["author"].as_str() {
-                            a.to_string()
-                        } else {
-                            "-".to_string()
-                        };
-                        profile_converter.insert("%RuleAuthor%".to_string(), author);
+                        profile_converter.insert("%RuleAuthor%".to_string(), rule.yaml["author"].as_str().unwrap_or("-").to_string());
                     }
                     "%RuleCreationDate%" => {
-                        let date = if let Some(d) = rule.yaml["date"].as_str() {
-                            d.to_string()
-                        } else {
-                            "-".to_string()
-                        };
-                        profile_converter.insert("%RuleCreationDate%".to_string(), date);
+                        profile_converter.insert("%RuleCreationDate%".to_string(), rule.yaml["date"].as_str().unwrap_or("-").to_string());
                     }
                     "%RuleModifiedDate%" => {
-                        let modified_date = if let Some(md) = rule.yaml["modified"].as_str() {
-                            md.to_string()
-                        } else {
-                            "-".to_string()
-                        };
-                        profile_converter.insert("%RuleModifiedDate%".to_string(), modified_date);
+                        profile_converter.insert("%RuleModifiedDate%".to_string(), rule.yaml["modified"].as_str().unwrap_or("-").to_string());
                     }
                     "%Status%" => {
-                        let status = if let Some(s) = rule.yaml["status"].as_str() {
-                            s.to_string()
-                        } else {
-                            "-".to_string()
-                        };
-                        profile_converter.insert("%Status%".to_string(), status);
+                        profile_converter.insert("%Status%".to_string(), rule.yaml["status"].as_str().unwrap_or("-").to_string());
                     }
-
                     _ => {}
                 }
             }
@@ -428,6 +405,7 @@ impl Detection {
 
         let mut profile_converter: HashMap<String, String> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let mut tags_config_values = TAGS_CONFIG.values();
 
         for p in PROFILES.as_ref().unwrap().iter() {
             let tmp = p[1].as_str();
@@ -481,18 +459,17 @@ impl Detection {
                         profile_converter.insert("%EvtxFile%".to_string(), "-".to_owned());
                     }
                     "%MitreTactics%" => {
-                        let tactics: &Vec<String> = &tag_info
+                        let tactics: &String = &tag_info
                             .iter()
-                            .filter(|x| TAGS_CONFIG.values().contains(x))
-                            .map(|y| y.to_owned())
-                            .collect();
-                        profile_converter.insert("%MitreTactics%".to_string(), tactics.join(" ¦ "));
+                            .filter(|x| tags_config_values.contains(&x.to_string()))
+                            .join(" ¦ ");
+                        profile_converter.insert("%MitreTactics%".to_string(), tactics.to_string());
                     }
                     "%MitreTags%" => {
-                        let techniques: &Vec<String> = &tag_info
+                        let techniques: &String = &tag_info
                             .iter()
                             .filter(|x| {
-                                !TAGS_CONFIG.values().contains(x)
+                                !tags_config_values.contains(&x.to_string())
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -501,21 +478,20 @@ impl Detection {
                                 let replaced_tag = y.replace("attack.", "");
                                 make_ascii_titlecase(&replaced_tag)
                             })
-                            .collect();
-                        profile_converter.insert("%MitreTags%".to_string(), techniques.join(" ¦ "));
+                            .join(" ¦ ");
+                        profile_converter.insert("%MitreTags%".to_string(), techniques.to_string());
                     }
                     "%OtherTags%" => {
-                        let tags: &Vec<String> = &tag_info
+                        let tags: &String = &tag_info
                             .iter()
                             .filter(|x| {
-                                !(TAGS_CONFIG.values().contains(x)
+                                !(tags_config_values.contains(&x.to_string())
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
                             })
-                            .map(|y| y.to_owned())
-                            .collect();
-                        profile_converter.insert("%OtherTags%".to_string(), tags.join(" ¦ "));
+                            .join(" ¦ ");
+                        profile_converter.insert("%OtherTags%".to_string(), tags.to_string());
                     }
                     _ => {}
                 }
