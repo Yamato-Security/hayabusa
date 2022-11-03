@@ -2,11 +2,10 @@ extern crate serde_derive;
 extern crate yaml_rust;
 
 use crate::detections::configs;
-use crate::detections::configs::EXCLUDE_STATUS;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use crate::filter::RuleExclude;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -21,6 +20,7 @@ pub struct ParseYaml {
     pub rule_load_cnt: HashMap<String, u128>,
     pub rule_status_cnt: HashMap<String, u128>,
     pub errorrule_count: u128,
+    pub exclude_status: HashSet<String>,
 }
 
 impl Default for ParseYaml {
@@ -40,6 +40,7 @@ impl ParseYaml {
             ]),
             rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
             errorrule_count: 0,
+            exclude_status: configs::convert_option_vecs_to_hs(configs::CONFIG.read().unwrap().args.exclude_status.as_ref()),
         }
     }
 
@@ -261,7 +262,7 @@ impl ParseYaml {
 
                 let status = &yaml_doc["status"].as_str();
                 if let Some(s) = status {
-                    if EXCLUDE_STATUS.contains(&s.to_string()) {
+                    if self.exclude_status.contains(&s.to_string()) {
                         let entry = self
                             .rule_load_cnt
                             .entry("excluded".to_string())

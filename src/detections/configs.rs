@@ -46,8 +46,6 @@ lazy_static! {
         get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
-    pub static ref EXCLUDE_STATUS: HashSet<String> =
-        convert_option_vecs_to_hs(CONFIG.read().unwrap().args.exclude_status.as_ref());
 }
 
 pub struct ConfigReader<'a> {
