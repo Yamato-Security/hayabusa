@@ -155,21 +155,20 @@ pub fn insert(
     if exist_detail {
         profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    let mut tmp_converted_info: Nested<Vec<String>> = Nested::<Vec<String>>::new();
+    let mut replaced_converted_info: Nested<Vec<String>> = Nested::<Vec<String>>::new();
     for di in detect_info.ext_field.iter() {
         let converted_reserve_info = convert_profile_reserved_info(&di[1], profile_converter);
         if di[1].contains("%AllFieldInfo%") || di[1].contains("%Details%") {
-            tmp_converted_info.push(vec![di[0].to_owned(), converted_reserve_info]);
+            replaced_converted_info.push(vec![di[0].to_owned(), converted_reserve_info]);
         } else {
-            tmp_converted_info.push(vec![
+            replaced_converted_info.push(vec![
                 di[0].to_owned(),
                 parse_message(event_record, &converted_reserve_info),
             ]);
         }
     }
-    for tci in tmp_converted_info.iter() {
-        detect_info.ext_field.push(tci);
-    }
+    detect_info.ext_field = replaced_converted_info;
+
     insert_message(detect_info, time)
 }
 

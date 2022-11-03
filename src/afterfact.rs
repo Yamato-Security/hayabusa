@@ -542,12 +542,8 @@ enum ColPos {
 fn _get_serialized_disp_output(data: &Nested<Vec<String>>, header: bool) -> String {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
-    let mut remove_unnecessary_title: HashSet<&String> = HashSet::new();
     if header {
         for (i, d) in data.iter().enumerate() {
-            if remove_unnecessary_title.contains(&d[0]) {
-                continue;
-            }
             if i == 0 {
                 ret.push(_format_cellpos(&d[0], ColPos::First))
             } else if i == data_length - 1 {
@@ -555,14 +551,9 @@ fn _get_serialized_disp_output(data: &Nested<Vec<String>>, header: bool) -> Stri
             } else {
                 ret.push(_format_cellpos(&d[0], ColPos::Other))
             }
-            remove_unnecessary_title.insert(&d[0]);
         }
     } else {
         for (i, d) in data.iter().enumerate() {
-            if d[0] != "Timestamp" && !remove_unnecessary_title.contains(&d[0]) {
-                remove_unnecessary_title.insert(&d[0]);
-                continue;
-            }
             if i == 0 {
                 ret.push(_format_cellpos(&d[1], ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
