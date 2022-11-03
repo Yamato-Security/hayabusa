@@ -151,7 +151,10 @@ pub fn insert(
         let val = di[1].to_string();
         let converted_reserve_info = convert_profile_reserved_info(&val, profile_converter);
         if val.contains("%AllFieldInfo%") || val.contains("%Details%") {
-            replaced_converted_info.push(vec![di[0].to_owned(), ComprString::new(&converted_reserve_info)]);
+            replaced_converted_info.push(vec![
+                di[0].to_owned(),
+                ComprString::new(&converted_reserve_info),
+            ]);
         } else {
             replaced_converted_info.push(vec![
                 di[0].to_owned(),

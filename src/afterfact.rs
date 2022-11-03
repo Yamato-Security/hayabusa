@@ -306,10 +306,20 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(detect_info.ext_field.iter().map(|x| x[0].to_string().trim().to_string()))?;
+                    wtr.write_record(
+                        detect_info
+                            .ext_field
+                            .iter()
+                            .map(|x| x[0].to_string().trim().to_string()),
+                    )?;
                     plus_header = false;
                 }
-                wtr.write_record(detect_info.ext_field.iter().map(|x| x[1].to_string().trim().to_string()))?;
+                wtr.write_record(
+                    detect_info
+                        .ext_field
+                        .iter()
+                        .map(|x| x[1].to_string().trim().to_string()),
+                )?;
             }
 
             // 各種集計作業
@@ -1498,12 +1508,30 @@ mod tests {
             ComprString::new("Timestamp"),
             ComprString::new(&format_time(&test_timestamp, false)),
         ]);
-        data.push(vec![ComprString::new("Computer"), ComprString::new(test_computername)]);
-        data.push(vec![ComprString::new("Channel"), ComprString::new(test_channel)]);
-        data.push(vec![ComprString::new("EventID"), ComprString::new(test_eventid)]);
-        data.push(vec![ComprString::new("Level"), ComprString::new(test_level)]);
-        data.push(vec![ComprString::new("RecordID"), ComprString::new(test_recid)]);
-        data.push(vec![ComprString::new("RuleTitle"), ComprString::new(test_title)]);
+        data.push(vec![
+            ComprString::new("Computer"),
+            ComprString::new(test_computername),
+        ]);
+        data.push(vec![
+            ComprString::new("Channel"),
+            ComprString::new(test_channel),
+        ]);
+        data.push(vec![
+            ComprString::new("EventID"),
+            ComprString::new(test_eventid),
+        ]);
+        data.push(vec![
+            ComprString::new("Level"),
+            ComprString::new(test_level),
+        ]);
+        data.push(vec![
+            ComprString::new("RecordID"),
+            ComprString::new(test_recid),
+        ]);
+        data.push(vec![
+            ComprString::new("RuleTitle"),
+            ComprString::new(test_title),
+        ]);
         data.push(vec![ComprString::new("Details"), ComprString::new(output)]);
         data.push(vec![
             ComprString::new("RecordInformation"),

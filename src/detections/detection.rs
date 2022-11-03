@@ -243,7 +243,10 @@ impl Detection {
         let mut profile_converter: HashMap<String, String> = HashMap::new();
         let mut tags_config_values = TAGS_CONFIG.values();
         for p in PROFILES.as_ref().unwrap().iter() {
-            for target_profile in PRELOAD_PROFILE_REGEX.matches(p[1].to_string().as_str()).into_iter() {
+            for target_profile in PRELOAD_PROFILE_REGEX
+                .matches(p[1].to_string().as_str())
+                .into_iter()
+            {
                 match PRELOAD_PROFILE[target_profile] {
                     "%Timestamp%" => {
                         profile_converter
@@ -421,7 +424,10 @@ impl Detection {
         let mut tags_config_values = TAGS_CONFIG.values();
 
         for p in PROFILES.as_ref().unwrap().iter() {
-            for target_profile in PRELOAD_PROFILE_REGEX.matches(p[1].to_string().as_str()).into_iter() {
+            for target_profile in PRELOAD_PROFILE_REGEX
+                .matches(p[1].to_string().as_str())
+                .into_iter()
+            {
                 match PRELOAD_PROFILE[target_profile] {
                     "%Timestamp%" => {
                         profile_converter.insert(

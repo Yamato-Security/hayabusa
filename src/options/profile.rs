@@ -77,7 +77,10 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
 }
 
 /// プロファイル情報を読み込む関数
-pub fn load_profile(default_profile_path: &str, profile_path: &str) -> Option<Nested<Vec<ComprString>>> {
+pub fn load_profile(
+    default_profile_path: &str,
+    profile_path: &str,
+) -> Option<Nested<Vec<ComprString>>> {
     let conf = &configs::CONFIG.read().unwrap().args;
     if conf.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
@@ -271,22 +274,55 @@ mod tests {
     fn test_load_profile_without_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = None;
         let mut expect: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
-        expect.push(vec![ComprString::new("Timestamp"), ComprString::new("%Timestamp%")]);
-        expect.push(vec![ComprString::new("Computer"), ComprString::new("%Computer%")]);
-        expect.push(vec![ComprString::new("Channel"), ComprString::new("%Channel%")]);
+        expect.push(vec![
+            ComprString::new("Timestamp"),
+            ComprString::new("%Timestamp%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("Computer"),
+            ComprString::new("%Computer%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("Channel"),
+            ComprString::new("%Channel%"),
+        ]);
         expect.push(vec![ComprString::new("Level"), ComprString::new("%Level%")]);
-        expect.push(vec![ComprString::new("EventID"), ComprString::new("%EventID%")]);
-        expect.push(vec![ComprString::new("MitreAttack"), ComprString::new("%MitreAttack%")]);
-        expect.push(vec![ComprString::new("RecordID"), ComprString::new("%RecordID%")]);
-        expect.push(vec![ComprString::new("RuleTitle"), ComprString::new("%RuleTitle%")]);
-        expect.push(vec![ComprString::new("Details"), ComprString::new("%Details%")]);
+        expect.push(vec![
+            ComprString::new("EventID"),
+            ComprString::new("%EventID%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("MitreAttack"),
+            ComprString::new("%MitreAttack%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("RecordID"),
+            ComprString::new("%RecordID%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("RuleTitle"),
+            ComprString::new("%RuleTitle%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("Details"),
+            ComprString::new("%Details%"),
+        ]);
         expect.push(vec![
             ComprString::new("RecordInformation"),
             ComprString::new("%AllFieldInfo%"),
         ]);
-        expect.push(vec![ComprString::new("RuleFile"), ComprString::new("%RuleFile%")]);
-        expect.push(vec![ComprString::new("EvtxFile"), ComprString::new("%EvtxFile%")]);
-        expect.push(vec![ComprString::new("Tags"), ComprString::new("%MitreAttack%")]);
+        expect.push(vec![
+            ComprString::new("RuleFile"),
+            ComprString::new("%RuleFile%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("EvtxFile"),
+            ComprString::new("%EvtxFile%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("Tags"),
+            ComprString::new("%MitreAttack%"),
+        ]);
 
         assert_eq!(
             Some(expect),
@@ -301,13 +337,31 @@ mod tests {
     fn test_load_profile_with_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = Some("minimal".to_string());
         let mut expect: Nested<Vec<ComprString>> = Nested::new();
-        expect.push(vec![ComprString::new("Timestamp"), ComprString::new("%Timestamp%")]);
-        expect.push(vec![ComprString::new("Computer"), ComprString::new("%Computer%")]);
-        expect.push(vec![ComprString::new("Channel"), ComprString::new("%Channel%")]);
-        expect.push(vec![ComprString::new("EventID"), ComprString::new("%EventID%")]);
+        expect.push(vec![
+            ComprString::new("Timestamp"),
+            ComprString::new("%Timestamp%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("Computer"),
+            ComprString::new("%Computer%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("Channel"),
+            ComprString::new("%Channel%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("EventID"),
+            ComprString::new("%EventID%"),
+        ]);
         expect.push(vec![ComprString::new("Level"), ComprString::new("%Level%")]);
-        expect.push(vec![ComprString::new("RuleTitle"), ComprString::new("%RuleTitle%")]);
-        expect.push(vec![ComprString::new("Details"), ComprString::new("%Details%")]);
+        expect.push(vec![
+            ComprString::new("RuleTitle"),
+            ComprString::new("%RuleTitle%"),
+        ]);
+        expect.push(vec![
+            ComprString::new("Details"),
+            ComprString::new("%Details%"),
+        ]);
 
         assert_eq!(
             Some(expect),
