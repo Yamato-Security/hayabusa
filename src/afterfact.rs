@@ -313,7 +313,14 @@ fn emit_csv<W: std::io::Write>(
 
             // 各種集計作業
             if !is_no_summary {
-                let level_suffix = *configs::LEVELMAP
+                let level_map:HashMap<String, u128> =  HashMap::from([
+                    ("INFORMATIONAL".to_owned(), 1),
+                    ("LOW".to_owned(), 2),
+                    ("MEDIUM".to_owned(), 3),
+                    ("HIGH".to_owned(), 4),
+                    ("CRITICAL".to_owned(), 5),
+                ]);
+                let level_suffix = *level_map
                     .get(
                         &LEVEL_FULL
                             .get(&detect_info.level)

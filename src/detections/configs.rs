@@ -14,15 +14,6 @@ use terminal_size::{terminal_size, Width};
 
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
-    pub static ref LEVELMAP: HashMap<String, u128> = {
-        let mut levelmap = HashMap::new();
-        levelmap.insert("INFORMATIONAL".to_owned(), 1);
-        levelmap.insert("LOW".to_owned(), 2);
-        levelmap.insert("MEDIUM".to_owned(), 3);
-        levelmap.insert("HIGH".to_owned(), 4);
-        levelmap.insert("CRITICAL".to_owned(), 5);
-        levelmap
-    };
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(
         utils::check_setting_path(
             &CONFIG.read().unwrap().args.config,

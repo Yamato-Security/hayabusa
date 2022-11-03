@@ -21,6 +21,7 @@ pub struct ParseYaml {
     pub rule_status_cnt: HashMap<String, u128>,
     pub errorrule_count: u128,
     pub exclude_status: HashSet<String>,
+    pub level_map: HashMap<String, u128>,
 }
 
 impl Default for ParseYaml {
@@ -41,6 +42,13 @@ impl ParseYaml {
             rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
             errorrule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(configs::CONFIG.read().unwrap().args.exclude_status.as_ref()),
+            level_map: HashMap::from([
+                ("INFORMATIONAL".to_owned(), 1),
+                ("LOW".to_owned(), 2),
+                ("MEDIUM".to_owned(), 3),
+                ("HIGH".to_owned(), 4),
+                ("CRITICAL".to_owned(), 5),
+            ]),
         }
     }
 
@@ -301,8 +309,8 @@ impl ParseYaml {
                     .unwrap_or("informational")
                     .to_string()
                     .to_uppercase();
-                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
-                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
+                let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
+                let args_level_num = self.level_map.get(level).unwrap_or(&1);
                 if doc_level_num < args_level_num {
                     return Option::None;
                 }
