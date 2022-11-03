@@ -12,7 +12,6 @@ use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use lazy_static::lazy_static;
-use linked_hash_map::LinkedHashMap;
 use nested::Nested;
 use std::path::Path;
 use std::str::FromStr;
@@ -205,7 +204,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<String, Colors>,
     all_record_cnt: u128,
-    profile: &LinkedHashMap<String, String>,
+    profile: &Nested<Vec<String>>,
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
@@ -305,10 +304,10 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(detect_info.ext_field.keys().map(|x| x.trim()))?;
+                    wtr.write_record(detect_info.ext_field.iter().map(|x| x[0].trim()))?;
                     plus_header = false;
                 }
-                wtr.write_record(detect_info.ext_field.values().map(|x| x.trim()))?;
+                wtr.write_record(detect_info.ext_field.iter().map(|x| x[1].trim()))?;
             }
 
             // 各種集計作業
@@ -540,27 +539,36 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: bool) -> String {
-    let data_length = &data.len();
+fn _get_serialized_disp_output(data: &Nested<Vec<String>>, header: bool) -> String {
+    let data_length = data.len();
     let mut ret = Nested::<String>::new();
+    let mut remove_unnecessary_title:HashSet<&String> = HashSet::new();
     if header {
-        for (i, k) in data.keys().enumerate() {
-            if i == 0 {
-                ret.push(_format_cellpos(k, ColPos::First))
-            } else if i == data_length - 1 {
-                ret.push(_format_cellpos(k, ColPos::Last))
-            } else {
-                ret.push(_format_cellpos(k, ColPos::Other))
+        for (i, d) in data.iter().enumerate() {
+            if remove_unnecessary_title.contains(&d[0]) {
+                continue;
             }
+            if i == 0 {
+                ret.push(_format_cellpos(&d[0], ColPos::First))
+            } else if i == data_length - 1 {
+                ret.push(_format_cellpos(&d[0], ColPos::Last))
+            } else {
+                ret.push(_format_cellpos(&d[0], ColPos::Other))
+            }
+            remove_unnecessary_title.insert(&d[0]);
         }
     } else {
-        for (i, (_, v)) in data.iter().enumerate() {
+        for (i,d) in data.iter().enumerate() {
+            if d[0] != "Timestamp" && !remove_unnecessary_title.contains(&d[0]) {
+                remove_unnecessary_title.insert(&d[0]);
+                continue;
+            }
             if i == 0 {
-                ret.push(_format_cellpos(v, ColPos::First).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(v, ColPos::Last).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::Last).replace('|', "🦅"))
             } else {
-                ret.push(_format_cellpos(v, ColPos::Other).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::Other).replace('|', "🦅"))
             }
         }
     }
@@ -622,8 +630,8 @@ fn _print_unique_results(
     let mut total_detect_md = vec!["- Total detections:".to_string()];
     let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
 
-    for (i, level_name) in LEVEL_ABBR.keys().enumerate() {
-        if "undefined" == *level_name {
+    for (i, level_name) in LEVEL_ABBR.iter().enumerate() {
+        if "undefined" == level_name[0] {
             continue;
         }
         let percent = if total_count == 0 {
@@ -639,13 +647,13 @@ fn _print_unique_results(
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
             total_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
-                level_name,
+                level_name[0],
                 counts_by_level[i].to_formatted_string(&Locale::en),
                 percent
             ));
             unique_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
-                level_name,
+                level_name[0],
                 unique_counts_by_level[i].to_formatted_string(&Locale::en),
                 unique_percent
             ));
@@ -653,7 +661,7 @@ fn _print_unique_results(
         let output_raw_str = format!(
             "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
             head_word,
-            level_name,
+            level_name[0],
             tail_word,
             counts_by_level[i].to_formatted_string(&Locale::en),
             percent,
@@ -662,7 +670,7 @@ fn _print_unique_results(
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
-            _get_output_color(color_map, level_name),
+            _get_output_color(color_map, &level_name[0]),
             &output_raw_str,
             true,
         )
@@ -688,9 +696,9 @@ fn _print_detection_summary_by_date(
     if *HTML_REPORT_FLAG {
         html_output_stock.push(format!("- {}", output_header));
     }
-    for (idx, level) in LEVEL_ABBR.values().enumerate() {
+    for (idx, level) in LEVEL_ABBR.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_day = detect_counts_by_date.get(level).unwrap();
+        let detections_by_day = detect_counts_by_date.get(&level[1]).unwrap();
         let mut max_detect_str = String::default();
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
@@ -703,7 +711,7 @@ fn _print_detection_summary_by_date(
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1]).unwrap(),
         )))
         .ok();
         if !exist_max_data {
@@ -711,7 +719,7 @@ fn _print_detection_summary_by_date(
         }
         let output_str = format!(
             "{}: {}",
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1]).unwrap(),
             &max_detect_str
         );
         write!(wtr, "{}", output_str).ok();
@@ -737,9 +745,9 @@ fn _print_detection_summary_by_computer(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
     writeln!(wtr, "Top 5 computers with most unique detections:").ok();
-    for level in LEVEL_ABBR.values() {
+    for level in LEVEL_ABBR.iter() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
+        let detections_by_computer = detect_counts_by_computer.get(&level[1]).unwrap();
         let mut result_vec = Nested::<String>::new();
         //computer nameで-となっているものは除外して集計する
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer
@@ -753,8 +761,8 @@ fn _print_detection_summary_by_computer(
         if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
-                LEVEL_FULL.get(level.as_str()).unwrap(),
-                LEVEL_FULL.get(level.as_str()).unwrap()
+                LEVEL_FULL.get(&level[1]).unwrap(),
+                LEVEL_FULL.get(&level[1]).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -780,13 +788,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1]).unwrap(),
         )))
         .ok();
         writeln!(
             wtr,
             "{}: {}",
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1]).unwrap(),
             &result_str
         )
         .ok();
@@ -806,20 +814,20 @@ fn _print_detection_summary_tables(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
     let mut output = vec![];
     let mut col_color = vec![];
-    for level in LEVEL_ABBR.values() {
+    for level in LEVEL_ABBR.iter() {
         let mut col_output: Vec<String> = vec![];
         col_output.push(format!(
             "Top {} alerts:",
-            LEVEL_FULL.get(level.as_str()).unwrap()
+            LEVEL_FULL.get(&level[1]).unwrap()
         ));
 
         col_color.push(_get_table_color(
             color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1]).unwrap(),
         ));
 
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_computer = detect_counts_by_rule_and_level.get(level).unwrap();
+        let detections_by_computer = detect_counts_by_rule_and_level.get(&level[1]).unwrap();
         let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
@@ -828,8 +836,8 @@ fn _print_detection_summary_tables(
         if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
-                LEVEL_FULL.get(level.as_str()).unwrap(),
-                LEVEL_FULL.get(level.as_str()).unwrap()
+                LEVEL_FULL.get(&level[1]).unwrap(),
+                LEVEL_FULL.get(&level[1]).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -846,7 +854,7 @@ fn _print_detection_summary_tables(
         }
 
         let take_cnt =
-            if LEVEL_FULL.get(level.as_str()).unwrap_or(&"-".to_string()) == "informational" {
+            if LEVEL_FULL.get(&level[1]).unwrap_or(&"-".to_string()) == "informational" {
                 10
             } else {
                 5
@@ -1014,22 +1022,23 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
 fn output_json_str(
-    ext_field: &LinkedHashMap<String, String>,
-    profile: &LinkedHashMap<String, String>,
+    ext_field: &Nested<Vec<String>>,
+    profile: &Nested<Vec<String>>,
     jsonl_output_flag: bool,
 ) -> String {
     let mut target: Vec<String> = vec![];
-    for (k, v) in ext_field.iter() {
-        let output_value_fmt = profile.get(k).unwrap();
-        let vec_data = _get_json_vec(output_value_fmt, v);
+    let profile_map:HashMap<String, String> = HashMap::from_iter(profile.iter().map(|p| (p[0].to_string(), p[1].to_string())));
+    for ef in ext_field.iter() {
+        let output_value_fmt = profile_map.get(&ef[0]).unwrap();
+        let vec_data = _get_json_vec(output_value_fmt, &ef[1]);
         if vec_data.is_empty() {
-            let tmp_val: Vec<&str> = v.split(": ").collect();
+            let tmp_val: Vec<&str> = ef[1].split(": ").collect();
             let output_val =
                 _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%AllFieldInfo%"));
             target.push(_create_json_output_format(
-                k,
+                &ef[0],
                 &output_val,
-                k.starts_with('\"'),
+                ef[0].starts_with('\"'),
                 output_val.starts_with('\"'),
                 4,
             ));
@@ -1037,7 +1046,7 @@ fn output_json_str(
             || output_value_fmt.contains("%AllFieldInfo%")
         {
             let mut output_stock: Vec<String> = vec![];
-            output_stock.push(format!("    \"{}\": {{", k));
+            output_stock.push(format!("    \"{}\": {{", ef[0]));
             let mut stocked_value = vec![];
             let mut key_index_stock = vec![];
             for detail_contents in vec_data.iter() {
@@ -1061,7 +1070,7 @@ fn output_json_str(
                 let mut tmp = if key_idx >= key_index_stock.len() {
                     String::default()
                 } else if value_idx == 0 && !value.is_empty() {
-                    k.to_string()
+                    ef[0].to_string()
                 } else {
                     key_index_stock[key_idx].to_string()
                 };
@@ -1137,9 +1146,9 @@ fn output_json_str(
             || output_value_fmt.contains("%MitreTactics%")
             || output_value_fmt.contains("%OtherTags%")
         {
-            let tmp_val: Vec<&str> = v.split(": ").collect();
+            let tmp_val: Vec<&str> = ef[1].split(": ").collect();
 
-            let key = _convert_valid_json_str(&[k.as_str()], false);
+            let key = _convert_valid_json_str(&[ef[0].as_str()], false);
             let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
             let mut value: Vec<String> = vec![];
 
@@ -1297,7 +1306,7 @@ mod tests {
     use crate::options::profile::load_profile;
     use chrono::{Local, TimeZone, Utc};
     use hashbrown::HashMap;
-    use linked_hash_map::LinkedHashMap;
+    use nested::Nested;
     use serde_json::Value;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
@@ -1322,7 +1331,7 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let output_profile: LinkedHashMap<String, String> = load_profile(
+        let output_profile: Nested<Vec<String>> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",
         )
@@ -1464,16 +1473,16 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
-        let mut data: LinkedHashMap<String, String> = LinkedHashMap::new();
-        data.insert("Timestamp".to_owned(), format_time(&test_timestamp, false));
-        data.insert("Computer".to_owned(), test_computername.to_owned());
-        data.insert("Channel".to_owned(), test_channel.to_owned());
-        data.insert("EventID".to_owned(), test_eventid.to_owned());
-        data.insert("Level".to_owned(), test_level.to_owned());
-        data.insert("RecordID".to_owned(), test_recid.to_owned());
-        data.insert("RuleTitle".to_owned(), test_title.to_owned());
-        data.insert("Details".to_owned(), output.to_owned());
-        data.insert("RecordInformation".to_owned(), test_recinfo.to_owned());
+        let mut data: Nested<Vec<String>> = Nested::<Vec<String>>::new();
+        data.push(vec!["Timestamp".to_owned(), format_time(&test_timestamp, false)]);
+        data.push(vec!["Computer".to_owned(), test_computername.to_owned()]);
+        data.push(vec!["Channel".to_owned(), test_channel.to_owned()]);
+        data.push(vec!["EventID".to_owned(), test_eventid.to_owned()]);
+        data.push(vec!["Level".to_owned(), test_level.to_owned()]);
+        data.push(vec!["RecordID".to_owned(), test_recid.to_owned()]);
+        data.push(vec!["RuleTitle".to_owned(), test_title.to_owned()]);
+        data.push(vec!["Details".to_owned(), output.to_owned()]);
+        data.push(vec!["RecordInformation".to_owned(), test_recinfo.to_owned()]);
 
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);

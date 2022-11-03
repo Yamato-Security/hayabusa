@@ -181,7 +181,9 @@ impl LeafMatcher for AllowlistFileMatcher {
 
     fn is_match(&self, event_value: Option<&String>, _recinfo: &EvtxRecordInfo) -> bool {
         match event_value {
-            Some(s) => !utils::check_allowlist(s, &self.regexes),
+            Some(s) => { 
+                !utils::check_allowlist(s, &self.regexes)
+            },
             None => true,
         }
     }

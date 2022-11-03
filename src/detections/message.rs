@@ -7,7 +7,7 @@ use dashmap::DashMap;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
-use linked_hash_map::LinkedHashMap;
+use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
 use std::env;
@@ -26,7 +26,7 @@ pub struct DetectInfo {
     pub eventid: String,
     pub detail: String,
     pub record_information: Option<String>,
-    pub ext_field: LinkedHashMap<String, String>,
+    pub ext_field: Nested<Vec<String>>,
 }
 
 pub struct AlertMessage {}
@@ -72,13 +72,21 @@ lazy_static! {
         .to_str()
         .unwrap()
     );
-    pub static ref LEVEL_ABBR: LinkedHashMap<String, String> = LinkedHashMap::from_iter([
+    pub static ref LEVEL_ABBR:Nested<Vec<String>> = Nested::from_iter(vec![
+        ["critical".to_string(), "crit".to_string()].to_vec(),
+        ["high".to_string(), "high".to_string()].to_vec(),
+        ["medium".to_string(), "med ".to_string()].to_vec(),
+        ["low".to_string(), "low ".to_string()].to_vec(),
+        ["informational".to_string(), "info".to_string()].to_vec(),
+    ].iter());
+    pub static ref LEVEL_ABBR_MAP:HashMap<String, String> = HashMap::from_iter(vec![
         ("critical".to_string(), "crit".to_string()),
         ("high".to_string(), "high".to_string()),
         ("medium".to_string(), "med ".to_string()),
         ("low".to_string(), "low ".to_string()),
         ("informational".to_string(), "info".to_string()),
-    ]);
+    ]
+);
     pub static ref LEVEL_FULL: HashMap<String, String> = HashMap::from([
         ("crit".to_string(), "critical".to_string()),
         ("high".to_string(), "high".to_string()),
@@ -139,28 +147,28 @@ pub fn insert(
         };
     }
     let mut exist_detail = false;
-    PROFILES.as_ref().unwrap().iter().for_each(|(_k, v)| {
-        if v.contains("%Details%") {
+    PROFILES.as_ref().unwrap().iter().for_each(|p_element| {
+        if p_element[1].contains("%Details%") {
             exist_detail = true;
         }
     });
     if exist_detail {
         profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    let mut tmp_converted_info: LinkedHashMap<String, String> = LinkedHashMap::new();
-    for (k, v) in &detect_info.ext_field {
-        let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
-        if v.contains("%AllFieldInfo%") || v.contains("%Details%") {
-            tmp_converted_info.insert(k.to_owned(), converted_reserve_info);
+    let mut tmp_converted_info: Nested<Vec<String>> = Nested::<Vec<String>>::new();
+    for di in detect_info.ext_field.iter() {
+        let converted_reserve_info = convert_profile_reserved_info(&di[1], profile_converter);
+        if di[1].contains("%AllFieldInfo%") || di[1].contains("%Details%") {
+            tmp_converted_info.push(vec![di[0].to_owned(), converted_reserve_info]);
         } else {
-            tmp_converted_info.insert(
-                k.to_owned(),
+            tmp_converted_info.push(vec![
+                di[0].to_owned(),
                 parse_message(event_record, &converted_reserve_info),
-            );
+            ]);
         }
     }
-    for (k, v) in tmp_converted_info {
-        detect_info.ext_field.insert(k, v);
+    for tci in tmp_converted_info.iter() {
+        detect_info.ext_field.push(tci);
     }
     insert_message(detect_info, time)
 }
@@ -359,6 +367,7 @@ mod tests {
     use crate::detections::message::{parse_message, MESSAGES};
     use chrono::Utc;
     use hashbrown::HashMap;
+    use nested::Nested;
     use rand::Rng;
     use serde_json::Value;
     use std::thread;
@@ -640,7 +649,7 @@ mod tests {
                 eventid: i.to_string(),
                 detail: "".to_string(),
                 record_information: None,
-                ext_field: Default::default(),
+                ext_field: Nested::<Vec<String>>::new(),
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }

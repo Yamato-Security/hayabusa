@@ -28,7 +28,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::message::{self, LEVEL_ABBR};
+use super::message::{self, LEVEL_ABBR_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -241,8 +241,8 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
         let mut profile_converter: HashMap<String, String> = HashMap::new();
-        for (_k, v) in PROFILES.as_ref().unwrap().iter() {
-            let tmp = v.as_str();
+        for p in PROFILES.as_ref().unwrap().iter() {
+            let tmp = p[1].as_str();
             for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
                 match PRELOAD_PROFILE[target_profile] {
                     "%Timestamp%" => {
@@ -269,7 +269,7 @@ impl Detection {
                     "%Level%" => {
                         profile_converter.insert(
                             "%Level%".to_string(),
-                            LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
+                            LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
                         );
                     }
                     "%EventID%" => {
@@ -394,7 +394,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: rule.rulepath.to_owned(),
             ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
-            level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
+            level: LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace('\"', ""),
@@ -429,8 +429,8 @@ impl Detection {
         let mut profile_converter: HashMap<String, String> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
-        for (_k, v) in PROFILES.as_ref().unwrap().iter() {
-            let tmp = v.as_str();
+        for p in PROFILES.as_ref().unwrap().iter() {
+            let tmp = p[1].as_str();
             for target_profile in PRELOAD_PROFILE_REGEX.matches(tmp).into_iter() {
                 match PRELOAD_PROFILE[target_profile] {
                     "%Timestamp%" => {
@@ -448,7 +448,7 @@ impl Detection {
                     "%Level%" => {
                         profile_converter.insert(
                             "%Level%".to_string(),
-                            LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
+                            LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
                         );
                     }
                     "%EventID%" => {
@@ -525,7 +525,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: rule.rulepath.to_owned(),
             ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
-            level: LEVEL_ABBR.get(&level).unwrap_or(&level).to_string(),
+            level: LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
             detail: output,
