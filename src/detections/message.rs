@@ -21,13 +21,13 @@ use termcolor::{BufferWriter, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
-    pub rulepath: ComprString,
-    pub ruletitle: ComprString,
-    pub level: ComprString,
-    pub computername: ComprString,
-    pub eventid: ComprString,
-    pub detail: ComprString,
-    pub record_information: Option<ComprString>,
+    pub rulepath: String,
+    pub ruletitle: String,
+    pub level: String,
+    pub computername: String,
+    pub eventid: String,
+    pub detail: String,
+    pub record_information: Option<String>,
     pub ext_field: Nested<Vec<ComprString>>,
 }
 
@@ -132,9 +132,9 @@ pub fn insert(
             .filter(|&c| !c.is_control())
             .collect::<String>();
         detect_info.detail = if parsed_detail.is_empty() {
-            ComprString::new("-")
+            "-".to_string()
         } else {
-            ComprString::new(&parsed_detail)
+            parsed_detail
         };
     }
     let mut exist_detail = false;
@@ -144,7 +144,7 @@ pub fn insert(
         }
     });
     if exist_detail {
-        profile_converter.insert("%Details%".to_string(), detect_info.detail.to_string());
+        profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
     let mut replaced_converted_info: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
     for di in detect_info.ext_field.iter() {
@@ -644,12 +644,12 @@ mod tests {
         let sample_event_time = Utc::now();
         for i in 1..2001 {
             let detect_info = DetectInfo {
-                rulepath: ComprString::new(""),
-                ruletitle: ComprString::new(""),
-                level: ComprString::new(""),
-                computername: ComprString::new(""),
-                eventid: ComprString::new(&i.to_string()),
-                detail: ComprString::new(""),
+                rulepath: "".to_string(),
+                ruletitle: "".to_string(),
+                level: "".to_string(),
+                computername: "".to_string(),
+                eventid: i.to_string(),
+                detail: "".to_string(),
                 record_information: None,
                 ext_field: Nested::<Vec<ComprString>>::new(),
             };
