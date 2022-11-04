@@ -13,7 +13,6 @@ use terminal_size::terminal_size;
 use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
-use lazy_static::lazy_static;
 use nested::Nested;
 use std::path::Path;
 use std::str::FromStr;
@@ -31,10 +30,6 @@ use std::fs::File;
 use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
-
-lazy_static! {
-    pub static ref OUTPUT_COLOR: HashMap<String, Colors> = set_output_color();
-}
 
 pub struct Colors {
     pub output_color: termcolor::Color,
