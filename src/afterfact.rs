@@ -281,8 +281,8 @@ fn emit_csv<W: std::io::Write>(
                     get_writable_color(_get_output_color(
                         &color_map,
                         LEVEL_FULL
-                            .get(&detect_info.level)
-                            .unwrap_or(&String::default()),
+                            .get(&detect_info.level.as_str())
+                            .unwrap_or(&""),
                     )),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
@@ -334,8 +334,8 @@ fn emit_csv<W: std::io::Write>(
                 let level_suffix = *level_map
                     .get(
                         &LEVEL_FULL
-                            .get(&detect_info.level)
-                            .unwrap_or(&"undefined".to_string())
+                            .get(&detect_info.level.as_str())
+                            .unwrap_or(&"undefined")
                             .to_uppercase(),
                     )
                     .unwrap_or(&0) as usize;
@@ -737,7 +737,7 @@ fn _print_detection_summary_by_date(
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(&level[1]).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
         )))
         .ok();
         if !exist_max_data {
@@ -745,7 +745,7 @@ fn _print_detection_summary_by_date(
         }
         let output_str = format!(
             "{}: {}",
-            LEVEL_FULL.get(&level[1]).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
             &max_detect_str
         );
         write!(wtr, "{}", output_str).ok();
@@ -788,8 +788,8 @@ fn _print_detection_summary_by_computer(
         if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
-                LEVEL_FULL.get(&level[1]).unwrap(),
-                LEVEL_FULL.get(&level[1]).unwrap()
+                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(&level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -815,13 +815,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(&level[1]).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
         )))
         .ok();
         writeln!(
             wtr,
             "{}: {}",
-            LEVEL_FULL.get(&level[1]).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
             &result_str
         )
         .ok();
@@ -846,12 +846,12 @@ fn _print_detection_summary_tables(
         let mut col_output: Vec<String> = vec![];
         col_output.push(format!(
             "Top {} alerts:",
-            LEVEL_FULL.get(&level[1]).unwrap()
+            LEVEL_FULL.get(&level[1].as_str()).unwrap()
         ));
 
         col_color.push(_get_table_color(
             color_map,
-            LEVEL_FULL.get(&level[1]).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
         ));
 
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -864,8 +864,8 @@ fn _print_detection_summary_tables(
         if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
-                LEVEL_FULL.get(&level[1]).unwrap(),
-                LEVEL_FULL.get(&level[1]).unwrap()
+                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(&level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -881,7 +881,7 @@ fn _print_detection_summary_tables(
             html_output_stock.push("");
         }
 
-        let take_cnt = if LEVEL_FULL.get(&level[1]).unwrap_or(&"-".to_string()) == "informational" {
+        let take_cnt = if "informational" == *LEVEL_FULL.get(&level[1].as_str()).unwrap_or(&"-") {
             10
         } else {
             5

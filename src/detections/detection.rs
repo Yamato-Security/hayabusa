@@ -272,7 +272,7 @@ impl Detection {
                     "%Level%" => {
                         profile_converter.insert(
                             "%Level%".to_string(),
-                            LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
+                            LEVEL_ABBR_MAP.get(&level.as_str()).unwrap_or(&level.as_str()).to_string(),
                         );
                     }
                     "%EventID%" => {
@@ -387,7 +387,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: rule.rulepath.to_owned(),
             ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
-            level: LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
+            level: LEVEL_ABBR_MAP.get(&level.as_str()).unwrap_or(&level.as_str()).to_string(),
             computername: record_info.record["Event"]["System"]["Computer"]
                 .to_string()
                 .replace('\"', ""),
@@ -444,7 +444,7 @@ impl Detection {
                     "%Level%" => {
                         profile_converter.insert(
                             "%Level%".to_string(),
-                            LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
+                            LEVEL_ABBR_MAP.get(&level.as_str()).unwrap_or(&level.as_str()).to_string(),
                         );
                     }
                     "%EventID%" => {
@@ -519,7 +519,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: rule.rulepath.to_owned(),
             ruletitle: rule.yaml["title"].as_str().unwrap_or("-").to_string(),
-            level: LEVEL_ABBR_MAP.get(&level).unwrap_or(&level).to_string(),
+            level: LEVEL_ABBR_MAP.get(&level.as_str()).unwrap_or(&level.as_str()).to_string(),
             computername: "-".to_owned(),
             eventid: "-".to_owned(),
             detail: output,

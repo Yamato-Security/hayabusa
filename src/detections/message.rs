@@ -70,20 +70,20 @@ lazy_static! {
         .to_str()
         .unwrap()
     );
-    pub static ref LEVEL_ABBR_MAP:HashMap<String, String> = HashMap::from_iter(vec![
-        ("critical".to_string(), "crit".to_string()),
-        ("high".to_string(), "high".to_string()),
-        ("medium".to_string(), "med ".to_string()),
-        ("low".to_string(), "low ".to_string()),
-        ("informational".to_string(), "info".to_string()),
+    pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
+        ("critical", "crit"),
+        ("high", "high"),
+        ("medium", "med "),
+        ("low", "low "),
+        ("informational", "info"),
     ]
 );
-    pub static ref LEVEL_FULL: HashMap<String, String> = HashMap::from([
-        ("crit".to_string(), "critical".to_string()),
-        ("high".to_string(), "high".to_string()),
-        ("med ".to_string(), "medium".to_string()),
-        ("low ".to_string(), "low".to_string()),
-        ("info".to_string(), "informational".to_string())
+    pub static ref LEVEL_FULL: HashMap<&'static str, &'static str> = HashMap::from([
+        ("crit", "critical"),
+        ("high", "high"),
+        ("med ", "medium"),
+        ("low ", "low"),
+        ("info", "informational")
     ]);
 }
 
