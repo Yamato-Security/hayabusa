@@ -222,7 +222,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
 }
 
 /// Get profile name and tag list in yaml file.
-pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
+pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
     let ymls = match read_profile_data(
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), profile_path, true)
             .unwrap()
@@ -235,7 +235,7 @@ pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
             vec![]
         }
     };
-    let mut ret = vec![];
+    let mut ret = Nested::<Vec<String>>::new();
     for yml in ymls.iter() {
         for (k, v) in yml.as_hash().unwrap() {
             let mut row = vec![];
@@ -406,13 +406,13 @@ mod tests {
 
     /// yamlファイル内のプロファイル名一覧を取得する機能のテスト
     fn test_get_profile_names() {
-        let expect = vec![vec![
-            "minimal", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %Details%"
-         ],
-         vec!["standard", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%"],
-         vec!["verbose-1", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%"],
-         vec!["verbose-2", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%"],
-         ];
+        let mut expect = Nested::<Vec<String>>::new();
+        expect.push(vec![
+            "minimal".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %Details%".to_string()
+         ]);
+         expect.push(vec!["standard".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%".to_string()]);
+         expect.push(vec!["verbose-1".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%".to_string()]);
+         expect.push(vec!["verbose-2".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%".to_string()]);
         assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }
 }

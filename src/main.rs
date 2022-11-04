@@ -146,7 +146,7 @@ impl App {
                 true,
             )
             .ok();
-            for profile in &profile_list {
+            for profile in profile_list.iter() {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     Some(Color::Green),
