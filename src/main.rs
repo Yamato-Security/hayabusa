@@ -592,7 +592,7 @@ impl App {
     #[cfg(not(target_os = "windows"))]
     fn collect_liveanalysis_files(
         &self,
-        target_extensions: &HashSet<String>,
+        _target_extensions: &HashSet<String>,
     ) -> Option<Vec<PathBuf>> {
         AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
             .ok();
