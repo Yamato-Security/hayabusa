@@ -370,8 +370,10 @@ impl App {
             }
             self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
         } else if let Some(directory) = &configs::CONFIG.read().unwrap().args.directory {
-            let evtx_files =
-                Self::collect_evtxfiles(directory.as_os_str().to_str().unwrap(), &target_extensions);
+            let evtx_files = Self::collect_evtxfiles(
+                directory.as_os_str().to_str().unwrap(),
+                &target_extensions,
+            );
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
@@ -624,10 +626,7 @@ impl App {
         }
     }
 
-    fn collect_evtxfiles(
-        dirpath: &str,
-        target_extensions: &HashSet<String>,
-    ) -> Vec<PathBuf> {
+    fn collect_evtxfiles(dirpath: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
@@ -1021,7 +1020,8 @@ mod tests {
 
     #[test]
     fn test_collect_evtxfiles() {
-        let files = Self::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
+        let files =
+            Self::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
         assert_eq!(3, files.len());
 
         files.iter().for_each(|file| {

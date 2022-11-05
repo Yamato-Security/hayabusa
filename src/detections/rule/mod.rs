@@ -257,7 +257,10 @@ impl DetectionNode {
 
     /// selectionをパースします。
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
-        Option::Some(Self::parse_selection_recursively(Nested::<String>::new(), selection_yaml))
+        Option::Some(Self::parse_selection_recursively(
+            Nested::<String>::new(),
+            selection_yaml,
+        ))
     }
 
     /// selectionをパースします。
