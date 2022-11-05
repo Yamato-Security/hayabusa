@@ -21,13 +21,13 @@ use termcolor::{BufferWriter, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
-    pub rulepath: String,
-    pub ruletitle: String,
-    pub level: String,
-    pub computername: String,
-    pub eventid: String,
-    pub detail: String,
-    pub record_information: Option<String>,
+    pub rulepath: CompactString,
+    pub ruletitle: CompactString,
+    pub level: CompactString,
+    pub computername: CompactString,
+    pub eventid: CompactString,
+    pub detail: CompactString,
+    pub record_information: CompactString,
     pub ext_field: Nested<Vec<CompactString>>,
 }
 
@@ -123,16 +123,16 @@ pub fn insert(
     output: CompactString,
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
-    profile_converter: &mut HashMap<String, String>,
+    profile_converter: &mut HashMap<CompactString, CompactString>,
     is_agg: bool,
 ) {
     if !is_agg {
         let parsed_detail = parse_message(event_record, output)
             .chars()
             .filter(|&c| !c.is_control())
-            .collect::<String>();
+            .collect::<CompactString>();
         detect_info.detail = if parsed_detail.is_empty() {
-            "-".to_string()
+            CompactString::from("-")
         } else {
             parsed_detail
         };
@@ -144,7 +144,10 @@ pub fn insert(
         }
     });
     if exist_detail {
-        profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
+        profile_converter.insert(
+            CompactString::from("%Details%"),
+            detect_info.detail.to_owned(),
+        );
     }
     let mut replaced_converted_info: Nested<Vec<CompactString>> =
         Nested::<Vec<CompactString>>::new();
@@ -171,11 +174,11 @@ pub fn insert(
 /// profileで用いられる予約語の情報を変換する関数
 fn convert_profile_reserved_info(
     output: &CompactString,
-    config_reserved_info: &HashMap<String, String>,
+    config_reserved_info: &HashMap<CompactString, CompactString>,
 ) -> CompactString {
     let mut ret = output.to_owned();
     config_reserved_info.iter().for_each(|(k, v)| {
-        ret = CompactString::from(ret.replace(k, v));
+        ret = CompactString::from(ret.replace(k.as_str(), v.as_str()));
     });
     ret
 }
@@ -648,13 +651,13 @@ mod tests {
         let sample_event_time = Utc::now();
         for i in 1..2001 {
             let detect_info = DetectInfo {
-                rulepath: "".to_string(),
-                ruletitle: "".to_string(),
-                level: "".to_string(),
-                computername: "".to_string(),
-                eventid: i.to_string(),
-                detail: "".to_string(),
-                record_information: None,
+                rulepath: CompactString::default(),
+                ruletitle: CompactString::default(),
+                level: CompactString::default(),
+                computername: CompactString::default(),
+                eventid: CompactString::from(i.to_string()),
+                detail: CompactString::default(),
+                record_information: CompactString::default(),
                 ext_field: Nested::<Vec<CompactString>>::new(),
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));

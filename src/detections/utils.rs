@@ -4,6 +4,7 @@ extern crate regex;
 
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 
+use compact_str::CompactString;
 use hashbrown::HashMap;
 use nested::Nested;
 use std::path::{Path, PathBuf};
@@ -358,15 +359,15 @@ fn _collect_recordinfo<'a>(
 /**
  * 最初の文字を大文字にする関数
  */
-pub fn make_ascii_titlecase(s: &str) -> String {
+pub fn make_ascii_titlecase(s: &str) -> CompactString {
     let mut c = s.chars();
     match c.next() {
-        None => String::new(),
+        None => CompactString::default(),
         Some(f) => {
             if !f.is_ascii() {
-                s.to_string()
+                CompactString::from(s)
             } else {
-                f.to_uppercase().collect::<String>() + c.as_str()
+                f.to_uppercase().collect::<CompactString>() + c.as_str()
             }
         }
     }
