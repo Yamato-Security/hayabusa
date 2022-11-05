@@ -120,14 +120,14 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 /// メッセージを設定
 pub fn insert(
     event_record: &Value,
-    output: String,
+    output: CompactString,
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<String, String>,
     is_agg: bool,
 ) {
     if !is_agg {
-        let parsed_detail = parse_message(event_record, &output)
+        let parsed_detail = parse_message(event_record, output)
             .chars()
             .filter(|&c| !c.is_control())
             .collect::<String>();
@@ -149,8 +149,8 @@ pub fn insert(
     let mut replaced_converted_info: Nested<Vec<CompactString>> =
         Nested::<Vec<CompactString>>::new();
     for di in detect_info.ext_field.iter() {
-        let val = di[1].to_string();
-        let converted_reserve_info = convert_profile_reserved_info(&val, profile_converter);
+        let val = &di[1];
+        let converted_reserve_info = convert_profile_reserved_info(val, profile_converter);
         if val.contains("%AllFieldInfo%") || val.contains("%Details%") {
             replaced_converted_info.push(vec![
                 di[0].to_owned(),
@@ -159,7 +159,7 @@ pub fn insert(
         } else {
             replaced_converted_info.push(vec![
                 di[0].to_owned(),
-                CompactString::new(&parse_message(event_record, &converted_reserve_info)),
+                parse_message(event_record, converted_reserve_info),
             ]);
         }
     }
@@ -170,19 +170,19 @@ pub fn insert(
 
 /// profileで用いられる予約語の情報を変換する関数
 fn convert_profile_reserved_info(
-    output: &String,
+    output: &CompactString,
     config_reserved_info: &HashMap<String, String>,
-) -> String {
+) -> CompactString {
     let mut ret = output.to_owned();
     config_reserved_info.iter().for_each(|(k, v)| {
-        ret = ret.replace(k, v);
+        ret = CompactString::from(ret.replace(k, v));
     });
     ret
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
-fn parse_message(event_record: &Value, output: &String) -> String {
-    let mut return_message = output.to_owned();
+fn parse_message(event_record: &Value, output: CompactString) -> CompactString {
+    let mut return_message = output;
     let mut hash_map: HashMap<String, String> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
@@ -233,7 +233,7 @@ fn parse_message(event_record: &Value, output: &String) -> String {
     }
 
     for (k, v) in &hash_map {
-        return_message = return_message.replace(k, v);
+        return_message = CompactString::new(return_message.replace(k, v));
     }
     return_message
 }
@@ -414,7 +414,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                CompactString::new("commandline:%CommandLine% computername:%ComputerName%")
             ),
             expected,
         );
@@ -435,7 +435,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "alias:no_alias";
         assert_eq!(
-            parse_message(&event_record, &"alias:%NoAlias%".to_owned()),
+            parse_message(&event_record, CompactString::new("alias:%NoAlias%")),
             expected,
         );
     }
@@ -461,7 +461,10 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "NoExistAlias:n/a";
         assert_eq!(
-            parse_message(&event_record, &"NoExistAlias:%NoAliasNoHit%".to_owned()),
+            parse_message(
+                &event_record,
+                CompactString::new("NoExistAlias:%NoAliasNoHit%")
+            ),
             expected,
         );
     }
@@ -488,7 +491,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                CompactString::new("commandline:%CommandLine% computername:%ComputerName%")
             ),
             expected,
         );
@@ -521,7 +524,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% data:%Data%".to_owned()
+                CompactString::new("commandline:%CommandLine% data:%Data%")
             ),
             expected,
         );
@@ -554,7 +557,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% data:%Data[2]%".to_owned()
+                CompactString::new("commandline:%CommandLine% data:%Data[2]%)")
             ),
             expected,
         );
@@ -587,7 +590,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% data:%Data[0]%".to_owned()
+                CompactString::new("commandline:%CommandLine% data:%Data[0]%")
             ),
             expected,
         );

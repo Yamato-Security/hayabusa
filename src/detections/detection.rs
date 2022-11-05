@@ -6,6 +6,7 @@ use crate::options::profile::{
     LOAEDED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES,
 };
 use chrono::{TimeZone, Utc};
+use compact_str::CompactString;
 use itertools::Itertools;
 use nested::Nested;
 use termcolor::{BufferWriter, Color, ColorChoice};
@@ -404,10 +405,7 @@ impl Detection {
         };
         message::insert(
             &record_info.record,
-            rule.yaml["details"]
-                .as_str()
-                .unwrap_or(&default_output)
-                .to_string(),
+            CompactString::new(rule.yaml["details"].as_str().unwrap_or(&default_output)),
             detect_info,
             time,
             &mut profile_converter,
@@ -541,7 +539,7 @@ impl Detection {
 
         message::insert(
             &Value::default(),
-            rule.yaml["details"].as_str().unwrap_or("-").to_string(),
+            CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,

@@ -1384,7 +1384,7 @@ mod tests {
             ]);
             message::insert(
                 &event,
-                output.to_string(),
+                CompactString::new(output),
                 DetectInfo {
                     rulepath: test_rulepath.to_string(),
                     ruletitle: test_title.to_string(),
