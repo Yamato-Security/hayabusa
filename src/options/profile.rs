@@ -2,7 +2,7 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::yaml;
-use compressed_string::ComprString;
+use compact_str::CompactString;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
 use nested::Nested;
@@ -13,7 +13,7 @@ use std::path::Path;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 lazy_static! {
-    pub static ref PROFILES: Option<Nested<Vec<ComprString>>> = load_profile(
+    pub static ref PROFILES: Option<Nested<Vec<CompactString>>> = load_profile(
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
             "config/default_profile.yaml",
@@ -34,7 +34,7 @@ lazy_static! {
     pub static ref LOAEDED_PROFILE_ALIAS: HashSet<String> = HashSet::from_iter(
         PROFILES
             .as_ref()
-            .unwrap_or(&Nested::<Vec<ComprString>>::new())
+            .unwrap_or(&Nested::<Vec<CompactString>>::new())
             .iter()
             .map(|x| x[1].to_string())
     );
@@ -80,7 +80,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
 pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
-) -> Option<Nested<Vec<ComprString>>> {
+) -> Option<Nested<Vec<CompactString>>> {
     let conf = &configs::CONFIG.read().unwrap().args;
     if conf.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
@@ -112,7 +112,7 @@ pub fn load_profile(
         return None;
     }
     let profile_data = &profile_all[0];
-    let mut ret: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
+    let mut ret: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
     if let Some(profile_name) = &conf.profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
@@ -122,8 +122,8 @@ pub fn load_profile(
                 .into_iter()
                 .for_each(|(k, v)| {
                     ret.push(vec![
-                        ComprString::new(k.as_str().unwrap()),
-                        ComprString::new(v.as_str().unwrap()),
+                        CompactString::new(k.as_str().unwrap()),
+                        CompactString::new(v.as_str().unwrap()),
                     ]);
                 });
             Some(ret)
@@ -149,8 +149,8 @@ pub fn load_profile(
             .into_iter()
             .for_each(|(k, v)| {
                 ret.push(vec![
-                    ComprString::new(k.as_str().unwrap()),
-                    ComprString::new(v.as_str().unwrap()),
+                    CompactString::new(k.as_str().unwrap()),
+                    CompactString::new(v.as_str().unwrap()),
                 ]);
             });
         Some(ret)
@@ -255,7 +255,7 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use compressed_string::ComprString;
+    use compact_str::CompactString;
     use nested::Nested;
 
     use crate::detections::configs;
@@ -273,55 +273,55 @@ mod tests {
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
     fn test_load_profile_without_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = None;
-        let mut expect: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
+        let mut expect: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
         expect.push(vec![
-            ComprString::new("Timestamp"),
-            ComprString::new("%Timestamp%"),
+            CompactString::new("Timestamp"),
+            CompactString::new("%Timestamp%"),
         ]);
         expect.push(vec![
-            ComprString::new("Computer"),
-            ComprString::new("%Computer%"),
+            CompactString::new("Computer"),
+            CompactString::new("%Computer%"),
         ]);
         expect.push(vec![
-            ComprString::new("Channel"),
-            ComprString::new("%Channel%"),
+            CompactString::new("Channel"),
+            CompactString::new("%Channel%"),
         ]);
-        expect.push(vec![ComprString::new("Level"), ComprString::new("%Level%")]);
+        expect.push(vec![CompactString::new("Level"), CompactString::new("%Level%")]);
         expect.push(vec![
-            ComprString::new("EventID"),
-            ComprString::new("%EventID%"),
-        ]);
-        expect.push(vec![
-            ComprString::new("MitreAttack"),
-            ComprString::new("%MitreAttack%"),
+            CompactString::new("EventID"),
+            CompactString::new("%EventID%"),
         ]);
         expect.push(vec![
-            ComprString::new("RecordID"),
-            ComprString::new("%RecordID%"),
+            CompactString::new("MitreAttack"),
+            CompactString::new("%MitreAttack%"),
         ]);
         expect.push(vec![
-            ComprString::new("RuleTitle"),
-            ComprString::new("%RuleTitle%"),
+            CompactString::new("RecordID"),
+            CompactString::new("%RecordID%"),
         ]);
         expect.push(vec![
-            ComprString::new("Details"),
-            ComprString::new("%Details%"),
+            CompactString::new("RuleTitle"),
+            CompactString::new("%RuleTitle%"),
         ]);
         expect.push(vec![
-            ComprString::new("RecordInformation"),
-            ComprString::new("%AllFieldInfo%"),
+            CompactString::new("Details"),
+            CompactString::new("%Details%"),
         ]);
         expect.push(vec![
-            ComprString::new("RuleFile"),
-            ComprString::new("%RuleFile%"),
+            CompactString::new("RecordInformation"),
+            CompactString::new("%AllFieldInfo%"),
         ]);
         expect.push(vec![
-            ComprString::new("EvtxFile"),
-            ComprString::new("%EvtxFile%"),
+            CompactString::new("RuleFile"),
+            CompactString::new("%RuleFile%"),
         ]);
         expect.push(vec![
-            ComprString::new("Tags"),
-            ComprString::new("%MitreAttack%"),
+            CompactString::new("EvtxFile"),
+            CompactString::new("%EvtxFile%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Tags"),
+            CompactString::new("%MitreAttack%"),
         ]);
 
         assert_eq!(
@@ -336,31 +336,31 @@ mod tests {
     /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
     fn test_load_profile_with_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = Some("minimal".to_string());
-        let mut expect: Nested<Vec<ComprString>> = Nested::new();
+        let mut expect: Nested<Vec<CompactString>> = Nested::new();
         expect.push(vec![
-            ComprString::new("Timestamp"),
-            ComprString::new("%Timestamp%"),
+            CompactString::new("Timestamp"),
+            CompactString::new("%Timestamp%"),
         ]);
         expect.push(vec![
-            ComprString::new("Computer"),
-            ComprString::new("%Computer%"),
+            CompactString::new("Computer"),
+            CompactString::new("%Computer%"),
         ]);
         expect.push(vec![
-            ComprString::new("Channel"),
-            ComprString::new("%Channel%"),
+            CompactString::new("Channel"),
+            CompactString::new("%Channel%"),
         ]);
         expect.push(vec![
-            ComprString::new("EventID"),
-            ComprString::new("%EventID%"),
+            CompactString::new("EventID"),
+            CompactString::new("%EventID%"),
         ]);
-        expect.push(vec![ComprString::new("Level"), ComprString::new("%Level%")]);
+        expect.push(vec![CompactString::new("Level"), CompactString::new("%Level%")]);
         expect.push(vec![
-            ComprString::new("RuleTitle"),
-            ComprString::new("%RuleTitle%"),
+            CompactString::new("RuleTitle"),
+            CompactString::new("%RuleTitle%"),
         ]);
         expect.push(vec![
-            ComprString::new("Details"),
-            ComprString::new("%Details%"),
+            CompactString::new("Details"),
+            CompactString::new("%Details%"),
         ]);
 
         assert_eq!(

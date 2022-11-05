@@ -3,7 +3,7 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::PROFILES;
 use chrono::{DateTime, Local, Utc};
-use compressed_string::ComprString;
+use compact_str::CompactString;
 use dashmap::DashMap;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
@@ -28,7 +28,7 @@ pub struct DetectInfo {
     pub eventid: String,
     pub detail: String,
     pub record_information: Option<String>,
-    pub ext_field: Nested<Vec<ComprString>>,
+    pub ext_field: Nested<Vec<CompactString>>,
 }
 
 pub struct AlertMessage {}
@@ -146,19 +146,19 @@ pub fn insert(
     if exist_detail {
         profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    let mut replaced_converted_info: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
+    let mut replaced_converted_info: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
     for di in detect_info.ext_field.iter() {
         let val = di[1].to_string();
         let converted_reserve_info = convert_profile_reserved_info(&val, profile_converter);
         if val.contains("%AllFieldInfo%") || val.contains("%Details%") {
             replaced_converted_info.push(vec![
                 di[0].to_owned(),
-                ComprString::new(&converted_reserve_info),
+                CompactString::new(&converted_reserve_info),
             ]);
         } else {
             replaced_converted_info.push(vec![
                 di[0].to_owned(),
-                ComprString::new(&parse_message(event_record, &converted_reserve_info)),
+                CompactString::new(&parse_message(event_record, &converted_reserve_info)),
             ]);
         }
     }
@@ -367,7 +367,7 @@ mod tests {
     use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
     use crate::detections::message::{parse_message, MESSAGES};
     use chrono::Utc;
-    use compressed_string::ComprString;
+    use compact_str::CompactString;
     use hashbrown::HashMap;
     use nested::Nested;
     use rand::Rng;
@@ -651,7 +651,7 @@ mod tests {
                 eventid: i.to_string(),
                 detail: "".to_string(),
                 record_information: None,
-                ext_field: Nested::<Vec<ComprString>>::new(),
+                ext_field: Nested::<Vec<CompactString>>::new(),
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }

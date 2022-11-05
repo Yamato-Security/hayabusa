@@ -7,7 +7,7 @@ use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
-use compressed_string::ComprString;
+use compact_str::CompactString;
 use terminal_size::terminal_size;
 
 use csv::{QuoteStyle, WriterBuilder};
@@ -201,7 +201,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<String, Colors>,
     all_record_cnt: u128,
-    profile: &Nested<Vec<ComprString>>,
+    profile: &Nested<Vec<CompactString>>,
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
@@ -567,27 +567,27 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(data: &Nested<Vec<ComprString>>, header: bool) -> String {
+fn _get_serialized_disp_output(data: &Nested<Vec<CompactString>>, header: bool) -> String {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d[0].to_string(), ColPos::First))
+                ret.push(_format_cellpos(&d[0], ColPos::First))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d[0].to_string(), ColPos::Last))
+                ret.push(_format_cellpos(&d[0], ColPos::Last))
             } else {
-                ret.push(_format_cellpos(&d[0].to_string(), ColPos::Other))
+                ret.push(_format_cellpos(&d[0], ColPos::Other))
             }
         }
     } else {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d[1].to_string(), ColPos::First).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d[1].to_string(), ColPos::Last).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::Last).replace('|', "🦅"))
             } else {
-                ret.push(_format_cellpos(&d[1].to_string(), ColPos::Other).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::Other).replace('|', "🦅"))
             }
         }
     }
@@ -1044,8 +1044,8 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
 fn output_json_str(
-    ext_field: &Nested<Vec<ComprString>>,
-    profile: &Nested<Vec<ComprString>>,
+    ext_field: &Nested<Vec<CompactString>>,
+    profile: &Nested<Vec<CompactString>>,
     jsonl_output_flag: bool,
 ) -> String {
     let mut target: Vec<String> = vec![];
@@ -1329,7 +1329,7 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::options::profile::load_profile;
     use chrono::{Local, TimeZone, Utc};
-    use compressed_string::ComprString;
+    use compact_str::CompactString;
     use hashbrown::HashMap;
     use nested::Nested;
     use serde_json::Value;
@@ -1356,7 +1356,7 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let output_profile: Nested<Vec<ComprString>> = load_profile(
+        let output_profile: Nested<Vec<CompactString>> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",
         )
@@ -1498,39 +1498,39 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
-        let mut data: Nested<Vec<ComprString>> = Nested::<Vec<ComprString>>::new();
+        let mut data: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
         data.push(vec![
-            ComprString::new("Timestamp"),
-            ComprString::new(&format_time(&test_timestamp, false)),
+            CompactString::new("Timestamp"),
+            CompactString::new(&format_time(&test_timestamp, false)),
         ]);
         data.push(vec![
-            ComprString::new("Computer"),
-            ComprString::new(test_computername),
+            CompactString::new("Computer"),
+            CompactString::new(test_computername),
         ]);
         data.push(vec![
-            ComprString::new("Channel"),
-            ComprString::new(test_channel),
+            CompactString::new("Channel"),
+            CompactString::new(test_channel),
         ]);
         data.push(vec![
-            ComprString::new("EventID"),
-            ComprString::new(test_eventid),
+            CompactString::new("EventID"),
+            CompactString::new(test_eventid),
         ]);
         data.push(vec![
-            ComprString::new("Level"),
-            ComprString::new(test_level),
+            CompactString::new("Level"),
+            CompactString::new(test_level),
         ]);
         data.push(vec![
-            ComprString::new("RecordID"),
-            ComprString::new(test_recid),
+            CompactString::new("RecordID"),
+            CompactString::new(test_recid),
         ]);
         data.push(vec![
-            ComprString::new("RuleTitle"),
-            ComprString::new(test_title),
+            CompactString::new("RuleTitle"),
+            CompactString::new(test_title),
         ]);
-        data.push(vec![ComprString::new("Details"), ComprString::new(output)]);
+        data.push(vec![CompactString::new("Details"), CompactString::new(output)]);
         data.push(vec![
-            ComprString::new("RecordInformation"),
-            ComprString::new(test_recinfo),
+            CompactString::new("RecordInformation"),
+            CompactString::new(test_recinfo),
         ]);
 
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
