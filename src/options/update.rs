@@ -223,7 +223,7 @@ impl Update {
         let mut latest_update_date = Local.timestamp(0, 0);
         for diff_key in diff {
             let tmp: Vec<&str> = diff_key.split('|').collect();
-            let file_modified_date = fs::metadata(&tmp[2]).unwrap().modified().unwrap();
+            let file_modified_date = fs::metadata(tmp[2]).unwrap().modified().unwrap();
 
             let dt_local: DateTime<Local> = file_modified_date.into();
 

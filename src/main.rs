@@ -371,7 +371,7 @@ impl App {
             self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
         } else if let Some(directory) = &configs::CONFIG.read().unwrap().args.directory {
             let evtx_files =
-                self.collect_evtxfiles(directory.as_os_str().to_str().unwrap(), &target_extensions);
+                Self::collect_evtxfiles(directory.as_os_str().to_str().unwrap(), &target_extensions);
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
@@ -607,7 +607,7 @@ impl App {
     ) -> Option<Vec<PathBuf>> {
         if is_elevated() {
             let log_dir = env::var("windir").expect("windir is not found");
-            let evtx_files = self.collect_evtxfiles(
+            let evtx_files = Self::collect_evtxfiles(
                 &[log_dir, "System32\\winevt\\Logs".to_string()].join("/"),
                 target_extensions,
             );
@@ -625,7 +625,6 @@ impl App {
     }
 
     fn collect_evtxfiles(
-        &self,
         dirpath: &str,
         target_extensions: &HashSet<String>,
     ) -> Vec<PathBuf> {
@@ -653,7 +652,7 @@ impl App {
             let path = e.unwrap().path();
             if path.is_dir() {
                 path.to_str().map(|path_str| {
-                    let subdir_ret = self.collect_evtxfiles(path_str, target_extensions);
+                    let subdir_ret = Self::collect_evtxfiles(path_str, target_extensions);
                     ret.extend(subdir_ret);
                     Option::Some(())
                 });
@@ -1022,8 +1021,7 @@ mod tests {
 
     #[test]
     fn test_collect_evtxfiles() {
-        let app = App::new();
-        let files = app.collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
+        let files = Self::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
         assert_eq!(3, files.len());
 
         files.iter().for_each(|file| {
