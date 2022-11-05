@@ -1262,12 +1262,7 @@ fn extract_author_name(yaml_path: &str) -> Nested<String> {
                 .iter()
                 .map(|r| {
                     r.split('/')
-                        .map(|p| {
-                            p.to_string()
-                                .replace(['"','\''], "")
-                                .trim()
-                                .to_string()
-                        })
+                        .map(|p| p.to_string().replace(['"', '\''], "").trim().to_string())
                         .collect::<String>()
                 })
                 .collect();

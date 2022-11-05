@@ -261,10 +261,7 @@ impl DetectionNode {
     }
 
     /// selectionをパースします。
-    fn parse_selection_recursively(
-        key_list: Vec<String>,
-        yaml: &Yaml,
-    ) -> Box<dyn SelectionNode> {
+    fn parse_selection_recursively(key_list: Vec<String>, yaml: &Yaml) -> Box<dyn SelectionNode> {
         if yaml.as_hash().is_some() {
             // 連想配列はAND条件と解釈する
             let yaml_hash = yaml.as_hash().unwrap();

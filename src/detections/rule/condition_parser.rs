@@ -337,9 +337,7 @@ impl ConditionCompiler {
     }
 
     /// OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
-    fn parse_operand_container(
-        parent_token: ConditionToken,
-    ) -> Result<ConditionToken, String> {
+    fn parse_operand_container(parent_token: ConditionToken) -> Result<ConditionToken, String> {
         if let ConditionToken::OperandContainer(sub_tokens) = parent_token {
             // 現状ではNOTの場合は、「not」と「notで修飾されるselectionノードの名前」の2つ入っているはず
             // NOTが無い場合、「selectionノードの名前」の一つしか入っていないはず。
