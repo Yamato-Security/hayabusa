@@ -380,28 +380,23 @@ impl SelectionNode for LeafSelectionNode {
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
-        let match_key_list = self
-            .key_list
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>();
         let matchers = self.get_matchers();
         self.matcher = matchers
             .into_iter()
-            .find(|matcher| matcher.is_target_key(&match_key_list));
+            .find(|matcher| matcher.is_target_key(&self.key_list));
 
         // 一致するmatcherが見つからないエラー
         if self.matcher.is_none() {
             return Result::Err(vec![format!(
                 "Found unknown key. key:{}",
-                utils::concat_selection_key(&match_key_list)
+                utils::concat_selection_key(&self.key_list)
             )]);
         }
 
         if self.select_value.is_badvalue() {
             return Result::Err(vec![format!(
                 "Cannot parse yml file. key:{}",
-                utils::concat_selection_key(&match_key_list)
+                utils::concat_selection_key(&self.key_list)
             )]);
         }
 
@@ -410,7 +405,7 @@ impl SelectionNode for LeafSelectionNode {
             .matcher
             .as_mut()
             .unwrap()
-            .init(&match_key_list, &self.select_value);
+            .init(&self.key_list, &self.select_value);
     }
 
     fn get_childs(&self) -> Vec<&dyn SelectionNode> {

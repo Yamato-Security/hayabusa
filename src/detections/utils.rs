@@ -29,7 +29,7 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
-pub fn concat_selection_key(key_list: &[String]) -> String {
+pub fn concat_selection_key(key_list: &Nested<String>) -> String {
     return key_list
         .iter()
         .fold("detection -> selection".to_string(), |mut acc, cur| {
