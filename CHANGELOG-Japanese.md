@@ -18,7 +18,7 @@
 - プロファイルの`%RecordInformation%` エイリアスを `%AllFieldInfo%` に変更した。 AllFieldInfoフィールドをJSONオブジェクト形式で出力するように変更した。 (#750) (@hitenkoku)
 - AllFieldInfoフィールドのJSONオブジェクト内で利用していたHBFI-プレフィックスを廃止した。 (#791) (@hitenkoku)
 - `--no-summary`  オプションを使用したときに、表示しないルール作者および検知回数の集計を省略した。 (#780) (@hitenkoku)
-- メモリ使用量を少なくし、処理速度を改善した。 (#778) (@hitenkoku)
+- メモリ使用量を少なくし、処理速度を改善した。 (#778 #789 #790) (@hitenkoku)
 
 **バグ修正:**
 

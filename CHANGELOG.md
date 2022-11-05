@@ -18,7 +18,7 @@
 - Replaced `%RecordInformation%` alias in output profiles to `%AllFieldInfo%`, and changed the `AllFieldInfo` field in JSON output to an object. (#750) (@hitenkoku)
 - Removed `HBFI-` prefix in `AllFieldInfo` field of json output. (#791) (@hitenkoku)
 - Don't display result summary, etc... when `--no-summary` option is used. (This is good to use when using as a Velociraptor agent, etc... It will usually be 10% faster.) (#780) (@hitenkoku)
-- Reduced memory usage and improved speed performance. (#778) (@hitenkoku)
+- Reduced memory usage and improved speed performance. (#778 #789 #790) (@hitenkoku)
 
 **Bug Fixes:**
 
