@@ -65,7 +65,7 @@ impl Default for HtmlReporter {
     }
 }
 
-/// get html report section data in LinkedHashMap
+/// get html report section data in HashMap
 fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     let mut ret = HashMap::new();
     let mut section_order = Nested::<String>::new();

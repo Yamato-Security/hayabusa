@@ -2,11 +2,10 @@ extern crate serde_derive;
 extern crate yaml_rust;
 
 use crate::detections::configs;
-use crate::detections::configs::EXCLUDE_STATUS;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use crate::filter::RuleExclude;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -21,6 +20,8 @@ pub struct ParseYaml {
     pub rule_load_cnt: HashMap<String, u128>,
     pub rule_status_cnt: HashMap<String, u128>,
     pub errorrule_count: u128,
+    pub exclude_status: HashSet<String>,
+    pub level_map: HashMap<String, u128>,
 }
 
 impl Default for ParseYaml {
@@ -40,6 +41,16 @@ impl ParseYaml {
             ]),
             rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
             errorrule_count: 0,
+            exclude_status: configs::convert_option_vecs_to_hs(
+                configs::CONFIG.read().unwrap().args.exclude_status.as_ref(),
+            ),
+            level_map: HashMap::from([
+                ("INFORMATIONAL".to_owned(), 1),
+                ("LOW".to_owned(), 2),
+                ("MEDIUM".to_owned(), 3),
+                ("HIGH".to_owned(), 4),
+                ("CRITICAL".to_owned(), 5),
+            ]),
         }
     }
 
@@ -261,7 +272,7 @@ impl ParseYaml {
 
                 let status = &yaml_doc["status"].as_str();
                 if let Some(s) = status {
-                    if EXCLUDE_STATUS.contains(&s.to_string()) {
+                    if self.exclude_status.contains(&s.to_string()) {
                         let entry = self
                             .rule_load_cnt
                             .entry("excluded".to_string())
@@ -300,8 +311,8 @@ impl ParseYaml {
                     .unwrap_or("informational")
                     .to_string()
                     .to_uppercase();
-                let doc_level_num = configs::LEVELMAP.get(doc_level).unwrap_or(&1);
-                let args_level_num = configs::LEVELMAP.get(level).unwrap_or(&1);
+                let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
+                let args_level_num = self.level_map.get(level).unwrap_or(&1);
                 if doc_level_num < args_level_num {
                     return Option::None;
                 }
@@ -316,8 +327,6 @@ impl ParseYaml {
 #[cfg(test)]
 mod tests {
 
-    use crate::detections::message::AlertMessage;
-    use crate::detections::message::ERROR_LOG_PATH;
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
@@ -327,8 +336,6 @@ mod tests {
 
     #[test]
     fn test_read_file_yaml() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude::default();
         let _ = &yaml.read_dir(
@@ -341,8 +348,6 @@ mod tests {
 
     #[test]
     fn test_read_dir_yaml() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude {
             no_use_rule: HashMap::new(),
@@ -426,8 +431,6 @@ mod tests {
     }
     #[test]
     fn test_all_exclude_rules_file() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
@@ -435,8 +438,6 @@ mod tests {
     }
     #[test]
     fn test_all_noisy_rules_file() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
@@ -444,8 +445,6 @@ mod tests {
     }
     #[test]
     fn test_none_exclude_rules_file() {
-        AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
-
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
         let exclude_ids = RuleExclude::default();

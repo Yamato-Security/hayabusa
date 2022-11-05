@@ -3,11 +3,13 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::PROFILES;
 use chrono::{DateTime, Local, Utc};
+use compact_str::CompactString;
 use dashmap::DashMap;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
+use itertools::Itertools;
 use lazy_static::lazy_static;
-use linked_hash_map::LinkedHashMap;
+use nested::Nested;
 use regex::Regex;
 use serde_json::Value;
 use std::env;
@@ -19,14 +21,14 @@ use termcolor::{BufferWriter, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
-    pub rulepath: String,
-    pub ruletitle: String,
-    pub level: String,
-    pub computername: String,
-    pub eventid: String,
-    pub detail: String,
-    pub record_information: Option<String>,
-    pub ext_field: LinkedHashMap<String, String>,
+    pub rulepath: CompactString,
+    pub ruletitle: CompactString,
+    pub level: CompactString,
+    pub computername: CompactString,
+    pub eventid: CompactString,
+    pub detail: CompactString,
+    pub record_information: CompactString,
+    pub ext_field: Nested<Vec<CompactString>>,
 }
 
 pub struct AlertMessage {}
@@ -37,12 +39,8 @@ lazy_static! {
     pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
-    pub static ref ERROR_LOG_PATH: String = format!(
-        "./logs/errorlog-{}.log",
-        Local::now().format("%Y%m%d_%H%M%S")
-    );
     pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().args.quiet_errors;
-    pub static ref ERROR_LOG_STACK: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
     pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().args.metrics;
     pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
@@ -72,19 +70,20 @@ lazy_static! {
         .to_str()
         .unwrap()
     );
-    pub static ref LEVEL_ABBR: LinkedHashMap<String, String> = LinkedHashMap::from_iter([
-        ("critical".to_string(), "crit".to_string()),
-        ("high".to_string(), "high".to_string()),
-        ("medium".to_string(), "med ".to_string()),
-        ("low".to_string(), "low ".to_string()),
-        ("informational".to_string(), "info".to_string()),
-    ]);
-    pub static ref LEVEL_FULL: HashMap<String, String> = HashMap::from([
-        ("crit".to_string(), "critical".to_string()),
-        ("high".to_string(), "high".to_string()),
-        ("med ".to_string(), "medium".to_string()),
-        ("low ".to_string(), "low".to_string()),
-        ("info".to_string(), "informational".to_string())
+    pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
+        ("critical", "crit"),
+        ("high", "high"),
+        ("medium", "med "),
+        ("low", "low "),
+        ("informational", "info"),
+    ]
+);
+    pub static ref LEVEL_FULL: HashMap<&'static str, &'static str> = HashMap::from([
+        ("crit", "critical"),
+        ("high", "high"),
+        ("med ", "medium"),
+        ("low ", "low"),
+        ("info", "informational")
     ]);
 }
 
@@ -97,7 +96,7 @@ pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
         AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
         return HashMap::default();
     }
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }
@@ -121,65 +120,72 @@ pub fn insert_message(detect_info: DetectInfo, event_time: DateTime<Utc>) {
 /// メッセージを設定
 pub fn insert(
     event_record: &Value,
-    output: String,
+    output: CompactString,
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
-    profile_converter: &mut HashMap<String, String>,
+    profile_converter: &mut HashMap<CompactString, CompactString>,
     is_agg: bool,
 ) {
     if !is_agg {
-        let parsed_detail = parse_message(event_record, &output)
+        let parsed_detail = parse_message(event_record, output)
             .chars()
             .filter(|&c| !c.is_control())
-            .collect::<String>();
+            .collect::<CompactString>();
         detect_info.detail = if parsed_detail.is_empty() {
-            "-".to_string()
+            CompactString::from("-")
         } else {
             parsed_detail
         };
     }
     let mut exist_detail = false;
-    PROFILES.as_ref().unwrap().iter().for_each(|(_k, v)| {
-        if v.contains("%Details%") {
+    PROFILES.as_ref().unwrap().iter().for_each(|p_element| {
+        if p_element[1].to_string().contains("%Details%") {
             exist_detail = true;
         }
     });
     if exist_detail {
-        profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
+        profile_converter.insert(
+            CompactString::from("%Details%"),
+            detect_info.detail.to_owned(),
+        );
     }
-    let mut tmp_converted_info: LinkedHashMap<String, String> = LinkedHashMap::new();
-    for (k, v) in &detect_info.ext_field {
-        let converted_reserve_info = convert_profile_reserved_info(v, profile_converter);
-        if v.contains("%AllFieldInfo%") || v.contains("%Details%") {
-            tmp_converted_info.insert(k.to_owned(), converted_reserve_info);
+    let mut replaced_converted_info: Nested<Vec<CompactString>> =
+        Nested::<Vec<CompactString>>::new();
+    for di in detect_info.ext_field.iter() {
+        let val = &di[1];
+        let converted_reserve_info = convert_profile_reserved_info(val, profile_converter);
+        if val.contains("%AllFieldInfo%") || val.contains("%Details%") {
+            replaced_converted_info.push(vec![
+                di[0].to_owned(),
+                CompactString::new(&converted_reserve_info),
+            ]);
         } else {
-            tmp_converted_info.insert(
-                k.to_owned(),
-                parse_message(event_record, &converted_reserve_info),
-            );
+            replaced_converted_info.push(vec![
+                di[0].to_owned(),
+                parse_message(event_record, converted_reserve_info),
+            ]);
         }
     }
-    for (k, v) in tmp_converted_info {
-        detect_info.ext_field.insert(k, v);
-    }
+    detect_info.ext_field = replaced_converted_info;
+
     insert_message(detect_info, time)
 }
 
 /// profileで用いられる予約語の情報を変換する関数
 fn convert_profile_reserved_info(
-    output: &String,
-    config_reserved_info: &HashMap<String, String>,
-) -> String {
+    output: &CompactString,
+    config_reserved_info: &HashMap<CompactString, CompactString>,
+) -> CompactString {
     let mut ret = output.to_owned();
     config_reserved_info.iter().for_each(|(k, v)| {
-        ret = ret.replace(k, v);
+        ret = CompactString::from(ret.replace(k.as_str(), v.as_str()));
     });
     ret
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
-fn parse_message(event_record: &Value, output: &String) -> String {
-    let mut return_message = output.to_owned();
+fn parse_message(event_record: &Value, output: CompactString) -> CompactString {
+    let mut return_message = output;
     let mut hash_map: HashMap<String, String> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
@@ -230,7 +236,7 @@ fn parse_message(event_record: &Value, output: &String) -> String {
     }
 
     for (k, v) in &hash_map {
-        return_message = return_message.replace(k, v);
+        return_message = CompactString::new(return_message.replace(k, v));
     }
     return_message
 }
@@ -259,7 +265,7 @@ pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
         Ok(lines) => {
             let mut ret: HashMap<String, String> = HashMap::new();
             lines
-                .into_iter()
+                .iter()
                 .try_for_each(|line| -> Result<(), String> {
                     let provider = match line.get(0) {
                         Some(_provider) => _provider.trim(),
@@ -303,11 +309,15 @@ pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
 
 impl AlertMessage {
     ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
-    pub fn create_error_log(path_str: String) {
+    pub fn create_error_log() {
         if *QUIET_ERRORS_FLAG {
             return;
         }
-        let path = Path::new(&path_str);
+        let file_path = format!(
+            "./logs/errorlog-{}.log",
+            Local::now().format("%Y%m%d_%H%M%S")
+        );
+        let path = Path::new(&file_path);
         if !path.parent().unwrap().exists() {
             create_dir(path.parent().unwrap()).ok();
         }
@@ -316,7 +326,10 @@ impl AlertMessage {
             .write_all(
                 format!(
                     "user input: {:?}\n",
-                    format_args!("{}", env::args().collect::<Vec<String>>().join(" "))
+                    format_args!(
+                        "{}",
+                        env::args().collect::<Nested<String>>().iter().join(" ")
+                    )
                 )
                 .as_bytes(),
             )
@@ -327,7 +340,7 @@ impl AlertMessage {
         });
         println!(
             "Errors were generated. Please check {} for details.",
-            *ERROR_LOG_PATH
+            file_path
         );
         println!();
     }
@@ -358,7 +371,9 @@ mod tests {
     use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
     use crate::detections::message::{parse_message, MESSAGES};
     use chrono::Utc;
+    use compact_str::CompactString;
     use hashbrown::HashMap;
+    use nested::Nested;
     use rand::Rng;
     use serde_json::Value;
     use std::thread;
@@ -402,7 +417,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                CompactString::new("commandline:%CommandLine% computername:%ComputerName%")
             ),
             expected,
         );
@@ -423,7 +438,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "alias:no_alias";
         assert_eq!(
-            parse_message(&event_record, &"alias:%NoAlias%".to_owned()),
+            parse_message(&event_record, CompactString::new("alias:%NoAlias%")),
             expected,
         );
     }
@@ -449,7 +464,10 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "NoExistAlias:n/a";
         assert_eq!(
-            parse_message(&event_record, &"NoExistAlias:%NoAliasNoHit%".to_owned()),
+            parse_message(
+                &event_record,
+                CompactString::new("NoExistAlias:%NoAliasNoHit%")
+            ),
             expected,
         );
     }
@@ -476,7 +494,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% computername:%ComputerName%".to_owned()
+                CompactString::new("commandline:%CommandLine% computername:%ComputerName%")
             ),
             expected,
         );
@@ -509,7 +527,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% data:%Data%".to_owned()
+                CompactString::new("commandline:%CommandLine% data:%Data%")
             ),
             expected,
         );
@@ -542,7 +560,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% data:%Data[2]%".to_owned()
+                CompactString::new("commandline:%CommandLine% data:%Data[2]%")
             ),
             expected,
         );
@@ -575,7 +593,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                &"commandline:%CommandLine% data:%Data[0]%".to_owned()
+                CompactString::new("commandline:%CommandLine% data:%Data[0]%")
             ),
             expected,
         );
@@ -633,14 +651,14 @@ mod tests {
         let sample_event_time = Utc::now();
         for i in 1..2001 {
             let detect_info = DetectInfo {
-                rulepath: "".to_string(),
-                ruletitle: "".to_string(),
-                level: "".to_string(),
-                computername: "".to_string(),
-                eventid: i.to_string(),
-                detail: "".to_string(),
-                record_information: None,
-                ext_field: Default::default(),
+                rulepath: CompactString::default(),
+                ruletitle: CompactString::default(),
+                level: CompactString::default(),
+                computername: CompactString::default(),
+                eventid: CompactString::from(i.to_string()),
+                detail: CompactString::default(),
+                record_information: CompactString::default(),
+                ext_field: Nested::<Vec<CompactString>>::new(),
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }

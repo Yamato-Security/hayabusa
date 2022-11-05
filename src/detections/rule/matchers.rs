@@ -18,7 +18,7 @@ lazy_static! {
 // LeafSelectionNodeのget_matchersクラスの戻り値の配列に新規作成したクラスのインスタンスを追加する。
 pub trait LeafMatcher: Downcast {
     /// 指定されたkey_listにマッチするLeafMatcherであるかどうか判定する。
-    fn is_target_key(&self, key_list: &[String]) -> bool;
+    fn is_target_key(&self, key_list: &Nested<String>) -> bool;
 
     /// 引数に指定されたJSON形式のデータがマッチするかどうか判定する。
     /// main.rsでWindows Event LogをJSON形式に変換していて、そのJSON形式のWindowsのイベントログデータがここには来る
@@ -27,7 +27,7 @@ pub trait LeafMatcher: Downcast {
 
     /// 初期化ロジックをここに記載します。
     /// ルールファイルの書き方が間違っている等の原因により、正しくルールファイルからパースできない場合、戻り値のResult型でエラーを返してください。
-    fn init(&mut self, key_list: &[String], select_value: &Yaml) -> Result<(), Vec<String>>;
+    fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>>;
 }
 downcast_rs::impl_downcast!(LeafMatcher);
 
@@ -43,7 +43,7 @@ impl MinlengthMatcher {
 }
 
 impl LeafMatcher for MinlengthMatcher {
-    fn is_target_key(&self, key_list: &[String]) -> bool {
+    fn is_target_key(&self, key_list: &Nested<String>) -> bool {
         if key_list.len() != 2 {
             return false;
         }
@@ -51,7 +51,7 @@ impl LeafMatcher for MinlengthMatcher {
         return key_list.get(1).unwrap() == "min_length";
     }
 
-    fn init(&mut self, key_list: &[String], select_value: &Yaml) -> Result<(), Vec<String>> {
+    fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
         let min_length = select_value.as_i64();
         if min_length.is_none() {
             let errmsg = format!(
@@ -86,7 +86,7 @@ impl RegexesFileMatcher {
 }
 
 impl LeafMatcher for RegexesFileMatcher {
-    fn is_target_key(&self, key_list: &[String]) -> bool {
+    fn is_target_key(&self, key_list: &Nested<String>) -> bool {
         if key_list.len() != 2 {
             return false;
         }
@@ -94,7 +94,7 @@ impl LeafMatcher for RegexesFileMatcher {
         key_list.get(1).unwrap() == "regexes"
     }
 
-    fn init(&mut self, key_list: &[String], select_value: &Yaml) -> Result<(), Vec<String>> {
+    fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
         let value = match select_value {
             Yaml::String(s) => Option::Some(s.to_owned()),
             Yaml::Integer(i) => Option::Some(i.to_string()),
@@ -115,8 +115,8 @@ impl LeafMatcher for RegexesFileMatcher {
         }
         let regexes_strs = regexes_strs.unwrap();
         self.regexes = regexes_strs
-            .into_iter()
-            .map(|regex_str| Regex::new(&regex_str).unwrap())
+            .iter()
+            .map(|regex_str| Regex::new(regex_str).unwrap())
             .collect();
 
         Result::Ok(())
@@ -143,7 +143,7 @@ impl AllowlistFileMatcher {
 }
 
 impl LeafMatcher for AllowlistFileMatcher {
-    fn is_target_key(&self, key_list: &[String]) -> bool {
+    fn is_target_key(&self, key_list: &Nested<String>) -> bool {
         if key_list.len() != 2 {
             return false;
         }
@@ -151,7 +151,7 @@ impl LeafMatcher for AllowlistFileMatcher {
         return key_list.get(1).unwrap() == "allowlist";
     }
 
-    fn init(&mut self, key_list: &[String], select_value: &Yaml) -> Result<(), Vec<String>> {
+    fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
         let value = match select_value {
             Yaml::String(s) => Option::Some(s.to_owned()),
             Yaml::Integer(i) => Option::Some(i.to_string()),
@@ -172,8 +172,8 @@ impl LeafMatcher for AllowlistFileMatcher {
         }
         self.regexes = regexes_strs
             .unwrap()
-            .into_iter()
-            .map(|regex_str| Regex::new(&regex_str).unwrap())
+            .iter()
+            .map(|regex_str| Regex::new(regex_str).unwrap())
             .collect();
 
         Result::Ok(())
@@ -230,17 +230,17 @@ impl DefaultMatcher {
 }
 
 impl LeafMatcher for DefaultMatcher {
-    fn is_target_key(&self, key_list: &[String]) -> bool {
+    fn is_target_key(&self, key_list: &Nested<String>) -> bool {
         if key_list.len() <= 1 {
             return true;
         }
 
-        return key_list.get(1).unwrap_or(&"".to_string()) == "value";
+        return key_list.get(1).unwrap_or("") == "value";
     }
 
-    fn init(&mut self, key_list: &[String], select_value: &Yaml) -> Result<(), Vec<String>> {
+    fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
         let mut tmp_key_list = Nested::<String>::new();
-        tmp_key_list.extend(key_list.to_vec());
+        tmp_key_list.extend(key_list.iter());
         self.key_list = tmp_key_list;
         if select_value.is_null() {
             return Result::Ok(());

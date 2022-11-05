@@ -2,9 +2,10 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::yaml;
+use compact_str::CompactString;
 use hashbrown::HashSet;
 use lazy_static::lazy_static;
-use linked_hash_map::LinkedHashMap;
+use nested::Nested;
 use regex::RegexSet;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
@@ -12,7 +13,7 @@ use std::path::Path;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 lazy_static! {
-    pub static ref PROFILES: Option<LinkedHashMap<String, String>> = load_profile(
+    pub static ref PROFILES: Option<Nested<Vec<CompactString>>> = load_profile(
         check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
             "config/default_profile.yaml",
@@ -33,9 +34,9 @@ lazy_static! {
     pub static ref LOAEDED_PROFILE_ALIAS: HashSet<String> = HashSet::from_iter(
         PROFILES
             .as_ref()
-            .unwrap_or(&LinkedHashMap::default())
-            .values()
-            .cloned()
+            .unwrap_or(&Nested::<Vec<CompactString>>::new())
+            .iter()
+            .map(|x| x[1].to_string())
     );
     pub static ref PRELOAD_PROFILE: Vec<&'static str> = vec![
         "%Timestamp%",
@@ -79,7 +80,7 @@ fn read_profile_data(profile_path: &str) -> Result<Vec<Yaml>, String> {
 pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
-) -> Option<LinkedHashMap<String, String>> {
+) -> Option<Nested<Vec<CompactString>>> {
     let conf = &configs::CONFIG.read().unwrap().args;
     if conf.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
@@ -111,7 +112,7 @@ pub fn load_profile(
         return None;
     }
     let profile_data = &profile_all[0];
-    let mut ret: LinkedHashMap<String, String> = LinkedHashMap::new();
+    let mut ret: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
     if let Some(profile_name) = &conf.profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
@@ -120,10 +121,10 @@ pub fn load_profile(
                 .unwrap()
                 .into_iter()
                 .for_each(|(k, v)| {
-                    ret.insert(
-                        k.as_str().unwrap().to_string(),
-                        v.as_str().unwrap().to_string(),
-                    );
+                    ret.push(vec![
+                        CompactString::new(k.as_str().unwrap()),
+                        CompactString::new(v.as_str().unwrap()),
+                    ]);
                 });
             Some(ret)
         } else {
@@ -147,10 +148,10 @@ pub fn load_profile(
             .unwrap()
             .into_iter()
             .for_each(|(k, v)| {
-                ret.insert(
-                    k.as_str().unwrap().to_string(),
-                    v.as_str().unwrap().to_string(),
-                );
+                ret.push(vec![
+                    CompactString::new(k.as_str().unwrap()),
+                    CompactString::new(v.as_str().unwrap()),
+                ]);
             });
         Some(ret)
     }
@@ -221,7 +222,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
 }
 
 /// Get profile name and tag list in yaml file.
-pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
+pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
     let ymls = match read_profile_data(
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), profile_path, true)
             .unwrap()
@@ -234,7 +235,7 @@ pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
             vec![]
         }
     };
-    let mut ret = vec![];
+    let mut ret = Nested::<Vec<String>>::new();
     for yml in ymls.iter() {
         for (k, v) in yml.as_hash().unwrap() {
             let mut row = vec![];
@@ -254,7 +255,8 @@ pub fn get_profile_list(profile_path: &str) -> Vec<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use linked_hash_map::LinkedHashMap;
+    use compact_str::CompactString;
+    use nested::Nested;
 
     use crate::detections::configs;
     use crate::options::profile::{get_profile_list, load_profile};
@@ -271,20 +273,59 @@ mod tests {
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
     fn test_load_profile_without_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = None;
-        let mut expect: LinkedHashMap<String, String> = LinkedHashMap::new();
-        expect.insert("Timestamp".to_owned(), "%Timestamp%".to_owned());
-        expect.insert("Computer".to_owned(), "%Computer%".to_owned());
-        expect.insert("Channel".to_owned(), "%Channel%".to_owned());
-        expect.insert("Level".to_owned(), "%Level%".to_owned());
-        expect.insert("EventID".to_owned(), "%EventID%".to_owned());
-        expect.insert("MitreAttack".to_owned(), "%MitreAttack%".to_owned());
-        expect.insert("RecordID".to_owned(), "%RecordID%".to_owned());
-        expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
-        expect.insert("Details".to_owned(), "%Details%".to_owned());
-        expect.insert("RecordInformation".to_owned(), "%AllFieldInfo%".to_owned());
-        expect.insert("RuleFile".to_owned(), "%RuleFile%".to_owned());
-        expect.insert("EvtxFile".to_owned(), "%EvtxFile%".to_owned());
-        expect.insert("Tags".to_owned(), "%MitreAttack%".to_owned());
+        let mut expect: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
+        expect.push(vec![
+            CompactString::new("Timestamp"),
+            CompactString::new("%Timestamp%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Computer"),
+            CompactString::new("%Computer%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Channel"),
+            CompactString::new("%Channel%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Level"),
+            CompactString::new("%Level%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("EventID"),
+            CompactString::new("%EventID%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("MitreAttack"),
+            CompactString::new("%MitreAttack%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("RecordID"),
+            CompactString::new("%RecordID%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("RuleTitle"),
+            CompactString::new("%RuleTitle%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Details"),
+            CompactString::new("%Details%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("RecordInformation"),
+            CompactString::new("%AllFieldInfo%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("RuleFile"),
+            CompactString::new("%RuleFile%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("EvtxFile"),
+            CompactString::new("%EvtxFile%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Tags"),
+            CompactString::new("%MitreAttack%"),
+        ]);
 
         assert_eq!(
             Some(expect),
@@ -298,14 +339,35 @@ mod tests {
     /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
     fn test_load_profile_with_profile_option() {
         configs::CONFIG.write().unwrap().args.profile = Some("minimal".to_string());
-        let mut expect: LinkedHashMap<String, String> = LinkedHashMap::new();
-        expect.insert("Timestamp".to_owned(), "%Timestamp%".to_owned());
-        expect.insert("Computer".to_owned(), "%Computer%".to_owned());
-        expect.insert("Channel".to_owned(), "%Channel%".to_owned());
-        expect.insert("EventID".to_owned(), "%EventID%".to_owned());
-        expect.insert("Level".to_owned(), "%Level%".to_owned());
-        expect.insert("RuleTitle".to_owned(), "%RuleTitle%".to_owned());
-        expect.insert("Details".to_owned(), "%Details%".to_owned());
+        let mut expect: Nested<Vec<CompactString>> = Nested::new();
+        expect.push(vec![
+            CompactString::new("Timestamp"),
+            CompactString::new("%Timestamp%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Computer"),
+            CompactString::new("%Computer%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Channel"),
+            CompactString::new("%Channel%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("EventID"),
+            CompactString::new("%EventID%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Level"),
+            CompactString::new("%Level%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("RuleTitle"),
+            CompactString::new("%RuleTitle%"),
+        ]);
+        expect.push(vec![
+            CompactString::new("Details"),
+            CompactString::new("%Details%"),
+        ]);
 
         assert_eq!(
             Some(expect),
@@ -350,13 +412,15 @@ mod tests {
 
     /// yamlファイル内のプロファイル名一覧を取得する機能のテスト
     fn test_get_profile_names() {
-        let expect = vec![vec![
-            "minimal", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %Details%"
-         ],
-         vec!["standard", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%"],
-         vec!["verbose-1", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%"],
-         vec!["verbose-2", "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%"],
-         ];
+        let mut expect = Nested::<Vec<String>>::new();
+        expect.push(vec![
+            "minimal".to_string(),
+            "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %Details%"
+                .to_string(),
+        ]);
+        expect.push(vec!["standard".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%".to_string()]);
+        expect.push(vec!["verbose-1".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%".to_string()]);
+        expect.push(vec!["verbose-2".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%".to_string()]);
         assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }
 }

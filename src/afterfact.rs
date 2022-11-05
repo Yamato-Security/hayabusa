@@ -1,5 +1,5 @@
-use crate::detections::configs::{self, CURRENT_EXE_PATH, TERM_SIZE};
-use crate::detections::message::{self, AlertMessage, LEVEL_ABBR, LEVEL_FULL, MESSAGEKEYS};
+use crate::detections::configs::{self, CURRENT_EXE_PATH};
+use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 use crate::options::profile::PROFILES;
@@ -7,12 +7,12 @@ use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
+use compact_str::CompactString;
+use terminal_size::terminal_size;
 
 use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
-use lazy_static::lazy_static;
-use linked_hash_map::LinkedHashMap;
 use nested::Nested;
 use std::path::Path;
 use std::str::FromStr;
@@ -31,17 +31,13 @@ use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
-lazy_static! {
-    pub static ref OUTPUT_COLOR: HashMap<String, Colors> = set_output_color();
-}
-
 pub struct Colors {
     pub output_color: termcolor::Color,
     pub table_color: comfy_table::Color,
 }
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn set_output_color() -> HashMap<String, Colors> {
+pub fn set_output_color() -> HashMap<CompactString, Colors> {
     let read_result = utils::read_csv(
         utils::check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
@@ -52,7 +48,7 @@ pub fn set_output_color() -> HashMap<String, Colors> {
         .to_str()
         .unwrap(),
     );
-    let mut color_map: HashMap<String, Colors> = HashMap::new();
+    let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
     if configs::CONFIG.read().unwrap().args.no_color {
         return color_map;
     }
@@ -61,12 +57,12 @@ pub fn set_output_color() -> HashMap<String, Colors> {
         AlertMessage::warn(read_result.as_ref().unwrap_err()).ok();
         return color_map;
     }
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }
         let empty = &"".to_string();
-        let level = line.get(0).unwrap_or(empty);
+        let level = CompactString::new(line.get(0).unwrap_or(empty).to_lowercase());
         let convert_color_result = hex::decode(line.get(1).unwrap_or(empty).trim());
         if convert_color_result.is_err() {
             AlertMessage::warn(&format!(
@@ -81,7 +77,7 @@ pub fn set_output_color() -> HashMap<String, Colors> {
             return;
         }
         color_map.insert(
-            level.to_lowercase(),
+            level,
             Colors {
                 output_color: termcolor::Color::Rgb(color_code[0], color_code[1], color_code[2]),
                 table_color: comfy_table::Color::Rgb {
@@ -95,20 +91,20 @@ pub fn set_output_color() -> HashMap<String, Colors> {
     color_map
 }
 
-fn _get_output_color(color_map: &HashMap<String, Colors>, level: &str) -> Option<Color> {
+fn _get_output_color(color_map: &HashMap<CompactString, Colors>, level: &str) -> Option<Color> {
     let mut color = None;
-    if let Some(c) = color_map.get(&level.to_lowercase()) {
+    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
         color = Some(c.output_color.to_owned());
     }
     color
 }
 
 fn _get_table_color(
-    color_map: &HashMap<String, Colors>,
+    color_map: &HashMap<CompactString, Colors>,
     level: &str,
 ) -> Option<comfy_table::Color> {
     let mut color = None;
-    if let Some(c) = color_map.get(&level.to_lowercase()) {
+    if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
         color = Some(c.table_color.to_owned());
     }
     color
@@ -203,9 +199,9 @@ pub fn after_fact(all_record_cnt: usize) {
 fn emit_csv<W: std::io::Write>(
     writer: &mut W,
     displayflag: bool,
-    color_map: HashMap<String, Colors>,
+    color_map: HashMap<CompactString, Colors>,
     all_record_cnt: u128,
-    profile: &LinkedHashMap<String, String>,
+    profile: &Nested<Vec<CompactString>>,
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
@@ -230,30 +226,32 @@ fn emit_csv<W: std::io::Write>(
     // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
-    let mut detected_rule_files: HashSet<String> = HashSet::new();
-    let mut detected_computer_and_rule_names: HashSet<String> = HashSet::new();
-    let mut detect_counts_by_date_and_level: HashMap<String, HashMap<String, i128>> =
+    let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
+    let mut detected_computer_and_rule_names: HashSet<CompactString> = HashSet::new();
+    let mut detect_counts_by_date_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
         HashMap::new();
-    let mut detect_counts_by_computer_and_level: HashMap<String, HashMap<String, i128>> =
+    let mut detect_counts_by_computer_and_level: HashMap<
+        CompactString,
+        HashMap<CompactString, i128>,
+    > = HashMap::new();
+    let mut detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>> =
         HashMap::new();
-    let mut detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>> =
-        HashMap::new();
-    let mut rule_title_path_map: HashMap<String, String> = HashMap::new();
-    let mut rule_author_counter: HashMap<String, i128> = HashMap::new();
+    let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
+    let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
 
     let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
-        detect_counts_by_date_and_level.insert(level_init.to_string(), HashMap::new());
-        detect_counts_by_computer_and_level.insert(level_init.to_string(), HashMap::new());
-        detect_counts_by_rule_and_level.insert(level_init.to_string(), HashMap::new());
+        detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
+        detect_counts_by_computer_and_level.insert(CompactString::from(level_init), HashMap::new());
+        detect_counts_by_rule_and_level.insert(CompactString::from(level_init), HashMap::new());
     }
     if displayflag {
         println!();
     }
     let mut timestamps: Vec<i64> = Vec::new();
     let mut plus_header = true;
-    let mut detected_record_idset: HashSet<String> = HashSet::new();
+    let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
     for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
         let multi = message::MESSAGES.get(time).unwrap();
@@ -261,7 +259,10 @@ fn emit_csv<W: std::io::Write>(
         timestamps.push(_get_timestamp(time));
         for (_, detect_info) in detect_infos.iter().enumerate() {
             if !detect_info.detail.starts_with("[condition]") {
-                detected_record_idset.insert(format!("{}_{}", time, detect_info.eventid));
+                detected_record_idset.insert(CompactString::from(format!(
+                    "{}_{}",
+                    time, detect_info.eventid
+                )));
             }
             if displayflag {
                 //ヘッダーのみを出力
@@ -279,9 +280,7 @@ fn emit_csv<W: std::io::Write>(
                     &disp_wtr,
                     get_writable_color(_get_output_color(
                         &color_map,
-                        LEVEL_FULL
-                            .get(&detect_info.level)
-                            .unwrap_or(&String::default()),
+                        LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
                     )),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
@@ -305,34 +304,55 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(detect_info.ext_field.keys().map(|x| x.trim()))?;
+                    wtr.write_record(
+                        detect_info
+                            .ext_field
+                            .iter()
+                            .map(|x| x[0].to_string().trim().to_string()),
+                    )?;
                     plus_header = false;
                 }
-                wtr.write_record(detect_info.ext_field.values().map(|x| x.trim()))?;
+                wtr.write_record(
+                    detect_info
+                        .ext_field
+                        .iter()
+                        .map(|x| x[1].to_string().trim().to_string()),
+                )?;
             }
 
             // 各種集計作業
             if !is_no_summary {
-                let level_suffix = *configs::LEVELMAP
+                let level_map: HashMap<String, u128> = HashMap::from([
+                    ("INFORMATIONAL".to_owned(), 1),
+                    ("LOW".to_owned(), 2),
+                    ("MEDIUM".to_owned(), 3),
+                    ("HIGH".to_owned(), 4),
+                    ("CRITICAL".to_owned(), 5),
+                ]);
+                let level_suffix = *level_map
                     .get(
                         &LEVEL_FULL
-                            .get(&detect_info.level)
-                            .unwrap_or(&"undefined".to_string())
+                            .get(&detect_info.level.as_str())
+                            .unwrap_or(&"undefined")
                             .to_uppercase(),
                     )
                     .unwrap_or(&0) as usize;
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
-                    detected_rule_files.insert(detect_info.rulepath.to_string());
+                    detected_rule_files.insert(detect_info.rulepath.to_owned());
                     let tmp = extract_author_name(&detect_info.rulepath);
                     for author in tmp.iter() {
-                        *rule_author_counter.entry(author.to_string()).or_insert(0) += 1;
+                        *rule_author_counter
+                            .entry(CompactString::from(author))
+                            .or_insert(0) += 1;
                     }
                     unique_detect_counts_by_level[level_suffix] += 1;
                 }
 
-                let computer_rule_check_key =
-                    format!("{}|{}", &detect_info.computername, &detect_info.rulepath);
+                let computer_rule_check_key = CompactString::from(format!(
+                    "{}|{}",
+                    &detect_info.computername, &detect_info.rulepath
+                ));
                 if !detected_computer_and_rule_names.contains(&computer_rule_check_key) {
                     detected_computer_and_rule_names.insert(computer_rule_check_key);
                     countup_aggregation(
@@ -368,6 +388,20 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.clear();
     if !is_no_summary {
+        let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
+            vec![
+                [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
+                [CompactString::from("high"), CompactString::from("high")].to_vec(),
+                [CompactString::from("medium"), CompactString::from("med ")].to_vec(),
+                [CompactString::from("low"), CompactString::from("low ")].to_vec(),
+                [
+                    CompactString::from("informational"),
+                    CompactString::from("info"),
+                ]
+                .to_vec(),
+            ]
+            .iter(),
+        );
         write_color_buffer(
             &disp_wtr,
             get_writable_color(Some(Color::Rgb(0, 255, 0))),
@@ -389,7 +423,7 @@ fn emit_csv<W: std::io::Write>(
         )
         .ok();
 
-        let terminal_width = match *TERM_SIZE {
+        let terminal_width = match terminal_size() {
             Some((Width(w), _)) => w as usize,
             None => 100,
         };
@@ -467,9 +501,10 @@ fn emit_csv<W: std::io::Write>(
         _print_unique_results(
             total_detect_counts_by_level,
             unique_detect_counts_by_level,
-            "Total | Unique".to_string(),
-            "detections".to_string(),
+            CompactString::from("Total | Unique"),
+            CompactString::from("detections"),
             &color_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -477,6 +512,7 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_by_date(
             detect_counts_by_date_and_level,
             &color_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -488,6 +524,7 @@ fn emit_csv<W: std::io::Write>(
         _print_detection_summary_by_computer(
             detect_counts_by_computer_and_level,
             &color_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -499,6 +536,7 @@ fn emit_csv<W: std::io::Write>(
             detect_counts_by_rule_and_level,
             &color_map,
             rule_title_path_map,
+            &level_abbr,
             &mut html_output_stock,
         );
         println!();
@@ -516,18 +554,19 @@ fn emit_csv<W: std::io::Write>(
 }
 
 fn countup_aggregation(
-    count_map: &mut HashMap<String, HashMap<String, i128>>,
+    count_map: &mut HashMap<CompactString, HashMap<CompactString, i128>>,
     key: &str,
     entry_key: &str,
 ) {
+    let compact_lowercase_key = CompactString::from(key.to_lowercase());
     let mut detect_counts_by_rules = count_map
-        .get(&key.to_lowercase())
+        .get(&compact_lowercase_key)
         .unwrap_or_else(|| count_map.get("undefined").unwrap())
         .to_owned();
     *detect_counts_by_rules
-        .entry(entry_key.to_string())
+        .entry(CompactString::from(entry_key))
         .or_insert(0) += 1;
-    count_map.insert(key.to_lowercase(), detect_counts_by_rules);
+    count_map.insert(compact_lowercase_key, detect_counts_by_rules);
 }
 
 /// columnt position. in cell
@@ -540,27 +579,27 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(data: &LinkedHashMap<String, String>, header: bool) -> String {
-    let data_length = &data.len();
+fn _get_serialized_disp_output(data: &Nested<Vec<CompactString>>, header: bool) -> String {
+    let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
-        for (i, k) in data.keys().enumerate() {
+        for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(k, ColPos::First))
+                ret.push(_format_cellpos(&d[0], ColPos::First))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(k, ColPos::Last))
+                ret.push(_format_cellpos(&d[0], ColPos::Last))
             } else {
-                ret.push(_format_cellpos(k, ColPos::Other))
+                ret.push(_format_cellpos(&d[0], ColPos::Other))
             }
         }
     } else {
-        for (i, (_, v)) in data.iter().enumerate() {
+        for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(v, ColPos::First).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(v, ColPos::Last).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::Last).replace('|', "🦅"))
             } else {
-                ret.push(_format_cellpos(v, ColPos::Other).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d[1], ColPos::Other).replace('|', "🦅"))
             }
         }
     }
@@ -593,9 +632,10 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
 fn _print_unique_results(
     mut counts_by_level: Vec<u128>,
     mut unique_counts_by_level: Vec<u128>,
-    head_word: String,
-    tail_word: String,
-    color_map: &HashMap<String, Colors>,
+    head_word: CompactString,
+    tail_word: CompactString,
+    color_map: &HashMap<CompactString, Colors>,
+    level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
@@ -622,8 +662,8 @@ fn _print_unique_results(
     let mut total_detect_md = vec!["- Total detections:".to_string()];
     let mut unique_detect_md = vec!["- Unique detecions:".to_string()];
 
-    for (i, level_name) in LEVEL_ABBR.keys().enumerate() {
-        if "undefined" == *level_name {
+    for (i, level_name) in level_abbr.iter().enumerate() {
+        if "undefined" == level_name[0] {
             continue;
         }
         let percent = if total_count == 0 {
@@ -639,13 +679,13 @@ fn _print_unique_results(
         if configs::CONFIG.read().unwrap().args.html_report.is_some() {
             total_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
-                level_name,
+                level_name[0],
                 counts_by_level[i].to_formatted_string(&Locale::en),
                 percent
             ));
             unique_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
-                level_name,
+                level_name[0],
                 unique_counts_by_level[i].to_formatted_string(&Locale::en),
                 unique_percent
             ));
@@ -653,7 +693,7 @@ fn _print_unique_results(
         let output_raw_str = format!(
             "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
             head_word,
-            level_name,
+            level_name[0],
             tail_word,
             counts_by_level[i].to_formatted_string(&Locale::en),
             percent,
@@ -662,7 +702,7 @@ fn _print_unique_results(
         );
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
-            _get_output_color(color_map, level_name),
+            _get_output_color(color_map, &level_name[0]),
             &output_raw_str,
             true,
         )
@@ -676,8 +716,9 @@ fn _print_unique_results(
 
 /// 各レベル毎で最も高い検知数を出した日付を出力する
 fn _print_detection_summary_by_date(
-    detect_counts_by_date: HashMap<String, HashMap<String, i128>>,
-    color_map: &HashMap<String, Colors>,
+    detect_counts_by_date: HashMap<CompactString, HashMap<CompactString, i128>>,
+    color_map: &HashMap<CompactString, Colors>,
+    level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -688,9 +729,9 @@ fn _print_detection_summary_by_date(
     if *HTML_REPORT_FLAG {
         html_output_stock.push(format!("- {}", output_header));
     }
-    for (idx, level) in LEVEL_ABBR.values().enumerate() {
+    for (idx, level) in level_abbr.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_day = detect_counts_by_date.get(level).unwrap();
+        let detections_by_day = detect_counts_by_date.get(&level[1]).unwrap();
         let mut max_detect_str = String::default();
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
@@ -703,7 +744,7 @@ fn _print_detection_summary_by_date(
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
         )))
         .ok();
         if !exist_max_data {
@@ -711,11 +752,11 @@ fn _print_detection_summary_by_date(
         }
         let output_str = format!(
             "{}: {}",
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
             &max_detect_str
         );
         write!(wtr, "{}", output_str).ok();
-        if idx != LEVEL_ABBR.len() - 1 {
+        if idx != level_abbr.len() - 1 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
@@ -728,8 +769,9 @@ fn _print_detection_summary_by_date(
 
 /// 各レベル毎で最も高い検知数を出したコンピュータ名を出力する
 fn _print_detection_summary_by_computer(
-    detect_counts_by_computer: HashMap<String, HashMap<String, i128>>,
-    color_map: &HashMap<String, Colors>,
+    detect_counts_by_computer: HashMap<CompactString, HashMap<CompactString, i128>>,
+    color_map: &HashMap<CompactString, Colors>,
+    level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -737,14 +779,14 @@ fn _print_detection_summary_by_computer(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
 
     writeln!(wtr, "Top 5 computers with most unique detections:").ok();
-    for level in LEVEL_ABBR.values() {
+    for level in level_abbr.iter() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_computer = detect_counts_by_computer.get(level).unwrap();
+        let detections_by_computer = detect_counts_by_computer.get(&level[1]).unwrap();
         let mut result_vec = Nested::<String>::new();
         //computer nameで-となっているものは除外して集計する
-        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer
+        let mut sorted_detections: Vec<(&CompactString, &i128)> = detections_by_computer
             .iter()
-            .filter(|a| a.0 != "-")
+            .filter(|a| a.0.as_str() != "-")
             .collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
@@ -753,8 +795,8 @@ fn _print_detection_summary_by_computer(
         if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
-                LEVEL_FULL.get(level.as_str()).unwrap(),
-                LEVEL_FULL.get(level.as_str()).unwrap()
+                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(&level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -780,13 +822,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
         )))
         .ok();
         writeln!(
             wtr,
             "{}: {}",
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
             &result_str
         )
         .ok();
@@ -796,9 +838,10 @@ fn _print_detection_summary_by_computer(
 
 /// 各レベルごとで検出数が多かったルールを表形式で出力する関数
 fn _print_detection_summary_tables(
-    detect_counts_by_rule_and_level: HashMap<String, HashMap<String, i128>>,
-    color_map: &HashMap<String, Colors>,
-    rule_title_path_map: HashMap<String, String>,
+    detect_counts_by_rule_and_level: HashMap<CompactString, HashMap<CompactString, i128>>,
+    color_map: &HashMap<CompactString, Colors>,
+    rule_title_path_map: HashMap<CompactString, CompactString>,
+    level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
@@ -806,21 +849,22 @@ fn _print_detection_summary_tables(
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
     let mut output = vec![];
     let mut col_color = vec![];
-    for level in LEVEL_ABBR.values() {
+    for level in level_abbr.iter() {
         let mut col_output: Vec<String> = vec![];
         col_output.push(format!(
             "Top {} alerts:",
-            LEVEL_FULL.get(level.as_str()).unwrap()
+            LEVEL_FULL.get(&level[1].as_str()).unwrap()
         ));
 
         col_color.push(_get_table_color(
             color_map,
-            LEVEL_FULL.get(level.as_str()).unwrap(),
+            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
         ));
 
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
-        let detections_by_computer = detect_counts_by_rule_and_level.get(level).unwrap();
-        let mut sorted_detections: Vec<(&String, &i128)> = detections_by_computer.iter().collect();
+        let detections_by_computer = detect_counts_by_rule_and_level.get(&level[1]).unwrap();
+        let mut sorted_detections: Vec<(&CompactString, &i128)> =
+            detections_by_computer.iter().collect();
 
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
@@ -828,8 +872,8 @@ fn _print_detection_summary_tables(
         if *HTML_REPORT_FLAG {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
-                LEVEL_FULL.get(level.as_str()).unwrap(),
-                LEVEL_FULL.get(level.as_str()).unwrap()
+                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(&level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -837,7 +881,7 @@ fn _print_detection_summary_tables(
                     x.0,
                     rule_title_path_map
                         .get(x.0)
-                        .unwrap_or(&"<Not Found Path>".to_string())
+                        .unwrap_or(&CompactString::from("<Not Found Path>"))
                         .replace('\\', "/"),
                     x.1.to_formatted_string(&Locale::en)
                 ));
@@ -845,12 +889,11 @@ fn _print_detection_summary_tables(
             html_output_stock.push("");
         }
 
-        let take_cnt =
-            if LEVEL_FULL.get(level.as_str()).unwrap_or(&"-".to_string()) == "informational" {
-                10
-            } else {
-                5
-            };
+        let take_cnt = if "informational" == *LEVEL_FULL.get(&level[1].as_str()).unwrap_or(&"-") {
+            10
+        } else {
+            5
+        };
         for x in sorted_detections.iter().take(take_cnt) {
             col_output.push(format!(
                 "{} ({})",
@@ -1014,22 +1057,25 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
 fn output_json_str(
-    ext_field: &LinkedHashMap<String, String>,
-    profile: &LinkedHashMap<String, String>,
+    ext_field: &Nested<Vec<CompactString>>,
+    profile: &Nested<Vec<CompactString>>,
     jsonl_output_flag: bool,
 ) -> String {
     let mut target: Vec<String> = vec![];
-    for (k, v) in ext_field.iter() {
-        let output_value_fmt = profile.get(k).unwrap();
-        let vec_data = _get_json_vec(output_value_fmt, v);
+    let profile_map: HashMap<String, String> =
+        HashMap::from_iter(profile.iter().map(|p| (p[0].to_string(), p[1].to_string())));
+    for ef in ext_field.iter() {
+        let [key, val] = [ef[0].to_string(), ef[1].to_string()];
+        let output_value_fmt = profile_map.get(&key).unwrap();
+        let vec_data = _get_json_vec(output_value_fmt, &val);
         if vec_data.is_empty() {
-            let tmp_val: Vec<&str> = v.split(": ").collect();
+            let tmp_val: Vec<&str> = val.split(": ").collect();
             let output_val =
                 _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%AllFieldInfo%"));
             target.push(_create_json_output_format(
-                k,
+                &key,
                 &output_val,
-                k.starts_with('\"'),
+                key.starts_with('\"'),
                 output_val.starts_with('\"'),
                 4,
             ));
@@ -1037,7 +1083,7 @@ fn output_json_str(
             || output_value_fmt.contains("%AllFieldInfo%")
         {
             let mut output_stock: Vec<String> = vec![];
-            output_stock.push(format!("    \"{}\": {{", k));
+            output_stock.push(format!("    \"{}\": {{", key));
             let mut stocked_value = vec![];
             let mut key_index_stock = vec![];
             for detail_contents in vec_data.iter() {
@@ -1061,7 +1107,7 @@ fn output_json_str(
                 let mut tmp = if key_idx >= key_index_stock.len() {
                     String::default()
                 } else if value_idx == 0 && !value.is_empty() {
-                    k.to_string()
+                    key.to_owned()
                 } else {
                     key_index_stock[key_idx].to_string()
                 };
@@ -1128,9 +1174,9 @@ fn output_json_str(
             || output_value_fmt.contains("%MitreTactics%")
             || output_value_fmt.contains("%OtherTags%")
         {
-            let tmp_val: Vec<&str> = v.split(": ").collect();
+            let tmp_val: Vec<&str> = val.split(": ").collect();
 
-            let key = _convert_valid_json_str(&[k.as_str()], false);
+            let key = _convert_valid_json_str(&[key.as_str()], false);
             let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
             let mut value: Vec<String> = vec![];
 
@@ -1173,8 +1219,8 @@ fn output_json_str(
 }
 
 /// output detected rule author name function.
-fn output_detected_rule_authors(rule_author_counter: HashMap<String, i128>) {
-    let mut sorted_authors: Vec<(&String, &i128)> = rule_author_counter.iter().collect();
+fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128>) {
+    let mut sorted_authors: Vec<(&CompactString, &i128)> = rule_author_counter.iter().collect();
 
     sorted_authors.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
     let div = if sorted_authors.len() % 4 != 0 {
@@ -1281,8 +1327,9 @@ mod tests {
     use crate::detections::message::DetectInfo;
     use crate::options::profile::load_profile;
     use chrono::{Local, TimeZone, Utc};
+    use compact_str::CompactString;
     use hashbrown::HashMap;
-    use linked_hash_map::LinkedHashMap;
+    use nested::Nested;
     use serde_json::Value;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
@@ -1307,7 +1354,7 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let output_profile: LinkedHashMap<String, String> = load_profile(
+        let output_profile: Nested<Vec<CompactString>> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",
         )
@@ -1330,37 +1377,71 @@ mod tests {
                 }
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
-            let mut profile_converter: HashMap<String, String> = HashMap::from([
-                ("%Timestamp%".to_owned(), format_time(&expect_time, false)),
-                ("%Computer%".to_owned(), test_computername.to_string()),
+            let mut profile_converter: HashMap<CompactString, CompactString> = HashMap::from([
                 (
-                    "%Channel%".to_owned(),
-                    mock_ch_filter
-                        .get(&"Security".to_ascii_lowercase())
-                        .unwrap_or(&String::default())
-                        .to_string(),
+                    CompactString::from("%Timestamp%"),
+                    CompactString::from(format_time(&expect_time, false)),
                 ),
-                ("%Level%".to_owned(), test_level.to_string()),
-                ("%EventID%".to_owned(), test_eventid.to_string()),
-                ("%MitreAttack%".to_owned(), test_attack.to_string()),
-                ("%RecordID%".to_owned(), test_record_id.to_string()),
-                ("%RuleTitle%".to_owned(), test_title.to_owned()),
-                ("%AllFieldInfo%".to_owned(), test_recinfo.to_owned()),
-                ("%RuleFile%".to_owned(), test_rulepath.to_string()),
-                ("%EvtxFile%".to_owned(), test_filepath.to_string()),
-                ("%Tags%".to_owned(), test_attack.to_string()),
+                (
+                    CompactString::from("%Computer%"),
+                    CompactString::from(test_computername),
+                ),
+                (
+                    CompactString::from("%Channel%"),
+                    CompactString::from(
+                        mock_ch_filter
+                            .get(&"Security".to_ascii_lowercase())
+                            .unwrap_or(&String::default()),
+                    ),
+                ),
+                (
+                    CompactString::from("%Level%"),
+                    CompactString::from(test_level),
+                ),
+                (
+                    CompactString::from("%EventID%"),
+                    CompactString::from(test_eventid),
+                ),
+                (
+                    CompactString::from("%MitreAttack%"),
+                    CompactString::from(test_attack),
+                ),
+                (
+                    CompactString::from("%RecordID%"),
+                    CompactString::from(test_record_id),
+                ),
+                (
+                    CompactString::from("%RuleTitle%"),
+                    CompactString::from(test_title),
+                ),
+                (
+                    CompactString::from("%AllFieldInfo%"),
+                    CompactString::from(test_recinfo),
+                ),
+                (
+                    CompactString::from("%RuleFile%"),
+                    CompactString::from(test_rulepath),
+                ),
+                (
+                    CompactString::from("%EvtxFile%"),
+                    CompactString::from(test_filepath),
+                ),
+                (
+                    CompactString::from("%Tags%"),
+                    CompactString::from(test_attack),
+                ),
             ]);
             message::insert(
                 &event,
-                output.to_string(),
+                CompactString::new(output),
                 DetectInfo {
-                    rulepath: test_rulepath.to_string(),
-                    ruletitle: test_title.to_string(),
-                    level: test_level.to_string(),
-                    computername: test_computername.to_string(),
-                    eventid: test_eventid.to_string(),
-                    detail: String::default(),
-                    record_information: Option::Some(test_recinfo.to_string()),
+                    rulepath: CompactString::from(test_rulepath),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    record_information: CompactString::from(test_recinfo),
                     ext_field: output_profile.to_owned(),
                 },
                 expect_time,
@@ -1449,16 +1530,43 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
-        let mut data: LinkedHashMap<String, String> = LinkedHashMap::new();
-        data.insert("Timestamp".to_owned(), format_time(&test_timestamp, false));
-        data.insert("Computer".to_owned(), test_computername.to_owned());
-        data.insert("Channel".to_owned(), test_channel.to_owned());
-        data.insert("EventID".to_owned(), test_eventid.to_owned());
-        data.insert("Level".to_owned(), test_level.to_owned());
-        data.insert("RecordID".to_owned(), test_recid.to_owned());
-        data.insert("RuleTitle".to_owned(), test_title.to_owned());
-        data.insert("Details".to_owned(), output.to_owned());
-        data.insert("RecordInformation".to_owned(), test_recinfo.to_owned());
+        let mut data: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
+        data.push(vec![
+            CompactString::new("Timestamp"),
+            CompactString::new(&format_time(&test_timestamp, false)),
+        ]);
+        data.push(vec![
+            CompactString::new("Computer"),
+            CompactString::new(test_computername),
+        ]);
+        data.push(vec![
+            CompactString::new("Channel"),
+            CompactString::new(test_channel),
+        ]);
+        data.push(vec![
+            CompactString::new("EventID"),
+            CompactString::new(test_eventid),
+        ]);
+        data.push(vec![
+            CompactString::new("Level"),
+            CompactString::new(test_level),
+        ]);
+        data.push(vec![
+            CompactString::new("RecordID"),
+            CompactString::new(test_recid),
+        ]);
+        data.push(vec![
+            CompactString::new("RuleTitle"),
+            CompactString::new(test_title),
+        ]);
+        data.push(vec![
+            CompactString::new("Details"),
+            CompactString::new(output),
+        ]);
+        data.push(vec![
+            CompactString::new("RecordInformation"),
+            CompactString::new(test_recinfo),
+        ]);
 
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);

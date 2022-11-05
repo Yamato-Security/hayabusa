@@ -4,6 +4,7 @@ extern crate regex;
 
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 
+use compact_str::CompactString;
 use hashbrown::HashMap;
 use nested::Nested;
 use std::path::{Path, PathBuf};
@@ -29,7 +30,7 @@ use termcolor::{BufferWriter, ColorSpec, WriteColor};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
-pub fn concat_selection_key(key_list: &[String]) -> String {
+pub fn concat_selection_key(key_list: &Nested<String>) -> String {
     return key_list
         .iter()
         .fold("detection -> selection".to_string(), |mut acc, cur| {
@@ -71,7 +72,7 @@ pub fn value_to_string(value: &Value) -> Option<String> {
     }
 }
 
-pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
+pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
     let filepath = if filename.starts_with("./") {
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
             .unwrap()
@@ -87,21 +88,18 @@ pub fn read_txt(filename: &str) -> Result<Vec<String>, String> {
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
-    Result::Ok(
-        reader
-            .lines()
-            .map(|line| line.unwrap_or_default())
-            .collect(),
-    )
+    Result::Ok(Nested::from_iter(
+        reader.lines().map(|line| line.unwrap_or_default()),
+    ))
 }
 
-pub fn read_csv(filename: &str) -> Result<Vec<Vec<String>>, String> {
+pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
     let f = File::open(filename);
     if f.is_err() {
         return Result::Err(format!("Cannot open file. [file:{}]", filename));
     }
     let mut contents: String = String::new();
-    let mut ret = vec![];
+    let mut ret = Nested::<Vec<String>>::new();
     let read_res = f.unwrap().read_to_string(&mut contents);
     if let Err(e) = read_res {
         return Result::Err(e.to_string());
@@ -361,15 +359,15 @@ fn _collect_recordinfo<'a>(
 /**
  * 最初の文字を大文字にする関数
  */
-pub fn make_ascii_titlecase(s: &str) -> String {
+pub fn make_ascii_titlecase(s: &str) -> CompactString {
     let mut c = s.chars();
     match c.next() {
-        None => String::new(),
+        None => CompactString::default(),
         Some(f) => {
             if !f.is_ascii() {
-                s.to_string()
+                CompactString::from(s)
             } else {
-                f.to_uppercase().collect::<String>() + c.as_str()
+                f.to_uppercase().collect::<CompactString>() + c.as_str()
             }
         }
     }
@@ -569,8 +567,8 @@ mod tests {
         let regexes: Vec<Regex> =
             utils::read_txt("./../../../rules/config/regex/detectlist_suspicous_services.txt")
                 .unwrap()
-                .into_iter()
-                .map(|regex_str| Regex::new(&regex_str).unwrap())
+                .iter()
+                .map(|regex_str| Regex::new(regex_str).unwrap())
                 .collect();
         let regextext = utils::check_regex("\\cvtres.exe", &regexes);
         assert!(regextext);
@@ -585,8 +583,8 @@ mod tests {
         let allowlist: Vec<Regex> =
             utils::read_txt("./../../../rules/config/regex/allowlist_legitimate_services.txt")
                 .unwrap()
-                .into_iter()
-                .map(|allow_str| Regex::new(&allow_str).unwrap())
+                .iter()
+                .map(|allow_str| Regex::new(allow_str).unwrap())
                 .collect();
         assert!(utils::check_allowlist(commandline, &allowlist));
 

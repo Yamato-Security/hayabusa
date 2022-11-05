@@ -9,12 +9,12 @@ use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::detections::configs::{
-    load_pivot_keywords, TargetEventTime, CONFIG, CURRENT_EXE_PATH, TARGET_EXTENSIONS,
+    load_pivot_keywords, TargetEventTime, CONFIG, CURRENT_EXE_PATH,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{
-    AlertMessage, ERROR_LOG_PATH, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG,
-    PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG,
+    AlertMessage, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG,
+    QUIET_ERRORS_FLAG,
 };
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
@@ -146,7 +146,7 @@ impl App {
                 true,
             )
             .ok();
-            for profile in &profile_list {
+            for profile in profile_list.iter() {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     Some(Color::Green),
@@ -329,8 +329,11 @@ impl App {
             true,
         )
         .ok();
+        let target_extensions =
+            configs::get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
+
         if configs::CONFIG.read().unwrap().args.live_analysis {
-            let live_analysis_list = self.collect_liveanalysis_files();
+            let live_analysis_list = self.collect_liveanalysis_files(&target_extensions);
             if live_analysis_list.is_none() {
                 return;
             }
@@ -344,7 +347,7 @@ impl App {
                 .ok();
                 return;
             }
-            if !TARGET_EXTENSIONS.contains(
+            if !target_extensions.contains(
                 filepath
                     .extension()
                     .unwrap_or_else(|| OsStr::new("."))
@@ -367,7 +370,10 @@ impl App {
             }
             self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
         } else if let Some(directory) = &configs::CONFIG.read().unwrap().args.directory {
-            let evtx_files = Self::collect_evtxfiles(directory.as_os_str().to_str().unwrap());
+            let evtx_files = Self::collect_evtxfiles(
+                directory.as_os_str().to_str().unwrap(),
+                &target_extensions,
+            );
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
@@ -491,7 +497,7 @@ impl App {
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
-            AlertMessage::create_error_log(ERROR_LOG_PATH.to_string());
+            AlertMessage::create_error_log();
         }
 
         if *PIVOT_KEYWORD_LIST_FLAG {
@@ -586,7 +592,10 @@ impl App {
     }
 
     #[cfg(not(target_os = "windows"))]
-    fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
+    fn collect_liveanalysis_files(
+        &self,
+        _target_extensions: &HashSet<String>,
+    ) -> Option<Vec<PathBuf>> {
         AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
             .ok();
         println!();
@@ -594,11 +603,16 @@ impl App {
     }
 
     #[cfg(target_os = "windows")]
-    fn collect_liveanalysis_files(&self) -> Option<Vec<PathBuf>> {
+    fn collect_liveanalysis_files(
+        &self,
+        target_extensions: &HashSet<String>,
+    ) -> Option<Vec<PathBuf>> {
         if is_elevated() {
             let log_dir = env::var("windir").expect("windir is not found");
-            let evtx_files =
-                Self::collect_evtxfiles(&[log_dir, "System32\\winevt\\Logs".to_string()].join("/"));
+            let evtx_files = Self::collect_evtxfiles(
+                &[log_dir, "System32\\winevt\\Logs".to_string()].join("/"),
+                target_extensions,
+            );
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return None;
@@ -612,7 +626,7 @@ impl App {
         }
     }
 
-    fn collect_evtxfiles(dirpath: &str) -> Vec<PathBuf> {
+    fn collect_evtxfiles(dirpath: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
@@ -637,11 +651,11 @@ impl App {
             let path = e.unwrap().path();
             if path.is_dir() {
                 path.to_str().map(|path_str| {
-                    let subdir_ret = Self::collect_evtxfiles(path_str);
+                    let subdir_ret = Self::collect_evtxfiles(path_str, target_extensions);
                     ret.extend(subdir_ret);
                     Option::Some(())
                 });
-            } else if TARGET_EXTENSIONS.contains(
+            } else if target_extensions.contains(
                 path.extension()
                     .unwrap_or_else(|| OsStr::new(""))
                     .to_str()
@@ -888,7 +902,7 @@ impl App {
         let mut key_set = HashSet::new();
         for rule in rules {
             let keys = get_detection_keys(rule);
-            key_set.extend(keys.iter().map(|x| x.to_string()).collect::<Vec<String>>());
+            key_set.extend(keys.iter().map(|x| x.to_string()));
         }
 
         key_set.into_iter().collect::<Nested<String>>()
@@ -1002,10 +1016,11 @@ impl App {
 #[cfg(test)]
 mod tests {
     use crate::App;
+    use hashbrown::HashSet;
 
     #[test]
     fn test_collect_evtxfiles() {
-        let files = App::collect_evtxfiles("test_files/evtx");
+        let files = App::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
         assert_eq!(3, files.len());
 
         files.iter().for_each(|file| {

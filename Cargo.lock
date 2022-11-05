@@ -158,6 +158,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "castaway"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a17ed5635fc8536268e5d4de1e22e81ac34419e5f052d4d51f4e01dcc263fcc"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -247,6 +256,17 @@ dependencies = [
  "strum",
  "strum_macros",
  "unicode-width",
+]
+
+[[package]]
+name = "compact_str"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5138945395949e7dfba09646dc9e766b548ff48e23deb5246890e6b64ae9e1b9"
+dependencies = [
+ "castaway",
+ "itoa 1.0.4",
+ "ryu",
 ]
 
 [[package]]
@@ -802,6 +822,7 @@ dependencies = [
  "chrono",
  "clap",
  "comfy-table",
+ "compact_str",
  "crossbeam-utils",
  "csv",
  "dashmap",

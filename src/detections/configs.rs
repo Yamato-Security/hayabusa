@@ -5,23 +5,15 @@ use chrono::{DateTime, Utc};
 use clap::{App, CommandFactory, Parser};
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
+use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
 use std::path::PathBuf;
 use std::sync::RwLock;
-use terminal_size::{terminal_size, Height, Width};
+use terminal_size::{terminal_size, Width};
 
 lazy_static! {
     pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
-    pub static ref LEVELMAP: HashMap<String, u128> = {
-        let mut levelmap = HashMap::new();
-        levelmap.insert("INFORMATIONAL".to_owned(), 1);
-        levelmap.insert("LOW".to_owned(), 2);
-        levelmap.insert("MEDIUM".to_owned(), 3);
-        levelmap.insert("HIGH".to_owned(), 4);
-        levelmap.insert("CRITICAL".to_owned(), 5);
-        levelmap
-    };
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(
         utils::check_setting_path(
             &CONFIG.read().unwrap().args.config,
@@ -41,13 +33,8 @@ lazy_static! {
     );
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
-    pub static ref TERM_SIZE: Option<(Width, Height)> = terminal_size();
-    pub static ref TARGET_EXTENSIONS: HashSet<String> =
-        get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
-    pub static ref EXCLUDE_STATUS: HashSet<String> =
-        convert_option_vecs_to_hs(CONFIG.read().unwrap().args.exclude_status.as_ref());
 }
 
 pub struct ConfigReader<'a> {
@@ -264,7 +251,7 @@ pub struct Config {
 impl ConfigReader<'_> {
     pub fn new() -> Self {
         let parse = Config::parse();
-        let help_term_width = if let Some((Width(w), _)) = *TERM_SIZE {
+        let help_term_width = if let Some((Width(w), _)) = terminal_size() {
             w as usize
         } else {
             400
@@ -341,11 +328,11 @@ fn load_target_ids(path: &str) -> TargetEventIds {
         return ret;
     }
 
-    for line in lines.unwrap() {
+    for line in lines.unwrap_or_else(|_| Nested::<String>::new()).iter() {
         if line.is_empty() {
             continue;
         }
-        ret.ids.insert(line);
+        ret.ids.insert(line.to_string());
     }
 
     ret
@@ -477,7 +464,7 @@ fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         return config;
     }
 
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         if line.len() != 2 {
             return;
         }
@@ -508,7 +495,7 @@ pub fn load_pivot_keywords(path: &str) {
         AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
     }
 
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         let map: Vec<&str> = line.split('.').collect();
         if map.len() != 2 {
             return;
@@ -594,7 +581,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
     }
 
     // event_id_info.txtが読み込めなかったらエラーで終了とする。
-    read_result.unwrap().into_iter().for_each(|line| {
+    read_result.unwrap().iter().for_each(|line| {
         if line.len() != 3 {
             return;
         }
