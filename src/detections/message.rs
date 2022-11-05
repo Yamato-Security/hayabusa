@@ -557,7 +557,7 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% data:%Data[2]%)")
+                CompactString::new("commandline:%CommandLine% data:%Data[2]%")
             ),
             expected,
         );
