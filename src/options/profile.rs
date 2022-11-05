@@ -286,7 +286,10 @@ mod tests {
             CompactString::new("Channel"),
             CompactString::new("%Channel%"),
         ]);
-        expect.push(vec![CompactString::new("Level"), CompactString::new("%Level%")]);
+        expect.push(vec![
+            CompactString::new("Level"),
+            CompactString::new("%Level%"),
+        ]);
         expect.push(vec![
             CompactString::new("EventID"),
             CompactString::new("%EventID%"),
@@ -353,7 +356,10 @@ mod tests {
             CompactString::new("EventID"),
             CompactString::new("%EventID%"),
         ]);
-        expect.push(vec![CompactString::new("Level"), CompactString::new("%Level%")]);
+        expect.push(vec![
+            CompactString::new("Level"),
+            CompactString::new("%Level%"),
+        ]);
         expect.push(vec![
             CompactString::new("RuleTitle"),
             CompactString::new("%RuleTitle%"),

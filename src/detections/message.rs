@@ -146,7 +146,8 @@ pub fn insert(
     if exist_detail {
         profile_converter.insert("%Details%".to_string(), detect_info.detail.to_owned());
     }
-    let mut replaced_converted_info: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
+    let mut replaced_converted_info: Nested<Vec<CompactString>> =
+        Nested::<Vec<CompactString>>::new();
     for di in detect_info.ext_field.iter() {
         let val = di[1].to_string();
         let converted_reserve_info = convert_profile_reserved_info(&val, profile_converter);

@@ -275,9 +275,7 @@ fn emit_csv<W: std::io::Write>(
                     &disp_wtr,
                     get_writable_color(_get_output_color(
                         &color_map,
-                        LEVEL_FULL
-                            .get(&detect_info.level.as_str())
-                            .unwrap_or(&""),
+                        LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
                     )),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
@@ -1527,7 +1525,10 @@ mod tests {
             CompactString::new("RuleTitle"),
             CompactString::new(test_title),
         ]);
-        data.push(vec![CompactString::new("Details"), CompactString::new(output)]);
+        data.push(vec![
+            CompactString::new("Details"),
+            CompactString::new(output),
+        ]);
         data.push(vec![
             CompactString::new("RecordInformation"),
             CompactString::new(test_recinfo),
