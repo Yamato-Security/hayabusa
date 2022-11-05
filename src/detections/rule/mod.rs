@@ -257,12 +257,11 @@ impl DetectionNode {
 
     /// selectionをパースします。
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
-        Option::Some(self.parse_selection_recursively(vec![], selection_yaml))
+        Option::Some(Self::parse_selection_recursively(vec![], selection_yaml))
     }
 
     /// selectionをパースします。
     fn parse_selection_recursively(
-        &self,
         key_list: Vec<String>,
         yaml: &Yaml,
     ) -> Box<dyn SelectionNode> {
@@ -275,7 +274,7 @@ impl DetectionNode {
                 let child_yaml = yaml_hash.get(hash_key).unwrap();
                 let mut child_key_list = key_list.clone();
                 child_key_list.push(hash_key.as_str().unwrap().to_string());
-                let child_node = self.parse_selection_recursively(child_key_list, child_yaml);
+                let child_node = Self::parse_selection_recursively(child_key_list, child_yaml);
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
@@ -283,7 +282,7 @@ impl DetectionNode {
             // 配列はOR条件と解釈する。
             let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
-                let child_node = self.parse_selection_recursively(key_list.clone(), child_yaml);
+                let child_node = Self::parse_selection_recursively(key_list.clone(), child_yaml);
                 or_node.child_nodes.push(child_node);
             });
 
