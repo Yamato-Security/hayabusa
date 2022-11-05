@@ -144,7 +144,7 @@ impl ConditionCompiler {
 
         let parsed = self.parse(tokens)?;
 
-        self.to_selectnode(parsed, name_2_node)
+        Self::to_selectnode(parsed, name_2_node)
     }
 
     /// 構文解析を実行する。
@@ -158,7 +158,7 @@ impl ConditionCompiler {
         let tokens = self.parse_and_or_operator(tokens)?;
 
         // OperandContainerトークンの中身をパースする。(現状、Notを解析するためだけにある。将来的に修飾するキーワードが増えたらここを変える。)
-        let token = self.parse_operand_container(tokens)?;
+        let token = Self::parse_operand_container(tokens)?;
 
         // 括弧で囲まれている部分を探して、もしあればその部分を再帰的に構文解析します。
         self.parse_rest_parenthesis(token)
@@ -337,10 +337,7 @@ impl ConditionCompiler {
     }
 
     /// OperandContainerの中身をパースする。現状はNotをパースするためだけに存在している。
-    fn parse_operand_container(
-        &self,
-        parent_token: ConditionToken,
-    ) -> Result<ConditionToken, String> {
+    fn parse_operand_container(parent_token: ConditionToken) -> Result<ConditionToken, String> {
         if let ConditionToken::OperandContainer(sub_tokens) = parent_token {
             // 現状ではNOTの場合は、「not」と「notで修飾されるselectionノードの名前」の2つ入っているはず
             // NOTが無い場合、「selectionノードの名前」の一つしか入っていないはず。
@@ -393,7 +390,7 @@ impl ConditionCompiler {
 
             let mut new_sub_tokens = vec![];
             for sub_token in sub_tokens {
-                let new_sub_token = self.parse_operand_container(sub_token)?;
+                let new_sub_token = Self::parse_operand_container(sub_token)?;
                 new_sub_tokens.push(new_sub_token);
             }
 
@@ -403,7 +400,6 @@ impl ConditionCompiler {
 
     /// ConditionTokenからSelectionNodeトレイトを実装した構造体に変換します。
     fn to_selectnode(
-        &self,
         token: ConditionToken,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
@@ -425,7 +421,7 @@ impl ConditionCompiler {
         if let ConditionToken::AndContainer(sub_tokens) = token {
             let mut select_and_node = AndSelectionNode::new();
             for sub_token in sub_tokens.into_iter() {
-                let sub_node = self.to_selectnode(sub_token, name_2_node)?;
+                let sub_node = Self::to_selectnode(sub_token, name_2_node)?;
                 select_and_node.child_nodes.push(sub_node);
             }
             return Result::Ok(Box::new(select_and_node));
@@ -435,7 +431,7 @@ impl ConditionCompiler {
         if let ConditionToken::OrContainer(sub_tokens) = token {
             let mut select_or_node = OrSelectionNode::new();
             for sub_token in sub_tokens.into_iter() {
-                let sub_node = self.to_selectnode(sub_token, name_2_node)?;
+                let sub_node = Self::to_selectnode(sub_token, name_2_node)?;
                 select_or_node.child_nodes.push(sub_node);
             }
             return Result::Ok(Box::new(select_or_node));
@@ -448,7 +444,7 @@ impl ConditionCompiler {
             }
 
             let select_sub_node =
-                self.to_selectnode(sub_tokens.into_iter().next().unwrap(), name_2_node)?;
+                Self::to_selectnode(sub_tokens.into_iter().next().unwrap(), name_2_node)?;
             let select_not_node = NotSelectionNode::new(select_sub_node);
             return Result::Ok(Box::new(select_not_node));
         }

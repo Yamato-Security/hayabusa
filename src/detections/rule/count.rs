@@ -44,7 +44,7 @@ pub fn countup(
     field_value: String,
     record_time_value: DateTime<Utc>,
 ) {
-    let value_map = rule.countdata.entry(key).or_insert(Vec::new());
+    let value_map = rule.countdata.entry(key).or_default();
     value_map.push(AggRecordTimeInfo {
         field_record_value: field_value,
         record_time: record_time_value,
