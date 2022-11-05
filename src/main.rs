@@ -1020,8 +1020,7 @@ mod tests {
 
     #[test]
     fn test_collect_evtxfiles() {
-        let files =
-            App::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
+        let files = App::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
         assert_eq!(3, files.len());
 
         files.iter().for_each(|file| {
