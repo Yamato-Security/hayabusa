@@ -31,7 +31,7 @@ lazy_static! {
         .to_str()
         .unwrap()
     );
-    pub static ref LOAEDED_PROFILE_ALIAS: HashSet<String> = HashSet::from_iter(
+    pub static ref LOADED_PROFILE_ALIAS: HashSet<String> = HashSet::from_iter(
         PROFILES
             .as_ref()
             .unwrap_or(&Nested::<Vec<CompactString>>::new())
