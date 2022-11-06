@@ -555,6 +555,12 @@ impl Detection {
                         );
                         profile_converter.insert(CompactString::from("%OtherTags%"), tags);
                     }
+                    "%Status%" => {
+                        profile_converter.insert(
+                            CompactString::from("%Status%"),
+                            CompactString::from(rule.yaml["status"].as_str().unwrap_or("-")),
+                        );
+                    }
                     "%RuleID%" => {
                         profile_converter.insert(
                             CompactString::from("%RuleID%"),
