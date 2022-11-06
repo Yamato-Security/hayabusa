@@ -403,6 +403,16 @@ impl Detection {
                             CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
                         );
                     }
+                    "%Provider%" => {
+                        profile_converter.insert(
+                            CompactString::from("%Provider%"),
+                            CompactString::from(
+                                record_info.record["Event"]["Provider_attributes"]["Name"]
+                                    .to_string()
+                                    .replace('\"', ""),
+                            ),
+                        );
+                    }
                     _ => {}
                 }
             }
@@ -567,6 +577,11 @@ impl Detection {
                             CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
                         );
                     }
+                    "%Provider%" => {
+                        profile_converter
+                            .insert(CompactString::from("%Provider%"), CompactString::from("-"));
+                    }
+
                     _ => {}
                 }
             }
