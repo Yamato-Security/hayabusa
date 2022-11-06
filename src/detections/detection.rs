@@ -407,7 +407,8 @@ impl Detection {
                         profile_converter.insert(
                             CompactString::from("%Provider%"),
                             CompactString::from(
-                                record_info.record["Event"]["Provider_attributes"]["Name"]
+                                record_info.record["Event"]["System"]["Provider_attributes"]
+                                    ["Name"]
                                     .to_string()
                                     .replace('\"', ""),
                             ),
