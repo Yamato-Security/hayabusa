@@ -397,6 +397,12 @@ impl Detection {
                             CompactString::from(rule.yaml["status"].as_str().unwrap_or("-")),
                         );
                     }
+                    "%RuleID%" => {
+                        profile_converter.insert(
+                            CompactString::from("%RuleID%"),
+                            CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
+                        );
+                    }
                     _ => {}
                 }
             }
@@ -548,6 +554,12 @@ impl Detection {
                                 .join(" ¦ "),
                         );
                         profile_converter.insert(CompactString::from("%OtherTags%"), tags);
+                    }
+                    "%RuleID%" => {
+                        profile_converter.insert(
+                            CompactString::from("%RuleID%"),
+                            CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
+                        );
                     }
                     _ => {}
                 }

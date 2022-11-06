@@ -56,6 +56,7 @@ lazy_static! {
         "%RuleCreationDate%",
         "%RuleModifiedDate%",
         "%Status%",
+        "%RuleID%",
     ];
     pub static ref PRELOAD_PROFILE_REGEX: RegexSet = RegexSet::new(&*PRELOAD_PROFILE).unwrap();
 }
