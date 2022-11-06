@@ -68,6 +68,7 @@ super-verbose:
     Timestamp: "%Timestamp%"
     Computer: "%Computer%"
     Channel: "%Channel%"
+    Provider: "%Provider%"
     EventID: "%EventID%"
     Level: "%Level%"
     MitreTactics: "%MitreTactics%"
