@@ -3,7 +3,7 @@ extern crate csv;
 use crate::detections::configs;
 use crate::detections::utils::{format_time, write_color_buffer};
 use crate::options::profile::{
-    LOAEDED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES,
+    LOADED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -213,7 +213,7 @@ impl Detection {
                 .as_ref()
                 .unwrap_or(&"-".to_string()),
         );
-        let rec_id = if LOAEDED_PROFILE_ALIAS.contains("%RecordID%") {
+        let rec_id = if LOADED_PROFILE_ALIAS.contains("%RecordID%") {
             CompactString::from(
                 get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
                     .unwrap_or_default(),
@@ -235,7 +235,7 @@ impl Detection {
             Some(str) => CompactString::from(str),
             None => recinfo.to_owned(),
         };
-        let opt_record_info = if LOAEDED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
+        let opt_record_info = if LOADED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
             recinfo
         } else {
             CompactString::from("-")
