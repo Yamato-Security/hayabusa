@@ -1,5 +1,19 @@
 # Changes
 
+## 1.x.x [2022/xx/xx]
+
+**New Features:**
+
+- xxx
+
+**Enhancements:**
+
+- Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
+
+**Bug Fixes:**
+
+- xxx
+
 ## 1.8.0 [2022/11/07]
 
 **New Features:**

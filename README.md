@@ -228,6 +228,8 @@ If the update fails, you may need to rename the `rules` folder and try again.
 
 If you have Rust installed, you can compile from source with the following command:
 
+Note: To compile, you need a Rust(rustc) version of `1.65.0` or higher.
+
 ```bash
 cargo build --release
 ```

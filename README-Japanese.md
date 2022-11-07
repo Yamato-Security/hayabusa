@@ -234,11 +234,14 @@ hayabusa-1.8.0-win-x64.exe -u
 
 Rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
+注意: hayabusaをコンパイルするためにはRust(rustc)が`1.65.0`以上であることが必要です。
+
 ```bash
 cargo build --release
 ```
 
 以下のコマンドで定期的にRustをアップデートしてください：
+
 ```bash
 rustup update stable
 ```
