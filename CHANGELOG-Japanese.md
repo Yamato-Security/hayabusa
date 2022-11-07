@@ -8,7 +8,7 @@
 
 **改善:**
 
-- xxx
+- インポートしているcrateのrust versionによるビルドエラーを回避するためにCargo.tomlに`rust_version` を追加した。(#802) (@hitenkoku)
 
 **バグ修正:**
 

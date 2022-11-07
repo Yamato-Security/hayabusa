@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- xxx
+- Added `rust_version` field in Cargo.toml to avoid dependencies rust version error. (#802) (@hitenkoku)
 
 **Bug Fixes:**
 
