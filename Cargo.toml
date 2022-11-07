@@ -3,6 +3,7 @@ name = "hayabusa"
 version = "1.8.0"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
+rust_version = "1.65.0"
 
 [dependencies]
 itertools = "*"
