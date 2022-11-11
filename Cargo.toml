@@ -5,6 +5,8 @@ authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 
 [dependencies]
+regex = "*"
+pcre2 = "*"
 itertools = "*"
 dashmap = "*"
 clap = { version = "3.*", features = ["derive", "cargo"]}
@@ -13,7 +15,6 @@ quick-xml = {version = "0.25.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
 serde_derive = "1.*"
-regex = "1"
 csv = "1.1.*"
 base64 = "*"
 flate2 = "1.*"

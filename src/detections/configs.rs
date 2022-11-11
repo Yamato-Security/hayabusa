@@ -6,7 +6,7 @@ use clap::{App, CommandFactory, Parser};
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use nested::Nested;
-use regex::Regex;
+use pcre2::bytes::Regex as Pcre2;
 use std::env::current_exe;
 use std::path::PathBuf;
 use std::sync::RwLock;
@@ -31,8 +31,8 @@ lazy_static! {
         .to_str()
         .unwrap()
     );
-    pub static ref IDS_REGEX: Regex =
-        Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
+    pub static ref IDS_REGEX: Pcre2 =
+        Pcre2::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
 }

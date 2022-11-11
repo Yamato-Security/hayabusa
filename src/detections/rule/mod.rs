@@ -1,5 +1,3 @@
-extern crate regex;
-
 use chrono::{DateTime, Utc};
 
 use hashbrown::HashMap;

@@ -1,13 +1,13 @@
 use crate::detections::configs;
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use hashbrown::HashMap;
-use regex::Regex;
+use pcre2::bytes::Regex as Pcre2;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 #[derive(Debug)]
 pub struct DataFilterRule {
-    pub regex_rule: Regex,
+    pub regex_rule: Pcre2,
     pub replace_str: String,
 }
 
@@ -72,7 +72,7 @@ impl RuleExclude {
             let v = v.unwrap().split('#').collect::<Vec<&str>>()[0]
                 .trim()
                 .to_string();
-            if v.is_empty() || !configs::IDS_REGEX.is_match(&v) {
+            if v.is_empty() || !configs::IDS_REGEX.is_match(&v.as_bytes().to_vec()).unwrap() {
                 // 空行は無視する。IDの検証
                 continue;
             }

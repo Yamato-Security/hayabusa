@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use regex::Regex;
+use pcre2::bytes::Regex as Pcre2;
 
 use self::selectionnodes::{
     AndSelectionNode, NotSelectionNode, OrSelectionNode, RefSelectionNode, SelectionNode,
@@ -9,13 +9,13 @@ use hashbrown::HashMap;
 use std::sync::Arc;
 
 lazy_static! {
-    pub static ref CONDITION_REGEXMAP: Vec<Regex> = vec![
-        Regex::new(r"^\(").unwrap(),
-        Regex::new(r"^\)").unwrap(),
-        Regex::new(r"^ ").unwrap(),
-        Regex::new(r"^\w+").unwrap(),
+    pub static ref CONDITION_REGEXMAP: Vec<Pcre2> = vec![
+        Pcre2::new(r"^\(").unwrap(),
+        Pcre2::new(r"^\)").unwrap(),
+        Pcre2::new(r"^ ").unwrap(),
+        Pcre2::new(r"^\w+").unwrap(),
     ];
-    pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
+    pub static ref RE_PIPE: Pcre2 = Pcre2::new(r"\|.*").unwrap();
 }
 
 #[derive(Debug, Clone)]
@@ -118,9 +118,10 @@ impl ConditionCompiler {
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
         // パイプはここでは処理しない
-        let captured = self::RE_PIPE.captures(&condition_str);
+        let condition_vec = condition_str.as_bytes().to_vec();
+        let captured = self::RE_PIPE.captures(&condition_vec).unwrap();
         let condition_str = if let Some(cap) = captured {
-            let captured = cap.get(0).unwrap().as_str().to_string();
+            let captured = String::from_utf8(cap.get(0).unwrap().as_bytes().to_vec()).unwrap();
             condition_str.replacen(&captured, "", 1)
         } else {
             condition_str
@@ -191,14 +192,16 @@ impl ConditionCompiler {
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
             let captured = self::CONDITION_REGEXMAP.iter().find_map(|regex| {
-                return regex.captures(cur_condition_str.as_str());
+                return regex.captures(&cur_condition_str.as_bytes()).unwrap();
             });
             if captured.is_none() {
                 // トークンにマッチしないのはありえないという方針でパースしています。
                 return Result::Err("An unusable character was found.".to_string());
             }
 
-            let mached_str = captured.unwrap().get(0).unwrap().as_str();
+            let mached_string =
+                String::from_utf8(captured.unwrap().get(0).unwrap().as_bytes().to_vec()).unwrap();
+            let mached_str = mached_string.as_str();
             let token = self.to_enum(mached_str.to_string());
             if let ConditionToken::Space = token {
                 // 空白は特に意味ないので、読み飛ばす。

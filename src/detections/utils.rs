@@ -1,6 +1,5 @@
 extern crate base64;
 extern crate csv;
-extern crate regex;
 
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 
@@ -15,7 +14,7 @@ use termcolor::Color;
 use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
-use regex::Regex;
+use pcre2::bytes::Regex as Pcre2;
 use serde_json::Value;
 use std::cmp::Ordering;
 use std::fs::File;
@@ -39,9 +38,9 @@ pub fn concat_selection_key(key_list: &Nested<String>) -> String {
         });
 }
 
-pub fn check_regex(string: &str, regex_list: &[Regex]) -> bool {
+pub fn check_regex(string: &str, regex_list: &[Pcre2]) -> bool {
     for regex in regex_list {
-        if !regex.is_match(string) {
+        if !regex.is_match(&string.as_bytes().to_vec()).unwrap() {
             continue;
         }
 
@@ -51,9 +50,9 @@ pub fn check_regex(string: &str, regex_list: &[Regex]) -> bool {
     false
 }
 
-pub fn check_allowlist(target: &str, regexes: &[Regex]) -> bool {
+pub fn check_allowlist(target: &str, regexes: &[Pcre2]) -> bool {
     for regex in regexes {
-        if regex.is_match(target) {
+        if regex.is_match(&target.as_bytes().to_vec()).unwrap() {
             return true;
         }
     }
@@ -499,7 +498,7 @@ mod tests {
     use std::path::Path;
 
     use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
-    use regex::Regex;
+    use pcre2::bytes::Regex;
     use serde_json::Value;
 
     #[test]

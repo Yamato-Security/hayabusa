@@ -4,9 +4,10 @@ use crate::detections::utils::check_setting_path;
 use crate::yaml;
 use compact_str::CompactString;
 use hashbrown::HashSet;
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use nested::Nested;
-use regex::RegexSet;
+use pcre2::bytes::Regex as Pcre2;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -59,7 +60,12 @@ lazy_static! {
         "%RuleID%",
         "%Provider%",
     ];
-    pub static ref PRELOAD_PROFILE_REGEX: RegexSet = RegexSet::new(&*PRELOAD_PROFILE).unwrap();
+    pub static ref PRELOAD_PROFILE_REGEX: Option<Vec<Result<Pcre2, pcre2::Error>>> = Some(
+        PRELOAD_PROFILE
+            .iter()
+            .map(|s| { Pcre2::new(s) })
+            .collect_vec()
+    );
 }
 
 // 指定されたパスのprofileを読み込む処理

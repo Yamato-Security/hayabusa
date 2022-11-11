@@ -10,7 +10,7 @@ use hashbrown::HashSet;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use nested::Nested;
-use regex::Regex;
+use pcre2::bytes::Regex as Pcre2;
 use serde_json::Value;
 use std::env;
 use std::fs::{create_dir, File};
@@ -37,8 +37,8 @@ lazy_static! {
     #[derive(Debug,PartialEq, Eq, Ord, PartialOrd)]
     pub static ref MESSAGES: DashMap<DateTime<Utc>, Vec<DetectInfo>> = DashMap::new();
     pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
-    pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
-    pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
+    pub static ref ALIASREGEX: Pcre2 = Pcre2::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
+    pub static ref SUFFIXREGEX: Pcre2 = Pcre2::new(r"\[([0-9]+)\]").unwrap();
     pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().args.quiet_errors;
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
     pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().args.metrics;
@@ -187,8 +187,11 @@ fn convert_profile_reserved_info(
 fn parse_message(event_record: &Value, output: CompactString) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<String, String> = HashMap::new();
-    for caps in ALIASREGEX.captures_iter(&return_message) {
-        let full_target_str = &caps[0];
+    for caps in ALIASREGEX.captures_iter(&return_message.as_bytes().to_vec()) {
+        let full_target =
+            String::from_utf8(caps.unwrap().get(0).unwrap().as_bytes().to_vec()).unwrap();
+
+        let full_target_str = full_target.as_str();
         let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
         let target_str = full_target_str
             .chars()
@@ -210,9 +213,16 @@ fn parse_message(event_record: &Value, output: CompactString) -> CompactString {
                 tmp_event_record = record;
             }
         }
-        let suffix_match = SUFFIXREGEX.captures(&target_str);
-        let suffix: i64 = match suffix_match {
-            Some(cap) => cap.get(1).map_or(-1, |a| a.as_str().parse().unwrap_or(-1)),
+        let target_vec = target_str.as_bytes().to_vec();
+        let suffix_match = SUFFIXREGEX.captures(&target_vec);
+        let suffix: i64 = match suffix_match.unwrap() {
+            Some(cap) => cap.get(1).map_or(-1, |a| {
+                String::from_utf8(a.as_bytes().to_vec())
+                    .unwrap()
+                    .as_str()
+                    .parse()
+                    .unwrap_or(-1)
+            }),
             None => -1,
         };
         if suffix >= 1 {

@@ -1,5 +1,6 @@
 use nested::Nested;
-use regex::Regex;
+use pcre2::bytes::Regex as Pcre2;
+use regex;
 use std::{cmp::Ordering, collections::VecDeque};
 use yaml_rust::Yaml;
 
@@ -76,7 +77,7 @@ impl LeafMatcher for MinlengthMatcher {
 /// 正規表現のリストが記載されたファイルを読み取って、比較するロジックを表すクラス
 /// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 pub struct RegexesFileMatcher {
-    regexes: Vec<Regex>,
+    regexes: Vec<Pcre2>,
 }
 
 impl RegexesFileMatcher {
@@ -116,7 +117,7 @@ impl LeafMatcher for RegexesFileMatcher {
         let regexes_strs = regexes_strs.unwrap();
         self.regexes = regexes_strs
             .iter()
-            .map(|regex_str| Regex::new(regex_str).unwrap())
+            .map(|regex_str| Pcre2::new(regex_str).unwrap())
             .collect();
 
         Result::Ok(())
@@ -133,7 +134,7 @@ impl LeafMatcher for RegexesFileMatcher {
 /// ファイルに列挙された文字列に一致する場合に検知するロジックを表す
 /// DeepBlueCLIのcheck_cmdメソッドの一部に同様の処理が実装されていた。
 pub struct AllowlistFileMatcher {
-    regexes: Vec<Regex>,
+    regexes: Vec<Pcre2>,
 }
 
 impl AllowlistFileMatcher {
@@ -173,7 +174,7 @@ impl LeafMatcher for AllowlistFileMatcher {
         self.regexes = regexes_strs
             .unwrap()
             .iter()
-            .map(|regex_str| Regex::new(regex_str).unwrap())
+            .map(|regex_str| Pcre2::new(regex_str).unwrap())
             .collect();
 
         Result::Ok(())
@@ -190,7 +191,7 @@ impl LeafMatcher for AllowlistFileMatcher {
 /// デフォルトのマッチクラス
 /// ワイルドカードの処理やパイプ
 pub struct DefaultMatcher {
-    re: Option<Regex>,
+    re: Option<Pcre2>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
     eqfield_key: Option<String>,
@@ -214,9 +215,17 @@ impl DefaultMatcher {
     /// 判定対象の文字列とこのmatcherが保持する正規表現が完全にマッチした場合のTRUEを返します。
     /// 例えば、判定対象文字列が"abc"で、正規表現が"ab"の場合、正規表現は判定対象文字列の一部分にしか一致していないので、この関数はfalseを返します。
     fn is_regex_fullmatch(&self, value: &str) -> bool {
-        return self.re.as_ref().unwrap().find_iter(value).any(|match_obj| {
-            return match_obj.as_str() == value;
-        });
+        return self
+            .re
+            .as_ref()
+            .unwrap()
+            .find_iter(&value.as_bytes().to_vec())
+            .any(|match_obj| {
+                return String::from_utf8(match_obj.unwrap().as_bytes().to_vec())
+                    .unwrap()
+                    .as_str()
+                    == value;
+            });
     }
 
     /// Hayabusaのルールファイルのフィールド名とそれに続いて指定されるパイプを、正規表現形式の文字列に変換します。
@@ -316,7 +325,7 @@ impl LeafMatcher for DefaultMatcher {
 
             let pattern = DefaultMatcher::from_pattern_to_regex_str(pattern, &self.pipes);
             // Pipeで処理されたパターンを正規表現に変換
-            let re_result = Regex::new(&pattern);
+            let re_result = Pcre2::new(&pattern);
             if re_result.is_err() {
                 let errmsg = format!(
                     "Cannot parse regex. [regex:{}, key:{}]",
@@ -367,7 +376,11 @@ impl LeafMatcher for DefaultMatcher {
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
-            self.re.as_ref().unwrap().is_match(event_value_str)
+            self.re
+                .as_ref()
+                .unwrap()
+                .is_match(&event_value_str.as_bytes().to_vec())
+                .unwrap()
         } else {
             // 通常の検索はこっち
             self.is_regex_fullmatch(event_value_str)

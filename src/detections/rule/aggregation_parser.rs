@@ -1,21 +1,21 @@
 use lazy_static::lazy_static;
-use regex::Regex;
+use pcre2::bytes::Regex as Pcre2;
 
 lazy_static! {
     // ここで字句解析するときに使う正規表現の一覧を定義する。
     // ここはSigmaのGithubレポジトリにある、toos/sigma/parser/condition.pyのSigmaConditionTokenizerのtokendefsを参考にしています。
-    pub static ref AGGREGATION_REGEXMAP: Vec<Regex> = vec![
-        Regex::new(r"^count\( *\w* *\)").unwrap(), // countの式
-        Regex::new(r"^ ").unwrap(),
-        Regex::new(r"^by").unwrap(),
-        Regex::new(r"^==").unwrap(),
-        Regex::new(r"^<=").unwrap(),
-        Regex::new(r"^>=").unwrap(),
-        Regex::new(r"^<").unwrap(),
-        Regex::new(r"^>").unwrap(),
-        Regex::new(r"^\w+").unwrap(),
+    pub static ref AGGREGATION_REGEXMAP: Vec<Pcre2> = vec![
+        Pcre2::new(r"^count\( *\w* *\)").unwrap(), // countの式
+        Pcre2::new(r"^ ").unwrap(),
+        Pcre2::new(r"^by").unwrap(),
+        Pcre2::new(r"^==").unwrap(),
+        Pcre2::new(r"^<=").unwrap(),
+        Pcre2::new(r"^>=").unwrap(),
+        Pcre2::new(r"^<").unwrap(),
+        Pcre2::new(r"^>").unwrap(),
+        Pcre2::new(r"^\w+").unwrap(),
     ];
-    pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
+    pub static ref RE_PIPE: Pcre2 = Pcre2::new(r"\|.*").unwrap();
 }
 
 #[derive(Debug)]
@@ -66,18 +66,17 @@ impl AggegationConditionCompiler {
         condition_str: String,
     ) -> Result<Option<AggregationParseInfo>, String> {
         // パイプの部分だけを取り出す
-        let captured = self::RE_PIPE.captures(&condition_str);
-        if captured.is_none() {
+        let binding = condition_str.into_bytes();
+        let captured = self::RE_PIPE.captures(&binding);
+        if captured.is_ok() {
             // パイプが無いので終了
             return Result::Ok(Option::None);
         }
         // ハイプ自体は削除してからパースする。
-        let aggregation_str = captured
+        let aggregation_matchd = captured.unwrap().unwrap().get(0).unwrap();
+
+        let aggregation_str = String::from_utf8(aggregation_matchd.as_bytes().to_vec())
             .unwrap()
-            .get(0)
-            .unwrap()
-            .as_str()
-            .to_string()
             .replacen('|', "", 1);
 
         let tokens = self.tokenize(aggregation_str)?;
@@ -95,24 +94,36 @@ impl AggegationConditionCompiler {
         let mut tokens = Vec::new();
         while !cur_condition_str.is_empty() {
             let captured = self::AGGREGATION_REGEXMAP.iter().find_map(|regex| {
-                return regex.captures(cur_condition_str.as_str());
+                return regex.captures(&cur_condition_str.as_bytes()).unwrap();
             });
             if captured.is_none() {
                 // トークンにマッチしないのはありえないという方針でパースしています。
                 return Result::Err("An unusable character was found.".to_string());
             }
 
-            let mached_str = captured.unwrap().get(0).unwrap().as_str();
-            let token = self.to_enum(mached_str.to_string());
+            let mached = captured.unwrap().get(0).unwrap();
+            let token = self.to_enum(String::from_utf8(mached.as_bytes().to_vec()).unwrap());
 
             if let AggregationConditionToken::Space = token {
                 // 空白は特に意味ないので、読み飛ばす。
-                cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+                cur_condition_str = cur_condition_str.replacen(
+                    String::from_utf8(mached.as_bytes().to_vec())
+                        .unwrap()
+                        .as_str(),
+                    "",
+                    1,
+                );
                 continue;
             }
 
             tokens.push(token);
-            cur_condition_str = cur_condition_str.replacen(mached_str, "", 1);
+            cur_condition_str = cur_condition_str.replacen(
+                String::from_utf8(mached.as_bytes().to_vec())
+                    .unwrap()
+                    .as_str(),
+                "",
+                1,
+            );
         }
 
         Result::Ok(tokens)
