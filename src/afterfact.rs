@@ -2,7 +2,7 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
-use crate::options::profile::PROFILES;
+use crate::options::profile::{Profile, PROFILES};
 use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -201,7 +201,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
     all_record_cnt: u128,
-    profile: &Nested<Vec<CompactString>>,
+    profile: &Vec<(CompactString, Profile)>,
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
@@ -258,7 +258,7 @@ fn emit_csv<W: std::io::Write>(
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
         for (_, detect_info) in detect_infos.iter().enumerate() {
-            if !detect_info.detail.starts_with("[condition]") {
+            if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
                     time, detect_info.eventid
@@ -308,7 +308,7 @@ fn emit_csv<W: std::io::Write>(
                         detect_info
                             .ext_field
                             .iter()
-                            .map(|x| x[0].to_string().trim().to_string()),
+                            .map(|x| x.0.to_string().trim().to_string()),
                     )?;
                     plus_header = false;
                 }
@@ -316,7 +316,7 @@ fn emit_csv<W: std::io::Write>(
                     detect_info
                         .ext_field
                         .iter()
-                        .map(|x| x[1].to_string().trim().to_string()),
+                        .map(|x| x.1.to_value().trim().to_string()),
                 )?;
             }
 
@@ -581,27 +581,27 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(data: &Nested<Vec<CompactString>>, header: bool) -> String {
+fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: bool) -> String {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d[0], ColPos::First))
+                ret.push(_format_cellpos(&d.0, ColPos::First))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d[0], ColPos::Last))
+                ret.push(_format_cellpos(&d.0, ColPos::Last))
             } else {
-                ret.push(_format_cellpos(&d[0], ColPos::Other))
+                ret.push(_format_cellpos(&d.0, ColPos::Other))
             }
         }
     } else {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d[1], ColPos::First).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d.1.to_value(), ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d[1], ColPos::Last).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Last).replace('|', "🦅"))
             } else {
-                ret.push(_format_cellpos(&d[1], ColPos::Other).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Other).replace('|', "🦅"))
             }
         }
     }
@@ -1059,23 +1059,26 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
 fn output_json_str(
-    ext_field: &Nested<Vec<CompactString>>,
-    profile: &Nested<Vec<CompactString>>,
+    ext_field: &Vec<(CompactString, Profile)>,
+    profile: &Vec<(CompactString, Profile)>,
     jsonl_output_flag: bool,
 ) -> String {
     let mut target: Vec<String> = vec![];
-    let profile_map: HashMap<String, String> =
-        HashMap::from_iter(profile.iter().map(|p| (p[0].to_string(), p[1].to_string())));
-    for ef in ext_field.iter() {
-        let [key, val] = [ef[0].to_string(), ef[1].to_string()];
-        let output_value_fmt = profile_map.get(&key).unwrap();
-        let vec_data = _get_json_vec(output_value_fmt, &val);
+    let profile_map: HashMap<String, String> = HashMap::from_iter(
+        profile
+            .iter()
+            .map(|p| (p.0.to_string(), p.1.to_value().to_string())),
+    );
+    for (key, profile) in ext_field.iter() {
+        let val = profile.to_value();
+        let output_value_fmt = profile_map.get(&key.to_string()).unwrap();
+        let vec_data = _get_json_vec(output_value_fmt, &val.to_string());
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = val.split(": ").collect();
             let output_val =
                 _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%AllFieldInfo%"));
             target.push(_create_json_output_format(
-                &key,
+                &key.to_string(),
                 &output_val,
                 key.starts_with('\"'),
                 output_val.starts_with('\"'),
@@ -1109,7 +1112,7 @@ fn output_json_str(
                 let mut tmp = if key_idx >= key_index_stock.len() {
                     String::default()
                 } else if value_idx == 0 && !value.is_empty() {
-                    key.to_owned()
+                    key.to_string().to_owned()
                 } else {
                     key_index_stock[key_idx].to_string()
                 };
@@ -1327,11 +1330,10 @@ mod tests {
     use crate::afterfact::format_time;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
-    use crate::options::profile::load_profile;
+    use crate::options::profile::{load_profile, Profile};
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
     use hashbrown::HashMap;
-    use nested::Nested;
     use serde_json::Value;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
@@ -1356,7 +1358,7 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let output_profile: Nested<Vec<CompactString>> = load_profile(
+        let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",
         )
@@ -1379,58 +1381,59 @@ mod tests {
                 }
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
-            let mut profile_converter: HashMap<CompactString, CompactString> = HashMap::from([
+            let mut profile_converter: HashMap<String, Profile> = HashMap::from([
                 (
-                    CompactString::from("%Timestamp%"),
-                    CompactString::from(format_time(&expect_time, false)),
+                    "%Timestamp%".to_string(),
+                    Profile::Timestamp(CompactString::from(format_time(&expect_time, false)))
                 ),
                 (
-                    CompactString::from("%Computer%"),
-                    CompactString::from(test_computername),
+                    "%Computer%".to_string(),
+                    Profile::Computer(CompactString::from(test_computername))
                 ),
                 (
-                    CompactString::from("%Channel%"),
+                    "%Channel%".to_string(),
+                    Profile::Channel(
                     CompactString::from(
                         mock_ch_filter
                             .get(&"Security".to_ascii_lowercase())
                             .unwrap_or(&String::default()),
-                    ),
+                    )),
                 ),
                 (
-                    CompactString::from("%Level%"),
-                    CompactString::from(test_level),
+                    "%Level%".to_string(),
+                    Profile::Level(CompactString::from(test_level)),
                 ),
                 (
-                    CompactString::from("%EventID%"),
-                    CompactString::from(test_eventid),
+                    "%EventID%".to_string(),
+                    Profile::EventID(CompactString::from(test_eventid))
                 ),
                 (
-                    CompactString::from("%MitreAttack%"),
-                    CompactString::from(test_attack),
+                    "%MitreAttack%".to_string(),
+                    Profile::MitreTactics(CompactString::from(test_attack))
                 ),
                 (
-                    CompactString::from("%RecordID%"),
-                    CompactString::from(test_record_id),
+                    "%RecordID%".to_string(),
+                    Profile::RecordID(CompactString::from(test_record_id))
                 ),
                 (
-                    CompactString::from("%RuleTitle%"),
-                    CompactString::from(test_title),
+                    "%RuleTitle%".to_string(),
+                    Profile::RuleTitle(CompactString::from(test_title))
                 ),
                 (
-                    CompactString::from("%AllFieldInfo%"),
-                    CompactString::from(test_recinfo),
+                    "%AllFieldInfo%".to_string(),
+                    Profile::AllFieldInfo(CompactString::from(test_recinfo))
                 ),
                 (
-                    CompactString::from("%RuleFile%"),
-                    CompactString::from(test_rulepath),
+                    "%RuleFile%".to_string(),
+                    Profile::RuleFile(CompactString::from(test_rulepath))
                 ),
                 (
-                    CompactString::from("%EvtxFile%"),
-                    CompactString::from(test_filepath),
+                    "%EvtxFile%".to_string(),
+                    Profile::EvtxFile(CompactString::from(test_filepath))
                 ),
                 (
-                    CompactString::from("%Tags%"),
-                    CompactString::from(test_attack),
+                    "%Tags%".to_string(),
+                    Profile::MitreTags(CompactString::from(test_attack)),
                 ),
             ]);
             message::insert(
@@ -1532,44 +1535,43 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
-        let mut data: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
-        data.push(vec![
+        let mut data: Vec<(CompactString, Profile)> = vec![];
+        data.push((
             CompactString::new("Timestamp"),
-            CompactString::new(&format_time(&test_timestamp, false)),
-        ]);
-        data.push(vec![
+            Profile::Timestamp(CompactString::new(&format_time(&test_timestamp, false))),
+        ));
+        data.push((
             CompactString::new("Computer"),
-            CompactString::new(test_computername),
-        ]);
-        data.push(vec![
+            Profile::Computer(CompactString::new(test_computername)),
+        ));
+        data.push((
             CompactString::new("Channel"),
-            CompactString::new(test_channel),
-        ]);
-        data.push(vec![
+            Profile::Channel(CompactString::new(test_channel)),
+        ));
+        data.push((
             CompactString::new("EventID"),
-            CompactString::new(test_eventid),
-        ]);
-        data.push(vec![
+            Profile::EventID(CompactString::new(test_eventid)),
+        ));
+        data.push((
             CompactString::new("Level"),
-            CompactString::new(test_level),
-        ]);
-        data.push(vec![
+            Profile::Level(CompactString::new(test_level)),
+        ));
+        data.push((
             CompactString::new("RecordID"),
-            CompactString::new(test_recid),
-        ]);
-        data.push(vec![
+            Profile::RecordID(CompactString::new(test_recid)),
+        ));
+        data.push((
             CompactString::new("RuleTitle"),
-            CompactString::new(test_title),
-        ]);
-        data.push(vec![
+            Profile::RuleTitle(CompactString::new(test_title)),
+        ));
+        data.push((
             CompactString::new("Details"),
-            CompactString::new(output),
-        ]);
-        data.push(vec![
+            Profile::Details(CompactString::new(output)),
+        ));
+        data.push((
             CompactString::new("RecordInformation"),
-            CompactString::new(test_recinfo),
-        ]);
-
+            Profile::AllFieldInfo(CompactString::new(test_recinfo)),
+        ));
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
     }

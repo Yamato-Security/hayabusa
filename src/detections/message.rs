@@ -1,7 +1,8 @@
 extern crate lazy_static;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
-use crate::options::profile::PROFILES;
+use crate::options::profile::Profile::{AllFieldInfo, Details};
+use crate::options::profile::{Profile, PROFILES};
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
 use dashmap::DashMap;
@@ -28,7 +29,8 @@ pub struct DetectInfo {
     pub eventid: CompactString,
     pub detail: CompactString,
     pub record_information: CompactString,
-    pub ext_field: Nested<Vec<CompactString>>,
+    pub ext_field: Vec<(CompactString, Profile)>,
+    pub is_condition : bool,
 }
 
 pub struct AlertMessage {}
@@ -123,7 +125,7 @@ pub fn insert(
     output: CompactString,
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
-    profile_converter: &mut HashMap<CompactString, CompactString>,
+    profile_converter: &mut HashMap<String, Profile>,
     is_agg: bool,
 ) {
     if !is_agg {
@@ -137,50 +139,44 @@ pub fn insert(
             parsed_detail
         };
     }
-    let mut exist_detail = false;
-    PROFILES.as_ref().unwrap().iter().for_each(|p_element| {
-        if p_element[1].to_string().contains("%Details%") {
-            exist_detail = true;
-        }
-    });
-    if exist_detail {
-        profile_converter.insert(
-            CompactString::from("%Details%"),
-            detect_info.detail.to_owned(),
-        );
+    if PROFILES
+        .as_ref()
+        .unwrap()
+        .iter()
+        .any(|(_k, p)| *p == Details(Default::default()))
+    {
+        if !detect_info.detail.is_empty() {
+            let d = detect_info.detail.to_owned();
+            if d.starts_with("[condition]") {
+                detect_info.is_condition = true
+            }
+            profile_converter.insert("Details".to_string(), Details(d));
+            detect_info.detail = CompactString::default(); // メモリ使用量削減のため、文字列をクリア
+        };
     }
-    let mut replaced_converted_info: Nested<Vec<CompactString>> =
-        Nested::<Vec<CompactString>>::new();
-    for di in detect_info.ext_field.iter() {
-        let val = &di[1];
-        let converted_reserve_info = convert_profile_reserved_info(val, profile_converter);
-        if val.contains("%AllFieldInfo%") || val.contains("%Details%") {
-            replaced_converted_info.push(vec![
-                di[0].to_owned(),
-                CompactString::new(&converted_reserve_info),
-            ]);
-        } else {
-            replaced_converted_info.push(vec![
-                di[0].to_owned(),
-                parse_message(event_record, converted_reserve_info),
-            ]);
+    let mut replaced_converted_info: Vec<(CompactString, Profile)> = vec![];
+    for (key, profile) in detect_info.ext_field.iter() {
+        match profile {
+            Details(_) | AllFieldInfo(_) => {
+                if let Some(p) = profile_converter.get(key.to_string().as_str()) {
+                    replaced_converted_info.push((key.to_owned(), p.to_owned()))
+                }
+            }
+            _ => {
+                if let Some(p) = profile_converter.get(key.to_string().as_str()) {
+                    replaced_converted_info.push((
+                        key.to_owned(),
+                        profile.convert(&parse_message(
+                            event_record,
+                            CompactString::new(p.to_value()),
+                        )),
+                    ))
+                }
+            }
         }
     }
     detect_info.ext_field = replaced_converted_info;
-
     insert_message(detect_info, time)
-}
-
-/// profileで用いられる予約語の情報を変換する関数
-fn convert_profile_reserved_info(
-    output: &CompactString,
-    config_reserved_info: &HashMap<CompactString, CompactString>,
-) -> CompactString {
-    let mut ret = output.to_owned();
-    config_reserved_info.iter().for_each(|(k, v)| {
-        ret = CompactString::from(ret.replace(k.as_str(), v.as_str()));
-    });
-    ret
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
@@ -373,7 +369,6 @@ mod tests {
     use chrono::Utc;
     use compact_str::CompactString;
     use hashbrown::HashMap;
-    use nested::Nested;
     use rand::Rng;
     use serde_json::Value;
     use std::thread;
@@ -658,7 +653,7 @@ mod tests {
                 eventid: CompactString::from(i.to_string()),
                 detail: CompactString::default(),
                 record_information: CompactString::default(),
-                ext_field: Nested::<Vec<CompactString>>::new(),
+                ext_field: vec![],
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }
