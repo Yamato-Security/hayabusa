@@ -1,7 +1,7 @@
 extern crate lazy_static;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
-use crate::options::profile::Profile::{AllFieldInfo, Details};
+use crate::options::profile::Profile::{AllFieldInfo, Details, Literal};
 use crate::options::profile::{Profile, PROFILES};
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
@@ -164,6 +164,7 @@ pub fn insert(
                     replaced_converted_info.push((key.to_owned(), p.to_owned()))
                 }
             }
+            Literal(_) => replaced_converted_info.push((key.to_owned(), profile.to_owned())),
             _ => {
                 if let Some(p) = profile_converter.get(key.to_string().as_str()) {
                     replaced_converted_info.push((

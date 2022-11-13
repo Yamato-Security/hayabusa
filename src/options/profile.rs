@@ -2,8 +2,8 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
-    AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, Level, MitreTactics, MitreTags,
-    NoneProfile, OtherTags, Provider, RecordID, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
+    AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, Level, Literal, MitreTactics,
+    MitreTags, OtherTags, Provider, RecordID, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
     RuleModifiedDate, RuleTitle, Status, Timestamp,
 };
 use crate::yaml;
@@ -58,33 +58,17 @@ pub enum Profile {
     RuleID(CompactString),
     Provider(CompactString),
     Details(CompactString),
-    NoneProfile,
+    Literal(CompactString), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
 impl Profile {
     pub fn to_value(&self) -> String {
         match &self {
-            Timestamp(v) => v.to_string(),
-            Computer(v) => v.to_string(),
-            Channel(v) => v.to_string(),
-            Level(v) => v.to_string(),
-            EventID(v) => v.to_string(),
-            RecordID(v) => v.to_string(),
-            RuleTitle(v) => v.to_string(),
-            AllFieldInfo(v) => v.to_string(),
-            RuleFile(v) => v.to_string(),
-            EvtxFile(v) => v.to_string(),
-            MitreTactics(v) => v.to_string(),
-            MitreTags(v) => v.to_string(),
-            OtherTags(v) => v.to_string(),
-            RuleAuthor(v) => v.to_string(),
-            RuleCreationDate(v) => v.to_string(),
-            RuleModifiedDate(v) => v.to_string(),
-            Status(v) => v.to_string(),
-            RuleID(v) => v.to_string(),
-            Provider(v) => v.to_string(),
-            Details(v) => v.to_string(),
-            _ => "".to_string(),
+            Timestamp(v) | Computer(v) | Channel(v) | Level(v) | EventID(v) | RecordID(v)
+            | RuleTitle(v) | AllFieldInfo(v) | RuleFile(v) | EvtxFile(v) | MitreTactics(v)
+            | MitreTags(v) | OtherTags(v) | RuleAuthor(v) | RuleCreationDate(v)
+            | RuleModifiedDate(v) | Status(v) | RuleID(v) | Provider(v) | Details(v)
+            | Literal(v) => v.to_string(),
         }
     }
 
@@ -136,7 +120,7 @@ impl From<&str> for Profile {
             "%RuleID%" => RuleID(Default::default()),
             "%Provider%" => Provider(Default::default()),
             "%Details%" => Details(Default::default()),
-            _ => NoneProfile,
+            s => Literal(CompactString::from(s)), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
         }
     }
 }
