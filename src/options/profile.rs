@@ -84,7 +84,7 @@ impl Profile {
             RuleID(v) => v.to_string(),
             Provider(v) => v.to_string(),
             Details(v) => v.to_string(),
-            NoneProfile => "".to_string(),
+            _ => "".to_string(),
         }
     }
 
@@ -336,10 +336,10 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use compact_str::CompactString;
-    use nested::Nested;
     use crate::detections::configs;
     use crate::options::profile::{get_profile_list, load_profile, Profile};
+    use compact_str::CompactString;
+    use nested::Nested;
 
     #[test]
     fn test_profile_enum_detail_arc_to_string() {
@@ -362,44 +362,56 @@ mod tests {
         let mut expect: Vec<(CompactString, Profile)> = vec![];
         expect.push((
             CompactString::new("Timestamp"),
-            Profile::Timestamp(Default::default())
+            Profile::Timestamp(Default::default()),
         ));
-        expect.push(
-            (CompactString::new("Computer"),
-            Profile::Computer(Default::default())));
-        expect.push(
-            (CompactString::new("Channel"),
-             Profile::Channel(Default::default())));
-        expect.push(
-            (CompactString::new("Level"),
-             Profile::Level(Default::default())));
-        expect.push(
-            (CompactString::new("EventID"),
-             Profile::EventID(Default::default())));
-        expect.push(
-            (CompactString::new("MitreTactics"),
-             Profile::MitreTactics(Default::default())));
-        expect.push(
-            (CompactString::new("RecordID"),
-             Profile::RecordID(Default::default())));
-        expect.push(
-            (CompactString::new("RuleTitle"),
-             Profile::RuleTitle(Default::default())));
-        expect.push(
-            (CompactString::new("Details"),
-             Profile::Details(Default::default())));
-        expect.push(
-            (CompactString::new("RecordInformation"),
-            Profile::AllFieldInfo(Default::default())));
-        expect.push(
-            (CompactString::new("RuleFile"),
-            Profile::RuleFile(Default::default())));
-        expect.push(
-            (CompactString::new("EvtxFile"),
-            Profile::EvtxFile(Default::default())));
-        expect.push(
-            (CompactString::new("Tags"),
-            Profile::MitreTags(Default::default())));
+        expect.push((
+            CompactString::new("Computer"),
+            Profile::Computer(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("Channel"),
+            Profile::Channel(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("Level"),
+            Profile::Level(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("EventID"),
+            Profile::EventID(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("MitreAttack"),
+            Profile::MitreTactics(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("RecordID"),
+            Profile::RecordID(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("RuleTitle"),
+            Profile::RuleTitle(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("Details"),
+            Profile::Details(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("RecordInformation"),
+            Profile::AllFieldInfo(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("RuleFile"),
+            Profile::RuleFile(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("EvtxFile"),
+            Profile::EvtxFile(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("Tags"),
+            Profile::MitreTags(Default::default()),
+        ));
 
         assert_eq!(
             Some(expect),
@@ -416,26 +428,32 @@ mod tests {
         let mut expect: Vec<(CompactString, Profile)> = vec![];
         expect.push((
             CompactString::new("Timestamp"),
-            Profile::Timestamp(Default::default())
+            Profile::Timestamp(Default::default()),
         ));
-        expect.push(
-            (CompactString::new("Computer"),
-             Profile::Computer(Default::default())));
-        expect.push(
-            (CompactString::new("Channel"),
-             Profile::Channel(Default::default())));
-        expect.push(
-            (CompactString::new("EventID"),
-             Profile::EventID(Default::default())));
-        expect.push(
-            (CompactString::new("Level"),
-             Profile::Level(Default::default())));
-        expect.push(
-            (CompactString::new("RuleTitle"),
-             Profile::RuleTitle(Default::default())));
-        expect.push(
-            (CompactString::new("Details"),
-             Profile::Details(Default::default())));
+        expect.push((
+            CompactString::new("Computer"),
+            Profile::Computer(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("Channel"),
+            Profile::Channel(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("EventID"),
+            Profile::EventID(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("Level"),
+            Profile::Level(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("RuleTitle"),
+            Profile::RuleTitle(Default::default()),
+        ));
+        expect.push((
+            CompactString::new("Details"),
+            Profile::Details(Default::default()),
+        ));
         assert_eq!(
             Some(expect),
             load_profile(
@@ -479,15 +497,15 @@ mod tests {
 
     /// yamlファイル内のプロファイル名一覧を取得する機能のテスト
     fn test_get_profile_names() {
-        let mut expect:Nested<Vec<String>> = Nested::<Vec<String>>::new();
+        let mut expect: Nested<Vec<String>> = Nested::<Vec<String>>::new();
         expect.push(vec![
             "minimal".to_string(),
             "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %RuleTitle%, %Details%"
                 .to_string(),
         ]);
-        expect.push(vec!["standard".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%".to_string()]);
-        expect.push(vec!["verbose-1".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%".to_string()]);
-        expect.push(vec!["verbose-2".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreAttack%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%".to_string()]);
+        expect.push(vec!["standard".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%".to_string()]);
+        expect.push(vec!["verbose-1".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%, %RuleFile%, %EvtxFile%".to_string()]);
+        expect.push(vec!["verbose-2".to_string(), "%Timestamp%, %Computer%, %Channel%, %EventID%, %Level%, %MitreTags%, %RecordID%, %RuleTitle%, %Details%, %AllFieldInfo%".to_string()]);
         assert_eq!(expect, get_profile_list("test_files/config/profiles.yaml"));
     }
 }

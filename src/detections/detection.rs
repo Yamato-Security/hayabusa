@@ -452,7 +452,7 @@ impl Detection {
             detail: CompactString::default(),
             record_information: opt_record_info,
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
-            is_condition: false
+            is_condition: false,
         };
         message::insert(
             &record_info.record,
@@ -611,7 +611,7 @@ impl Detection {
             detail: output,
             record_information: CompactString::default(),
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
-            is_condition: false
+            is_condition: false,
         };
         message::insert(
             &Value::default(),

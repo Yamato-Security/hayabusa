@@ -30,7 +30,7 @@ pub struct DetectInfo {
     pub detail: CompactString,
     pub record_information: CompactString,
     pub ext_field: Vec<(CompactString, Profile)>,
-    pub is_condition : bool,
+    pub is_condition: bool,
 }
 
 pub struct AlertMessage {}
@@ -133,6 +133,9 @@ pub fn insert(
             .chars()
             .filter(|&c| !c.is_control())
             .collect::<CompactString>();
+        if parsed_detail.starts_with("[condition]") {
+            detect_info.is_condition = true
+        }
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {
@@ -146,11 +149,10 @@ pub fn insert(
         .any(|(_k, p)| *p == Details(Default::default()))
     {
         if !detect_info.detail.is_empty() {
-            let d = detect_info.detail.to_owned();
-            if d.starts_with("[condition]") {
-                detect_info.is_condition = true
-            }
-            profile_converter.insert("Details".to_string(), Details(d));
+            profile_converter.insert(
+                "Details".to_string(),
+                Details(detect_info.detail.to_owned()),
+            );
             detect_info.detail = CompactString::default(); // メモリ使用量削減のため、文字列をクリア
         };
     }
@@ -654,6 +656,7 @@ mod tests {
                 detail: CompactString::default(),
                 record_information: CompactString::default(),
                 ext_field: vec![],
+                is_condition: false,
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }

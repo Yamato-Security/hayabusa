@@ -1383,56 +1383,55 @@ mod tests {
             let event: Value = serde_json::from_str(val).unwrap();
             let mut profile_converter: HashMap<String, Profile> = HashMap::from([
                 (
-                    "%Timestamp%".to_string(),
-                    Profile::Timestamp(CompactString::from(format_time(&expect_time, false)))
+                    "Timestamp".to_string(),
+                    Profile::Timestamp(CompactString::from(format_time(&expect_time, false))),
                 ),
                 (
-                    "%Computer%".to_string(),
-                    Profile::Computer(CompactString::from(test_computername))
+                    "Computer".to_string(),
+                    Profile::Computer(CompactString::from(test_computername)),
                 ),
                 (
-                    "%Channel%".to_string(),
-                    Profile::Channel(
-                    CompactString::from(
+                    "Channel".to_string(),
+                    Profile::Channel(CompactString::from(
                         mock_ch_filter
                             .get(&"Security".to_ascii_lowercase())
                             .unwrap_or(&String::default()),
                     )),
                 ),
                 (
-                    "%Level%".to_string(),
+                    "Level".to_string(),
                     Profile::Level(CompactString::from(test_level)),
                 ),
                 (
-                    "%EventID%".to_string(),
-                    Profile::EventID(CompactString::from(test_eventid))
+                    "EventID".to_string(),
+                    Profile::EventID(CompactString::from(test_eventid)),
                 ),
                 (
-                    "%MitreAttack%".to_string(),
-                    Profile::MitreTactics(CompactString::from(test_attack))
+                    "MitreAttack".to_string(),
+                    Profile::MitreTactics(CompactString::from(test_attack)),
                 ),
                 (
-                    "%RecordID%".to_string(),
-                    Profile::RecordID(CompactString::from(test_record_id))
+                    "RecordID".to_string(),
+                    Profile::RecordID(CompactString::from(test_record_id)),
                 ),
                 (
-                    "%RuleTitle%".to_string(),
-                    Profile::RuleTitle(CompactString::from(test_title))
+                    "RuleTitle".to_string(),
+                    Profile::RuleTitle(CompactString::from(test_title)),
                 ),
                 (
-                    "%AllFieldInfo%".to_string(),
-                    Profile::AllFieldInfo(CompactString::from(test_recinfo))
+                    "RecordInformation".to_string(),
+                    Profile::AllFieldInfo(CompactString::from(test_recinfo)),
                 ),
                 (
-                    "%RuleFile%".to_string(),
-                    Profile::RuleFile(CompactString::from(test_rulepath))
+                    "RuleFile".to_string(),
+                    Profile::RuleFile(CompactString::from(test_rulepath)),
                 ),
                 (
-                    "%EvtxFile%".to_string(),
-                    Profile::EvtxFile(CompactString::from(test_filepath))
+                    "EvtxFile".to_string(),
+                    Profile::EvtxFile(CompactString::from(test_filepath)),
                 ),
                 (
-                    "%Tags%".to_string(),
+                    "Tags".to_string(),
                     Profile::MitreTags(CompactString::from(test_attack)),
                 ),
             ]);
@@ -1448,6 +1447,7 @@ mod tests {
                     detail: CompactString::default(),
                     record_information: CompactString::from(test_recinfo),
                     ext_field: output_profile.to_owned(),
+                    is_condition: false,
                 },
                 expect_time,
                 &mut profile_converter,
