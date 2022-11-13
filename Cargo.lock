@@ -815,7 +815,7 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "1.8.0"
+version = "1.8.1-dev"
 dependencies = [
  "base64",
  "bytesize",
