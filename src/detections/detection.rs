@@ -575,6 +575,30 @@ impl Detection {
                     );
                     profile_converter.insert(key.to_string(), OtherTags(tags));
                 }
+                RuleAuthor(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleAuthor(CompactString::from(
+                            rule.yaml["author"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleCreationDate(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleCreationDate(CompactString::from(
+                            rule.yaml["date"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleModifiedDate(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleModifiedDate(CompactString::from(
+                            rule.yaml["modified"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
                 Status(_) => {
                     profile_converter.insert(
                         key.to_string(),
