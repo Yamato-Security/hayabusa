@@ -717,7 +717,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 ## MITRE ATT&CK戦術の省略
 
 簡潔に出力するためにMITRE ATT&CKの戦術を以下のように省略しています。
-`./config/output_tag.txt`の設定ファイルで自由に編集できます。
+`./config/mitre_tactics.txt`の設定ファイルで自由に編集できます。
 
 * `Recon` : Reconnaissance (偵察)
 * `ResDev` : Resource Development (リソース開発)

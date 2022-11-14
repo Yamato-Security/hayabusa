@@ -712,7 +712,7 @@ In order to save space, we use the following abbrevations when displaying the al
 ## MITRE ATT&CK Tactics Abbreviations
 
 In order to save space, we use the following abbreviations when displaying MITRE ATT&CK tactic tags.
-You can freely edit these abbreviations in the `./config/output_tag.txt` configuration file.
+You can freely edit these abbreviations in the `./config/mitre_tactics.txt` configuration file.
 
 * `Recon` : Reconnaissance
 * `ResDev` : Resource Development
