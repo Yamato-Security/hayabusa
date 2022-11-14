@@ -142,19 +142,18 @@ pub fn insert(
             parsed_detail
         };
     }
-    if PROFILES
-        .as_ref()
-        .unwrap()
-        .iter()
-        .any(|(_k, p)| *p == Details(Default::default()))
+    if !detect_info.detail.is_empty()
+        & PROFILES
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|(_k, p)| *p == Details(Default::default()))
     {
-        if !detect_info.detail.is_empty() {
-            profile_converter.insert(
-                "Details".to_string(),
-                Details(detect_info.detail.to_owned()),
-            );
-            detect_info.detail = CompactString::default(); // メモリ使用量削減のため、文字列をクリア
-        };
+        profile_converter.insert(
+            "Details".to_string(),
+            Details(detect_info.detail.to_owned()),
+        );
+        detect_info.detail = CompactString::default(); // メモリ使用量削減のため、文字列をクリア
     }
     let mut replaced_converted_info: Vec<(CompactString, Profile)> = vec![];
     for (key, profile) in detect_info.ext_field.iter() {

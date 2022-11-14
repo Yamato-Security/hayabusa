@@ -1051,18 +1051,15 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 }
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(ext_field: &Vec<(CompactString, Profile)>, jsonl_output_flag: bool) -> String {
+fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bool) -> String {
     let mut target: Vec<String> = vec![];
     for (key, profile) in ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = val.split(": ").collect();
-            let output_all = match profile {
-                Profile::AllFieldInfo(_) => true,
-                _ => false,
-            };
-            let output_val = _convert_valid_json_str(&tmp_val, output_all);
+            let output_val =
+                _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
             target.push(_create_json_output_format(
                 &key.to_string(),
                 &output_val,
@@ -1523,43 +1520,44 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
-        let mut data: Vec<(CompactString, Profile)> = vec![];
-        data.push((
-            CompactString::new("Timestamp"),
-            Profile::Timestamp(CompactString::new(&format_time(&test_timestamp, false))),
-        ));
-        data.push((
-            CompactString::new("Computer"),
-            Profile::Computer(CompactString::new(test_computername)),
-        ));
-        data.push((
-            CompactString::new("Channel"),
-            Profile::Channel(CompactString::new(test_channel)),
-        ));
-        data.push((
-            CompactString::new("EventID"),
-            Profile::EventID(CompactString::new(test_eventid)),
-        ));
-        data.push((
-            CompactString::new("Level"),
-            Profile::Level(CompactString::new(test_level)),
-        ));
-        data.push((
-            CompactString::new("RecordID"),
-            Profile::RecordID(CompactString::new(test_recid)),
-        ));
-        data.push((
-            CompactString::new("RuleTitle"),
-            Profile::RuleTitle(CompactString::new(test_title)),
-        ));
-        data.push((
-            CompactString::new("Details"),
-            Profile::Details(CompactString::new(output)),
-        ));
-        data.push((
-            CompactString::new("RecordInformation"),
-            Profile::AllFieldInfo(CompactString::new(test_recinfo)),
-        ));
+        let mut data: Vec<(CompactString, Profile)> = vec![
+            (
+                CompactString::new("Timestamp"),
+                Profile::Timestamp(CompactString::new(&format_time(&test_timestamp, false))),
+            ),
+            (
+                CompactString::new("Computer"),
+                Profile::Computer(CompactString::new(test_computername)),
+            ),
+            (
+                CompactString::new("Channel"),
+                Profile::Channel(CompactString::new(test_channel)),
+            ),
+            (
+                CompactString::new("EventID"),
+                Profile::EventID(CompactString::new(test_eventid)),
+            ),
+            (
+                CompactString::new("Level"),
+                Profile::Level(CompactString::new(test_level)),
+            ),
+            (
+                CompactString::new("RecordID"),
+                Profile::RecordID(CompactString::new(test_recid)),
+            ),
+            (
+                CompactString::new("RuleTitle"),
+                Profile::RuleTitle(CompactString::new(test_title)),
+            ),
+            (
+                CompactString::new("Details"),
+                Profile::Details(CompactString::new(output)),
+            ),
+            (
+                CompactString::new("RecordInformation"),
+                Profile::AllFieldInfo(CompactString::new(test_recinfo)),
+            ),
+        ];
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
     }
