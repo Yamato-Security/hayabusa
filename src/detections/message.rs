@@ -1,8 +1,8 @@
 extern crate lazy_static;
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
+use crate::options::profile::Profile;
 use crate::options::profile::Profile::{AllFieldInfo, Details, Literal};
-use crate::options::profile::{Profile, PROFILES};
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
 use dashmap::DashMap;
@@ -139,31 +139,30 @@ pub fn insert(
             parsed_detail
         };
     }
-    if !detect_info.detail.is_empty()
-        & PROFILES
-            .as_ref()
-            .unwrap()
-            .iter()
-            .any(|(_k, p)| *p == Details(Default::default()))
-    {
-        profile_converter.insert(
-            "Details".to_string(),
-            Details(detect_info.detail.to_owned()),
-        );
-        detect_info.detail = CompactString::default(); // メモリ使用量削減のため、文字列をクリア
-    }
-    let mut replaced_converted_info: Vec<(CompactString, Profile)> = vec![];
+    let mut replaced_profiles: Vec<(CompactString, Profile)> = vec![];
     for (key, profile) in detect_info.ext_field.iter() {
         match profile {
-            Details(_) | AllFieldInfo(_) => {
-                if let Some(p) = profile_converter.get(key.to_string().as_str()) {
-                    replaced_converted_info.push((key.to_owned(), p.to_owned()))
+            Details(_) => {
+                if detect_info.detail.is_empty() {
+                    replaced_profiles.push((key.to_owned(), profile.to_owned()));
+                } else {
+                    replaced_profiles.push((key.to_owned(), Details(detect_info.detail)));
+                    detect_info.detail = CompactString::default();
                 }
             }
-            Literal(_) => replaced_converted_info.push((key.to_owned(), profile.to_owned())),
+            AllFieldInfo(_) => {
+                if detect_info.record_information.is_empty() {
+                    replaced_profiles.push((key.to_owned(), profile.to_owned()));
+                } else {
+                    replaced_profiles
+                        .push((key.to_owned(), AllFieldInfo(detect_info.record_information)));
+                    detect_info.record_information = CompactString::default();
+                }
+            }
+            Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
             _ => {
                 if let Some(p) = profile_converter.get(key.to_string().as_str()) {
-                    replaced_converted_info.push((
+                    replaced_profiles.push((
                         key.to_owned(),
                         profile.convert(&parse_message(
                             event_record,
@@ -174,7 +173,7 @@ pub fn insert(
             }
         }
     }
-    detect_info.ext_field = replaced_converted_info;
+    detect_info.ext_field = replaced_profiles;
     insert_message(detect_info, time)
 }
 

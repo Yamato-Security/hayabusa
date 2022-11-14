@@ -616,7 +616,6 @@ impl Detection {
                 Provider(_) => {
                     profile_converter.insert(key.to_string(), Provider(CompactString::from("-")));
                 }
-
                 _ => {}
             }
         }
