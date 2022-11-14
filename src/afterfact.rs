@@ -1520,7 +1520,7 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
-        let mut data: Vec<(CompactString, Profile)> = vec![
+        let data: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
                 Profile::Timestamp(CompactString::new(&format_time(&test_timestamp, false))),
