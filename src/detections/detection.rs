@@ -635,7 +635,7 @@ impl Detection {
             detail: output,
             record_information: CompactString::default(),
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
-            is_condition: false,
+            is_condition: true,
         };
         message::insert(
             &Value::default(),

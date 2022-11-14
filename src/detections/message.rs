@@ -133,9 +133,6 @@ pub fn insert(
             .chars()
             .filter(|&c| !c.is_control())
             .collect::<CompactString>();
-        if parsed_detail.starts_with("[condition]") {
-            detect_info.is_condition = true
-        }
         detect_info.detail = if parsed_detail.is_empty() {
             CompactString::from("-")
         } else {
