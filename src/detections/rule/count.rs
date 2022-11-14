@@ -28,7 +28,7 @@ pub fn count(rule: &mut RuleNode, record: &Value) {
     };
     let field_value =
         get_alias_value_in_record(rule, &field_name, record, false).unwrap_or_default();
-    let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+    let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
     countup(
         rule,
         key,
@@ -498,6 +498,8 @@ mod tests {
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::utils;
+    use chrono::DateTime;
+    use chrono::NaiveDate;
     use hashbrown::HashMap;
 
     use chrono::{TimeZone, Utc};
@@ -560,7 +562,7 @@ mod tests {
             2,
             "_".to_string(),
             vec![],
-            Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+            Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
             ">= 1".to_string(),
         )];
         check_count(
@@ -613,14 +615,14 @@ mod tests {
                 1,
                 "_".to_string(),
                 vec![],
-                Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+                Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
                 ">= 1".to_string(),
             ),
             AggResult::new(
                 1,
                 "_".to_string(),
                 vec![],
-                Utc.ymd(1996, 2, 27).and_hms(1, 5, 1),
+                Utc.with_ymd_and_hms(1996, 2, 27, 1, 5, 1).unwrap(),
                 ">= 1".to_string(),
             ),
         ];
@@ -653,7 +655,7 @@ mod tests {
             1,
             "_".to_string(),
             vec!["System".to_owned()],
-            Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+            Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
             ">= 1".to_string(),
         );
         check_count(
@@ -703,14 +705,14 @@ mod tests {
                 1,
                 "System".to_owned(),
                 vec!["7040".to_owned()],
-                Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+                Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
                 ">= 1".to_string(),
             ),
             AggResult::new(
                 1,
                 "Test".to_owned(),
                 vec!["9999".to_owned()],
-                Utc.ymd(1996, 2, 27).and_hms(1, 5, 1),
+                Utc.with_ymd_and_hms(1996, 2, 27, 1, 5, 1).unwrap(),
                 ">= 1".to_string(),
             ),
         ];
@@ -761,14 +763,14 @@ mod tests {
                 1,
                 "Windows Event Log".to_owned(),
                 vec!["7040".to_owned()],
-                Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+                Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
                 ">= 1".to_string(),
             ),
             AggResult::new(
                 1,
                 "Test".to_owned(),
                 vec!["9999".to_owned()],
-                Utc.ymd(1977, 1, 1).and_hms(0, 5, 0),
+                Utc.with_ymd_and_hms(1977, 1, 1, 0, 5, 0).unwrap(),
                 ">= 1".to_string(),
             ),
         ];
@@ -871,7 +873,7 @@ mod tests {
             2,
             "System".to_owned(),
             vec!["7040".to_owned(), "9999".to_owned()],
-            Utc.ymd(1977, 1, 1).and_hms(0, 0, 0),
+            Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap(),
             ">= 2".to_string(),
         )];
         check_count(
@@ -914,7 +916,7 @@ mod tests {
         details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let mut expected_count = HashMap::new();
         expected_count.insert("System".to_owned(), 2);
         let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -944,7 +946,7 @@ mod tests {
         // timeframe=20sはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "20s");
-            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -978,7 +980,7 @@ mod tests {
         // timeframe=20mはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "20m");
-            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1012,7 +1014,7 @@ mod tests {
         // timeframe=3hはHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "3h");
-            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1028,7 +1030,7 @@ mod tests {
         // timeframe=2hはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "2h");
-            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1052,7 +1054,7 @@ mod tests {
         // timeframe=120minはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "120m");
-            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1086,7 +1088,7 @@ mod tests {
         // timeframe=11dはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11d");
-            let default_time = Utc.ymd(1977, 1, 9).and_hms(0, 30, 0);
+            let default_time = Utc.with_ymd_and_hms(1977, 1, 9, 0, 30, 0).unwrap();
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1120,7 +1122,7 @@ mod tests {
         // timeframe=11secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11s");
-            let default_time = Utc.ymd(2021, 12, 21).and_hms(10, 40, 0);
+            let default_time = Utc.with_ymd_and_hms(2021, 12, 21, 10, 40, 0).unwrap();
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1154,7 +1156,13 @@ mod tests {
         // timeframe=10secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "10s");
-            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 50);
+            let default_time = DateTime::<Utc>::from_utc(
+                NaiveDate::from_ymd_opt(2021, 12, 21)
+                    .unwrap()
+                    .and_hms_milli_opt(10, 40, 0, 50)
+                    .unwrap(),
+                Utc,
+            );
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1188,7 +1196,13 @@ mod tests {
         // timeframe=11secはギリギリHit
         {
             let rule_str = create_std_rule("count(EventID) >= 3", "11s");
-            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 50);
+            let default_time = DateTime::<Utc>::from_utc(
+                NaiveDate::from_ymd_opt(2021, 12, 21)
+                    .unwrap()
+                    .and_hms_milli_opt(10, 40, 0, 50)
+                    .unwrap(),
+                Utc,
+            );
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 3);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1230,7 +1244,13 @@ mod tests {
         // byない
         {
             let rule_str = create_std_rule("count(EventID) >= 1", "1s");
-            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 0);
+            let default_time = DateTime::<Utc>::from_utc(
+                NaiveDate::from_ymd_opt(2021, 12, 21)
+                    .unwrap()
+                    .and_hms_milli_opt(10, 40, 0, 0)
+                    .unwrap(),
+                Utc,
+            );
             let mut expected_count = HashMap::new();
             expected_count.insert("_".to_owned(), 1);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1246,7 +1266,13 @@ mod tests {
         // byある
         {
             let rule_str = create_std_rule("count(EventID) by param1>= 1", "1s");
-            let default_time = Utc.ymd(2021, 12, 21).and_hms_milli(10, 40, 0, 0);
+            let default_time = DateTime::<Utc>::from_utc(
+                NaiveDate::from_ymd_opt(2021, 12, 21)
+                    .unwrap()
+                    .and_hms_milli_opt(10, 40, 0, 0)
+                    .unwrap(),
+                Utc,
+            );
             let mut expected_count = HashMap::new();
             expected_count.insert("Windows Event Log".to_owned(), 1);
             let expected_agg_result: Vec<AggResult> = vec![AggResult::new(
@@ -1291,7 +1317,7 @@ mod tests {
             3,
             "_".to_owned(),
             vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
-            Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+            Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
             ">= 3".to_string(),
         )];
         check_count(&rule_str, &recs, expected_count, expected_agg_result);
@@ -1342,7 +1368,7 @@ mod tests {
                     "3".to_owned(),
                     "4".to_owned(),
                 ],
-                Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+                Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
                 ">= 4".to_string(),
             )];
 
@@ -1370,7 +1396,7 @@ mod tests {
                 3,
                 "_".to_owned(),
                 vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
-                Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+                Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
                 ">= 3".to_string(),
             )];
 
@@ -1420,7 +1446,7 @@ mod tests {
                         "3".to_owned(),
                         "4".to_owned(),
                     ],
-                    Utc.ymd(1977, 1, 9).and_hms(1, 30, 0),
+                    Utc.with_ymd_and_hms(1977, 1, 9, 1, 30, 0).unwrap(),
                     ">= 4".to_string(),
                 ),
                 AggResult::new(
@@ -1432,7 +1458,7 @@ mod tests {
                         "3".to_owned(),
                         "4".to_owned(),
                     ],
-                    Utc.ymd(1977, 1, 9).and_hms(5, 30, 0),
+                    Utc.with_ymd_and_hms(1977, 1, 9, 5, 30, 0).unwrap(),
                     ">= 4".to_string(),
                 ),
                 AggResult::new(
@@ -1444,7 +1470,7 @@ mod tests {
                         "3".to_owned(),
                         "4".to_owned(),
                     ],
-                    Utc.ymd(1977, 1, 9).and_hms(9, 30, 0),
+                    Utc.with_ymd_and_hms(1977, 1, 9, 9, 30, 0).unwrap(),
                     ">= 4".to_string(),
                 ),
             ];
@@ -1482,7 +1508,7 @@ mod tests {
                 3,
                 "_".to_owned(),
                 vec!["2".to_owned(), "3".to_owned(), "4".to_owned()],
-                Utc.ymd(1977, 1, 9).and_hms(3, 30, 0),
+                Utc.with_ymd_and_hms(1977, 1, 9, 3, 30, 0).unwrap(),
                 ">= 3".to_string(),
             ),
             AggResult::new(
@@ -1494,7 +1520,7 @@ mod tests {
                     "4".to_owned(),
                     "5".to_owned(),
                 ],
-                Utc.ymd(1977, 1, 9).and_hms(20, 00, 0),
+                Utc.with_ymd_and_hms(1977, 1, 9, 20, 00, 0).unwrap(),
                 ">= 3".to_string(),
             ),
         ];

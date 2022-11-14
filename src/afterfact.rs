@@ -956,7 +956,11 @@ fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
     if configs::CONFIG.read().unwrap().args.utc || configs::CONFIG.read().unwrap().args.iso_8601 {
         time.timestamp()
     } else {
-        let offset_sec = Local.timestamp(0, 0).offset().local_minus_utc();
+        let offset_sec = Local
+            .timestamp_opt(0, 0)
+            .unwrap()
+            .offset()
+            .local_minus_utc();
         offset_sec as i64 + time.with_timezone(&Local).timestamp()
     }
 }

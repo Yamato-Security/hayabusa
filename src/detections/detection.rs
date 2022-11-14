@@ -241,7 +241,7 @@ impl Detection {
             CompactString::from("-")
         };
 
-        let default_time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
@@ -812,7 +812,8 @@ mod tests {
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::filter;
-    use chrono::{TimeZone, Utc};
+    use chrono::TimeZone;
+    use chrono::Utc;
     use std::path::Path;
     use yaml_rust::YamlLoader;
 
@@ -827,7 +828,7 @@ mod tests {
 
     #[test]
     fn test_output_aggregation_output_with_output() {
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
             AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
         let rule_str = r#"
@@ -855,7 +856,7 @@ mod tests {
 
     #[test]
     fn test_output_aggregation_output_no_filed_by() {
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
             AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
         let rule_str = r#"
@@ -882,7 +883,7 @@ mod tests {
 
     #[test]
     fn test_output_aggregation_output_with_timeframe() {
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult =
             AggResult::new(2, "_".to_string(), vec![], default_time, ">= 1".to_string());
         let rule_str = r#"
@@ -911,7 +912,7 @@ mod tests {
 
     #[test]
     fn test_output_aggregation_output_with_field() {
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult = AggResult::new(
             2,
             "_".to_string(),
@@ -941,7 +942,7 @@ mod tests {
 
     #[test]
     fn test_output_aggregation_output_with_field_by() {
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult = AggResult::new(
             2,
             "lsass.exe".to_string(),
@@ -970,7 +971,7 @@ mod tests {
     }
     #[test]
     fn test_output_aggregation_output_with_by() {
-        let default_time = Utc.ymd(1977, 1, 1).and_hms(0, 0, 0);
+        let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
         let agg_result: AggResult = AggResult::new(
             2,
             "lsass.exe".to_string(),
