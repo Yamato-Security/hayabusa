@@ -1,6 +1,6 @@
 # Changes
 
-## 1.9.0 [2022/xx/xx]
+## 1.9.0-dev [2022/xx/xx]
 
 **New Features:**
 
@@ -13,7 +13,7 @@
 
 **Bug Fixes:**
 
-- xxx
+- Fixed a problem where rules using the `Data` field were not being detected. (#775) (@hitenkoku)
 
 ## 1.8.0 [2022/11/07]
 

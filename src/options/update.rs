@@ -220,7 +220,7 @@ impl Update {
     ) -> Result<String, git2::Error> {
         let diff = updated_sets.difference(&prev_sets);
         let mut update_count_by_rule_type: HashMap<String, u128> = HashMap::new();
-        let mut latest_update_date = Local.timestamp(0, 0);
+        let mut latest_update_date = Local.timestamp_opt(0, 0).unwrap();
         for diff_key in diff {
             let tmp: Vec<&str> = diff_key.split('|').collect();
             let file_modified_date = fs::metadata(tmp[2]).unwrap().modified().unwrap();
