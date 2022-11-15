@@ -152,7 +152,7 @@ pub fn insert(
             }
             AllFieldInfo(_) => {
                 if detect_info.record_information.is_empty() {
-                    replaced_profiles.push((key.to_owned(), profile.to_owned()));
+                    replaced_profiles.push((key.to_owned(), AllFieldInfo(CompactString::from("-"))));
                 } else {
                     replaced_profiles
                         .push((key.to_owned(), AllFieldInfo(detect_info.record_information)));
