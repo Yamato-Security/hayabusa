@@ -1,6 +1,6 @@
 # Changes
 
-## 1.x.x [2022/xx/xx]
+## 1.9.0 [2022/xx/xx]
 
 **New Features:**
 
@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
+- Reduced memory usage. (#806) (@fukusuket)
 
 **Bug Fixes:**
 
