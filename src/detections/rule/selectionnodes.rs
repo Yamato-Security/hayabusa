@@ -327,7 +327,7 @@ impl SelectionNode for LeafSelectionNode {
                     ]
                 }
         */
-        if self.get_key() == "EventData" {
+        if self.get_key() == "EventData" || self.get_key() == "Data" {
             let values = utils::get_event_value("Event.EventData.Data", &event_record.record);
             if values.is_none() {
                 return self
