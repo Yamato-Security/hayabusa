@@ -2,7 +2,7 @@ use crate::detections::configs::{self, CURRENT_EXE_PATH};
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
-use crate::options::profile::PROFILES;
+use crate::options::profile::{Profile, PROFILES};
 use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -201,7 +201,7 @@ fn emit_csv<W: std::io::Write>(
     displayflag: bool,
     color_map: HashMap<CompactString, Colors>,
     all_record_cnt: u128,
-    profile: &Nested<Vec<CompactString>>,
+    profile: &Vec<(CompactString, Profile)>,
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = *HTML_REPORT_FLAG;
@@ -258,7 +258,7 @@ fn emit_csv<W: std::io::Write>(
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(time));
         for (_, detect_info) in detect_infos.iter().enumerate() {
-            if !detect_info.detail.starts_with("[condition]") {
+            if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
                     time, detect_info.eventid
@@ -289,17 +289,13 @@ fn emit_csv<W: std::io::Write>(
             } else if json_output_flag {
                 // JSON output
                 wtr.write_field("{")?;
-                wtr.write_field(&output_json_str(
-                    &detect_info.ext_field,
-                    profile,
-                    jsonl_output_flag,
-                ))?;
+                wtr.write_field(&output_json_str(&detect_info.ext_field, jsonl_output_flag))?;
                 wtr.write_field("}")?;
             } else if jsonl_output_flag {
                 // JSONL output format
                 wtr.write_field(format!(
                     "{{ {} }}",
-                    &output_json_str(&detect_info.ext_field, profile, jsonl_output_flag)
+                    &output_json_str(&detect_info.ext_field, jsonl_output_flag)
                 ))?;
             } else {
                 // csv output format
@@ -308,7 +304,7 @@ fn emit_csv<W: std::io::Write>(
                         detect_info
                             .ext_field
                             .iter()
-                            .map(|x| x[0].to_string().trim().to_string()),
+                            .map(|x| x.0.to_string().trim().to_string()),
                     )?;
                     plus_header = false;
                 }
@@ -316,7 +312,7 @@ fn emit_csv<W: std::io::Write>(
                     detect_info
                         .ext_field
                         .iter()
-                        .map(|x| x[1].to_string().trim().to_string()),
+                        .map(|x| x.1.to_value().trim().to_string()),
                 )?;
             }
 
@@ -581,27 +577,27 @@ enum ColPos {
     Other,
 }
 
-fn _get_serialized_disp_output(data: &Nested<Vec<CompactString>>, header: bool) -> String {
+fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: bool) -> String {
     let data_length = data.len();
     let mut ret = Nested::<String>::new();
     if header {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d[0], ColPos::First))
+                ret.push(_format_cellpos(&d.0, ColPos::First))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d[0], ColPos::Last))
+                ret.push(_format_cellpos(&d.0, ColPos::Last))
             } else {
-                ret.push(_format_cellpos(&d[0], ColPos::Other))
+                ret.push(_format_cellpos(&d.0, ColPos::Other))
             }
         }
     } else {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d[1], ColPos::First).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d.1.to_value(), ColPos::First).replace('|', "🦅"))
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d[1], ColPos::Last).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Last).replace('|', "🦅"))
             } else {
-                ret.push(_format_cellpos(&d[1], ColPos::Other).replace('|', "🦅"))
+                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Other).replace('|', "🦅"))
             }
         }
     }
@@ -966,32 +962,29 @@ fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
 }
 
 /// json出力の際に配列として対応させるdetails,MitreTactics,MitreTags,OtherTagsに該当する場合に配列を返す関数
-fn _get_json_vec(target_alias_context: &str, target_data: &String) -> Vec<String> {
-    if target_alias_context.contains("%MitreTactics%")
-        || target_alias_context.contains("%OtherTags%")
-        || target_alias_context.contains("%MitreTags%")
-    {
-        let ret: Vec<String> = target_data
-            .to_owned()
-            .split(": ")
-            .map(|x| x.to_string())
-            .collect();
-        ret
-    } else if target_alias_context.contains("%Details%")
-        || target_alias_context.contains("%AllFieldInfo%")
-    {
-        let ret: Vec<String> = target_data
-            .to_owned()
-            .split(" ¦ ")
-            .map(|x| x.to_string())
-            .collect();
-        if target_data == &ret[0] && !target_data.contains(": ") {
-            vec![]
-        } else {
+fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
+    match profile {
+        Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
+            let ret: Vec<String> = target_data
+                .to_owned()
+                .split(": ")
+                .map(|x| x.to_string())
+                .collect();
             ret
         }
-    } else {
-        vec![]
+        Profile::Details(_) | Profile::AllFieldInfo(_) => {
+            let ret: Vec<String> = target_data
+                .to_owned()
+                .split(" ¦ ")
+                .map(|x| x.to_string())
+                .collect();
+            if target_data == &ret[0] && !target_data.contains(": ") {
+                vec![]
+            } else {
+                ret
+            }
+        }
+        _ => vec![],
     }
 }
 
@@ -1062,157 +1055,152 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 }
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(
-    ext_field: &Nested<Vec<CompactString>>,
-    profile: &Nested<Vec<CompactString>>,
-    jsonl_output_flag: bool,
-) -> String {
+fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bool) -> String {
     let mut target: Vec<String> = vec![];
-    let profile_map: HashMap<String, String> =
-        HashMap::from_iter(profile.iter().map(|p| (p[0].to_string(), p[1].to_string())));
-    for ef in ext_field.iter() {
-        let [key, val] = [ef[0].to_string(), ef[1].to_string()];
-        let output_value_fmt = profile_map.get(&key).unwrap();
-        let vec_data = _get_json_vec(output_value_fmt, &val);
+    for (key, profile) in ext_field.iter() {
+        let val = profile.to_value();
+        let vec_data = _get_json_vec(profile, &val.to_string());
         if vec_data.is_empty() {
             let tmp_val: Vec<&str> = val.split(": ").collect();
             let output_val =
-                _convert_valid_json_str(&tmp_val, output_value_fmt.contains("%AllFieldInfo%"));
+                _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
             target.push(_create_json_output_format(
-                &key,
+                &key.to_string(),
                 &output_val,
                 key.starts_with('\"'),
                 output_val.starts_with('\"'),
                 4,
             ));
-        } else if output_value_fmt.contains("%Details%")
-            || output_value_fmt.contains("%AllFieldInfo%")
-        {
-            let mut output_stock: Vec<String> = vec![];
-            output_stock.push(format!("    \"{}\": {{", key));
-            let mut stocked_value = vec![];
-            let mut key_index_stock = vec![];
-            for detail_contents in vec_data.iter() {
-                // 分解してキーとなりえる箇所を抽出する
-                let space_split: Vec<&str> = detail_contents.split(' ').collect();
-                let mut tmp_stock = vec![];
-                for sp in space_split.iter() {
-                    if sp.ends_with(':') && sp.len() > 2 {
+        } else {
+            match profile {
+                Profile::AllFieldInfo(_) | Profile::Details(_) => {
+                    let mut output_stock: Vec<String> = vec![];
+                    output_stock.push(format!("    \"{}\": {{", key));
+                    let mut stocked_value = vec![];
+                    let mut key_index_stock = vec![];
+                    for detail_contents in vec_data.iter() {
+                        // 分解してキーとなりえる箇所を抽出する
+                        let space_split: Vec<&str> = detail_contents.split(' ').collect();
+                        let mut tmp_stock = vec![];
+                        for sp in space_split.iter() {
+                            if sp.ends_with(':') && sp.len() > 2 {
+                                stocked_value.push(tmp_stock);
+                                tmp_stock = vec![];
+                                key_index_stock.push(sp.replace(':', "").to_owned());
+                            } else {
+                                tmp_stock.push(sp.to_owned());
+                            }
+                        }
                         stocked_value.push(tmp_stock);
-                        tmp_stock = vec![];
-                        key_index_stock.push(sp.replace(':', "").to_owned());
-                    } else {
-                        tmp_stock.push(sp.to_owned());
                     }
-                }
-                stocked_value.push(tmp_stock);
-            }
-            let mut key_idx = 0;
-            let mut output_value_stock = String::default();
-            for (value_idx, value) in stocked_value.iter().enumerate() {
-                let mut tmp = if key_idx >= key_index_stock.len() {
-                    String::default()
-                } else if value_idx == 0 && !value.is_empty() {
-                    key.to_owned()
-                } else {
-                    key_index_stock[key_idx].to_string()
-                };
-                if !output_value_stock.is_empty() {
-                    output_value_stock.push_str(" | ");
-                }
-                output_value_stock.push_str(&value.join(" "));
-                //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                let is_remain_split_stock = if key_idx == key_index_stock.len() - 2
-                    && value_idx < stocked_value.len() - 1
-                    && !output_value_stock.is_empty()
-                {
-                    let mut ret = true;
-                    for remain_value in stocked_value[value_idx + 1..].iter() {
-                        if remain_value.is_empty() {
-                            ret = false;
-                            break;
+                    let mut key_idx = 0;
+                    let mut output_value_stock = String::default();
+                    for (value_idx, value) in stocked_value.iter().enumerate() {
+                        let mut tmp = if key_idx >= key_index_stock.len() {
+                            String::default()
+                        } else if value_idx == 0 && !value.is_empty() {
+                            key.to_string().to_owned()
+                        } else {
+                            key_index_stock[key_idx].to_string()
+                        };
+                        if !output_value_stock.is_empty() {
+                            output_value_stock.push_str(" | ");
+                        }
+                        output_value_stock.push_str(&value.join(" "));
+                        //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
+                        let is_remain_split_stock = if key_idx == key_index_stock.len() - 2
+                            && value_idx < stocked_value.len() - 1
+                            && !output_value_stock.is_empty()
+                        {
+                            let mut ret = true;
+                            for remain_value in stocked_value[value_idx + 1..].iter() {
+                                if remain_value.is_empty() {
+                                    ret = false;
+                                    break;
+                                }
+                            }
+                            ret
+                        } else {
+                            false
+                        };
+                        if (value_idx < stocked_value.len() - 1
+                            && stocked_value[value_idx + 1].is_empty())
+                            || is_remain_split_stock
+                        {
+                            // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
+                            let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                            let output: Vec<&str> = output_tmp.split(": ").collect();
+                            let key = _convert_valid_json_str(&[output[0]], false);
+                            let fmted_val = _convert_valid_json_str(&output, false);
+                            output_stock.push(format!(
+                                "{},",
+                                _create_json_output_format(
+                                    &key,
+                                    &fmted_val,
+                                    key.starts_with('\"'),
+                                    fmted_val.starts_with('\"'),
+                                    8
+                                )
+                            ));
+                            output_value_stock.clear();
+                            tmp = String::default();
+                            key_idx += 1;
+                        }
+                        if value_idx == stocked_value.len() - 1 {
+                            let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                            let output: Vec<&str> = output_tmp.split(": ").collect();
+                            let key = _convert_valid_json_str(&[output[0]], false);
+                            let fmted_val = _convert_valid_json_str(&output, false);
+                            output_stock.push(_create_json_output_format(
+                                &key,
+                                &fmted_val,
+                                key.starts_with('\"'),
+                                fmted_val.starts_with('\"'),
+                                8,
+                            ));
+                            key_idx += 1;
                         }
                     }
-                    ret
-                } else {
-                    false
-                };
-                if (value_idx < stocked_value.len() - 1 && stocked_value[value_idx + 1].is_empty())
-                    || is_remain_split_stock
-                {
-                    // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
-                    let output_tmp = format!("{}: {}", tmp, output_value_stock);
-                    let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]], false);
-                    let fmted_val = _convert_valid_json_str(&output, false);
-                    output_stock.push(format!(
-                        "{},",
-                        _create_json_output_format(
-                            &key,
-                            &fmted_val,
-                            key.starts_with('\"'),
-                            fmted_val.starts_with('\"'),
-                            8
-                        )
-                    ));
-                    output_value_stock.clear();
-                    tmp = String::default();
-                    key_idx += 1;
+                    output_stock.push("    }".to_string());
+                    target.push(output_stock.join("\n"));
                 }
-                if value_idx == stocked_value.len() - 1 {
-                    let output_tmp = format!("{}: {}", tmp, output_value_stock);
-                    let output: Vec<&str> = output_tmp.split(": ").collect();
-                    let key = _convert_valid_json_str(&[output[0]], false);
-                    let fmted_val = _convert_valid_json_str(&output, false);
-                    output_stock.push(_create_json_output_format(
+                Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
+                    let tmp_val: Vec<&str> = val.split(": ").collect();
+
+                    let key = _convert_valid_json_str(&[key.as_str()], false);
+                    let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
+                    let mut value: Vec<String> = vec![];
+
+                    if values.is_empty() {
+                        continue;
+                    }
+                    for (idx, tag_val) in values.iter().enumerate() {
+                        if idx == 0 {
+                            value.push("[\n".to_string());
+                        }
+                        let insert_val = format!("        \"{}\"", tag_val.trim());
+                        value.push(insert_val);
+                        if idx != values.len() - 1 {
+                            value.push(",\n".to_string());
+                        }
+                    }
+                    value.push("\n    ]".to_string());
+
+                    let fmted_val = if jsonl_output_flag {
+                        value.iter().map(|x| x.replace('\n', "")).join("")
+                    } else {
+                        value.join("")
+                    };
+                    target.push(_create_json_output_format(
                         &key,
                         &fmted_val,
                         key.starts_with('\"'),
-                        fmted_val.starts_with('\"'),
-                        8,
+                        true,
+                        4,
                     ));
-                    key_idx += 1;
                 }
+                _ => {}
             }
-            output_stock.push("    }".to_string());
-            target.push(output_stock.join("\n"));
-        } else if output_value_fmt.contains("%MitreTags%")
-            || output_value_fmt.contains("%MitreTactics%")
-            || output_value_fmt.contains("%OtherTags%")
-        {
-            let tmp_val: Vec<&str> = val.split(": ").collect();
-
-            let key = _convert_valid_json_str(&[key.as_str()], false);
-            let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
-            let mut value: Vec<String> = vec![];
-
-            if values.is_empty() {
-                continue;
-            }
-            for (idx, tag_val) in values.iter().enumerate() {
-                if idx == 0 {
-                    value.push("[\n".to_string());
-                }
-                let insert_val = format!("        \"{}\"", tag_val.trim());
-                value.push(insert_val);
-                if idx != values.len() - 1 {
-                    value.push(",\n".to_string());
-                }
-            }
-            value.push("\n    ]".to_string());
-
-            let fmted_val = if jsonl_output_flag {
-                value.iter().map(|x| x.replace('\n', "")).join("")
-            } else {
-                value.join("")
-            };
-            target.push(_create_json_output_format(
-                &key,
-                &fmted_val,
-                key.starts_with('\"'),
-                true,
-                4,
-            ));
         }
     }
     if jsonl_output_flag {
@@ -1331,11 +1319,10 @@ mod tests {
     use crate::afterfact::format_time;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
-    use crate::options::profile::load_profile;
+    use crate::options::profile::{load_profile, Profile};
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
     use hashbrown::HashMap;
-    use nested::Nested;
     use serde_json::Value;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
@@ -1360,7 +1347,7 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
-        let output_profile: Nested<Vec<CompactString>> = load_profile(
+        let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",
         )
@@ -1383,58 +1370,58 @@ mod tests {
                 }
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
-            let mut profile_converter: HashMap<CompactString, CompactString> = HashMap::from([
+            let mut profile_converter: HashMap<String, Profile> = HashMap::from([
                 (
-                    CompactString::from("%Timestamp%"),
-                    CompactString::from(format_time(&expect_time, false)),
+                    "Timestamp".to_string(),
+                    Profile::Timestamp(CompactString::from(format_time(&expect_time, false))),
                 ),
                 (
-                    CompactString::from("%Computer%"),
-                    CompactString::from(test_computername),
+                    "Computer".to_string(),
+                    Profile::Computer(CompactString::from(test_computername)),
                 ),
                 (
-                    CompactString::from("%Channel%"),
-                    CompactString::from(
+                    "Channel".to_string(),
+                    Profile::Channel(CompactString::from(
                         mock_ch_filter
                             .get(&"Security".to_ascii_lowercase())
                             .unwrap_or(&String::default()),
-                    ),
+                    )),
                 ),
                 (
-                    CompactString::from("%Level%"),
-                    CompactString::from(test_level),
+                    "Level".to_string(),
+                    Profile::Level(CompactString::from(test_level)),
                 ),
                 (
-                    CompactString::from("%EventID%"),
-                    CompactString::from(test_eventid),
+                    "EventID".to_string(),
+                    Profile::EventID(CompactString::from(test_eventid)),
                 ),
                 (
-                    CompactString::from("%MitreAttack%"),
-                    CompactString::from(test_attack),
+                    "MitreAttack".to_string(),
+                    Profile::MitreTactics(CompactString::from(test_attack)),
                 ),
                 (
-                    CompactString::from("%RecordID%"),
-                    CompactString::from(test_record_id),
+                    "RecordID".to_string(),
+                    Profile::RecordID(CompactString::from(test_record_id)),
                 ),
                 (
-                    CompactString::from("%RuleTitle%"),
-                    CompactString::from(test_title),
+                    "RuleTitle".to_string(),
+                    Profile::RuleTitle(CompactString::from(test_title)),
                 ),
                 (
-                    CompactString::from("%AllFieldInfo%"),
-                    CompactString::from(test_recinfo),
+                    "RecordInformation".to_string(),
+                    Profile::AllFieldInfo(CompactString::from(test_recinfo)),
                 ),
                 (
-                    CompactString::from("%RuleFile%"),
-                    CompactString::from(test_rulepath),
+                    "RuleFile".to_string(),
+                    Profile::RuleFile(CompactString::from(test_rulepath)),
                 ),
                 (
-                    CompactString::from("%EvtxFile%"),
-                    CompactString::from(test_filepath),
+                    "EvtxFile".to_string(),
+                    Profile::EvtxFile(CompactString::from(test_filepath)),
                 ),
                 (
-                    CompactString::from("%Tags%"),
-                    CompactString::from(test_attack),
+                    "Tags".to_string(),
+                    Profile::MitreTags(CompactString::from(test_attack)),
                 ),
             ]);
             message::insert(
@@ -1449,6 +1436,7 @@ mod tests {
                     detail: CompactString::default(),
                     record_information: CompactString::from(test_recinfo),
                     ext_field: output_profile.to_owned(),
+                    is_condition: false,
                 },
                 expect_time,
                 &mut profile_converter,
@@ -1536,44 +1524,44 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
-        let mut data: Nested<Vec<CompactString>> = Nested::<Vec<CompactString>>::new();
-        data.push(vec![
-            CompactString::new("Timestamp"),
-            CompactString::new(&format_time(&test_timestamp, false)),
-        ]);
-        data.push(vec![
-            CompactString::new("Computer"),
-            CompactString::new(test_computername),
-        ]);
-        data.push(vec![
-            CompactString::new("Channel"),
-            CompactString::new(test_channel),
-        ]);
-        data.push(vec![
-            CompactString::new("EventID"),
-            CompactString::new(test_eventid),
-        ]);
-        data.push(vec![
-            CompactString::new("Level"),
-            CompactString::new(test_level),
-        ]);
-        data.push(vec![
-            CompactString::new("RecordID"),
-            CompactString::new(test_recid),
-        ]);
-        data.push(vec![
-            CompactString::new("RuleTitle"),
-            CompactString::new(test_title),
-        ]);
-        data.push(vec![
-            CompactString::new("Details"),
-            CompactString::new(output),
-        ]);
-        data.push(vec![
-            CompactString::new("RecordInformation"),
-            CompactString::new(test_recinfo),
-        ]);
-
+        let data: Vec<(CompactString, Profile)> = vec![
+            (
+                CompactString::new("Timestamp"),
+                Profile::Timestamp(CompactString::new(&format_time(&test_timestamp, false))),
+            ),
+            (
+                CompactString::new("Computer"),
+                Profile::Computer(CompactString::new(test_computername)),
+            ),
+            (
+                CompactString::new("Channel"),
+                Profile::Channel(CompactString::new(test_channel)),
+            ),
+            (
+                CompactString::new("EventID"),
+                Profile::EventID(CompactString::new(test_eventid)),
+            ),
+            (
+                CompactString::new("Level"),
+                Profile::Level(CompactString::new(test_level)),
+            ),
+            (
+                CompactString::new("RecordID"),
+                Profile::RecordID(CompactString::new(test_recid)),
+            ),
+            (
+                CompactString::new("RuleTitle"),
+                Profile::RuleTitle(CompactString::new(test_title)),
+            ),
+            (
+                CompactString::new("Details"),
+                Profile::Details(CompactString::new(output)),
+            ),
+            (
+                CompactString::new("RecordInformation"),
+                Profile::AllFieldInfo(CompactString::new(test_recinfo)),
+            ),
+        ];
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
     }

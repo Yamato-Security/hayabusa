@@ -2,13 +2,17 @@ extern crate csv;
 
 use crate::detections::configs;
 use crate::detections::utils::{format_time, write_color_buffer};
-use crate::options::profile::{
-    LOADED_PROFILE_ALIAS, PRELOAD_PROFILE, PRELOAD_PROFILE_REGEX, PROFILES,
+use crate::options::profile::Profile::{
+    AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
+    Provider, RecordID, RuleAuthor, RuleCreationDate, RuleFile, RuleID, RuleModifiedDate,
+    RuleTitle, Status, Timestamp,
 };
+use crate::options::profile::{Profile, PROFILES};
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
 use itertools::Itertools;
 use nested::Nested;
+use std::default::Default;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
 use crate::detections::message::{
@@ -87,7 +91,7 @@ impl Detection {
         let return_if_success = |mut rule: RuleNode| {
             let err_msgs_result = rule.init();
             if err_msgs_result.is_ok() {
-                return Option::Some(rule);
+                return Some(rule);
             }
 
             // ruleファイルのパースに失敗した場合はエラー出力
@@ -116,7 +120,7 @@ impl Detection {
                 parseerror_count += 1;
                 println!();
             });
-            Option::None
+            None
         };
         // parse rule files
         let ret = rulefile_loader
@@ -213,7 +217,12 @@ impl Detection {
                 .as_ref()
                 .unwrap_or(&"-".to_string()),
         );
-        let rec_id = if LOADED_PROFILE_ALIAS.contains("%RecordID%") {
+        let rec_id = if PROFILES
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|(_s, p)| *p == RecordID(Default::default()))
+        {
             CompactString::from(
                 get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
                     .unwrap_or_default(),
@@ -235,7 +244,12 @@ impl Detection {
             Some(str) => CompactString::from(str),
             None => recinfo.to_owned(),
         };
-        let opt_record_info = if LOADED_PROFILE_ALIAS.contains("%AllFieldInfo%") {
+        let opt_record_info = if PROFILES
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|(_s, p)| *p == AllFieldInfo(Default::default()))
+        {
             recinfo
         } else {
             CompactString::from("-")
@@ -245,177 +259,178 @@ impl Detection {
         let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
-        let mut profile_converter: HashMap<CompactString, CompactString> = HashMap::new();
+        let mut profile_converter: HashMap<String, Profile> = HashMap::new();
         let mut tags_config_values = TAGS_CONFIG.values();
-        for p in PROFILES.as_ref().unwrap().iter() {
-            for target_profile in PRELOAD_PROFILE_REGEX
-                .matches(p[1].to_string().as_str())
-                .into_iter()
-            {
-                match PRELOAD_PROFILE[target_profile] {
-                    "%Timestamp%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Timestamp%"),
-                            CompactString::from(format_time(&time, false)),
-                        );
-                    }
-                    "%Computer%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Computer%"),
-                            CompactString::from(
-                                record_info.record["Event"]["System"]["Computer"]
-                                    .to_string()
-                                    .replace('\"', ""),
-                            ),
-                        );
-                    }
-                    "%Channel%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Channel%"),
-                            CompactString::from(
-                                CH_CONFIG
-                                    .get(&ch_str.to_ascii_lowercase())
-                                    .unwrap_or(ch_str),
-                            ),
-                        );
-                    }
-                    "%Level%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Level%"),
-                            CompactString::from(
-                                LEVEL_ABBR_MAP
-                                    .get(&level.as_str())
-                                    .unwrap_or(&level.as_str())
-                                    .to_string(),
-                            ),
-                        );
-                    }
-                    "%EventID%" => {
-                        profile_converter.insert(CompactString::from("%EventID%"), eid.to_owned());
-                    }
-                    "%RecordID%" => {
-                        profile_converter
-                            .insert(CompactString::from("%RecordID%"), rec_id.to_owned());
-                    }
-                    "%RuleTitle%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleTitle%"),
-                            CompactString::from(rule.yaml["title"].as_str().unwrap_or("")),
-                        );
-                    }
-                    "%AllFieldInfo%" => {
-                        profile_converter.insert(
-                            CompactString::from("%AllFieldInfo%"),
-                            opt_record_info.to_owned(),
-                        );
-                    }
-                    "%RuleFile%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleFile%"),
-                            CompactString::from(
-                                Path::new(&rule.rulepath)
-                                    .file_name()
-                                    .unwrap_or_default()
-                                    .to_str()
-                                    .unwrap_or_default(),
-                            ),
-                        );
-                    }
-                    "%EvtxFile%" => {
-                        profile_converter.insert(
-                            CompactString::from("%EvtxFile%"),
-                            CompactString::from(
-                                Path::new(&record_info.evtx_filepath)
-                                    .to_str()
-                                    .unwrap_or_default(),
-                            ),
-                        );
-                    }
-                    "%MitreTactics%" => {
-                        let tactics = CompactString::from(
-                            &tag_info
-                                .iter()
-                                .filter(|x| tags_config_values.contains(&x.to_string()))
-                                .join(" ¦ "),
-                        );
+        for (key, profile) in PROFILES.as_ref().unwrap().iter() {
+            match profile {
+                Timestamp(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Timestamp(CompactString::from(format_time(&time, false))),
+                    );
+                }
+                Computer(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Computer(CompactString::from(
+                            record_info.record["Event"]["System"]["Computer"]
+                                .to_string()
+                                .replace('\"', ""),
+                        )),
+                    );
+                }
+                Channel(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Channel(CompactString::from(
+                            CH_CONFIG
+                                .get(&ch_str.to_ascii_lowercase())
+                                .unwrap_or(ch_str),
+                        )),
+                    );
+                }
+                Level(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Level(CompactString::from(
+                            LEVEL_ABBR_MAP
+                                .get(&level.as_str())
+                                .unwrap_or(&level.as_str())
+                                .to_string(),
+                        )),
+                    );
+                }
+                EventID(_) => {
+                    profile_converter.insert(key.to_string(), EventID(eid.to_owned()));
+                }
+                RecordID(_) => {
+                    profile_converter.insert(key.to_string(), RecordID(rec_id.to_owned()));
+                }
+                RuleTitle(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleTitle(CompactString::from(
+                            rule.yaml["title"].as_str().unwrap_or(""),
+                        )),
+                    );
+                }
+                AllFieldInfo(_) => {
+                    profile_converter
+                        .insert(key.to_string(), AllFieldInfo(opt_record_info.to_owned()));
+                }
+                RuleFile(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleFile(CompactString::from(
+                            Path::new(&rule.rulepath)
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_str()
+                                .unwrap_or_default(),
+                        )),
+                    );
+                }
+                EvtxFile(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        EvtxFile(CompactString::from(
+                            Path::new(&record_info.evtx_filepath)
+                                .to_str()
+                                .unwrap_or_default(),
+                        )),
+                    );
+                }
+                MitreTactics(_) => {
+                    let tactics = CompactString::from(
+                        &tag_info
+                            .iter()
+                            .filter(|x| tags_config_values.contains(&x.to_string()))
+                            .join(" ¦ "),
+                    );
 
-                        profile_converter.insert(CompactString::from("%MitreTactics%"), tactics);
-                    }
-                    "%MitreTags%" => {
-                        let techniques = CompactString::from(
-                            &tag_info
-                                .iter()
-                                .filter(|x| {
-                                    !tags_config_values.contains(&x.to_string())
-                                        && (x.starts_with("attack.t")
-                                            || x.starts_with("attack.g")
-                                            || x.starts_with("attack.s"))
-                                })
-                                .map(|y| {
-                                    let replaced_tag = y.replace("attack.", "");
-                                    make_ascii_titlecase(&replaced_tag)
-                                })
-                                .join(" ¦ "),
-                        );
-                        profile_converter.insert(CompactString::from("%MitreTags%"), techniques);
-                    }
-                    "%OtherTags%" => {
-                        let tags = CompactString::from(
-                            &tag_info
-                                .iter()
-                                .filter(|x| {
-                                    !(TAGS_CONFIG.values().contains(&x.to_string())
-                                        || x.starts_with("attack.t")
+                    profile_converter.insert(key.to_string(), MitreTactics(tactics));
+                }
+                MitreTags(_) => {
+                    let techniques = CompactString::from(
+                        &tag_info
+                            .iter()
+                            .filter(|x| {
+                                !tags_config_values.contains(&x.to_string())
+                                    && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
-                                })
-                                .join(" ¦ "),
-                        );
-                        profile_converter.insert(CompactString::from("%OtherTags%"), tags);
-                    }
-                    "%RuleAuthor%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleAuthor%"),
-                            CompactString::from(rule.yaml["author"].as_str().unwrap_or("-")),
-                        );
-                    }
-                    "%RuleCreationDate%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleCreationDate%"),
-                            CompactString::from(rule.yaml["date"].as_str().unwrap_or("-")),
-                        );
-                    }
-                    "%RuleModifiedDate%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleModifiedDate%"),
-                            CompactString::from(rule.yaml["modified"].as_str().unwrap_or("-")),
-                        );
-                    }
-                    "%Status%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Status%"),
-                            CompactString::from(rule.yaml["status"].as_str().unwrap_or("-")),
-                        );
-                    }
-                    "%RuleID%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleID%"),
-                            CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
-                        );
-                    }
-                    "%Provider%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Provider%"),
-                            CompactString::from(
-                                record_info.record["Event"]["System"]["Provider_attributes"]
-                                    ["Name"]
-                                    .to_string()
-                                    .replace('\"', ""),
-                            ),
-                        );
-                    }
-                    _ => {}
+                            })
+                            .map(|y| {
+                                let replaced_tag = y.replace("attack.", "");
+                                make_ascii_titlecase(&replaced_tag)
+                            })
+                            .join(" ¦ "),
+                    );
+                    profile_converter.insert(key.to_string(), MitreTags(techniques));
                 }
+                OtherTags(_) => {
+                    let tags = CompactString::from(
+                        &tag_info
+                            .iter()
+                            .filter(|x| {
+                                !(TAGS_CONFIG.values().contains(&x.to_string())
+                                    || x.starts_with("attack.t")
+                                    || x.starts_with("attack.g")
+                                    || x.starts_with("attack.s"))
+                            })
+                            .join(" ¦ "),
+                    );
+                    profile_converter.insert(key.to_string(), OtherTags(tags));
+                }
+                RuleAuthor(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleAuthor(CompactString::from(
+                            rule.yaml["author"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleCreationDate(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleCreationDate(CompactString::from(
+                            rule.yaml["date"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleModifiedDate(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleModifiedDate(CompactString::from(
+                            rule.yaml["modified"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                Status(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Status(CompactString::from(
+                            rule.yaml["status"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleID(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleID(CompactString::from(rule.yaml["id"].as_str().unwrap_or("-"))),
+                    );
+                }
+                Provider(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Provider(CompactString::from(
+                            record_info.record["Event"]["System"]["Provider_attributes"]["Name"]
+                                .to_string()
+                                .replace('\"', ""),
+                        )),
+                    );
+                }
+                _ => {}
             }
         }
 
@@ -437,6 +452,7 @@ impl Detection {
             detail: CompactString::default(),
             record_information: opt_record_info,
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
+            is_condition: false,
         };
         message::insert(
             &record_info.record,
@@ -452,139 +468,155 @@ impl Detection {
     fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
-        let rec_info = CompactString::default();
 
-        let mut profile_converter: HashMap<CompactString, CompactString> = HashMap::new();
+        let mut profile_converter: HashMap<String, Profile> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let mut tags_config_values = TAGS_CONFIG.values();
 
-        for p in PROFILES.as_ref().unwrap().iter() {
-            for target_profile in PRELOAD_PROFILE_REGEX
-                .matches(p[1].to_string().as_str())
-                .into_iter()
-            {
-                match PRELOAD_PROFILE[target_profile] {
-                    "%Timestamp%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Timestamp%"),
-                            CompactString::from(format_time(&agg_result.start_timedate, false)),
-                        );
-                    }
-                    "%Computer%" => {
-                        profile_converter
-                            .insert(CompactString::from("%Computer%"), CompactString::from("-"));
-                    }
-                    "%Channel%" => {
-                        profile_converter
-                            .insert(CompactString::from("%Channel%"), CompactString::from("-"));
-                    }
-                    "%Level%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Level%"),
-                            CompactString::from(
-                                LEVEL_ABBR_MAP
-                                    .get(&level.as_str())
-                                    .unwrap_or(&level.as_str())
-                                    .to_string(),
-                            ),
-                        );
-                    }
-                    "%EventID%" => {
-                        profile_converter
-                            .insert(CompactString::from("%EventID%"), CompactString::from("-"));
-                    }
-                    "%RecordID%" => {
-                        profile_converter
-                            .insert(CompactString::from("%RecordID%"), CompactString::from(""));
-                    }
-                    "%RuleTitle%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleTitle%"),
-                            CompactString::from(rule.yaml["title"].as_str().unwrap_or("")),
-                        );
-                    }
-                    "%AllFieldInfo%" => {
-                        profile_converter.insert(
-                            CompactString::from("%AllFieldInfo%"),
-                            CompactString::from("-"),
-                        );
-                    }
-                    "%RuleFile%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleFile%"),
-                            CompactString::from(
-                                Path::new(&rule.rulepath)
-                                    .file_name()
-                                    .unwrap_or_default()
-                                    .to_str()
-                                    .unwrap_or_default(),
-                            ),
-                        );
-                    }
-                    "%EvtxFile%" => {
-                        profile_converter
-                            .insert(CompactString::from("%EvtxFile%"), CompactString::from("-"));
-                    }
-                    "%MitreTactics%" => {
-                        let tactics = CompactString::from(
-                            &tag_info
-                                .iter()
-                                .filter(|x| tags_config_values.contains(&x.to_string()))
-                                .join(" ¦ "),
-                        );
-                        profile_converter.insert(CompactString::from("%MitreTactics%"), tactics);
-                    }
-                    "%MitreTags%" => {
-                        let techniques = CompactString::from(
-                            &tag_info
-                                .iter()
-                                .filter(|x| {
-                                    !tags_config_values.contains(&x.to_string())
-                                        && (x.starts_with("attack.t")
-                                            || x.starts_with("attack.g")
-                                            || x.starts_with("attack.s"))
-                                })
-                                .map(|y| {
-                                    let replaced_tag = y.replace("attack.", "");
-                                    make_ascii_titlecase(&replaced_tag)
-                                })
-                                .join(" ¦ "),
-                        );
-                        profile_converter.insert(CompactString::from("%MitreTags%"), techniques);
-                    }
-                    "%OtherTags%" => {
-                        let tags = CompactString::from(
-                            &tag_info
-                                .iter()
-                                .filter(|x| {
-                                    !(tags_config_values.contains(&x.to_string())
-                                        || x.starts_with("attack.t")
+        for (key, profile) in PROFILES.as_ref().unwrap().iter() {
+            match profile {
+                Timestamp(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Timestamp(CompactString::from(format_time(
+                            &agg_result.start_timedate,
+                            false,
+                        ))),
+                    );
+                }
+                Computer(_) => {
+                    profile_converter.insert(key.to_string(), Computer(CompactString::from("-")));
+                }
+                Channel(_) => {
+                    profile_converter.insert(key.to_string(), Channel(CompactString::from("-")));
+                }
+                Level(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Level(CompactString::from(
+                            LEVEL_ABBR_MAP
+                                .get(&level.as_str())
+                                .unwrap_or(&level.as_str())
+                                .to_string(),
+                        )),
+                    );
+                }
+                EventID(_) => {
+                    profile_converter.insert(key.to_string(), EventID(CompactString::from("-")));
+                }
+                RecordID(_) => {
+                    profile_converter.insert(key.to_string(), RecordID(CompactString::from("")));
+                }
+                RuleTitle(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleTitle(CompactString::from(
+                            rule.yaml["title"].as_str().unwrap_or(""),
+                        )),
+                    );
+                }
+                AllFieldInfo(_) => {
+                    profile_converter
+                        .insert(key.to_string(), AllFieldInfo(CompactString::from("-")));
+                }
+                RuleFile(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleFile(CompactString::from(
+                            Path::new(&rule.rulepath)
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_str()
+                                .unwrap_or_default(),
+                        )),
+                    );
+                }
+                EvtxFile(_) => {
+                    profile_converter.insert(key.to_string(), EvtxFile(CompactString::from("-")));
+                }
+                MitreTactics(_) => {
+                    let tactics = CompactString::from(
+                        &tag_info
+                            .iter()
+                            .filter(|x| tags_config_values.contains(&x.to_string()))
+                            .join(" ¦ "),
+                    );
+                    profile_converter.insert(key.to_string(), MitreTactics(tactics));
+                }
+                MitreTags(_) => {
+                    let techniques = CompactString::from(
+                        &tag_info
+                            .iter()
+                            .filter(|x| {
+                                !tags_config_values.contains(&x.to_string())
+                                    && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
-                                })
-                                .join(" ¦ "),
-                        );
-                        profile_converter.insert(CompactString::from("%OtherTags%"), tags);
-                    }
-                    "%Status%" => {
-                        profile_converter.insert(
-                            CompactString::from("%Status%"),
-                            CompactString::from(rule.yaml["status"].as_str().unwrap_or("-")),
-                        );
-                    }
-                    "%RuleID%" => {
-                        profile_converter.insert(
-                            CompactString::from("%RuleID%"),
-                            CompactString::from(rule.yaml["id"].as_str().unwrap_or("-")),
-                        );
-                    }
-                    "%Provider%" => {
-                        profile_converter
-                            .insert(CompactString::from("%Provider%"), CompactString::from("-"));
-                    }
-
-                    _ => {}
+                            })
+                            .map(|y| {
+                                let replaced_tag = y.replace("attack.", "");
+                                make_ascii_titlecase(&replaced_tag)
+                            })
+                            .join(" ¦ "),
+                    );
+                    profile_converter.insert(key.to_string(), MitreTags(techniques));
                 }
+                OtherTags(_) => {
+                    let tags = CompactString::from(
+                        &tag_info
+                            .iter()
+                            .filter(|x| {
+                                !(tags_config_values.contains(&x.to_string())
+                                    || x.starts_with("attack.t")
+                                    || x.starts_with("attack.g")
+                                    || x.starts_with("attack.s"))
+                            })
+                            .join(" ¦ "),
+                    );
+                    profile_converter.insert(key.to_string(), OtherTags(tags));
+                }
+                RuleAuthor(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleAuthor(CompactString::from(
+                            rule.yaml["author"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleCreationDate(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleCreationDate(CompactString::from(
+                            rule.yaml["date"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleModifiedDate(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleModifiedDate(CompactString::from(
+                            rule.yaml["modified"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                Status(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        Status(CompactString::from(
+                            rule.yaml["status"].as_str().unwrap_or("-"),
+                        )),
+                    );
+                }
+                RuleID(_) => {
+                    profile_converter.insert(
+                        key.to_string(),
+                        RuleID(CompactString::from(rule.yaml["id"].as_str().unwrap_or("-"))),
+                    );
+                }
+                Provider(_) => {
+                    profile_converter.insert(key.to_string(), Provider(CompactString::from("-")));
+                }
+                _ => {}
             }
         }
 
@@ -600,10 +632,10 @@ impl Detection {
             computername: CompactString::from("-"),
             eventid: CompactString::from("-"),
             detail: output,
-            record_information: rec_info,
+            record_information: CompactString::default(),
             ext_field: PROFILES.as_ref().unwrap().to_owned(),
+            is_condition: true,
         };
-
         message::insert(
             &Value::default(),
             CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
@@ -807,7 +839,6 @@ impl Detection {
 
 #[cfg(test)]
 mod tests {
-
     use crate::detections::detection::Detection;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;

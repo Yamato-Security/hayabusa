@@ -9,6 +9,7 @@
 **改善:**
 
 - インポートしているcrateのRustバージョンによるビルドエラーを回避するためにCargo.tomlに`rust-version`を追加した。(#802) (@hitenkoku)
+- メモリ使用の削減。 (#806) (@fukusuket)
 
 **バグ修正:**
 

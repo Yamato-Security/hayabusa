@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
+- Reduced memory usage. (#806) (@fukusuket)
 
 **Bug Fixes:**
 
