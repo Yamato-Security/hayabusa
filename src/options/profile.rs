@@ -3,8 +3,8 @@ use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
     AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, Level, Literal, MitreTactics,
-    MitreTags, OtherTags, Provider, RecordID, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
-    RuleModifiedDate, RuleTitle, Status, Timestamp,
+    MitreTags, OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate,
+    RuleFile, RuleID, RuleModifiedDate, RuleTitle, Status, Timestamp,
 };
 use crate::yaml;
 use compact_str::CompactString;
@@ -58,6 +58,7 @@ pub enum Profile {
     RuleID(CompactString),
     Provider(CompactString),
     Details(CompactString),
+    RenderedMessage(CompactString),
     Literal(CompactString), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
@@ -68,7 +69,7 @@ impl Profile {
             | RuleTitle(v) | AllFieldInfo(v) | RuleFile(v) | EvtxFile(v) | MitreTactics(v)
             | MitreTags(v) | OtherTags(v) | RuleAuthor(v) | RuleCreationDate(v)
             | RuleModifiedDate(v) | Status(v) | RuleID(v) | Provider(v) | Details(v)
-            | Literal(v) => v.to_string(),
+            | RenderedMessage(v) | Literal(v) => v.to_string(),
         }
     }
 
@@ -92,6 +93,7 @@ impl Profile {
             Status(_) => Status(converted_string.to_owned()),
             RuleID(_) => RuleID(converted_string.to_owned()),
             Provider(_) => Provider(converted_string.to_owned()),
+            RenderedMessage(_) => RenderedMessage(converted_string.to_owned()),
             p => p.to_owned(),
         }
     }
@@ -120,6 +122,7 @@ impl From<&str> for Profile {
             "%RuleID%" => RuleID(Default::default()),
             "%Provider%" => Provider(Default::default()),
             "%Details%" => Details(Default::default()),
+            "%RenderedMessage%" => RenderedMessage(Default::default()),
             s => Literal(CompactString::from(s)), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
         }
     }

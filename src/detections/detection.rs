@@ -4,8 +4,8 @@ use crate::detections::configs;
 use crate::detections::utils::{format_time, write_color_buffer};
 use crate::options::profile::Profile::{
     AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
-    Provider, RecordID, RuleAuthor, RuleCreationDate, RuleFile, RuleID, RuleModifiedDate,
-    RuleTitle, Status, Timestamp,
+    Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
+    RuleModifiedDate, RuleTitle, Status, Timestamp,
 };
 use crate::options::profile::{Profile, PROFILES};
 use chrono::{TimeZone, Utc};
@@ -430,6 +430,21 @@ impl Detection {
                         )),
                     );
                 }
+                RenderedMessage(_) => {
+                    let convert_value = if configs::CONFIG.read().unwrap().args.output.is_none() {
+                        CompactString::from(format!("({} is omitted)", key))
+                    } else {
+                        CompactString::from(
+                            record_info.record["Event"]["RenderingInfo"]["Message"]
+                                .as_str()
+                                .unwrap_or("-")
+                                .replace('\n', "\\n")
+                                .replace('\r', "\\r")
+                                .replace('\t', "\\t"),
+                        )
+                    };
+                    profile_converter.insert(key.to_string(), Provider(convert_value));
+                }
                 _ => {}
             }
         }
@@ -614,6 +629,9 @@ impl Detection {
                     );
                 }
                 Provider(_) => {
+                    profile_converter.insert(key.to_string(), Provider(CompactString::from("-")));
+                }
+                RenderedMessage(_) => {
                     profile_converter.insert(key.to_string(), Provider(CompactString::from("-")));
                 }
                 _ => {}
