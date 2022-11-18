@@ -14,6 +14,7 @@
 **Bug Fixes:**
 
 - Fixed a problem where rules using the `Data` field were not being detected. (#775) (@hitenkoku)
+- Fixed `%MitreTags%` and `%MitreTactics%` profile output randomly miss values. (#807) (@fukusuket)
 
 ## 1.8.0 [2022/11/07]
 
