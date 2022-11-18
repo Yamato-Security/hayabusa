@@ -260,7 +260,7 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
 
         let mut profile_converter: HashMap<String, Profile> = HashMap::new();
-        let mut tags_config_values = TAGS_CONFIG.values();
+        let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
         for (key, profile) in PROFILES.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -344,7 +344,7 @@ impl Detection {
                     let tactics = CompactString::from(
                         &tag_info
                             .iter()
-                            .filter(|x| tags_config_values.contains(&x.to_string()))
+                            .filter(|x| tags_config_values.contains(&&x.to_string()))
                             .join(" ¦ "),
                     );
 
@@ -355,7 +355,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !tags_config_values.contains(&x.to_string())
+                                !tags_config_values.contains(&&x.to_string())
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -471,7 +471,7 @@ impl Detection {
 
         let mut profile_converter: HashMap<String, Profile> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
-        let mut tags_config_values = TAGS_CONFIG.values();
+        let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
 
         for (key, profile) in PROFILES.as_ref().unwrap().iter() {
             match profile {
@@ -538,7 +538,7 @@ impl Detection {
                     let tactics = CompactString::from(
                         &tag_info
                             .iter()
-                            .filter(|x| tags_config_values.contains(&x.to_string()))
+                            .filter(|x| tags_config_values.contains(&&x.to_string()))
                             .join(" ¦ "),
                     );
                     profile_converter.insert(key.to_string(), MitreTactics(tactics));
@@ -548,7 +548,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !tags_config_values.contains(&x.to_string())
+                                !tags_config_values.contains(&&x.to_string())
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -566,7 +566,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !(tags_config_values.contains(&x.to_string())
+                                !(tags_config_values.contains(&&x.to_string())
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
