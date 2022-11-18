@@ -10,7 +10,7 @@
 
 - Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
 - Reduced memory usage. (#806) (@fukusuket)
-- Added `%RenderedMessage%`  profile which is Rendered Message in WEC used log to output profile. (#760) (@hitenkoku)
+- Added `%RenderedMessage%`  profile which is Rendered Message in WEC used evtx file to output profile. (#760) (@hitenkoku)
 
 **Bug Fixes:**
 
