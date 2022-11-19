@@ -64,6 +64,25 @@ pub struct Config {
     #[arg(help_heading = Some("INPUT"), short = 'f', long = "file", value_name = "FILE")]
     pub filepath: Option<PathBuf>,
 
+    /// Analyze the local C:\Windows\System32\winevt\Logs folder
+    #[arg(help_heading = Some("INPUT"), short = 'l', long = "live-analysis")]
+    pub live_analysis: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+        help_heading = Some("ADVANCED"),
+        short = 'c',
+        long = "rules-config",
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "DIRECTORY"
+    )]
+    pub config: PathBuf,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(help_heading = Some("ADVANCED"), short = 'Q', long = "quiet-errors")]
+    pub quiet_errors: bool,
+
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
         help_heading = Some("ADVANCED"), 
@@ -75,20 +94,45 @@ pub struct Config {
     )]
     pub rules: PathBuf,
 
-    /// Specify custom rule config directory (default: ./rules/config)
-    #[arg(
-        help_heading = Some("ADVANCED"), 
-        short = 'c',
-        long = "rules-config",
-        default_value = "./rules/config",
-        hide_default_value = true,
-        value_name = "DIRECTORY"
-    )]
-    pub config: PathBuf,
+    /// Thread number (default: optimal number for performance)
+    #[arg(help_heading = Some("ADVANCED"), short, long = "thread-number", value_name = "NUMBER")]
+    pub thread_number: Option<usize>,
+
+    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
+    #[arg(help_heading = Some("ADVANCED"), long = "target-file-ext")]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Save detail Results Summary in html (ex: results.html)
+    #[arg(help_heading = Some("OUTPUT"), short = 'H', long="html-report", value_name = "FILE")]
+    pub html_report: Option<PathBuf>,
+
+    /// Save the timeline in JSON format (ex: -j -o results.json)
+    #[arg(help_heading = Some("OUTPUT"), short = 'j', long = "json", requires = "output")]
+    pub json_timeline: bool,
+
+    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
+    #[arg(help_heading = Some("OUTPUT"), short = 'J', long = "jsonl", requires = "output")]
+    pub jsonl_timeline: bool,
 
     /// Save the timeline in CSV format (ex: results.csv)
     #[arg(help_heading = Some("OUTPUT"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
+
+    /// Specify output profile
+    #[arg(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
+    pub profile: Option<String>,
+
+    /// Disable color output
+    #[arg(help_heading = Some("DISPLAY-SETTINGS"), long = "no-color")]
+    pub no_color: bool,
+
+    /// Do not display result summary
+    #[arg(help_heading = Some("DISPLAY-SETTINGS"), long = "no-summary")]
+    pub no_summary: bool,
+
+    /// Quiet mode: do not display the launch banner
+    #[arg(help_heading = Some("DISPLAY-SETTINGS"), short, long)]
+    pub quiet: bool,
 
     /// Output verbose information
     #[arg(help_heading = Some("DISPLAY-SETTINGS"), short = 'v', long)]
@@ -98,21 +142,17 @@ pub struct Config {
     #[arg(help_heading = Some("DISPLAY-SETTINGS"), short = 'T', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
-    /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("FILTERING"), long = "enable-deprecated-rules")]
-    pub enable_deprecated_rules: bool,
-
     /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("FILTERING"), short = 'e', long = "eid-filter")]
     pub eid_filter: bool,
 
-    /// Enable rules marked as noisy
-    #[arg(help_heading = Some("FILTERING"), short = 'n', long = "enable-noisy-rules")]
-    pub enable_noisy_rules: bool,
+    /// Enable rules marked as deprecated
+    #[arg(help_heading = Some("FILTERING"), long = "enable-deprecated-rules")]
+    pub enable_deprecated_rules: bool,
 
-    /// Update to the latest rules in the hayabusa-rules github repository
-    #[arg(help_heading = Some("OTHER-ACTIONS"), short = 'u', long = "update-rules")]
-    pub update_rules: bool,
+    /// Ignore rules according to status (ex: experimental) (ex: stable test)
+    #[arg(help_heading = Some("FILTERING"), long = "exclude-status", value_name = "STATUS")]
+    pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
     #[arg(
@@ -125,57 +165,21 @@ pub struct Config {
     )]
     pub min_level: String,
 
-    /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[arg(help_heading = Some("INPUT"), short = 'l', long = "live-analysis")]
-    pub live_analysis: bool,
-
-    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("FILTERING"), long = "timeline-start", value_name = "DATE")]
-    pub start_timeline: Option<String>,
+    /// Enable rules marked as noisy
+    #[arg(help_heading = Some("FILTERING"), short = 'n', long = "enable-noisy-rules")]
+    pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
     #[arg(help_heading = Some("FILTERING"), long = "timeline-end", value_name = "DATE")]
     pub end_timeline: Option<String>,
 
-    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("TIME-FORMAT"), long = "RFC-2822")]
-    pub rfc_2822: bool,
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    #[arg(help_heading = Some("FILTERING"), long = "timeline-start", value_name = "DATE")]
+    pub start_timeline: Option<String>,
 
-    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("TIME-FORMAT"), long = "RFC-3339")]
-    pub rfc_3339: bool,
-
-    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("TIME-FORMAT"), long = "US-time")]
-    pub us_time: bool,
-
-    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("TIME-FORMAT"), long = "ISO-8601")]
-    pub iso_8601: bool,
-
-    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("TIME-FORMAT"), long = "US-military-time")]
-    pub us_military_time: bool,
-
-    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("TIME-FORMAT"), long = "European-time")]
-    pub european_time: bool,
-
-    /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("TIME-FORMAT"), short = 'U', long = "UTC")]
-    pub utc: bool,
-
-    /// Disable color output
-    #[arg(help_heading = Some("DISPLAY-SETTINGS"), long = "no-color")]
-    pub no_color: bool,
-
-    /// Thread number (default: optimal number for performance)
-    #[arg(help_heading = Some("ADVANCED"), short, long = "thread-number", value_name = "NUMBER")]
-    pub thread_number: Option<usize>,
-
-    /// Print event ID metrics
-    #[arg(help_heading = Some("OTHER-ACTIONS"), short='M', long)]
-    pub metrics: bool,
+    /// Print the list of contributors
+    #[arg(help_heading = Some("OTHER-ACTIONS"), long)]
+    pub contributors: bool,
 
     /// Print a summary of successful and failed logons
     #[arg(help_heading = Some("OTHER-ACTIONS"), short = 'L', long = "logon-summary")]
@@ -190,57 +194,53 @@ pub struct Config {
     )]
     pub level_tuning: Option<Option<String>>,
 
-    /// Quiet mode: do not display the launch banner
-    #[arg(help_heading = Some("DISPLAY-SETTINGS"), short, long)]
-    pub quiet: bool,
+    /// List the output profiles
+    #[arg(help_heading = Some("OTHER-ACTIONS"), long = "list-profiles")]
+    pub list_profile: bool,
 
-    /// Quiet errors mode: do not save error logs
-    #[arg(help_heading = Some("ADVANCED"), short = 'Q', long = "quiet-errors")]
-    pub quiet_errors: bool,
+    /// Print event ID metrics
+    #[arg(help_heading = Some("OTHER-ACTIONS"), short='M', long)]
+    pub metrics: bool,
 
     /// Create a list of pivot keywords
     #[arg(help_heading = Some("OTHER-ACTIONS"), short = 'p', long = "pivot-keywords-list")]
     pub pivot_keywords_list: bool,
 
-    /// Print the list of contributors
-    #[arg(help_heading = Some("OTHER-ACTIONS"), long)]
-    pub contributors: bool,
-
-    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-    #[arg(help_heading = Some("ADVANCED"), long = "target-file-ext")]
-    pub evtx_file_ext: Option<Vec<String>>,
-
-    /// Ignore rules according to status (ex: experimental) (ex: stable test)
-    #[arg(help_heading = Some("FILTERING"), long = "exclude-status", value_name = "STATUS")]
-    pub exclude_status: Option<Vec<String>>,
-
-    /// Specify output profile
-    #[arg(help_heading = Some("OUTPUT"), short = 'P', long = "profile")]
-    pub profile: Option<String>,
-
     /// Set default output profile
     #[arg(help_heading = Some("OTHER-ACTIONS"), long = "set-default-profile", value_name = "PROFILE")]
     pub set_default_profile: Option<String>,
 
-    /// List the output profiles
-    #[arg(help_heading = Some("OTHER-ACTIONS"), long = "list-profiles")]
-    pub list_profile: bool,
+    /// Update to the latest rules in the hayabusa-rules github repository
+    #[arg(help_heading = Some("OTHER-ACTIONS"), short = 'u', long = "update-rules")]
+    pub update_rules: bool,
 
-    /// Save the timeline in JSON format (ex: -j -o results.json)
-    #[arg(help_heading = Some("OUTPUT"), short = 'j', long = "json", requires = "output")]
-    pub json_timeline: bool,
+    /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+    #[arg(help_heading = Some("TIME-FORMAT"), long = "European-time")]
+    pub european_time: bool,
 
-    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
-    #[arg(help_heading = Some("OUTPUT"), short = 'J', long = "jsonl", requires = "output")]
-    pub jsonl_timeline: bool,
+    /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+    #[arg(help_heading = Some("TIME-FORMAT"), long = "ISO-8601")]
+    pub iso_8601: bool,
 
-    /// Do not display result summary
-    #[arg(help_heading = Some("DISPLAY-SETTINGS"), long = "no-summary")]
-    pub no_summary: bool,
+    /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+    #[arg(help_heading = Some("TIME-FORMAT"), long = "RFC-2822")]
+    pub rfc_2822: bool,
 
-    /// Save detail Results Summary in html (ex: results.html)
-    #[arg(help_heading = Some("OUTPUT"), short = 'H', long="html-report", value_name = "FILE")]
-    pub html_report: Option<PathBuf>,
+    /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+    #[arg(help_heading = Some("TIME-FORMAT"), long = "RFC-3339")]
+    pub rfc_3339: bool,
+
+    /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+    #[arg(help_heading = Some("TIME-FORMAT"), long = "US-military-time")]
+    pub us_military_time: bool,
+
+    /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+    #[arg(help_heading = Some("TIME-FORMAT"), long = "US-time")]
+    pub us_time: bool,
+
+    /// Output time in UTC format (default: local time)
+    #[arg(help_heading = Some("TIME-FORMAT"), short = 'U', long = "UTC")]
+    pub utc: bool,
 }
 
 impl ConfigReader {
