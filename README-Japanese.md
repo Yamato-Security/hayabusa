@@ -394,62 +394,66 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 ## コマンドラインオプション
 
 ```
-USAGE:
-    hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
+Usage:
+  hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
+
+Options:
+  -h, --help     Print help information
+  -V, --version  Print version information
 
 INPUT:
-    -d, --directory <DIRECTORY>    .evtxファイルを持つディレクトリのパス
-    -f, --file <FILE>              1つの.evtxファイルに対して解析を行う
-    -l, --live-analysis            ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -d, --directory <DIRECTORY>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
 
 ADVANCED:
-    -c, --rules-config <DIRECTORY>              ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-    -Q, --quiet-errors                          Quiet errorsモード: エラーログを保存しない
-    -r, --rules <DIRECTORY/FILE>                ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
-    -t, --thread-number <NUMBER>                スレッド数 (デフォルト: パフォーマンスに最適な数値)
-        --target-file-ext <EVTX_FILE_EXT>...    evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
+  -c, --rules-config <DIRECTORY>         ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -r, --rules <DIRECTORY/FILE>           ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+  -t, --thread-number <NUMBER>           スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1 evtx2)
 
 OUTPUT:
-    -H, --html-report <FILE>               HTML形式で詳細な結果を出力する (例: results.html)
-    -j, --json                             タイムラインの出力をJSON形式で保存する（例: -j -o results.json）
-    -J, --jsonl                            タイムラインの出力をJSONL形式で保存する (例: -J -o results.jsonl)
-    -o, --output <FILE>                    タイムラインをCSV形式で保存する (例: results.csv)
-    -P, --profile <PROFILE>                利用する出力プロファイル名を指定する
+  -H, --html-report <FILE>  HTML形式で詳細な結果を出力する (例: results.html)
+  -j, --json                タイムラインの出力をJSON形式で保存する（例: -j -o results.json）
+  -J, --jsonl               タイムラインの出力をJSONL形式で保存する (例: -J -o results.jsonl)
+  -o, --output <FILE>       タイムラインをCSV形式で保存する (例: results.csv)
+  -P, --profile <PROFILE>   利用する出力プロファイル名を指定する
 
 DISPLAY-SETTINGS:
-        --no-color              カラー出力を無効にする
-        --no-summary            結果概要を出力しない
-    -q, --quiet                 Quietモード: 起動バナーを表示しない
-    -v, --verbose               詳細な情報を出力する
-    -V, --visualize-timeline    イベント頻度タイムラインを出力する
+      --no-color            カラー出力を無効にする
+      --no-summary          結果概要を出力しない
+  -q, --quiet               Quietモード: 起動バナーを表示しない
+  -v, --verbose             詳細な情報を出力する
+  -T, --visualize-timeline  イベント頻度タイムラインを出力する
 
 FILTERING:
-    -e, --eid-filter                    イベントIDによるフィルタリングを行う(コンフィグファイル: ./rules/config/target_event_IDs.txt`)
-        --enable-deprecated-rules       Deprecatedルールを有効にする
-        --exclude-status <STATUS>...    読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
-    -m, --min-level <LEVEL>             結果出力をするルールの最低レベル (デフォルト: informational)
-    -n, --enable-noisy-rules            Noisyルールを有効にする
-        --timeline-end <DATE>           解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-        --timeline-start <DATE>         解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -e, --eid-filter               イベントIDによるフィルタリングを行う(コンフィグファイル: ./rules/config/target_event_IDs.txt`)
+      --enable-deprecated-rules  Deprecatedルールを有効にする
+      --exclude-status <STATUS>  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable test)
+  -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
+  -n, --enable-noisy-rules       Noisyルールを有効にする
+      --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 OTHER-ACTIONS:
-        --contributors                          コントリビュータの一覧表示
-    -L, --logon-summary                         成功と失敗したログオン情報の要約を出力する
-        --level-tuning [<FILE>]                 ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-        --list-profiles                         利用可能な出力プロファイル名を出力する
-    -M, --metrics                               イベントIDの統計情報を表示する
-    -p, --pivot-keywords-list                   ピボットキーワードの一覧作成
-        --set-default-profile <PROFILE>         デフォルトの出力コンフィグを設定する
-    -u, --update-rules                          rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
+      --contributors                   コントリビュータの一覧表示
+  -L, --logon-summary                  成功と失敗したログオン情報の要約を出力する
+      --level-tuning [<FILE>]          ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+      --list-profiles                  利用可能な出力プロファイル名を出力する
+  -M, --metrics                        イベントIDの統計情報を表示する
+  -p, --pivot-keywords-list            ピボットキーワードの一覧作成
+      --set-default-profile <PROFILE>  デフォルトの出力コンフィグを設定する
+  -u, --update-rules                   rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
 
 TIME-FORMAT:
-        --European-time       ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
-        --ISO-8601            ISO-8601形式で日付と時刻を出力する (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-        --RFC-2822            RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
-        --RFC-3339            RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
-        --US-military-time    24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
-        --US-time             アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
-    -U, --UTC                 UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
+      --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          ISO-8601形式で日付と時刻を出力する (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          RFC 2822形式で日付と時刻を出力する (例: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          RFC 3339形式で日付と時刻を出力する (例: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
 ```
 
 ## 使用例

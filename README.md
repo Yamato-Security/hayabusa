@@ -389,11 +389,8 @@ You should now be able to run hayabusa.
 ## Command Line Options
 
 ```
-Hayabusa 1.9.0-dev
-Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)
-
 Usage:
-    725.exe [OPTIONS]
+  hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
 
 Options:
   -h, --help     Print help information
@@ -405,52 +402,52 @@ INPUT:
   -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
 
 ADVANCED:
-  -r, --rules <DIRECTORY/FILE>           Specify a custom rule directory or file (default: ./rules)
   -c, --rules-config <DIRECTORY>         Specify custom rule config directory (default: ./rules/config)
-  -t, --thread-number <NUMBER>           Thread number (default: optimal number for performance)
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
+  -r, --rules <DIRECTORY/FILE>           Specify a custom rule directory or file (default: ./rules)
+  -t, --thread-number <NUMBER>           Thread number (default: optimal number for performance)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
 
 OUTPUT:
-  -o, --output <FILE>       Save the timeline in CSV format (ex: results.csv)
-  -P, --profile <PROFILE>   Specify output profile
+  -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
   -j, --json                Save the timeline in JSON format (ex: -j -o results.json)
   -J, --jsonl               Save the timeline in JSONL format (ex: -J -o results.jsonl)
-  -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
+  -o, --output <FILE>       Save the timeline in CSV format (ex: results.csv)
+  -P, --profile <PROFILE>   Specify output profile
 
 DISPLAY-SETTINGS:
+      --no-color            Disable color output
+      --no-summary          Do not display result summary
+  -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline
-      --no-color            Disable color output
-  -q, --quiet               Quiet mode: do not display the launch banner
-      --no-summary          Do not display result summary
 
 FILTERING:
-      --enable-deprecated-rules  Enable rules marked as deprecated
   -e, --eid-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-  -n, --enable-noisy-rules       Enable rules marked as noisy
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --enable-deprecated-rules  Enable rules marked as deprecated
       --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable test)
+  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
+  -n, --enable-noisy-rules       Enable rules marked as noisy
+      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 OTHER-ACTIONS:
-  -u, --update-rules                   Update to the latest rules in the hayabusa-rules github repository
-  -M, --metrics                        Print event ID metrics
+      --contributors                   Print the list of contributors
   -L, --logon-summary                  Print a summary of successful and failed logons
       --level-tuning [<FILE>]          Tune alert levels (default: ./rules/config/level_tuning.txt)
-  -p, --pivot-keywords-list            Create a list of pivot keywords
-      --contributors                   Print the list of contributors
-      --set-default-profile <PROFILE>  Set default output profile
       --list-profiles                  List the output profiles
+  -M, --metrics                        Print event ID metrics
+  -p, --pivot-keywords-list            Create a list of pivot keywords
+      --set-default-profile <PROFILE>  Set default output profile
+  -u, --update-rules                   Update to the latest rules in the hayabusa-rules github repository
 
 TIME-FORMAT:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
       --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
   -U, --UTC               Output time in UTC format (default: local time)
 ```
 
