@@ -10,6 +10,7 @@
 
 - Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
 - Reduced memory usage. (#806) (@fukusuket)
+- Updated clap crate package to version 4 and changed `--visualize-timeline` short option with `-T`. (#725) (@hitenkoku)
 
 **Bug Fixes:**
 

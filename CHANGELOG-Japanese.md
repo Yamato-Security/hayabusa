@@ -10,6 +10,7 @@
 
 - インポートしているcrateのRustバージョンによるビルドエラーを回避するためにCargo.tomlに`rust-version`を追加した。(#802) (@hitenkoku)
 - メモリ使用の削減。 (#806) (@fukusuket)
+- Clap Crateパッケージの更新。更新の関係で`--visualize-timeline` のショートオプションを`-T`に変更した. (#725) (@hitenkoku)
 
 **バグ修正:**
 
