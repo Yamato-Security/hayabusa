@@ -431,17 +431,20 @@ impl Detection {
                     );
                 }
                 RenderedMessage(_) => {
-                    let convert_value = if configs::CONFIG.read().unwrap().args.output.is_none() {
-                        CompactString::from(format!("({} is omitted)", key))
-                    } else {
+                    let convert_value = if let Some(message) =
+                        record_info.record["Event"]["RenderingInfo"]["Message"].as_str()
+                    {
                         CompactString::from(
-                            record_info.record["Event"]["RenderingInfo"]["Message"]
-                                .as_str()
-                                .unwrap_or("-")
+                            message
+                                .replace('\t', "\\t")
+                                .split("\r\n")
+                                .map(|x| x.trim())
+                                .join("\r\n")
                                 .replace('\n', "\\n")
-                                .replace('\r', "\\r")
-                                .replace('\t', "\\t"),
+                                .replace('\r', "\\r"),
                         )
+                    } else {
+                        CompactString::from("n/a")
                     };
                     profile_converter.insert(key.to_string(), Provider(convert_value));
                 }
