@@ -10,11 +10,12 @@
 
 - Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
 - Reduced memory usage. (#806) (@fukusuket)
+- Added the support for the `%RenderedMessage%` field in output profiles which is the rendered message in logs forwarded by WEC. (#760) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Fixed a problem where rules using the `Data` field were not being detected. (#775) (@hitenkoku)
-- Fixed `%MitreTags%` and `%MitreTactics%` profile output randomly miss values. (#807) (@fukusuket)
+- Fixed a problem where the `%MitreTags%` and `%MitreTactics%` fields would randomly miss values. (#807) (@fukusuket)
 
 ## 1.8.0 [2022/11/07]
 

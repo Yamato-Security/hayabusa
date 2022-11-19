@@ -10,6 +10,7 @@
 
 - インポートしているcrateのRustバージョンによるビルドエラーを回避するためにCargo.tomlに`rust-version`を追加した。(#802) (@hitenkoku)
 - メモリ使用の削減。 (#806) (@fukusuket)
+- WEC機能を利用したevtxファイルのレンダーされたメッセージを出力するための`%RenderedMessage%`フィールドを追加した。 (#760) (@hitenkoku)
 
 **バグ修正:**
 

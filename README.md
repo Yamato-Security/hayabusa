@@ -696,6 +696,7 @@ The following benchmarks were conducted on a 2018 MBP with 7.5GB of evtx data.
 |%Status% | The `status` field in the YML detection rule. |
 |%RuleID% | The `id` field in the YML detection rule. |
 |%Provider% | The `Name` attribute in `<Event><System><Provider>` field. |
+|%RenderedMessage% | The `<Event><RenderingInfo><Message>` field in WEC forwarded logs. |
 
 You can use these aliases in your output profiles, as well as define other [event key alises](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README.md#eventkey-aliases) to output other fields.
 

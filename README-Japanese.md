@@ -701,6 +701,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 |%Status% | YML検知ルールの `status` フィールド。 |
 |%RuleID% | YML検知ルールの `id` フィールド。 |
 |%Provider% | `<Event><System><Provider>` フィールド内の`Name`属性。 |
+|%RenderedMessage% | WEC機能で転送されたイベントログの`<Event><RenderingInfo><Message>`フィールド。 |
 
 これらのエイリアスは、出力プロファイルで使用することができます。また、他の[イベントキーエイリアス](https://github.com/Yamato-Security/hayabusa-rules/blob/main/README-Japanese.md#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%AD%E3%83%BC%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9)を定義し、他のフィールドを出力することもできます。
 
