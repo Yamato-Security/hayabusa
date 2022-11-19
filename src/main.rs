@@ -9,7 +9,8 @@ use chrono::{DateTime, Datelike, Local};
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::detections::configs::{
-    load_pivot_keywords, TargetEventTime, CONFIG, CURRENT_EXE_PATH,
+    load_pivot_keywords, ConfigReader, EventInfoConfig, TargetEventIds, TargetEventTime, CONFIG,
+    CURRENT_EXE_PATH,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{
@@ -84,6 +85,7 @@ impl App {
     }
 
     fn exec(&mut self) {
+        let mut configreader = ConfigReader::new();
         if *PIVOT_KEYWORD_LIST_FLAG {
             load_pivot_keywords(
                 utils::check_setting_path(
@@ -115,11 +117,12 @@ impl App {
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
             self.output_logo();
-            configs::CONFIG.write().unwrap().app.print_help().ok();
+            // TODO 別枠でCommandの所をmainで宣言してしまえばok
+            configreader.app.print_help().ok();
             println!();
             return;
         }
-        if !configs::CONFIG.read().unwrap().args.quiet {
+        if !configs::CONFIG.read().unwrap().quiet {
             self.output_logo();
             println!();
             self.output_eggs(&format!(
@@ -137,7 +140,7 @@ impl App {
             return;
         }
 
-        if configs::CONFIG.read().unwrap().args.list_profile {
+        if configs::CONFIG.read().unwrap().list_profile {
             let profile_list = options::profile::get_profile_list("config/profiles.yaml");
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
@@ -166,20 +169,16 @@ impl App {
             return;
         }
 
-        if configs::CONFIG.read().unwrap().args.update_rules {
+        if configs::CONFIG.read().unwrap().update_rules {
             // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
             let latest_version_data = if let Ok(data) = Update::get_latest_hayabusa_version() {
                 data
             } else {
                 None
             };
-            let now_version = &format!(
-                "v{}",
-                configs::CONFIG.read().unwrap().app.get_version().unwrap()
-            );
+            let now_version = &format!("v{}", configreader.app.get_version().unwrap());
 
-            match Update::update_rules(configs::CONFIG.read().unwrap().args.rules.to_str().unwrap())
-            {
+            match Update::update_rules(configs::CONFIG.read().unwrap().rules.to_str().unwrap()) {
                 Ok(output) => {
                     if output != "You currently have the latest rules." {
                         write_color_buffer(
@@ -238,15 +237,15 @@ impl App {
             return;
         }
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG.read().unwrap().args.config == Path::new("./rules/config") {
-            configs::CONFIG.write().unwrap().args.config =
+        if configs::CONFIG.read().unwrap().config == Path::new("./rules/config") {
+            configs::CONFIG.write().unwrap().config =
                 utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
                     .unwrap();
         }
 
         // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG.read().unwrap().args.rules == Path::new("./rules") {
-            configs::CONFIG.write().unwrap().args.rules =
+        if configs::CONFIG.read().unwrap().rules == Path::new("./rules") {
+            configs::CONFIG.write().unwrap().rules =
                 utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true).unwrap();
         }
         // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
@@ -256,7 +255,7 @@ impl App {
         }
 
         // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-        if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
+        if let Some(csv_path) = &configs::CONFIG.read().unwrap().output {
             let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
             pivot_key_unions.iter().for_each(|(key, _)| {
                 let keywords_file_name =
@@ -306,7 +305,7 @@ impl App {
             println!();
         }
 
-        if let Some(html_path) = &configs::CONFIG.read().unwrap().args.html_report {
+        if let Some(html_path) = &configs::CONFIG.read().unwrap().html_report {
             // if already exists same html report file. output alert message and exit
             if utils::check_file_expect_not_exist(
                 html_path.as_path(),
@@ -330,15 +329,20 @@ impl App {
         )
         .ok();
         let target_extensions =
-            configs::get_target_extensions(CONFIG.read().unwrap().args.evtx_file_ext.as_ref());
+            configs::get_target_extensions(CONFIG.read().unwrap().evtx_file_ext.as_ref());
 
-        if configs::CONFIG.read().unwrap().args.live_analysis {
+        if configs::CONFIG.read().unwrap().live_analysis {
             let live_analysis_list = self.collect_liveanalysis_files(&target_extensions);
             if live_analysis_list.is_none() {
                 return;
             }
-            self.analysis_files(live_analysis_list.unwrap(), &time_filter);
-        } else if let Some(filepath) = &configs::CONFIG.read().unwrap().args.filepath {
+            self.analysis_files(
+                live_analysis_list.unwrap(),
+                &time_filter,
+                configreader.event_timeline_config,
+                configreader.target_eventids,
+            );
+        } else if let Some(filepath) = &configs::CONFIG.read().unwrap().filepath {
             if !filepath.exists() {
                 AlertMessage::alert(&format!(
                     " The file {} does not exist. Please specify a valid file path.",
@@ -368,8 +372,13 @@ impl App {
                 .ok();
                 return;
             }
-            self.analysis_files(vec![PathBuf::from(filepath)], &time_filter);
-        } else if let Some(directory) = &configs::CONFIG.read().unwrap().args.directory {
+            self.analysis_files(
+                vec![PathBuf::from(filepath)],
+                &time_filter,
+                configreader.event_timeline_config,
+                configreader.target_eventids,
+            );
+        } else if let Some(directory) = &configs::CONFIG.read().unwrap().directory {
             let evtx_files = Self::collect_evtxfiles(
                 directory.as_os_str().to_str().unwrap(),
                 &target_extensions,
@@ -378,22 +387,26 @@ impl App {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
             }
-            self.analysis_files(evtx_files, &time_filter);
-        } else if configs::CONFIG.read().unwrap().args.contributors {
+            self.analysis_files(
+                evtx_files,
+                &time_filter,
+                configreader.event_timeline_config,
+                configreader.target_eventids,
+            );
+        } else if configs::CONFIG.read().unwrap().contributors {
             self.print_contributors();
             return;
-        } else if configs::CONFIG.read().unwrap().args.level_tuning.is_some() {
+        } else if configs::CONFIG.read().unwrap().level_tuning.is_some() {
             let level_tuning_val = &configs::CONFIG
                 .read()
                 .unwrap()
-                .args
                 .level_tuning
                 .to_owned()
                 .unwrap();
             let level_tuning_config_path = match level_tuning_val {
                 Some(path) => path.to_owned(),
                 _ => utils::check_setting_path(
-                    &CONFIG.read().unwrap().args.config,
+                    &CONFIG.read().unwrap().config,
                     "level_tuning.txt",
                     false,
                 )
@@ -415,7 +428,6 @@ impl App {
                     configs::CONFIG
                         .read()
                         .unwrap()
-                        .args
                         .rules
                         .as_os_str()
                         .to_str()
@@ -434,7 +446,7 @@ impl App {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
-                &configs::CONFIG.read().unwrap().headless_help,
+                &configreader.headless_help,
                 true,
             )
             .ok();
@@ -461,19 +473,12 @@ impl App {
             );
         }
 
-        let output_path = &configs::CONFIG.read().unwrap().args.output;
+        let output_path = &configs::CONFIG.read().unwrap().output;
         if let Some(path) = output_path {
             if let Ok(metadata) = fs::metadata(path) {
                 let output_saved_str = format!(
                     "Saved file: {} ({})",
-                    configs::CONFIG
-                        .read()
-                        .unwrap()
-                        .args
-                        .output
-                        .as_ref()
-                        .unwrap()
-                        .display(),
+                    path.display(),
                     ByteSize::b(metadata.len()).to_string_as(false)
                 );
                 write_color_buffer(
@@ -520,7 +525,7 @@ impl App {
             };
 
             //ファイル出力の場合
-            if let Some(pivot_file) = &configs::CONFIG.read().unwrap().args.output {
+            if let Some(pivot_file) = &configs::CONFIG.read().unwrap().output {
                 pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                     let mut f = BufWriter::new(
                         fs::File::create(
@@ -579,7 +584,6 @@ impl App {
                 configs::CONFIG
                     .read()
                     .unwrap()
-                    .args
                     .html_report
                     .as_ref()
                     .unwrap()
@@ -630,7 +634,7 @@ impl App {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
-            if configs::CONFIG.read().unwrap().args.verbose {
+            if configs::CONFIG.read().unwrap().verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
@@ -693,13 +697,14 @@ impl App {
             }
         }
     }
-    fn analysis_files(&mut self, evtx_files: Vec<PathBuf>, time_filter: &TargetEventTime) {
-        let level = configs::CONFIG
-            .read()
-            .unwrap()
-            .args
-            .min_level
-            .to_uppercase();
+    fn analysis_files(
+        &mut self,
+        evtx_files: Vec<PathBuf>,
+        time_filter: &TargetEventTime,
+        event_timeline_config: EventInfoConfig,
+        target_event_ids: TargetEventIds,
+    ) {
+        let level = configs::CONFIG.read().unwrap().min_level.to_uppercase();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
@@ -716,8 +721,8 @@ impl App {
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{}", total_size_output);
         println!();
-        if !(configs::CONFIG.read().unwrap().args.metrics
-            || configs::CONFIG.read().unwrap().args.logon_summary)
+        if !(configs::CONFIG.read().unwrap().metrics
+            || configs::CONFIG.read().unwrap().logon_summary)
         {
             println!("Loading detections rules. Please wait.");
             println!();
@@ -737,7 +742,7 @@ impl App {
 
         let rule_files = detection::Detection::parse_rule_files(
             level,
-            &configs::CONFIG.read().unwrap().args.rules,
+            &configs::CONFIG.read().unwrap().rules,
             &filter::exclude_ids(),
         );
 
@@ -756,22 +761,27 @@ impl App {
         let mut total_records: usize = 0;
         let mut tl = Timeline::new();
         for evtx_file in evtx_files {
-            if configs::CONFIG.read().unwrap().args.verbose {
+            if configs::CONFIG.read().unwrap().verbose {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) =
-                self.analysis_file(evtx_file, detection, time_filter, tl.to_owned());
+            (detection, cnt_tmp, tl) = self.analysis_file(
+                evtx_file,
+                detection,
+                time_filter,
+                tl.to_owned(),
+                &target_event_ids,
+            );
             total_records += cnt_tmp;
             pb.inc();
         }
         if *METRICS_FLAG {
-            tl.tm_stats_dsp_msg();
+            tl.tm_stats_dsp_msg(event_timeline_config);
         }
         if *LOGONSUMMARY_FLAG {
             tl.tm_logon_stats_dsp_msg();
         }
-        if configs::CONFIG.read().unwrap().args.output.is_some() {
+        if configs::CONFIG.read().unwrap().output.is_some() {
             println!();
             println!();
             println!("Analysis finished. Please wait while the results are being saved.");
@@ -790,6 +800,7 @@ impl App {
         mut detection: detection::Detection,
         time_filter: &TargetEventTime,
         mut tl: Timeline,
+        target_event_ids: &TargetEventIds,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(&evtx_filepath);
@@ -819,7 +830,7 @@ impl App {
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().args.verbose {
+                    if configs::CONFIG.read().unwrap().verbose {
                         AlertMessage::alert(&errmsg).ok();
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -834,8 +845,8 @@ impl App {
                 let data = record_result.as_ref().unwrap().data.borrow();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
                 if !self._is_valid_channel(data)
-                    || (configs::CONFIG.read().unwrap().args.eid_filter
-                        && !self._is_target_event_id(data))
+                    || (configs::CONFIG.read().unwrap().eid_filter
+                        && !self._is_target_event_id(data, target_event_ids))
                 {
                     continue;
                 }
@@ -909,15 +920,15 @@ impl App {
     }
 
     /// target_eventids.txtの設定を元にフィルタする。 trueであれば検知確認対象のEventIDであることを意味する。
-    fn _is_target_event_id(&self, data: &Value) -> bool {
+    fn _is_target_event_id(&self, data: &Value, target_event_ids: &TargetEventIds) -> bool {
         let eventid = utils::get_event_value(&utils::get_event_id_key(), data);
         if eventid.is_none() {
             return true;
         }
 
         match eventid.unwrap() {
-            Value::String(s) => utils::is_target_event_id(&s.replace('\"', "")),
-            Value::Number(n) => utils::is_target_event_id(&n.to_string().replace('\"', "")),
+            Value::String(s) => target_event_ids.is_target(&s.replace('\"', "")),
+            Value::Number(n) => target_event_ids.is_target(&n.to_string().replace('\"', "")),
             _ => true, // レコードからEventIdが取得できない場合は、特にフィルタしない
         }
     }
@@ -957,7 +968,7 @@ impl App {
         let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
             .unwrap();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        let output_color = if configs::CONFIG.read().unwrap().args.no_color {
+        let output_color = if configs::CONFIG.read().unwrap().no_color {
             None
         } else {
             Some(Color::Green)

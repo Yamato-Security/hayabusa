@@ -76,7 +76,7 @@ impl Detection {
         let result_readdir = rulefile_loader.read_dir(rulespath, &level, exclude_ids);
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
-            if configs::CONFIG.read().unwrap().args.verbose {
+            if configs::CONFIG.read().unwrap().verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
@@ -98,7 +98,7 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                if configs::CONFIG.read().unwrap().args.verbose {
+                if configs::CONFIG.read().unwrap().verbose {
                     AlertMessage::warn(&errmsg_body).ok();
 
                     err_msgs.iter().for_each(|err_msg| {
@@ -738,7 +738,7 @@ impl Detection {
         }
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
-        let args = &configs::CONFIG.read().unwrap().args;
+        let args = configs::CONFIG.read().unwrap();
         let mut html_report_stock = Nested::<String>::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {

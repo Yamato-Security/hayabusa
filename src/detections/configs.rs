@@ -2,7 +2,7 @@ use crate::detections::message::AlertMessage;
 use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
 use chrono::{DateTime, Utc};
-use clap::{App, CommandFactory, Parser};
+use clap::{ColorChoice, Command, CommandFactory, Parser};
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use nested::Nested;
@@ -13,39 +13,34 @@ use std::sync::RwLock;
 use terminal_size::{terminal_size, Width};
 
 lazy_static! {
-    pub static ref CONFIG: RwLock<ConfigReader<'static>> = RwLock::new(ConfigReader::new());
+    pub static ref CONFIG: RwLock<Config> = RwLock::new(Config::parse());
+    pub static ref CURRENT_EXE_PATH: PathBuf =
+        current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(
-        utils::check_setting_path(
-            &CONFIG.read().unwrap().args.config,
-            "eventkey_alias.txt",
-            false
-        )
-        .unwrap_or_else(|| {
-            utils::check_setting_path(
-                &CURRENT_EXE_PATH.to_path_buf(),
-                "rules/config/eventkey_alias.txt",
-                true,
-            )
+        utils::check_setting_path(&CONFIG.read().unwrap().config, "eventkey_alias.txt", false)
+            .unwrap_or_else(|| {
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+            })
+            .to_str()
             .unwrap()
-        })
-        .to_str()
-        .unwrap()
     );
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
-    pub static ref CURRENT_EXE_PATH: PathBuf =
-        current_exe().unwrap().parent().unwrap().to_path_buf();
 }
 
-pub struct ConfigReader<'a> {
-    pub app: App<'a>,
-    pub args: Config,
+pub struct ConfigReader {
+    pub app: Command,
     pub headless_help: String,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
 }
 
-impl Default for ConfigReader<'_> {
+impl Default for ConfigReader {
     fn default() -> Self {
         Self::new()
     }
@@ -54,7 +49,6 @@ impl Default for ConfigReader<'_> {
 #[derive(Parser, Clone)]
 #[clap(
     name = "Hayabusa",
-    usage = "hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n    {usage}\n\n{all-args}\n",
     version,
@@ -100,7 +94,7 @@ pub struct Config {
     pub verbose: bool,
 
     /// Output event frequency timeline
-    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short = 'V', long = "visualize-timeline")]
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), short = 'T', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
     /// Enable rules marked as deprecated
@@ -212,11 +206,11 @@ pub struct Config {
     pub contributors: bool,
 
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-    #[clap(help_heading = Some("ADVANCED"), long = "target-file-ext", multiple_values = true)]
+    #[clap(help_heading = Some("ADVANCED"), long = "target-file-ext")]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable test)
-    #[clap(help_heading = Some("FILTERING"), long = "exclude-status", multiple_values = true, value_name = "STATUS")]
+    #[clap(help_heading = Some("FILTERING"), long = "exclude-status", value_name = "STATUS")]
     pub exclude_status: Option<Vec<String>>,
 
     /// Specify output profile
@@ -248,7 +242,7 @@ pub struct Config {
     pub html_report: Option<PathBuf>,
 }
 
-impl ConfigReader<'_> {
+impl ConfigReader {
     pub fn new() -> Self {
         let parse = Config::parse();
         let help_term_width = if let Some((Width(w), _)) = terminal_size() {
@@ -257,11 +251,11 @@ impl ConfigReader<'_> {
             400
         };
         let build_cmd = Config::command()
+            .color(ColorChoice::Auto)
             .term_width(help_term_width)
             .help_template("\n\nUSAGE:\n    {usage}\n\nOPTIONS:\n{options}");
         ConfigReader {
             app: build_cmd,
-            args: parse.to_owned(),
             headless_help: String::default(),
             event_timeline_config: load_eventcode_info(
                 utils::check_setting_path(&parse.config, "channel_eid_info.txt", false)
@@ -354,7 +348,7 @@ impl Default for TargetEventTime {
 impl TargetEventTime {
     pub fn new() -> Self {
         let mut parse_success_flag = true;
-        let start_time = if let Some(s_time) = &CONFIG.read().unwrap().args.start_timeline {
+        let start_time = if let Some(s_time) = &CONFIG.read().unwrap().start_timeline {
             match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
                 .or_else(|_| DateTime::parse_from_str(s_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
             {
@@ -371,7 +365,7 @@ impl TargetEventTime {
         } else {
             None
         };
-        let end_time = if let Some(e_time) = &CONFIG.read().unwrap().args.end_timeline {
+        let end_time = if let Some(e_time) = &CONFIG.read().unwrap().end_timeline {
             match DateTime::parse_from_str(e_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
             .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
         {
