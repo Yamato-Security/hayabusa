@@ -537,8 +537,8 @@ mod tests {
                     - ホスト アプリケーション
                 ImagePath:
                     min_length: 1234321
-                    regexes: ./../../../rules/config/regex/detectlist_suspicous_services.txt
-                    allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
+                    regexes: rules/config/regex/detectlist_suspicous_services.txt
+                    allowlist: rules/config/regex/allowlist_legitimate_services.txt
         falsepositives:
             - unknown
         level: medium
@@ -1125,7 +1125,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
+                    - allowlist: rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1159,7 +1159,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
+                    - allowlist: rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
@@ -1193,7 +1193,7 @@ mod tests {
             selection:
                 EventID: 4103
                 Channel:
-                    - allowlist: ./../../../rules/config/regex/allowlist_legitimate_services.txt
+                    - allowlist: rules/config/regex/allowlist_legitimate_services.txt
         details: 'command=%CommandLine%'
         "#;
 
