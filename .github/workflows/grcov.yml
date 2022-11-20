@@ -18,6 +18,7 @@ jobs:
           command: test
           args: --all-features --no-fail-fast
         env:
+          RUST_TEST_THREADS: 1
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off'
           RUSTDOCFLAGS: '-Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off'
