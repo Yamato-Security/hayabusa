@@ -68,7 +68,7 @@ impl AggegationConditionCompiler {
         // パイプの部分だけを取り出す
         let binding = condition_str.into_bytes();
         let captured = self::RE_PIPE.captures(&binding);
-        if captured.is_ok() {
+        if captured.as_ref().unwrap().is_none(){
             // パイプが無いので終了
             return Result::Ok(Option::None);
         }
