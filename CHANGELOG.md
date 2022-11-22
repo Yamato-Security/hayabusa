@@ -1,21 +1,32 @@
 # Changes
 
-## 1.9.0-dev [2022/xx/xx]
+## 1.x.x [2022/xx/xx]
 
 **New Features:**
 
-- xxx
+- XXX
+
+**Enhancements:**
+
+- Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
+- Updated clap crate package to version 4 and changed `--visualize-timeline` short option with `-T`. (#725) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
+## 1.8.1 [2022/11/21]
 
 **Enhancements:**
 
 - Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
 - Reduced memory usage. (#806) (@fukusuket)
-- Updated clap crate package to version 4 and changed `--visualize-timeline` short option with `-T`. (#725) (@hitenkoku)
+- Added the support for the `%RenderedMessage%` field in output profiles which is the rendered message in logs forwarded by WEC. (#760) (@hitenkoku)
 
 **Bug Fixes:**
 
 - Fixed a problem where rules using the `Data` field were not being detected. (#775) (@hitenkoku)
-- Fixed `%MitreTags%` and `%MitreTactics%` profile output randomly miss values. (#807) (@fukusuket)
+- Fixed a problem where the `%MitreTags%` and `%MitreTactics%` fields would randomly miss values. (#807) (@fukusuket)
 
 ## 1.8.0 [2022/11/07]
 

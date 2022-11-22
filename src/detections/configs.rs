@@ -241,6 +241,10 @@ pub struct Config {
     /// Output time in UTC format (default: local time)
     #[arg(help_heading = Some("TIME-FORMAT"), short = 'U', long = "UTC")]
     pub utc: bool,
+
+    /// Print debug information (memory usage, etc...)
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "debug")]
+    pub debug: bool,
 }
 
 impl ConfigReader {

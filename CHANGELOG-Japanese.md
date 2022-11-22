@@ -1,16 +1,27 @@
 # 変更点
 
-## 1.9.0-dev [2022/xx/xx]
+## 1.x.x [2022/xx/xx]
 
 **新機能:**
 
-- xxx
+- XXX
+
+**改善:**
+
+- 実行時のメモリ利用率を表示する機能を追加した。`--debug`オプションで利用可能。 (#788) (@fukusuket)
+- Clap Crateパッケージの更新。更新の関係で`--visualize-timeline` のショートオプションを`-T`に変更した. (#725) (@hitenkoku)
+
+**バグ修正:**
+
+- XXX
+
+## 1.8.1 [2022/11/21]
 
 **改善:**
 
 - インポートしているcrateのRustバージョンによるビルドエラーを回避するためにCargo.tomlに`rust-version`を追加した。(#802) (@hitenkoku)
 - メモリ使用の削減。 (#806) (@fukusuket)
-- Clap Crateパッケージの更新。更新の関係で`--visualize-timeline` のショートオプションを`-T`に変更した. (#725) (@hitenkoku)
+- WEC機能を利用したevtxファイルのレンダーされたメッセージを出力するための`%RenderedMessage%`フィールドを追加した。 (#760) (@hitenkoku)
 
 **バグ修正:**
 

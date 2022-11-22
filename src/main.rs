@@ -28,6 +28,7 @@ use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
+use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use pbr::ProgressBar;
@@ -38,6 +39,7 @@ use std::fmt::Display;
 use std::fmt::Write as _;
 use std::io::{BufWriter, Write};
 use std::path::Path;
+use std::ptr::null_mut;
 use std::sync::Arc;
 use std::{
     env,
@@ -62,6 +64,9 @@ const MAX_DETECT_RECORDS: usize = 5000;
 fn main() {
     let mut app = App::new();
     app.exec();
+    unsafe {
+        mi_stats_print_out(None, null_mut());
+    }
     app.rt.shutdown_background();
 }
 
@@ -591,6 +596,13 @@ impl App {
                     .unwrap_or("")
                     .to_string(),
             )
+        }
+        if configs::CONFIG.read().unwrap().args.debug {
+            println!();
+            println!("Memory usage stats:");
+            unsafe {
+                mi_stats_print_out(None, null_mut());
+            }
         }
         println!();
     }
