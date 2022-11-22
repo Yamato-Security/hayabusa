@@ -98,13 +98,8 @@ pub struct Config {
     #[arg(help_heading = Some("Advanced"), short, long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
-<<<<<<< HEAD
-    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-    #[arg(help_heading = Some("ADVANCED"), long = "target-file-ext", num_args=0..)]
-=======
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
     #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',')]
->>>>>>> 834f5565ea2ca3acd998a53c0fc6fe42b0678dc7
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Save detail Results Summary in html (ex: results.html)
