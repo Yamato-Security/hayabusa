@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added the ability to display memory utilization at runtime. Available with the `--debug` option. (#788) (@fukusuket)
 
 **Bug Fixes:**
 
