@@ -417,6 +417,7 @@ OUTPUT:
     -P, --profile <PROFILE>                利用する出力プロファイル名を指定する
 
 DISPLAY-SETTINGS:
+        --debug                 デバッグ情報を出力する (メモリ使用量など)
         --no-color              カラー出力を無効にする
         --no-summary            結果概要を出力しない
     -q, --quiet                 Quietモード: 起動バナーを表示しない

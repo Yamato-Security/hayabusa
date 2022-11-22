@@ -27,7 +27,7 @@ use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
-use libmimalloc_sys::*;
+use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use pbr::ProgressBar;
@@ -592,6 +592,13 @@ impl App {
                     .unwrap_or("")
                     .to_string(),
             )
+        }
+        if configs::CONFIG.read().unwrap().args.debug {
+            println!();
+            println!("Memory usage stats:");
+            unsafe {
+                mi_stats_print_out(None, null_mut());
+            }
         }
         println!();
     }
