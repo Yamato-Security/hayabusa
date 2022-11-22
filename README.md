@@ -412,6 +412,7 @@ OUTPUT:
     -P, --profile <PROFILE>     Specify output profile
 
 DISPLAY-SETTINGS:
+        --debug                 Print debug information (memory usage, etc...)
         --no-color              Disable color output
         --no-summary            Do not display result summary
     -q, --quiet                 Quiet mode: do not display the launch banner
