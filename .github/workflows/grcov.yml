@@ -11,7 +11,7 @@ jobs:
           submodules: recursive
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly 
+          toolchain: nightly
           override: true
       - uses: actions-rs/cargo@v1
         with:
@@ -19,8 +19,10 @@ jobs:
           args: --all-features --no-fail-fast
         env:
           RUST_TEST_THREADS: 1
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          CARGO_INCREMENTAL: "0"
+          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
       - uses: actions-rs/grcov@v0.1
       - uses: codecov/codecov-action@v3
+        with:
+          directory: /tmp/
