@@ -5,6 +5,9 @@ name: Code Coverage
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      issues: read 
+      pull-requests: read 
     steps:
       - uses: actions/checkout@v1
         with:
