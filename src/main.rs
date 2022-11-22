@@ -597,7 +597,7 @@ impl App {
                     .to_string(),
             )
         }
-        if configs::CONFIG.read().unwrap().args.debug {
+        if configs::CONFIG.read().unwrap().debug {
             println!();
             println!("Memory usage stats:");
             unsafe {

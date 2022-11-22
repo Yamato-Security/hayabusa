@@ -99,7 +99,7 @@ pub struct Config {
     pub thread_number: Option<usize>,
 
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
-    #[arg(help_heading = Some("ADVANCED"), long = "target-file-ext")]
+    #[arg(help_heading = Some("ADVANCED"), long = "target-file-ext", num_args=0..)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Save detail Results Summary in html (ex: results.html)
