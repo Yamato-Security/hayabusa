@@ -416,6 +416,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cty"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b365fabc795046672053e29c954733ec3b05e4be654ab130fe8f1f94d7051f35"
+
+[[package]]
 name = "cxx"
 version = "1.0.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -859,6 +865,7 @@ dependencies = [
  "itertools",
  "krapslog",
  "lazy_static",
+ "libmimalloc-sys",
  "linked-hash-map",
  "lock_api",
  "mimalloc",
@@ -1190,6 +1197,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04d1c67deb83e6b75fa4fe3309e09cfeade12e7721d95322af500d3814ea60c9"
 dependencies = [
  "cc",
+ "cty",
  "libc",
 ]
 

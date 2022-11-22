@@ -246,6 +246,10 @@ pub struct Config {
     /// Save detail Results Summary in html (ex: results.html)
     #[clap(help_heading = Some("OUTPUT"), short = 'H', long="html-report", value_name = "FILE")]
     pub html_report: Option<PathBuf>,
+
+    /// Print debug information (memory usage, etc...)
+    #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "debug")]
+    pub debug: bool,
 }
 
 impl ConfigReader<'_> {
