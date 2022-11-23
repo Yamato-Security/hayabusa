@@ -64,9 +64,6 @@ const MAX_DETECT_RECORDS: usize = 5000;
 fn main() {
     let mut app = App::new();
     app.exec();
-    unsafe {
-        mi_stats_print_out(None, null_mut());
-    }
     app.rt.shutdown_background();
 }
 
