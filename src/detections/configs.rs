@@ -142,6 +142,10 @@ pub struct Config {
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
+    /// Print debug information (memory usage, etc...)
+    #[clap(help_heading = Some("Display Settings"), long = "debug")]
+    pub debug: bool,
+
     /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
     pub eid_filter: bool,
@@ -242,9 +246,6 @@ pub struct Config {
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC")]
     pub utc: bool,
 
-    /// Print debug information (memory usage, etc...)
-    #[clap(help_heading = Some("DISPLAY-SETTINGS"), long = "debug")]
-    pub debug: bool,
 }
 
 impl ConfigReader {
