@@ -245,7 +245,6 @@ pub struct Config {
     /// Output time in UTC format (default: local time)
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC")]
     pub utc: bool,
-
 }
 
 impl ConfigReader {
