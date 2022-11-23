@@ -42,7 +42,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Screenshots](#screenshots)
   - [Startup](#startup)
   - [Terminal Output](#terminal-output)
-  - [Event Fequency Timeline (`-V` option)](#event-fequency-timeline--v-option)
+  - [Event Fequency Timeline (`-T` option)](#event-fequency-timeline--t-option)
   - [Results Summary](#results-summary)
   - [HTML Results Summary (`-H` option)](#html-results-summary--h-option)
   - [Analysis in Excel](#analysis-in-excel)
@@ -129,7 +129,7 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ![Hayabusa terminal output](screenshots/Hayabusa-Results.png)
 
-## Event Fequency Timeline (`-V` option)
+## Event Fequency Timeline (`-T` option)
 
 ![Hayabusa Event Frequency Timeline](screenshots/HayabusaEventFrequencyTimeline.png)
 
@@ -390,49 +390,49 @@ You should now be able to run hayabusa.
 
 ```
 Usage:
-  hayabusa.exe <INPUT> [OTHER-ACTIONS] [OPTIONS]
+  hayabusa.exe [OTHER-ACTIONS] <INPUT> [OUTPUT] [OPTIONS]
 
 Options:
   -h, --help     Print help information
   -V, --version  Print version information
 
-INPUT:
+Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
   -f, --file <FILE>            File path to one .evtx file
   -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
 
-ADVANCED:
+Advanced:
   -c, --rules-config <DIRECTORY>         Specify custom rule config directory (default: ./rules/config)
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
   -r, --rules <DIRECTORY/FILE>           Specify a custom rule directory or file (default: ./rules)
   -t, --thread-number <NUMBER>           Thread number (default: optimal number for performance)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1 evtx2)
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
 
-OUTPUT:
+Output:
   -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
   -j, --json                Save the timeline in JSON format (ex: -j -o results.json)
   -J, --jsonl               Save the timeline in JSONL format (ex: -J -o results.jsonl)
   -o, --output <FILE>       Save the timeline in CSV format (ex: results.csv)
   -P, --profile <PROFILE>   Specify output profile
 
-DISPLAY-SETTINGS:
-      --debug                 Print debug information (memory usage, etc...)
+Display Settings:
       --no-color            Disable color output
       --no-summary          Do not display result summary
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline
+      --debug               Print debug information (memory usage, etc...)
 
-FILTERING:
+Filtering:
   -e, --eid-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
       --enable-deprecated-rules  Enable rules marked as deprecated
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable test)
+      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
   -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
   -n, --enable-noisy-rules       Enable rules marked as noisy
       --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
-OTHER-ACTIONS:
+Other Actions:
       --contributors                   Print the list of contributors
   -L, --logon-summary                  Print a summary of successful and failed logons
       --level-tuning [<FILE>]          Tune alert levels (default: ./rules/config/level_tuning.txt)
@@ -442,7 +442,7 @@ OTHER-ACTIONS:
       --set-default-profile <PROFILE>  Set default output profile
   -u, --update-rules                   Update to the latest rules in the hayabusa-rules github repository
 
-TIME-FORMAT:
+Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
       --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
       --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
@@ -843,7 +843,7 @@ Total events, the number of events with hits, data reduction metrics, total and 
 
 ### Event Fequency Timeline
 
-If you add `-V` or `--visualize-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
+If you add `-T` or `--visualize-timeline` option, the Event Frequency Timeline feature displays a sparkline frequency timeline of detected events.
 Note: There needs to be more than 5 events. Also, the characters will not render correctly on the default Command Prompt or PowerShell Prompt, so please use a terminal like Windows Terminal, iTerm2, etc...
 
 # Hayabusa Rules
