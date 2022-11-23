@@ -9,7 +9,7 @@
 **改善:**
 
 - 実行時のメモリ利用率を表示する機能を追加した。`--debug`オプションで利用可能。 (#788) (@fukusuket)
-- Clap Crateパッケージの更新。更新の関係で`--visualize-timeline` のショートオプションを`-T`に変更した. (#725) (@hitenkoku)
+- Clap Crateパッケージの更新。更新の関係で`--visualize-timeline` のショートオプションの`-V`を`-T`に変更した。 (#725) (@hitenkoku)
 
 **バグ修正:**
 
