@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::BufWriter;
 
+use crate::detections::configs::EventInfoConfig;
 use crate::detections::message::{AlertMessage, CH_CONFIG, LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -42,14 +43,14 @@ impl Timeline {
         self.stats.logon_stats_start(records);
     }
 
-    pub fn tm_stats_dsp_msg(&mut self) {
+    pub fn tm_stats_dsp_msg(&mut self, event_timeline_config: EventInfoConfig) {
         if !*METRICS_FLAG {
             return;
         }
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        if CONFIG.read().unwrap().args.filepath.is_some() {
+        if CONFIG.read().unwrap().filepath.is_some() {
             sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
             sammsges.push(total_event_record);
             sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
@@ -60,7 +61,7 @@ impl Timeline {
 
         let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
         let target;
-        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
+        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => {
@@ -90,12 +91,12 @@ impl Timeline {
         mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
         // イベントID毎の出力メッセージ生成
-        let stats_msges: Vec<Vec<String>> = self.tm_stats_set_msg(mapsorted);
+        let stats_msges: Vec<Vec<String>> = self.tm_stats_set_msg(mapsorted, event_timeline_config);
 
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-        if CONFIG.read().unwrap().args.output.is_some() {
+        if CONFIG.read().unwrap().output.is_some() {
             for msg in stats_msges.iter() {
                 if let Some(ref mut w) = wtr {
                     w.write_record(msg).ok();
@@ -113,7 +114,7 @@ impl Timeline {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        if CONFIG.read().unwrap().args.filepath.is_some() {
+        if CONFIG.read().unwrap().filepath.is_some() {
             sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
             sammsges.push(total_event_record);
             sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
@@ -132,6 +133,7 @@ impl Timeline {
     fn tm_stats_set_msg(
         &self,
         mapsorted: Vec<(&(std::string::String, std::string::String), &usize)>,
+        event_timeline_config: EventInfoConfig,
     ) -> Vec<Vec<String>> {
         let mut msges: Vec<Vec<String>> = Vec::new();
 
@@ -142,10 +144,7 @@ impl Timeline {
             let fmted_channel = channel.replace('\"', "");
 
             // イベント情報取得(eventtitleなど)
-            let conf = CONFIG
-                .read()
-                .unwrap()
-                .event_timeline_config
+            let conf = event_timeline_config
                 .get_event_id(&fmted_channel, event_id)
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
@@ -160,10 +159,7 @@ impl Timeline {
                     format!("{:.1}%", (rate * 1000.0).round() / 10.0),
                     ch,
                     event_id.to_string(),
-                    CONFIG
-                        .read()
-                        .unwrap()
-                        .event_timeline_config
+                    event_timeline_config
                         .get_event_id(&fmted_channel, event_id)
                         .unwrap()
                         .evttitle
@@ -196,7 +192,7 @@ impl Timeline {
         } else {
             let header = vec!["User", "Failed", "Successful"];
             let target;
-            let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().args.output {
+            let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
                 // output to file
                 match File::create(csv_path) {
                     Ok(file) => {

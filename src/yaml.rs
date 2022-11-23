@@ -42,7 +42,7 @@ impl ParseYaml {
             rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
             errorrule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(
-                configs::CONFIG.read().unwrap().args.exclude_status.as_ref(),
+                configs::CONFIG.read().unwrap().exclude_status.as_ref(),
             ),
             level_map: HashMap::from([
                 ("INFORMATIONAL".to_owned(), 1),
@@ -79,7 +79,7 @@ impl ParseYaml {
                 "fail to read metadata of file: {}",
                 path.as_ref().to_path_buf().display(),
             );
-            if configs::CONFIG.read().unwrap().args.verbose {
+            if configs::CONFIG.read().unwrap().verbose {
                 AlertMessage::alert(&errmsg)?;
             }
             if !*QUIET_ERRORS_FLAG {
@@ -111,7 +111,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     read_content.unwrap_err()
                 );
-                if configs::CONFIG.read().unwrap().args.verbose {
+                if configs::CONFIG.read().unwrap().verbose {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
@@ -132,7 +132,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     yaml_contents.unwrap_err()
                 );
-                if configs::CONFIG.read().unwrap().args.verbose {
+                if configs::CONFIG.read().unwrap().verbose {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
@@ -197,7 +197,7 @@ impl ParseYaml {
                         entry.path().display(),
                         read_content.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().args.verbose {
+                    if configs::CONFIG.read().unwrap().verbose {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -218,7 +218,7 @@ impl ParseYaml {
                         entry.path().display(),
                         yaml_contents.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().args.verbose {
+                    if configs::CONFIG.read().unwrap().verbose {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -263,7 +263,7 @@ impl ParseYaml {
                         }
                         if entry_key == "excluded"
                             || (entry_key == "noisy"
-                                && !configs::CONFIG.read().unwrap().args.enable_noisy_rules)
+                                && !configs::CONFIG.read().unwrap().enable_noisy_rules)
                         {
                             return Option::None;
                         }
@@ -301,7 +301,7 @@ impl ParseYaml {
                     .or_insert(0);
                 *status_cnt += 1;
 
-                if configs::CONFIG.read().unwrap().args.verbose {
+                if configs::CONFIG.read().unwrap().verbose {
                     println!("Loaded yml file path: {}", filepath);
                 }
 

@@ -120,10 +120,6 @@ pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
     Result::Ok(ret)
 }
 
-pub fn is_target_event_id(s: &str) -> bool {
-    configs::CONFIG.read().unwrap().target_eventids.is_target(s)
-}
-
 pub fn get_event_id_key() -> String {
     "Event.System.EventID".to_string()
 }
@@ -199,8 +195,11 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
 
 pub fn get_thread_num() -> usize {
     let cpu_num = num_cpus::get();
-    let conf = configs::CONFIG.read().unwrap();
-    conf.args.thread_number.unwrap_or(cpu_num)
+    configs::CONFIG
+        .read()
+        .unwrap()
+        .thread_number
+        .unwrap_or(cpu_num)
 }
 
 pub fn create_tokio_runtime() -> Runtime {
@@ -269,7 +268,7 @@ pub fn write_color_buffer(
 
 /// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
 pub fn get_writable_color(color: Option<Color>) -> Option<Color> {
-    if configs::CONFIG.read().unwrap().args.no_color {
+    if configs::CONFIG.read().unwrap().no_color {
         None
     } else {
         color
@@ -388,15 +387,15 @@ pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Opt
 pub fn check_rule_config() -> Result<(), String> {
     // rules/configのフォルダが存在するかを確認する
     let exist_rule_config_folder =
-        if configs::CONFIG.read().unwrap().args.config == CURRENT_EXE_PATH.to_path_buf() {
+        if configs::CONFIG.read().unwrap().config == CURRENT_EXE_PATH.to_path_buf() {
             check_setting_path(
-                &configs::CONFIG.read().unwrap().args.config,
+                &configs::CONFIG.read().unwrap().config,
                 "rules/config",
                 false,
             )
             .is_some()
         } else {
-            check_setting_path(&configs::CONFIG.read().unwrap().args.config, "", false).is_some()
+            check_setting_path(&configs::CONFIG.read().unwrap().config, "", false).is_some()
         };
     if !exist_rule_config_folder {
         return Err("The required rules config files were not found. Please download them with --update-rules".to_string());
@@ -413,7 +412,7 @@ pub fn check_rule_config() -> Result<(), String> {
     ];
     let mut not_exist_file = vec![];
     for file in &files {
-        if check_setting_path(&configs::CONFIG.read().unwrap().args.config, file, false).is_none() {
+        if check_setting_path(&configs::CONFIG.read().unwrap().config, file, false).is_none() {
             not_exist_file.push(*file);
         }
     }
@@ -429,7 +428,7 @@ pub fn check_rule_config() -> Result<(), String> {
 
 ///タイムゾーンに合わせた情報を情報を取得する関数
 pub fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
-    if configs::CONFIG.read().unwrap().args.utc || configs::CONFIG.read().unwrap().args.iso_8601 {
+    if configs::CONFIG.read().unwrap().utc || configs::CONFIG.read().unwrap().iso_8601 {
         format_rfc(time, date_only)
     } else {
         format_rfc(&time.with_timezone(&Local), date_only)
@@ -441,7 +440,7 @@ fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>, date_only: bool) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
-    let time_args = &configs::CONFIG.read().unwrap().args;
+    let time_args = configs::CONFIG.read().unwrap();
     if time_args.rfc_2822 {
         if date_only {
             time.format("%a, %e %b %Y").to_string()

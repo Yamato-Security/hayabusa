@@ -41,17 +41,17 @@ lazy_static! {
     pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
-    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().args.quiet_errors;
+    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().quiet_errors;
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
-    pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().args.metrics;
-    pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().args.logon_summary;
+    pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().metrics;
+    pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
             .unwrap(),
     );
     pub static ref CH_CONFIG: HashMap<String, String> = create_output_filter_config(
-        utils::check_setting_path(&configs::CONFIG.read().unwrap().args.config, "channel_abbreviations.txt", false).unwrap_or_else(|| {
+        utils::check_setting_path(&configs::CONFIG.read().unwrap().config, "channel_abbreviations.txt", false).unwrap_or_else(|| {
             utils::check_setting_path(
                 &CURRENT_EXE_PATH.to_path_buf(),
                 "rules/config/channel_abbreviations.txt", true
@@ -61,9 +61,9 @@ lazy_static! {
         .unwrap(),
     );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
-        configs::CONFIG.read().unwrap().args.pivot_keywords_list;
+        configs::CONFIG.read().unwrap().pivot_keywords_list;
     pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(
-        utils::check_setting_path(&configs::CONFIG.read().unwrap().args.config, "default_details.txt", false).unwrap_or_else(|| {
+        utils::check_setting_path(&configs::CONFIG.read().unwrap().config, "default_details.txt", false).unwrap_or_else(|| {
             utils::check_setting_path(
                 &CURRENT_EXE_PATH.to_path_buf(),
                 "rules/config/default_details.txt", true

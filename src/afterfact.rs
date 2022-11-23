@@ -49,7 +49,7 @@ pub fn set_output_color() -> HashMap<CompactString, Colors> {
         .unwrap(),
     );
     let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
-    if configs::CONFIG.read().unwrap().args.no_color {
+    if configs::CONFIG.read().unwrap().no_color {
         return color_map;
     }
     if read_result.is_err() {
@@ -170,7 +170,7 @@ pub fn after_fact(all_record_cnt: usize) {
 
     let mut displayflag = false;
     let mut target: Box<dyn io::Write> =
-        if let Some(csv_path) = &configs::CONFIG.read().unwrap().args.output {
+        if let Some(csv_path) = &configs::CONFIG.read().unwrap().output {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => Box::new(BufWriter::new(file)),
@@ -207,9 +207,9 @@ fn emit_csv<W: std::io::Write>(
     let html_output_flag = *HTML_REPORT_FLAG;
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-    let json_output_flag = configs::CONFIG.read().unwrap().args.json_timeline;
-    let jsonl_output_flag = configs::CONFIG.read().unwrap().args.jsonl_timeline;
-    let is_no_summary = configs::CONFIG.read().unwrap().args.no_summary;
+    let json_output_flag = configs::CONFIG.read().unwrap().json_timeline;
+    let jsonl_output_flag = configs::CONFIG.read().unwrap().jsonl_timeline;
+    let is_no_summary = configs::CONFIG.read().unwrap().no_summary;
 
     let mut wtr = if json_output_flag || jsonl_output_flag {
         WriterBuilder::new()
@@ -427,7 +427,7 @@ fn emit_csv<W: std::io::Write>(
         };
         println!();
 
-        if configs::CONFIG.read().unwrap().args.visualize_timeline {
+        if configs::CONFIG.read().unwrap().visualize_timeline {
             _print_timeline_hist(timestamps, terminal_width, 3);
             println!();
         }
@@ -674,7 +674,7 @@ fn _print_unique_results(
         } else {
             (unique_counts_by_level[i] as f64) / (unique_total_count as f64) * 100.0
         };
-        if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+        if configs::CONFIG.read().unwrap().html_report.is_some() {
             total_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
                 level_name[0],
@@ -706,7 +706,7 @@ fn _print_unique_results(
         )
         .ok();
     }
-    if configs::CONFIG.read().unwrap().args.html_report.is_some() {
+    if configs::CONFIG.read().unwrap().html_report.is_some() {
         html_output_stock.extend(total_detect_md.iter());
         html_output_stock.extend(unique_detect_md.iter());
     }
@@ -949,7 +949,7 @@ fn _print_detection_summary_tables(
 
 /// get timestamp to input datetime.
 fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
-    if configs::CONFIG.read().unwrap().args.utc || configs::CONFIG.read().unwrap().args.iso_8601 {
+    if configs::CONFIG.read().unwrap().utc || configs::CONFIG.read().unwrap().iso_8601 {
         time.timestamp()
     } else {
         let offset_sec = Local

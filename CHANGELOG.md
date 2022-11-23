@@ -8,7 +8,8 @@
 
 **Enhancements:**
 
-- Added the ability to display memory utilization at runtime. Available with the `--debug` option. (#788) (@fukusuket)
+- Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
+- Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@YamatoSecurity)
 
 **Bug Fixes:**
 

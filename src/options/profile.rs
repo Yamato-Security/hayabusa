@@ -149,7 +149,7 @@ pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
 ) -> Option<Vec<(CompactString, Profile)>> {
-    let conf = &configs::CONFIG.read().unwrap().args;
+    let conf = configs::CONFIG.read().unwrap();
     if conf.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
             AlertMessage::alert(&e).ok();
@@ -236,7 +236,7 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
     };
 
     // デフォルトプロファイルを設定する処理
-    if let Some(profile_name) = &configs::CONFIG.read().unwrap().args.set_default_profile {
+    if let Some(profile_name) = &configs::CONFIG.read().unwrap().set_default_profile {
         if let Ok(mut buf_wtr) = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -323,8 +323,9 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::configs;
+    use crate::detections::configs::{self, Config};
     use crate::options::profile::{get_profile_list, load_profile, Profile};
+    use clap::Parser;
     use compact_str::CompactString;
     use nested::Nested;
 
@@ -345,7 +346,7 @@ mod tests {
 
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
     fn test_load_profile_without_profile_option() {
-        configs::CONFIG.write().unwrap().args.profile = None;
+        *configs::CONFIG.write().unwrap() = Config::parse();
         let expect: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
@@ -412,7 +413,7 @@ mod tests {
 
     /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
     fn test_load_profile_with_profile_option() {
-        configs::CONFIG.write().unwrap().args.profile = Some("minimal".to_string());
+        configs::CONFIG.write().unwrap().profile = Some("minimal".to_string());
         let expect: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
@@ -454,7 +455,7 @@ mod tests {
 
     /// プロファイルオプションが設定されているが、対象のオプションが存在しない場合のテスト
     fn test_load_profile_no_exist_profile_files() {
-        configs::CONFIG.write().unwrap().args.profile = Some("not_exist".to_string());
+        configs::CONFIG.write().unwrap().profile = Some("not_exist".to_string());
 
         //両方のファイルが存在しない場合
         assert_eq!(
