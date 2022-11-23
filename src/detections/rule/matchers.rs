@@ -219,12 +219,14 @@ impl DefaultMatcher {
             .re
             .as_ref()
             .unwrap()
-            .find_iter(&value.as_bytes().to_vec())
+            .find_iter(&value.as_bytes())
             .any(|match_obj| {
-                return String::from_utf8(match_obj.unwrap().as_bytes().to_vec())
-                    .unwrap()
-                    .as_str()
-                    == value;
+                let m = match match_obj {
+                    Ok(m) => m,
+                    Err(_) => panic!("{:?}", self.re), // バックトラックが発生する正規表現の調査のため、開発中はpanicさせる
+                };
+                let s = m.end() - m.start();
+                return s == value.len();
             });
     }
 
@@ -502,11 +504,7 @@ impl PipeElement {
                     regex::escape(pattern)
                 } else {
                     // wildcardの場合、"*"は".*"という正規表現に変換し、"?"は"."に変換する。
-                    let wildcard_regex_value = if *pattern == "*" {
-                        "(.|\\a|\\f|\\t|\\n|\\r|\\v)*"
-                    } else {
-                        "."
-                    };
+                    let wildcard_regex_value = if *pattern == "*" { ".*" } else { "." };
                     wildcard_regex_value.to_string()
                 };
 
@@ -1700,7 +1698,7 @@ mod tests {
     #[test]
     fn test_pipe_pattern_wildcard_asterisk() {
         let value = PipeElement::pipe_pattern_wildcard(r"*ho*ge*".to_string());
-        assert_eq!("(?i)(.|\\a|\\f|\\t|\\n|\\r|\\v)*ho(.|\\a|\\f|\\t|\\n|\\r|\\v)*ge(.|\\a|\\f|\\t|\\n|\\r|\\v)*", value);
+        assert_eq!("(?i).*ho.*ge.*", value);
     }
 
     #[test]
@@ -1716,10 +1714,7 @@ mod tests {
         // wildcardの「\\*」は文字列としての「\」と正規表現の「.*」を表す。
         // 文字列としての「\」はエスケープされるので、「\\.*」が正解
         let value = PipeElement::pipe_pattern_wildcard(r"\\*ho\\*ge\\*".to_string());
-        assert_eq!(
-            r"(?i)\\(.|\a|\f|\t|\n|\r|\v)*ho\\(.|\a|\f|\t|\n|\r|\v)*ge\\(.|\a|\f|\t|\n|\r|\v)*",
-            value
-        );
+        assert_eq!(r"(?i)\\.*ho\\.*ge\\.*", value);
     }
 
     #[test]
@@ -1749,19 +1744,13 @@ mod tests {
     #[test]
     fn test_pipe_pattern_wildcard_mixed() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\*\****\*\\*".to_string());
-        assert_eq!(
-            r"(?i)\\(.|\a|\f|\t|\n|\r|\v)*\*(.|\a|\f|\t|\n|\r|\v)*(.|\a|\f|\t|\n|\r|\v)*(.|\a|\f|\t|\n|\r|\v)*\*\\(.|\a|\f|\t|\n|\r|\v)*",
-            value
-        );
+        assert_eq!(r"(?i)\\.*\*.*.*.*\*\\.*", value);
     }
 
     #[test]
     fn test_pipe_pattern_wildcard_many_backshashs() {
         let value = PipeElement::pipe_pattern_wildcard(r"\\\*ho\\\*ge\\\".to_string());
-        assert_eq!(
-            r"(?i)\\\\(.|\a|\f|\t|\n|\r|\v)*ho\\\\(.|\a|\f|\t|\n|\r|\v)*ge\\\\\\",
-            value
-        );
+        assert_eq!(r"(?i)\\\\.*ho\\\\.*ge\\\\\\", value);
     }
 
     #[test]
