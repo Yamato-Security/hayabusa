@@ -119,7 +119,6 @@ impl App {
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
             self.output_logo();
-            // TODO 別枠でCommandの所をmainで宣言してしまえばok
             println!();
             configreader.app.print_help().ok();
             println!();
