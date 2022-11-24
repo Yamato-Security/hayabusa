@@ -227,7 +227,7 @@ impl App {
                 )
                 .ok();
                 println!();
-            } 
+            }
 
             return;
         }
