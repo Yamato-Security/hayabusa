@@ -1,6 +1,5 @@
 extern crate csv;
 
-use crate::detections::configs;
 use crate::detections::utils::{format_time, write_color_buffer};
 use crate::options::profile::Profile::{
     AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
@@ -33,6 +32,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
+use super::configs::{CONFIG, OUTPUTOPTIONS};
 use super::message::{self, LEVEL_ABBR_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体
@@ -67,16 +67,16 @@ impl Detection {
 
     // ルールファイルをパースします。
     pub fn parse_rule_files(
-        level: String,
+        level: &str,
         rulespath: &Path,
         exclude_ids: &filter::RuleExclude,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new();
-        let result_readdir = rulefile_loader.read_dir(rulespath, &level, exclude_ids);
+        let result_readdir = rulefile_loader.read_dir(rulespath, level, exclude_ids);
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
-            if configs::CONFIG.read().unwrap().verbose {
+            if CONFIG.read().unwrap().verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
@@ -98,7 +98,7 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                if configs::CONFIG.read().unwrap().verbose {
+                if CONFIG.read().unwrap().verbose {
                     AlertMessage::warn(&errmsg_body).ok();
 
                     err_msgs.iter().for_each(|err_msg| {
@@ -759,12 +759,18 @@ impl Detection {
         }
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
-        let args = configs::CONFIG.read().unwrap();
         let mut html_report_stock = Nested::<String>::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
-                let disable_flag = if key == "noisy" && !args.enable_noisy_rules {
+                let disable_flag = if key == "noisy"
+                    && !OUTPUTOPTIONS
+                        .read()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .enable_noisy_rules
+                {
                     " (Disabled)"
                 } else {
                     ""
@@ -799,7 +805,14 @@ impl Detection {
         sorted_st_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
                 let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
-                let deprecated_flag = if key == "deprecated" && !args.enable_deprecated_rules {
+                let deprecated_flag = if key == "deprecated"
+                    && !OUTPUTOPTIONS
+                        .read()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .enable_deprecated_rules
+                {
                     " (Disabled)"
                 } else {
                     ""
@@ -873,8 +886,7 @@ mod tests {
     fn test_parse_rule_files() {
         let level = "informational";
         let opt_rule_path = Path::new("./test_files/rules/level_yaml");
-        let cole =
-            Detection::parse_rule_files(level.to_owned(), opt_rule_path, &filter::exclude_ids());
+        let cole = Detection::parse_rule_files(level, opt_rule_path, &filter::exclude_ids());
         assert_eq!(5, cole.len());
     }
 

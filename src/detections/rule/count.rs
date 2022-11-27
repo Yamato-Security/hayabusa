@@ -1,4 +1,5 @@
-use crate::detections::configs;
+use crate::detections::configs::CONFIG;
+
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
@@ -86,7 +87,7 @@ fn get_alias_value_in_record(
           utils::get_event_value(&utils::get_event_id_key(), record).unwrap()
         ),
             };
-            if configs::CONFIG.read().unwrap().verbose {
+            if CONFIG.read().unwrap().verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
@@ -187,7 +188,7 @@ impl TimeFrameInfo {
             value.retain(|c| c != 'd');
         } else {
             let errmsg = format!("Timeframe is invalid. Input value:{}", value);
-            if configs::CONFIG.read().unwrap().verbose {
+            if CONFIG.read().unwrap().verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {
@@ -223,7 +224,7 @@ pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
         }
         Err(err) => {
             let errmsg = format!("Timeframe number is invalid. timeframe. {}", err);
-            if configs::CONFIG.read().unwrap().verbose {
+            if CONFIG.read().unwrap().verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !*QUIET_ERRORS_FLAG {

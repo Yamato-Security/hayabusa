@@ -3,6 +3,7 @@ extern crate csv;
 extern crate regex;
 
 use crate::detections::configs::{self, CURRENT_EXE_PATH};
+use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
 
 use compact_str::CompactString;
 use hashbrown::HashMap;
@@ -10,7 +11,7 @@ use nested::Nested;
 use std::path::{Path, PathBuf};
 
 use chrono::Local;
-use termcolor::Color;
+use termcolor::{Color, ColorChoice};
 
 use tokio::runtime::{Builder, Runtime};
 
@@ -27,6 +28,7 @@ use std::string::String;
 use std::vec;
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
+use super::configs::OUTPUTOPTIONS;
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
@@ -428,7 +430,9 @@ pub fn check_rule_config() -> Result<(), String> {
 
 ///タイムゾーンに合わせた情報を情報を取得する関数
 pub fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
-    if configs::CONFIG.read().unwrap().utc || configs::CONFIG.read().unwrap().iso_8601 {
+    if OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().utc
+        || OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().iso_8601
+    {
         format_rfc(time, date_only)
     } else {
         format_rfc(&time.with_timezone(&Local), date_only)
@@ -440,7 +444,8 @@ fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>, date_only: bool) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
-    let time_args = configs::CONFIG.read().unwrap();
+    let binding = &OUTPUTOPTIONS.read().unwrap();
+    let time_args = binding.as_ref().unwrap();
     if time_args.rfc_2822 {
         if date_only {
             time.format("%a, %e %b %Y").to_string()
@@ -491,6 +496,22 @@ pub fn check_file_expect_not_exist(path: &Path, exist_alert_str: String) -> bool
         AlertMessage::alert(&exist_alert_str).ok();
     }
     ret
+}
+
+pub fn output_and_data_stack_for_html(output_str: &str, section_name: &str) {
+    write_color_buffer(
+        &BufferWriter::stdout(ColorChoice::Always),
+        None,
+        output_str,
+        true,
+    )
+    .ok();
+
+    if *HTML_REPORT_FLAG {
+        let mut output_data = Nested::<String>::new();
+        output_data.extend(vec![format!("- {}", output_str)]);
+        htmlreport::add_md_data(section_name.to_string(), output_data);
+    }
 }
 
 #[cfg(test)]

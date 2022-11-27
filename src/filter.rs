@@ -1,4 +1,4 @@
-use crate::detections::configs;
+use crate::detections::configs::{self, CONFIG};
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use hashbrown::HashMap;
 use regex::Regex;
@@ -44,7 +44,7 @@ impl RuleExclude {
     fn insert_ids(&mut self, filename: &str) {
         let f = File::open(filename);
         if f.is_err() {
-            if configs::CONFIG.read().unwrap().verbose {
+            if CONFIG.read().unwrap().verbose {
                 AlertMessage::warn(&format!("{} does not exist", filename)).ok();
             }
             if !*QUIET_ERRORS_FLAG {

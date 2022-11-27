@@ -1,7 +1,7 @@
 extern crate serde_derive;
 extern crate yaml_rust;
 
-use crate::detections::configs;
+use crate::detections::configs::{self, CONFIG, OUTPUTOPTIONS};
 use crate::detections::message::AlertMessage;
 use crate::detections::message::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
 use crate::filter::RuleExclude;
@@ -32,6 +32,16 @@ impl Default for ParseYaml {
 
 impl ParseYaml {
     pub fn new() -> ParseYaml {
+        let exclude_status_vec = if OUTPUTOPTIONS.read().unwrap().is_some() {
+            OUTPUTOPTIONS
+                .read()
+                .unwrap()
+                .clone()
+                .unwrap()
+                .exclude_status
+        } else {
+            None
+        };
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
@@ -41,9 +51,7 @@ impl ParseYaml {
             ]),
             rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
             errorrule_count: 0,
-            exclude_status: configs::convert_option_vecs_to_hs(
-                configs::CONFIG.read().unwrap().exclude_status.as_ref(),
-            ),
+            exclude_status: configs::convert_option_vecs_to_hs(exclude_status_vec.as_ref()),
             level_map: HashMap::from([
                 ("INFORMATIONAL".to_owned(), 1),
                 ("LOW".to_owned(), 2),
@@ -74,12 +82,13 @@ impl ParseYaml {
         exclude_ids: &RuleExclude,
     ) -> io::Result<String> {
         let metadata = fs::metadata(path.as_ref());
+        let verbose_flag = CONFIG.read().unwrap().verbose;
         if metadata.is_err() {
             let errmsg = format!(
                 "fail to read metadata of file: {}",
                 path.as_ref().to_path_buf().display(),
             );
-            if configs::CONFIG.read().unwrap().verbose {
+            if verbose_flag {
                 AlertMessage::alert(&errmsg)?;
             }
             if !*QUIET_ERRORS_FLAG {
@@ -111,7 +120,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     read_content.unwrap_err()
                 );
-                if configs::CONFIG.read().unwrap().verbose {
+                if verbose_flag {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
@@ -132,7 +141,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     yaml_contents.unwrap_err()
                 );
-                if configs::CONFIG.read().unwrap().verbose {
+                if verbose_flag {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !*QUIET_ERRORS_FLAG {
@@ -197,7 +206,7 @@ impl ParseYaml {
                         entry.path().display(),
                         read_content.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().verbose {
+                    if verbose_flag {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -218,7 +227,7 @@ impl ParseYaml {
                         entry.path().display(),
                         yaml_contents.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().verbose {
+                    if verbose_flag {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !*QUIET_ERRORS_FLAG {
@@ -263,7 +272,12 @@ impl ParseYaml {
                         }
                         if entry_key == "excluded"
                             || (entry_key == "noisy"
-                                && !configs::CONFIG.read().unwrap().enable_noisy_rules)
+                                && !OUTPUTOPTIONS
+                                    .read()
+                                    .unwrap()
+                                    .as_ref()
+                                    .unwrap()
+                                    .enable_noisy_rules)
                         {
                             return Option::None;
                         }
@@ -301,7 +315,7 @@ impl ParseYaml {
                     .or_insert(0);
                 *status_cnt += 1;
 
-                if configs::CONFIG.read().unwrap().verbose {
+                if verbose_flag {
                     println!("Loaded yml file path: {}", filepath);
                 }
 

@@ -1,4 +1,4 @@
-use crate::detections::configs::{self, CURRENT_EXE_PATH};
+use crate::detections::configs::{self, Action, OutputOption, CURRENT_EXE_PATH, OUTPUTOPTIONS};
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
@@ -169,8 +169,16 @@ pub fn after_fact(all_record_cnt: usize) {
     };
 
     let mut displayflag = false;
+    if OUTPUTOPTIONS.read().unwrap().is_none() {
+        AlertMessage::alert(&format!(
+            "UnExpected output option. {:?}",
+            configs::CONFIG.read().unwrap().action
+        ))
+        .ok();
+        process::exit(1);
+    }
     let mut target: Box<dyn io::Write> =
-        if let Some(csv_path) = &configs::CONFIG.read().unwrap().output {
+        if let Some(csv_path) = &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().output {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => Box::new(BufWriter::new(file)),
@@ -207,19 +215,29 @@ fn emit_csv<W: std::io::Write>(
     let html_output_flag = *HTML_REPORT_FLAG;
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
-    let json_output_flag = configs::CONFIG.read().unwrap().json_timeline;
-    let jsonl_output_flag = configs::CONFIG.read().unwrap().jsonl_timeline;
-    let is_no_summary = configs::CONFIG.read().unwrap().no_summary;
+    let mut json_output_flag = false;
+    let mut jsonl_output_flag = false;
 
-    let mut wtr = if json_output_flag || jsonl_output_flag {
-        WriterBuilder::new()
-            .delimiter(b'\n')
-            .double_quote(false)
-            .quote_style(QuoteStyle::Never)
-            .from_writer(writer)
-    } else {
-        WriterBuilder::new().from_writer(writer)
+    let tmp_wtr = match &configs::CONFIG.read().unwrap().action {
+        Action::JsonTimeline(option) => {
+            json_output_flag = true;
+            jsonl_output_flag = option.jsonl_timeline;
+            Some(
+                WriterBuilder::new()
+                    .delimiter(b'\n')
+                    .double_quote(false)
+                    .quote_style(QuoteStyle::Never)
+                    .from_writer(writer),
+            )
+        }
+        Action::CsvTimeline(_) => Some(WriterBuilder::new().from_writer(writer)),
+        _ => None,
     };
+    //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
+    if tmp_wtr.is_none() {
+        return Ok(());
+    }
+    let mut wtr = tmp_wtr.unwrap();
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
@@ -253,10 +271,13 @@ fn emit_csv<W: std::io::Write>(
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
+    let binding = &OUTPUTOPTIONS.read().unwrap();
+    let output_options = binding.as_ref().unwrap();
+
     for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
-        timestamps.push(_get_timestamp(time));
+        timestamps.push(_get_timestamp(output_options, time));
         for (_, detect_info) in detect_infos.iter().enumerate() {
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
@@ -317,7 +338,7 @@ fn emit_csv<W: std::io::Write>(
             }
 
             // 各種集計作業
-            if !is_no_summary {
+            if !output_options.no_summary {
                 let level_map: HashMap<String, u128> = HashMap::from([
                     ("INFORMATIONAL".to_owned(), 1),
                     ("LOW".to_owned(), 2),
@@ -383,7 +404,7 @@ fn emit_csv<W: std::io::Write>(
     }
 
     disp_wtr_buf.clear();
-    if !is_no_summary {
+    if !output_options.no_summary {
         let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
             vec![
                 [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
@@ -427,7 +448,7 @@ fn emit_csv<W: std::io::Write>(
         };
         println!();
 
-        if configs::CONFIG.read().unwrap().visualize_timeline {
+        if output_options.visualize_timeline {
             _print_timeline_hist(timestamps, terminal_width, 3);
             println!();
         }
@@ -499,11 +520,14 @@ fn emit_csv<W: std::io::Write>(
         _print_unique_results(
             total_detect_counts_by_level,
             unique_detect_counts_by_level,
-            CompactString::from("Total | Unique"),
-            CompactString::from("detections"),
+            (
+                CompactString::from("Total | Unique"),
+                CompactString::from("detections"),
+            ),
             &color_map,
             &level_abbr,
             &mut html_output_stock,
+            html_output_flag,
         );
         println!();
 
@@ -630,11 +654,11 @@ fn _format_cellpos(colval: &str, column: ColPos) -> String {
 fn _print_unique_results(
     mut counts_by_level: Vec<u128>,
     mut unique_counts_by_level: Vec<u128>,
-    head_word: CompactString,
-    tail_word: CompactString,
+    head_and_tail_word: (CompactString, CompactString),
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
+    html_output_flag: bool,
 ) {
     // the order in which are registered and the order of levels to be displayed are reversed
     counts_by_level.reverse();
@@ -648,8 +672,8 @@ fn _print_unique_results(
         None,
         &format!(
             "{} {}: {} | {}",
-            head_word,
-            tail_word,
+            head_and_tail_word.0,
+            head_and_tail_word.1,
             total_count.to_formatted_string(&Locale::en),
             unique_total_count.to_formatted_string(&Locale::en)
         ),
@@ -674,7 +698,7 @@ fn _print_unique_results(
         } else {
             (unique_counts_by_level[i] as f64) / (unique_total_count as f64) * 100.0
         };
-        if configs::CONFIG.read().unwrap().html_report.is_some() {
+        if html_output_flag {
             total_detect_md.push(format!(
                 "    - {}: {} ({:.2}%)",
                 level_name[0],
@@ -690,9 +714,9 @@ fn _print_unique_results(
         }
         let output_raw_str = format!(
             "{} {} {}: {} ({:.2}%) | {} ({:.2}%)",
-            head_word,
+            head_and_tail_word.0,
             level_name[0],
-            tail_word,
+            head_and_tail_word.1,
             counts_by_level[i].to_formatted_string(&Locale::en),
             percent,
             unique_counts_by_level[i].to_formatted_string(&Locale::en),
@@ -706,7 +730,7 @@ fn _print_unique_results(
         )
         .ok();
     }
-    if configs::CONFIG.read().unwrap().html_report.is_some() {
+    if html_output_flag {
         html_output_stock.extend(total_detect_md.iter());
         html_output_stock.extend(unique_detect_md.iter());
     }
@@ -723,7 +747,8 @@ fn _print_detection_summary_by_date(
     let mut wtr = buf_wtr.buffer();
     wtr.set_color(ColorSpec::new().set_fg(None)).ok();
     let output_header = "Dates with most total detections:";
-    writeln!(wtr, "{}", output_header).ok();
+    write_color_buffer(&buf_wtr, None, output_header, true).ok();
+
     if *HTML_REPORT_FLAG {
         html_output_stock.push(format!("- {}", output_header));
     }
@@ -948,8 +973,8 @@ fn _print_detection_summary_tables(
 }
 
 /// get timestamp to input datetime.
-fn _get_timestamp(time: &DateTime<Utc>) -> i64 {
-    if configs::CONFIG.read().unwrap().utc || configs::CONFIG.read().unwrap().iso_8601 {
+fn _get_timestamp(output_options: &OutputOption, time: &DateTime<Utc>) -> i64 {
+    if output_options.utc || output_options.iso_8601 {
         time.timestamp()
     } else {
         let offset_sec = Local

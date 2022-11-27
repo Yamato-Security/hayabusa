@@ -1,4 +1,4 @@
-use crate::detections::configs::{self, CURRENT_EXE_PATH};
+use crate::detections::configs::{CURRENT_EXE_PATH, OUTPUTOPTIONS};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
@@ -149,15 +149,31 @@ pub fn load_profile(
     default_profile_path: &str,
     profile_path: &str,
 ) -> Option<Vec<(CompactString, Profile)>> {
-    let conf = configs::CONFIG.read().unwrap();
-    if conf.set_default_profile.is_some() {
+    if OUTPUTOPTIONS.read().unwrap().is_none() {
+        return None;
+    }
+    if OUTPUTOPTIONS
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .set_default_profile
+        .is_some()
+    {
         if let Err(e) = set_default_profile(default_profile_path, profile_path) {
             AlertMessage::alert(&e).ok();
         } else {
             println!("Successfully updated the default profile.");
         };
     }
-    let profile_all: Vec<Yaml> = if conf.profile.is_none() {
+    let profile_all: Vec<Yaml> = if OUTPUTOPTIONS
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .profile
+        .is_none()
+    {
         match read_profile_data(default_profile_path) {
             Ok(data) => data,
             Err(e) => {
@@ -181,7 +197,7 @@ pub fn load_profile(
     }
     let profile_data = &profile_all[0];
     let mut ret: Vec<(CompactString, Profile)> = vec![];
-    if let Some(profile_name) = &conf.profile {
+    if let Some(profile_name) = &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
             target_data
@@ -235,8 +251,18 @@ pub fn set_default_profile(default_profile_path: &str, profile_path: &str) -> Re
         }
     };
 
-    // デフォルトプロファイルを設定する処理
-    if let Some(profile_name) = &configs::CONFIG.read().unwrap().set_default_profile {
+    // output用のオプションが存在しない場合は以降の処理でエラーが出るためここで確認する
+    if OUTPUTOPTIONS.read().unwrap().is_none() {
+        return Err("Not exist output option.".to_string());
+    }
+
+    if let Some(profile_name) = &OUTPUTOPTIONS
+        .read()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .set_default_profile
+    {
         if let Ok(mut buf_wtr) = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -323,7 +349,7 @@ pub fn get_profile_list(profile_path: &str) -> Nested<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::configs::{self, Config};
+    use crate::detections::configs::{self, Config, OUTPUTOPTIONS};
     use crate::options::profile::{get_profile_list, load_profile, Profile};
     use clap::Parser;
     use compact_str::CompactString;
@@ -413,7 +439,7 @@ mod tests {
 
     /// プロファイルオプションが設定されて`おり、そのオプションに該当するプロファイルが存在する場合のテスト
     fn test_load_profile_with_profile_option() {
-        configs::CONFIG.write().unwrap().profile = Some("minimal".to_string());
+        OUTPUTOPTIONS.write().unwrap().as_mut().unwrap().profile = Some("minimal".to_string());
         let expect: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
@@ -455,7 +481,7 @@ mod tests {
 
     /// プロファイルオプションが設定されているが、対象のオプションが存在しない場合のテスト
     fn test_load_profile_no_exist_profile_files() {
-        configs::CONFIG.write().unwrap().profile = Some("not_exist".to_string());
+        OUTPUTOPTIONS.write().unwrap().as_mut().unwrap().profile = Some("not_exist".to_string());
 
         //両方のファイルが存在しない場合
         assert_eq!(

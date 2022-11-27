@@ -35,7 +35,7 @@ impl PivotKeyword {
 ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
 ///それをPIVOT_KEYWORD.keywordsに入れる。
 pub fn insert_pivot_keyword(event_record: &Value) {
-    //levelがlow異常なら続ける
+    //levelがlow以上なら続ける
     let mut is_exist_event_key = false;
     let mut tmp_event_record: &Value = event_record;
     for s in ["Event", "System", "Level"] {

@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::BufWriter;
 
-use crate::detections::configs::EventInfoConfig;
-use crate::detections::message::{AlertMessage, CH_CONFIG, LOGONSUMMARY_FLAG, METRICS_FLAG};
+use crate::detections::configs::{Action, EventInfoConfig, LogonSummaryOption, MetricsOption};
+use crate::detections::message::{AlertMessage, CH_CONFIG};
 use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -44,24 +44,30 @@ impl Timeline {
     }
 
     pub fn tm_stats_dsp_msg(&mut self, event_timeline_config: EventInfoConfig) {
-        if !*METRICS_FLAG {
-            return;
-        }
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        if CONFIG.read().unwrap().filepath.is_some() {
-            sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-            sammsges.push(total_event_record);
-            sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-            sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        } else {
-            sammsges.push(total_event_record);
+        let metrics_option: MetricsOption;
+        match &CONFIG.read().unwrap().action {
+            Action::Metrics(option) => {
+                metrics_option = option.clone();
+                if option.input_args.filepath.is_some() {
+                    sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+                    sammsges.push(total_event_record);
+                    sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+                    sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+                } else {
+                    sammsges.push(total_event_record);
+                }
+            }
+            _ => {
+                return;
+            }
         }
 
         let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
         let target;
-        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
+        let mut wtr = if let Some(csv_path) = metrics_option.output.as_ref() {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => {
@@ -96,7 +102,7 @@ impl Timeline {
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-        if CONFIG.read().unwrap().output.is_some() {
+        if metrics_option.output.as_ref().is_some() {
             for msg in stats_msges.iter() {
                 if let Some(ref mut w) = wtr {
                     w.write_record(msg).ok();
@@ -108,25 +114,32 @@ impl Timeline {
     }
 
     pub fn tm_logon_stats_dsp_msg(&mut self) {
-        if !*LOGONSUMMARY_FLAG {
-            return;
-        }
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        if CONFIG.read().unwrap().filepath.is_some() {
-            sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-            sammsges.push(total_event_record);
-            sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-            sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        } else {
-            sammsges.push(total_event_record);
+        let logon_summary_option: LogonSummaryOption;
+        match &CONFIG.read().unwrap().action {
+            Action::LogonSummary(option) => {
+                logon_summary_option = option.clone();
+                if option.input_args.filepath.is_some() {
+                    sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+                    sammsges.push(total_event_record);
+                    sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+                    sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+                } else {
+                    sammsges.push(total_event_record);
+                }
+            }
+            _ => {
+                return;
+            }
         }
+
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
 
-        self.tm_loginstats_tb_set_msg();
+        self.tm_loginstats_tb_set_msg(logon_summary_option);
     }
 
     // イベントID毎の出力メッセージ生成
@@ -179,7 +192,7 @@ impl Timeline {
     }
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
-    fn tm_loginstats_tb_set_msg(&self) {
+    fn tm_loginstats_tb_set_msg(&self, option: LogonSummaryOption) {
         println!(" Logon Summary:");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
@@ -192,7 +205,7 @@ impl Timeline {
         } else {
             let header = vec!["User", "Failed", "Successful"];
             let target;
-            let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
+            let mut wtr = if let Some(csv_path) = option.output {
                 // output to file
                 match File::create(csv_path) {
                     Ok(file) => {

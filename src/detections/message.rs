@@ -43,8 +43,8 @@ lazy_static! {
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().quiet_errors;
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
-    pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().metrics;
-    pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().logon_summary;
+    pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().action.to_usize() == 3;
+    pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().action.to_usize() == 2;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
@@ -61,7 +61,7 @@ lazy_static! {
         .unwrap(),
     );
     pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
-        configs::CONFIG.read().unwrap().pivot_keywords_list;
+    configs::CONFIG.read().unwrap().action.to_usize() == 4;
     pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(
         utils::check_setting_path(&configs::CONFIG.read().unwrap().config, "default_details.txt", false).unwrap_or_else(|| {
             utils::check_setting_path(
