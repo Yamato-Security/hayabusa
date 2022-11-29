@@ -1,5 +1,6 @@
 use nested::Nested;
 use pcre2::bytes::Regex as Pcre2;
+use pcre2::bytes::RegexBuilder;
 use regex;
 use std::{cmp::Ordering, collections::VecDeque};
 use yaml_rust::Yaml;
@@ -327,7 +328,7 @@ impl LeafMatcher for DefaultMatcher {
 
             let pattern = DefaultMatcher::from_pattern_to_regex_str(pattern, &self.pipes);
             // Pipeで処理されたパターンを正規表現に変換
-            let re_result = Pcre2::new(&pattern);
+            let re_result = RegexBuilder::new().jit(true).build(&pattern);
             if re_result.is_err() {
                 let errmsg = format!(
                     "Cannot parse regex. [regex:{}, key:{}]",
