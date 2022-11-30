@@ -190,7 +190,15 @@ impl Timeline {
                 println!("{}", msgprint);
             }
         } else {
-            let header = vec!["User", "Failed", "Successful"];
+            let success_header = vec![
+                "User", "Type 0", "Type 2", "Type 3", "Type 4", "Type 5", "Type 7", "Type 8",
+                "Type 9", "Type 10", "Type 11", "Type 12", "Type 13", "Unknown",
+            ];
+            let faild_header = vec![
+                "User", "Type 0", "Type 2", "Type 3", "Type 4", "Type 5", "Type 7", "Type 8",
+                "Type 9", "Type 10", "Type 11", "Type 12", "Type 13", "Unknown",
+            ];
+            let header = vec!["User", "Hostname", "Logontype", "Failed", "Successful"];
             let target;
             let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
                 // output to file
@@ -220,11 +228,19 @@ impl Timeline {
             let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
             mapsorted.sort_by(|x, y| x.0.cmp(y.0));
 
-            for (key, values) in &mapsorted {
+            for ((key, host, ltype), values) in &mapsorted {
                 let mut username: String = key.to_string();
+                let mut hostname: String = host.to_string();
+                let mut logontype: String = ltype.to_string();
                 username.pop();
                 username.remove(0);
-                let record_data = vec![username, values[1].to_string(), values[0].to_string()];
+                let record_data = vec![
+                    username,
+                    hostname,
+                    logontype,
+                    values[1].to_string(),
+                    values[0].to_string(),
+                ];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
                 }

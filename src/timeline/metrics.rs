@@ -9,7 +9,7 @@ pub struct EventMetrics {
     pub start_time: String,
     pub end_time: String,
     pub stats_list: HashMap<(String, String), usize>,
-    pub stats_login_list: HashMap<String, [usize; 2]>,
+    pub stats_login_list: HashMap<(String, String, String), [usize; 2]>,
 }
 /**
 * Windows Event Logの統計情報を出力する
@@ -21,7 +21,7 @@ impl EventMetrics {
         start_time: String,
         end_time: String,
         stats_list: HashMap<(String, String), usize>,
-        stats_login_list: HashMap<String, [usize; 2]>,
+        stats_login_list: HashMap<(String, String, String), [usize; 2]>,
     ) -> EventMetrics {
         EventMetrics {
             total,
@@ -116,17 +116,27 @@ impl EventMetrics {
                 }
 
                 let username = utils::get_event_value("TargetUserName", &record.record);
+                let logontype = utils::get_event_value("LogonType", &record.record);
+                let hostname = utils::get_event_value("Computer", &record.record);
                 let countlist: [usize; 2] = [0, 0];
                 if idnum == 4624 {
                     let count: &mut [usize; 2] = self
                         .stats_login_list
-                        .entry(username.unwrap().to_string())
+                        .entry((
+                            username.unwrap().to_string(),
+                            hostname.unwrap().to_string(),
+                            logontype.unwrap().to_string(),
+                        ))
                         .or_insert(countlist);
                     count[0] += 1;
                 } else if idnum == 4625 {
                     let count: &mut [usize; 2] = self
                         .stats_login_list
-                        .entry(username.unwrap().to_string())
+                        .entry((
+                            username.unwrap().to_string(),
+                            hostname.unwrap().to_string(),
+                            logontype.unwrap().to_string(),
+                        ))
                         .or_insert(countlist);
                     count[1] += 1;
                 }
