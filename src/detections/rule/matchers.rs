@@ -515,7 +515,7 @@ impl PipeElement {
 
         // sigmaのwildcardはcase insensitive
         // なので、正規表現の先頭にcase insensitiveであることを表す記号を付与
-        "(?i)".to_string() + &ret
+        "(?is)".to_string() + &ret
     }
 }
 
