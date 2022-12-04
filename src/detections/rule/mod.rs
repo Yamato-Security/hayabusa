@@ -18,6 +18,7 @@ mod condition_parser;
 mod count;
 use self::count::{AggRecordTimeInfo, TimeFrameInfo};
 
+use super::configs::{EventKeyAliasConfig, StoredStatic};
 use super::detection::EvtxRecordInfo;
 
 pub fn create_rule(rulepath: String, yaml: Yaml) -> RuleNode {
@@ -51,11 +52,11 @@ impl RuleNode {
         }
     }
 
-    pub fn init(&mut self) -> Result<(), Vec<String>> {
+    pub fn init(&mut self, stored_static: &StoredStatic) -> Result<(), Vec<String>> {
         let mut errmsgs: Vec<String> = vec![];
 
         // detection node initialization
-        let detection_result = self.detection.init(&self.yaml["detection"]);
+        let detection_result = self.detection.init(&self.yaml["detection"], stored_static);
         if let Err(err_detail) = detection_result {
             errmsgs.extend(err_detail);
         }
@@ -67,10 +68,12 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&mut self, event_record: &EvtxRecordInfo) -> bool {
-        let result = self.detection.select(event_record);
+    pub fn select(&mut self, event_record: &EvtxRecordInfo, stored_static: &StoredStatic) -> bool {
+        let result = self
+            .detection
+            .select(event_record, &stored_static.eventkey_alias);
         if result && self.has_agg_condition() {
-            count::count(self, &event_record.record);
+            count::count(self, &event_record.record, stored_static);
         }
         result
     }
@@ -79,12 +82,15 @@ impl RuleNode {
         self.detection.aggregation_condition.is_some()
     }
     /// Aggregation Conditionの結果を配列で返却する関数
-    pub fn judge_satisfy_aggcondition(&self) -> Vec<AggResult> {
+    pub fn judge_satisfy_aggcondition(&self, stored_static: &StoredStatic) -> Vec<AggResult> {
         let mut ret = Vec::new();
         if !self.has_agg_condition() {
             return ret;
         }
-        ret.append(&mut count::aggregation_condition_select(self));
+        ret.append(&mut count::aggregation_condition_select(
+            self,
+            stored_static,
+        ));
         ret
     }
     pub fn check_exist_countdata(&self) -> bool {
@@ -144,14 +150,21 @@ impl DetectionNode {
         }
     }
 
-    fn init(&mut self, detection_yaml: &Yaml) -> Result<(), Vec<String>> {
+    fn init(
+        &mut self,
+        detection_yaml: &Yaml,
+        stored_static: &StoredStatic,
+    ) -> Result<(), Vec<String>> {
         // selection nodeの初期化
         self.parse_name_to_selection(detection_yaml)?;
 
         //timeframeに指定されている値を取得
         let timeframe = &detection_yaml["timeframe"].as_str();
         if timeframe.is_some() {
-            self.timeframe = Some(TimeFrameInfo::parse_tframe(timeframe.unwrap().to_string()));
+            self.timeframe = Some(TimeFrameInfo::parse_tframe(
+                timeframe.unwrap().to_string(),
+                stored_static,
+            ));
         }
 
         // conditionに指定されている式を取得
@@ -197,13 +210,17 @@ impl DetectionNode {
         }
     }
 
-    pub fn select(&self, event_record: &EvtxRecordInfo) -> bool {
+    pub fn select(
+        &self,
+        event_record: &EvtxRecordInfo,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) -> bool {
         if self.condition.is_none() {
             return false;
         }
 
         let condition = &self.condition.as_ref().unwrap();
-        condition.select(event_record)
+        condition.select(event_record, eventkey_alias)
     }
 
     /// selectionノードをパースします。
@@ -335,9 +352,32 @@ impl AggResult {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::RuleNode;
-    use crate::detections::{self, rule::create_rule, utils};
+    use crate::detections::{
+        self,
+        configs::{Action, Config, StoredStatic, UpdateOption},
+        rule::create_rule,
+        utils,
+    };
     use yaml_rust::YamlLoader;
+
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        })
+    }
 
     pub fn parse_rule_from_str(rule_str: &str) -> RuleNode {
         let rule_yaml = YamlLoader::load_from_str(rule_str);
@@ -345,8 +385,31 @@ mod tests {
         let rule_yamls = rule_yaml.unwrap();
         let mut rule_yaml = rule_yamls.into_iter();
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
-        assert!(rule_node.init().is_ok());
+        assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
         rule_node
+    }
+
+    fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
+        let mut rule_node = parse_rule_from_str(rule_str);
+        let dummy_stored_static = create_dummy_stored_static();
+        match serde_json::from_str(record_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(
+                    record,
+                    "testpath".to_owned(),
+                    &keys,
+                    &dummy_stored_static.eventkey_alias,
+                );
+                assert_eq!(
+                    rule_node.select(&recinfo, &dummy_stored_static),
+                    expect_select
+                );
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
     }
 
     #[test]
@@ -365,18 +428,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -395,18 +447,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -426,17 +467,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -508,18 +539,7 @@ mod tests {
               "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
             }
           }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -567,18 +587,7 @@ mod tests {
               "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
             }
           }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -633,18 +642,7 @@ mod tests {
             }
         }
         "#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -677,18 +675,7 @@ mod tests {
             }
         }
         "#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -722,18 +709,7 @@ mod tests {
             }
         }
         "#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -787,17 +763,7 @@ mod tests {
           }
         "#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -851,17 +817,7 @@ mod tests {
           }
         "#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -897,17 +853,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -925,7 +871,7 @@ mod tests {
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
         assert_eq!(
-            rule_node.init(),
+            rule_node.init(&create_dummy_stored_static()),
             Err(vec![
                 "An unknown pipe element was specified. key:detection -> selection -> Channel|failed"
                     .to_string()
@@ -945,7 +891,7 @@ mod tests {
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
         assert_eq!(
-            rule_node.init(),
+            rule_node.init(&create_dummy_stored_static()),
             Err(vec!["Detection node was not found.".to_string()])
         );
     }
@@ -955,12 +901,18 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        let _init = rule_node.init();
+        let _init = rule_node.init(&create_dummy_stored_static());
+        let dummy_stored_static = create_dummy_stored_static();
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                let result = rule_node.select(&recinfo);
+                let recinfo = utils::create_rec_info(
+                    record,
+                    "testpath".to_owned(),
+                    &keys,
+                    &dummy_stored_static.eventkey_alias,
+                );
+                let result = rule_node.select(&recinfo, &dummy_stored_static);
                 assert!(rule_node.detection.aggregation_condition.is_some());
                 assert!(result);
                 assert_eq!(

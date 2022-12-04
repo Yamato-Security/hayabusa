@@ -1,9 +1,11 @@
 use std::fs::File;
 use std::io::BufWriter;
 
-use crate::detections::configs::{Action, EventInfoConfig, LogonSummaryOption, MetricsOption};
-use crate::detections::message::{AlertMessage, CH_CONFIG};
-use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
+use crate::detections::configs::{
+    Action, EventInfoConfig, EventKeyAliasConfig, LogonSummaryOption, MetricsOption, StoredStatic,
+};
+use crate::detections::detection::EvtxRecordInfo;
+use crate::detections::message::AlertMessage;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
@@ -38,17 +40,29 @@ impl Timeline {
         Timeline { stats: statistic }
     }
 
-    pub fn start(&mut self, records: &[EvtxRecordInfo]) {
-        self.stats.evt_stats_start(records);
-        self.stats.logon_stats_start(records);
+    pub fn start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        metrics_flag: bool,
+        logon_summary_flag: bool,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) {
+        self.stats
+            .evt_stats_start(records, metrics_flag, eventkey_alias);
+        self.stats
+            .logon_stats_start(records, logon_summary_flag, eventkey_alias);
     }
 
-    pub fn tm_stats_dsp_msg(&mut self, event_timeline_config: EventInfoConfig) {
+    pub fn tm_stats_dsp_msg(
+        &mut self,
+        event_timeline_config: &EventInfoConfig,
+        stored_static: &StoredStatic,
+    ) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
         let metrics_option: MetricsOption;
-        match &CONFIG.read().unwrap().action {
+        match &stored_static.config.action {
             Action::Metrics(option) => {
                 metrics_option = option.clone();
                 if option.input_args.filepath.is_some() {
@@ -97,7 +111,8 @@ impl Timeline {
         mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
         // イベントID毎の出力メッセージ生成
-        let stats_msges: Vec<Vec<String>> = self.tm_stats_set_msg(mapsorted, event_timeline_config);
+        let stats_msges: Vec<Vec<String>> =
+            self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
 
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
@@ -113,12 +128,12 @@ impl Timeline {
         println!("{stats_tb}");
     }
 
-    pub fn tm_logon_stats_dsp_msg(&mut self) {
+    pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
         let logon_summary_option: LogonSummaryOption;
-        match &CONFIG.read().unwrap().action {
+        match &stored_static.config.action {
             Action::LogonSummary(option) => {
                 logon_summary_option = option.clone();
                 if option.input_args.filepath.is_some() {
@@ -146,10 +161,12 @@ impl Timeline {
     fn tm_stats_set_msg(
         &self,
         mapsorted: Vec<(&(std::string::String, std::string::String), &usize)>,
-        event_timeline_config: EventInfoConfig,
+        event_timeline_config: &EventInfoConfig,
+        stored_static: &StoredStatic,
     ) -> Vec<Vec<String>> {
         let mut msges: Vec<Vec<String>> = Vec::new();
 
+        let channel_config = &stored_static.ch_config;
         for ((event_id, channel), event_cnt) in mapsorted.iter() {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
@@ -162,7 +179,7 @@ impl Timeline {
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
-            let ch = CH_CONFIG
+            let ch = channel_config
                 .get(fmted_channel.to_lowercase().as_str())
                 .unwrap_or(&fmted_channel)
                 .to_string();

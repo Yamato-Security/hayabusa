@@ -509,14 +509,52 @@ impl PipeElement {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::super::matchers::{
         AllowlistFileMatcher, DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher,
     };
     use super::super::selectionnodes::{
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
+    use crate::detections::configs::{Action, Config, StoredStatic, UpdateOption};
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
+
+    fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
+        let mut rule_node = parse_rule_from_str(rule_str);
+        let dummy_stored_static = StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        });
+        match serde_json::from_str(record_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(
+                    record,
+                    "testpath".to_owned(),
+                    &keys,
+                    &dummy_stored_static.eventkey_alias,
+                );
+                assert_eq!(
+                    rule_node.select(&recinfo, &dummy_stored_static),
+                    expect_select
+                );
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
 
     #[test]
     fn test_rule_parse() {
@@ -734,18 +772,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -765,17 +792,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -795,17 +812,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -826,17 +833,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -857,17 +854,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -887,17 +874,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -917,17 +894,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -948,17 +915,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -979,17 +936,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1010,17 +957,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1041,17 +978,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1072,17 +999,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1102,17 +1019,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1136,17 +1043,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1170,17 +1067,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1202,18 +1089,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\"", "Computer":"DESKTOP-ICHIICHI"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1245,17 +1121,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1287,17 +1153,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1328,18 +1184,7 @@ mod tests {
             "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
           }
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1371,17 +1216,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1412,18 +1247,7 @@ mod tests {
             "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
           }
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1454,18 +1278,7 @@ mod tests {
             "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
           }
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1497,17 +1310,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1539,17 +1342,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1580,18 +1373,7 @@ mod tests {
             "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
           }
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_rec) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1611,17 +1393,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1640,18 +1412,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "ホストアプリケーション"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1671,17 +1432,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1767,18 +1518,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"DESKTOP-ICHIICHI"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1798,17 +1538,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1830,17 +1560,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -1862,17 +1582,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1891,23 +1601,12 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
     fn test_eq_field_notdetect() {
         // equalsfieldsの検知できないパターン
-        // equalsfieldsで正しく検知できることを確認
         let rule_str = r#"
         detection:
             selection:
@@ -1920,18 +1619,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1950,17 +1638,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
 
         let rule_str = r#"
         detection:
@@ -1968,17 +1646,7 @@ mod tests {
                 NoField|equalsfield: Channel
         details: 'command=%CommandLine%'
         "#;
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
 
         let rule_str = r#"
         detection:
@@ -1986,17 +1654,7 @@ mod tests {
                 NoField|equalsfield: NoField1
         details: 'command=%CommandLine%'
         "#;
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -2018,18 +1676,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell" }},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
     #[test]
     fn test_eq_field_null_not_detect() {
@@ -2047,16 +1694,6 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(e) => {
-                panic!("Failed to parse json record.{:?}", e);
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 }

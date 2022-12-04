@@ -9,10 +9,9 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
 
-use crate::detections::configs::{Action, CONFIG};
+use crate::detections::configs::{Action, Config};
 
 lazy_static! {
-    pub static ref HTML_REPORT_FLAG: bool = check_html_flag();
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
 }
 
@@ -64,8 +63,8 @@ impl Default for HtmlReporter {
     }
 }
 
-fn check_html_flag() -> bool {
-    match &CONFIG.read().unwrap().action {
+pub fn check_html_flag(config: &Config) -> bool {
+    match &config.action {
         Action::CsvTimeline(option) => option.output_options.html_report.is_some(),
         Action::JsonTimeline(option) => option.output_options.html_report.is_some(),
         _ => false,

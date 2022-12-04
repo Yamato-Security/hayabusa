@@ -3,27 +3,23 @@ extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
 
-use crate::htmlreport::HTML_REPORT_FLAG;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
+use clap::Command;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::detections::configs::{
-    load_pivot_keywords, Action, ConfigReader, EventInfoConfig, TargetEventIds, TargetEventTime,
-    CONFIG, CURRENT_EXE_PATH, OUTPUTOPTIONS,
+    load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
+    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{
-    AlertMessage, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG,
-    QUIET_ERRORS_FLAG,
-};
+use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::output_and_data_stack_for_html;
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
-use hayabusa::options::profile::PROFILES;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
@@ -63,8 +59,11 @@ static GLOBAL: MiMalloc = MiMalloc;
 const MAX_DETECT_RECORDS: usize = 5000;
 
 fn main() {
-    let mut app = App::new();
-    app.exec();
+    let mut config_reader = ConfigReader::new();
+    // コマンドのパース情報を作成してstatic変数に格納する
+    let mut stored_static = StoredStatic::create_static_data(&config_reader.config);
+    let mut app = App::new(stored_static.config.thread_number);
+    app.exec(&mut config_reader.app, &mut stored_static);
     app.rt.shutdown_background();
 }
 
@@ -73,24 +72,17 @@ pub struct App {
     rule_keys: Nested<String>,
 }
 
-impl Default for App {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl App {
-    pub fn new() -> App {
+    pub fn new(thread_number: Option<usize>) -> App {
         App {
-            rt: utils::create_tokio_runtime(),
+            rt: utils::create_tokio_runtime(thread_number),
             rule_keys: Nested::<String>::new(),
         }
     }
 
-    fn exec(&mut self) {
-        let mut configreader = ConfigReader::new();
+    fn exec(&mut self, app: &mut Command, stored_static: &mut StoredStatic) {
         let analysis_start_time: DateTime<Local> = Local::now();
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
             output_data.extend(vec![format!(
                 "- Start time: {}",
@@ -104,14 +96,14 @@ impl App {
 
         // Show usage when no arguments.
         if std::env::args().len() == 1 {
-            self.output_logo();
+            self.output_logo(stored_static);
             println!();
-            configreader.app.print_help().ok();
+            app.print_help().ok();
             println!();
             return;
         }
-        if !configs::CONFIG.read().unwrap().quiet {
-            self.output_logo();
+        if !stored_static.config.quiet {
+            self.output_logo(stored_static);
             println!();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
@@ -128,8 +120,9 @@ impl App {
             return;
         }
 
-        if configs::CONFIG.read().unwrap().list_profile {
-            let profile_list = options::profile::get_profile_list("config/profiles.yaml");
+        if stored_static.config.list_profile {
+            let profile_list =
+                options::profile::get_profile_list("config/profiles.yaml", stored_static);
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -166,18 +159,18 @@ impl App {
             return;
         }
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG.read().unwrap().config == Path::new("./rules/config") {
-            configs::CONFIG.write().unwrap().config =
+        if stored_static.config.config == Path::new("./rules/config") {
+            stored_static.config.config =
                 utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
                     .unwrap();
         }
 
-        let time_filter = TargetEventTime::default();
+        let time_filter = TargetEventTime::new(stored_static);
         if !time_filter.is_parse_success() {
             return;
         }
 
-        if *METRICS_FLAG {
+        if stored_static.metrics_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -187,7 +180,7 @@ impl App {
             .ok();
             println!();
         }
-        if *LOGONSUMMARY_FLAG {
+        if stored_static.logon_summary_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -208,11 +201,10 @@ impl App {
             true,
         )
         .ok();
-        let target_extensions = if OUTPUTOPTIONS.read().unwrap().is_some() {
+        let target_extensions = if stored_static.output_option.is_some() {
             configs::get_target_extensions(
-                OUTPUTOPTIONS
-                    .read()
-                    .unwrap()
+                stored_static
+                    .output_option
                     .as_ref()
                     .unwrap()
                     .input_args
@@ -220,27 +212,27 @@ impl App {
                     .as_ref(),
             )
         } else {
-            HashSet::from_iter(vec!["evtx".to_string()])
+            HashSet::default()
         };
-        match &configs::CONFIG.read().unwrap().action {
+
+        match &stored_static.config.action {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
                 // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
-                if OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().rules == Path::new("./rules") {
-                    OUTPUTOPTIONS.write().unwrap().as_mut().unwrap().rules =
+                if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
+                    stored_static.output_option.as_mut().unwrap().rules =
                         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true)
                             .unwrap();
                 }
                 // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
-                if let Err(e) = utils::check_rule_config() {
+                if let Err(e) = utils::check_rule_config(&stored_static.config) {
                     AlertMessage::alert(&e).ok();
                     return;
                 }
 
-                if PROFILES.is_none() {
+                if stored_static.profiles.is_none() {
                     return;
                 }
-                if let Some(html_path) =
-                    &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().html_report
+                if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
                 {
                     // if already exists same html report file. output alert message and exit
                     if utils::check_file_expect_not_exist(
@@ -253,7 +245,7 @@ impl App {
                         return;
                     }
                 }
-                if let Some(path) = &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
                     if utils::check_file_expect_not_exist(
                         path.as_path(),
                         format!(
@@ -264,9 +256,9 @@ impl App {
                         return;
                     }
                 }
-                self.analysis_start(&target_extensions, &time_filter, configreader);
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
 
-                if let Some(path) = &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
                     if let Ok(metadata) = fs::metadata(path) {
                         let output_saved_str = format!(
                             "Saved file: {} ({})",
@@ -276,16 +268,16 @@ impl App {
                         output_and_data_stack_for_html(
                             &output_saved_str,
                             "General Overview {#general_overview}",
+                            stored_static.html_report_flag,
                         );
                     }
                 }
-                if *HTML_REPORT_FLAG {
+                if stored_static.html_report_flag {
                     let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
                     htmlreport::create_html_file(
                         html_str,
-                        OUTPUTOPTIONS
-                            .read()
-                            .unwrap()
+                        stored_static
+                            .output_option
                             .as_ref()
                             .unwrap()
                             .html_report
@@ -304,7 +296,7 @@ impl App {
             Action::Metrics(_) => todo!(),
             Action::PivotKeywordsList(_) => {
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-                if let Some(csv_path) = &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().output {
+                if let Some(csv_path) = &stored_static.output_option.as_ref().unwrap().output {
                     let mut error_flag = false;
                     let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                     pivot_key_unions.iter().for_each(|(key, _)| {
@@ -335,7 +327,7 @@ impl App {
                     .unwrap(),
                 );
 
-                self.analysis_start(&target_extensions, &time_filter, configreader);
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
 
                 // pivotのファイルの作成。pivot.rsに投げたい
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
@@ -354,7 +346,7 @@ impl App {
 
                         output
                     };
-                if let Some(pivot_file) = &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().output {
+                if let Some(pivot_file) = &stored_static.output_option.as_ref().unwrap().output {
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         let mut f = BufWriter::new(
                             fs::File::create(
@@ -409,7 +401,7 @@ impl App {
                 }
             }
             Action::UpdateRules(_) => {
-                let update_target = match &configs::CONFIG.read().unwrap().action {
+                let update_target = match &stored_static.config.action {
                     Action::UpdateRules(option) => Some(option.rules.to_owned()),
                     _ => None,
                 };
@@ -419,9 +411,10 @@ impl App {
                 } else {
                     None
                 };
-                let now_version = &format!("v{}", configreader.app.get_version().unwrap());
+                let now_version = &format!("v{}", app.get_version().unwrap());
 
-                match Update::update_rules(update_target.unwrap().to_str().unwrap()) {
+                match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static)
+                {
                     Ok(output) => {
                         if output != "You currently have the latest rules." {
                             write_color_buffer(
@@ -476,7 +469,7 @@ impl App {
                 let level_tuning_config_path = match level_tuning_val {
                     Some(path) => path.to_string(),
                     _ => utils::check_setting_path(
-                        &CONFIG.read().unwrap().config,
+                        &stored_static.config.config,
                         "level_tuning.txt",
                         false,
                     )
@@ -495,15 +488,15 @@ impl App {
                 if Path::new(&level_tuning_config_path).exists() {
                     if let Err(err) = LevelTuning::run(
                         &level_tuning_config_path,
-                        OUTPUTOPTIONS
-                            .read()
-                            .unwrap()
+                        stored_static
+                            .output_option
                             .as_ref()
                             .unwrap()
                             .rules
                             .as_os_str()
                             .to_str()
                             .unwrap(),
+                        stored_static,
                     ) {
                         AlertMessage::alert(&err).ok();
                     }
@@ -522,15 +515,19 @@ impl App {
         let analysis_end_time: DateTime<Local> = Local::now();
         let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
         let elapsed_output_str = format!("Elapsed time: {}", &analysis_duration.hhmmssxxx());
-        output_and_data_stack_for_html(&elapsed_output_str, "General Overview {#general_overview}");
+        output_and_data_stack_for_html(
+            &elapsed_output_str,
+            "General Overview {#general_overview}",
+            stored_static.html_report_flag,
+        );
 
         // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
         if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
-            AlertMessage::create_error_log();
+            AlertMessage::create_error_log(stored_static.quiet_errors_flag);
         }
 
         // Debugフラグをつけていた時にはメモリ利用情報などの統計情報を画面に出力する
-        if configs::CONFIG.read().unwrap().debug {
+        if stored_static.config.debug {
             println!();
             println!("Memory usage stats:");
             unsafe {
@@ -544,36 +541,40 @@ impl App {
         &mut self,
         target_extensions: &HashSet<String>,
         time_filter: &TargetEventTime,
-        configreader: ConfigReader,
+        stored_static: &StoredStatic,
     ) {
-        if OUTPUTOPTIONS
-            .read()
-            .unwrap()
+        if stored_static.output_option.is_none() {
+        } else if stored_static
+            .output_option
             .as_ref()
             .unwrap()
             .input_args
             .live_analysis
         {
-            let live_analysis_list = self.collect_liveanalysis_files(target_extensions);
+            let live_analysis_list =
+                self.collect_liveanalysis_files(target_extensions, stored_static);
             if live_analysis_list.is_none() {
                 return;
             }
             self.analysis_files(
                 live_analysis_list.unwrap(),
                 time_filter,
-                configreader.event_timeline_config,
-                configreader.target_eventids,
+                &stored_static.event_timeline_config,
+                &stored_static.target_eventids,
+                stored_static,
             );
-        } else if let Some(directory) = &OUTPUTOPTIONS
-            .read()
-            .unwrap()
+        } else if let Some(directory) = &stored_static
+            .output_option
             .as_ref()
             .unwrap()
             .input_args
             .directory
         {
-            let evtx_files =
-                Self::collect_evtxfiles(directory.as_os_str().to_str().unwrap(), target_extensions);
+            let evtx_files = Self::collect_evtxfiles(
+                directory.as_os_str().to_str().unwrap(),
+                target_extensions,
+                stored_static,
+            );
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
                 return;
@@ -581,14 +582,14 @@ impl App {
             self.analysis_files(
                 evtx_files,
                 time_filter,
-                configreader.event_timeline_config,
-                configreader.target_eventids,
+                &stored_static.event_timeline_config,
+                &stored_static.target_eventids,
+                stored_static,
             );
         } else {
             // directory, live_analysis以外はfilepathの指定の場合
-            if let Some(filepath) = &OUTPUTOPTIONS
-                .read()
-                .unwrap()
+            if let Some(filepath) = &stored_static
+                .output_option
                 .as_ref()
                 .unwrap()
                 .input_args
@@ -626,8 +627,9 @@ impl App {
                 self.analysis_files(
                     vec![PathBuf::from(filepath)],
                     time_filter,
-                    configreader.event_timeline_config,
-                    configreader.target_eventids,
+                    &stored_static.event_timeline_config,
+                    &stored_static.target_eventids,
+                    stored_static,
                 );
             }
         }
@@ -648,12 +650,14 @@ impl App {
     fn collect_liveanalysis_files(
         &self,
         target_extensions: &HashSet<String>,
+        stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
         if is_elevated() {
             let log_dir = env::var("windir").expect("windir is not found");
             let evtx_files = Self::collect_evtxfiles(
                 &[log_dir, "System32\\winevt\\Logs".to_string()].join("/"),
                 target_extensions,
+                stored_static,
             );
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
@@ -668,14 +672,18 @@ impl App {
         }
     }
 
-    fn collect_evtxfiles(dirpath: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
+    fn collect_evtxfiles(
+        dirpath: &str,
+        target_extensions: &HashSet<String>,
+        stored_static: &StoredStatic,
+    ) -> Vec<PathBuf> {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
-            if CONFIG.read().unwrap().verbose {
+            if stored_static.config.verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -693,7 +701,8 @@ impl App {
             let path = e.unwrap().path();
             if path.is_dir() {
                 path.to_str().map(|path_str| {
-                    let subdir_ret = Self::collect_evtxfiles(path_str, target_extensions);
+                    let subdir_ret =
+                        Self::collect_evtxfiles(path_str, target_extensions, stored_static);
                     ret.extend(subdir_ret);
                     Option::Some(())
                 });
@@ -735,16 +744,17 @@ impl App {
             }
         }
     }
+
     fn analysis_files(
         &mut self,
         evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
-        event_timeline_config: EventInfoConfig,
-        target_event_ids: TargetEventIds,
+        event_timeline_config: &EventInfoConfig,
+        target_event_ids: &TargetEventIds,
+        stored_static: &StoredStatic,
     ) {
-        let level = &OUTPUTOPTIONS
-            .read()
-            .unwrap()
+        let level = stored_static
+            .output_option
             .as_ref()
             .unwrap()
             .min_level
@@ -765,12 +775,12 @@ impl App {
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{}", total_size_output);
         println!();
-        if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG) {
+        if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
             println!("Loading detections rules. Please wait.");
             println!();
         }
 
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
             output_data.extend(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
@@ -784,8 +794,9 @@ impl App {
 
         let rule_files = detection::Detection::parse_rule_files(
             level.as_str(),
-            &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().rules,
-            &filter::exclude_ids(),
+            &stored_static.output_option.as_ref().unwrap().rules,
+            &filter::exclude_ids(stored_static),
+            stored_static,
         );
 
         if rule_files.is_empty() {
@@ -803,7 +814,7 @@ impl App {
         let mut total_records: usize = 0;
         let mut tl = Timeline::new();
         for evtx_file in evtx_files {
-            if CONFIG.read().unwrap().verbose {
+            if stored_static.config.verbose {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
@@ -812,20 +823,20 @@ impl App {
                 detection,
                 time_filter,
                 tl.to_owned(),
-                &target_event_ids,
+                target_event_ids,
+                stored_static,
             );
             total_records += cnt_tmp;
             pb.inc();
         }
-        if *METRICS_FLAG {
-            tl.tm_stats_dsp_msg(event_timeline_config);
+        if stored_static.metrics_flag {
+            tl.tm_stats_dsp_msg(event_timeline_config, stored_static);
         }
-        if *LOGONSUMMARY_FLAG {
-            tl.tm_logon_stats_dsp_msg();
+        if stored_static.logon_summary_flag {
+            tl.tm_logon_stats_dsp_msg(stored_static);
         }
-        if OUTPUTOPTIONS
-            .read()
-            .unwrap()
+        if stored_static
+            .output_option
             .as_ref()
             .unwrap()
             .output
@@ -836,9 +847,17 @@ impl App {
             println!("Analysis finished. Please wait while the results are being saved.");
         }
         println!();
-        detection.add_aggcondition_msges(&self.rt);
-        if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
-            after_fact(total_records);
+        detection.add_aggcondition_msges(&self.rt, stored_static);
+        if !(stored_static.metrics_flag
+            || stored_static.logon_summary_flag
+            || stored_static.pivot_keyword_list_flag)
+        {
+            after_fact(
+                total_records,
+                stored_static.output_option.as_ref().unwrap(),
+                stored_static.config.no_color,
+                stored_static,
+            );
         }
     }
 
@@ -850,6 +869,7 @@ impl App {
         time_filter: &TargetEventTime,
         mut tl: Timeline,
         target_event_ids: &TargetEventIds,
+        stored_static: &StoredStatic,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(&evtx_filepath);
@@ -861,6 +881,8 @@ impl App {
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
 
+        let verbose_flag = stored_static.config.verbose;
+        let quiet_errors_flag = stored_static.quiet_errors_flag;
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -879,10 +901,10 @@ impl App {
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
-                    if CONFIG.read().unwrap().verbose {
+                    if verbose_flag {
                         AlertMessage::alert(&errmsg).ok();
                     }
-                    if !*QUIET_ERRORS_FLAG {
+                    if !quiet_errors_flag {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
@@ -893,9 +915,13 @@ impl App {
 
                 let data = record_result.as_ref().unwrap().data.borrow();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(data)
-                    || (OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().eid_filter
-                        && !self._is_target_event_id(data, target_event_ids))
+                if !self._is_valid_channel(data, &stored_static.eventkey_alias)
+                    || (stored_static.output_option.as_ref().unwrap().eid_filter
+                        && !self._is_target_event_id(
+                            data,
+                            target_event_ids,
+                            &stored_static.eventkey_alias,
+                        ))
                 {
                     continue;
                 }
@@ -916,14 +942,20 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
+                stored_static.eventkey_alias.to_owned(),
             ));
 
             // timeline機能の実行
-            tl.start(&records_per_detect);
+            tl.start(
+                &records_per_detect,
+                stored_static.metrics_flag,
+                stored_static.logon_summary_flag,
+                &stored_static.eventkey_alias,
+            );
 
-            if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG) {
+            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
                 // ruleファイルの検知
-                detection = detection.start(&self.rt, records_per_detect);
+                detection = detection.start(&self.rt, records_per_detect, stored_static.clone());
             }
         }
 
@@ -934,17 +966,25 @@ impl App {
         records_per_detect: Vec<Value>,
         path: &dyn Display,
         rule_keys: Nested<String>,
+        eventkey_alias: EventKeyAliasConfig,
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
+        let arc_eventkey_alias = Arc::new(eventkey_alias);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
             let this = records_per_detect
                 .into_iter()
                 .map(|rec| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
+                    let arc_eventkey_alias_clone = Arc::clone(&arc_eventkey_alias);
                     spawn(async move {
-                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
+                        utils::create_rec_info(
+                            rec,
+                            arc_path.to_string(),
+                            &arc_rule_keys,
+                            &arc_eventkey_alias_clone,
+                        )
                     })
                 });
             FromIterator::from_iter(this)
@@ -969,8 +1009,13 @@ impl App {
     }
 
     /// target_eventids.txtの設定を元にフィルタする。 trueであれば検知確認対象のEventIDであることを意味する。
-    fn _is_target_event_id(&self, data: &Value, target_event_ids: &TargetEventIds) -> bool {
-        let eventid = utils::get_event_value(&utils::get_event_id_key(), data);
+    fn _is_target_event_id(
+        &self,
+        data: &Value,
+        target_event_ids: &TargetEventIds,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) -> bool {
+        let eventid = utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias);
         if eventid.is_none() {
             return true;
         }
@@ -983,8 +1028,8 @@ impl App {
     }
 
     /// レコードのチャンネルの値が正しい(Stringの形でありnullでないもの)ことを判定する関数
-    fn _is_valid_channel(&self, data: &Value) -> bool {
-        let channel = utils::get_event_value("Event.System.Channel", data);
+    fn _is_valid_channel(&self, data: &Value, eventkey_alias: &EventKeyAliasConfig) -> bool {
+        let channel = utils::get_event_value("Event.System.Channel", data, eventkey_alias);
         if channel.is_none() {
             return false;
         }
@@ -1013,11 +1058,11 @@ impl App {
     }
 
     /// output logo
-    fn output_logo(&self) {
+    fn output_logo(&self, stored_static: &StoredStatic) {
         let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
             .unwrap();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        let output_color = if configs::CONFIG.read().unwrap().no_color {
+        let output_color = if stored_static.config.no_color {
             None
         } else {
             Some(Color::Green)
@@ -1075,12 +1120,35 @@ impl App {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use crate::App;
     use hashbrown::HashSet;
+    use hayabusa::detections::configs::{Action, Config, StoredStatic, UpdateOption};
+
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        })
+    }
 
     #[test]
     fn test_collect_evtxfiles() {
-        let files = App::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
+        let files = App::collect_evtxfiles(
+            "test_files/evtx",
+            &HashSet::from(["evtx".to_string()]),
+            &create_dummy_stored_static(),
+        );
         assert_eq!(3, files.len());
 
         files.iter().for_each(|file| {

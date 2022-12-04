@@ -1,9 +1,9 @@
 extern crate serde_derive;
 extern crate yaml_rust;
 
-use crate::detections::configs::{self, CONFIG, OUTPUTOPTIONS};
+use crate::detections::configs::{self, StoredStatic};
 use crate::detections::message::AlertMessage;
-use crate::detections::message::{ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
+use crate::detections::message::ERROR_LOG_STACK;
 use crate::filter::RuleExclude;
 use hashbrown::{HashMap, HashSet};
 use std::ffi::OsStr;
@@ -24,21 +24,10 @@ pub struct ParseYaml {
     pub level_map: HashMap<String, u128>,
 }
 
-impl Default for ParseYaml {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ParseYaml {
-    pub fn new() -> ParseYaml {
-        let exclude_status_vec = if OUTPUTOPTIONS.read().unwrap().is_some() {
-            OUTPUTOPTIONS
-                .read()
-                .unwrap()
-                .clone()
-                .unwrap()
-                .exclude_status
+    pub fn new(stored_static: &StoredStatic) -> ParseYaml {
+        let exclude_status_vec = if let Some(output_option) = stored_static.output_option.as_ref() {
+            output_option.exclude_status.clone()
         } else {
             None
         };
@@ -80,18 +69,18 @@ impl ParseYaml {
         path: P,
         level: &str,
         exclude_ids: &RuleExclude,
+        stored_static: &StoredStatic,
     ) -> io::Result<String> {
         let metadata = fs::metadata(path.as_ref());
-        let verbose_flag = CONFIG.read().unwrap().verbose;
         if metadata.is_err() {
             let errmsg = format!(
                 "fail to read metadata of file: {}",
                 path.as_ref().to_path_buf().display(),
             );
-            if verbose_flag {
+            if stored_static.config.verbose {
                 AlertMessage::alert(&errmsg)?;
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -120,10 +109,10 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     read_content.unwrap_err()
                 );
-                if verbose_flag {
+                if stored_static.config.verbose {
                     AlertMessage::warn(&errmsg)?;
                 }
-                if !*QUIET_ERRORS_FLAG {
+                if !stored_static.quiet_errors_flag {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
@@ -141,10 +130,10 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     yaml_contents.unwrap_err()
                 );
-                if verbose_flag {
+                if stored_static.config.verbose {
                     AlertMessage::warn(&errmsg)?;
                 }
-                if !*QUIET_ERRORS_FLAG {
+                if !stored_static.quiet_errors_flag {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
@@ -164,7 +153,7 @@ impl ParseYaml {
                 let entry = entry?;
                 // フォルダは再帰的に呼び出す。
                 if entry.file_type()?.is_dir() {
-                    self.read_dir(entry.path(), level, exclude_ids)?;
+                    self.read_dir(entry.path(), level, exclude_ids, stored_static)?;
                     return io::Result::Ok(ret);
                 }
                 // ファイル以外は無視
@@ -206,10 +195,10 @@ impl ParseYaml {
                         entry.path().display(),
                         read_content.unwrap_err()
                     );
-                    if verbose_flag {
+                    if stored_static.config.verbose {
                         AlertMessage::warn(&errmsg)?;
                     }
-                    if !*QUIET_ERRORS_FLAG {
+                    if !stored_static.quiet_errors_flag {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
@@ -227,10 +216,10 @@ impl ParseYaml {
                         entry.path().display(),
                         yaml_contents.unwrap_err()
                     );
-                    if verbose_flag {
+                    if stored_static.config.verbose {
                         AlertMessage::warn(&errmsg)?;
                     }
-                    if !*QUIET_ERRORS_FLAG {
+                    if !stored_static.quiet_errors_flag {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
@@ -270,14 +259,14 @@ impl ParseYaml {
                                 self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
                             *entry += 1;
                         }
-                        if entry_key == "excluded"
-                            || (entry_key == "noisy"
-                                && !OUTPUTOPTIONS
-                                    .read()
-                                    .unwrap()
-                                    .as_ref()
-                                    .unwrap()
-                                    .enable_noisy_rules)
+                        let enable_noisy_rules =
+                            if let Some(o) = stored_static.output_option.as_ref() {
+                                o.enable_noisy_rules
+                            } else {
+                                false
+                            };
+
+                        if entry_key == "excluded" || (entry_key == "noisy" && !enable_noisy_rules)
                         {
                             return Option::None;
                         }
@@ -315,7 +304,7 @@ impl ParseYaml {
                     .or_insert(0);
                 *status_cnt += 1;
 
-                if verbose_flag {
+                if stored_static.config.verbose {
                     println!("Loaded yml file path: {}", filepath);
                 }
 
@@ -341,6 +330,10 @@ impl ParseYaml {
 #[cfg(test)]
 mod tests {
 
+    use crate::detections::configs::Action;
+    use crate::detections::configs::Config;
+    use crate::detections::configs::StoredStatic;
+    use crate::detections::configs::UpdateOption;
     use crate::filter;
     use crate::yaml;
     use crate::yaml::RuleExclude;
@@ -348,31 +341,55 @@ mod tests {
     use std::path::Path;
     use yaml_rust::YamlLoader;
 
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        })
+    }
+
     #[test]
     fn test_read_file_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude::default();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let _ = &yaml.read_dir(
             "test_files/rules/yaml/1.yml",
             &String::default(),
             &exclude_ids,
+            &dummy_stored_static,
         );
         assert_eq!(yaml.files.len(), 1);
     }
 
     #[test]
     fn test_read_dir_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
         let exclude_ids = RuleExclude {
             no_use_rule: HashMap::new(),
         };
-        let _ = &yaml.read_dir("test_files/rules/yaml/", &String::default(), &exclude_ids);
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        let _ = &yaml.read_dir(
+            "test_files/rules/yaml/",
+            &String::default(),
+            &exclude_ids,
+            &dummy_stored_static,
+        );
         assert_ne!(yaml.files.len(), 0);
     }
 
     #[test]
     fn test_read_yaml() {
-        let yaml = yaml::ParseYaml::new();
+        let yaml = yaml::ParseYaml::new(&create_dummy_stored_static());
         let path = Path::new("test_files/rules/yaml/1.yml");
         let ret = yaml.read_file(path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret).unwrap();
@@ -389,7 +406,7 @@ mod tests {
 
     #[test]
     fn test_failed_read_yaml() {
-        let yaml = yaml::ParseYaml::new();
+        let yaml = yaml::ParseYaml::new(&create_dummy_stored_static());
         let path = Path::new("test_files/rules/yaml/error.yml");
         let ret = yaml.read_file(path.to_path_buf()).unwrap();
         let rule = YamlLoader::load_from_str(&ret);
@@ -399,78 +416,135 @@ mod tests {
     #[test]
     /// no specifed "level" arguments value is adapted default level(informational)
     fn test_default_level_read_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
 
     #[test]
     fn test_info_level_read_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
+        let dummy_stored_static = create_dummy_stored_static();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path, "informational", &filter::exclude_ids())
-            .unwrap();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "informational",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.files.len(), 5);
     }
     #[test]
     fn test_low_level_read_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path, "LOW", &filter::exclude_ids()).unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "LOW",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.files.len(), 4);
     }
     #[test]
     fn test_medium_level_read_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path, "MEDIUM", &filter::exclude_ids())
-            .unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "MEDIUM",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.files.len(), 3);
     }
     #[test]
     fn test_high_level_read_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path, "HIGH", &filter::exclude_ids()).unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "HIGH",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.files.len(), 2);
     }
     #[test]
     fn test_critical_level_read_yaml() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/level_yaml");
-        yaml.read_dir(path, "CRITICAL", &filter::exclude_ids())
-            .unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "CRITICAL",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.files.len(), 1);
     }
     #[test]
     fn test_all_exclude_rules_file() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
-        yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 5);
     }
     #[test]
     fn test_all_noisy_rules_file() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
-        yaml.read_dir(path, "", &filter::exclude_ids()).unwrap();
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
         assert_eq!(yaml.rule_load_cnt.get("noisy").unwrap().to_owned(), 5);
     }
     #[test]
     fn test_none_exclude_rules_file() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::default();
-        yaml.read_dir(path, "", &exclude_ids).unwrap();
+        yaml.read_dir(path, "", &exclude_ids, &dummy_stored_static)
+            .unwrap();
         assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 0);
     }
     #[test]
     fn test_exclude_deprecated_rules_file() {
-        let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/deprecated");
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::default();
-        yaml.read_dir(path, "", &exclude_ids).unwrap();
+        yaml.read_dir(path, "", &exclude_ids, &dummy_stored_static)
+            .unwrap();
         assert_eq!(
             yaml.rule_status_cnt.get("deprecated").unwrap().to_owned(),
             1

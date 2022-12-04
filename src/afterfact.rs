@@ -1,8 +1,8 @@
-use crate::detections::configs::{self, Action, OutputOption, CURRENT_EXE_PATH, OUTPUTOPTIONS};
+use crate::detections::configs::{Action, OutputOption, StoredStatic, CURRENT_EXE_PATH};
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
-use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
-use crate::options::profile::{Profile, PROFILES};
+use crate::options::htmlreport;
+use crate::options::profile::Profile;
 use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -37,7 +37,7 @@ pub struct Colors {
 }
 
 /// level_color.txtファイルを読み込み対応する文字色のマッピングを返却する関数
-pub fn set_output_color() -> HashMap<CompactString, Colors> {
+pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
     let read_result = utils::read_csv(
         utils::check_setting_path(
             &CURRENT_EXE_PATH.to_path_buf(),
@@ -49,7 +49,7 @@ pub fn set_output_color() -> HashMap<CompactString, Colors> {
         .unwrap(),
     );
     let mut color_map: HashMap<CompactString, Colors> = HashMap::new();
-    if configs::CONFIG.read().unwrap().no_color {
+    if no_color_flag {
         return color_map;
     }
     if read_result.is_err() {
@@ -162,43 +162,40 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     buf_wtr.print(&wtr).ok();
 }
 
-pub fn after_fact(all_record_cnt: usize) {
+pub fn after_fact(
+    all_record_cnt: usize,
+    output_option: &OutputOption,
+    no_color_flag: bool,
+    stored_static: &StoredStatic,
+) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {}", err)).ok();
         process::exit(1);
     };
 
     let mut displayflag = false;
-    if OUTPUTOPTIONS.read().unwrap().is_none() {
-        AlertMessage::alert(&format!(
-            "UnExpected output option. {:?}",
-            configs::CONFIG.read().unwrap().action
-        ))
-        .ok();
-        process::exit(1);
-    }
-    let mut target: Box<dyn io::Write> =
-        if let Some(csv_path) = &OUTPUTOPTIONS.read().unwrap().as_ref().unwrap().output {
-            // output to file
-            match File::create(csv_path) {
-                Ok(file) => Box::new(BufWriter::new(file)),
-                Err(err) => {
-                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
-                    process::exit(1);
-                }
+    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option.output {
+        // output to file
+        match File::create(path) {
+            Ok(file) => Box::new(BufWriter::new(file)),
+            Err(err) => {
+                AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                process::exit(1);
             }
-        } else {
-            displayflag = true;
-            // stdoutput (termcolor crate color output is not csv writer)
-            Box::new(BufWriter::new(io::stdout()))
-        };
-    let color_map = set_output_color();
+        }
+    } else {
+        displayflag = true;
+        // stdoutput (termcolor crate color output is not csv writer)
+        Box::new(BufWriter::new(io::stdout()))
+    };
+    let color_map = set_output_color(no_color_flag);
     if let Err(err) = emit_csv(
         &mut target,
         displayflag,
         color_map,
         all_record_cnt as u128,
-        PROFILES.as_ref().unwrap(),
+        stored_static.profiles.as_ref().unwrap(),
+        stored_static,
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -210,15 +207,18 @@ fn emit_csv<W: std::io::Write>(
     color_map: HashMap<CompactString, Colors>,
     all_record_cnt: u128,
     profile: &Vec<(CompactString, Profile)>,
+    stored_static: &StoredStatic,
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
-    let html_output_flag = *HTML_REPORT_FLAG;
+    let html_output_flag = stored_static.html_report_flag;
+    let output_option = stored_static.output_option.as_ref().unwrap();
+
     let disp_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut disp_wtr_buf = disp_wtr.buffer();
     let mut json_output_flag = false;
     let mut jsonl_output_flag = false;
 
-    let tmp_wtr = match &configs::CONFIG.read().unwrap().action {
+    let tmp_wtr = match &stored_static.config.action {
         Action::JsonTimeline(option) => {
             json_output_flag = true;
             jsonl_output_flag = option.jsonl_timeline;
@@ -271,13 +271,10 @@ fn emit_csv<W: std::io::Write>(
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
-    let binding = &OUTPUTOPTIONS.read().unwrap();
-    let output_options = binding.as_ref().unwrap();
-
     for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
-        timestamps.push(_get_timestamp(output_options, time));
+        timestamps.push(_get_timestamp(output_option, time));
         for (_, detect_info) in detect_infos.iter().enumerate() {
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
@@ -290,7 +287,7 @@ fn emit_csv<W: std::io::Write>(
                 if plus_header {
                     write_color_buffer(
                         &disp_wtr,
-                        get_writable_color(None),
+                        get_writable_color(None, &stored_static.config),
                         &_get_serialized_disp_output(profile, true),
                         false,
                     )
@@ -299,10 +296,13 @@ fn emit_csv<W: std::io::Write>(
                 }
                 write_color_buffer(
                     &disp_wtr,
-                    get_writable_color(_get_output_color(
-                        &color_map,
-                        LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
-                    )),
+                    get_writable_color(
+                        _get_output_color(
+                            &color_map,
+                            LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
+                        ),
+                        &stored_static.config,
+                    ),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
                 )
@@ -336,9 +336,8 @@ fn emit_csv<W: std::io::Write>(
                         .map(|x| x.1.to_value().trim().to_string()),
                 )?;
             }
-
             // 各種集計作業
-            if !output_options.no_summary {
+            if !output_option.no_summary {
                 let level_map: HashMap<String, u128> = HashMap::from([
                     ("INFORMATIONAL".to_owned(), 1),
                     ("LOW".to_owned(), 2),
@@ -357,7 +356,7 @@ fn emit_csv<W: std::io::Write>(
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
-                    let tmp = extract_author_name(&detect_info.rulepath);
+                    let tmp = extract_author_name(&detect_info.rulepath, stored_static);
                     for author in tmp.iter() {
                         *rule_author_counter
                             .entry(CompactString::from(author))
@@ -382,10 +381,11 @@ fn emit_csv<W: std::io::Write>(
                     detect_info.ruletitle.to_owned(),
                     detect_info.rulepath.to_owned(),
                 );
+
                 countup_aggregation(
                     &mut detect_counts_by_date_and_level,
                     &detect_info.level,
-                    &format_time(time, true),
+                    &format_time(time, true, output_option),
                 );
                 countup_aggregation(
                     &mut detect_counts_by_rule_and_level,
@@ -404,7 +404,7 @@ fn emit_csv<W: std::io::Write>(
     }
 
     disp_wtr_buf.clear();
-    if !output_options.no_summary {
+    if !output_option.no_summary {
         let level_abbr: Nested<Vec<CompactString>> = Nested::from_iter(
             vec![
                 [CompactString::from("critical"), CompactString::from("crit")].to_vec(),
@@ -422,12 +422,18 @@ fn emit_csv<W: std::io::Write>(
         if !rule_author_counter.is_empty() {
             write_color_buffer(
                 &disp_wtr,
-                get_writable_color(Some(Color::Rgb(0, 255, 0))),
+                get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
                 "Rule Authors:",
                 false,
             )
             .ok();
-            write_color_buffer(&disp_wtr, get_writable_color(None), " ", true).ok();
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(None, &stored_static.config),
+                " ",
+                true,
+            )
+            .ok();
 
             println!();
             output_detected_rule_authors(rule_author_counter);
@@ -436,7 +442,7 @@ fn emit_csv<W: std::io::Write>(
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0))),
+            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
             "Results Summary:",
             true,
         )
@@ -448,7 +454,7 @@ fn emit_csv<W: std::io::Write>(
         };
         println!();
 
-        if output_options.visualize_timeline {
+        if output_option.visualize_timeline {
             _print_timeline_hist(timestamps, terminal_width, 3);
             println!();
         }
@@ -460,40 +466,64 @@ fn emit_csv<W: std::io::Write>(
         };
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0))),
+            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
             "Events with hits",
             false,
         )
         .ok();
-        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255))),
+            get_writable_color(None, &stored_static.config),
+            " / ",
+            false,
+        )
+        .ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
             "Total events",
             false,
         )
         .ok();
-        write_color_buffer(&disp_wtr, get_writable_color(None), ": ", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None, &stored_static.config),
+            ": ",
+            false,
+        )
+        .ok();
         let saved_alerts_output =
             (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0))),
+            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
             &saved_alerts_output,
             false,
         )
         .ok();
-        write_color_buffer(&disp_wtr, get_writable_color(None), " / ", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None, &stored_static.config),
+            " / ",
+            false,
+        )
+        .ok();
 
         let all_record_output = all_record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255))),
+            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
             &all_record_output,
             false,
         )
         .ok();
-        write_color_buffer(&disp_wtr, get_writable_color(None), " (", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None, &stored_static.config),
+            " (",
+            false,
+        )
+        .ok();
         let reduction_output = format!(
             "Data reduction: {} events ({:.2}%)",
             reducted_record_cnt.to_formatted_string(&Locale::en),
@@ -501,13 +531,19 @@ fn emit_csv<W: std::io::Write>(
         );
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0))),
+            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
             &reduction_output,
             false,
         )
         .ok();
 
-        write_color_buffer(&disp_wtr, get_writable_color(None), ")", false).ok();
+        write_color_buffer(
+            &disp_wtr,
+            get_writable_color(None, &stored_static.config),
+            ")",
+            false,
+        )
+        .ok();
         println!();
         println!();
 
@@ -536,6 +572,7 @@ fn emit_csv<W: std::io::Write>(
             &color_map,
             &level_abbr,
             &mut html_output_stock,
+            stored_static,
         );
         println!();
         println!();
@@ -548,6 +585,7 @@ fn emit_csv<W: std::io::Write>(
             &color_map,
             &level_abbr,
             &mut html_output_stock,
+            stored_static,
         );
         println!();
         if html_output_flag {
@@ -560,6 +598,7 @@ fn emit_csv<W: std::io::Write>(
             rule_title_path_map,
             &level_abbr,
             &mut html_output_stock,
+            stored_static,
         );
         println!();
         if html_output_flag {
@@ -742,6 +781,7 @@ fn _print_detection_summary_by_date(
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
+    stored_static: &StoredStatic,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -749,7 +789,7 @@ fn _print_detection_summary_by_date(
     let output_header = "Dates with most total detections:";
     write_color_buffer(&buf_wtr, None, output_header, true).ok();
 
-    if *HTML_REPORT_FLAG {
+    if stored_static.html_report_flag {
         html_output_stock.push(format!("- {}", output_header));
     }
     for (idx, level) in level_abbr.iter().enumerate() {
@@ -783,7 +823,7 @@ fn _print_detection_summary_by_date(
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             html_output_stock.push(format!("    - {}", output_str));
         }
     }
@@ -796,6 +836,7 @@ fn _print_detection_summary_by_computer(
     color_map: &HashMap<CompactString, Colors>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
+    stored_static: &StoredStatic,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -815,7 +856,7 @@ fn _print_detection_summary_by_computer(
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         // html出力は各種すべてのコンピュータ名を表示するようにする
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
                 LEVEL_FULL.get(&level[1].as_str()).unwrap(),
@@ -866,6 +907,7 @@ fn _print_detection_summary_tables(
     rule_title_path_map: HashMap<CompactString, CompactString>,
     level_abbr: &Nested<Vec<CompactString>>,
     html_output_stock: &mut Nested<String>,
+    stored_static: &StoredStatic,
 ) {
     let buf_wtr = BufferWriter::stdout(ColorChoice::Always);
     let mut wtr = buf_wtr.buffer();
@@ -892,7 +934,7 @@ fn _print_detection_summary_tables(
         sorted_detections.sort_by(|a, b| (-a.1).cmp(&(-b.1)));
 
         // html出力の場合はすべての内容を出力するようにする
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
                 LEVEL_FULL.get(&level[1].as_str()).unwrap(),
@@ -973,8 +1015,8 @@ fn _print_detection_summary_tables(
 }
 
 /// get timestamp to input datetime.
-fn _get_timestamp(output_options: &OutputOption, time: &DateTime<Utc>) -> i64 {
-    if output_options.utc || output_options.iso_8601 {
+fn _get_timestamp(output_option: &OutputOption, time: &DateTime<Utc>) -> i64 {
+    if output_option.utc || output_option.iso_8601 {
         time.timestamp()
     } else {
         let offset_sec = Local
@@ -1289,8 +1331,8 @@ fn output_detected_rule_authors(rule_author_counter: HashMap<CompactString, i128
 }
 
 /// 与えられたyaml_pathからauthorの名前を抽出して配列で返却する関数
-fn extract_author_name(yaml_path: &str) -> Nested<String> {
-    let parser = ParseYaml::new();
+fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<String> {
+    let parser = ParseYaml::new(stored_static);
     let contents = match parser.read_file(Path::new(&yaml_path).to_path_buf()) {
         Ok(yaml) => Some(yaml),
         Err(e) => {
@@ -1342,8 +1384,17 @@ mod tests {
     use crate::afterfact::_get_serialized_disp_output;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
+    use crate::detections::configs::load_eventkey_alias;
+    use crate::detections::configs::Action;
+    use crate::detections::configs::Config;
+    use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::InputOption;
+    use crate::detections::configs::OutputOption;
+    use crate::detections::configs::StoredStatic;
+    use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::message;
     use crate::detections::message::DetectInfo;
+    use crate::detections::utils;
     use crate::options::profile::{load_profile, Profile};
     use chrono::{Local, TimeZone, Utc};
     use compact_str::CompactString;
@@ -1352,6 +1403,7 @@ mod tests {
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;
+    use std::path::Path;
 
     #[test]
     fn test_emit_csv_output() {
@@ -1372,11 +1424,55 @@ mod tests {
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
         let expect_tz = expect_time.with_timezone(&Local);
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    evtx_file_ext: None,
+                },
+                profile: None,
+                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                set_default_profile: None,
+            },
+        });
+        let dummy_config = Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: dummy_action,
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        };
+        let stored_static = StoredStatic::create_static_data(&dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",
+            Some(&stored_static),
         )
-        .unwrap();
+        .unwrap_or_default();
         {
             let messages = &message::MESSAGES;
             messages.clear();
@@ -1395,10 +1491,43 @@ mod tests {
                 }
             "##;
             let event: Value = serde_json::from_str(val).unwrap();
+            let output_option = OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    evtx_file_ext: None,
+                },
+                profile: None,
+                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                set_default_profile: None,
+            };
             let mut profile_converter: HashMap<String, Profile> = HashMap::from([
                 (
                     "Timestamp".to_string(),
-                    Profile::Timestamp(CompactString::from(format_time(&expect_time, false))),
+                    Profile::Timestamp(CompactString::from(format_time(
+                        &expect_time,
+                        false,
+                        &output_option,
+                    ))),
                 ),
                 (
                     "Computer".to_string(),
@@ -1466,7 +1595,21 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 false,
+                load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                ),
             );
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+
+            println!("message: {:?}", detect_infos);
         }
         let expect =
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
@@ -1501,7 +1644,16 @@ mod tests {
                 + test_attack
                 + "\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
-        assert!(emit_csv(&mut file, false, HashMap::new(), 1, &output_profile).is_ok());
+
+        assert!(emit_csv(
+            &mut file,
+            false,
+            HashMap::new(),
+            1,
+            &output_profile,
+            &stored_static
+        )
+        .is_ok());
         match read_to_string("./test_emit_csv.csv") {
             Err(_) => panic!("Failed to open file."),
             Ok(s) => {
@@ -1549,10 +1701,43 @@ mod tests {
             + " ‖ "
             + test_recinfo
             + "\n";
+        let output_option = OutputOption {
+            input_args: InputOption {
+                directory: None,
+                filepath: None,
+                live_analysis: false,
+                evtx_file_ext: None,
+            },
+            profile: None,
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            enable_deprecated_rules: false,
+            exclude_status: None,
+            min_level: "informational".to_string(),
+            enable_noisy_rules: false,
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+            set_default_profile: None,
+        };
         let data: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
-                Profile::Timestamp(CompactString::new(&format_time(&test_timestamp, false))),
+                Profile::Timestamp(CompactString::new(&format_time(
+                    &test_timestamp,
+                    false,
+                    &output_option,
+                ))),
             ),
             (
                 CompactString::new("Computer"),

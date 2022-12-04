@@ -1,12 +1,12 @@
 extern crate csv;
 
 use crate::detections::utils::{format_time, write_color_buffer};
+use crate::options::profile::Profile;
 use crate::options::profile::Profile::{
     AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
     Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
     RuleModifiedDate, RuleTitle, Status, Timestamp,
 };
-use crate::options::profile::{Profile, PROFILES};
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
 use itertools::Itertools;
@@ -14,15 +14,12 @@ use nested::Nested;
 use std::default::Default;
 use termcolor::{BufferWriter, Color, ColorChoice};
 
-use crate::detections::message::{
-    AlertMessage, DetectInfo, CH_CONFIG, DEFAULT_DETAILS, ERROR_LOG_STACK, LOGONSUMMARY_FLAG,
-    METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG, QUIET_ERRORS_FLAG, TAGS_CONFIG,
-};
+use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
-use crate::options::htmlreport::{self, HTML_REPORT_FLAG};
+use crate::options::htmlreport;
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
@@ -32,8 +29,9 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{CONFIG, OUTPUTOPTIONS};
+use super::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
 use super::message::{self, LEVEL_ABBR_MAP};
+use super::utils;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -61,8 +59,13 @@ impl Detection {
         Detection { rules: rule_nodes }
     }
 
-    pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> Self {
-        rt.block_on(self.execute_rules(records))
+    pub fn start(
+        self,
+        rt: &Runtime,
+        records: Vec<EvtxRecordInfo>,
+        stored_static: StoredStatic,
+    ) -> Self {
+        rt.block_on(self.execute_rules(records, stored_static))
     }
 
     // ルールファイルをパースします。
@@ -70,16 +73,17 @@ impl Detection {
         level: &str,
         rulespath: &Path,
         exclude_ids: &filter::RuleExclude,
+        stored_static: &StoredStatic,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
-        let mut rulefile_loader = ParseYaml::new();
-        let result_readdir = rulefile_loader.read_dir(rulespath, level, exclude_ids);
+        let mut rulefile_loader = ParseYaml::new(stored_static);
+        let result_readdir = rulefile_loader.read_dir(rulespath, level, exclude_ids, stored_static);
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
-            if CONFIG.read().unwrap().verbose {
+            if stored_static.config.verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !stored_static.config.quiet_errors {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -89,7 +93,7 @@ impl Detection {
         }
         let mut parseerror_count = rulefile_loader.errorrule_count;
         let return_if_success = |mut rule: RuleNode| {
-            let err_msgs_result = rule.init();
+            let err_msgs_result = rule.init(stored_static);
             if err_msgs_result.is_ok() {
                 return Some(rule);
             }
@@ -98,14 +102,14 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                if CONFIG.read().unwrap().verbose {
+                if stored_static.config.verbose {
                     AlertMessage::warn(&errmsg_body).ok();
 
                     err_msgs.iter().for_each(|err_msg| {
                         AlertMessage::warn(err_msg).ok();
                     });
                 }
-                if !*QUIET_ERRORS_FLAG {
+                if !stored_static.config.quiet_errors {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
@@ -129,27 +133,36 @@ impl Detection {
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
-        if !*LOGONSUMMARY_FLAG {
+        if !stored_static.logon_summary_flag {
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
                 &rulefile_loader.rule_load_cnt,
                 &rulefile_loader.rule_status_cnt,
                 &parseerror_count,
+                stored_static,
             );
         }
         ret
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
-    async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> Self {
+    async fn execute_rules(
+        mut self,
+        records: Vec<EvtxRecordInfo>,
+        stored_static: StoredStatic,
+    ) -> Self {
         let records_arc = Arc::new(records);
+        let stored_static_arc = Arc::new(stored_static);
         // // 各rule毎にスレッドを作成して、スレッドを起動する。
         let rules = self.rules;
         let handles: Vec<JoinHandle<RuleNode>> = rules
             .into_iter()
             .map(|rule| {
                 let records_cloned = Arc::clone(&records_arc);
-                spawn(async move { Detection::execute_rule(rule, records_cloned) })
+                let stored_static_cloned = Arc::clone(&stored_static_arc);
+                spawn(async move {
+                    Detection::execute_rule(rule, records_cloned, &stored_static_cloned)
+                })
             })
             .collect();
 
@@ -168,40 +181,44 @@ impl Detection {
         self
     }
 
-    pub fn add_aggcondition_msges(self, rt: &Runtime) {
-        return rt.block_on(self.add_aggcondition_msg());
+    pub fn add_aggcondition_msges(self, rt: &Runtime, stored_static: &StoredStatic) {
+        return rt.block_on(self.add_aggcondition_msg(stored_static));
     }
 
-    async fn add_aggcondition_msg(&self) {
+    async fn add_aggcondition_msg(&self, stored_static: &StoredStatic) {
         for rule in &self.rules {
             if !rule.has_agg_condition() {
                 continue;
             }
 
-            let agg_results = rule.judge_satisfy_aggcondition();
+            let agg_results = rule.judge_satisfy_aggcondition(stored_static);
             for value in agg_results {
-                Detection::insert_agg_message(rule, value);
+                Detection::insert_agg_message(rule, value, stored_static);
             }
         }
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
-    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
+    fn execute_rule(
+        mut rule: RuleNode,
+        records: Arc<Vec<EvtxRecordInfo>>,
+        stored_static: &StoredStatic,
+    ) -> RuleNode {
         let agg_condition = rule.has_agg_condition();
         for record_info in records.as_ref() {
-            let result = rule.select(record_info);
+            let result = rule.select(record_info, stored_static);
             if !result {
                 continue;
             }
 
-            if *PIVOT_KEYWORD_LIST_FLAG {
-                insert_pivot_keyword(&record_info.record);
+            if stored_static.pivot_keyword_list_flag {
+                insert_pivot_keyword(&record_info.record, &stored_static.eventkey_alias);
                 continue;
             }
 
             // aggregation conditionが存在しない場合はそのまま出力対応を行う
             if !agg_condition {
-                Detection::insert_message(&rule, record_info);
+                Detection::insert_message(&rule, record_info, stored_static);
             }
         }
 
@@ -209,7 +226,7 @@ impl Detection {
     }
 
     /// 条件に合致したレコードを格納するための関数
-    fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo) {
+    fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo, stored_static: &StoredStatic) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let recinfo = CompactString::from(
             record_info
@@ -217,7 +234,8 @@ impl Detection {
                 .as_ref()
                 .unwrap_or(&"-".to_string()),
         );
-        let rec_id = if PROFILES
+        let rec_id = if stored_static
+            .profiles
             .as_ref()
             .unwrap()
             .iter()
@@ -240,11 +258,15 @@ impl Detection {
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
                 .unwrap_or_else(|| "-".to_string()),
         );
-        let default_output = match DEFAULT_DETAILS.get(&format!("{}_{}", provider, &eid)) {
+        let default_output = match stored_static
+            .default_details
+            .get(&format!("{}_{}", provider, &eid))
+        {
             Some(str) => CompactString::from(str),
             None => recinfo.to_owned(),
         };
-        let opt_record_info = if PROFILES
+        let opt_record_info = if stored_static
+            .profiles
             .as_ref()
             .unwrap()
             .iter()
@@ -261,12 +283,16 @@ impl Detection {
 
         let mut profile_converter: HashMap<String, Profile> = HashMap::new();
         let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
-        for (key, profile) in PROFILES.as_ref().unwrap().iter() {
+        for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
                     profile_converter.insert(
                         key.to_string(),
-                        Timestamp(CompactString::from(format_time(&time, false))),
+                        Timestamp(CompactString::from(format_time(
+                            &time,
+                            false,
+                            stored_static.output_option.as_ref().unwrap(),
+                        ))),
                     );
                 }
                 Computer(_) => {
@@ -283,7 +309,8 @@ impl Detection {
                     profile_converter.insert(
                         key.to_string(),
                         Channel(CompactString::from(
-                            CH_CONFIG
+                            stored_static
+                                .ch_config
                                 .get(&ch_str.to_ascii_lowercase())
                                 .unwrap_or(ch_str),
                         )),
@@ -469,7 +496,7 @@ impl Detection {
             eventid: eid,
             detail: CompactString::default(),
             record_information: opt_record_info,
-            ext_field: PROFILES.as_ref().unwrap().to_owned(),
+            ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
         };
         message::insert(
@@ -479,11 +506,21 @@ impl Detection {
             time,
             &mut profile_converter,
             false,
+            load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
         );
     }
 
     /// insert aggregation condition detection message to output stack
-    fn insert_agg_message(rule: &RuleNode, agg_result: AggResult) {
+    fn insert_agg_message(rule: &RuleNode, agg_result: AggResult, stored_static: &StoredStatic) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
 
@@ -491,7 +528,7 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
         let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
 
-        for (key, profile) in PROFILES.as_ref().unwrap().iter() {
+        for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
                     profile_converter.insert(
@@ -499,6 +536,7 @@ impl Detection {
                         Timestamp(CompactString::from(format_time(
                             &agg_result.start_timedate,
                             false,
+                            stored_static.output_option.as_ref().unwrap(),
                         ))),
                     );
                 }
@@ -654,7 +692,7 @@ impl Detection {
             eventid: CompactString::from("-"),
             detail: output,
             record_information: CompactString::default(),
-            ext_field: PROFILES.as_ref().unwrap().to_owned(),
+            ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
         };
         message::insert(
@@ -664,6 +702,16 @@ impl Detection {
             agg_result.start_timedate,
             &mut profile_converter,
             true,
+            load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
         )
     }
 
@@ -753,8 +801,9 @@ impl Detection {
         ld_rc: &HashMap<String, u128>,
         st_rc: &HashMap<String, u128>,
         err_rc: &u128,
+        stored_static: &StoredStatic,
     ) {
-        if *METRICS_FLAG {
+        if stored_static.metrics_flag {
             return;
         }
         let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
@@ -764,9 +813,8 @@ impl Detection {
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
                 let disable_flag = if key == "noisy"
-                    && !OUTPUTOPTIONS
-                        .read()
-                        .unwrap()
+                    && !stored_static
+                        .output_option
                         .as_ref()
                         .unwrap()
                         .enable_noisy_rules
@@ -783,7 +831,7 @@ impl Detection {
                     disable_flag
                 );
                 println!("{}", output_str);
-                if *HTML_REPORT_FLAG {
+                if stored_static.html_report_flag {
                     html_report_stock.push(format!("- {}", output_str));
                 }
             }
@@ -806,9 +854,8 @@ impl Detection {
             if value != &0_u128 {
                 let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
                 let deprecated_flag = if key == "deprecated"
-                    && !OUTPUTOPTIONS
-                        .read()
-                        .unwrap()
+                    && !stored_static
+                        .output_option
                         .as_ref()
                         .unwrap()
                         .enable_deprecated_rules
@@ -832,7 +879,7 @@ impl Detection {
                     true,
                 )
                 .ok();
-                if *HTML_REPORT_FLAG {
+                if stored_static.html_report_flag {
                     html_report_stock.push(format!("- {}", output_str));
                 }
             }
@@ -850,7 +897,7 @@ impl Detection {
                 true,
             )
             .ok();
-            if *HTML_REPORT_FLAG {
+            if stored_static.html_report_flag {
                 html_report_stock.push(format!("- {}", output_str));
             }
         });
@@ -859,7 +906,7 @@ impl Detection {
             format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
         println!("{}", tmp_total_detect_output);
         println!();
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             html_report_stock.push(format!("- {}", tmp_total_detect_output));
         }
         if !html_report_stock.is_empty() {
@@ -873,6 +920,10 @@ impl Detection {
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::configs::Action;
+    use crate::detections::configs::Config;
+    use crate::detections::configs::StoredStatic;
+    use crate::detections::configs::UpdateOption;
     use crate::detections::detection::Detection;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
@@ -882,11 +933,45 @@ mod tests {
     use std::path::Path;
     use yaml_rust::YamlLoader;
 
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        })
+    }
+
     #[test]
     fn test_parse_rule_files() {
         let level = "informational";
         let opt_rule_path = Path::new("./test_files/rules/level_yaml");
-        let cole = Detection::parse_rule_files(level, opt_rule_path, &filter::exclude_ids());
+        let dummy_stored_static = StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        });
+        let cole = Detection::parse_rule_files(
+            level,
+            opt_rule_path,
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        );
         assert_eq!(5, cole.len());
     }
 
@@ -910,7 +995,7 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        rule_node.init().ok();
+        rule_node.init(&create_dummy_stored_static()).ok();
         let expected_output = "[condition] count() >= 1 [result] count:2";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
@@ -937,7 +1022,7 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        rule_node.init().ok();
+        rule_node.init(&create_dummy_stored_static()).ok();
         let expected_output = "[condition] count() >= 1 [result] count:2";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
@@ -965,7 +1050,7 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        rule_node.init().ok();
+        rule_node.init(&create_dummy_stored_static()).ok();
         let expected_output =
             "[condition] count() >= 1 in timeframe [result] count:2 timeframe:15m";
         assert_eq!(
@@ -996,7 +1081,7 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        rule_node.init().ok();
+        rule_node.init(&create_dummy_stored_static()).ok();
         let expected_output = "[condition] count(EventID) >= 1 [result] count:2 EventID:7040/9999";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
@@ -1026,7 +1111,7 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        rule_node.init().ok();
+        rule_node.init(&create_dummy_stored_static()).ok();
         let expected_output = "[condition] count(EventID) by process >= 1 [result] count:2 EventID:0000/1111 process:lsass.exe";
         assert_eq!(
             Detection::create_count_output(&rule_node, &agg_result),
@@ -1055,7 +1140,7 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        rule_node.init().ok();
+        rule_node.init(&create_dummy_stored_static()).ok();
         let expected_output =
             "[condition] count() by process >= 1 [result] count:2 process:lsass.exe";
         assert_eq!(

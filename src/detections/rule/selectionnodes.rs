@@ -1,4 +1,4 @@
-use crate::detections::{detection::EvtxRecordInfo, utils};
+use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 use nested::Nested;
 use std::{sync::Arc, vec};
@@ -10,7 +10,7 @@ use super::matchers::{self, DefaultMatcher};
 pub trait SelectionNode: Downcast {
     // 引数で指定されるイベントログのレコードが、条件に一致するかどうかを判定する
     // このトレイトを実装する構造体毎に適切な判定処理を書く必要がある。
-    fn select(&self, event_record: &EvtxRecordInfo) -> bool;
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool;
 
     // 初期化処理を行う
     // 戻り値としてエラーを返却できるようになっているので、Ruleファイルが間違っていて、SelectionNodeを構成出来ない時はここでエラーを出す
@@ -40,10 +40,10 @@ impl AndSelectionNode {
 }
 
 impl SelectionNode for AndSelectionNode {
-    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
         self.child_nodes
             .iter()
-            .all(|child_node| child_node.select(event_record))
+            .all(|child_node| child_node.select(event_record, eventkey_alias))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -110,10 +110,10 @@ impl OrSelectionNode {
 }
 
 impl SelectionNode for OrSelectionNode {
-    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
         self.child_nodes
             .iter()
-            .any(|child_node| child_node.select(event_record))
+            .any(|child_node| child_node.select(event_record, eventkey_alias))
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -178,8 +178,8 @@ impl NotSelectionNode {
 }
 
 impl SelectionNode for NotSelectionNode {
-    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        !self.node.select(event_record)
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
+        !self.node.select(event_record, eventkey_alias)
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -212,8 +212,8 @@ impl RefSelectionNode {
 }
 
 impl SelectionNode for RefSelectionNode {
-    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
-        self.selection_node.select(event_record)
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
+        self.selection_node.select(event_record, eventkey_alias)
     }
 
     fn init(&mut self) -> Result<(), Vec<String>> {
@@ -302,7 +302,7 @@ impl LeafSelectionNode {
 }
 
 impl SelectionNode for LeafSelectionNode {
-    fn select(&self, event_record: &EvtxRecordInfo) -> bool {
+    fn select(&self, event_record: &EvtxRecordInfo, eventkey_alias: &EventKeyAliasConfig) -> bool {
         if self.matcher.is_none() {
             return false;
         }
@@ -328,7 +328,11 @@ impl SelectionNode for LeafSelectionNode {
                 }
         */
         if self.get_key() == "EventData" || self.get_key() == "Data" {
-            let values = utils::get_event_value("Event.EventData.Data", &event_record.record);
+            let values = utils::get_event_value(
+                "Event.EventData.Data",
+                &event_record.record,
+                eventkey_alias,
+            );
             if values.is_none() {
                 return self
                     .matcher
@@ -419,7 +423,53 @@ impl SelectionNode for LeafSelectionNode {
 
 #[cfg(test)]
 mod tests {
-    use crate::detections::{self, rule::tests::parse_rule_from_str, utils};
+    use std::path::Path;
+
+    use crate::detections::{
+        self,
+        configs::{Action, Config, StoredStatic, UpdateOption},
+        rule::tests::parse_rule_from_str,
+        utils,
+    };
+
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        })
+    }
+
+    fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
+        let mut rule_node = parse_rule_from_str(rule_str);
+        let dummy_stored_static = create_dummy_stored_static();
+        match serde_json::from_str(record_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(
+                    record,
+                    "testpath".to_owned(),
+                    &keys,
+                    &dummy_stored_static.eventkey_alias,
+                );
+                assert_eq!(
+                    rule_node.select(&recinfo, &dummy_stored_static),
+                    expect_select
+                );
+            }
+            Err(_rec) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
 
     #[test]
     fn test_detect_mutiple_regex_and() {
@@ -439,17 +489,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -471,18 +511,7 @@ mod tests {
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer":"DESKTOP-ICHIICHI"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
-
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -504,17 +533,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -536,17 +555,7 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -568,16 +577,6 @@ mod tests {
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 }

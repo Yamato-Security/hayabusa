@@ -1,45 +1,32 @@
 use crate::detections::message::AlertMessage;
 use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
+use crate::options::htmlreport;
+use crate::options::profile::{load_profile, Profile};
 use chrono::{DateTime, Utc};
 use clap::{Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
 use terminal_size::{terminal_size, Width};
 
+use super::message::create_output_filter_config;
+use super::utils::check_setting_path;
+
 lazy_static! {
-    pub static ref CONFIG: RwLock<Config> = RwLock::new(Config::parse());
-    pub static ref OUTPUTOPTIONS: RwLock<Option<OutputOption>> =
-        RwLock::new(extract_output_options());
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
-    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(
-        utils::check_setting_path(&CONFIG.read().unwrap().config, "eventkey_alias.txt", false)
-            .unwrap_or_else(|| {
-                utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "rules/config/eventkey_alias.txt",
-                    true,
-                )
-                .unwrap()
-            })
-            .to_str()
-            .unwrap()
-    );
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
 }
 
 pub struct ConfigReader {
     pub app: Command,
-    pub headless_help: String,
-    pub event_timeline_config: EventInfoConfig,
-    pub target_eventids: TargetEventIds,
+    pub config: Config,
 }
 
 impl Default for ConfigReader {
@@ -48,6 +35,176 @@ impl Default for ConfigReader {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct StoredStatic {
+    pub config: Config,
+    pub eventkey_alias: EventKeyAliasConfig,
+    pub ch_config: HashMap<String, String>,
+    pub quiet_errors_flag: bool,
+    pub metrics_flag: bool,
+    pub logon_summary_flag: bool,
+    pub output_option: Option<OutputOption>,
+    pub pivot_keyword_list_flag: bool,
+    pub default_details: HashMap<String, String>,
+    pub html_report_flag: bool,
+    pub profiles: Option<Vec<(CompactString, Profile)>>,
+    pub event_timeline_config: EventInfoConfig,
+    pub target_eventids: TargetEventIds,
+}
+impl StoredStatic {
+    /// main.rsでパースした情報からデータを格納する関数
+    pub fn create_static_data(config: &Config) -> StoredStatic {
+        let mut ret = StoredStatic {
+            config: config.to_owned(),
+            ch_config: create_output_filter_config(
+                utils::check_setting_path(&config.config, "channel_abbreviations.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/channel_abbreviations.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            default_details: Self::get_default_details(
+                utils::check_setting_path(&config.config, "default_details.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/default_details.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            eventkey_alias: load_eventkey_alias(
+                utils::check_setting_path(&config.config, "eventkey_alias.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/eventkey_alias.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            logon_summary_flag: config.action.to_usize() == 2,
+            metrics_flag: config.action.to_usize() == 3,
+            output_option: extract_output_options(config),
+            pivot_keyword_list_flag: config.action.to_usize() == 4,
+            quiet_errors_flag: config.quiet_errors,
+            html_report_flag: htmlreport::check_html_flag(config),
+            profiles: None,
+            event_timeline_config: load_eventcode_info(
+                utils::check_setting_path(&config.config, "channel_eid_info.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/channel_eid_info.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            target_eventids: load_target_ids(
+                utils::check_setting_path(&config.config, "target_event_IDs.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/target_event_IDs.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+        };
+        ret.profiles = load_profile(
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/default_profile.yaml",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/profiles.yaml",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+            Some(&ret),
+        );
+        ret
+    }
+    /// detailsのdefault値をファイルから読み取る関数
+    pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
+        let read_result = utils::read_csv(filepath);
+        match read_result {
+            Err(_e) => {
+                AlertMessage::alert(&_e).ok();
+                HashMap::new()
+            }
+            Ok(lines) => {
+                let mut ret: HashMap<String, String> = HashMap::new();
+                lines
+                    .iter()
+                    .try_for_each(|line| -> Result<(), String> {
+                        let provider = match line.get(0) {
+                            Some(_provider) => _provider.trim(),
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read provider in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        let eid = match line.get(1) {
+                            Some(eid_str) => match eid_str.trim().parse::<i64>() {
+                                Ok(_eid) => _eid,
+                                _ => {
+                                    return Result::Err(
+                                        "Parse Error EventID in default_details.txt.".to_string(),
+                                    )
+                                }
+                            },
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read EventID in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        let details = match line.get(2) {
+                            Some(detail) => detail.trim(),
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read details in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        ret.insert(format!("{}_{}", provider, eid), details.to_string());
+                        Ok(())
+                    })
+                    .ok();
+                ret
+            }
+        }
+    }
+}
+
+// コマンド生成用のClapの定義
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     CsvTimeline(CsvOutputOption),
@@ -314,7 +471,7 @@ pub struct JSONOutputOption {
     pub jsonl_timeline: bool,
 }
 
-#[derive(Parser, Clone)]
+#[derive(Parser, Clone, Debug)]
 #[command(
     name = "Hayabusa",
     override_usage = "hayabusa.exe [OTHER-ACTIONS] <INPUT> [OUTPUT] [OPTIONS]",
@@ -381,33 +538,7 @@ impl ConfigReader {
             .term_width(help_term_width);
         ConfigReader {
             app: build_cmd,
-            headless_help: String::default(),
-            event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(&parse.config, "channel_eid_info.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_eid_info.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
-            ),
-            target_eventids: load_target_ids(
-                utils::check_setting_path(&parse.config, "target_event_IDs.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/target_event_IDs.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
-            ),
+            config: parse,
         }
     }
 }
@@ -464,14 +595,8 @@ pub struct TargetEventTime {
     end_time: Option<DateTime<Utc>>,
 }
 
-impl Default for TargetEventTime {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl TargetEventTime {
-    pub fn new() -> Self {
+    pub fn new(stored_static: &StoredStatic) -> Self {
         let mut parse_success_flag = true;
         let mut get_time = |input_time: Option<&String>, error_contents: &str| {
             if let Some(time) = input_time {
@@ -490,7 +615,7 @@ impl TargetEventTime {
                 None
             }
         };
-        match &CONFIG.read().unwrap().action {
+        match &stored_static.config.action {
             Action::CsvTimeline(option) => {
                 let start_time = get_time(
                     option.output_options.start_timeline.as_ref(),
@@ -580,7 +705,7 @@ impl Default for EventKeyAliasConfig {
     }
 }
 
-fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
+pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
@@ -658,8 +783,8 @@ pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
 }
 
 /// configから出力に関連したオプションの値を格納した構造体を抽出する関数
-fn extract_output_options() -> Option<OutputOption> {
-    match &CONFIG.read().unwrap().action {
+fn extract_output_options(config: &Config) -> Option<OutputOption> {
+    match &config.action {
         Action::CsvTimeline(option) => Some(option.output_options.clone()),
         Action::JsonTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {

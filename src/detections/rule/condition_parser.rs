@@ -489,6 +489,9 @@ impl ConditionCompiler {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
+    use crate::detections::configs::{Action, Config, StoredStatic, UpdateOption};
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
@@ -511,20 +514,46 @@ mod tests {
       }
     }"#;
 
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(&Config {
+            config: Path::new("./rules/config").to_path_buf(),
+            action: Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            }),
+            thread_number: None,
+            no_color: false,
+            quiet: false,
+            quiet_errors: false,
+            debug: false,
+            list_profile: false,
+            verbose: false,
+        })
+    }
+
     fn check_rule_parse_error(rule_str: &str, errmsgs: Vec<String>) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
-        assert_eq!(rule_node.init(), Err(errmsgs));
+        assert_eq!(rule_node.init(&create_dummy_stored_static()), Err(errmsgs));
     }
 
     fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
         let mut rule_node = parse_rule_from_str(rule_str);
+        let dummy_stored_static = create_dummy_stored_static();
+
         match serde_json::from_str(record_str) {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert_eq!(rule_node.select(&recinfo), expect_select);
+                let recinfo = utils::create_rec_info(
+                    record,
+                    "testpath".to_owned(),
+                    &keys,
+                    &dummy_stored_static.eventkey_alias,
+                );
+                assert_eq!(
+                    rule_node.select(&recinfo, &dummy_stored_static),
+                    expect_select
+                );
             }
             Err(_rec) => {
                 panic!("Failed to parse json record.");
@@ -562,17 +591,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, true);
     }
 
     #[test]
@@ -606,17 +625,7 @@ mod tests {
           }
         }"#;
 
-        let mut rule_node = parse_rule_from_str(rule_str);
-        match serde_json::from_str(record_json_str) {
-            Ok(record) => {
-                let keys = detections::rule::get_detection_keys(&rule_node);
-                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                assert!(!rule_node.select(&recinfo));
-            }
-            Err(_) => {
-                panic!("Failed to parse json record.");
-            }
-        }
+        check_select(rule_str, record_json_str, false);
     }
 
     #[test]
@@ -1174,7 +1183,7 @@ mod tests {
         let mut rule_node = create_rule("testpath".to_string(), rule_yaml.next().unwrap());
 
         assert_eq!(
-            rule_node.init(),
+            rule_node.init(&create_dummy_stored_static()),
             Err(vec![
                 "There is no condition node under detection.".to_string()
             ])
