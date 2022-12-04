@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed collect evtx file if enclosed in double quotes when running -d at command prompt. (#828) (@hitenkoku)
 
 ## 1.8.1 [2022/11/21]
 
