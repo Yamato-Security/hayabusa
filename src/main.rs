@@ -639,7 +639,14 @@ impl App {
         }
     }
 
-    fn collect_evtxfiles(dirpath: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
+    fn collect_evtxfiles(dir_path: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
+        let mut dirpath = dir_path.to_string();
+        if dirpath.starts_with('"') {
+            dirpath.remove(0);
+        }
+        if dirpath.ends_with('"') {
+            dirpath.remove(dirpath.len() - 1);
+        }
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
