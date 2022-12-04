@@ -132,6 +132,7 @@ pub fn load_profile(
     opt_stored_static: Option<&StoredStatic>,
 ) -> Option<Vec<(CompactString, Profile)>> {
     opt_stored_static?;
+    opt_stored_static.as_ref().unwrap().output_option.as_ref()?;
     if opt_stored_static
         .as_ref()
         .unwrap()

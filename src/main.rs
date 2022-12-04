@@ -465,9 +465,13 @@ impl App {
                 return;
             }
             Action::LevelTuning(option) => {
-                let level_tuning_val = option.level_tuning.as_ref().unwrap();
+                let level_tuning_val = if let Some(tmp) = option.level_tuning.as_ref() {
+                    tmp.to_owned()
+                } else {
+                    Some("./rules/config/level_tuning.txt".to_string())
+                };
                 let level_tuning_config_path = match level_tuning_val {
-                    Some(path) => path.to_string(),
+                    Some(path) => path,
                     _ => utils::check_setting_path(
                         &stored_static.config.config,
                         "level_tuning.txt",
@@ -485,19 +489,23 @@ impl App {
                     .to_string(),
                 };
 
+                let rules_path = if stored_static.output_option.as_ref().is_some() {
+                    stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .rules
+                        .as_os_str()
+                        .to_str()
+                        .unwrap()
+                } else {
+                    "./rules"
+                };
+
                 if Path::new(&level_tuning_config_path).exists() {
-                    if let Err(err) = LevelTuning::run(
-                        &level_tuning_config_path,
-                        stored_static
-                            .output_option
-                            .as_ref()
-                            .unwrap()
-                            .rules
-                            .as_os_str()
-                            .to_str()
-                            .unwrap(),
-                        stored_static,
-                    ) {
+                    if let Err(err) =
+                        LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
+                    {
                         AlertMessage::alert(&err).ok();
                     }
                 } else {
