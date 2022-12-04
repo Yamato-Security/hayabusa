@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed An unneeded space is outputted when there is a rule parsing error. (#829) (@hitenkoku)
 
 ## 1.8.1 [2022/11/21]
 
