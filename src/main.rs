@@ -374,8 +374,15 @@ impl App {
                 .ok();
                 return;
             }
+            let mut replaced_filepath = filepath.display().to_string();
+            if replaced_filepath.starts_with('"') {
+                replaced_filepath.remove(0);
+            }
+            if replaced_filepath.ends_with('"') {
+                replaced_filepath.remove(replaced_filepath.len() - 1);
+            }
             self.analysis_files(
-                vec![PathBuf::from(filepath)],
+                vec![PathBuf::from(replaced_filepath)],
                 &time_filter,
                 configreader.event_timeline_config,
                 configreader.target_eventids,
