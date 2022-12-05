@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- Fixed collect evtx file if enclosed in double quotes when running -d at command prompt. (#828) (@hitenkoku)
+- Fixed a bug where evtx files would not be loaded if run from a command prompt and the directory path was enclosed in double quotes. (#828) (@hitenkoku)
 
 ## 1.8.1 [2022/11/21]
 
