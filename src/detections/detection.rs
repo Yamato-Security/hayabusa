@@ -104,10 +104,10 @@ impl Detection {
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
                 if stored_static.config.verbose {
                     AlertMessage::warn(&errmsg_body).ok();
-
                     err_msgs.iter().for_each(|err_msg| {
                         AlertMessage::warn(err_msg).ok();
                     });
+                    println!();
                 }
                 if !stored_static.config.quiet_errors {
                     ERROR_LOG_STACK
@@ -122,7 +122,6 @@ impl Detection {
                     });
                 }
                 parseerror_count += 1;
-                println!();
             });
             None
         };

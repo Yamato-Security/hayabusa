@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed unneeded spaces outputted when there were rule parsing errors. (#829) (@hitenkoku)
 
 ## 1.8.1 [2022/11/21]
 
