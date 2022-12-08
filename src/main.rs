@@ -603,7 +603,15 @@ impl App {
                 .input_args
                 .filepath
             {
-                if !filepath.exists() {
+                let mut replaced_filepath = filepath.display().to_string();
+                if replaced_filepath.starts_with('"') {
+                    replaced_filepath.remove(0);
+                }
+                if replaced_filepath.ends_with('"') {
+                    replaced_filepath.remove(replaced_filepath.len() - 1);
+                }
+                let check_path = Path::new(&replaced_filepath);
+                if !check_path.exists() {
                     AlertMessage::alert(&format!(
                         " The file {} does not exist. Please specify a valid file path.",
                         filepath.as_os_str().to_str().unwrap()
@@ -612,13 +620,12 @@ impl App {
                     return;
                 }
                 if !target_extensions.contains(
-                    filepath
+                    check_path
                         .extension()
                         .unwrap_or_else(|| OsStr::new("."))
                         .to_str()
                         .unwrap(),
-                ) || filepath
-                    .as_path()
+                ) || check_path
                     .file_stem()
                     .unwrap_or_else(|| OsStr::new("."))
                     .to_str()
@@ -633,7 +640,7 @@ impl App {
                     return;
                 }
                 self.analysis_files(
-                    vec![PathBuf::from(filepath)],
+                    vec![check_path.to_path_buf()],
                     time_filter,
                     &stored_static.event_timeline_config,
                     &stored_static.target_eventids,
