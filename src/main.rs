@@ -654,7 +654,7 @@ impl App {
     fn collect_liveanalysis_files(
         &self,
         _target_extensions: &HashSet<String>,
-        stored_static: &StoredStatic,
+        _stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
         AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
             .ok();
