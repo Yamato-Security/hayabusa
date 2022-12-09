@@ -467,6 +467,10 @@ pub struct InputOption {
 pub struct CsvOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
+
+    /// List the output profiles
+    #[arg(help_heading = Some("Other Actions"), long = "list-profiles", global = true)]
+    pub list_profile: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -477,6 +481,10 @@ pub struct JSONOutputOption {
     /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
     #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
     pub jsonl_timeline: bool,
+
+    /// List the output profiles
+    #[arg(help_heading = Some("Other Actions"), long = "list-profiles", global = true)]
+    pub list_profile: bool,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -511,10 +519,6 @@ pub struct Config {
     /// Print debug information (memory usage, etc...)
     #[clap(long = "debug", global = true)]
     pub debug: bool,
-
-    /// List the output profiles
-    #[arg(help_heading = Some("Other Actions"), long = "list-profiles", global = true)]
-    pub list_profile: bool,
 
     /// Specify custom rule config directory (default: ./rules/config)
     #[arg(

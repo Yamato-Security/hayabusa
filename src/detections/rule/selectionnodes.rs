@@ -443,7 +443,6 @@ mod tests {
             quiet: false,
             quiet_errors: false,
             debug: false,
-            list_profile: false,
             verbose: false,
         })
     }

@@ -297,7 +297,6 @@ mod tests {
             quiet: false,
             quiet_errors: false,
             debug: false,
-            list_profile: false,
             verbose: false,
         });
         let prev_modified_rules = Update::get_updated_rules(

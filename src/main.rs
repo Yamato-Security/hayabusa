@@ -120,7 +120,12 @@ impl App {
             return;
         }
 
-        if stored_static.config.list_profile {
+        let list_profile_flag = match &stored_static.config.action {
+            Action::CsvTimeline(opt)  => {opt.list_profile},
+            Action::JsonTimeline(opt) =>{opt.list_profile},
+            _ => false,
+        };
+        if list_profile_flag {
             let profile_list =
                 options::profile::get_profile_list("config/profiles.yaml", stored_static);
             write_color_buffer(
@@ -1160,7 +1165,6 @@ mod tests {
             quiet: false,
             quiet_errors: false,
             debug: false,
-            list_profile: false,
             verbose: false,
         })
     }
