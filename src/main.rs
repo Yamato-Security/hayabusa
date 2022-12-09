@@ -297,8 +297,9 @@ impl App {
                 self.print_contributors();
                 return;
             }
-            Action::LogonSummary(_) => todo!(),
-            Action::Metrics(_) => todo!(),
+            Action::LogonSummary(_) | Action::Metrics(_) => {
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+            }
             Action::PivotKeywordsList(_) => {
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
                 if let Some(csv_path) = &stored_static.output_option.as_ref().unwrap().output {
