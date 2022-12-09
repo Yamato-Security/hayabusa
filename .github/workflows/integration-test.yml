@@ -39,16 +39,16 @@ jobs:
         run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -J
 
       - name: logon-summary
-        run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx
+        run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q
 
       - name: metrics
-        run: cd main && cargo run --release -- metrics -d ../hayabusa-sample-evtx
+        run: cd main && cargo run --release -- metrics -d ../hayabusa-sample-evtx -q
 
       - name: pivot-keywords-list
-        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx
+        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o p.csv -q
 
       - name: set-default-profile
-        run: cd main && cargo run --release -- set-default-profile
+        run: cd main && cargo run --release -- set-default-profile -q
 
       - name: list-contributors
         run: cd main && cargo run --release -- list-contributors
