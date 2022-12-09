@@ -207,7 +207,10 @@ impl StoredStatic {
 // コマンド生成用のClapの定義
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
+    /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
+
+    /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
 
     /// Print a summary of successful and failed logons
@@ -218,8 +221,13 @@ pub enum Action {
     PivotKeywordsList(PivotKeywordOption),
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
+
+    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
+
+    /// Set default output profile
     SetDefaultProfile,
+
     /// Print the list of contributors
     ListContributors,
 }
