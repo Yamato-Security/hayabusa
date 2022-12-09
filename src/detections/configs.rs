@@ -215,10 +215,13 @@ pub enum Action {
 
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
+
     /// Print event ID metrics
     Metrics(MetricsOption),
+
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
+
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
 
@@ -497,7 +500,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[command(
     name = "Hayabusa",
-    override_usage = "hayabusa.exe [OUTPUT] [COMMAND]",
+    override_usage = "hayabusa.exe [COMMAND] [OPTION]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
     version,
