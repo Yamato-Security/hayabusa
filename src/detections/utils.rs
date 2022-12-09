@@ -400,7 +400,7 @@ pub fn check_rule_config(config: &Config) -> Result<(), String> {
         check_setting_path(config_path, "", false).is_some()
     };
     if !exist_rule_config_folder {
-        return Err("The required rules config files were not found. Please download them with --update-rules".to_string());
+        return Err("The required rules and config files were not found. Please download them with the update-rules command.".to_string());
     }
 
     // 各種ファイルを確認する
