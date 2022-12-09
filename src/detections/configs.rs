@@ -485,7 +485,7 @@ pub struct Config {
     pub action: Action,
 
     /// Thread number (default: optimal number for performance)
-    #[arg(help_heading = Some("Advanced"), short, long = "thread-number", value_name = "NUMBER", global = true)]
+    #[arg(short, long = "thread-number", value_name = "NUMBER", global = true)]
     pub thread_number: Option<usize>,
 
     /// Disable color output
@@ -493,15 +493,15 @@ pub struct Config {
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
-    #[arg(help_heading = Some("Display Settings"), short, long, global = true)]
+    #[arg(short, long, global = true)]
     pub quiet: bool,
 
     /// Quiet errors mode: do not save error logs
-    #[arg(help_heading = Some("Advanced"), short = 'Q', long = "quiet-errors", global=true)]
+    #[arg(short = 'Q', long = "quiet-errors", global=true)]
     pub quiet_errors: bool,
 
     /// Print debug information (memory usage, etc...)
-    #[clap(help_heading = Some("Display Settings"), long = "debug", global = true)]
+    #[clap(long = "debug", global = true)]
     pub debug: bool,
 
     /// List the output profiles
