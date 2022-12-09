@@ -474,7 +474,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[command(
     name = "Hayabusa",
-    override_usage = "hayabusa.exe [OTHER-ACTIONS] <INPUT> [OUTPUT] [OPTIONS]",
+    override_usage = "hayabusa.exe [OUTPUT] [COMMAND]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
     version,
