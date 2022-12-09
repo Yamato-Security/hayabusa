@@ -1,0 +1,54 @@
+name: Integration Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  integration-test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: ['ubuntu-20.04', 'windows-2019', 'macos-12']
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v3
+        with:
+          path: main
+
+      - name: Checkout hayabusa-sample-evtx repo
+        uses: actions/checkout@v3
+        with:
+          repository: Yamato-Security/hayabusa-sample-evtx
+          path: hayabusa-sample-evtx
+
+      - name: help
+        run: cd main && cargo run --release -- help
+
+      - name: update-rules
+        run: cd main && cargo run --release -- update-rules
+
+      - name: csv-timeline
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q
+
+      - name: json-timeline
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q
+
+      - name: json-timeline(-J)
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q -J
+
+      - name: logon-summary
+        run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx
+
+      - name: metrics
+        run: cd main && cargo run --release -- metrics -d ../hayabusa-sample-evtx
+
+      - name: pivot-keywords-list
+        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx
+
+      - name: set-default-profile
+        run: cd main && cargo run --release -- set-default-profile
+
+      - name: list-contributors
+        run: cd main && cargo run --release -- list-contributors
