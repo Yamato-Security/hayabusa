@@ -57,7 +57,7 @@ impl EventMetrics {
         eventkey_alias: &EventKeyAliasConfig,
     ) {
         // 引数でlogon-summaryオプションが指定されている時だけ、統計情報を出力する。
-        if logon_summary_flag {
+        if !logon_summary_flag {
             return;
         }
 
