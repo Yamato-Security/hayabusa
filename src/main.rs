@@ -121,8 +121,8 @@ impl App {
         }
 
         let list_profile_flag = match &stored_static.config.action {
-            Action::CsvTimeline(opt)  => {opt.list_profile},
-            Action::JsonTimeline(opt) =>{opt.list_profile},
+            Action::CsvTimeline(opt) => opt.list_profile,
+            Action::JsonTimeline(opt) => opt.list_profile,
             _ => false,
         };
         if list_profile_flag {

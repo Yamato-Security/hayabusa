@@ -513,7 +513,7 @@ pub struct Config {
     pub quiet: bool,
 
     /// Quiet errors mode: do not save error logs
-    #[arg(short = 'Q', long = "quiet-errors", global=true)]
+    #[arg(short = 'Q', long = "quiet-errors", global = true)]
     pub quiet_errors: bool,
 
     /// Print debug information (memory usage, etc...)
