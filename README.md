@@ -446,7 +446,7 @@ Advanced:
 
 Output:
   -P, --profile <PROFILE>   Specify output profile
-  -o, --output <FILE>       Save the timeline in format (csv-timeline ex.: result.csv , json-timeline ex.: result.json)
+  -o, --output <FILE>       Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
   -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
 
 Filtering:
@@ -502,7 +502,7 @@ Advanced:
 
 Output:
   -P, --profile <PROFILE>   Specify output profile
-  -o, --output <FILE>       Save the timeline in format (csv-timeline ex.: result.csv , json-timeline ex.: result.json)
+  -o, --output <FILE>       Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
   -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
   -J, --jsonl               Save the timeline in JSONL format (ex: -J -o results.jsonl)
 
@@ -549,7 +549,7 @@ Options:
   -h, --help                      Print help information
 
 Input:
-  -d, --directory <DIRECTORY>  Directory of mul`tiple .evtx files
+  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
   -f, --file <FILE>            File path to one .evtx file
   -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
 
@@ -576,7 +576,7 @@ Options:
   -h, --help                      Print help information
 
 Input:
-  -d, --directory <DIRECTORY>  Directory of mul`tiple .evtx files
+  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
   -f, --file <FILE>            File path to one .evtx file
   -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
 
@@ -603,7 +603,7 @@ Options:
   -h, --help                      Print help information
 
 Input:
-  -d, --directory <DIRECTORY>  Directory of mul`tiple .evtx files
+  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
   -f, --file <FILE>            File path to one .evtx file
   -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
 

@@ -344,7 +344,7 @@ pub struct LogonSummaryOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save the Metrics in CSV format (ex: metrics.csv)
+    /// Save the Logon summary in CSV format (ex: logon-summary.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 }
@@ -359,7 +359,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'P', long = "profile")]
     pub profile: Option<String>,
 
-    /// Save the timeline in format (csv-timeline ex.: result.csv , json-timeline ex.: result.json)
+    /// Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
@@ -479,7 +479,7 @@ pub struct CsvOutputOption {
     pub output_options: OutputOption,
 
     /// List the output profiles
-    #[arg(help_heading = Some("Other Actions"), long = "list-profiles", global = true)]
+    #[arg(help_heading = Some("Other Actions"), long = "list-profiles")]
     pub list_profile: bool,
 }
 
@@ -493,7 +493,7 @@ pub struct JSONOutputOption {
     pub jsonl_timeline: bool,
 
     /// List the output profiles
-    #[arg(help_heading = Some("Other Actions"), long = "list-profiles", global = true)]
+    #[arg(help_heading = Some("Other Actions"), long = "list-profiles")]
     pub list_profile: bool,
 }
 
@@ -515,7 +515,7 @@ pub struct Config {
     pub thread_number: Option<usize>,
 
     /// Disable color output
-    #[arg(long = "no-color", global=true)]
+    #[arg(long = "no-color", global = true)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
@@ -537,12 +537,12 @@ pub struct Config {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIRECTORY",
-        global=true
+        global = true
     )]
     pub config: PathBuf,
 
     /// Output verbose information
-    #[arg(short = 'v', long, global=true)]
+    #[arg(short = 'v', long, global = true)]
     pub verbose: bool,
 }
 
