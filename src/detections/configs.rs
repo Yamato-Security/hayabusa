@@ -515,7 +515,7 @@ pub struct Config {
     pub thread_number: Option<usize>,
 
     /// Disable color output
-    #[arg(help_heading = Some("Display Settings"), long = "no-color", global=true)]
+    #[arg(long = "no-color", global=true)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
@@ -532,7 +532,6 @@ pub struct Config {
 
     /// Specify custom rule config directory (default: ./rules/config)
     #[arg(
-        help_heading = Some("Advanced"),
         short = 'c',
         long = "rules-config",
         default_value = "./rules/config",
@@ -543,7 +542,7 @@ pub struct Config {
     pub config: PathBuf,
 
     /// Output verbose information
-    #[arg(help_heading = Some("Display Settings"), short = 'v', long, global=true)]
+    #[arg(short = 'v', long, global=true)]
     pub verbose: bool,
 }
 
