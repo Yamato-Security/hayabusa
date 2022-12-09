@@ -226,7 +226,7 @@ pub enum Action {
     LevelTuning(LevelTuningOption),
 
     /// Set default output profile
-    SetDefaultProfile,
+    SetDefaultProfile(DefaultProfileOption),
 
     /// Print the list of contributors
     ListContributors,
@@ -242,10 +242,17 @@ impl Action {
             Action::PivotKeywordsList(_) => 4,
             Action::UpdateRules(_) => 5,
             Action::LevelTuning(_) => 6,
-            Action::SetDefaultProfile => 7,
+            Action::SetDefaultProfile(_) => 7,
             Action::ListContributors => 8,
         }
     }
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct DefaultProfileOption {
+    /// Specify output profile
+    #[arg(short = 'P', long = "profile")]
+    pub profile: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -870,6 +877,35 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             html_report: None,
             no_summary: false,
             set_default_profile: None,
+        }),
+        Action::SetDefaultProfile(option) => Some(OutputOption {
+            input_args: InputOption {
+                directory: None,
+                filepath: None,
+                live_analysis: false,
+                evtx_file_ext: None,
+            },
+            output: None,
+            enable_deprecated_rules: false,
+            enable_noisy_rules: false,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+            set_default_profile: option.profile.clone(),
         }),
         _ => None,
     }
