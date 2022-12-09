@@ -299,6 +299,20 @@ impl App {
             }
             Action::LogonSummary(_) | Action::Metrics(_) => {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
+                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                    if let Ok(metadata) = fs::metadata(path) {
+                        let output_saved_str = format!(
+                            "Saved file: {} ({})",
+                            path.display(),
+                            ByteSize::b(metadata.len()).to_string_as(false)
+                        );
+                        output_and_data_stack_for_html(
+                            &output_saved_str,
+                            "General Overview {#general_overview}",
+                            stored_static.html_report_flag,
+                        );
+                    }
+                }
             }
             Action::PivotKeywordsList(_) => {
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
