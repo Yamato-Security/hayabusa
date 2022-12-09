@@ -24,40 +24,40 @@ jobs:
           path: hayabusa-sample-evtx
 
       - name: help
-        run: cd main && cargo run -- help
+        run: cd main && cargo run --release -- help
 
       - name: update-rules
-        run: cd main && cargo run -- update-rules -q
+        run: cd main && cargo run --release -- update-rules -q
 
       - name: csv-timeline
-        run: cd main && cargo run -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q
 
       - name: csv-timeline(-P super-verbose)
-        run: cd main && cargo run -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -P super-verbose -q
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -P super-verbose -q
 
       - name: json-timeline
-        run: cd main && cargo run -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q
 
       - name: json-timeline(-P super-verbose)
-        run: cd main && cargo run -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -P super-verbose -q
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -P super-verbose -q
 
       - name: json-timeline(-J)
-        run: cd main && cargo run -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -J
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -J
 
       - name: logon-summary
-        run: cd main && cargo run -- logon-summary -d ../hayabusa-sample-evtx -q
+        run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q
 
       - name: metrics
-        run: cd main && cargo run -- metrics -d ../hayabusa-sample-evtx -q
+        run: cd main && cargo run --release -- metrics -d ../hayabusa-sample-evtx -q
 
       - name: pivot-keywords-list
-        run: cd main && cargo run -- pivot-keywords-list -d ../hayabusa-sample-evtx -o p.csv -q
+        run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o p.csv -q
 
       - name: pivot-keywords-list
-        run: cd main && cargo run -- level-tuning --level-tuning ./rules/config/level_tuning.txt -q
+        run: cd main && cargo run --release -- level-tuning --level-tuning ./rules/config/level_tuning.txt -q
 
       - name: set-default-profile
-        run: cd main && cargo run -- set-default-profile -q
+        run: cd main && cargo run --release -- set-default-profile -q
 
       - name: list-contributors
-        run: cd main && cargo run -- list-contributors -q
+        run: cd main && cargo run --release -- list-contributors -q
