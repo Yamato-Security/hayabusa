@@ -40,12 +40,12 @@ crossbeam-utils = "0.8.*"
 num-format = "*"
 comfy-table = "6.*"
 pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
-reqwest = {version = "0.11.*", features = ["blocking", "json"]}
 horrorshow = "0.8.*"
 mimalloc = { version = "*", default-features = false }
 libmimalloc-sys = { version = "*",  features = ["extended"] }
 nested="*"
 compact_str = "0.6.*"
+ureq = "*"
 
 [profile.dev]
 debug = 0
