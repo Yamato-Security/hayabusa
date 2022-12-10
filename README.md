@@ -221,7 +221,7 @@ If the update fails, you may need to rename the `rules` folder and try again.
 
 >> Caution: When updating, rules and config files in the `rules` folder are replaced with the latest rules and config files in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) repository.
 >> Any changes you make to existing files will be overwritten, so we recommend that you make backups of any files that you edit before updating.
->> If you are performing level tuning with `--level-tuning`, please re-tune your rule files after each update.
+>> If you are performing level tuning with `level-tuning`, please re-tune your rule files after each update.
 >> If you add **new** rules inside of the `rules` folder, they will **not** be overwritten or deleted when updating.
 
 # Advanced: Compiling From Source (Optional)
@@ -800,7 +800,7 @@ If you do not want to save error messages, please add `-Q`.
 You can use the `pivot-keywords-list` command to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. You can customize what keywords you want to search for by editing `./config/pivot_keywords.txt`.
 This is the default setting:
 
-```
+```txt
 Users.SubjectUserName
 Users.TargetUserName
 Users.User
@@ -811,7 +811,7 @@ Ip Addresses.IpAddress
 Processes.Image
 ```
 
-The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields. By default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `--pivot-keyword-list` option with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
+The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields. By default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `pivot-keyword-list` command with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
 
 ## Logon Summary Generator
 
@@ -844,7 +844,7 @@ Hayabusa has 5 pre-defined profiles to use in `config/profiles.yaml`:
 8. `timesketch-verbose`
 
 You can easily customize or add your own profiles by editing this file.
-You can also easily change the default profile with `--set-default-profile <profile>`.
+You can also easily change the default profile with `set-default-profile -P <profile>`.
 Use the `csv-timeline --list-profiles` option to show the available profiles and their field information.
 
 ### 1. `minimal` profile output
@@ -1120,12 +1120,12 @@ You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignor
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.8.1-win-x64.exe --level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-1.8.1-win-x64.exe level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:
 
-```
+```csv
 id,new_level
 00000000-0000-0000-0000-000000000000,informational # sample level tuning line
 ```
