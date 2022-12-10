@@ -485,7 +485,7 @@ Output:
   -P, --profile <PROFILE>   利用する出力プロファイル名を指定する
   -o, --output <FILE>       タイムラインを保存する (csv-timeline 例: result.csv, json-timeline例: result.json)
   -H, --html-report <FILE>  HTML形式で詳細な結果を出力する (例: results.html)
-  -J, --jsonl               JSONL形式でdタイムラインを保存する (ex: -J -o results.jsonl)
+  -J, --jsonl               JSONL形式でタイムラインを保存する (ex: -J -o results.jsonl)
 
 Filtering:
       --enable-deprecated-rules  Deprecatedルールを有効にする
