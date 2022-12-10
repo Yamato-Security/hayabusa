@@ -3,6 +3,10 @@ name: Integration Test
 on:
   workflow_dispatch:
 
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-D warnings"
+
 jobs:
   integration-test:
     runs-on: ${{ matrix.os }}
