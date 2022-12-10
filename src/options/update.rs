@@ -21,10 +21,12 @@ pub struct Update {}
 impl Update {
     /// get latest hayabusa version number.
     pub fn get_latest_hayabusa_version() -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let text = ureq::get("https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest")
-            .set("User-Agent", "HayabusaUpdateChecker")
-            .set("Accept", "application/vnd.github.v3+json")
-            .call()?.into_string()?;
+        let text =
+            ureq::get("https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest")
+                .set("User-Agent", "HayabusaUpdateChecker")
+                .set("Accept", "application/vnd.github.v3+json")
+                .call()?
+                .into_string()?;
         let json_res: Value = serde_json::from_str(&text)?;
 
         if json_res["tag_name"].is_null() {
