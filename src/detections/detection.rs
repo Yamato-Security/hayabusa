@@ -29,7 +29,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
+use super::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH, STORED_STATIC};
 use super::message::{self, LEVEL_ABBR_MAP};
 use super::utils;
 
@@ -65,7 +65,8 @@ impl Detection {
         records: Vec<EvtxRecordInfo>,
         stored_static: StoredStatic,
     ) -> Self {
-        rt.block_on(self.execute_rules(records, stored_static))
+        *STORED_STATIC.write().unwrap() = Some(stored_static);
+        rt.block_on(self.execute_rules(records))
     }
 
     // ルールファイルをパースします。
@@ -145,23 +146,15 @@ impl Detection {
     }
 
     // 複数のイベントレコードに対して、複数のルールを1個実行します。
-    async fn execute_rules(
-        mut self,
-        records: Vec<EvtxRecordInfo>,
-        stored_static: StoredStatic,
-    ) -> Self {
+    async fn execute_rules(mut self, records: Vec<EvtxRecordInfo>) -> Self {
         let records_arc = Arc::new(records);
-        let stored_static_arc = Arc::new(stored_static);
         // // 各rule毎にスレッドを作成して、スレッドを起動する。
         let rules = self.rules;
         let handles: Vec<JoinHandle<RuleNode>> = rules
             .into_iter()
             .map(|rule| {
                 let records_cloned = Arc::clone(&records_arc);
-                let stored_static_cloned = Arc::clone(&stored_static_arc);
-                spawn(async move {
-                    Detection::execute_rule(rule, records_cloned, &stored_static_cloned)
-                })
+                spawn(async move { Detection::execute_rule(rule, records_cloned) })
             })
             .collect();
 
@@ -198,12 +191,10 @@ impl Detection {
     }
 
     // 複数のイベントレコードに対して、ルールを1個実行します。
-    fn execute_rule(
-        mut rule: RuleNode,
-        records: Arc<Vec<EvtxRecordInfo>>,
-        stored_static: &StoredStatic,
-    ) -> RuleNode {
+    fn execute_rule(mut rule: RuleNode, records: Arc<Vec<EvtxRecordInfo>>) -> RuleNode {
         let agg_condition = rule.has_agg_condition();
+        let binding = STORED_STATIC.read().unwrap();
+        let stored_static = binding.as_ref().unwrap();
         for record_info in records.as_ref() {
             let result = rule.select(record_info, stored_static);
             if !result {

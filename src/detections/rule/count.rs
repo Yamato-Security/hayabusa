@@ -505,6 +505,7 @@ mod tests {
     use crate::detections::configs::Config;
     use crate::detections::configs::StoredStatic;
     use crate::detections::configs::UpdateOption;
+    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::utils;
@@ -838,6 +839,8 @@ mod tests {
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
         let dummy_stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+
         let init_result = rule_node.init(&dummy_stored_static);
         assert!(init_result.is_ok());
         let target = vec![SIMPLE_RECORD_STR, record_str];
@@ -845,12 +848,7 @@ mod tests {
             match serde_json::from_str(record) {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(
-                        rec,
-                        "testpath".to_owned(),
-                        &keys,
-                        &dummy_stored_static.eventkey_alias,
-                    );
+                    let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
                     let _result = rule_node.select(&recinfo, &dummy_stored_static);
                 }
                 Err(_) => {
@@ -1613,16 +1611,13 @@ mod tests {
             panic!("Failed to init rulenode");
         }
         let dummy_stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
-                    let recinfo = utils::create_rec_info(
-                        record,
-                        "testpath".to_owned(),
-                        &keys,
-                        &dummy_stored_static.eventkey_alias,
-                    );
+                    let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                     let result = &rule_node.select(&recinfo, &dummy_stored_static);
                     assert_eq!(result, &true);
                 }

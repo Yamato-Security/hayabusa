@@ -12,12 +12,15 @@ use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
 use std::path::{Path, PathBuf};
+use std::sync::RwLock;
 use terminal_size::{terminal_size, Width};
 
 use super::message::create_output_filter_config;
 use super::utils::check_setting_path;
 
 lazy_static! {
+    pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
+    pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =

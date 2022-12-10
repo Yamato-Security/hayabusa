@@ -10,7 +10,7 @@ use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
-    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH,
+    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
@@ -882,6 +882,8 @@ impl App {
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
         let mut tl = Timeline::new();
+
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         for evtx_file in evtx_files {
             if stored_static.config.verbose {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
@@ -1011,7 +1013,6 @@ impl App {
                 records_per_detect,
                 &path,
                 self.rule_keys.to_owned(),
-                stored_static.eventkey_alias.to_owned(),
             ));
 
             // timeline機能の実行
@@ -1035,25 +1036,17 @@ impl App {
         records_per_detect: Vec<Value>,
         path: &dyn Display,
         rule_keys: Nested<String>,
-        eventkey_alias: EventKeyAliasConfig,
     ) -> Vec<EvtxRecordInfo> {
         let path = Arc::new(path.to_string());
         let rule_keys = Arc::new(rule_keys);
-        let arc_eventkey_alias = Arc::new(eventkey_alias);
         let threads: Vec<JoinHandle<EvtxRecordInfo>> = {
             let this = records_per_detect
                 .into_iter()
                 .map(|rec| -> JoinHandle<EvtxRecordInfo> {
                     let arc_rule_keys = Arc::clone(&rule_keys);
                     let arc_path = Arc::clone(&path);
-                    let arc_eventkey_alias_clone = Arc::clone(&arc_eventkey_alias);
                     spawn(async move {
-                        utils::create_rec_info(
-                            rec,
-                            arc_path.to_string(),
-                            &arc_rule_keys,
-                            &arc_eventkey_alias_clone,
-                        )
+                        utils::create_rec_info(rec, arc_path.to_string(), &arc_rule_keys)
                     })
                 });
             FromIterator::from_iter(this)

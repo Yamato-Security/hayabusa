@@ -28,7 +28,7 @@ use std::string::String;
 use std::vec;
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
-use super::configs::{Config, EventKeyAliasConfig, OutputOption};
+use super::configs::{Config, EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
@@ -213,12 +213,7 @@ pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
 }
 
 // EvtxRecordInfoを作成します。
-pub fn create_rec_info(
-    data: Value,
-    path: String,
-    keys: &Nested<String>,
-    eventkey_alias: &EventKeyAliasConfig,
-) -> EvtxRecordInfo {
+pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> EvtxRecordInfo {
     // 高速化のための処理
 
     // 例えば、Value型から"Event.System.EventID"の値を取得しようとすると、value["Event"]["System"]["EventID"]のように3回アクセスする必要がある。
@@ -227,6 +222,9 @@ pub fn create_rec_info(
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
     // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。標準ライブラリがhashbrownを採用したためserde_jsonについても高速化した。
     let mut key_2_values = HashMap::new();
+
+    let binding = STORED_EKEY_ALIAS.read().unwrap();
+    let eventkey_alias = binding.as_ref().unwrap();
     for key in keys.iter() {
         let val = get_event_value(key, &data, eventkey_alias);
         if val.is_none() {
