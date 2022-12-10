@@ -24,6 +24,10 @@ jobs:
           repository: Yamato-Security/hayabusa-sample-evtx
           path: hayabusa-sample-evtx
 
+      - name: Enable Rust cache
+        if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+        uses: Swatinem/rust-cache@v2
+
       - name: help
         run: cd main && cargo run --release -- help
 
