@@ -4,6 +4,7 @@ version = "1.9.0-dev"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 rust-version = "1.65.0"
+include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
 itertools = "*"
