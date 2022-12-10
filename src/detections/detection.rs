@@ -196,7 +196,12 @@ impl Detection {
         let binding = STORED_STATIC.read().unwrap();
         let stored_static = binding.as_ref().unwrap();
         for record_info in records.as_ref() {
-            let result = rule.select(record_info, stored_static);
+            let result = rule.select(
+                record_info,
+                stored_static.config.verbose,
+                stored_static.quiet_errors_flag,
+                &stored_static.eventkey_alias,
+            );
             if !result {
                 continue;
             }

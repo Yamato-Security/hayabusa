@@ -68,12 +68,22 @@ impl RuleNode {
         }
     }
 
-    pub fn select(&mut self, event_record: &EvtxRecordInfo, stored_static: &StoredStatic) -> bool {
-        let result = self
-            .detection
-            .select(event_record, &stored_static.eventkey_alias);
+    pub fn select(
+        &mut self,
+        event_record: &EvtxRecordInfo,
+        verbose_flag: bool,
+        quiet_errors_flag: bool,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) -> bool {
+        let result = self.detection.select(event_record, eventkey_alias);
         if result && self.has_agg_condition() {
-            count::count(self, &event_record.record, stored_static);
+            count::count(
+                self,
+                &event_record.record,
+                verbose_flag,
+                quiet_errors_flag,
+                eventkey_alias,
+            );
         }
         result
     }
@@ -398,7 +408,12 @@ mod tests {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(
-                    rule_node.select(&recinfo, &dummy_stored_static),
+                    rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.config.verbose,
+                        dummy_stored_static.config.quiet_errors,
+                        &dummy_stored_static.eventkey_alias
+                    ),
                     expect_select
                 );
             }
@@ -905,7 +920,12 @@ mod tests {
             Ok(record) => {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                let result = rule_node.select(&recinfo, &dummy_stored_static);
+                let result = rule_node.select(
+                    &recinfo,
+                    dummy_stored_static.config.verbose,
+                    dummy_stored_static.quiet_errors_flag,
+                    &dummy_stored_static.eventkey_alias,
+                );
                 assert!(rule_node.detection.aggregation_condition.is_some());
                 assert!(result);
                 assert_eq!(

@@ -1,3 +1,4 @@
+use crate::detections::configs::EventKeyAliasConfig;
 use crate::detections::configs::StoredStatic;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
@@ -15,8 +16,20 @@ use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
-pub fn count(rule: &mut RuleNode, record: &Value, stored_static: &StoredStatic) {
-    let key = create_count_key(rule, record, stored_static);
+pub fn count(
+    rule: &mut RuleNode,
+    record: &Value,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
+) {
+    let key = create_count_key(
+        rule,
+        record,
+        verbose_flag,
+        quiet_errors_flag,
+        eventkey_alias,
+    );
     let field_name: String = match rule.get_agg_condition() {
         None => String::default(),
         Some(aggcondition) => aggcondition
@@ -25,8 +38,16 @@ pub fn count(rule: &mut RuleNode, record: &Value, stored_static: &StoredStatic) 
             .unwrap_or(&String::default())
             .to_owned(),
     };
-    let field_value = get_alias_value_in_record(rule, &field_name, record, false, stored_static)
-        .unwrap_or_default();
+    let field_value = get_alias_value_in_record(
+        rule,
+        &field_name,
+        record,
+        false,
+        verbose_flag,
+        quiet_errors_flag,
+        eventkey_alias,
+    )
+    .unwrap_or_default();
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
     countup(
         rule,
@@ -58,12 +79,14 @@ fn get_alias_value_in_record(
     alias: &str,
     record: &Value,
     is_by_alias: bool,
-    stored_static: &StoredStatic,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
 ) -> Option<String> {
     if alias.is_empty() {
         return None;
     }
-    match utils::get_event_value(alias, record, &stored_static.eventkey_alias) {
+    match utils::get_event_value(alias, record, eventkey_alias) {
         Some(value) => Some(value.to_string().replace('\"', "")),
         None => {
             let errmsg = match is_by_alias {
@@ -74,7 +97,7 @@ fn get_alias_value_in_record(
             .unwrap()
             .to_str()
             .unwrap(),
-          utils::get_event_value(&utils::get_event_id_key(), record, &stored_static.eventkey_alias).unwrap()
+          utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias).unwrap()
         ),
                 false => format!(
           "count field clause alias value not found in count process. rule file:{} EventID:{}",
@@ -83,13 +106,13 @@ fn get_alias_value_in_record(
             .unwrap()
             .to_str()
             .unwrap(),
-          utils::get_event_value(&utils::get_event_id_key(), record, &stored_static.eventkey_alias).unwrap()
+          utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias).unwrap()
         ),
             };
-            if stored_static.config.verbose {
+            if verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !stored_static.quiet_errors_flag {
+            if !quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -103,12 +126,26 @@ fn get_alias_value_in_record(
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
 /// 以下の場合は空文字を返却
 /// groupbyの指定がない、groubpbyで指定したエイリアスがレコードに存在しない場合は_のみとする。空文字ではキーを指定してデータを取得することができなかった
-pub fn create_count_key(rule: &RuleNode, record: &Value, stored_static: &StoredStatic) -> String {
+pub fn create_count_key(
+    rule: &RuleNode,
+    record: &Value,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
+) -> String {
     let agg_condition = rule.get_agg_condition().unwrap();
     if agg_condition._by_field_name.is_some() {
         let by_field_key = agg_condition._by_field_name.as_ref().unwrap();
-        get_alias_value_in_record(rule, by_field_key, record, true, stored_static)
-            .unwrap_or_else(|| "_".to_string())
+        get_alias_value_in_record(
+            rule,
+            by_field_key,
+            record,
+            true,
+            verbose_flag,
+            quiet_errors_flag,
+            eventkey_alias,
+        )
+        .unwrap_or_else(|| "_".to_string())
     } else {
         "_".to_string()
     }
@@ -849,7 +886,12 @@ mod tests {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
-                    let _result = rule_node.select(&recinfo, &dummy_stored_static);
+                    let _result = rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.config.verbose,
+                        dummy_stored_static.config.quiet_errors,
+                        &dummy_stored_static.eventkey_alias,
+                    );
                 }
                 Err(_) => {
                     panic!("failed to parse json record.");
@@ -1618,7 +1660,12 @@ mod tests {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                    let result = &rule_node.select(&recinfo, &dummy_stored_static);
+                    let result = &rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.config.verbose,
+                        dummy_stored_static.quiet_errors_flag,
+                        &dummy_stored_static.eventkey_alias,
+                    );
                     assert_eq!(result, &true);
                 }
                 Err(_rec) => {

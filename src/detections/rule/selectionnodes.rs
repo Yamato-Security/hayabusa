@@ -457,7 +457,12 @@ mod tests {
                 let keys = detections::rule::get_detection_keys(&rule_node);
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 assert_eq!(
-                    rule_node.select(&recinfo, &dummy_stored_static),
+                    rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.config.verbose,
+                        dummy_stored_static.quiet_errors_flag,
+                        &dummy_stored_static.eventkey_alias
+                    ),
                     expect_select
                 );
             }
