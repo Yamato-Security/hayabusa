@@ -381,7 +381,7 @@ You should now be able to run hayabusa.
 * default: Create a fast forensics timeline.
 * `--level-tuning`: Custom tune the alerts' `level`.
 * `-L, --logon-summary`: Print a summary of logon events.
-* `-P, --pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
+* `-p, --pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
 * `-M, --metrics`: Print metrics of the number and percentage of events based on Event ID.
 * `--set-default-profile`: Change the default profile.
 * `-u, --update`: Sync the rules to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) GitHub repository.
