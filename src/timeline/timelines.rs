@@ -1,9 +1,8 @@
 use std::fs::File;
 use std::io::BufWriter;
+use std::path::PathBuf;
 
-use crate::detections::configs::{
-    Action, EventInfoConfig, EventKeyAliasConfig, LogonSummaryOption, MetricsOption, StoredStatic,
-};
+use crate::detections::configs::{Action, EventInfoConfig, EventKeyAliasConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -61,10 +60,11 @@ impl Timeline {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        let metrics_option: MetricsOption;
+        let mut wtr;
+        let target;
+
         match &stored_static.config.action {
             Action::Metrics(option) => {
-                metrics_option = option.clone();
                 if option.input_args.filepath.is_some() {
                     sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
                     sammsges.push(total_event_record);
@@ -73,6 +73,21 @@ impl Timeline {
                 } else {
                     sammsges.push(total_event_record);
                 }
+                wtr = if let Some(csv_path) = option.output.as_ref() {
+                    // output to file
+                    match File::create(csv_path) {
+                        Ok(file) => {
+                            target = Box::new(BufWriter::new(file));
+                            Some(WriterBuilder::new().from_writer(target))
+                        }
+                        Err(err) => {
+                            AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                            process::exit(1);
+                        }
+                    }
+                } else {
+                    None
+                };
             }
             _ => {
                 return;
@@ -80,22 +95,6 @@ impl Timeline {
         }
 
         let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
-        let target;
-        let mut wtr = if let Some(csv_path) = metrics_option.output.as_ref() {
-            // output to file
-            match File::create(csv_path) {
-                Ok(file) => {
-                    target = Box::new(BufWriter::new(file));
-                    Some(WriterBuilder::new().from_writer(target))
-                }
-                Err(err) => {
-                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
-                    process::exit(1);
-                }
-            }
-        } else {
-            None
-        };
         if let Some(ref mut w) = wtr {
             w.write_record(&header).ok();
         }
@@ -117,7 +116,7 @@ impl Timeline {
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-        if metrics_option.output.as_ref().is_some() {
+        if wtr.is_some() {
             for msg in stats_msges.iter() {
                 if let Some(ref mut w) = wtr {
                     w.write_record(msg).ok();
@@ -132,29 +131,22 @@ impl Timeline {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        let logon_summary_option: LogonSummaryOption;
-        match &stored_static.config.action {
-            Action::LogonSummary(option) => {
-                logon_summary_option = option.clone();
-                if option.input_args.filepath.is_some() {
-                    sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-                    sammsges.push(total_event_record);
-                    sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-                    sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-                } else {
-                    sammsges.push(total_event_record);
-                }
+        if let Action::LogonSummary(logon_summary_option) = &stored_static.config.action {
+            if logon_summary_option.input_args.filepath.is_some() {
+                sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+                sammsges.push(total_event_record);
+                sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+                sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+            } else {
+                sammsges.push(total_event_record);
             }
-            _ => {
-                return;
+
+            for msgprint in sammsges.iter() {
+                println!("{}", msgprint);
             }
-        }
 
-        for msgprint in sammsges.iter() {
-            println!("{}", msgprint);
+            self.tm_loginstats_tb_set_msg(&logon_summary_option.output);
         }
-
-        self.tm_loginstats_tb_set_msg(logon_summary_option);
     }
 
     // イベントID毎の出力メッセージ生成
@@ -209,7 +201,7 @@ impl Timeline {
     }
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
-    fn tm_loginstats_tb_set_msg(&self, option: LogonSummaryOption) {
+    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
         println!(" Logon Summary:");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
@@ -222,7 +214,7 @@ impl Timeline {
         } else {
             let header = vec!["User", "Failed", "Successful"];
             let target;
-            let mut wtr = if let Some(csv_path) = option.output {
+            let mut wtr = if let Some(csv_path) = output {
                 // output to file
                 match File::create(csv_path) {
                     Ok(file) => {
