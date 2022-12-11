@@ -386,7 +386,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * デフォルト: ファストフォレンジックタイムラインの作成。
 * `--level-tuning`: アラート`level`のカスタムチューニング
 * `-L, --logon-summary`: ログオンイベントのサマリを出力する。
-* `-P, --pivot-keywords-list`: ピボットする不審なキーワードのリスト作成。 
+* `-p, --pivot-keywords-list`: ピボットする不審なキーワードのリスト作成。
 * `-M, --metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `--set-default-profile`: デフォルトプロファイルを変更する。
 * `-u, --update`: GitHubの[hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)リポジトリにある最新のルールに同期させる。
