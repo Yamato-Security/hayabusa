@@ -59,11 +59,7 @@ impl Detection {
         Detection { rules: rule_nodes }
     }
 
-    pub fn start(
-        self,
-        rt: &Runtime,
-        records: Vec<EvtxRecordInfo>,
-    ) -> Self {
+    pub fn start(self, rt: &Runtime, records: Vec<EvtxRecordInfo>) -> Self {
         rt.block_on(self.execute_rules(records))
     }
 
