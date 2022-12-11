@@ -6,11 +6,6 @@ use yaml_rust::Yaml;
 use crate::detections::{detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 
-use lazy_static::lazy_static;
-lazy_static! {
-    pub static ref STR_DEFAULT: String = String::default();
-}
-
 // 末端ノードがEventLogの値を比較するロジックを表す。
 // 正規条件のマッチや文字数制限など、比較ロジック毎にこのtraitを実装したクラスが存在する。
 //
