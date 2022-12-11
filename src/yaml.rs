@@ -27,9 +27,9 @@ pub struct ParseYaml {
 impl ParseYaml {
     pub fn new(stored_static: &StoredStatic) -> ParseYaml {
         let exclude_status_vec = if let Some(output_option) = stored_static.output_option.as_ref() {
-            output_option.exclude_status.clone()
+            &output_option.exclude_status
         } else {
-            None
+            &None
         };
         ParseYaml {
             files: Vec::new(),
