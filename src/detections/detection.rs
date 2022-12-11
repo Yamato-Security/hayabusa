@@ -63,9 +63,7 @@ impl Detection {
         self,
         rt: &Runtime,
         records: Vec<EvtxRecordInfo>,
-        stored_static: StoredStatic,
     ) -> Self {
-        *STORED_STATIC.write().unwrap() = Some(stored_static);
         rt.block_on(self.execute_rules(records))
     }
 

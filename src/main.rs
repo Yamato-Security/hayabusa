@@ -11,7 +11,7 @@ use hashbrown::{HashMap, HashSet};
 use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
-    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS,
+    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
@@ -896,6 +896,7 @@ impl App {
         let mut tl = Timeline::new();
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
             if stored_static.config.verbose {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
@@ -1047,7 +1048,7 @@ impl App {
 
             if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
                 // ruleファイルの検知
-                detection = detection.start(&self.rt, records_per_detect, stored_static.clone());
+                detection = detection.start(&self.rt, records_per_detect);
             }
         }
 
