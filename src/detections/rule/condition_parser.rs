@@ -63,7 +63,9 @@ impl ConditionToken {
             ConditionToken::AndContainer(_) => ConditionToken::AndContainer(sub_tokens.into_iter()),
             ConditionToken::OrContainer(_) => ConditionToken::OrContainer(sub_tokens.into_iter()),
             ConditionToken::NotContainer(_) => ConditionToken::NotContainer(sub_tokens.into_iter()),
-            ConditionToken::OperandContainer(_) => ConditionToken::OperandContainer(sub_tokens.into_iter()),
+            ConditionToken::OperandContainer(_) => {
+                ConditionToken::OperandContainer(sub_tokens.into_iter())
+            }
             ConditionToken::LeftParenthesis => ConditionToken::LeftParenthesis,
             ConditionToken::RightParenthesis => ConditionToken::RightParenthesis,
             ConditionToken::Space => ConditionToken::Space,
@@ -371,7 +373,8 @@ impl ConditionCompiler {
                 if let ConditionToken::Not = second_token {
                     Result::Err("Not is continuous.".to_string())
                 } else {
-                    let not_container = ConditionToken::NotContainer(vec![second_token].into_iter());
+                    let not_container =
+                        ConditionToken::NotContainer(vec![second_token].into_iter());
                     Result::Ok(not_container)
                 }
             } else {
@@ -469,7 +472,9 @@ impl ConditionCompiler {
                     ret.push(token);
                     continue;
                 }
-                ret.push(ConditionToken::OperandContainer(grouped_operands.into_iter()));
+                ret.push(ConditionToken::OperandContainer(
+                    grouped_operands.into_iter(),
+                ));
                 ret.push(token);
                 grouped_operands = vec![];
                 continue;
@@ -478,7 +483,9 @@ impl ConditionCompiler {
             grouped_operands.push(token);
         }
         if !grouped_operands.is_empty() {
-            ret.push(ConditionToken::OperandContainer(grouped_operands.into_iter()));
+            ret.push(ConditionToken::OperandContainer(
+                grouped_operands.into_iter(),
+            ));
         }
 
         Result::Ok(ret)
