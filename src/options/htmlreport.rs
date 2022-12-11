@@ -76,8 +76,8 @@ fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     let mut ret = HashMap::new();
     let mut section_order = Nested::<String>::new();
     section_order.extend(vec![
-        "General Overview {#general_overview}".to_string(),
-        "Results Summary {#results_summary}".to_string(),
+        "General Overview {#general_overview}",
+        "Results Summary {#results_summary}",
     ]);
     for section in section_order.iter() {
         ret.insert(section.to_owned(), Nested::<String>::new());
