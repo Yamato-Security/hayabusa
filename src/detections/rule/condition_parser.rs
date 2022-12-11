@@ -6,7 +6,7 @@ use self::selectionnodes::{
 };
 use super::selectionnodes;
 use hashbrown::HashMap;
-use std::sync::Arc;
+use std::{sync::Arc, vec::IntoIter};
 
 lazy_static! {
     pub static ref CONDITION_REGEXMAP: Vec<Regex> = vec![
@@ -30,11 +30,11 @@ pub enum ConditionToken {
     SelectionReference(String),
 
     // パースの時に上手く処理するために作った疑似的なトークン
-    ParenthesisContainer(Vec<ConditionToken>), // 括弧を表すトークン
-    AndContainer(Vec<ConditionToken>),         // ANDでつながった条件をまとめるためのトークン
-    OrContainer(Vec<ConditionToken>),          // ORでつながった条件をまとめるためのトークン
-    NotContainer(Vec<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
-    OperandContainer(Vec<ConditionToken>), // ANDやORやNOT等の演算子に対して、非演算子を表す
+    ParenthesisContainer(IntoIter<ConditionToken>), // 括弧を表すトークン
+    AndContainer(IntoIter<ConditionToken>),         // ANDでつながった条件をまとめるためのトークン
+    OrContainer(IntoIter<ConditionToken>),          // ORでつながった条件をまとめるためのトークン
+    NotContainer(IntoIter<ConditionToken>), // 「NOT」と「NOTで否定される式」をまとめるためのトークン この配列には要素が一つしか入らないが、他のContainerと同じように扱えるようにするためにVecにしている。あんまり良くない。
+    OperandContainer(IntoIter<ConditionToken>), // ANDやORやNOT等の演算子に対して、非演算子を表す
 }
 
 // ここを参考にしました。https://qiita.com/yasuo-ozu/items/7ce2f8ff846ba00dd244
@@ -43,15 +43,14 @@ impl IntoIterator for ConditionToken {
     type IntoIter = std::vec::IntoIter<ConditionToken>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let v = match self {
+        match self {
             ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens,
             ConditionToken::AndContainer(sub_tokens) => sub_tokens,
             ConditionToken::OrContainer(sub_tokens) => sub_tokens,
             ConditionToken::NotContainer(sub_tokens) => sub_tokens,
             ConditionToken::OperandContainer(sub_tokens) => sub_tokens,
-            _ => vec![],
-        };
-        v.into_iter()
+            _ => vec![].into_iter(),
+        }
     }
 }
 
@@ -59,12 +58,12 @@ impl ConditionToken {
     fn replace_subtoken(&self, sub_tokens: Vec<ConditionToken>) -> ConditionToken {
         match self {
             ConditionToken::ParenthesisContainer(_) => {
-                ConditionToken::ParenthesisContainer(sub_tokens)
+                ConditionToken::ParenthesisContainer(sub_tokens.into_iter())
             }
-            ConditionToken::AndContainer(_) => ConditionToken::AndContainer(sub_tokens),
-            ConditionToken::OrContainer(_) => ConditionToken::OrContainer(sub_tokens),
-            ConditionToken::NotContainer(_) => ConditionToken::NotContainer(sub_tokens),
-            ConditionToken::OperandContainer(_) => ConditionToken::OperandContainer(sub_tokens),
+            ConditionToken::AndContainer(_) => ConditionToken::AndContainer(sub_tokens.into_iter()),
+            ConditionToken::OrContainer(_) => ConditionToken::OrContainer(sub_tokens.into_iter()),
+            ConditionToken::NotContainer(_) => ConditionToken::NotContainer(sub_tokens.into_iter()),
+            ConditionToken::OperandContainer(_) => ConditionToken::OperandContainer(sub_tokens.into_iter()),
             ConditionToken::LeftParenthesis => ConditionToken::LeftParenthesis,
             ConditionToken::RightParenthesis => ConditionToken::RightParenthesis,
             ConditionToken::Space => ConditionToken::Space,
@@ -80,11 +79,11 @@ impl ConditionToken {
     pub fn sub_tokens(&self) -> Vec<ConditionToken> {
         // TODO ここでcloneを使わずに実装できるようにしたい。
         match self {
-            ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens.clone(),
-            ConditionToken::AndContainer(sub_tokens) => sub_tokens.clone(),
-            ConditionToken::OrContainer(sub_tokens) => sub_tokens.clone(),
-            ConditionToken::NotContainer(sub_tokens) => sub_tokens.clone(),
-            ConditionToken::OperandContainer(sub_tokens) => sub_tokens.clone(),
+            ConditionToken::ParenthesisContainer(sub_tokens) => sub_tokens.as_slice().to_vec(),
+            ConditionToken::AndContainer(sub_tokens) => sub_tokens.as_slice().to_vec(),
+            ConditionToken::OrContainer(sub_tokens) => sub_tokens.as_slice().to_vec(),
+            ConditionToken::NotContainer(sub_tokens) => sub_tokens.as_slice().to_vec(),
+            ConditionToken::OperandContainer(sub_tokens) => sub_tokens.as_slice().to_vec(),
             ConditionToken::LeftParenthesis => vec![],
             ConditionToken::RightParenthesis => vec![],
             ConditionToken::Space => vec![],
@@ -142,13 +141,13 @@ impl ConditionCompiler {
     ) -> Result<Box<dyn SelectionNode>, String> {
         let tokens = self.tokenize(&condition_str)?;
 
-        let parsed = self.parse(tokens)?;
+        let parsed = self.parse(tokens.into_iter())?;
 
         Self::to_selectnode(parsed, name_2_node)
     }
 
     /// 構文解析を実行する。
-    fn parse(&self, tokens: Vec<ConditionToken>) -> Result<ConditionToken, String> {
+    fn parse(&self, tokens: IntoIter<ConditionToken>) -> Result<ConditionToken, String> {
         // 括弧で囲まれた部分を解析します。
         // (括弧で囲まれた部分は後で解析するため、ここでは一時的にConditionToken::ParenthesisContainerに変換しておく)
         // 括弧の中身を解析するのはparse_rest_parenthesis()で行う。
@@ -235,11 +234,10 @@ impl ConditionCompiler {
     /// 右括弧と左括弧をだけをパースする。戻り値の配列にはLeftParenthesisとRightParenthesisが含まれず、代わりにTokenContainerに変換される。TokenContainerが括弧で囲まれた部分を表現している。
     fn parse_parenthesis(
         &self,
-        tokens: Vec<ConditionToken>,
+        mut tokens: IntoIter<ConditionToken>,
     ) -> Result<Vec<ConditionToken>, String> {
         let mut ret = vec![];
-        let mut token_ite = tokens.into_iter();
-        while let Some(token) = token_ite.next() {
+        while let Some(token) = tokens.next() {
             // まず、左括弧を探す。
             let is_left = matches!(token, ConditionToken::LeftParenthesis);
             if !is_left {
@@ -251,7 +249,7 @@ impl ConditionCompiler {
             let mut left_cnt = 1;
             let mut right_cnt = 0;
             let mut sub_tokens = vec![];
-            for token in token_ite.by_ref() {
+            for token in tokens.by_ref() {
                 if let ConditionToken::LeftParenthesis = token {
                     left_cnt += 1;
                 } else if let ConditionToken::RightParenthesis = token {
@@ -268,7 +266,7 @@ impl ConditionCompiler {
             }
 
             // ここで再帰的に呼び出す。
-            ret.push(ConditionToken::ParenthesisContainer(sub_tokens));
+            ret.push(ConditionToken::ParenthesisContainer(sub_tokens.into_iter()));
         }
 
         // この時点で右括弧が残っている場合は右括弧の数が左括弧よりも多いことを表している。
@@ -326,13 +324,13 @@ impl ConditionCompiler {
             } else {
                 // Andの場合はANDでつなげる
                 let and_operands = vec![operands.pop().unwrap(), operant_ite.next().unwrap()];
-                let and_container = ConditionToken::AndContainer(and_operands);
+                let and_container = ConditionToken::AndContainer(and_operands.into_iter());
                 operands.push(and_container);
             }
         }
 
         // 次にOrでつながっている部分をまとめる
-        let or_contaienr = ConditionToken::OrContainer(operands);
+        let or_contaienr = ConditionToken::OrContainer(operands.into_iter());
         Result::Ok(or_contaienr)
     }
 
@@ -351,7 +349,7 @@ impl ConditionCompiler {
             }
 
             // 0はありえないはず
-            if sub_tokens.is_empty() {
+            if sub_tokens.len() == 0 {
                 return Result::Err("Unknown error.".to_string());
             }
 
@@ -366,14 +364,14 @@ impl ConditionCompiler {
             }
 
             // ２つ入っている場合、先頭がNotで次はNotじゃない何かのはず
-            let mut sub_tokens_ite = sub_tokens.into_iter();
+            let mut sub_tokens_ite = sub_tokens;
             let first_token = sub_tokens_ite.next().unwrap();
             let second_token = sub_tokens_ite.next().unwrap();
             if let ConditionToken::Not = first_token {
                 if let ConditionToken::Not = second_token {
                     Result::Err("Not is continuous.".to_string())
                 } else {
-                    let not_container = ConditionToken::NotContainer(vec![second_token]);
+                    let not_container = ConditionToken::NotContainer(vec![second_token].into_iter());
                     Result::Ok(not_container)
                 }
             } else {
@@ -420,7 +418,7 @@ impl ConditionCompiler {
         // AndSelectionNodeに変換
         if let ConditionToken::AndContainer(sub_tokens) = token {
             let mut select_and_node = AndSelectionNode::new();
-            for sub_token in sub_tokens.into_iter() {
+            for sub_token in sub_tokens {
                 let sub_node = Self::to_selectnode(sub_token, name_2_node)?;
                 select_and_node.child_nodes.push(sub_node);
             }
@@ -430,7 +428,7 @@ impl ConditionCompiler {
         // OrSelectionNodeに変換
         if let ConditionToken::OrContainer(sub_tokens) = token {
             let mut select_or_node = OrSelectionNode::new();
-            for sub_token in sub_tokens.into_iter() {
+            for sub_token in sub_tokens {
                 let sub_node = Self::to_selectnode(sub_token, name_2_node)?;
                 select_or_node.child_nodes.push(sub_node);
             }
@@ -471,7 +469,7 @@ impl ConditionCompiler {
                     ret.push(token);
                     continue;
                 }
-                ret.push(ConditionToken::OperandContainer(grouped_operands));
+                ret.push(ConditionToken::OperandContainer(grouped_operands.into_iter()));
                 ret.push(token);
                 grouped_operands = vec![];
                 continue;
@@ -480,7 +478,7 @@ impl ConditionCompiler {
             grouped_operands.push(token);
         }
         if !grouped_operands.is_empty() {
-            ret.push(ConditionToken::OperandContainer(grouped_operands));
+            ret.push(ConditionToken::OperandContainer(grouped_operands.into_iter()));
         }
 
         Result::Ok(ret)
