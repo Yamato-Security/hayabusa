@@ -1,0 +1,52 @@
+use std::sync::Mutex;
+
+use chrono::{DateTime, Local};
+use hhmmss::Hhmmss;
+use lazy_static::lazy_static;
+use nested::Nested;
+
+lazy_static! {
+    pub static ref CHECKPOINT: Mutex<CheckPointProcessTimer> =
+        Mutex::new(CheckPointProcessTimer::create_checkpoint_timer());
+}
+
+pub struct CheckPointProcessTimer {
+    prev_checkpoint: Option<DateTime<Local>>,
+    stocked_results: Nested<String>,
+}
+
+impl CheckPointProcessTimer {
+    /// static変数に最初に投入するための構造体情報を作成する関数
+    pub fn create_checkpoint_timer() -> Self {
+        CheckPointProcessTimer {
+            prev_checkpoint: None,
+            stocked_results: Nested::<String>::new(),
+        }
+    }
+
+    /// 時間計測開始点を設定する関数
+    pub fn set_checkpoint(&mut self, time: DateTime<Local>) {
+        self.prev_checkpoint = Some(time);
+    }
+
+    /// ラップタイムを取得して、出力用の配列に格納する関数
+    pub fn rap_check_point(&mut self, output_str: &str) {
+        if self.prev_checkpoint.is_none() {
+            return;
+        }
+        let new_checkpoint = Local::now();
+        self.stocked_results.push(format!(
+            "{}: {} ",
+            output_str,
+            (new_checkpoint - self.prev_checkpoint.unwrap()).hhmmssxxx()
+        ));
+        self.prev_checkpoint = Some(new_checkpoint);
+    }
+
+    /// ストックした結果を出力する関数
+    pub fn output_stocked_result(&self) {
+        for output in self.stocked_results.iter() {
+            println!("{}", output);
+        }
+    }
+}
