@@ -8,6 +8,7 @@ use chrono::{DateTime, Datelike, Local};
 use clap::Command;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
+use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
     load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
     TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS,
@@ -207,6 +208,11 @@ impl App {
             true,
         )
         .ok();
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .set_checkpoint(analysis_start_time);
         let target_extensions = if stored_static.output_option.is_some() {
             configs::get_target_extensions(
                 stored_static
@@ -582,6 +588,7 @@ impl App {
 
         // Debugフラグをつけていた時にはメモリ利用情報などの統計情報を画面に出力する
         if stored_static.config.debug {
+            CHECKPOINT.lock().as_ref().unwrap().output_stocked_result();
             println!();
             println!("Memory usage stats:");
             unsafe {
@@ -867,6 +874,11 @@ impl App {
             &filter::exclude_ids(stored_static),
             stored_static,
         );
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .rap_check_point("Rule Parse Processing Time");
 
         if rule_files.is_empty() {
             AlertMessage::alert(
@@ -900,6 +912,11 @@ impl App {
             total_records += cnt_tmp;
             pb.inc();
         }
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .rap_check_point("Analysis Processing Time");
         if stored_static.metrics_flag {
             tl.tm_stats_dsp_msg(event_timeline_config, stored_static);
         }
@@ -930,6 +947,11 @@ impl App {
                 stored_static,
             );
         }
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .rap_check_point("Output Processing Time");
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
