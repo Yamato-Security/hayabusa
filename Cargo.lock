@@ -787,7 +787,6 @@ dependencies = [
  "krapslog",
  "lazy_static",
  "libmimalloc-sys",
- "linked-hash-map",
  "lock_api",
  "mimalloc",
  "nested",

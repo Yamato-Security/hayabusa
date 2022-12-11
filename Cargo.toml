@@ -22,7 +22,6 @@ flate2 = "1.*"
 lazy_static = "1.4.*"
 chrono = "0.4.*"
 yaml-rust = "0.4.*"
-linked-hash-map = "0.5.*"
 tokio = { version = "1", features = ["full"] }
 num_cpus = "1.*"
 downcast-rs = "1.*"
