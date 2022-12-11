@@ -91,9 +91,7 @@ impl LeafMatcher for RegexesFileMatcher {
 
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
         let value = match select_value {
-            Yaml::String(s) => Option::Some(s.to_owned()),
-            Yaml::Integer(i) => Option::Some(i.to_string()),
-            Yaml::Real(r) => Option::Some(r.to_owned()),
+            Yaml::String(_) | Yaml::Integer(_) | Yaml::Real(_) => select_value.as_str(),
             _ => Option::None,
         };
         if value.is_none() {
@@ -104,7 +102,7 @@ impl LeafMatcher for RegexesFileMatcher {
             return Result::Err(vec![errmsg]);
         }
 
-        let regexes_strs = utils::read_txt(&value.unwrap());
+        let regexes_strs = utils::read_txt(value.unwrap());
         if regexes_strs.is_err() {
             return Result::Err(vec![regexes_strs.unwrap_err()]);
         }
