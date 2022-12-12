@@ -53,6 +53,7 @@ pub struct StoredStatic {
     pub profiles: Option<Vec<(CompactString, Profile)>>,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
+    pub thread_number: Option<usize>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -106,6 +107,7 @@ impl StoredStatic {
             quiet_errors_flag: config.quiet_errors,
             html_report_flag: htmlreport::check_html_flag(config),
             profiles: None,
+            thread_number: check_thread_number(config),
             event_timeline_config: load_eventcode_info(
                 utils::check_setting_path(&config.config, "channel_eid_info.txt", false)
                     .unwrap_or_else(|| {
@@ -205,6 +207,18 @@ impl StoredStatic {
                 ret
             }
         }
+    }
+}
+
+/// config情報からthred_numberの情報を抽出する関数
+fn check_thread_number(config: &Config) -> Option<usize> {
+    match config.action.as_ref()? {
+        Action::CsvTimeline(opt) => opt.output_options.input_args.thread_number,
+        Action::JsonTimeline(opt) => opt.output_options.input_args.thread_number,
+        Action::LogonSummary(opt) => opt.input_args.thread_number,
+        Action::Metrics(opt) => opt.input_args.thread_number,
+        Action::PivotKeywordsList(opt) => opt.input_args.thread_number,
+        _ => None,
     }
 }
 
@@ -487,6 +501,10 @@ pub struct InputOption {
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
     #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',')]
     pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Thread number (default: optimal number for performance)
+    #[arg(short = 'O', long = "thread-number", value_name = "NUMBER")]
+    pub thread_number: Option<usize>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -525,15 +543,6 @@ pub struct JSONOutputOption {
 pub struct Config {
     #[command(subcommand)]
     pub action: Option<Action>,
-
-    /// Thread number (default: optimal number for performance)
-    #[arg(
-        short = 'O',
-        long = "thread-number",
-        value_name = "NUMBER",
-        global = true
-    )]
-    pub thread_number: Option<usize>,
 
     /// Disable color output
     #[arg(long = "no-color", global = true)]
@@ -826,8 +835,7 @@ pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
 
 /// configから出力に関連したオプションの値を格納した構造体を抽出する関数
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
-    config.action.as_ref()?;
-    match &config.action.as_ref().unwrap() {
+    match &config.action.as_ref()? {
         Action::CsvTimeline(option) => Some(option.output_options.clone()),
         Action::JsonTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {
@@ -908,6 +916,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
                 evtx_file_ext: None,
+                thread_number: None,
             },
             output: None,
             enable_deprecated_rules: false,

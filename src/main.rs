@@ -64,7 +64,7 @@ fn main() {
     let mut config_reader = ConfigReader::new();
     // コマンドのパース情報を作成してstatic変数に格納する
     let mut stored_static = StoredStatic::create_static_data(&config_reader.config);
-    let mut app = App::new(stored_static.config.thread_number);
+    let mut app = App::new(stored_static.thread_number);
     app.exec(&mut config_reader.app, &mut stored_static);
     app.rt.shutdown_background();
 }
@@ -1217,7 +1217,6 @@ mod tests {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
             })),
-            thread_number: None,
             no_color: false,
             quiet: false,
             quiet_errors: false,

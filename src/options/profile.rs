@@ -131,17 +131,8 @@ pub fn load_profile(
     profile_path: &str,
     opt_stored_static: Option<&StoredStatic>,
 ) -> Option<Vec<(CompactString, Profile)>> {
-    opt_stored_static?;
-    opt_stored_static.as_ref().unwrap().output_option.as_ref()?;
-    if opt_stored_static
-        .as_ref()
-        .unwrap()
-        .output_option
-        .as_ref()
-        .unwrap()
-        .set_default_profile
-        .is_some()
-    {
+    let output_option = opt_stored_static?.output_option.as_ref()?;
+    if output_option.set_default_profile.is_some() {
         if let Err(e) = set_default_profile(
             default_profile_path,
             profile_path,
@@ -355,7 +346,6 @@ mod tests {
         StoredStatic::create_static_data(&Config {
             config: Path::new("./rules/config").to_path_buf(),
             action: Some(action),
-            thread_number: None,
             no_color: false,
             quiet: false,
             quiet_errors: false,
@@ -444,6 +434,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         evtx_file_ext: None,
+                        thread_number: None,
                     },
                     profile: None,
                     output: None,
@@ -489,6 +480,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         evtx_file_ext: None,
+                        thread_number: None,
                     },
                     profile: Some("minimal".to_string()),
                     output: None,
@@ -565,6 +557,7 @@ mod tests {
                         filepath: None,
                         live_analysis: false,
                         evtx_file_ext: None,
+                        thread_number: None,
                     },
                     profile: Some("not_exist".to_string()),
                     output: None,

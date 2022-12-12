@@ -247,8 +247,7 @@ impl TimeFrameInfo {
 /// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
 pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Option<i64> {
     let timeframe = rule.detection.timeframe.as_ref();
-    timeframe?;
-    let tfi = timeframe.as_ref().unwrap();
+    let tfi = timeframe?;
     match &tfi.timenum {
         Ok(n) => {
             if tfi.timetype == "d" {
@@ -576,7 +575,6 @@ mod tests {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
             })),
-            thread_number: None,
             no_color: false,
             quiet: false,
             quiet_errors: false,

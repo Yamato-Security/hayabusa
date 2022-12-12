@@ -523,7 +523,6 @@ mod tests {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
             })),
-            thread_number: None,
             no_color: false,
             quiet: false,
             quiet_errors: false,
