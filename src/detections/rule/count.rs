@@ -169,7 +169,7 @@ pub fn aggregation_condition_select(
 pub fn get_str_agg_eq(rule: &RuleNode) -> String {
     //この関数はaggregation ruleのパースが正常終了した後に呼ばれる想定のためOptionの判定は行わない
     let agg_condition = rule.detection.aggregation_condition.as_ref().unwrap();
-    let mut ret: String = "".to_owned();
+    let mut ret: String = String::default();
     match agg_condition._cmp_op {
         AggregationConditionToken::EQ => {
             ret.push_str("== ");
@@ -212,18 +212,18 @@ pub struct TimeFrameInfo {
 impl TimeFrameInfo {
     /// timeframeの文字列をパースし、構造体を返す関数
     pub fn parse_tframe(mut value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
-        let mut ttype: String = "".to_string();
+        let mut ttype = "";
         if value.contains('s') {
-            ttype = "s".to_owned();
+            ttype = "s";
             value.retain(|c| c != 's');
         } else if value.contains('m') {
-            ttype = "m".to_owned();
+            ttype = "m";
             value.retain(|c| c != 'm')
         } else if value.contains('h') {
-            ttype = "h".to_owned();
+            ttype = "h";
             value.retain(|c| c != 'h');
         } else if value.contains('d') {
-            ttype = "d".to_owned();
+            ttype = "d";
             value.retain(|c| c != 'd');
         } else {
             let errmsg = format!("Timeframe is invalid. Input value:{}", value);
@@ -238,7 +238,7 @@ impl TimeFrameInfo {
             }
         }
         TimeFrameInfo {
-            timetype: ttype,
+            timetype: ttype.to_string(),
             timenum: value.parse::<i64>(),
         }
     }
