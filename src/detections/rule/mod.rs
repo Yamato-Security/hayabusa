@@ -196,8 +196,7 @@ impl DetectionNode {
         // conditionをパースして、SelectionNodeに変換する
         let mut err_msgs = vec![];
         let compiler = condition_parser::ConditionCompiler::new();
-        let compile_result =
-            compiler.compile_condition(condition_str.clone(), &self.name_to_selection);
+        let compile_result = compiler.compile_condition(&condition_str, &self.name_to_selection);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.extend(vec![err_msg]);
         } else {

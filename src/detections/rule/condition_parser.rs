@@ -115,19 +115,19 @@ impl ConditionCompiler {
 
     pub fn compile_condition(
         &self,
-        condition_str: String,
+        condition_str: &str,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
         // パイプはここでは処理しない
-        let captured = self::RE_PIPE.captures(&condition_str);
-        let condition_str = if let Some(cap) = captured {
-            let captured = cap.get(0).unwrap().as_str().to_string();
-            condition_str.replacen(&captured, "", 1)
+        let captured = self::RE_PIPE.captures(condition_str);
+        let replaced_condition = if let Some(cap) = captured {
+            let captured = cap.get(0).unwrap().as_str();
+            condition_str.replacen(captured, "", 1)
         } else {
-            condition_str
+            condition_str.to_string()
         };
 
-        let result = self.compile_condition_body(condition_str, name_2_node);
+        let result = self.compile_condition_body(&replaced_condition, name_2_node);
         if let Result::Err(msg) = result {
             Result::Err(format!("A condition parse error has occured. {}", msg))
         } else {
@@ -138,10 +138,10 @@ impl ConditionCompiler {
     /// 与えたConditionからSelectionNodeを作る
     fn compile_condition_body(
         &self,
-        condition_str: String,
+        condition_str: &str,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
-        let tokens = self.tokenize(&condition_str)?;
+        let tokens = self.tokenize(condition_str)?;
 
         let parsed = self.parse(tokens.into_iter())?;
 
