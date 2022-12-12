@@ -315,7 +315,7 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    ///  Save pivot words to seperate files (ex: pivot-keywords)
+    /// Save pivot words to separate files (ex: pivot-keywords.txt)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
