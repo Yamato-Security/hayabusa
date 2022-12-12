@@ -522,7 +522,12 @@ pub struct Config {
     pub action: Action,
 
     /// Thread number (default: optimal number for performance)
-    #[arg(short, long = "thread-number", value_name = "NUMBER", global = true)]
+    #[arg(
+        short = 'h',
+        long = "thread-number",
+        value_name = "NUMBER",
+        global = true
+    )]
     pub thread_number: Option<usize>,
 
     /// Disable color output
