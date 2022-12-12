@@ -211,27 +211,35 @@ impl StoredStatic {
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     /// Save the timeline in CSV format.
+    #[clap(short_flag='C')]
     CsvTimeline(CsvOutputOption),
 
     /// Save the timeline in JSON/JSONL format.
+    #[clap(short_flag='J')]
     JsonTimeline(JSONOutputOption),
 
     /// Print a summary of successful and failed logons
+    #[clap(short_flag='S')]
     LogonSummary(LogonSummaryOption),
 
     /// Print event ID metrics
+    #[clap(short_flag='M')]
     Metrics(MetricsOption),
 
     /// Create a list of pivot keywords
+    #[clap(short_flag='P')]
     PivotKeywordsList(PivotKeywordOption),
 
     /// Update to the latest rules in the hayabusa-rules github repository
+    #[clap(short_flag='U')]
     UpdateRules(UpdateOption),
 
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
+    #[clap(short_flag='T')]
     LevelTuning(LevelTuningOption),
 
     /// Set default output profile
+    #[clap(short_flag='D')]
     SetDefaultProfile(DefaultProfileOption),
 
     /// Print the list of contributors
@@ -257,7 +265,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
     /// Specify output profile
-    #[arg(short = 'P', long = "profile")]
+    #[arg(short = 'p', long = "profile")]
     pub profile: Option<String>,
 }
 
@@ -359,7 +367,7 @@ pub struct OutputOption {
     pub input_args: InputOption,
 
     /// Specify output profile
-    #[arg(help_heading = Some("Output"), short = 'P', long = "profile")]
+    #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
     pub profile: Option<String>,
 
     /// Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
@@ -426,11 +434,11 @@ pub struct OutputOption {
     pub us_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC")]
+    #[arg(help_heading = Some("Time Format"), short = 'u', long = "UTC")]
     pub utc: bool,
 
     /// Output event frequency timeline
-    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline")]
+    #[arg(help_heading = Some("Display Settings"), short = 't', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)
@@ -491,8 +499,8 @@ pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
+    /// Save the timeline in JSONL format (ex: -j -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'j', long = "jsonl", requires = "output")]
     pub jsonl_timeline: bool,
 
     /// List the output profiles
