@@ -211,35 +211,35 @@ impl StoredStatic {
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
     /// Save the timeline in CSV format.
-    #[clap(short_flag='C')]
+    #[clap(short_flag = 'C')]
     CsvTimeline(CsvOutputOption),
 
     /// Save the timeline in JSON/JSONL format.
-    #[clap(short_flag='J')]
+    #[clap(short_flag = 'J')]
     JsonTimeline(JSONOutputOption),
 
     /// Print a summary of successful and failed logons
-    #[clap(short_flag='S')]
+    #[clap(short_flag = 'S')]
     LogonSummary(LogonSummaryOption),
 
     /// Print event ID metrics
-    #[clap(short_flag='M')]
+    #[clap(short_flag = 'M')]
     Metrics(MetricsOption),
 
     /// Create a list of pivot keywords
-    #[clap(short_flag='P')]
+    #[clap(short_flag = 'P')]
     PivotKeywordsList(PivotKeywordOption),
 
     /// Update to the latest rules in the hayabusa-rules github repository
-    #[clap(short_flag='U')]
+    #[clap(short_flag = 'U')]
     UpdateRules(UpdateOption),
 
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
-    #[clap(short_flag='T')]
+    #[clap(short_flag = 'T')]
     LevelTuning(LevelTuningOption),
 
     /// Set default output profile
-    #[clap(short_flag='D')]
+    #[clap(short_flag = 'D')]
     SetDefaultProfile(DefaultProfileOption),
 
     /// Print the list of contributors
