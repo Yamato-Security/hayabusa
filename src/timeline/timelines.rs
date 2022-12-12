@@ -63,7 +63,7 @@ impl Timeline {
         let mut wtr;
         let target;
 
-        match &stored_static.config.action {
+        match &stored_static.config.action.as_ref().unwrap() {
             Action::Metrics(option) => {
                 if option.input_args.filepath.is_some() {
                     sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
@@ -131,7 +131,9 @@ impl Timeline {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        if let Action::LogonSummary(logon_summary_option) = &stored_static.config.action {
+        if let Action::LogonSummary(logon_summary_option) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
             if logon_summary_option.input_args.filepath.is_some() {
                 sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
                 sammsges.push(total_event_record);

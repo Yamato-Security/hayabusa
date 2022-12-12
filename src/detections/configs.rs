@@ -57,6 +57,7 @@ pub struct StoredStatic {
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
     pub fn create_static_data(config: &Config) -> StoredStatic {
+        let action_id = Action::to_usize(config.action.as_ref());
         let mut ret = StoredStatic {
             config: config.to_owned(),
             ch_config: create_output_filter_config(
@@ -98,10 +99,10 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
             ),
-            logon_summary_flag: config.action.to_usize() == 2,
-            metrics_flag: config.action.to_usize() == 3,
+            logon_summary_flag: action_id == 2,
+            metrics_flag: action_id == 3,
             output_option: extract_output_options(config),
-            pivot_keyword_list_flag: config.action.to_usize() == 4,
+            pivot_keyword_list_flag: action_id == 4,
             quiet_errors_flag: config.quiet_errors,
             html_report_flag: htmlreport::check_html_flag(config),
             profiles: None,
@@ -247,17 +248,21 @@ pub enum Action {
 }
 
 impl Action {
-    pub fn to_usize(&self) -> usize {
-        match self {
-            Action::CsvTimeline(_) => 0,
-            Action::JsonTimeline(_) => 1,
-            Action::LogonSummary(_) => 2,
-            Action::Metrics(_) => 3,
-            Action::PivotKeywordsList(_) => 4,
-            Action::UpdateRules(_) => 5,
-            Action::LevelTuning(_) => 6,
-            Action::SetDefaultProfile(_) => 7,
-            Action::ListContributors => 8,
+    pub fn to_usize(action: Option<&Action>) -> usize {
+        if let Some(a) = action {
+            match a {
+                Action::CsvTimeline(_) => 0,
+                Action::JsonTimeline(_) => 1,
+                Action::LogonSummary(_) => 2,
+                Action::Metrics(_) => 3,
+                Action::PivotKeywordsList(_) => 4,
+                Action::UpdateRules(_) => 5,
+                Action::LevelTuning(_) => 6,
+                Action::SetDefaultProfile(_) => 7,
+                Action::ListContributors => 8,
+            }
+        } else {
+            100
         }
     }
 }
@@ -510,20 +515,20 @@ pub struct JSONOutputOption {
 
 #[derive(Parser, Clone, Debug)]
 #[command(
-    name = "Hayabusa",
+    name = "Hayabusa v1.9.0-dev",
     override_usage = "hayabusa.exe [COMMAND] [OPTION]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
-    version,
-    term_width = 400
+    term_width = 400,
+    disable_help_flag = true
 )]
 pub struct Config {
     #[command(subcommand)]
-    pub action: Action,
+    pub action: Option<Action>,
 
     /// Thread number (default: optimal number for performance)
     #[arg(
-        short = 'h',
+        short = 'O',
         long = "thread-number",
         value_name = "NUMBER",
         global = true
@@ -652,7 +657,7 @@ impl TargetEventTime {
                 None
             }
         };
-        match &stored_static.config.action {
+        match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(option) => {
                 let start_time = get_time(
                     option.output_options.start_timeline.as_ref(),
@@ -821,7 +826,8 @@ pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
 
 /// configから出力に関連したオプションの値を格納した構造体を抽出する関数
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
-    match &config.action {
+    config.action.as_ref()?;
+    match &config.action.as_ref().unwrap() {
         Action::CsvTimeline(option) => Some(option.output_options.clone()),
         Action::JsonTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {

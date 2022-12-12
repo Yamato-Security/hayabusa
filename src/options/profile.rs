@@ -354,7 +354,7 @@ mod tests {
     fn create_dummy_stored_static(action: Action) -> StoredStatic {
         StoredStatic::create_static_data(&Config {
             config: Path::new("./rules/config").to_path_buf(),
-            action,
+            action: Some(action),
             thread_number: None,
             no_color: false,
             quiet: false,

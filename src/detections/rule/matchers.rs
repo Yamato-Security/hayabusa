@@ -520,9 +520,9 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         let dummy_stored_static = StoredStatic::create_static_data(&Config {
             config: Path::new("./rules/config").to_path_buf(),
-            action: Action::UpdateRules(UpdateOption {
+            action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
-            }),
+            })),
             thread_number: None,
             no_color: false,
             quiet: false,

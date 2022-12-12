@@ -64,7 +64,10 @@ impl Default for HtmlReporter {
 }
 
 pub fn check_html_flag(config: &Config) -> bool {
-    match &config.action {
+    if config.action.as_ref().is_none() {
+        return false;
+    }
+    match &config.action.as_ref().unwrap() {
         Action::CsvTimeline(option) => option.output_options.html_report.is_some(),
         Action::JsonTimeline(option) => option.output_options.html_report.is_some(),
         _ => false,

@@ -218,7 +218,7 @@ fn emit_csv<W: std::io::Write>(
     let mut json_output_flag = false;
     let mut jsonl_output_flag = false;
 
-    let tmp_wtr = match &stored_static.config.action {
+    let tmp_wtr = match &stored_static.config.action.as_ref().unwrap() {
         Action::JsonTimeline(option) => {
             json_output_flag = true;
             jsonl_output_flag = option.jsonl_timeline;
@@ -1458,7 +1458,7 @@ mod tests {
         });
         let dummy_config = Config {
             config: Path::new("./rules/config").to_path_buf(),
-            action: dummy_action,
+            action: Some(dummy_action),
             thread_number: None,
             no_color: false,
             quiet: false,

@@ -122,7 +122,7 @@ impl App {
             return;
         }
 
-        let list_profile_flag = match &stored_static.config.action {
+        let list_profile_flag = match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(opt) => opt.list_profile,
             Action::JsonTimeline(opt) => opt.list_profile,
             _ => false,
@@ -227,7 +227,7 @@ impl App {
             HashSet::default()
         };
 
-        match &stored_static.config.action {
+        match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
                 // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
                 if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
@@ -428,7 +428,7 @@ impl App {
                 }
             }
             Action::UpdateRules(_) => {
-                let update_target = match &stored_static.config.action {
+                let update_target = match &stored_static.config.action.as_ref().unwrap() {
                     Action::UpdateRules(option) => Some(option.rules.to_owned()),
                     _ => None,
                 };
@@ -1214,9 +1214,9 @@ mod tests {
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(&Config {
             config: Path::new("./rules/config").to_path_buf(),
-            action: Action::UpdateRules(UpdateOption {
+            action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
-            }),
+            })),
             thread_number: None,
             no_color: false,
             quiet: false,
