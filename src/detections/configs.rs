@@ -533,12 +533,12 @@ pub struct JSONOutputOption {
 
 #[derive(Parser, Clone, Debug)]
 #[command(
-    name = "Hayabusa v1.9.0-dev",
+    name = "Hayabusa",
     override_usage = "hayabusa.exe [COMMAND] [OPTION]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
     term_width = 400,
-    disable_help_flag = true
+    version
 )]
 pub struct Config {
     #[command(subcommand)]
@@ -585,6 +585,7 @@ impl ConfigReader {
             400
         };
         let build_cmd = Config::command()
+            .disable_version_flag(true)
             .color(ColorChoice::Auto)
             .term_width(help_term_width);
         ConfigReader {
