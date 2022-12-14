@@ -511,7 +511,7 @@ mod tests {
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
     use crate::detections::configs::{
-        Action, Config, StoredStatic, UpdateOption, STORED_EKEY_ALIAS,
+        Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS,
     };
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
@@ -520,8 +520,36 @@ mod tests {
         let mut rule_node = parse_rule_from_str(rule_str);
         let dummy_stored_static = StoredStatic::create_static_data(&Config {
             config: Path::new("./rules/config").to_path_buf(),
-            action: Some(Action::UpdateRules(UpdateOption {
-                rules: Path::new("./rules").to_path_buf(),
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        evtx_file_ext: None,
+                        thread_number: None,
+                    },
+                    profile: None,
+                    output: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                },
             })),
             no_color: false,
             quiet: false,

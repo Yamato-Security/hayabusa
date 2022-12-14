@@ -142,15 +142,15 @@ pub fn load_profile(
             println!("Successfully updated the default profile.");
         }
     }
-    let profile_all: Vec<Yaml> = if opt_stored_static
-        .as_ref()
-        .unwrap()
-        .output_option
-        .as_ref()
-        .unwrap()
-        .profile
-        .is_none()
-    {
+
+    let profile = if let Some(opt) = &opt_stored_static.as_ref().unwrap().output_option {
+        &opt.profile
+    } else {
+        &None
+    };
+
+    // println!("dbg {:?}", opt_stored_static.as_ref().unwrap());
+    let profile_all: Vec<Yaml> = if profile.is_none() {
         match read_profile_data(default_profile_path, opt_stored_static.unwrap()) {
             Ok(data) => data,
             Err(e) => {
@@ -174,13 +174,7 @@ pub fn load_profile(
     }
     let profile_data = &profile_all[0];
     let mut ret: Vec<(CompactString, Profile)> = vec![];
-    if let Some(profile_name) = &opt_stored_static
-        .unwrap()
-        .output_option
-        .as_ref()
-        .unwrap()
-        .profile
-    {
+    if let Some(profile_name) = profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
             target_data

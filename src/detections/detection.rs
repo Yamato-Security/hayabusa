@@ -911,8 +911,10 @@ impl Detection {
 mod tests {
     use crate::detections::configs::Action;
     use crate::detections::configs::Config;
+    use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::InputOption;
+    use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
-    use crate::detections::configs::UpdateOption;
     use crate::detections::detection::Detection;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
@@ -925,8 +927,36 @@ mod tests {
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(&Config {
             config: Path::new("./rules/config").to_path_buf(),
-            action: Some(Action::UpdateRules(UpdateOption {
-                rules: Path::new("./rules").to_path_buf(),
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        evtx_file_ext: None,
+                        thread_number: None,
+                    },
+                    profile: None,
+                    output: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                },
             })),
             no_color: false,
             quiet: false,
@@ -940,17 +970,7 @@ mod tests {
     fn test_parse_rule_files() {
         let level = "informational";
         let opt_rule_path = Path::new("./test_files/rules/level_yaml");
-        let dummy_stored_static = StoredStatic::create_static_data(&Config {
-            config: Path::new("./rules/config").to_path_buf(),
-            action: Some(Action::UpdateRules(UpdateOption {
-                rules: Path::new("./rules").to_path_buf(),
-            })),
-            no_color: false,
-            quiet: false,
-            quiet_errors: false,
-            debug: false,
-            verbose: false,
-        });
+        let dummy_stored_static = create_dummy_stored_static();
         let cole = Detection::parse_rule_files(
             level,
             opt_rule_path,
