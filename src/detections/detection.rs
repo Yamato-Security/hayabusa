@@ -78,7 +78,7 @@ impl Detection {
             if stored_static.config.verbose {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !stored_static.config.quiet_errors {
+            if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -104,7 +104,7 @@ impl Detection {
                     });
                     println!();
                 }
-                if !stored_static.config.quiet_errors {
+                if !stored_static.quiet_errors_flag {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
@@ -935,6 +935,7 @@ mod tests {
                         live_analysis: false,
                         evtx_file_ext: None,
                         thread_number: None,
+                        quiet_errors: false,
                     },
                     profile: None,
                     output: None,
@@ -960,7 +961,6 @@ mod tests {
             })),
             no_color: false,
             quiet: false,
-            quiet_errors: false,
             debug: false,
             verbose: false,
         })

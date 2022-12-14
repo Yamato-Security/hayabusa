@@ -138,7 +138,6 @@ mod tests {
             })),
             no_color: false,
             quiet: false,
-            quiet_errors: false,
             debug: false,
             verbose: false,
         })

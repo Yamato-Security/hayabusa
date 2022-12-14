@@ -386,6 +386,7 @@ mod tests {
                         live_analysis: false,
                         evtx_file_ext: None,
                         thread_number: None,
+                        quiet_errors: false,
                     },
                     profile: None,
                     output: None,
@@ -411,7 +412,6 @@ mod tests {
             })),
             no_color: false,
             quiet: false,
-            quiet_errors: false,
             debug: false,
             verbose: false,
         })
@@ -440,7 +440,7 @@ mod tests {
                     rule_node.select(
                         &recinfo,
                         dummy_stored_static.config.verbose,
-                        dummy_stored_static.config.quiet_errors,
+                        dummy_stored_static.quiet_errors_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
                     expect_select

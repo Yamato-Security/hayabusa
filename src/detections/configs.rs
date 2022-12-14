@@ -59,6 +59,14 @@ impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
     pub fn create_static_data(config: &Config) -> StoredStatic {
         let action_id = Action::to_usize(config.action.as_ref());
+        let quiet_errors_flag = match &config.action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.quiet_errors,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.quiet_errors,
+            Some(Action::LogonSummary(opt)) => opt.input_args.quiet_errors,
+            Some(Action::Metrics(opt)) => opt.input_args.quiet_errors,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.quiet_errors,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: config.to_owned(),
             ch_config: create_output_filter_config(
@@ -104,7 +112,7 @@ impl StoredStatic {
             metrics_flag: action_id == 3,
             output_option: extract_output_options(config),
             pivot_keyword_list_flag: action_id == 4,
-            quiet_errors_flag: config.quiet_errors,
+            quiet_errors_flag,
             html_report_flag: htmlreport::check_html_flag(config),
             profiles: None,
             thread_number: check_thread_number(config),
@@ -497,6 +505,10 @@ pub struct InputOption {
     /// Thread number (default: optimal number for performance)
     #[arg(short = 'O', long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(short = 'Q', long = "quiet-errors")]
+    pub quiet_errors: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -536,10 +548,6 @@ pub struct Config {
     /// Quiet mode: do not display the launch banner
     #[arg(short, long, global = true)]
     pub quiet: bool,
-
-    /// Quiet errors mode: do not save error logs
-    #[arg(short = 'Q', long = "quiet-errors", global = true)]
-    pub quiet_errors: bool,
 
     /// Print debug information (memory usage, etc...)
     #[clap(long = "debug", global = true)]
@@ -900,6 +908,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 live_analysis: false,
                 evtx_file_ext: None,
                 thread_number: None,
+                quiet_errors: false,
             },
             output: None,
             enable_deprecated_rules: false,
