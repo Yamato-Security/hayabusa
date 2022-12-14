@@ -518,7 +518,7 @@ mod tests {
 
     fn check_select(rule_str: &str, record_str: &str, expect_select: bool) {
         let mut rule_node = parse_rule_from_str(rule_str);
-        let dummy_stored_static = StoredStatic::create_static_data(&Config {
+        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
@@ -556,7 +556,7 @@ mod tests {
             quiet: false,
             debug: false,
             verbose: false,
-        });
+        }));
 
         *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
 

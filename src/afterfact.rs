@@ -1456,15 +1456,15 @@ mod tests {
                 no_summary: true,
             },
         });
-        let dummy_config = Config {
+        let dummy_config = Some(Config {
             config: Path::new("./rules/config").to_path_buf(),
             action: Some(dummy_action),
             no_color: false,
             quiet: false,
             debug: false,
             verbose: false,
-        };
-        let stored_static = StoredStatic::create_static_data(&dummy_config);
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
             "test_files/config/default_profile.yaml",
             "test_files/config/profiles.yaml",

@@ -131,7 +131,7 @@ mod tests {
     use super::*;
 
     fn create_dummy_stored_static(level_tuning_path: &str) -> StoredStatic {
-        StoredStatic::create_static_data(&Config {
+        StoredStatic::create_static_data(Some(Config {
             config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::LevelTuning(LevelTuningOption {
                 level_tuning: Some(Some(level_tuning_path.to_string())),
@@ -140,7 +140,7 @@ mod tests {
             quiet: false,
             debug: false,
             verbose: false,
-        })
+        }))
     }
 
     #[test]

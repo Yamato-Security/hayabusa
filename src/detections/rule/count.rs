@@ -572,7 +572,7 @@ mod tests {
     }"#;
 
     fn create_dummy_stored_static() -> StoredStatic {
-        StoredStatic::create_static_data(&Config {
+        StoredStatic::create_static_data(Some(Config {
             config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
@@ -610,7 +610,7 @@ mod tests {
             quiet: false,
             debug: false,
             verbose: false,
-        })
+        }))
     }
 
     #[test]

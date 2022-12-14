@@ -340,14 +340,14 @@ mod tests {
     use nested::Nested;
 
     fn create_dummy_stored_static(action: Action) -> StoredStatic {
-        StoredStatic::create_static_data(&Config {
+        StoredStatic::create_static_data(Some(Config {
             config: Path::new("./rules/config").to_path_buf(),
             action: Some(action),
             no_color: false,
             quiet: false,
             debug: false,
             verbose: false,
-        })
+        }))
     }
 
     #[test]

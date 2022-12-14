@@ -29,7 +29,7 @@ lazy_static! {
 
 pub struct ConfigReader {
     pub app: Command,
-    pub config: Config,
+    pub config: Option<Config>,
 }
 
 impl Default for ConfigReader {
@@ -57,9 +57,9 @@ pub struct StoredStatic {
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
-    pub fn create_static_data(config: &Config) -> StoredStatic {
-        let action_id = Action::to_usize(config.action.as_ref());
-        let quiet_errors_flag = match &config.action {
+    pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
+        let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
+        let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.quiet_errors,
             Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.quiet_errors,
             Some(Action::LogonSummary(opt)) => opt.input_args.quiet_errors,
@@ -68,79 +68,99 @@ impl StoredStatic {
             _ => false,
         };
         let mut ret = StoredStatic {
-            config: config.to_owned(),
+            config: input_config.as_ref().unwrap().to_owned(),
             ch_config: create_output_filter_config(
-                utils::check_setting_path(&config.config, "channel_abbreviations.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_abbreviations.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &input_config.as_ref().unwrap().config,
+                    "channel_abbreviations.txt",
+                    false,
+                )
+                .unwrap_or_else(|| {
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/channel_abbreviations.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .to_str()
+                .unwrap(),
             ),
             default_details: Self::get_default_details(
-                utils::check_setting_path(&config.config, "default_details.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/default_details.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &input_config.as_ref().unwrap().config,
+                    "default_details.txt",
+                    false,
+                )
+                .unwrap_or_else(|| {
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/default_details.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .to_str()
+                .unwrap(),
             ),
             eventkey_alias: load_eventkey_alias(
-                utils::check_setting_path(&config.config, "eventkey_alias.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/eventkey_alias.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &input_config.as_ref().unwrap().config,
+                    "eventkey_alias.txt",
+                    false,
+                )
+                .unwrap_or_else(|| {
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .to_str()
+                .unwrap(),
             ),
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
-            output_option: extract_output_options(config),
+            output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
             quiet_errors_flag,
-            html_report_flag: htmlreport::check_html_flag(config),
+            html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),
             profiles: None,
-            thread_number: check_thread_number(config),
+            thread_number: check_thread_number(input_config.as_ref().unwrap()),
             event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(&config.config, "channel_eid_info.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_eid_info.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &input_config.as_ref().unwrap().config,
+                    "channel_eid_info.txt",
+                    false,
+                )
+                .unwrap_or_else(|| {
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/channel_eid_info.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .to_str()
+                .unwrap(),
             ),
             target_eventids: load_target_ids(
-                utils::check_setting_path(&config.config, "target_event_IDs.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/target_event_IDs.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
+                utils::check_setting_path(
+                    &input_config.unwrap().config,
+                    "target_event_IDs.txt",
+                    false,
+                )
+                .unwrap_or_else(|| {
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/target_event_IDs.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .to_str()
+                .unwrap(),
             ),
         };
         ret.profiles = load_profile(
@@ -281,6 +301,24 @@ impl Action {
             }
         } else {
             100
+        }
+    }
+    pub fn get_action_name(action: Option<&Action>) -> &str {
+        if let Some(a) = action {
+            match a {
+                Action::CsvTimeline(_) => "csv-timeline",
+                Action::JsonTimeline(_) => "json-timeline",
+                Action::LogonSummary(_) => "logon-summary",
+                Action::Metrics(_) => "metrics",
+                Action::PivotKeywordsList(_) => "pivot-keywords-list",
+                Action::UpdateRules(_) => "update-rules",
+                Action::LevelTuning(_) => "level-tuning",
+                Action::SetDefaultProfile(_) => "set-default-profile",
+                Action::ListContributors => "list-contributors",
+                Action::ListProfiles => "list-profiles",
+            }
+        } else {
+            ""
         }
     }
 }
@@ -583,7 +621,7 @@ impl ConfigReader {
             .term_width(help_term_width);
         ConfigReader {
             app: build_cmd,
-            config: parse,
+            config: Some(parse),
         }
     }
 }
