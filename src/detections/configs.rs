@@ -288,7 +288,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
     /// Specify output profile
-    #[arg(short = 'p', long = "profile")]
+    #[arg(short = 'P', long = "profile")]
     pub profile: Option<String>,
 }
 
@@ -390,7 +390,7 @@ pub struct OutputOption {
     pub input_args: InputOption,
 
     /// Specify output profile
-    #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
+    #[arg(help_heading = Some("Output"), short = 'P', long = "profile")]
     pub profile: Option<String>,
 
     /// Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
@@ -457,11 +457,11 @@ pub struct OutputOption {
     pub us_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'u', long = "UTC")]
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC")]
     pub utc: bool,
 
     /// Output event frequency timeline
-    #[arg(help_heading = Some("Display Settings"), short = 't', long = "visualize-timeline")]
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline")]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)
@@ -522,8 +522,8 @@ pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Save the timeline in JSONL format (ex: -j -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'j', long = "jsonl", requires = "output")]
+    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
     pub jsonl_timeline: bool,
 }
 
