@@ -126,41 +126,6 @@ impl App {
             return;
         }
 
-        let list_profile_flag = match &stored_static.config.action.as_ref().unwrap() {
-            Action::CsvTimeline(opt) => opt.list_profile,
-            Action::JsonTimeline(opt) => opt.list_profile,
-            _ => false,
-        };
-        if list_profile_flag {
-            let profile_list =
-                options::profile::get_profile_list("config/profiles.yaml", stored_static);
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                None,
-                "List of available profiles:",
-                true,
-            )
-            .ok();
-            for profile in profile_list.iter() {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Green),
-                    &format!("- {:<25}", &format!("{}:", profile[0])),
-                    false,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &profile[1],
-                    true,
-                )
-                .ok();
-            }
-            println!();
-            return;
-        }
-
         // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
         if !CURRENT_EXE_PATH.join("config").exists() && !Path::new("./config").exists() {
             AlertMessage::alert(
@@ -571,6 +536,35 @@ impl App {
                 } else {
                     println!("Successfully updated the default profile.");
                 }
+                return;
+            }
+            Action::ListProfiles => {
+                let profile_list =
+                    options::profile::get_profile_list("config/profiles.yaml", stored_static);
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    None,
+                    "List of available profiles:",
+                    true,
+                )
+                .ok();
+                for profile in profile_list.iter() {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        Some(Color::Green),
+                        &format!("- {:<25}", &format!("{}:", profile[0])),
+                        false,
+                    )
+                    .ok();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &profile[1],
+                        true,
+                    )
+                    .ok();
+                }
+                println!();
                 return;
             }
         }

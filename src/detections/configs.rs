@@ -251,6 +251,9 @@ pub enum Action {
 
     /// Print the list of contributors
     ListContributors,
+
+    /// List the output profiles
+    ListProfiles,
 }
 
 impl Action {
@@ -266,6 +269,7 @@ impl Action {
                 Action::LevelTuning(_) => 6,
                 Action::SetDefaultProfile(_) => 7,
                 Action::ListContributors => 8,
+                Action::ListProfiles => 9,
             }
         } else {
             100
@@ -503,10 +507,6 @@ pub struct InputOption {
 pub struct CsvOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
-
-    /// List the output profiles
-    #[arg(help_heading = Some("Other Actions"), long = "list-profiles")]
-    pub list_profile: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -517,10 +517,6 @@ pub struct JSONOutputOption {
     /// Save the timeline in JSONL format (ex: -j -o results.jsonl)
     #[arg(help_heading = Some("Output"), short = 'j', long = "jsonl", requires = "output")]
     pub jsonl_timeline: bool,
-
-    /// List the output profiles
-    #[arg(help_heading = Some("Other Actions"), long = "list-profiles")]
-    pub list_profile: bool,
 }
 
 #[derive(Parser, Clone, Debug)]

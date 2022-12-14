@@ -458,7 +458,6 @@ mod tests {
                     no_summary: false,
                     set_default_profile: None,
                 },
-                list_profile: false,
             }));
         assert_eq!(
             Some(expect),
@@ -504,7 +503,6 @@ mod tests {
                     no_summary: false,
                     set_default_profile: None,
                 },
-                list_profile: false,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -581,7 +579,6 @@ mod tests {
                     no_summary: false,
                     set_default_profile: None,
                 },
-                list_profile: false,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(

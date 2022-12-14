@@ -1455,7 +1455,6 @@ mod tests {
                 no_summary: true,
                 set_default_profile: None,
             },
-            list_profile: false,
         });
         let dummy_config = Config {
             config: Path::new("./rules/config").to_path_buf(),
