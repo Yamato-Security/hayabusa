@@ -1453,7 +1453,6 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: true,
-                set_default_profile: None,
             },
         });
         let dummy_config = Config {
@@ -1518,7 +1517,6 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: false,
-                set_default_profile: None,
             };
             let mut profile_converter: HashMap<String, Profile> = HashMap::from([
                 (
@@ -1729,7 +1727,6 @@ mod tests {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
-            set_default_profile: None,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (

@@ -1,4 +1,4 @@
-use crate::detections::configs::{StoredStatic, CURRENT_EXE_PATH};
+use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
@@ -131,8 +131,7 @@ pub fn load_profile(
     profile_path: &str,
     opt_stored_static: Option<&StoredStatic>,
 ) -> Option<Vec<(CompactString, Profile)>> {
-    let output_option = opt_stored_static?.output_option.as_ref()?;
-    if output_option.set_default_profile.is_some() {
+    if Action::to_usize(opt_stored_static?.config.action.as_ref()) == 7 {
         if let Err(e) = set_default_profile(
             default_profile_path,
             profile_path,
@@ -239,13 +238,17 @@ pub fn set_default_profile(
         }
     };
 
-    let set_default_profile = &stored_static
-        .output_option
-        .as_ref()
-        .unwrap()
-        .set_default_profile;
-    if set_default_profile.is_some() {
-        let profile_name = set_default_profile.as_ref().unwrap();
+    let set_default_profile = match &stored_static.config.action.as_ref().unwrap() {
+        Action::SetDefaultProfile(s) => Some(s),
+        _ => None,
+    };
+    if set_default_profile.is_some() && set_default_profile.unwrap().profile.is_some() {
+        let profile_name = set_default_profile
+            .as_ref()
+            .unwrap()
+            .profile
+            .as_ref()
+            .unwrap();
         if let Ok(mut buf_wtr) = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -456,7 +459,6 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
-                    set_default_profile: None,
                 },
             }));
         assert_eq!(
@@ -501,7 +503,6 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
-                    set_default_profile: None,
                 },
             }));
 
@@ -577,7 +578,6 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
-                    set_default_profile: None,
                 },
             }));
         //両方のファイルが存在しない場合

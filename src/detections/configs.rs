@@ -474,10 +474,6 @@ pub struct OutputOption {
     /// Do not display result summary
     #[arg(help_heading = Some("Display Settings"), long = "no-summary")]
     pub no_summary: bool,
-
-    /// Set default output profile
-    #[arg(help_heading = Some("Other Actions"), long = "set-default-profile", value_name = "PROFILE")]
-    pub set_default_profile: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -850,7 +846,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
-            set_default_profile: None,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -874,7 +869,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
-            set_default_profile: None,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -898,9 +892,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
-            set_default_profile: None,
         }),
-        Action::SetDefaultProfile(option) => Some(OutputOption {
+        Action::SetDefaultProfile(_) => Some(OutputOption {
             input_args: InputOption {
                 directory: None,
                 filepath: None,
@@ -928,7 +921,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
-            set_default_profile: option.profile.clone(),
         }),
         _ => None,
     }
