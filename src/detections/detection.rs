@@ -75,7 +75,7 @@ impl Detection {
         let result_readdir = rulefile_loader.read_dir(rulespath, level, exclude_ids, stored_static);
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
-            if stored_static.config.verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
@@ -97,7 +97,7 @@ impl Detection {
             err_msgs_result.err().iter().for_each(|err_msgs| {
                 let errmsg_body =
                     format!("Failed to parse rule file. (FilePath : {})", rule.rulepath);
-                if stored_static.config.verbose {
+                if stored_static.verbose_flag {
                     AlertMessage::warn(&errmsg_body).ok();
                     err_msgs.iter().for_each(|err_msg| {
                         AlertMessage::warn(err_msg).ok();
@@ -192,7 +192,7 @@ impl Detection {
         for record_info in records.as_ref() {
             let result = rule.select(
                 record_info,
-                stored_static.config.verbose,
+                stored_static.verbose_flag,
                 stored_static.quiet_errors_flag,
                 &stored_static.eventkey_alias,
             );
@@ -926,7 +926,6 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
@@ -936,6 +935,8 @@ mod tests {
                         evtx_file_ext: None,
                         thread_number: None,
                         quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
                     },
                     profile: None,
                     output: None,
@@ -962,7 +963,6 @@ mod tests {
             no_color: false,
             quiet: false,
             debug: false,
-            verbose: false,
         }))
     }
 

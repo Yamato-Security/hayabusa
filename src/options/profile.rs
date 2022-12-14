@@ -341,12 +341,10 @@ mod tests {
 
     fn create_dummy_stored_static(action: Action) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            config: Path::new("./rules/config").to_path_buf(),
             action: Some(action),
             no_color: false,
             quiet: false,
             debug: false,
-            verbose: false,
         }))
     }
 
@@ -432,6 +430,8 @@ mod tests {
                         evtx_file_ext: None,
                         thread_number: None,
                         quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
                     },
                     profile: None,
                     output: None,
@@ -477,6 +477,8 @@ mod tests {
                         evtx_file_ext: None,
                         thread_number: None,
                         quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
                     },
                     profile: Some("minimal".to_string()),
                     output: None,
@@ -553,6 +555,8 @@ mod tests {
                         evtx_file_ext: None,
                         thread_number: None,
                         quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
                     },
                     profile: Some("not_exist".to_string()),
                     output: None,

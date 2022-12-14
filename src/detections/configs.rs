@@ -41,9 +41,11 @@ impl Default for ConfigReader {
 #[derive(Debug, Clone)]
 pub struct StoredStatic {
     pub config: Config,
+    pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
     pub ch_config: HashMap<String, String>,
     pub quiet_errors_flag: bool,
+    pub verbose_flag: bool,
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
     pub output_option: Option<OutputOption>,
@@ -67,100 +69,99 @@ impl StoredStatic {
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.quiet_errors,
             _ => false,
         };
+        let binding = Path::new("./rules/config").to_path_buf();
+        let config_path = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => &opt.output_options.input_args.config,
+            Some(Action::JsonTimeline(opt)) => &opt.output_options.input_args.config,
+            Some(Action::LogonSummary(opt)) => &opt.input_args.config,
+            Some(Action::Metrics(opt)) => &opt.input_args.config,
+            Some(Action::PivotKeywordsList(opt)) => &opt.input_args.config,
+            _ => &binding,
+        };
+        let verbose_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.verbose,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.verbose,
+            Some(Action::LogonSummary(opt)) => opt.input_args.verbose,
+            Some(Action::Metrics(opt)) => opt.input_args.verbose,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.verbose,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
+            config_path: config_path.to_path_buf(),
             ch_config: create_output_filter_config(
-                utils::check_setting_path(
-                    &input_config.as_ref().unwrap().config,
-                    "channel_abbreviations.txt",
-                    false,
-                )
-                .unwrap_or_else(|| {
-                    utils::check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/channel_abbreviations.txt",
-                        true,
-                    )
-                    .unwrap()
-                })
-                .to_str()
-                .unwrap(),
+                utils::check_setting_path(config_path, "channel_abbreviations.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/channel_abbreviations.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
             ),
             default_details: Self::get_default_details(
-                utils::check_setting_path(
-                    &input_config.as_ref().unwrap().config,
-                    "default_details.txt",
-                    false,
-                )
-                .unwrap_or_else(|| {
-                    utils::check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/default_details.txt",
-                        true,
-                    )
-                    .unwrap()
-                })
-                .to_str()
-                .unwrap(),
+                utils::check_setting_path(config_path, "default_details.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/default_details.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
             ),
             eventkey_alias: load_eventkey_alias(
-                utils::check_setting_path(
-                    &input_config.as_ref().unwrap().config,
-                    "eventkey_alias.txt",
-                    false,
-                )
-                .unwrap_or_else(|| {
-                    utils::check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/eventkey_alias.txt",
-                        true,
-                    )
-                    .unwrap()
-                })
-                .to_str()
-                .unwrap(),
+                utils::check_setting_path(config_path, "eventkey_alias.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/eventkey_alias.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
             ),
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
             quiet_errors_flag,
+            verbose_flag,
             html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),
             profiles: None,
             thread_number: check_thread_number(input_config.as_ref().unwrap()),
             event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(
-                    &input_config.as_ref().unwrap().config,
-                    "channel_eid_info.txt",
-                    false,
-                )
-                .unwrap_or_else(|| {
-                    utils::check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/channel_eid_info.txt",
-                        true,
-                    )
-                    .unwrap()
-                })
-                .to_str()
-                .unwrap(),
+                utils::check_setting_path(config_path, "channel_eid_info.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/channel_eid_info.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
             ),
             target_eventids: load_target_ids(
-                utils::check_setting_path(
-                    &input_config.unwrap().config,
-                    "target_event_IDs.txt",
-                    false,
-                )
-                .unwrap_or_else(|| {
-                    utils::check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/target_event_IDs.txt",
-                        true,
-                    )
-                    .unwrap()
-                })
-                .to_str()
-                .unwrap(),
+                utils::check_setting_path(config_path, "target_event_IDs.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/target_event_IDs.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
             ),
         };
         ret.profiles = load_profile(
@@ -547,6 +548,20 @@ pub struct InputOption {
     /// Quiet errors mode: do not save error logs
     #[arg(short = 'Q', long = "quiet-errors")]
     pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+        short = 'c',
+        long = "rules-config",
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "DIRECTORY"
+    )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(short = 'v', long)]
+    pub verbose: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -590,21 +605,6 @@ pub struct Config {
     /// Print debug information (memory usage, etc...)
     #[clap(long = "debug", global = true)]
     pub debug: bool,
-
-    /// Specify custom rule config directory (default: ./rules/config)
-    #[arg(
-        short = 'c',
-        long = "rules-config",
-        default_value = "./rules/config",
-        hide_default_value = true,
-        value_name = "DIRECTORY",
-        global = true
-    )]
-    pub config: PathBuf,
-
-    /// Output verbose information
-    #[arg(short = 'v', long, global = true)]
-    pub verbose: bool,
 }
 
 impl ConfigReader {
@@ -947,6 +947,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 evtx_file_ext: None,
                 thread_number: None,
                 quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
             },
             output: None,
             enable_deprecated_rules: false,

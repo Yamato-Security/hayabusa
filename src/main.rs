@@ -136,8 +136,8 @@ impl App {
             return;
         }
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-        if stored_static.config.config == Path::new("./rules/config") {
-            stored_static.config.config =
+        if stored_static.config_path == Path::new("./rules/config") {
+            stored_static.config_path =
                 utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
                     .unwrap();
         }
@@ -217,7 +217,7 @@ impl App {
                             .unwrap();
                 }
                 // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
-                if let Err(e) = utils::check_rule_config(&stored_static.config) {
+                if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
                     AlertMessage::alert(&e).ok();
                     return;
                 }
@@ -499,7 +499,7 @@ impl App {
                 let level_tuning_config_path = match level_tuning_val {
                     Some(path) => path,
                     _ => utils::check_setting_path(
-                        &stored_static.config.config,
+                        &stored_static.config_path,
                         "level_tuning.txt",
                         false,
                     )
@@ -784,7 +784,7 @@ impl App {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
-            if stored_static.config.verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
             if !stored_static.quiet_errors_flag {
@@ -926,7 +926,7 @@ impl App {
         *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
         *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            if stored_static.config.verbose {
+            if stored_static.verbose_flag {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
@@ -1003,7 +1003,7 @@ impl App {
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
 
-        let verbose_flag = stored_static.config.verbose;
+        let verbose_flag = stored_static.verbose_flag;
         let quiet_errors_flag = stored_static.quiet_errors_flag;
         loop {
             let mut records_per_detect = vec![];
@@ -1241,14 +1241,12 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
             })),
             no_color: false,
             quiet: false,
             debug: false,
-            verbose: false,
         }))
     }
 

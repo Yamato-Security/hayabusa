@@ -288,14 +288,12 @@ mod tests {
     fn test_get_updated_rules() {
         let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
-            config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
             })),
             no_color: false,
             quiet: false,
             debug: false,
-            verbose: false,
         }));
         let prev_modified_rules = Update::get_updated_rules(
             "test_files/rules/level_yaml",

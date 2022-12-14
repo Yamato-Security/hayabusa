@@ -1433,6 +1433,8 @@ mod tests {
                     evtx_file_ext: None,
                     thread_number: None,
                     quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
                 },
                 profile: None,
                 output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1457,12 +1459,10 @@ mod tests {
             },
         });
         let dummy_config = Some(Config {
-            config: Path::new("./rules/config").to_path_buf(),
             action: Some(dummy_action),
             no_color: false,
             quiet: false,
             debug: false,
-            verbose: false,
         });
         let stored_static = StoredStatic::create_static_data(dummy_config);
         let output_profile: Vec<(CompactString, Profile)> = load_profile(
@@ -1497,6 +1497,8 @@ mod tests {
                     evtx_file_ext: None,
                     thread_number: None,
                     quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
                 },
                 profile: None,
                 output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1708,6 +1710,8 @@ mod tests {
                 evtx_file_ext: None,
                 thread_number: None,
                 quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
             },
             profile: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),

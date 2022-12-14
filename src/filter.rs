@@ -29,7 +29,7 @@ pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
     exclude_ids.insert_ids(
         &format!(
             "{}/noisy_rules.txt",
-            stored_static.config.config.as_path().display(),
+            stored_static.config_path.as_path().display(),
         ),
         stored_static,
     );
@@ -37,7 +37,7 @@ pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
     exclude_ids.insert_ids(
         &format!(
             "{}/exclude_rules.txt",
-            stored_static.config.config.as_path().display(),
+            stored_static.config_path.as_path().display(),
         ),
         stored_static,
     );
@@ -49,7 +49,7 @@ impl RuleExclude {
     fn insert_ids(&mut self, filename: &str, stored_static: &StoredStatic) {
         let f = File::open(filename);
         if f.is_err() {
-            if stored_static.config.verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::warn(&format!("{} does not exist", filename)).ok();
             }
             if !stored_static.quiet_errors_flag {

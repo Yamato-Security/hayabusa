@@ -389,8 +389,7 @@ pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Opt
 }
 
 /// rule configのファイルの所在を確認する関数。
-pub fn check_rule_config(config: &Config) -> Result<(), String> {
-    let config_path = &config.config;
+pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
     // rules/configのフォルダが存在するかを確認する
     let exist_rule_config_folder = if config_path == &CURRENT_EXE_PATH.to_path_buf() {
         check_setting_path(config_path, "rules/config", false).is_some()

@@ -377,7 +377,6 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
@@ -387,6 +386,8 @@ mod tests {
                         evtx_file_ext: None,
                         thread_number: None,
                         quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
                     },
                     profile: None,
                     output: None,
@@ -413,7 +414,6 @@ mod tests {
             no_color: false,
             quiet: false,
             debug: false,
-            verbose: false,
         }))
     }
 
@@ -439,7 +439,7 @@ mod tests {
                 assert_eq!(
                     rule_node.select(
                         &recinfo,
-                        dummy_stored_static.config.verbose,
+                        dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
@@ -951,7 +951,7 @@ mod tests {
                 let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
                 let result = rule_node.select(
                     &recinfo,
-                    dummy_stored_static.config.verbose,
+                    dummy_stored_static.verbose_flag,
                     dummy_stored_static.quiet_errors_flag,
                     &dummy_stored_static.eventkey_alias,
                 );

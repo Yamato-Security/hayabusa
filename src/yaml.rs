@@ -77,7 +77,7 @@ impl ParseYaml {
                 "fail to read metadata of file: {}",
                 path.as_ref().to_path_buf().display(),
             );
-            if stored_static.config.verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg)?;
             }
             if !stored_static.quiet_errors_flag {
@@ -109,7 +109,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     read_content.unwrap_err()
                 );
-                if stored_static.config.verbose {
+                if stored_static.verbose_flag {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !stored_static.quiet_errors_flag {
@@ -130,7 +130,7 @@ impl ParseYaml {
                     path.as_ref().to_path_buf().display(),
                     yaml_contents.unwrap_err()
                 );
-                if stored_static.config.verbose {
+                if stored_static.verbose_flag {
                     AlertMessage::warn(&errmsg)?;
                 }
                 if !stored_static.quiet_errors_flag {
@@ -195,7 +195,7 @@ impl ParseYaml {
                         entry.path().display(),
                         read_content.unwrap_err()
                     );
-                    if stored_static.config.verbose {
+                    if stored_static.verbose_flag {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !stored_static.quiet_errors_flag {
@@ -216,7 +216,7 @@ impl ParseYaml {
                         entry.path().display(),
                         yaml_contents.unwrap_err()
                     );
-                    if stored_static.config.verbose {
+                    if stored_static.verbose_flag {
                         AlertMessage::warn(&errmsg)?;
                     }
                     if !stored_static.quiet_errors_flag {
@@ -304,7 +304,7 @@ impl ParseYaml {
                     .or_insert(0);
                 *status_cnt += 1;
 
-                if stored_static.config.verbose {
+                if stored_static.verbose_flag {
                     println!("Loaded yml file path: {}", filepath);
                 }
 
@@ -345,7 +345,6 @@ mod tests {
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            config: Path::new("./rules/config").to_path_buf(),
             action: Some(Action::CsvTimeline(CsvOutputOption {
                 output_options: OutputOption {
                     input_args: InputOption {
@@ -355,6 +354,8 @@ mod tests {
                         evtx_file_ext: None,
                         thread_number: None,
                         quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
                     },
                     profile: None,
                     output: None,
@@ -381,7 +382,6 @@ mod tests {
             no_color: false,
             quiet: false,
             debug: false,
-            verbose: false,
         }))
     }
 
