@@ -526,6 +526,7 @@ pub struct JSONOutputOption {
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
     term_width = 400,
+    disable_help_flag = true,
     version
 )]
 pub struct Config {
