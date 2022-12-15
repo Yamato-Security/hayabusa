@@ -211,7 +211,7 @@ impl StoredStatic {
                                 Ok(_eid) => _eid,
                                 _ => {
                                     return Result::Err(
-                                        "Parse Error EventID in default_details.txt.".to_string(),
+                                        "EventID parsing error in default_details.txt.".to_string(),
                                     )
                                 }
                             },
@@ -327,7 +327,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
     /// Specify output profile
-    #[arg(short = 'P', long = "profile")]
+    #[arg(short = 'p', long = "profile")]
     pub profile: Option<String>,
 }
 
@@ -348,12 +348,7 @@ pub struct UpdateOption {
 #[derive(Args, Clone, Debug)]
 pub struct LevelTuningOption {
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
-    #[arg(
-        help_heading = Some("Other Actions"), 
-        long = "level-tuning",
-        hide_default_value = true,
-        value_name = "FILE"
-    )]
+    #[arg(long = "level-tuning", hide_default_value = true, value_name = "FILE")]
     pub level_tuning: Option<Option<String>>,
 }
 
@@ -429,7 +424,7 @@ pub struct OutputOption {
     pub input_args: InputOption,
 
     /// Specify output profile
-    #[arg(help_heading = Some("Output"), short = 'P', long = "profile")]
+    #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
     pub profile: Option<String>,
 
     /// Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
@@ -525,7 +520,7 @@ pub struct OutputOption {
 
 #[derive(Args, Clone, Debug)]
 pub struct InputOption {
-    /// Directory of mul`tiple .evtx files
+    /// Directory of multiple .evtx files
     #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIRECTORY")]
     pub directory: Option<PathBuf>,
 
@@ -542,7 +537,7 @@ pub struct InputOption {
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Thread number (default: optimal number for performance)
-    #[arg(short = 'O', long = "thread-number", value_name = "NUMBER")]
+    #[arg(short = 't', long = "thread-number", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
     /// Quiet errors mode: do not save error logs
@@ -583,7 +578,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[command(
     name = "Hayabusa",
-    override_usage = "hayabusa.exe [COMMAND] [OPTION]",
+    override_usage = "hayabusa.exe [COMMAND] [OPTIONS]\n  hayabusa.exe help [COMMAND]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
     term_width = 400,
