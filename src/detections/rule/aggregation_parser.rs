@@ -77,7 +77,6 @@ impl AggegationConditionCompiler {
             .get(0)
             .unwrap()
             .as_str()
-            .to_string()
             .replacen('|', "", 1);
 
         let tokens = self.tokenize(aggregation_str)?;
