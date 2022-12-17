@@ -321,12 +321,7 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(
-                        detect_info
-                            .ext_field
-                            .iter()
-                            .map(|x| x.0.to_string().trim().to_string()),
-                    )?;
+                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim().to_string()))?;
                     plus_header = false;
                 }
                 wtr.write_record(
@@ -606,10 +601,7 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if html_output_flag {
-        htmlreport::add_md_data(
-            "Results Summary {#results_summary}".to_string(),
-            html_output_stock,
-        );
+        htmlreport::add_md_data("Results Summary {#results_summary}", html_output_stock);
     }
     Ok(())
 }
@@ -1521,9 +1513,9 @@ mod tests {
                 html_report: None,
                 no_summary: false,
             };
-            let mut profile_converter: HashMap<String, Profile> = HashMap::from([
+            let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
-                    "Timestamp".to_string(),
+                    "Timestamp",
                     Profile::Timestamp(CompactString::from(format_time(
                         &expect_time,
                         false,
@@ -1531,53 +1523,47 @@ mod tests {
                     ))),
                 ),
                 (
-                    "Computer".to_string(),
+                    "Computer",
                     Profile::Computer(CompactString::from(test_computername)),
                 ),
                 (
-                    "Channel".to_string(),
+                    "Channel",
                     Profile::Channel(CompactString::from(
                         mock_ch_filter
                             .get(&"Security".to_ascii_lowercase())
                             .unwrap_or(&String::default()),
                     )),
                 ),
+                ("Level", Profile::Level(CompactString::from(test_level))),
                 (
-                    "Level".to_string(),
-                    Profile::Level(CompactString::from(test_level)),
-                ),
-                (
-                    "EventID".to_string(),
+                    "EventID",
                     Profile::EventID(CompactString::from(test_eventid)),
                 ),
                 (
-                    "MitreAttack".to_string(),
+                    "MitreAttack",
                     Profile::MitreTactics(CompactString::from(test_attack)),
                 ),
                 (
-                    "RecordID".to_string(),
+                    "RecordID",
                     Profile::RecordID(CompactString::from(test_record_id)),
                 ),
                 (
-                    "RuleTitle".to_string(),
+                    "RuleTitle",
                     Profile::RuleTitle(CompactString::from(test_title)),
                 ),
                 (
-                    "RecordInformation".to_string(),
+                    "RecordInformation",
                     Profile::AllFieldInfo(CompactString::from(test_recinfo)),
                 ),
                 (
-                    "RuleFile".to_string(),
+                    "RuleFile",
                     Profile::RuleFile(CompactString::from(test_rulepath)),
                 ),
                 (
-                    "EvtxFile".to_string(),
+                    "EvtxFile",
                     Profile::EvtxFile(CompactString::from(test_filepath)),
                 ),
-                (
-                    "Tags".to_string(),
-                    Profile::MitreTags(CompactString::from(test_attack)),
-                ),
+                ("Tags", Profile::MitreTags(CompactString::from(test_attack))),
             ]);
             message::insert(
                 &event,

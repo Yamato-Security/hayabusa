@@ -49,7 +49,7 @@ impl AggegationConditionCompiler {
         AggegationConditionCompiler {}
     }
 
-    pub fn compile(&self, condition_str: String) -> Result<Option<AggregationParseInfo>, String> {
+    pub fn compile(&self, condition_str: &str) -> Result<Option<AggregationParseInfo>, String> {
         let result = self.compile_body(condition_str);
         if let Result::Err(msg) = result {
             Result::Err(format!(
@@ -63,10 +63,10 @@ impl AggegationConditionCompiler {
 
     pub fn compile_body(
         &self,
-        condition_str: String,
+        condition_str: &str,
     ) -> Result<Option<AggregationParseInfo>, String> {
         // パイプの部分だけを取り出す
-        let captured = self::RE_PIPE.captures(&condition_str);
+        let captured = self::RE_PIPE.captures(condition_str);
         if captured.is_none() {
             // パイプが無いので終了
             return Result::Ok(Option::None);
@@ -265,7 +265,7 @@ mod tests {
     fn test_aggegation_condition_compiler_no_count() {
         // countが無いパターン
         let compiler = AggegationConditionCompiler::new();
-        let result = compiler.compile("select1 and select2".to_string());
+        let result = compiler.compile("select1 and select2");
         assert!(result.is_ok());
         let result = result.unwrap();
         assert!(result.is_none());
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn test_aggegation_condition_compiler_count_by() {
         let compiler = AggegationConditionCompiler::new();
-        let result = compiler.compile("select1 or select2 | count() by iiibbb > 27".to_string());
+        let result = compiler.compile("select1 or select2 | count() by iiibbb > 27");
 
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -314,7 +314,7 @@ mod tests {
     #[test]
     fn test_aggegation_condition_compiler_count_field() {
         let compiler = AggegationConditionCompiler::new();
-        let result = compiler.compile("select1 or select2 | count( hogehoge    ) > 3".to_string());
+        let result = compiler.compile("select1 or select2 | count( hogehoge    ) > 3");
 
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -330,8 +330,7 @@ mod tests {
     #[test]
     fn test_aggegation_condition_compiler_count_all_field() {
         let compiler = AggegationConditionCompiler::new();
-        let result =
-            compiler.compile("select1 or select2 | count( hogehoge) by snsn > 3".to_string());
+        let result = compiler.compile("select1 or select2 | count( hogehoge) by snsn > 3");
 
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -347,7 +346,7 @@ mod tests {
     #[test]
     fn test_aggegation_condition_compiler_only_pipe() {
         let compiler = AggegationConditionCompiler::new();
-        let result = compiler.compile("select1 or select2 |".to_string());
+        let result = compiler.compile("select1 or select2 |");
 
         assert!(result.is_err());
         assert_eq!(
@@ -360,8 +359,7 @@ mod tests {
     #[test]
     fn test_aggegation_condition_compiler_unused_character() {
         let compiler = AggegationConditionCompiler::new();
-        let result =
-            compiler.compile("select1 or select2 | count( hogeess ) by ii-i > 33".to_string());
+        let result = compiler.compile("select1 or select2 | count( hogeess ) by ii-i > 33");
 
         assert!(result.is_err());
         assert_eq!(
@@ -375,8 +373,7 @@ mod tests {
     fn test_aggegation_condition_compiler_not_count() {
         // countじゃないものが先頭に来ている。
         let compiler = AggegationConditionCompiler::new();
-        let result =
-            compiler.compile("select1 or select2 | by count( hogehoge) by snsn > 3".to_string());
+        let result = compiler.compile("select1 or select2 | by count( hogehoge) by snsn > 3");
 
         assert!(result.is_err());
         assert_eq!("An aggregation condition parse error has occurred. The aggregation condition can only use count.".to_string(),result.unwrap_err());
@@ -386,7 +383,7 @@ mod tests {
     fn test_aggegation_condition_compiler_no_ope() {
         // 比較演算子がない
         let compiler = AggegationConditionCompiler::new();
-        let result = compiler.compile("select1 or select2 | count( hogehoge) 3".to_string());
+        let result = compiler.compile("select1 or select2 | count( hogehoge) 3");
 
         assert!(result.is_err());
         assert_eq!("An aggregation condition parse error has occurred. The count keyword needs a compare operator and number like '> 3'".to_string(),result.unwrap_err());
@@ -396,7 +393,7 @@ mod tests {
     fn test_aggegation_condition_compiler_by() {
         // byの後に何もない
         let compiler = AggegationConditionCompiler::new();
-        let result = compiler.compile("select1 or select2 | count( hogehoge) by".to_string());
+        let result = compiler.compile("select1 or select2 | count( hogehoge) by");
 
         assert!(result.is_err());
         assert_eq!("An aggregation condition parse error has occurred. The by keyword needs a field name like 'by EventID'".to_string(),result.unwrap_err());
@@ -406,8 +403,7 @@ mod tests {
     fn test_aggegation_condition_compiler_no_ope_afterby() {
         // byの後に何もない
         let compiler = AggegationConditionCompiler::new();
-        let result =
-            compiler.compile("select1 or select2 | count( hogehoge ) by hoe >".to_string());
+        let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe >");
 
         assert!(result.is_err());
         assert_eq!("An aggregation condition parse error has occurred. The compare operator needs a number like '> 3'.".to_string(),result.unwrap_err());
@@ -417,8 +413,7 @@ mod tests {
     fn test_aggegation_condition_compiler_unneccesary_word() {
         // byの後に何もない
         let compiler = AggegationConditionCompiler::new();
-        let result =
-            compiler.compile("select1 or select2 | count( hogehoge ) by hoe > 3 33".to_string());
+        let result = compiler.compile("select1 or select2 | count( hogehoge ) by hoe > 3 33");
 
         assert!(result.is_err());
         assert_eq!(
@@ -430,7 +425,7 @@ mod tests {
 
     fn check_aggregation_condition_ope(expr: String, cmp_num: i64) -> AggregationConditionToken {
         let compiler = AggegationConditionCompiler::new();
-        let result = compiler.compile(expr);
+        let result = compiler.compile(&expr);
 
         assert!(result.is_ok());
         let result = result.unwrap();

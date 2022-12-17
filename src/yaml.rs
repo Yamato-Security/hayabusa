@@ -312,7 +312,6 @@ impl ParseYaml {
                 let doc_level = &yaml_doc["level"]
                     .as_str()
                     .unwrap_or("informational")
-                    .to_string()
                     .to_uppercase();
                 let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
                 let args_level_num = self.level_map.get(level).unwrap_or(&1);

@@ -102,7 +102,7 @@ pub fn insert(
     output: CompactString,
     mut detect_info: DetectInfo,
     time: DateTime<Utc>,
-    profile_converter: &mut HashMap<String, Profile>,
+    profile_converter: &mut HashMap<&str, Profile>,
     is_agg: bool,
     eventkey_alias: EventKeyAliasConfig,
 ) {

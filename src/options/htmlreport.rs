@@ -89,7 +89,7 @@ fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     (section_order, ret)
 }
 
-pub fn add_md_data(section_name: String, data: Nested<String>) {
+pub fn add_md_data(section_name: &str, data: Nested<String>) {
     let mut md_with_section_data = HTML_REPORTER.write().unwrap().md_datas.to_owned();
     for c in data.iter() {
         let entry = md_with_section_data
