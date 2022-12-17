@@ -180,7 +180,7 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self) {
-        println!(" Logon Summary:");
+        println!(" Logon Summary:\n");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
             loginmsges.push("-----------------------------------------".to_string());
@@ -190,62 +190,75 @@ impl Timeline {
                 println!("{}", msgprint);
             }
         } else {
-            let success_header = vec![
-                "User", "Type 0", "Type 2", "Type 3", "Type 4", "Type 5", "Type 7", "Type 8",
-                "Type 9", "Type 10", "Type 11", "Type 12", "Type 13", "Unknown",
-            ];
-            let faild_header = vec![
-                "User", "Type 0", "Type 2", "Type 3", "Type 4", "Type 5", "Type 7", "Type 8",
-                "Type 9", "Type 10", "Type 11", "Type 12", "Type 13", "Unknown",
-            ];
-            let header = vec!["User", "Hostname", "Logontype", "Failed", "Successful"];
-            let target;
-            let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
-                // output to file
-                match File::create(csv_path) {
-                    Ok(file) => {
-                        target = Box::new(BufWriter::new(file));
-                        Some(WriterBuilder::new().from_writer(target))
-                    }
-                    Err(err) => {
-                        AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
-                        process::exit(1);
-                    }
+            println!(" Success Logon:");
+            self.tm_loginstats_tb_dsp_msg(&"Successful");
+            println!("\n\n Failed Logon:");
+            self.tm_loginstats_tb_dsp_msg(&"Failed");
+        }
+    }
+
+    /// ユーザ毎のログイン統計情報出力
+    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str) {
+        let header = vec!["User", "Hostname", "Logontype", &logon_res];
+        let target;
+        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
+            // output to file
+            match File::create(csv_path) {
+                Ok(file) => {
+                    target = Box::new(BufWriter::new(file));
+                    Some(WriterBuilder::new().from_writer(target))
                 }
-            } else {
-                None
-            };
-            if let Some(ref mut w) = wtr {
-                w.write_record(&header).ok();
+                Err(err) => {
+                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                    process::exit(1);
+                }
             }
+        } else {
+            None
+        };
+        if let Some(ref mut w) = wtr {
+            w.write_record(&header).ok();
+        }
 
-            let mut logins_stats_tb = Table::new();
-            logins_stats_tb
-                .load_preset(UTF8_FULL)
-                .apply_modifier(UTF8_ROUND_CORNERS);
-            logins_stats_tb.set_header(&header);
-            // 集計件数でソート
-            let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
-            mapsorted.sort_by(|x, y| x.0.cmp(y.0));
-
-            for ((key, host, ltype), values) in &mapsorted {
+        let mut logins_stats_tb = Table::new();
+        logins_stats_tb
+            .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS);
+        logins_stats_tb.set_header(&header);
+        // 集計するログオン結果を設定
+        let vnum = match logon_res {
+            "Successful" => 0,
+            "Failed" => 1,
+            &_ => todo!(),
+        };
+        // 集計件数でソート
+        let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
+        mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
+        for ((key, host, ltype), values) in &mapsorted {
+            if values[vnum] == 0 {
+                continue;
+            } else {
                 let mut username: String = key.to_string();
                 let mut hostname: String = host.to_string();
-                let mut logontype: String = ltype.to_string();
+                let logontype: String = ltype.to_string();
                 username.pop();
                 username.remove(0);
-                let record_data = vec![
-                    username,
-                    hostname,
-                    logontype,
-                    values[1].to_string(),
-                    values[0].to_string(),
-                ];
+                hostname.pop();
+                hostname.remove(0);
+                let record_data = vec![username, hostname, logontype, values[vnum].to_string()];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
                 }
                 logins_stats_tb.add_row(record_data);
             }
+        }
+        if logins_stats_tb.row_iter().len() == 0 {
+            let mut msges: Vec<String> = Vec::new();
+            msges.push(" No logon ".to_string() + &logon_res + &" events were detected.");
+            for msgprint in msges.iter() {
+                println!("{}", msgprint);
+            }
+        } else {
             println!("{logins_stats_tb}");
         }
     }
