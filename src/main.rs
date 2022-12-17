@@ -103,7 +103,9 @@ impl App {
 
         // 引数がなかった時にhelpを出力するためのサブコマンド出力。引数がなくても動作するサブコマンドはhelpを出力しない
         let subcommand_name = Action::get_action_name(stored_static.config.action.as_ref());
-        if !self.check_is_valid_args_num(stored_static.config.action.as_ref()) {
+        if stored_static.config.action.is_some()
+            && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
+        {
             if !stored_static.config.quiet {
                 self.output_logo(stored_static);
                 println!();
