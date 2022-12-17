@@ -268,7 +268,7 @@ impl Detection {
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
-        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let level = rule.yaml["level"].as_str().unwrap_or("-");
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
@@ -310,8 +310,8 @@ impl Detection {
                         key.as_str(),
                         Level(CompactString::from(
                             LEVEL_ABBR_MAP
-                                .get(&level.as_str())
-                                .unwrap_or(&level.as_str())
+                                .get(level)
+                                .unwrap_or(&level)
                                 .to_string(),
                         )),
                     );
@@ -473,8 +473,8 @@ impl Detection {
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
             level: CompactString::from(
                 LEVEL_ABBR_MAP
-                    .get(&level.as_str())
-                    .unwrap_or(&level.as_str())
+                    .get(level)
+                    .unwrap_or(&level)
                     .to_string(),
             ),
             computername: CompactString::from(
