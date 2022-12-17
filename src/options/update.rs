@@ -68,11 +68,11 @@ impl Update {
             // case of no exist hayabusa-rules repository in rules.
             // execute update because submodule information exists if hayabusa repository exists submodule information.
 
-            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
             let rules_path = Path::new(rule_path);
             if !rules_path.exists() {
                 create_dir(rules_path).ok();
             }
+            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
             if rule_path == "./rules" {
                 let hayabusa_repo = hayabusa_repo.unwrap();
                 let submodules = hayabusa_repo.submodules()?;
