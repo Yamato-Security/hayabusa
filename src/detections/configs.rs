@@ -598,7 +598,7 @@ pub struct Config {
     pub quiet: bool,
 
     /// Print debug information (memory usage, etc...)
-    #[clap(long = "debug", global = true)]
+    #[clap(long = "debug", global = true, hide = true)]
     pub debug: bool,
 }
 
