@@ -191,9 +191,9 @@ impl Timeline {
             }
         } else {
             println!(" Success Logon:");
-            self.tm_loginstats_tb_dsp_msg(&"successful");
+            self.tm_loginstats_tb_dsp_msg("successful");
             println!("\n\n Failed Logon:");
-            self.tm_loginstats_tb_dsp_msg(&"failed");
+            self.tm_loginstats_tb_dsp_msg("failed");
         }
     }
 
@@ -256,7 +256,7 @@ impl Timeline {
         // rowデータがない場合は、検出なしのメッセージを表示する
         if logins_stats_tb.row_iter().len() == 0 {
             let mut msges: Vec<String> = Vec::new();
-            msges.push(" No logon ".to_string() + &logon_res + &" events were detected.");
+            msges.push(" No logon ".to_string() + logon_res + " events were detected.");
             for msgprint in msges.iter() {
                 println!("{}", msgprint);
             }
