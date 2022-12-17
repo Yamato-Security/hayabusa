@@ -387,7 +387,7 @@ mod tests {
 
     #[test]
     fn test_read_file_yaml() {
-        let exclude_ids = RuleExclude::default();
+        let exclude_ids = RuleExclude::new();
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let _ = &yaml.read_dir(
@@ -560,7 +560,7 @@ mod tests {
         let path = Path::new("test_files/rules/yaml");
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
-        let exclude_ids = RuleExclude::default();
+        let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", &exclude_ids, &dummy_stored_static)
             .unwrap();
         assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 0);
@@ -570,7 +570,7 @@ mod tests {
         let path = Path::new("test_files/rules/deprecated");
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
-        let exclude_ids = RuleExclude::default();
+        let exclude_ids = RuleExclude::new();
         yaml.read_dir(path, "", &exclude_ids, &dummy_stored_static)
             .unwrap();
         assert_eq!(
