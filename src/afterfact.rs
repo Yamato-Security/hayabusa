@@ -1025,19 +1025,10 @@ fn _get_timestamp(output_option: &OutputOption, time: &DateTime<Utc>) -> i64 {
 fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
     match profile {
         Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
-            let ret: Vec<String> = target_data
-                .to_owned()
-                .split(": ")
-                .map(|x| x.to_string())
-                .collect();
-            ret
+            target_data.split(": ").map(|x| x.to_string()).collect()
         }
         Profile::Details(_) | Profile::AllFieldInfo(_) => {
-            let ret: Vec<String> = target_data
-                .to_owned()
-                .split(" ¦ ")
-                .map(|x| x.to_string())
-                .collect();
+            let ret: Vec<String> = target_data.split(" ¦ ").map(|x| x.to_string()).collect();
             if target_data == &ret[0] && !target_data.contains(": ") {
                 vec![]
             } else {
