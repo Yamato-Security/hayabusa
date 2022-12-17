@@ -1,6 +1,6 @@
 use nested::Nested;
 use regex::Regex;
-use std::{cmp::Ordering};
+use std::cmp::Ordering;
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
@@ -259,7 +259,7 @@ impl LeafMatcher for DefaultMatcher {
         // Pipeが指定されていればパースする
         let emp = String::default();
         // 一つ目はただのキーで、2つめ以降がpipe
-        let keys  = key_list.get(0).unwrap_or(&emp).split('|').skip(1); // key_listが空はあり得ない
+        let keys = key_list.get(0).unwrap_or(&emp).split('|').skip(1); // key_listが空はあり得ない
         let mut errmsgs = vec![];
         keys.for_each(|key| {
             let pipe_element = match key {

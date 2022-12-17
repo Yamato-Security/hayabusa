@@ -202,7 +202,10 @@ fn parse_message(
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
                 // UnicodeのWhitespace characterをそのままCSVに出力すると見難いので、スペースに変換する。なお、先頭と最後のWhitespace characterは単に削除される。
-                hash_map.insert(full_target_str.to_string(), hash_value.split_whitespace().join(" "));
+                hash_map.insert(
+                    full_target_str.to_string(),
+                    hash_value.split_whitespace().join(" "),
+                );
             }
         } else {
             hash_map.insert(full_target_str.to_string(), "n/a".to_string());

@@ -193,11 +193,11 @@ pub fn load_profile(
                 "Invalid profile specified: {}\nPlease specify one of the following profiles:\n {}",
                 profile_name,
                 profile_data
-                .as_hash()
-                .unwrap()
-                .keys()
-                .map(|k| k.as_str().unwrap())
-                .join(", ")
+                    .as_hash()
+                    .unwrap()
+                    .keys()
+                    .map(|k| k.as_str().unwrap())
+                    .join(", ")
             ))
             .ok();
             None

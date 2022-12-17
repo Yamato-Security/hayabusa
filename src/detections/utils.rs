@@ -298,10 +298,12 @@ fn create_recordinfos(record: &Value) -> CompactString {
         }
     });
 
-    CompactString::from(output
-        .iter()
-        .map(|(key, value)| format!("{}: {}", key, value))
-        .join(" | "))
+    CompactString::from(
+        output
+            .iter()
+            .map(|(key, value)| format!("{}: {}", key, value))
+            .join(" | "),
+    )
 }
 
 /**

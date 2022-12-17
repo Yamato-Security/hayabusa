@@ -237,88 +237,83 @@ impl ParseYaml {
             })?;
         }
 
-        let files = yaml_docs
-            .into_iter()
-            .filter_map(|(filepath, yaml_doc)| {
-                //除外されたルールは無視する
-                let rule_id = &yaml_doc["id"].as_str();
-                if rule_id.is_some() {
-                    if let Some(v) = exclude_ids
-                        .no_use_rule
-                        .get(&rule_id.unwrap_or(&String::default()).to_string())
-                    {
-                        let entry_key = if v.contains("exclude_rule") {
-                            "excluded"
-                        } else {
-                            "noisy"
-                        };
-                        // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
-                        if v != "00000000-0000-0000-0000-000000000000" {
-                            let entry =
-                                self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
-                            *entry += 1;
-                        }
-                        let enable_noisy_rules =
-                            if let Some(o) = stored_static.output_option.as_ref() {
-                                o.enable_noisy_rules
-                            } else {
-                                false
-                            };
-
-                        if entry_key == "excluded" || (entry_key == "noisy" && !enable_noisy_rules)
-                        {
-                            return Option::None;
-                        }
-                    }
-                }
-
-                let status = &yaml_doc["status"].as_str();
-                if let Some(s) = status {
-                    if self.exclude_status.contains(&s.to_string()) {
-                        let entry = self
-                            .rule_load_cnt
-                            .entry("excluded".to_string())
-                            .or_insert(0);
+        let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
+            //除外されたルールは無視する
+            let rule_id = &yaml_doc["id"].as_str();
+            if rule_id.is_some() {
+                if let Some(v) = exclude_ids
+                    .no_use_rule
+                    .get(&rule_id.unwrap_or(&String::default()).to_string())
+                {
+                    let entry_key = if v.contains("exclude_rule") {
+                        "excluded"
+                    } else {
+                        "noisy"
+                    };
+                    // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
+                    if v != "00000000-0000-0000-0000-000000000000" {
+                        let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
                         *entry += 1;
+                    }
+                    let enable_noisy_rules = if let Some(o) = stored_static.output_option.as_ref() {
+                        o.enable_noisy_rules
+                    } else {
+                        false
+                    };
+
+                    if entry_key == "excluded" || (entry_key == "noisy" && !enable_noisy_rules) {
                         return Option::None;
                     }
                 }
+            }
 
-                self.rulecounter.insert(
-                    yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
-                    self.rulecounter
-                        .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
-                        .unwrap_or(&0)
-                        + 1,
-                );
-
-                let status_cnt = self
-                    .rule_status_cnt
-                    .entry(
-                        yaml_doc["status"]
-                            .as_str()
-                            .unwrap_or("undefined")
-                            .to_string(),
-                    )
-                    .or_insert(0);
-                *status_cnt += 1;
-
-                if stored_static.verbose_flag {
-                    println!("Loaded yml file path: {}", filepath);
-                }
-
-                // 指定されたレベルより低いルールは無視する
-                let doc_level = &yaml_doc["level"]
-                    .as_str()
-                    .unwrap_or("informational")
-                    .to_uppercase();
-                let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
-                let args_level_num = self.level_map.get(level).unwrap_or(&1);
-                if doc_level_num < args_level_num {
+            let status = &yaml_doc["status"].as_str();
+            if let Some(s) = status {
+                if self.exclude_status.contains(&s.to_string()) {
+                    let entry = self
+                        .rule_load_cnt
+                        .entry("excluded".to_string())
+                        .or_insert(0);
+                    *entry += 1;
                     return Option::None;
                 }
-                Option::Some((filepath, yaml_doc))
-            });
+            }
+
+            self.rulecounter.insert(
+                yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
+                self.rulecounter
+                    .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
+                    .unwrap_or(&0)
+                    + 1,
+            );
+
+            let status_cnt = self
+                .rule_status_cnt
+                .entry(
+                    yaml_doc["status"]
+                        .as_str()
+                        .unwrap_or("undefined")
+                        .to_string(),
+                )
+                .or_insert(0);
+            *status_cnt += 1;
+
+            if stored_static.verbose_flag {
+                println!("Loaded yml file path: {}", filepath);
+            }
+
+            // 指定されたレベルより低いルールは無視する
+            let doc_level = &yaml_doc["level"]
+                .as_str()
+                .unwrap_or("informational")
+                .to_uppercase();
+            let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
+            let args_level_num = self.level_map.get(level).unwrap_or(&1);
+            if doc_level_num < args_level_num {
+                return Option::None;
+            }
+            Option::Some((filepath, yaml_doc))
+        });
         self.files.extend(files);
         io::Result::Ok(String::default())
     }

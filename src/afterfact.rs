@@ -1215,15 +1215,13 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                     target.push(output_stock.join("\n"));
                 }
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
-                    let tmp_val: Vec<&str> = val.split(": ").collect();
-
                     let key = _convert_valid_json_str(&[key.as_str()], false);
-                    let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
-                    let mut value: Vec<String> = vec![];
+                    let values: Vec<&str> = val.split(": ").filter(|x| x.trim() != "").collect();
 
                     if values.is_empty() {
                         continue;
                     }
+                    let mut value: Vec<String> = vec![];
                     for (idx, tag_val) in values.iter().enumerate() {
                         if idx == 0 {
                             value.push("[\n".to_string());
@@ -1333,11 +1331,7 @@ fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<
     {
         if let Some(author) = yaml["author"].as_str() {
             let mut ret = Nested::<String>::new();
-            for author in author
-            .to_string()
-            .split(',')
-            .into_iter()
-            .map(|s| {
+            for author in author.to_string().split(',').into_iter().map(|s| {
                 // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
                 // データの中にdouble quote と single quoteが入っているためここで除外する
                 s.split('(').next().unwrap_or_default().to_string()
