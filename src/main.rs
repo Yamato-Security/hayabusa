@@ -345,7 +345,15 @@ impl App {
                 configreader.target_eventids,
             );
         } else if let Some(filepath) = &configs::CONFIG.read().unwrap().filepath {
-            if !filepath.exists() {
+            let mut replaced_filepath = filepath.display().to_string();
+            if replaced_filepath.starts_with('"') {
+                replaced_filepath.remove(0);
+            }
+            if replaced_filepath.ends_with('"') {
+                replaced_filepath.remove(replaced_filepath.len() - 1);
+            }
+            let check_path = Path::new(&replaced_filepath);
+            if !check_path.exists() {
                 AlertMessage::alert(&format!(
                     " The file {} does not exist. Please specify a valid file path.",
                     filepath.as_os_str().to_str().unwrap()
@@ -354,13 +362,12 @@ impl App {
                 return;
             }
             if !target_extensions.contains(
-                filepath
+                check_path
                     .extension()
                     .unwrap_or_else(|| OsStr::new("."))
                     .to_str()
                     .unwrap(),
-            ) || filepath
-                .as_path()
+            ) || check_path
                 .file_stem()
                 .unwrap_or_else(|| OsStr::new("."))
                 .to_str()
@@ -374,8 +381,9 @@ impl App {
                 .ok();
                 return;
             }
+
             self.analysis_files(
-                vec![PathBuf::from(filepath)],
+                vec![check_path.to_path_buf()],
                 &time_filter,
                 configreader.event_timeline_config,
                 configreader.target_eventids,
@@ -639,7 +647,14 @@ impl App {
         }
     }
 
-    fn collect_evtxfiles(dirpath: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
+    fn collect_evtxfiles(dir_path: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
+        let mut dirpath = dir_path.to_string();
+        if dirpath.starts_with('"') {
+            dirpath.remove(0);
+        }
+        if dirpath.ends_with('"') {
+            dirpath.remove(dirpath.len() - 1);
+        }
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());

@@ -14,7 +14,8 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed a bug where evtx files would not be loaded if run from a command prompt and the directory path was enclosed in double quotes. (#828) (@hitenkoku)
+- Fixed unneeded spaces outputted when there were rule parsing errors. (#829) (@hitenkoku)
 
 ## 1.8.1 [2022/11/21]
 
