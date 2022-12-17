@@ -97,9 +97,25 @@ impl App {
             );
         }
 
+        // 引数がなかった時にhelpを出力するためのサブコマンド出力。引数がなくても動作するサブコマンドはhelpを出力しない
+        let subcommand_name = Action::get_action_name(stored_static.config.action.as_ref());
+        if !self.check_is_valid_args_num(stored_static.config.action.as_ref()) {
+            if !stored_static.config.quiet {
+                self.output_logo(stored_static);
+                println!();
+            }
+            app.find_subcommand(subcommand_name)
+                .unwrap()
+                .clone()
+                .print_help()
+                .ok();
+            println!();
+            return;
+        }
+
         // Show usage when no arguments.
         if std::env::args().len() == 1
-            || (stored_static.config.quiet && std::env::args().len() == 2)
+            || (!stored_static.config.quiet && std::env::args().len() == 2)
         {
             if !stored_static.config.quiet {
                 self.output_logo(stored_static);
@@ -197,19 +213,8 @@ impl App {
             HashSet::default()
         };
 
-        // 引数がなかった時にhelpを出力するためのサブコマンド出力。引数がなくても動作するサブコマンドはhelpを出力しない
-        let subcommand_name = Action::get_action_name(stored_static.config.action.as_ref());
-
         match &stored_static.config.action.as_ref().unwrap() {
             Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
-                if std::env::args().len() == 2 {
-                    app.find_subcommand(subcommand_name)
-                        .unwrap()
-                        .clone()
-                        .print_help()
-                        .ok();
-                    return;
-                }
                 // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
                 if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
                     stored_static.output_option.as_mut().unwrap().rules =
@@ -286,15 +291,6 @@ impl App {
                 return;
             }
             Action::LogonSummary(_) | Action::Metrics(_) => {
-                if std::env::args().len() == 2 {
-                    app.find_subcommand(subcommand_name)
-                        .unwrap()
-                        .clone()
-                        .print_help()
-                        .ok();
-                    return;
-                }
-
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
                 if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
                     if let Ok(metadata) = fs::metadata(path) {
@@ -312,15 +308,6 @@ impl App {
                 }
             }
             Action::PivotKeywordsList(_) => {
-                if std::env::args().len() == 2 {
-                    app.find_subcommand(subcommand_name)
-                        .unwrap()
-                        .clone()
-                        .print_help()
-                        .ok();
-                    return;
-                }
-
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
                 if let Some(csv_path) = &stored_static.output_option.as_ref().unwrap().output {
                     let mut error_flag = false;
@@ -1228,6 +1215,22 @@ impl App {
                 || (cfg!(target_pointer_width = "32") && is_processor_arch_32bit && not_wow_flag);
         }
         true
+    }
+
+    fn check_is_valid_args_num(&self, action: Option<&Action>) -> bool {
+        match action.as_ref().unwrap() {
+            Action::CsvTimeline(_)
+            | Action::JsonTimeline(_)
+            | Action::LogonSummary(_)
+            | Action::Metrics(_)
+            | Action::PivotKeywordsList(_) => {
+                if std::env::args().len() == 2 {
+                    return false;
+                }
+                true
+            }
+            _ => true,
+        }
     }
 }
 
