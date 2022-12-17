@@ -274,9 +274,8 @@ impl LeafSelectionNode {
             return String::default();
         }
 
-        let topkey = self.key_list[0].to_string();
-        let values: Vec<&str> = topkey.split('|').collect();
-        values[0].to_string()
+        let topkey = &self.key_list[0];
+        topkey.split('|').next().unwrap_or_default().to_string()
     }
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
