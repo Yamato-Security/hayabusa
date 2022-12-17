@@ -191,9 +191,9 @@ impl Timeline {
             }
         } else {
             println!(" Success Logon:");
-            self.tm_loginstats_tb_dsp_msg(&"Successful");
+            self.tm_loginstats_tb_dsp_msg(&"successful");
             println!("\n\n Failed Logon:");
-            self.tm_loginstats_tb_dsp_msg(&"Failed");
+            self.tm_loginstats_tb_dsp_msg(&"failed");
         }
     }
 
@@ -227,14 +227,15 @@ impl Timeline {
         logins_stats_tb.set_header(&header);
         // 集計するログオン結果を設定
         let vnum = match logon_res {
-            "Successful" => 0,
-            "Failed" => 1,
-            &_ => todo!(),
+            "successful" => 0,
+            "failed" => 1,
+            &_ => 0,
         };
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
         for ((key, host, ltype), values) in &mapsorted {
+            // 件数が"0"件は表示しない
             if values[vnum] == 0 {
                 continue;
             } else {
@@ -252,6 +253,7 @@ impl Timeline {
                 logins_stats_tb.add_row(record_data);
             }
         }
+        // rowデータがない場合は、検出なしのメッセージを表示する
         if logins_stats_tb.row_iter().len() == 0 {
             let mut msges: Vec<String> = Vec::new();
             msges.push(" No logon ".to_string() + &logon_res + &" events were detected.");
