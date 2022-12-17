@@ -191,15 +191,15 @@ impl Timeline {
             }
         } else {
             println!(" Success Logon:");
-            self.tm_loginstats_tb_dsp_msg("successful");
+            self.tm_loginstats_tb_dsp_msg("Successful");
             println!("\n\n Failed Logon:");
-            self.tm_loginstats_tb_dsp_msg("failed");
+            self.tm_loginstats_tb_dsp_msg("Failed");
         }
     }
 
     /// ユーザ毎のログイン統計情報出力
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str) {
-        let header = vec!["User", "Hostname", "Logontype", &logon_res];
+        let header = vec!["User", "Hostname", "Logontype", logon_res];
         let target;
         let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
             // output to file
@@ -227,8 +227,8 @@ impl Timeline {
         logins_stats_tb.set_header(&header);
         // 集計するログオン結果を設定
         let vnum = match logon_res {
-            "successful" => 0,
-            "failed" => 1,
+            "Successful" => 0,
+            "Failed" => 1,
             &_ => 0,
         };
         // 集計件数でソート
