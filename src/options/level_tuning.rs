@@ -40,14 +40,17 @@ impl LevelTuning {
                         || _level.starts_with("medium")
                         || _level.starts_with("high")
                         || _level.starts_with("critical") {
-                            _level.split('#').collect::<Vec<&str>>()[0]
-                        } else {
+                            _level.split('#').collect::<Vec<&str>>()[0].to_string()
+                        } else if _level.starts_with("info"){
+                            _level.split('#').collect::<Vec<&str>>()[0].to_string().replace("info", "informational")
+                        }
+                        else {
                             return Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string())
                         }
                     }
                 _ => return Result::Err("Failed to read level...".to_string())
             };
-            tuning_map.insert(id.to_string(), level.to_string());
+            tuning_map.insert(id.to_string(), level);
             Ok(())
         })?;
 
@@ -80,7 +83,7 @@ impl LevelTuning {
                 };
                 let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
 
-                if new_level.starts_with("informational") {
+                if new_level.starts_with("informational") || new_level.starts_with("info") {
                     content = content.replace(&past_level, "level: informational");
                 }
                 if new_level.starts_with("low") {
@@ -124,13 +127,15 @@ impl LevelTuning {
 #[cfg(test)]
 mod tests {
 
+    use std::path::Path;
+
     use super::*;
     use crate::detections::configs::{Action, Config, LevelTuningOption};
 
     fn create_dummy_stored_static(level_tuning_path: &str) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
             action: Some(Action::LevelTuning(LevelTuningOption {
-                level_tuning: Some(Some(level_tuning_path.to_string())),
+                level_tuning: Path::new(level_tuning_path).to_path_buf(),
             })),
             no_color: false,
             quiet: false,

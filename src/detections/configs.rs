@@ -348,8 +348,12 @@ pub struct UpdateOption {
 #[derive(Args, Clone, Debug)]
 pub struct LevelTuningOption {
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
-    #[arg(long = "level-tuning", hide_default_value = true, value_name = "FILE")]
-    pub level_tuning: Option<Option<String>>,
+    #[arg(
+        long = "level-tuning",
+        default_value = "./rules/config/level_tuning.txt",
+        value_name = "FILE"
+    )]
+    pub level_tuning: PathBuf,
 }
 
 #[derive(Args, Clone, Debug)]

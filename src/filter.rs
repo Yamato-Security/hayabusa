@@ -24,6 +24,12 @@ impl RuleExclude {
     }
 }
 
+impl Default for RuleExclude {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
     let mut exclude_ids = RuleExclude::new();
     exclude_ids.insert_ids(

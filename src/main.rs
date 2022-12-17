@@ -482,16 +482,20 @@ impl App {
                 return;
             }
             Action::LevelTuning(option) => {
-                let level_tuning_val = if let Some(tmp) = option.level_tuning.as_ref() {
-                    tmp.to_owned()
-                } else {
-                    Some("./rules/config/level_tuning.txt".to_string())
-                };
-                let level_tuning_config_path = match level_tuning_val {
-                    Some(path) => path,
-                    _ => utils::check_setting_path(
-                        &stored_static.config_path,
-                        "level_tuning.txt",
+                let level_tuning_config_path = if option.level_tuning.to_str().unwrap()
+                    != "./rules/config/level_tuning.txt"
+                {
+                    utils::check_setting_path(
+                        option
+                            .level_tuning
+                            .parent()
+                            .unwrap_or_else(|| Path::new("")),
+                        option
+                            .level_tuning
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .unwrap_or_default(),
                         false,
                     )
                     .unwrap_or_else(|| {
@@ -503,7 +507,19 @@ impl App {
                         .unwrap()
                     })
                     .display()
-                    .to_string(),
+                    .to_string()
+                } else {
+                    utils::check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
+                        .unwrap_or_else(|| {
+                            utils::check_setting_path(
+                                &CURRENT_EXE_PATH.to_path_buf(),
+                                "rules/config/level_tuning.txt",
+                                true,
+                            )
+                            .unwrap()
+                        })
+                        .display()
+                        .to_string()
                 };
 
                 let rules_path = if stored_static.output_option.as_ref().is_some() {
