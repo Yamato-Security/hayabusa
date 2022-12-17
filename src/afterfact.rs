@@ -1139,9 +1139,8 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                     let mut key_index_stock = vec![];
                     for detail_contents in vec_data.iter() {
                         // 分解してキーとなりえる箇所を抽出する
-                        let space_split: Vec<&str> = detail_contents.split(' ').collect();
                         let mut tmp_stock = vec![];
-                        for sp in space_split.iter() {
+                        for sp in detail_contents.split(' ') {
                             if sp.ends_with(':') && sp.len() > 2 {
                                 stocked_value.push(tmp_stock);
                                 tmp_stock = vec![];
@@ -1341,19 +1340,16 @@ fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<
         .into_iter()
     {
         if let Some(author) = yaml["author"].as_str() {
-            let authors_vec: Nested<String> = author
-                .to_string()
-                .split(',')
-                .into_iter()
-                .map(|s| {
-                    // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
-                    let tmp: Vec<&str> = s.split('(').collect();
-                    // データの中にdouble quote と single quoteが入っているためここで除外する
-                    tmp[0].to_string()
-                })
-                .collect();
             let mut ret = Nested::<String>::new();
-            for author in authors_vec.iter() {
+            for author in author
+            .to_string()
+            .split(',')
+            .into_iter()
+            .map(|s| {
+                // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
+                // データの中にdouble quote と single quoteが入っているためここで除外する
+                s.split('(').next().unwrap_or_default().to_string()
+            }) {
                 ret.extend(author.split(';'));
             }
 

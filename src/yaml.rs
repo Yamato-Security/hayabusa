@@ -11,7 +11,6 @@ use std::fs;
 use std::io;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use yaml_rust::Yaml;
 use yaml_rust::YamlLoader;
 
 pub struct ParseYaml {
@@ -238,7 +237,7 @@ impl ParseYaml {
             })?;
         }
 
-        let files: Vec<(String, Yaml)> = yaml_docs
+        let files = yaml_docs
             .into_iter()
             .filter_map(|(filepath, yaml_doc)| {
                 //除外されたルールは無視する
@@ -319,8 +318,7 @@ impl ParseYaml {
                     return Option::None;
                 }
                 Option::Some((filepath, yaml_doc))
-            })
-            .collect();
+            });
         self.files.extend(files);
         io::Result::Ok(String::default())
     }

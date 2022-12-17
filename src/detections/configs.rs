@@ -827,10 +827,9 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         config
             .key_to_eventkey
             .insert(alias.to_owned(), event_key.to_owned());
-        let splits = event_key.split('.').map(|s| s.len()).collect();
         config
             .key_to_split_eventkey
-            .insert(alias.to_owned(), splits);
+            .insert(alias.to_owned(), event_key.split('.').map(|s| s.len()).collect());
     });
     config.key_to_eventkey.shrink_to_fit();
     config

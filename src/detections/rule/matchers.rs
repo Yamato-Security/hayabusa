@@ -1,6 +1,6 @@
 use nested::Nested;
 use regex::Regex;
-use std::{cmp::Ordering, collections::VecDeque};
+use std::{cmp::Ordering};
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
@@ -258,10 +258,10 @@ impl LeafMatcher for DefaultMatcher {
 
         // Pipeが指定されていればパースする
         let emp = String::default();
-        let mut keys: VecDeque<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
-        keys.pop_front(); // 一つ目はただのキーで、2つめ以降がpipe
-        while !keys.is_empty() {
-            let key = keys.pop_front().unwrap();
+        // 一つ目はただのキーで、2つめ以降がpipe
+        let keys  = key_list.get(0).unwrap_or(&emp).split('|').skip(1); // key_listが空はあり得ない
+        let mut errmsgs = vec![];
+        keys.for_each(|key| {
             let pipe_element = match key {
                 "startswith" => Option::Some(PipeElement::Startswith),
                 "endswith" => Option::Some(PipeElement::Endswith),
@@ -271,14 +271,15 @@ impl LeafMatcher for DefaultMatcher {
                 _ => Option::None,
             };
             if pipe_element.is_none() {
-                let errmsg = format!(
+                errmsgs.push(format!(
                     "An unknown pipe element was specified. key:{}",
                     utils::concat_selection_key(key_list)
-                );
-                return Result::Err(vec![errmsg]);
+                ));
             }
-
             self.pipes.push(pipe_element.unwrap());
+        });
+        if !errmsgs.is_empty() {
+            return Err(errmsgs);
         }
         if self.pipes.len() >= 2 {
             // 現状では複数のパイプは対応していない

@@ -7,6 +7,7 @@ use crate::options::htmlreport;
 
 use compact_str::CompactString;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
 
@@ -297,12 +298,10 @@ fn create_recordinfos(record: &Value) -> CompactString {
         }
     });
 
-    let summary: Vec<String> = output
+    CompactString::from(output
         .iter()
         .map(|(key, value)| format!("{}: {}", key, value))
-        .collect();
-
-    CompactString::from(summary.join(" ¦ "))
+        .join(" | "))
 }
 
 /**

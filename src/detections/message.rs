@@ -180,9 +180,8 @@ fn parse_message(
             format!("Event.EventData.{}", target_str)
         };
 
-        let split: Vec<&str> = array_str.split('.').collect();
         let mut tmp_event_record: &Value = event_record;
-        for s in &split {
+        for s in array_str.split('.') {
             if let Some(record) = tmp_event_record.get(s) {
                 tmp_event_record = record;
             }
@@ -203,9 +202,7 @@ fn parse_message(
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
                 // UnicodeのWhitespace characterをそのままCSVに出力すると見難いので、スペースに変換する。なお、先頭と最後のWhitespace characterは単に削除される。
-                let hash_value: Vec<&str> = hash_value.split_whitespace().collect();
-                let hash_value = hash_value.join(" ");
-                hash_map.insert(full_target_str.to_string(), hash_value);
+                hash_map.insert(full_target_str.to_string(), hash_value.split_whitespace().join(" "));
             }
         } else {
             hash_map.insert(full_target_str.to_string(), "n/a".to_string());
