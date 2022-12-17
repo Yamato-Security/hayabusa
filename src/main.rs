@@ -1245,7 +1245,8 @@ impl App {
             | Action::JsonTimeline(_)
             | Action::LogonSummary(_)
             | Action::Metrics(_)
-            | Action::PivotKeywordsList(_) => {
+            | Action::PivotKeywordsList(_)
+            | Action::SetDefaultProfile(_) => {
                 if std::env::args().len() == 2 {
                     return false;
                 }

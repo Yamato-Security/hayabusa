@@ -270,7 +270,7 @@ pub fn set_default_profile(
                         profile_path, e
                     )),
                 };
-                return result;
+                result
             } else {
                 let profile_names: Vec<&str> = prof_all_data
                     .as_hash()
@@ -278,20 +278,21 @@ pub fn set_default_profile(
                     .keys()
                     .map(|k| k.as_str().unwrap())
                     .collect();
-                return Err(format!(
+                Err(format!(
                     "Invalid profile specified: {}\nPlease specify one of the following profiles:\n{}",
                     profile_name,
                     profile_names.join(", ")
-                ));
+                ))
             }
         } else {
-            return Err(format!(
+            Err(format!(
                 "Failed to set the default profile file({}).",
                 profile_path
-            ));
+            ))
         }
+    } else {
+        Err("Failed to set the default profile file. profile option should set.".to_string())
     }
-    Ok(())
 }
 
 /// Get profile name and tag list in yaml file.

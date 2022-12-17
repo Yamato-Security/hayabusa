@@ -325,6 +325,13 @@ impl Action {
 }
 
 #[derive(Args, Clone, Debug)]
+#[command(
+    name = "Hayabusa",
+    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa.exe set-default-profile -p <PROFILE>\n\n{all-args}",
+    term_width = 400,
+    version
+)]
 pub struct DefaultProfileOption {
     /// Specify output profile
     #[arg(short = 'p', long = "profile")]
@@ -347,9 +354,10 @@ pub struct UpdateOption {
 
 #[derive(Args, Clone, Debug)]
 #[command(
-    help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  hayabusa.exe level-tuning\n  hayabusa.exe level-tuning -f <FILE>\n\n{all-args}",
+    name = "Hayabusa",
+    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa.exe level-tuning\n  hayabusa.exe level-tuning -f <FILE>\n\n{all-args}",
     term_width = 400,
-    disable_help_flag = true,
     version
 )]
 pub struct LevelTuningOption {
