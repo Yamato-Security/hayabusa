@@ -309,10 +309,7 @@ impl Detection {
                     profile_converter.insert(
                         key.as_str(),
                         Level(CompactString::from(
-                            LEVEL_ABBR_MAP
-                                .get(level)
-                                .unwrap_or(&level)
-                                .to_string(),
+                            LEVEL_ABBR_MAP.get(level).unwrap_or(&level).to_string(),
                         )),
                     );
                 }
@@ -471,12 +468,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
-            level: CompactString::from(
-                LEVEL_ABBR_MAP
-                    .get(level)
-                    .unwrap_or(&level)
-                    .to_string(),
-            ),
+            level: CompactString::from(LEVEL_ABBR_MAP.get(level).unwrap_or(&level).to_string()),
             computername: CompactString::from(
                 record_info.record["Event"]["System"]["Computer"]
                     .to_string()
