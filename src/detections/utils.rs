@@ -283,7 +283,7 @@ pub fn get_writable_color(color: Option<Color>, config: &Config) -> Option<Color
 /**
  * CSVのrecord infoカラムに出力する文字列を作る
  */
-fn create_recordinfos(record: &Value) -> String {
+fn create_recordinfos(record: &Value) -> CompactString {
     let mut output = vec![];
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
@@ -302,7 +302,7 @@ fn create_recordinfos(record: &Value) -> String {
         .map(|(key, value)| format!("{}: {}", key, value))
         .collect();
 
-    summary.join(" ¦ ")
+    CompactString::from(summary.join(" ¦ "))
 }
 
 /**

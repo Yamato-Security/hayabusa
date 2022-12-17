@@ -40,7 +40,7 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
     pub key_2_value: HashMap<String, String>,
-    pub record_information: Option<String>,
+    pub record_information: Option<CompactString>,
 }
 
 impl EvtxRecordInfo {
@@ -217,12 +217,11 @@ impl Detection {
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo, stored_static: &StoredStatic) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
-        let recinfo = CompactString::from(
-            record_info
-                .record_information
-                .as_ref()
-                .unwrap_or(&"-".to_string()),
-        );
+        let recinfo = if let Some(tmp) = record_info.record_information.as_ref() {
+            tmp.to_owned()
+        } else {
+            CompactString::from("-")
+        };
         let rec_id = if stored_static
             .profiles
             .as_ref()
