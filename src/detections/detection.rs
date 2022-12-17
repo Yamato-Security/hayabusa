@@ -822,7 +822,7 @@ impl Detection {
         println!();
 
         let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
-        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| v.to_owned()).sum();
+        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| *v).sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {

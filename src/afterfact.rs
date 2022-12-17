@@ -1136,7 +1136,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                             if sp.ends_with(':') && sp.len() > 2 {
                                 stocked_value.push(tmp_stock);
                                 tmp_stock = vec![];
-                                key_index_stock.push(sp.replace(':', "").to_owned());
+                                key_index_stock.push(sp.replace(':', ""));
                             } else {
                                 tmp_stock.push(sp.to_owned());
                             }
@@ -1149,7 +1149,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                         let mut tmp = if key_idx >= key_index_stock.len() {
                             String::default()
                         } else if value_idx == 0 && !value.is_empty() {
-                            key.to_string().to_owned()
+                            key.to_string()
                         } else {
                             key_index_stock[key_idx].to_string()
                         };
@@ -1590,7 +1590,6 @@ mod tests {
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
                 + &expect_tz
-                    .to_owned()
                     .format("%Y-%m-%d %H:%M:%S%.3f %:z")
                     .to_string()
                 + ","
@@ -1655,10 +1654,7 @@ mod tests {
         let expect_header = "Timestamp ‖ Computer ‖ Channel ‖ EventID ‖ Level ‖ RecordID ‖ RuleTitle ‖ Details ‖ RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
-        let expect_no_header = expect_tz
-            .to_owned()
-            .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-            .to_string()
+        let expect_no_header = expect_tz.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
             + " ‖ "
             + test_computername
             + " ‖ "

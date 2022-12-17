@@ -133,8 +133,8 @@ impl App {
             println!();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
-                &analysis_start_time.month().to_owned(),
-                &analysis_start_time.day().to_owned()
+                &analysis_start_time.month(),
+                &analysis_start_time.day()
             ));
         }
         if !self.is_matched_architecture_and_binary() {
