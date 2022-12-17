@@ -349,7 +349,8 @@ pub struct UpdateOption {
 pub struct LevelTuningOption {
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[arg(
-        long = "level-tuning",
+        short = 'f',
+        long = "file",
         default_value = "./rules/config/level_tuning.txt",
         value_name = "FILE"
     )]
