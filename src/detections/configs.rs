@@ -328,7 +328,7 @@ impl Action {
 #[command(
     name = "Hayabusa",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa.exe set-default-profile -p <PROFILE>\n\n{all-args}",
+    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa set-default-profile -p <PROFILE>\n\n{all-args}",
     term_width = 400,
     version
 )]
@@ -356,7 +356,7 @@ pub struct UpdateOption {
 #[command(
     name = "Hayabusa",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa.exe level-tuning\n  hayabusa.exe level-tuning -f <FILE>\n\n{all-args}",
+    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa level-tuning\n  hayabusa level-tuning -f <FILE>\n\n{all-args}",
     term_width = 400,
     version
 )]
@@ -597,7 +597,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[command(
     name = "Hayabusa",
-    override_usage = "hayabusa.exe [COMMAND] [OPTIONS]\n  hayabusa.exe help [COMMAND]",
+    override_usage = "hayabusa [COMMAND] [OPTIONS]\n  hayabusa help [COMMAND]",
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
     term_width = 400,
