@@ -84,6 +84,10 @@ impl App {
     }
 
     fn exec(&mut self, app: &mut Command, stored_static: &mut StoredStatic) {
+        if stored_static.profiles.is_none() {
+            return;
+        }
+
         let analysis_start_time: DateTime<Local> = Local::now();
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
@@ -115,7 +119,7 @@ impl App {
 
         // Show usage when no arguments.
         if std::env::args().len() == 1
-            || (!stored_static.config.quiet && std::env::args().len() == 2)
+            || (stored_static.config.quiet && std::env::args().len() == 2)
         {
             if !stored_static.config.quiet {
                 self.output_logo(stored_static);

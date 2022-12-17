@@ -149,7 +149,6 @@ pub fn load_profile(
         &None
     };
 
-    // println!("dbg {:?}", opt_stored_static.as_ref().unwrap());
     let profile_all: Vec<Yaml> = if profile.is_none() {
         match read_profile_data(default_profile_path, opt_stored_static.unwrap()) {
             Ok(data) => data,
