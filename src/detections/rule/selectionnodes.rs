@@ -1,6 +1,7 @@
 use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
 use downcast_rs::Downcast;
 use nested::Nested;
+use serde_json::Value;
 use std::{sync::Arc, vec};
 use yaml_rust::Yaml;
 
@@ -342,35 +343,36 @@ impl SelectionNode for LeafSelectionNode {
 
             // 配列じゃなくて、文字列や数値等の場合は普通通りに比較する。
             let eventdata_data = values.unwrap();
-            if eventdata_data.is_boolean() || eventdata_data.is_i64() || eventdata_data.is_string()
-            {
-                let event_value = event_record.get_value(self.get_key());
-                return self
-                    .matcher
-                    .as_ref()
-                    .unwrap()
-                    .is_match(event_value, event_record);
-            }
-            // 配列の場合は配列の要素のどれか一つでもルールに合致すれば条件に一致したことにする。
-            if eventdata_data.is_array() {
-                return eventdata_data
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .any(|ary_element| {
-                        let event_value = utils::value_to_string(ary_element);
-                        return self
-                            .matcher
-                            .as_ref()
-                            .unwrap()
-                            .is_match(event_value.as_ref(), event_record);
-                    });
-            } else {
-                return self
-                    .matcher
-                    .as_ref()
-                    .unwrap()
-                    .is_match(Option::None, event_record);
+            match eventdata_data {
+                Value::Bool(_) | Value::Number(_) | Value::String(_) => {
+                    let event_value = event_record.get_value(self.get_key());
+                    return self
+                        .matcher
+                        .as_ref()
+                        .unwrap()
+                        .is_match(event_value, event_record);
+                }
+                Value::Array(_) => {
+                    return eventdata_data
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|ary_element| {
+                            let event_value = utils::value_to_string(ary_element);
+                            return self
+                                .matcher
+                                .as_ref()
+                                .unwrap()
+                                .is_match(event_value.as_ref(), event_record);
+                        });
+                }
+                _ => {
+                    return self
+                        .matcher
+                        .as_ref()
+                        .unwrap()
+                        .is_match(Option::None, event_record);
+                }
             }
         }
 
