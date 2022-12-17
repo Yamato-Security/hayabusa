@@ -333,19 +333,20 @@ fn emit_csv<W: std::io::Write>(
             }
             // 各種集計作業
             if !output_option.no_summary {
-                let level_map: HashMap<String, u128> = HashMap::from([
-                    ("INFORMATIONAL".to_owned(), 1),
-                    ("LOW".to_owned(), 2),
-                    ("MEDIUM".to_owned(), 3),
-                    ("HIGH".to_owned(), 4),
-                    ("CRITICAL".to_owned(), 5),
+                let level_map: HashMap<&str, u128> = HashMap::from([
+                    ("INFORMATIONAL", 1),
+                    ("LOW", 2),
+                    ("MEDIUM", 3),
+                    ("HIGH", 4),
+                    ("CRITICAL", 5),
                 ]);
                 let level_suffix = *level_map
                     .get(
-                        &LEVEL_FULL
+                        LEVEL_FULL
                             .get(&detect_info.level.as_str())
                             .unwrap_or(&"undefined")
-                            .to_uppercase(),
+                            .to_uppercase()
+                            .as_str(),
                     )
                     .unwrap_or(&0) as usize;
 
@@ -1049,7 +1050,7 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
 
 /// JSONの出力フォーマットに合わせた文字列を出力する関数
 fn _create_json_output_format(
-    key: &String,
+    key: &str,
     value: &str,
     key_quote_exclude_flag: bool,
     concat_flag: bool,
@@ -1124,7 +1125,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
             let output_val =
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
             target.push(_create_json_output_format(
-                &key.to_string(),
+                key,
                 &output_val,
                 key.starts_with('\"'),
                 output_val.starts_with('\"'),

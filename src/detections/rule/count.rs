@@ -25,17 +25,18 @@ pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_erro
         quiet_errors_flag,
         STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     );
-    let field_name: String = match rule.get_agg_condition() {
-        None => String::default(),
+    let binding = String::default();
+    let field_name = match rule.get_agg_condition() {
+        None => "",
         Some(aggcondition) => aggcondition
             ._field_name
             .as_ref()
-            .unwrap_or(&String::default())
-            .to_owned(),
+            .unwrap_or(&binding)
+            .as_str(),
     };
     let field_value = get_alias_value_in_record(
         rule,
-        &field_name,
+        field_name,
         record,
         false,
         verbose_flag,
