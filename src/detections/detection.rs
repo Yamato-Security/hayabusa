@@ -177,8 +177,7 @@ impl Detection {
                 continue;
             }
 
-            let agg_results = rule.judge_satisfy_aggcondition(stored_static);
-            for value in agg_results {
+            for value in rule.judge_satisfy_aggcondition(stored_static) {
                 Detection::insert_agg_message(rule, value, stored_static);
             }
         }
