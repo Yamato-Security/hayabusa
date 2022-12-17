@@ -719,46 +719,52 @@ impl Detection {
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> CompactString {
         // 条件式部分の出力
-        let mut ret: String = "[condition] ".to_owned();
-        let agg_condition_raw_str: Vec<&str> = rule.yaml["detection"]["condition"]
-            .as_str()
-            .unwrap()
-            .split('|')
-            .collect();
+        let mut ret: String = "[condition] ".to_string();
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
         let agg_condition = rule.get_agg_condition().unwrap();
         let exist_timeframe = rule.yaml["detection"]["timeframe"].as_str().unwrap_or("") != "";
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
-        ret.push_str(agg_condition_raw_str[1].trim());
+        ret.push_str(
+            rule.yaml["detection"]["condition"]
+                .as_str()
+                .unwrap()
+                .split('|')
+                .nth(1)
+                .unwrap_or_default()
+                .trim(),
+        );
         if exist_timeframe {
             ret.push_str(" in timeframe");
         }
 
-        let _ = write!(ret, " [result] count:{}", agg_result.data);
+        write!(ret, " [result] count:{}", agg_result.data).ok();
         if agg_condition._field_name.is_some() {
-            let _ = write!(
+            write!(
                 ret,
                 " {}:{}",
                 agg_condition._field_name.as_ref().unwrap(),
                 agg_result.field_values.join("/")
-            );
+            )
+            .ok();
         }
 
         if agg_condition._by_field_name.is_some() {
-            let _ = write!(
+            write!(
                 ret,
                 " {}:{}",
                 agg_condition._by_field_name.as_ref().unwrap(),
                 agg_result.key
-            );
+            )
+            .ok();
         }
 
         if exist_timeframe {
-            let _ = write!(
+            write!(
                 ret,
                 " timeframe:{}",
                 rule.yaml["detection"]["timeframe"].as_str().unwrap()
-            );
+            )
+            .ok();
         }
 
         CompactString::from(ret)
