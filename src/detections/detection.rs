@@ -504,7 +504,7 @@ impl Detection {
         let output = Detection::create_count_output(rule, &agg_result);
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
-        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let level = rule.yaml["level"].as_str().unwrap_or("-");
         let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
@@ -529,10 +529,7 @@ impl Detection {
                     profile_converter.insert(
                         key.as_str(),
                         Level(CompactString::from(
-                            LEVEL_ABBR_MAP
-                                .get(&level.as_str())
-                                .unwrap_or(&level.as_str())
-                                .to_string(),
+                            LEVEL_ABBR_MAP.get(level).unwrap_or(&level).to_string(),
                         )),
                     );
                 }
@@ -660,11 +657,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
-            level: CompactString::from(
-                *LEVEL_ABBR_MAP
-                    .get(&level.as_str())
-                    .unwrap_or(&level.as_str()),
-            ),
+            level: CompactString::from(*LEVEL_ABBR_MAP.get(level).unwrap_or(&level)),
             computername: CompactString::from("-"),
             eventid: CompactString::from("-"),
             detail: output,
