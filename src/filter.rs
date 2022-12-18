@@ -17,7 +17,7 @@ pub struct RuleExclude {
 }
 
 impl RuleExclude {
-    pub fn default() -> RuleExclude {
+    pub fn new() -> RuleExclude {
         RuleExclude {
             no_use_rule: HashMap::new(),
         }
@@ -25,7 +25,7 @@ impl RuleExclude {
 }
 
 pub fn exclude_ids() -> RuleExclude {
-    let mut exclude_ids = RuleExclude::default();
+    let mut exclude_ids = RuleExclude::new();
 
     exclude_ids.insert_ids(&format!(
         "{}/noisy_rules.txt",
