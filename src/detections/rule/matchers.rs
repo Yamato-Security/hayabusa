@@ -407,8 +407,6 @@ impl PipeElement {
                     return false;
                 }
 
-                println!("event value: {}", event_value.unwrap());
-                println!("eq_value: {}", eq_value.unwrap());
                 eq_value.unwrap().cmp(event_value.unwrap()) == Ordering::Equal
             }
             PipeElement::Endswithfield(eq_key) => {
@@ -418,8 +416,9 @@ impl PipeElement {
                     return false;
                 }
 
-                let event_value = event_value.unwrap();
-                event_value.ends_with(ends_value.unwrap())
+                let event_value = &event_value.unwrap().to_lowercase();
+                let ends_value = &ends_value.unwrap().to_lowercase();
+                event_value.ends_with(ends_value)
             }
             _ => false,
         }
