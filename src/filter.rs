@@ -24,8 +24,14 @@ impl RuleExclude {
     }
 }
 
+impl Default for RuleExclude {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn exclude_ids() -> RuleExclude {
-    let mut exclude_ids = RuleExclude::new();
+    let mut exclude_ids = RuleExclude::default();
 
     exclude_ids.insert_ids(&format!(
         "{}/noisy_rules.txt",

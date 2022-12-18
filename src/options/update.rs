@@ -187,7 +187,7 @@ impl Update {
             .read_dir(
                 rule_folder_path,
                 "INFORMATIONAL",
-                &filter::RuleExclude::new(),
+                &filter::RuleExclude::default(),
             )
             .ok();
 
