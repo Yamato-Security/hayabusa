@@ -190,16 +190,16 @@ impl Timeline {
                 println!("{}", msgprint);
             }
         } else {
-            println!(" Success Logon:");
+            println!(" Successful Logons:");
             self.tm_loginstats_tb_dsp_msg("Successful");
-            println!("\n\n Failed Logon:");
+            println!("\n\n Failed Logons:");
             self.tm_loginstats_tb_dsp_msg("Failed");
         }
     }
 
     /// ユーザ毎のログイン統計情報出力
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str) {
-        let header = vec!["User", "Hostname", "Logontype", logon_res];
+        let header = vec!["User", "Hostname", "Logon Type", logon_res];
         let target;
         let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
             // output to file
