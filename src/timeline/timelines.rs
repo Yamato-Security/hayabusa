@@ -239,7 +239,12 @@ impl Timeline {
             if values[vnum] == 0 {
                 continue;
             } else {
-                let record_data = vec![username.to_string(), hostname.to_string(), logontype.to_string(), values[vnum].to_string()];
+                let record_data = vec![
+                    username.to_string(),
+                    hostname.to_string(),
+                    logontype.to_string(),
+                    values[vnum].to_string(),
+                ];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
                 }
