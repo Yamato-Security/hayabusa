@@ -154,8 +154,10 @@ pub fn insert(
                     replaced_profiles
                         .push((key.to_owned(), AllFieldInfo(CompactString::from("-"))));
                 } else {
-                    let r = utils::create_recordinfos(event_record);
-                    replaced_profiles.push((key.to_owned(), AllFieldInfo(CompactString::from(r))));
+                    let rec = utils::create_recordinfos(event_record);
+                    let rec = if rec.is_empty() { "-".to_string() } else { rec };
+                    replaced_profiles
+                        .push((key.to_owned(), AllFieldInfo(CompactString::from(rec))));
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),

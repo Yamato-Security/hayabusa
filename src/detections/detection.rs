@@ -425,16 +425,12 @@ impl Detection {
                 _ => {}
             }
         }
-        let m = rule.yaml["details"].as_str();
-        let s = match m {
+        let details_fmt_str = match rule.yaml["details"].as_str() {
             Some(s) => s.to_string(),
-            None => {
-                let default_output = match DEFAULT_DETAILS.get(&format!("{}_{}", provider, &eid)) {
-                    Some(str) => str.to_string(),
-                    None => create_recordinfos(&record_info.record),
-                };
-                default_output
-            }
+            None => match DEFAULT_DETAILS.get(&format!("{}_{}", provider, &eid)) {
+                Some(str) => str.to_string(),
+                None => create_recordinfos(&record_info.record),
+            },
         };
 
         let detect_info = DetectInfo {
@@ -459,7 +455,7 @@ impl Detection {
 
         message::insert(
             &record_info.record,
-            CompactString::new(s),
+            CompactString::new(details_fmt_str),
             detect_info,
             time,
             &mut profile_converter,
