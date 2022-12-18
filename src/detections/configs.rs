@@ -254,27 +254,77 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 // コマンド生成用のClapの定義
 #[derive(Subcommand, Clone, Debug)]
 pub enum Action {
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
 
+    #[clap(
+        name = "Hayabusa",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Print event ID metrics
     Metrics(MetricsOption),
 
+    #[clap(
+        name = "Hayabusa",
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
 
@@ -325,13 +375,6 @@ impl Action {
 }
 
 #[derive(Args, Clone, Debug)]
-#[command(
-    name = "Hayabusa",
-    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa set-default-profile -p <PROFILE>\n\n{all-args}",
-    term_width = 400,
-    version
-)]
 pub struct DefaultProfileOption {
     /// Specify output profile
     #[arg(short = 'p', long = "profile")]
@@ -353,13 +396,6 @@ pub struct UpdateOption {
 }
 
 #[derive(Args, Clone, Debug)]
-#[command(
-    name = "Hayabusa",
-    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa {version}\n{author}\n\n{usage-heading}\n  hayabusa level-tuning\n  hayabusa level-tuning -f <FILE>\n\n{all-args}",
-    term_width = 400,
-    version
-)]
 pub struct LevelTuningOption {
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[arg(
@@ -595,11 +631,9 @@ pub struct JSONOutputOption {
 }
 
 #[derive(Parser, Clone, Debug)]
-#[command(
-    name = "Hayabusa",
-    override_usage = "hayabusa [COMMAND] [OPTIONS]\n  hayabusa help [COMMAND]",
+#[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
+    help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
     term_width = 400,
     disable_help_flag = true,
     version
