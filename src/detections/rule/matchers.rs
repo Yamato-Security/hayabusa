@@ -1972,6 +1972,64 @@ mod tests {
     }
 
     #[test]
+    fn test_endswith_field_caseinsensitive() {
+        // endswithfieldでcaseinsensitiveで検知することを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswithfield: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "iTy" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_endswith_field_caseinsensitive2() {
+        // endswithfieldでcaseinsensitiveで検知することを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswithfield: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "SecuriTy", "Computer": "ity" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
     fn test_endswith_field_notdetect() {
         // endswithfieldで正しく検知しないパターン
         let rule_str = r#"
