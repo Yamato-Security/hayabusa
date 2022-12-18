@@ -364,7 +364,11 @@ enum PipeElement {
 }
 
 impl PipeElement {
-    fn new(key: &str, pattern: &str, key_list: &Nested<String>) -> Result<PipeElement, Vec<String>> {
+    fn new(
+        key: &str,
+        pattern: &str,
+        key_list: &Nested<String>,
+    ) -> Result<PipeElement, Vec<String>> {
         let pipe_element = match key {
             "startswith" => Option::Some(PipeElement::Startswith),
             "endswith" => Option::Some(PipeElement::Endswith),
@@ -402,21 +406,21 @@ impl PipeElement {
                 if event_value.is_none() || eq_value.is_none() {
                     return false;
                 }
-    
+
                 println!("event value: {}", event_value.unwrap());
                 println!("eq_value: {}", eq_value.unwrap());
                 eq_value.unwrap().cmp(event_value.unwrap()) == Ordering::Equal
-            },
+            }
             PipeElement::Endswithfield(eq_key) => {
                 let ends_value = recinfo.get_value(eq_key);
                 // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
                 if event_value.is_none() || ends_value.is_none() {
                     return false;
                 }
-    
+
                 let event_value = event_value.unwrap();
                 event_value.ends_with(ends_value.unwrap())
-            },
+            }
             _ => false,
         }
     }
@@ -2025,7 +2029,6 @@ mod tests {
             }
         }
     }
-
 
     #[test]
     fn test_eq_field() {
