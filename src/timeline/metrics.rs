@@ -125,17 +125,18 @@ impl EventMetrics {
                     utils::get_event_value("Computer", &record.record).unwrap(),
                 );
                 let countlist: [usize; 2] = [0, 0];
+                // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
+                let count: &mut [usize; 2] = self
+                    .stats_login_list
+                    .entry((
+                        username.unwrap_or_default(),
+                        hostname.unwrap_or_default(),
+                        logontype.unwrap_or_default(),
+                    ))
+                    .or_insert(countlist);
                 if idnum == 4624 {
-                    let count: &mut [usize; 2] = self
-                        .stats_login_list
-                        .entry((username.unwrap(), hostname.unwrap(), logontype.unwrap()))
-                        .or_insert(countlist);
                     count[0] += 1;
                 } else if idnum == 4625 {
-                    let count: &mut [usize; 2] = self
-                        .stats_login_list
-                        .entry((username.unwrap(), hostname.unwrap(), logontype.unwrap()))
-                        .or_insert(countlist);
                     count[1] += 1;
                 }
             };
