@@ -268,7 +268,7 @@ impl LeafMatcher for DefaultMatcher {
         keys.pop_front(); // 一つ目はただのキーで、2つめ以降がpipe
         while !keys.is_empty() {
             let key = keys.pop_front().unwrap();
-            let pipe_element = PipeElement::new(key, key_list)?;
+            let pipe_element = PipeElement::new(key, &pattern, key_list)?;
             self.pipes.push(pipe_element);
         }
         if self.pipes.len() >= 2 {
@@ -314,7 +314,7 @@ impl LeafMatcher for DefaultMatcher {
 
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         // PipeElement::EqualsFieldが設定されていた場合
-        let pipe = self.pipes.first().unwrap();
+        let pipe = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
         if pipe.get_eqfield().is_some() {
             return pipe.is_eqfield_match(event_value, recinfo);
         }
@@ -364,8 +364,8 @@ enum PipeElement {
 }
 
 impl PipeElement {
-    fn new(pattern: &str, key_list: &Nested<String>) -> Result<PipeElement, Vec<String>> {
-        let pipe_element = match pattern {
+    fn new(key: &str, pattern: &str, key_list: &Nested<String>) -> Result<PipeElement, Vec<String>> {
+        let pipe_element = match key {
             "startswith" => Option::Some(PipeElement::Startswith),
             "endswith" => Option::Some(PipeElement::Endswith),
             "contains" => Option::Some(PipeElement::Contains),
@@ -397,13 +397,15 @@ impl PipeElement {
     fn is_eqfield_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
         match self {
             PipeElement::EqualsField(eq_key) => {
-                let another_value = recinfo.get_value(eq_key);
+                let eq_value = recinfo.get_value(eq_key);
                 // Evtxのレコードに存在しないeventkeyを指定された場合はfalseにする
-                if event_value.is_none() || another_value.is_none() {
+                if event_value.is_none() || eq_value.is_none() {
                     return false;
                 }
     
-                another_value.unwrap().cmp(event_value.unwrap()) == Ordering::Equal
+                println!("event value: {}", event_value.unwrap());
+                println!("eq_value: {}", eq_value.unwrap());
+                eq_value.unwrap().cmp(event_value.unwrap()) == Ordering::Equal
             },
             PipeElement::Endswithfield(eq_key) => {
                 let ends_value = recinfo.get_value(eq_key);
@@ -1909,6 +1911,123 @@ mod tests {
     }
 
     #[test]
+    fn test_endswith_field() {
+        // endswithfieldで正しく検知できることを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswithfield: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "rity" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_endswith_field2() {
+        // endswithfieldで正しく検知できることを確認
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswithfield: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_endswith_field_notdetect() {
+        // endswithfieldで正しく検知しないパターン
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswithfield: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "rity", "Computer": "Security" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+    #[test]
+    fn test_endswith_field_notdetect2() {
+        // endswithfieldで正しく検知しないパターン
+        let rule_str = r#"
+        detection:
+            selection:
+                Channel|endswithfield: Computer
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Sec" }},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        let mut rule_node = parse_rule_from_str(rule_str);
+        match serde_json::from_str(record_json_str) {
+            Ok(record) => {
+                let keys = detections::rule::get_detection_keys(&rule_node);
+                let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
+                assert!(!rule_node.select(&recinfo));
+            }
+            Err(_) => {
+                panic!("Failed to parse json record.");
+            }
+        }
+    }
+
+
+    #[test]
     fn test_eq_field() {
         // equalsfieldsで正しく検知できることを確認
         let rule_str = r#"
@@ -2033,7 +2152,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eq_field_null() {
+    fn test_field_null() {
         // 値でnullであった場合に対象のフィールドが存在しないことを確認
         let rule_str = r#"
         enabled: true
@@ -2064,8 +2183,9 @@ mod tests {
             }
         }
     }
+
     #[test]
-    fn test_eq_field_null_not_detect() {
+    fn test_field_null_not_detect() {
         // 値でnullであった場合に対象のフィールドが存在しないことを確認するテスト
         let rule_str = r#"
         enabled: true
