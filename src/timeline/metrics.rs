@@ -115,15 +115,9 @@ impl EventMetrics {
                     continue;
                 }
 
-                let username = utils::value_to_string(
-                    utils::get_event_value("TargetUserName", &record.record).unwrap(),
-                );
-                let logontype = utils::value_to_string(
-                    utils::get_event_value("LogonType", &record.record).unwrap(),
-                );
-                let hostname = utils::value_to_string(
-                    utils::get_event_value("Computer", &record.record).unwrap(),
-                );
+                let username = utils::get_event_value("TargetUserName", &record.record);
+                let logontype = utils::get_event_value("LogonType", &record.record);
+                let hostname = utils::get_event_value("Computer", &record.record);
                 let countlist: [usize; 2] = [0, 0];
                 // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
                 let count: &mut [usize; 2] = self

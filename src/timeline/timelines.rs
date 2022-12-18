@@ -234,17 +234,19 @@ impl Timeline {
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
-        for ((username, hostname, logontype), values) in &mapsorted {
+        for ((key, host, ltype), values) in &mapsorted {
             // 件数が"0"件は表示しない
             if values[vnum] == 0 {
                 continue;
             } else {
-                let record_data = vec![
-                    username.to_string(),
-                    hostname.to_string(),
-                    logontype.to_string(),
-                    values[vnum].to_string(),
-                ];
+                let mut username: String = key.to_string();
+                let mut hostname: String = host.to_string();
+                let logontype: String = ltype.to_string();
+                username.pop();
+                username.remove(0);
+                hostname.pop();
+                hostname.remove(0);
+                let record_data = vec![username, hostname, logontype, values[vnum].to_string()];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
                 }

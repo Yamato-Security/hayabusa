@@ -64,9 +64,9 @@ pub fn check_allowlist(target: &str, regexes: &[Regex]) -> bool {
 pub fn value_to_string(value: &Value) -> Option<String> {
     match value {
         Value::Null => Option::None,
-        Value::Bool(b) => Option::Some(b.to_string().replace(['"', '\''], "")),
-        Value::Number(n) => Option::Some(n.to_string().replace(['"', '\''], "")),
-        Value::String(s) => Option::Some(s.trim().replace(['"', '\''], "")),
+        Value::Bool(b) => Option::Some(b.to_string()),
+        Value::Number(n) => Option::Some(n.to_string()),
+        Value::String(s) => Option::Some(s.trim().to_string()),
         Value::Array(_) => Option::None,
         Value::Object(_) => Option::None,
     }
