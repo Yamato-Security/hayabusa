@@ -115,28 +115,26 @@ impl EventMetrics {
                     continue;
                 }
 
-                let username = utils::get_event_value("TargetUserName", &record.record);
-                let logontype = utils::get_event_value("LogonType", &record.record);
-                let hostname = utils::get_event_value("Computer", &record.record);
+                let username = utils::value_to_string(
+                    utils::get_event_value("TargetUserName", &record.record).unwrap(),
+                );
+                let logontype = utils::value_to_string(
+                    utils::get_event_value("LogonType", &record.record).unwrap(),
+                );
+                let hostname = utils::value_to_string(
+                    utils::get_event_value("Computer", &record.record).unwrap(),
+                );
                 let countlist: [usize; 2] = [0, 0];
                 if idnum == 4624 {
                     let count: &mut [usize; 2] = self
                         .stats_login_list
-                        .entry((
-                            username.unwrap().to_string(),
-                            hostname.unwrap().to_string(),
-                            logontype.unwrap().to_string(),
-                        ))
+                        .entry((username.unwrap(), hostname.unwrap(), logontype.unwrap()))
                         .or_insert(countlist);
                     count[0] += 1;
                 } else if idnum == 4625 {
                     let count: &mut [usize; 2] = self
                         .stats_login_list
-                        .entry((
-                            username.unwrap().to_string(),
-                            hostname.unwrap().to_string(),
-                            logontype.unwrap().to_string(),
-                        ))
+                        .entry((username.unwrap(), hostname.unwrap(), logontype.unwrap()))
                         .or_insert(countlist);
                     count[1] += 1;
                 }
