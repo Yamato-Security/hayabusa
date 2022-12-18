@@ -253,11 +253,7 @@ impl Timeline {
         }
         // rowデータがない場合は、検出なしのメッセージを表示する
         if logins_stats_tb.row_iter().len() == 0 {
-            let mut msges: Vec<String> = Vec::new();
-            msges.push(" No logon ".to_string() + logon_res + " events were detected.");
-            for msgprint in msges.iter() {
-                println!("{}", msgprint);
-            }
+            println!(" No logon {} events were detected.", logon_res);
         } else {
             println!("{logins_stats_tb}");
         }
