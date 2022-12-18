@@ -399,7 +399,7 @@ impl CountStrategy for NoFieldStrategy {
         rule: &RuleNode,
     ) -> AggResult {
         let ret = AggResult::new(
-            cnt as i64,
+            cnt,
             key.to_string(),
             vec![],
             datas[left as usize].record_time,
@@ -476,7 +476,7 @@ pub fn judge_timeframe(
         }
 
         let cnt = counter.count();
-        if select_aggcon(cnt as i64, rule) {
+        if select_aggcon(cnt, rule) {
             // 条件を満たすtimeframeが見つかった
             ret.push(counter.create_agg_result(left, &datas, cnt, key, rule));
             left = right;
