@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn test_read_file_yaml() {
         let mut yaml = yaml::ParseYaml::new();
-        let exclude_ids = RuleExclude::new();
+        let exclude_ids = RuleExclude::default();
         let _ = &yaml.read_dir(
             "test_files/rules/yaml/1.yml",
             &String::default(),
@@ -447,7 +447,7 @@ mod tests {
     fn test_none_exclude_rules_file() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/yaml");
-        let exclude_ids = RuleExclude::new();
+        let exclude_ids = RuleExclude::default();
         yaml.read_dir(path, "", &exclude_ids).unwrap();
         assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 0);
     }
@@ -455,7 +455,7 @@ mod tests {
     fn test_exclude_deprecated_rules_file() {
         let mut yaml = yaml::ParseYaml::new();
         let path = Path::new("test_files/rules/deprecated");
-        let exclude_ids = RuleExclude::new();
+        let exclude_ids = RuleExclude::default();
         yaml.read_dir(path, "", &exclude_ids).unwrap();
         assert_eq!(
             yaml.rule_status_cnt.get("deprecated").unwrap().to_owned(),

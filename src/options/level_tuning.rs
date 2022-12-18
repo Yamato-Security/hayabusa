@@ -50,7 +50,7 @@ impl LevelTuning {
         let mut rulefile_loader = ParseYaml::new();
         //noisy rules and exclude rules treats as update target
         let result_readdir =
-            rulefile_loader.read_dir(rules_path, "informational", &RuleExclude::new());
+            rulefile_loader.read_dir(rules_path, "informational", &RuleExclude::default());
         if result_readdir.is_err() {
             return Result::Err(format!("{}", result_readdir.unwrap_err()));
         }
