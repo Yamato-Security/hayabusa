@@ -115,18 +115,21 @@ impl EventMetrics {
                     continue;
                 }
 
-                let username = utils::get_event_value("TargetUserName", &record.record)
-                    .unwrap()
-                    .to_string()
-                    .replace(['"', '\''], "");
-                let logontype = utils::get_event_value("LogonType", &record.record)
-                    .unwrap()
-                    .to_string()
-                    .replace(['"', '\''], "");
-                let hostname = utils::get_event_value("Computer", &record.record)
-                    .unwrap()
-                    .to_string()
-                    .replace(['"', '\''], "");
+                let username = utils::get_serde_number_to_string(
+                    utils::get_event_value("TargetUserName", &record.record).unwrap(),
+                )
+                .unwrap_or_else(|| "n/a".to_string())
+                .replace(['"', '\''], "");
+                let logontype = utils::get_serde_number_to_string(
+                    utils::get_event_value("LogonType", &record.record).unwrap(),
+                )
+                .unwrap_or_else(|| "n/a".to_string())
+                .replace(['"', '\''], "");
+                let hostname = utils::get_serde_number_to_string(
+                    utils::get_event_value("Computer", &record.record).unwrap(),
+                )
+                .unwrap_or_else(|| "n/a".to_string())
+                .replace(['"', '\''], "");
                 let countlist: [usize; 2] = [0, 0];
                 // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
                 let count: &mut [usize; 2] = self

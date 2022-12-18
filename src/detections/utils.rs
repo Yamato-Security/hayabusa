@@ -145,7 +145,7 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
 pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     if value.is_string() {
         Option::Some(value.as_str().unwrap_or("").to_string())
-    } else if value.is_object() {
+    } else if value.is_object() || value.is_null() {
         // Object type is not specified record value.
         Option::None
     } else {
