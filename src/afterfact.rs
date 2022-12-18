@@ -927,9 +927,9 @@ fn _print_detection_summary_tables(
         .set_style(TableComponent::BottomBorderIntersections, hlch);
 
         tb.add_row(vec![
-            Cell::new(&output[2 * x][1..].join("\n"))
+            Cell::new(output[2 * x][1..].join("\n"))
                 .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
-            Cell::new(&output[2 * x + 1][1..].join("\n"))
+            Cell::new(output[2 * x + 1][1..].join("\n"))
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
         ]);
     }
@@ -1527,7 +1527,7 @@ mod tests {
         let data: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
-                Profile::Timestamp(CompactString::new(&format_time(&test_timestamp, false))),
+                Profile::Timestamp(CompactString::new(format_time(&test_timestamp, false))),
             ),
             (
                 CompactString::new("Computer"),
