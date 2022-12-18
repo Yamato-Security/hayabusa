@@ -282,7 +282,6 @@ pub enum Action {
     LogonSummary(LogonSummaryOption),
 
     #[clap(
-        name = "Hayabusa",
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
@@ -292,7 +291,6 @@ pub enum Action {
     Metrics(MetricsOption),
 
     #[clap(
-        name = "Hayabusa",
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
