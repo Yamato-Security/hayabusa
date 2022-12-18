@@ -1,6 +1,6 @@
 # Changes
 
-## 1.x.x [2022/xx/xx]
+## 2.0.0 [2022/12/24]
 
 **New Features:**
 
@@ -9,9 +9,9 @@
 **Enhancements:**
 
 - Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
-- Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@YamatoSecurity)
+- Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@hitenkoku)
 - By optimizating binary, binary size is compressed and processing time is slightly improved. (#824) (@YamatoSecurity)
-- Separated help menu by subcommand. (#656) (@hitenkoku)
+- Separated the help menu and usage by subcommands. (#656) (@hitenkoku)
 
 **Bug Fixes:**
 

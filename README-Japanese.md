@@ -65,9 +65,10 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
+- [主なコマンド](#主なコマンド)
 - [使用方法](#使用方法)
-  - [主なコマンド](#主なコマンド)
-  - [コマンドラインオプション](#コマンドラインオプション)
+  - [デフォルトのヘルプメニュー](#デフォルトのヘルプメニュー)
+  - [`csv-timeline`コマンド](#csv-timelineコマンド)
   - [使用例](#使用例)
   - [ピボットキーワードの作成](#ピボットキーワードの作成)
   - [ログオン情報の要約](#ログオン情報の要約)
@@ -188,7 +189,7 @@ CSVのタイムラインをTimesketchにインポートする方法は[こちら
 * フォレンジック調査やインシデントレスポンスのために、分析しやすいCSVタイムラインを作成します。
 * 読みやすい/作成/編集可能なYMLベースのHayabusaルールで作成されたIoCシグネチャに基づくスレット。
 * SigmaルールをHayabusaルールに変換するためのSigmaルールのサポートがされています。
-* 現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルールにも対応しています。
+* 現在、他の類似ツールに比べ最も多くのSigmaルールをサポートしており、カウントルール、新しい機能の`|equalsfield`や`|endswithfield`等にも対応しています。
 * イベントログの統計。(どのような種類のイベントがあるのかを把握し、ログ設定のチューニングに有効です。)
 * 不良ルールやノイズの多いルールを除外するルールチューニング設定が可能です。
 * MITRE ATT&CKとのマッピング (CSVの出力ファイルのみ)。
@@ -219,7 +220,7 @@ git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 `git pull --recurse-submodules`コマンド、もしくは以下のコマンドで`rules`フォルダを同期し、Hayabusaの最新のルールを更新することができます:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe update-rules
+hayabusa-2.0.0-win-x64.exe update-rules
 ```
 
 アップデートが失敗した場合は、`rules`フォルダの名前を変更してから、もう一回アップデートしてみて下さい。
@@ -328,20 +329,20 @@ Windows PC起動後の初回実行時に時間がかかる場合があります�
 
 コマンドプロンプトやWindows Terminalから32ビットもしくは64ビットのWindowsバイナリをHayabusaのルートディレクトリから実行します。
 
-例: `hayabusa-1.8.1-windows-x64.exe`
+例: `hayabusa-2.0.0-win-x64.exe`
 
 ## Linux
 
 まず、バイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.8.1-lin-gnu
+chmod +x ./hayabusa-2.0.0-lin-gnu
 ```
 
 次に、Hayabusaのルートディレクトリから実行します：
 
 ```bash
-./hayabusa-1.8.1-lin-gnu
+./hayabusa-2.0.0-lin-gnu
 ```
 
 ## macOS
@@ -349,13 +350,13 @@ chmod +x ./hayabusa-1.8.1-lin-gnu
 まず、ターミナルやiTerm2からバイナリに実行権限を与える必要があります。
 
 ```bash
-chmod +x ./hayabusa-1.8.1-mac-intel
+chmod +x ./hayabusa-2.0.0-mac-intel
 ```
 
 次に、Hayabusaのルートディレクトリから実行してみてください：
 
 ```bash
-./hayabusa-1.8.1-mac-intel
+./hayabusa-2.0.0-mac-intel
 ```
 
 macOSの最新版では、以下のセキュリティ警告が出る可能性があります：
@@ -369,7 +370,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 その後、ターミナルからもう一回実行してみてください：
 
 ```bash
-./hayabusa-1.8.1-mac-intel
+./hayabusa-2.0.0-mac-intel
 ```
 
 以下の警告が出るので、「開く」をクリックしてください。
@@ -378,26 +379,26 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 これで実行できるようになります。
 
-# 使用方法
-
-## 主なコマンド
+# 主なコマンド
 
 * `csv-timeline`: CSV形式のタイムラインを出力する。
-* `json-timeline`: JSON/JSONL形式のタイムラインを出力する
+* `json-timeline`: JSON/JSONL形式のタイムラインを出力する。
 * `logon-summary`: ログオンイベントのサマリを出力する。
 * `metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `pivot-keywords-list`: ピボットする不審なキーワードのリストを作成する。
 * `update-rules`: GitHubの[hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)リポジトリにある最新のルールに同期させる。
-* `level-tuning`: アラート`level`のカスタムチューニング
+* `level-tuning`: アラート`level`のカスタムチューニング。
+* `list-profiles` : 出力プロファイルの一覧表示。
 * `set-default-profile`: デフォルトプロファイルを変更する。
 
-## コマンドラインオプション
+# 使用方法
 
-* 各種コマンドとグローバルオプション
+## デフォルトのヘルプメニュー
 
-```bash
+```
 Usage:
-  hayabusa.exe [COMMAND] [OPTION]
+  hayabusa.exe help <COMMAND>
+  hayabusa.exe <COMMAND> [OPTIONS]
 
 Commands:
   csv-timeline         CSV形式のタイムラインを出力
@@ -408,28 +409,65 @@ Commands:
   update-rules         rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
   level-tuning         ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
   set-default-profile  デフォルトの出力コンフィグを設定する
-  list-contributors    コントリビュータの一覧表示
+  list-contributors    コントリビュータの一覧表示  
+  list-profiles        出力プロファイルの一覧表示
   help                 コマンドに付随するオプションのヘルプを表示する
 
 Options:
-  -t, --thread-number <NUMBER>           スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --no-color  カラーで出力しない
   -q, --quiet                            Quietモード: 起動バナーを表示しない
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-      --debug Debug output               メモリ使用量などのデバッグ情報を表示する
-  -c, --rules-config <DIRECTORY>         ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -h, --help                             ヘルプ画面の表示
-  -V, --version                          バージョンの表示
 ```
 
-* csv-timelineコマンド
+## `csv-timeline`コマンド
 
-```bash
-Usage: hayabusa.exe csv-timeline [OPTIONS]
+```
+Options:
+  -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
+  -Q, --quiet-errors              Quiet errors mode: do not save error logs
+  -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
+  -v, --verbose                   Output verbose information
+  -h, --help                      Print help information
+  -V, --version                   Print version information
 
 Input:
   -d, --directory <DIRECTORY>  .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+
+Advanced:
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -r, --rules <DIRECTORY/FILE>           Specify a custom rule directory or file (default: ./rules)
+
+Output:
+  -p, --profile <PROFILE>   Specify output profile
+  -o, --output <FILE>       Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
+  -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
+
+Filtering:
+      --enable-deprecated-rules  Enable rules marked as deprecated
+      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
+  -n, --enable-noisy-rules       Enable rules marked as noisy
+      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -e, --eid-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
+
+Display Settings:
+  -T, --visualize-timeline  イベント頻度タイムラインを出力する
+      --no-summary          結果概要を出力しない
+
+Usage: csv-timeline <INPUT> [OPTIONS]
+
+Input:
 
 Advanced:
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
@@ -459,8 +497,7 @@ Time Format:
   -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
 
 Display Settings:
-  -T, --visualize-timeline  イベント頻度タイムラインを出力する
-      --no-summary          結果概要を出力しない
+
 
 Other Actions:
       --set-default-profile <PROFILE>  デフォルトの出力コンフィグを設定する
@@ -611,91 +648,91 @@ Options:
 * １つのWindowsイベントログファイルに対してHayabusaを実行する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -f eventlog.evtx
+hayabusa-2.0.0-win-x64.exe csv-timeline -f eventlog.evtx
 ```
 
 * `verbose`プロファイルで複数のWindowsイベントログファイルのあるsample-evtxディレクトリに対して、Hayabusaを実行する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -P verbose
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -P verbose
 ```
 
 * 全てのフィールド情報も含めて１つのCSVファイルにエクスポートして、Excel、Timeline Explorer、Elastic Stack等でさらに分析することができる(注意: `super-verbose`プロファイルを使すると、出力するファイルのサイズがとても大きくなる！):
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -P super-verbose
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -P super-verbose
 ```
 
 * タイムラインをJSON形式で保存する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe json-timeline -d .\hayabusa-sample-evtx -o results.json
+hayabusa-2.0.0-win-x64.exe json-timeline -d .\hayabusa-sample-evtx -o results.json
 ```
 
 * Hayabusaルールのみを実行する（デフォルトでは`-r .\rules`にあるすべてのルールが利用される）:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Windowsでデフォルトで有効になっているログに対してのみ、Hayabusaルールを実行する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
 ```
 
 * Sysmonログに対してのみHayabusaルールを実行する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Sigmaルールのみを実行する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * 廃棄(deprecated)されたルール(`status`が`deprecated`になっているルール)とノイジールール(`.\rules\config\noisy_rules.txt`にルールIDが書かれているルール)を有効にする:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * ログオン情報を分析するルールのみを実行し、UTCタイムゾーンで出力する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
 ```
 
 * 起動中のWindows端末上で実行し（Administrator権限が必要）、アラート（悪意のある可能性のある動作）のみを検知する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -l -m low
+hayabusa-2.0.0-win-x64.exe csv-timeline -l -m low
 ```
 
 * criticalレベルのアラートからピボットキーワードの一覧を作成する(結果は結果毎に`keywords-Ip Address.txt`や`keywords-Users.txt`等に出力される):
 
 ```bash
-hayabusa-1.8.1-win-x64.exe pivot-keywords-list -l -m critical -o keywords
+hayabusa-2.0.0-win-x64.exe pivot-keywords-list -l -m critical -o keywords
 ```
 
 * イベントIDの統計情報を出力する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe metrics -f Security.evtx
+hayabusa-2.0.0-win-x64.exe metrics -f Security.evtx
 ```
 
 * ログオンサマリを出力する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe logon-summary -f Security.evtx
+hayabusa-2.0.0-win-x64.exe logon-summary -f Security.evtx
 ```
 
 * 詳細なメッセージを出力する(処理に時間がかかるファイル、パースエラー等を特定するのに便利):
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -v
+hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose出力の例:
@@ -716,7 +753,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 * 結果を[Timesketch](https://timesketch.org/)にインポートできるCSV形式に保存する:
 
 ```bash
-hayabusa-1.8.1-win-x64.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
+hayabusa-2.0.0-win-x64.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -P timesketch -U
 ```
 
 * エラーログの出力をさせないようにする:
@@ -1048,7 +1085,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 ## 検知レベルのlevelチューニング
 
 Hayabusaルール、Sigmaルールはそれぞれの作者が検知した際のリスクレベルを決めています。
-ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-1.8.1-win-x64.exe level-tuning`を実行することでルールファイルが書き換えられます。
+ユーザが独自のリスクレベルに設定するには`./rules/config/level_tuning.txt`に変換情報を書き、`hayabusa-2.0.0-win-x64.exe level-tuning`を実行することでルールファイルが書き換えられます。
 ルールファイルが直接書き換えられることに注意して使用してください。
 
 `./rules/config/level_tuning.txt`の例:
