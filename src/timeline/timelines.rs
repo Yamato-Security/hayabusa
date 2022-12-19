@@ -199,7 +199,14 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str) {
-        let header = vec!["User", "Hostname", "Logon Type", logon_res];
+        let header = vec![
+            logon_res,
+            "User",
+            "Hostname",
+            "Logon Type",
+            "Source Computer",
+            "Source Ip",
+        ];
         let target;
         let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
             // output to file
@@ -234,16 +241,18 @@ impl Timeline {
         // 集計件数でソート
         let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
         mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
-        for ((username, hostname, logontype), values) in &mapsorted {
+        for ((username, hostname, logontype, source_computer, source_ip), values) in &mapsorted {
             // 件数が"0"件は表示しない
             if values[vnum] == 0 {
                 continue;
             } else {
                 let record_data = vec![
+                    values[vnum].to_string(),
                     username.to_string(),
                     hostname.to_string(),
                     logontype.to_string(),
-                    values[vnum].to_string(),
+                    source_computer.to_string(),
+                    source_ip.to_string(),
                 ];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
