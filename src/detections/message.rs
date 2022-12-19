@@ -28,7 +28,6 @@ pub struct DetectInfo {
     pub computername: CompactString,
     pub eventid: CompactString,
     pub detail: CompactString,
-    pub record_information: CompactString,
     pub ext_field: Vec<(CompactString, Profile)>,
     pub is_condition: bool,
 }
@@ -151,13 +150,14 @@ pub fn insert(
                 }
             }
             AllFieldInfo(_) => {
-                if detect_info.record_information.is_empty() {
+                if is_agg {
                     replaced_profiles
                         .push((key.to_owned(), AllFieldInfo(CompactString::from("-"))));
                 } else {
+                    let rec = utils::create_recordinfos(event_record);
+                    let rec = if rec.is_empty() { "-".to_string() } else { rec };
                     replaced_profiles
-                        .push((key.to_owned(), AllFieldInfo(detect_info.record_information)));
-                    detect_info.record_information = CompactString::default();
+                        .push((key.to_owned(), AllFieldInfo(CompactString::from(rec))));
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
@@ -651,7 +651,6 @@ mod tests {
                 computername: CompactString::default(),
                 eventid: CompactString::from(i.to_string()),
                 detail: CompactString::default(),
-                record_information: CompactString::default(),
                 ext_field: vec![],
                 is_condition: false,
             };
