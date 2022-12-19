@@ -17,10 +17,16 @@ pub struct RuleExclude {
 }
 
 impl RuleExclude {
-    pub fn default() -> RuleExclude {
+    pub fn new() -> RuleExclude {
         RuleExclude {
             no_use_rule: HashMap::new(),
         }
+    }
+}
+
+impl Default for RuleExclude {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

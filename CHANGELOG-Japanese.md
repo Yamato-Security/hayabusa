@@ -12,6 +12,7 @@
 - Clap Crateパッケージの更新。更新の関係で`--visualize-timeline` のショートオプションの`-V`を`-T`に変更した。 (#725) (@YamatoSecurity)
 - バイナリの最適化を行うことで、バイナリサイズを圧縮し、処理時間もわずかに向上した。 (#824) (@YamatoSecurity)
 - 速度とメモリ使用の最適化。 (#787) (@fukusuket)
+- 新たなパイプキーワード(`|endswithfield`)に対応した。 (#740) (@hach1yon)
 
 **バグ修正:**
 
