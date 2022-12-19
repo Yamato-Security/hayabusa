@@ -11,6 +11,7 @@
 - Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
 - Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@YamatoSecurity)
 - By optimizating binary, binary size is compressed and processing time is slightly improved. (#824) (@YamatoSecurity)
+- Optimized speed and memory usage. (#787) (@fukusuket)
 - Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
 
 **Bug Fixes:**

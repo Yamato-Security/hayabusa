@@ -236,14 +236,12 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
 
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
-    let rec_info = Option::Some(create_recordinfos(&data));
 
     EvtxRecordInfo {
         evtx_filepath: path,
         record: data,
         data_string: data_str,
         key_2_value: key_2_values,
-        record_information: rec_info,
     }
 }
 
@@ -278,7 +276,7 @@ pub fn get_writable_color(color: Option<Color>) -> Option<Color> {
 /**
  * CSVのrecord infoカラムに出力する文字列を作る
  */
-fn create_recordinfos(record: &Value) -> String {
+pub fn create_recordinfos(record: &Value) -> String {
     let mut output = vec![];
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
