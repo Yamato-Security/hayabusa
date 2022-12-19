@@ -125,7 +125,7 @@ impl EventMetrics {
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
         let logontype_map: HashMap<&str, &str> = HashMap::from([
             ("0", "0 - System"),
-            ("2", "1 - Interactive"),
+            ("2", "2 - Interactive"),
             ("3", "3 - Network"),
             ("4", "4 - Batch"),
             ("5", "5 - Service"),
