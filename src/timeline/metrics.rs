@@ -111,7 +111,16 @@ impl EventMetrics {
                 } else {
                     evtid.as_str().unwrap().parse::<i64>().unwrap_or_default()
                 };
-                if !(idnum == 4624 || idnum == 4625) {
+
+                if !(utils::get_serde_number_to_string(
+                    utils::get_event_value("Channel", &record.record)
+                        .unwrap_or(&serde_json::Value::Null),
+                )
+                .unwrap_or_else(|| "n/a".to_string())
+                .replace(['"', '\''], "")
+                    == "Security"
+                    && (idnum == 4624 || idnum == 4625))
+                {
                     continue;
                 }
 
