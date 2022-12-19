@@ -116,17 +116,20 @@ impl EventMetrics {
                 }
 
                 let username = utils::get_serde_number_to_string(
-                    utils::get_event_value("TargetUserName", &record.record).unwrap(),
+                    utils::get_event_value("TargetUserName", &record.record)
+                        .unwrap_or(&serde_json::Value::Null),
                 )
                 .unwrap_or_else(|| "n/a".to_string())
                 .replace(['"', '\''], "");
                 let logontype = utils::get_serde_number_to_string(
-                    utils::get_event_value("LogonType", &record.record).unwrap(),
+                    utils::get_event_value("LogonType", &record.record)
+                        .unwrap_or(&serde_json::Value::Null),
                 )
                 .unwrap_or_else(|| "n/a".to_string())
                 .replace(['"', '\''], "");
                 let hostname = utils::get_serde_number_to_string(
-                    utils::get_event_value("Computer", &record.record).unwrap(),
+                    utils::get_event_value("Computer", &record.record)
+                        .unwrap_or(&serde_json::Value::Null),
                 )
                 .unwrap_or_else(|| "n/a".to_string())
                 .replace(['"', '\''], "");
