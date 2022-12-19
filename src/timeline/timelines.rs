@@ -180,7 +180,7 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self) {
-        println!(" Logon Summary:");
+        println!(" Logon Summary:\n");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
             loginmsges.push("-----------------------------------------".to_string());
@@ -190,46 +190,80 @@ impl Timeline {
                 println!("{}", msgprint);
             }
         } else {
-            let header = vec!["User", "Failed", "Successful"];
-            let target;
-            let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
-                // output to file
-                match File::create(csv_path) {
-                    Ok(file) => {
-                        target = Box::new(BufWriter::new(file));
-                        Some(WriterBuilder::new().from_writer(target))
-                    }
-                    Err(err) => {
-                        AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
-                        process::exit(1);
-                    }
+            println!(" Successful Logons:");
+            self.tm_loginstats_tb_dsp_msg("Successful");
+            println!("\n\n Failed Logons:");
+            self.tm_loginstats_tb_dsp_msg("Failed");
+        }
+    }
+
+    /// ユーザ毎のログイン統計情報出力
+    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str) {
+        let header = vec![
+            logon_res,
+            "User",
+            "Hostname",
+            "Logon Type",
+            "Source Computer",
+            "Source Ip",
+        ];
+        let target;
+        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
+            // output to file
+            match File::create(csv_path) {
+                Ok(file) => {
+                    target = Box::new(BufWriter::new(file));
+                    Some(WriterBuilder::new().from_writer(target))
                 }
-            } else {
-                None
-            };
-            if let Some(ref mut w) = wtr {
-                w.write_record(&header).ok();
+                Err(err) => {
+                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                    process::exit(1);
+                }
             }
+        } else {
+            None
+        };
+        if let Some(ref mut w) = wtr {
+            w.write_record(&header).ok();
+        }
 
-            let mut logins_stats_tb = Table::new();
-            logins_stats_tb
-                .load_preset(UTF8_FULL)
-                .apply_modifier(UTF8_ROUND_CORNERS);
-            logins_stats_tb.set_header(&header);
-            // 集計件数でソート
-            let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
-            mapsorted.sort_by(|x, y| x.0.cmp(y.0));
-
-            for (key, values) in &mapsorted {
-                let mut username: String = key.to_string();
-                username.pop();
-                username.remove(0);
-                let record_data = vec![username, values[1].to_string(), values[0].to_string()];
+        let mut logins_stats_tb = Table::new();
+        logins_stats_tb
+            .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS);
+        logins_stats_tb.set_header(&header);
+        // 集計するログオン結果を設定
+        let vnum = match logon_res {
+            "Successful" => 0,
+            "Failed" => 1,
+            &_ => 0,
+        };
+        // 集計件数でソート
+        let mut mapsorted: Vec<_> = self.stats.stats_login_list.iter().collect();
+        mapsorted.sort_by(|x, y| y.1[vnum].cmp(&x.1[vnum]));
+        for ((username, hostname, logontype, source_computer, source_ip), values) in &mapsorted {
+            // 件数が"0"件は表示しない
+            if values[vnum] == 0 {
+                continue;
+            } else {
+                let record_data = vec![
+                    values[vnum].to_string(),
+                    username.to_string(),
+                    hostname.to_string(),
+                    logontype.to_string(),
+                    source_computer.to_string(),
+                    source_ip.to_string(),
+                ];
                 if let Some(ref mut w) = wtr {
                     w.write_record(&record_data).ok();
                 }
                 logins_stats_tb.add_row(record_data);
             }
+        }
+        // rowデータがない場合は、検出なしのメッセージを表示する
+        if logins_stats_tb.row_iter().len() == 0 {
+            println!(" No logon {} events were detected.", logon_res);
+        } else {
             println!("{logins_stats_tb}");
         }
     }

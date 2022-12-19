@@ -10,6 +10,7 @@
 
 - Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
 - Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@YamatoSecurity)
+- Added output logon types in Logon Summary. (#835) (@garigariganzy @hitenkoku)
 - Optimized speed and memory usage. (#787) (@fukusuket)
 - Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
 

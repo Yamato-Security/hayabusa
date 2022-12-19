@@ -10,6 +10,7 @@
 
 - 実行時のメモリ利用率を表示する機能を追加した。`--debug`オプションで利用可能。 (#788) (@fukusuket)
 - Clap Crateパッケージの更新。更新の関係で`--visualize-timeline` のショートオプションの`-V`を`-T`に変更した。 (#725) (@YamatoSecurity)
+- ログオン情報の出力でログオンタイプを出力できるようにした。 (#835) (@garigariganzy @hitenkoku)
 - 速度とメモリ使用の最適化。 (#787) (@fukusuket)
 - 新たなパイプキーワード(`|endswithfield`)に対応した。 (#740) (@hach1yon)
 

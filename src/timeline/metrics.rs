@@ -1,5 +1,6 @@
 use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use crate::detections::{detection::EvtxRecordInfo, utils};
+use compact_str::CompactString;
 use hashbrown::HashMap;
 
 #[derive(Debug, Clone)]
@@ -9,7 +10,16 @@ pub struct EventMetrics {
     pub start_time: String,
     pub end_time: String,
     pub stats_list: HashMap<(String, String), usize>,
-    pub stats_login_list: HashMap<String, [usize; 2]>,
+    pub stats_login_list: HashMap<
+        (
+            CompactString,
+            CompactString,
+            CompactString,
+            CompactString,
+            CompactString,
+        ),
+        [usize; 2],
+    >,
 }
 /**
 * Windows Event Logの統計情報を出力する
@@ -21,7 +31,16 @@ impl EventMetrics {
         start_time: String,
         end_time: String,
         stats_list: HashMap<(String, String), usize>,
-        stats_login_list: HashMap<String, [usize; 2]>,
+        stats_login_list: HashMap<
+            (
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+                CompactString,
+            ),
+            [usize; 2],
+        >,
     ) -> EventMetrics {
         EventMetrics {
             total,
@@ -104,6 +123,20 @@ impl EventMetrics {
     }
     // Login event
     fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
+        let logontype_map: HashMap<&str, &str> = HashMap::from([
+            ("0", "0 - System"),
+            ("2", "2 - Interactive"),
+            ("3", "3 - Network"),
+            ("4", "4 - Batch"),
+            ("5", "5 - Service"),
+            ("7", "7 - Unlock"),
+            ("8", "8 - NetworkCleartext"),
+            ("9", "9 - NewInteractive"),
+            ("10", "10 - RemoteInteractive"),
+            ("11", "11 - CachedInteractive"),
+            ("12", "12 - CachedRemoteInteractive"),
+            ("13", "13 - CachedUnlock"),
+        ]);
         for record in records.iter() {
             if let Some(evtid) = utils::get_event_value("EventID", &record.record) {
                 let idnum: i64 = if evtid.is_number() {
@@ -111,23 +144,79 @@ impl EventMetrics {
                 } else {
                     evtid.as_str().unwrap().parse::<i64>().unwrap_or_default()
                 };
-                if !(idnum == 4624 || idnum == 4625) {
+
+                if !(utils::get_serde_number_to_string(
+                    utils::get_event_value("Channel", &record.record)
+                        .unwrap_or(&serde_json::Value::Null),
+                )
+                .unwrap_or_else(|| "n/a".to_string())
+                .replace(['"', '\''], "")
+                    == "Security"
+                    && (idnum == 4624 || idnum == 4625))
+                {
                     continue;
                 }
 
-                let username = utils::get_event_value("TargetUserName", &record.record);
+                let username = CompactString::from(
+                    utils::get_serde_number_to_string(
+                        utils::get_event_value("TargetUserName", &record.record)
+                            .unwrap_or(&serde_json::Value::Null),
+                    )
+                    .unwrap_or_else(|| "n/a".to_string())
+                    .replace(['"', '\''], ""),
+                );
+                let logontype = utils::get_serde_number_to_string(
+                    utils::get_event_value("LogonType", &record.record)
+                        .unwrap_or(&serde_json::Value::Null),
+                )
+                .unwrap_or_else(|| "n/a".to_string())
+                .replace(['"', '\''], "");
+                let hostname = CompactString::from(
+                    utils::get_serde_number_to_string(
+                        utils::get_event_value("Computer", &record.record)
+                            .unwrap_or(&serde_json::Value::Null),
+                    )
+                    .unwrap_or_else(|| "n/a".to_string())
+                    .replace(['"', '\''], ""),
+                );
+
+                let source_computer = CompactString::from(
+                    utils::get_serde_number_to_string(
+                        utils::get_event_value("WorkstationName", &record.record)
+                            .unwrap_or(&serde_json::Value::Null),
+                    )
+                    .unwrap_or_else(|| "n/a".to_string())
+                    .replace(['"', '\''], ""),
+                );
+
+                let source_ip = CompactString::from(
+                    utils::get_serde_number_to_string(
+                        utils::get_event_value("IpAddress", &record.record)
+                            .unwrap_or(&serde_json::Value::Null),
+                    )
+                    .unwrap_or_else(|| "n/a".to_string())
+                    .replace(['"', '\''], ""),
+                );
+
                 let countlist: [usize; 2] = [0, 0];
+                // この段階でEventIDは4624もしくは4625となるのでこの段階で対応するカウンターを取得する
+                let count: &mut [usize; 2] = self
+                    .stats_login_list
+                    .entry((
+                        username,
+                        hostname,
+                        CompactString::from(
+                            *logontype_map
+                                .get(&logontype.as_str())
+                                .unwrap_or(&logontype.as_str()),
+                        ),
+                        source_computer,
+                        source_ip,
+                    ))
+                    .or_insert(countlist);
                 if idnum == 4624 {
-                    let count: &mut [usize; 2] = self
-                        .stats_login_list
-                        .entry(username.unwrap().to_string())
-                        .or_insert(countlist);
                     count[0] += 1;
                 } else if idnum == 4625 {
-                    let count: &mut [usize; 2] = self
-                        .stats_login_list
-                        .entry(username.unwrap().to_string())
-                        .or_insert(countlist);
                     count[1] += 1;
                 }
             };
