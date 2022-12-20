@@ -1012,6 +1012,7 @@ impl App {
         eggs.insert("01/01", ("art/happynewyear.txt", Color::Rgb(255, 0, 0)));
         eggs.insert("02/22", ("art/ninja.txt", Color::Rgb(33, 30, 85)));
         eggs.insert("08/08", ("art/takoyaki.txt", Color::Rgb(144, 103, 62)));
+        eggs.insert("12/24", ("art/christmas.txt", Color::Rgb(70, 192, 22)));
         eggs.insert("12/25", ("art/christmas.txt", Color::Rgb(70, 192, 22)));
 
         match eggs.get(exec_datestr) {
