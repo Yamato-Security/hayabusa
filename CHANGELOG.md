@@ -12,6 +12,8 @@
 - Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@hitenkoku)
 - Added output of logon types, source computer and source IP address in Logon Summary as well as failed logons. (#835) (@garigariganzy @hitenkoku)
 - Optimized speed and memory usage. (#787) (@fukusuket)
+- Changed output color in eggs ascii art.(#839) (@hitenkoku)
+- Made the `--debug` option hidden by default. (#841) (@hitenkoku)
 - Added color to the ascii art eggs. (#839) (@hitenkoku)
 
 **Bug Fixes:**
