@@ -143,7 +143,7 @@ pub struct Config {
     pub visualize_timeline: bool,
 
     /// Print debug information (memory usage, etc...)
-    #[clap(help_heading = Some("Display Settings"), long = "debug")]
+    #[clap(help_heading = Some("Display Settings"), long = "debug", hide = true)]
     pub debug: bool,
 
     /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
