@@ -426,7 +426,6 @@ Display Settings:
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
   -T, --visualize-timeline  イベント頻度タイムラインを出力する
-      --debug               デバッグ情報を出力する (メモリ使用量など)
 
 Filtering:
   -e, --eid-filter               イベントIDによるフィルタリングを行う(コンフィグファイル: ./rules/config/target_event_IDs.txt)

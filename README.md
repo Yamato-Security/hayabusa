@@ -421,7 +421,6 @@ Display Settings:
   -q, --quiet               Quiet mode: do not display the launch banner
   -v, --verbose             Output verbose information
   -T, --visualize-timeline  Output event frequency timeline
-      --debug               Print debug information (memory usage, etc...)
 
 Filtering:
   -e, --eid-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
