@@ -14,7 +14,7 @@
 - Optimized speed and memory usage. (#787) (@fukusuket)
 - Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
 - Changed output color in eggs ascii art.(#839) (@hitenkoku)
-- Hidden `--debug` option. (#841) (@hitenkoku)
+- Made the `--debug` option hidden by default. (#841) (@hitenkoku)
 
 **Bug Fixes:**
 
