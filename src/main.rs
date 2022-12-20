@@ -1008,21 +1008,21 @@ impl App {
 
     /// output easter egg arts
     fn output_eggs(&self, exec_datestr: &str) {
-        let mut eggs: HashMap<&str, &str> = HashMap::new();
-        eggs.insert("01/01", "art/happynewyear.txt");
-        eggs.insert("02/22", "art/ninja.txt");
-        eggs.insert("08/08", "art/takoyaki.txt");
-        eggs.insert("12/25", "art/christmas.txt");
+        let mut eggs: HashMap<&str, (&str, Color)> = HashMap::new();
+        eggs.insert("01/01", ("art/happynewyear.txt", Color::Rgb(255, 0, 0)));
+        eggs.insert("02/22", ("art/ninja.txt", Color::Rgb(33, 30, 85)));
+        eggs.insert("08/08", ("art/takoyaki.txt", Color::Rgb(144, 103, 62)));
+        eggs.insert("12/25", ("art/christmas.txt", Color::Rgb(70, 192, 22)));
 
         match eggs.get(exec_datestr) {
             None => {}
-            Some(path) => {
+            Some((path, color)) => {
                 let egg_path =
                     utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), path, true).unwrap();
                 let content = fs::read_to_string(egg_path).unwrap_or_default();
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
-                    None,
+                    Some(color.to_owned()),
                     &content,
                     true,
                 )
