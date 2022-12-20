@@ -13,7 +13,8 @@
 - Added output logon types in Logon Summary. (#835) (@garigariganzy @hitenkoku)
 - Optimized speed and memory usage. (#787) (@fukusuket)
 - Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
-- Changed output color in eggs ascii art.(#839)
+- Changed output color in eggs ascii art.(#839) (@hitenkoku)
+- Hidden `--debug` option. (#841) (@hitenkoku)
 
 **Bug Fixes:**
 
