@@ -203,7 +203,7 @@ impl Timeline {
     }
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
-    fn tm_loginstats_tb_set_msg(&self) {
+    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
         println!(" Logon Summary:\n");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
@@ -215,14 +215,14 @@ impl Timeline {
             }
         } else {
             println!(" Successful Logons:");
-            self.tm_loginstats_tb_dsp_msg("Successful");
+            self.tm_loginstats_tb_dsp_msg("Successful", output);
             println!("\n\n Failed Logons:");
-            self.tm_loginstats_tb_dsp_msg("Failed");
+            self.tm_loginstats_tb_dsp_msg("Failed", output);
         }
     }
 
     /// ユーザ毎のログイン統計情報出力
-    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str) {
+    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
         let header = vec![
             logon_res,
             "User",
@@ -232,7 +232,7 @@ impl Timeline {
             "Source Ip",
         ];
         let target;
-        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
+        let mut wtr = if let Some(csv_path) = output {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => {

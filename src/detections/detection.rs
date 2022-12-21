@@ -1,12 +1,10 @@
 extern crate csv;
 
-use crate::options::profile::Profile;
-use crate::detections::configs;
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
-    Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags, Provider,
-    RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID, RuleModifiedDate,
-    RuleTitle, Status, Timestamp,
+    self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
+    Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
+    RuleModifiedDate, RuleTitle, Status, Timestamp,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -217,12 +215,6 @@ impl Detection {
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo, stored_static: &StoredStatic) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
-        let recinfo = CompactString::from(
-            record_info
-                .record_information
-                .as_ref()
-                .unwrap_or(&"-".to_string()),
-        );
         let rec_id = if stored_static
             .profiles
             .as_ref()
@@ -247,24 +239,6 @@ impl Detection {
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
                 .unwrap_or_else(|| "-".to_string()),
         );
-        let default_output = match stored_static
-            .default_details
-            .get(&format!("{}_{}", provider, &eid))
-        {
-            Some(str) => CompactString::from(str),
-            None => recinfo.to_owned(),
-        };
-        let opt_record_info = if stored_static
-            .profiles
-            .as_ref()
-            .unwrap()
-            .iter()
-            .any(|(_s, p)| *p == AllFieldInfo(Default::default()))
-        {
-            recinfo
-        } else {
-            CompactString::from("-")
-        };
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
@@ -465,7 +439,10 @@ impl Detection {
         }
         let details_fmt_str = match rule.yaml["details"].as_str() {
             Some(s) => s.to_string(),
-            None => match DEFAULT_DETAILS.get(&format!("{}_{}", provider, &eid)) {
+            None => match stored_static
+                .default_details
+                .get(&format!("{}_{}", provider, &eid))
+            {
                 Some(str) => str.to_string(),
                 None => create_recordinfos(&record_info.record),
             },
@@ -487,7 +464,6 @@ impl Detection {
             ),
             eventid: eid,
             detail: CompactString::default(),
-            record_information: opt_record_info,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
         };
@@ -680,7 +656,6 @@ impl Detection {
             computername: CompactString::from("-"),
             eventid: CompactString::from("-"),
             detail: output,
-            record_information: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
         };

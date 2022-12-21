@@ -1,5 +1,4 @@
 use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
-use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
 use compact_str::CompactString;
 use hashbrown::HashMap;
 
@@ -161,7 +160,7 @@ impl EventMetrics {
                 };
 
                 if !(utils::get_serde_number_to_string(
-                    utils::get_event_value("Channel", &record.record)
+                    utils::get_event_value("Channel", &record.record, eventkey_alias)
                         .unwrap_or(&serde_json::Value::Null),
                 )
                 .unwrap_or_else(|| "n/a".to_string())
@@ -197,7 +196,7 @@ impl EventMetrics {
 
                 let source_computer = CompactString::from(
                     utils::get_serde_number_to_string(
-                        utils::get_event_value("WorkstationName", &record.record)
+                        utils::get_event_value("WorkstationName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
                     .unwrap_or_else(|| "n/a".to_string())
@@ -206,7 +205,7 @@ impl EventMetrics {
 
                 let source_ip = CompactString::from(
                     utils::get_serde_number_to_string(
-                        utils::get_event_value("IpAddress", &record.record)
+                        utils::get_event_value("IpAddress", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
                     .unwrap_or_else(|| "n/a".to_string())
