@@ -1418,7 +1418,7 @@ mod tests {
         let test_channel = "Sec";
         let output = "pokepoke";
         let test_attack = "execution/txxxx.yyy";
-        let test_recinfo = "record_infoinfo11";
+        let test_recinfo = "CommandRLine: hoge";
         let test_record_id = "11111";
         let expect_time = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
@@ -1589,7 +1589,6 @@ mod tests {
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
-                    record_information: CompactString::from(test_recinfo),
                     ext_field: output_profile.to_owned(),
                     is_condition: false,
                 },

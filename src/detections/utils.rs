@@ -147,7 +147,7 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
 pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     if value.is_string() {
         Option::Some(value.as_str().unwrap_or("").to_string())
-    } else if value.is_object() {
+    } else if value.is_object() || value.is_null() {
         // Object type is not specified record value.
         Option::None
     } else {
@@ -241,14 +241,12 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
 
     // EvtxRecordInfoを作る
     let data_str = data.to_string();
-    let rec_info = Option::Some(create_recordinfos(&data));
 
     EvtxRecordInfo {
         evtx_filepath: path,
         record: data,
         data_string: data_str,
         key_2_value: key_2_values,
-        record_information: rec_info,
     }
 }
 
@@ -283,7 +281,7 @@ pub fn get_writable_color(color: Option<Color>, config: &Config) -> Option<Color
 /**
  * CSVのrecord infoカラムに出力する文字列を作る
  */
-fn create_recordinfos(record: &Value) -> String {
+pub fn create_recordinfos(record: &Value) -> String {
     let mut output = vec![];
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 

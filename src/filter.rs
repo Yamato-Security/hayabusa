@@ -31,7 +31,7 @@ impl Default for RuleExclude {
 }
 
 pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
-    let mut exclude_ids = RuleExclude::new();
+    let mut exclude_ids = RuleExclude::default();
     exclude_ids.insert_ids(
         &format!(
             "{}/noisy_rules.txt",

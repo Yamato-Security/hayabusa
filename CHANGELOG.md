@@ -1,17 +1,20 @@
 # Changes
 
-## 2.0.0 [2022/12/24]
+## 1.9.0 [2022/12/24]
 
 **New Features:**
 
-- XXX
+- Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
+- Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
 
 **Enhancements:**
 
-- Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
 - Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@hitenkoku)
-- By optimizating binary, binary size is compressed and processing time is slightly improved. (#824) (@YamatoSecurity)
-- Separated the help menu and usage by subcommands. (#656) (@hitenkoku)
+- Added output of logon types, source computer and source IP address in Logon Summary as well as failed logons. (#835) (@garigariganzy @hitenkoku)
+- Optimized speed and memory usage. (#787) (@fukusuket)
+- Changed output color in eggs ascii art.(#839) (@hitenkoku)
+- Made the `--debug` option hidden by default. (#841) (@hitenkoku)
+- Added color to the ascii art eggs. (#839) (@hitenkoku)
 
 **Bug Fixes:**
 
