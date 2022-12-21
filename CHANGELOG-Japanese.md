@@ -1,5 +1,11 @@
 # 変更点
 
+## 2.0.0 [2022/12/24]
+
+**新機能:**
+
+- Separated the help menu and usage by subcommands. (#656) (@hitenkoku)
+
 ## 1.9.0 [2022/12/24]
 
 **新機能:**
