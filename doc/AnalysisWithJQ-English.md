@@ -386,9 +386,9 @@ This will return all objects where the `EventID` is `4624` and the nested `"Deta
 
 There is a problem though.
 You may notice errors saying `jq: error (at <stdin>:10636): Cannot index string with string "Type"`.
-Any time you see the error `Cannot index string with string`, it means that you are telling `jq` to output a field that does not exist.
+Any time you see the error `Cannot index string with string`, it means that you are telling `jq` to output a field that does not exist and therefore is a wrong type.
 You can get rid of the errors by adding a `?` to the end of the field.
-This tells `jq` to check if the field exists and then output it only if it exists.
+This tells `jq` to ignore the errors.
 
 Example: `cat results.json | jq 'select ( (.EventID == 4624) and (.Details.Type? == 3) )'`
 
@@ -430,6 +430,8 @@ Results:
 ```
 
 You can now save the CSV file by adding `> 4624-logs.csv` and then import it into Excel or Timeline Explorer for further analysis.
+
+
 
 Note that you will need to add a header to do filtering.
 It is usually easiest just to manually add a top row after saving the file.
