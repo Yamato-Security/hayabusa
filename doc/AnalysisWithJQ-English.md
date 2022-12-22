@@ -14,7 +14,7 @@
     - [2. Metrics](#2-metrics)
     - [3. Filtering on Certain Data](#3-filtering-on-certain-data)
     - [4. Saving Output to CSV](#4-saving-output-to-csv)
-    - [5. Finding Dates With Most Alerts](#5-finding-dates-with-most-alerts)
+    - [5. Finding Dates with Most Alerts](#5-finding-dates-with-most-alerts)
     - [6. Reconstructing PowerShell Logs](#6-reconstructing-powershell-logs)
 
 
@@ -56,7 +56,7 @@ Please refer to [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/)
 
 JSON logs are a list of objects contained in curly brackets `{` `}`.
 Inside these objects are key-value pairs separated by colons.
-The keys must be strings but the values may be one of the following:
+The keys must be strings, but the values may be one of the following:
   * string (Ex: `"string"`)
   * number (Ex: `10`)
   * another object (Ex: `{ xxxx }`)
@@ -149,12 +149,12 @@ If you want to save both the `Details` and `AllFieldInfo` objects just in case, 
 
 ### Benefits of Using Details Over AllFieldInfo
 
-The first benefit of using `Details` over `AllFieldInfo` is that only the important fields are saved and the field names have been shortened to save file space.
+The first benefit of using `Details` over `AllFieldInfo` is that only the important fields are saved, and the field names have been shortened to save file space.
 The downside is that there is a possibility of missing data that you actually cared about but was missed.
 The second benefit is that Hayabusa will save the fields in a more uniform manner.
 For example, in original Windows logs, the username is usually in a `SubjectUserName` or `TargetUserName` field. 
 However, sometimes the username will be in the `AccountName` field, sometimes the target user will actually be in the `SubjectUserName` field, etc...
-Hayabusa tries to normalize these fields so an analyst only has to parse out a common name instead of having to understand the infinite amount of quirks and discrepancies between event IDs in Windows.
+Hayabusa tries to normalize these fields, so an analyst only has to parse out a common name instead of having to understand the infinite amount of quirks and discrepancies between event IDs in Windows.
 
 One example of this is the user field.
 Hayabusa will normalize `SubjectUserName`, `TargetUserName`, `AccountName`, etc... in the following manner:
@@ -178,7 +178,7 @@ This is one of the first things to do to understand what fields are in the logs.
 You could simply do a `less results.json` but a better way is the following:
 `cat results.json | jq -C | less -R`
 
-By passing to `jq`, it will neatly format all of the fields for you if they were not formated neatly to begin with.
+By passing to `jq`, it will neatly format all of the fields for you if they were not formatted neatly to begin with.
 By using the `-C` (color) option with `jq` and `-R` (raw output) option with less, you can scroll up and down in color.
 
 ### 2. Metrics
@@ -231,7 +231,7 @@ You should see something like this:
  391 8
  ```
 
- The left is the count and the right is the Event ID.
+ The left is the count, and the right is the Event ID.
  As you can see it is not sorted so hard to tell what event IDs happened the most.
 
  You can add a `sort -n` at the end to fix this:
@@ -256,7 +256,7 @@ You should see something like this:
 We can see that `4688` (Process creation) events were recorded the most.
 The second most recorded event was `4625` (Failed Logon).
 
-If you want to print the most recorded events at the top then you can reverse the sort with `sort -n -r` or `sort -nr`.
+If you want to print the most recorded events at the top, then you can reverse the sort with `sort -n -r` or `sort -nr`.
 You can also just print the top 10 most recorded events by piping the results to `head -n 10`.
 
 `cat results.json | jq '.EventID' | sort | uniq -c | sort -nr | head -n 10`
@@ -275,7 +275,7 @@ This will give you:
  391 8
  ```
 
- You may know that EIDs (Event IDs) are not unique and you may have completely different events but the same Event ID.
+ You may know that EIDs (Event IDs) are not unique, and you may have completely different events but the same Event ID.
  Therefore, it is important to also check the `Channel`.
 
  We can add this field information like this:
@@ -378,7 +378,7 @@ This will return all of the JSON objects for EID `4624`:
   }
   ```
 
-  If you want to filter on multiple conditions you can use keywords like `and`, `or` and `not`.
+  If you want to filter on multiple conditions, you can use keywords like `and`, `or` and `not`.
 
   For example, lets search for `4624` events where the type is `3` (Network logon).
 
@@ -405,7 +405,7 @@ You can then run `sort`, `uniq -c`, etc... like in the previous examples to find
 
 ### 4. Saving Output to CSV
 
-Unfortunately, the fields in Windows event logs will differ completely according the type of event, so it is not easily possible to create comma separated timelines by fields without having hundreds of columns.
+Unfortunately, the fields in Windows event logs will differ completely according to the type of event, so it is not easily possible to create comma separated timelines by fields without having hundreds of columns.
 However, it is possible to create field separated timelines with single types of events.
 Two common examples are Security `4624` (Successful logon) and `4625` (Failed logons) to check for lateral movement and password guessing/spraying.
 
@@ -443,7 +443,7 @@ You can now save the CSV file by adding `> 4624-logs.csv` and then import it int
 Note that you will need to add a header to do filtering.
 While it is possible to add a heading inside the `jq` query, it is usually easiest just to manually add a top row after saving the file.
 
-### 5. Finding Dates With Most Alerts
+### 5. Finding Dates with Most Alerts
 
 Hayabusa will, by default, tell you the dates that had the most alerts according to severity levels.
 However, you may want to find the second, third, etc... most dates with alerts as well.
