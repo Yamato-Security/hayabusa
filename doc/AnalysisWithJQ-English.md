@@ -14,6 +14,8 @@
     - [2. Metrics](#2-metrics)
     - [3. Filtering on Certain Data](#3-filtering-on-certain-data)
     - [4. Saving Output to CSV](#4-saving-output-to-csv)
+    - [5. Finding Dates With Most Alerts](#5-finding-dates-with-most-alerts)
+    - [6. Reconstructing PowerShell Logs](#6-reconstructing-powershell-logs)
 
 
 # Analysing Hayabusa Results with JQ
@@ -415,7 +417,7 @@ Example: `cat results.json | jq 'select ( (.Channel == "Sec") and (.EventID == 4
 
 Notes:
   * To select all of the fields in the `Details` object we add `[]`.
-  * The `Details` array will sometimes give `Cannot iterate over string` errors so you need to add a `?`.
+  * There are cases where `Details` is a string and not an array and will give `Cannot iterate over string` errors so you need to add a `?`.
   * We add the `-r` (Raw output) option to `jq` to not backslash escape double quotes.
 
 Results:
@@ -429,11 +431,64 @@ Results:
 "2019-05-12 02:10:10.889 +09:00","IEWIN7",9,"IEUser","","::1","0x1bbdce"
 ```
 
+If we are just checking who had successful logons, we may not need the last LID (Logon ID) field.
+You can delete any unneeded column with the `del` function.
+
+Example: `cat results.json | jq 'select ( (.Channel == "Sec") and (.EventID == 4624) ) | [.Timestamp, .Computer, .Details[]?] | del(.[6]) | @csv' -r`
+
+The array counts from `0` so to remove the 7th field, we use `6`.
+
 You can now save the CSV file by adding `> 4624-logs.csv` and then import it into Excel or Timeline Explorer for further analysis.
 
-
-
 Note that you will need to add a header to do filtering.
-It is usually easiest just to manually add a top row after saving the file.
+While it is possible to add a heading inside the `jq` query, it is usually easiest just to manually add a top row after saving the file.
 
+### 5. Finding Dates With Most Alerts
 
+Hayabusa will, by default, tell you the dates that had the most alerts according to severity levels.
+However, you may want to find the second, third, etc... most dates with alerts as well.
+We can do that with string slicing the timestamp to group by year, month or date depending on our needs.
+
+Example: `cat results.json | jq '.Timestamp | .[:10]' -r | sort | uniq -c | sort`
+
+`.[:10]` tells `jq` to extract just the first 10 bytes from `Timestamp`.
+
+This will give us the dates with the most events:
+```
+1066 2021-12-12
+1093 2016-09-02
+1571 2021-04-22
+1750 2016-09-03
+2271 2016-08-19
+2932 2021-11-03
+8095 2016-09-20
+```
+
+If you want to know the month with the most events, you can just change `.[:10]` to `.[:7]` to extract the first 7 bytes.
+
+If you want to list up the dates with the most `high` alerts, you can do this:
+`cat results.json | jq 'select (.Level == "high") | .Timestamp | .[:10]' -r | sort | uniq -c | sort`
+
+You can keep addind conditions to the `select` function according to computer name, event ID, etc... depending on your needs.
+
+### 6. Reconstructing PowerShell Logs
+
+An unfortunate thing about PowerShell logs is that the logs will often be broken up into multiple logs making them hard to read.
+We can make the logs much easier to read by extracting out just the commands that the attacker ran.
+
+For example, if have `4104` ScriptBlock logs, we can extract out just that field to create an easy to read timeline.
+
+`cat results.json | jq 'select(.EventID == 4104) | .Timestamp[:16], " ", .Details.ScriptBlock, "\n"' -jr`
+
+This will result in a timeline as follows:
+```
+2022-12-24 10:56 ipconfig
+2022-12-24 10:56 prompt
+2022-12-24 10:56 pwd
+2022-12-24 10:56 prompt
+2022-12-24 10:56 whoami
+2022-12-24 10:56 prompt
+2022-12-24 10:57 cd..
+2022-12-24 10:57 prompt
+2022-12-24 10:57 ls
+```
