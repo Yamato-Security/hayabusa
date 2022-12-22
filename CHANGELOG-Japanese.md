@@ -4,7 +4,7 @@
 
 **新機能:**
 
-- Separated the help menu and usage by subcommands. (#656) (@hitenkoku)
+- コマンドの使用方法とヘルプメニューはサブコマンドで行うようにした。 (#656) (@hitenkoku)
 
 ## 1.9.0 [2022/12/24]
 

@@ -432,8 +432,6 @@ Options:
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
   -v, --verbose                   Output verbose information
-  -h, --help                      Print help information
-  -V, --version                   Print version information
 
 Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
@@ -446,7 +444,7 @@ Advanced:
 
 Output:
   -p, --profile <PROFILE>   Specify output profile
-  -o, --output <FILE>       Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
+  -o, --output <FILE>       Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
   -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
 
 Filtering:
@@ -482,8 +480,6 @@ Options:
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
   -v, --verbose                   Output verbose information
-  -h, --help                      Print help information
-  -V, --version                   Print version information
 
 Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
@@ -496,7 +492,7 @@ Advanced:
 
 Output:
   -p, --profile <PROFILE>   Specify output profile
-  -o, --output <FILE>       Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
+  -o, --output <FILE>       Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
   -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
   -J, --jsonl               Save the timeline in JSONL format (ex: -J -o results.jsonl)
 
@@ -533,8 +529,6 @@ Options:
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
   -v, --verbose                   Output verbose information
-  -h, --help                      Print help information
-  -V, --version                   Print version information
 
 Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
@@ -558,8 +552,6 @@ Options:
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
   -v, --verbose                   Output verbose information
-  -h, --help                      Print help information
-  -V, --version                   Print version information
 
 Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
@@ -583,8 +575,6 @@ Options:
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
   -v, --verbose                   Output verbose information
-  -h, --help                      Print help information
-  -V, --version                   Print version information
 
 Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
@@ -615,7 +605,6 @@ Usage: update-rules [OPTIONS]
 Options:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
-  -V, --version   Print version information
 
 Advanced:
   -r, --rules <DIRECTORY/FILE>  Specify a custom rule directory or file (default: ./rules)
@@ -630,7 +619,6 @@ Options:
   -f, --file <FILE>   Tune alert levels (default: ./rules/config/level_tuning.txt)
       --no-color      Disable color output
   -q, --quiet         Quiet mode: do not display the launch banner
-  -V, --version       Print version information
 ```
 
 ## `set-default-profile` command
@@ -642,7 +630,6 @@ Options:
   -p, --profile <PROFILE>  Specify output profile
       --no-color           Disable color output
   -q, --quiet              Quiet mode: do not display the launch banner
-  -V, --version            Print version information
 ```
 
 ## `list-profiles` command
@@ -660,91 +647,91 @@ Options:
 
 * Run hayabusa against one Windows event log file with default standard profile:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
 ```
 
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `super-verbose` profile!):
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
 ```
 
 * Save the timline in JSON format:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe json-timeline -d .\hayabusa-sample-evtx -o results.json
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe pivot-keywords-list -l -m critical -o keywords.txt
 ```
 
 * Print Event ID metrics:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe metrics -f Security.evtx
 ```
 
 * Print logon summary:
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe logon-summary -f Security.evtx
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
-```bash
+```
 hayabusa-2.0.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -v
 ```
 
@@ -1135,6 +1122,7 @@ There is no "one tool to rule them all" and we have found that each has its own 
 * [EVTX parser](https://github.com/omerbenamram/evtx) - the Rust evtx library we use written by [@OBenamram](https://twitter.com/obenamram).
 * [Grafiki](https://github.com/lucky-luk3/Grafiki) - Sysmon and PowerShell log visualizer.
 * [LogonTracer](https://github.com/JPCERTCC/LogonTracer) - A graphical interface to visualize logons to detect lateral movement by [JPCERTCC](https://twitter.com/jpcert_en).
+* [NSA Windows Event Monitoring Guidance](https://github.com/nsacyber/Event-Forwarding-Guidance/tree/master/Events) - NSA's guide on what to monitor for.
 * [RustyBlue](https://github.com/Yamato-Security/RustyBlue) - Rust port of DeepBlueCLI by Yamato Security.
 * [Sigma](https://github.com/SigmaHQ/sigma) - Community based generic SIEM rules.
 * [SOF-ELK](https://github.com/philhagen/sof-elk) - A pre-packaged VM with Elastic Stack to import data for DFIR analysis by [Phil Hagen](https://twitter.com/philhagen)

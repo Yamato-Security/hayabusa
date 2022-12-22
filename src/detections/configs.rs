@@ -480,7 +480,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
     pub profile: Option<String>,
 
-    /// Save the timeline in format (csv-timeline ex.: result.csv, json-timeline ex.: result.json)
+    /// Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
