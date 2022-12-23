@@ -256,61 +256,55 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400,
-        version
+        help_template = "\n`{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
     )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400,
-        version
+        help_template = "\n{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
     )]
     /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400,
-        version
+        help_template = "\n{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
     )]
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400,
-        version
+        help_template = "\n{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
     )]
     /// Print event ID metrics
     Metrics(MetricsOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400,
-        version
+        help_template = "\n{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
     )]
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400,
-        version
+        help_template = "\n{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
     )]
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\n{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         version
     )]
@@ -319,9 +313,8 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400,
-        version
+        help_template = "\n{name} v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
     )]
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
@@ -633,8 +626,7 @@ pub struct JSONOutputOption {
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
     help_template = "\n{name} {version}\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
     term_width = 400,
-    disable_help_flag = true,
-    version
+    disable_help_flag = true
 )]
 pub struct Config {
     #[command(subcommand)]
