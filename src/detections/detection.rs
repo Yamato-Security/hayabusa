@@ -26,7 +26,7 @@ use std::fmt::Write;
 use std::path::Path;
 
 use std::sync::Arc;
-use tokio::{runtime::Runtime, spawn};
+use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use super::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH, STORED_STATIC};
 use super::message::{self, LEVEL_ABBR_MAP};
@@ -142,10 +142,13 @@ impl Detection {
         let records_arc = Arc::new(records);
         // // 各rule毎にスレッドを作成して、スレッドを起動する。
         let rules = self.rules;
-        let handles = rules.into_iter().map(|rule| {
-            let records_cloned = Arc::clone(&records_arc);
-            spawn(async move { Detection::execute_rule(rule, records_cloned) })
-        });
+        let handles: Vec<JoinHandle<RuleNode>> = rules
+            .into_iter()
+            .map(|rule| {
+                let records_cloned = Arc::clone(&records_arc);
+                spawn(async move { Detection::execute_rule(rule, records_cloned) })
+            })
+            .collect();
 
         // 全スレッドの実行完了を待機
         let mut rules = vec![];
