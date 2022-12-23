@@ -1216,19 +1216,19 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                 }
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
                     let key = _convert_valid_json_str(&[key.as_str()], false);
-                    let values: Vec<&str> = val.split(": ").filter(|x| x.trim() != "").collect();
-
-                    if values.is_empty() {
+                    let values = val.split(": ").filter(|x| x.trim() != "");
+                    let values_len = values.size_hint().0;
+                    if values_len == 0 {
                         continue;
                     }
                     let mut value: Vec<String> = vec![];
-                    for (idx, tag_val) in values.iter().enumerate() {
+                    for (idx, tag_val) in values.enumerate() {
                         if idx == 0 {
                             value.push("[\n".to_string());
                         }
                         let insert_val = format!("        \"{}\"", tag_val.trim());
                         value.push(insert_val);
-                        if idx != values.len() - 1 {
+                        if idx != values_len - 1 {
                             value.push(",\n".to_string());
                         }
                     }
