@@ -287,7 +287,7 @@ impl Detection {
                     );
                 }
                 EventID(_) => {
-                    profile_converter.insert(key.to_string(), EventID(eid.clone()));
+                    profile_converter.insert(key.as_str(), EventID(eid.clone()));
                 }
                 RecordID(_) => {
                     profile_converter.insert(key.as_str(), RecordID(rec_id.to_owned()));
@@ -440,7 +440,7 @@ impl Detection {
                 .get(&format!("{}_{}", provider, &eid))
             {
                 Some(str) => str.to_string(),
-                None => create_recordinfos(&record_info.record),
+                None => create_recordinfos(&record_info.record).to_string(),
             },
         };
 
