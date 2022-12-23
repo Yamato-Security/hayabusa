@@ -31,7 +31,7 @@
 
 **Enhancements:**
 
-- Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
+- Specified the minimum Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
 - Reduced memory usage. (#806) (@fukusuket)
 - Added the support for the `%RenderedMessage%` field in output profiles which is the rendered message in logs forwarded by WEC. (#760) (@hitenkoku)
 
