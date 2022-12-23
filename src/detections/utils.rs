@@ -299,7 +299,7 @@ pub fn create_recordinfos(record: &Value) -> String {
     output
         .iter()
         .map(|(key, value)| format!("{}: {}", key, value))
-        .join(" | ")
+        .join(" ¦ ")
 }
 
 /**
