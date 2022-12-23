@@ -120,9 +120,7 @@ impl App {
         }
 
         // Show usage when no arguments.
-        if std::env::args().len() == 1
-            || (stored_static.config.quiet && std::env::args().len() == 2)
-        {
+        if stored_static.config.action.is_none() {
             if !stored_static.config.quiet {
                 self.output_logo(stored_static);
                 println!();
