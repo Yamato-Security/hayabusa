@@ -121,7 +121,10 @@ impl App {
 
         // Show usage when no arguments.
         if std::env::args().len() == 1
-            || (stored_static.config.quiet && std::env::args().len() == 2)
+            || (std::env::args().len() == 2
+                && (stored_static.config.quiet
+                    || stored_static.config.no_color
+                    || stored_static.config.debug))
         {
             if !stored_static.config.quiet {
                 self.output_logo(stored_static);
