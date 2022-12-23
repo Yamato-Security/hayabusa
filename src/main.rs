@@ -430,7 +430,7 @@ impl App {
                 } else {
                     None
                 };
-                let now_version = &format!("v{}", app.get_version().unwrap());
+                let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
 
                 match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static)
                 {
