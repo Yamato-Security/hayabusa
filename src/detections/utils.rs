@@ -2,7 +2,8 @@ extern crate base64;
 extern crate csv;
 extern crate regex;
 
-use crate::detections::configs::{self, CURRENT_EXE_PATH};
+use crate::detections::configs::CURRENT_EXE_PATH;
+use crate::options::htmlreport;
 
 use compact_str::CompactString;
 use hashbrown::HashMap;
@@ -10,7 +11,7 @@ use nested::Nested;
 use std::path::{Path, PathBuf};
 
 use chrono::Local;
-use termcolor::Color;
+use termcolor::{Color, ColorChoice};
 
 use tokio::runtime::{Builder, Runtime};
 
@@ -27,6 +28,7 @@ use std::string::String;
 use std::vec;
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
+use super::configs::{Config, EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
@@ -153,16 +155,20 @@ pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     }
 }
 
-pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Value> {
+pub fn get_event_value<'a>(
+    key: &str,
+    event_value: &'a Value,
+    eventkey_alias: &EventKeyAliasConfig,
+) -> Option<&'a Value> {
     if key.is_empty() {
         return Option::None;
     }
 
-    let event_key = configs::EVENTKEY_ALIAS.get_event_key(key);
+    let event_key = eventkey_alias.get_event_key(key);
     let mut ret: &Value = event_value;
     if let Some(event_key) = event_key {
-        // get_event_keyが取得できてget_event_key_splitが取得できないことはない
-        let splits = configs::EVENTKEY_ALIAS.get_event_key_split(key);
+        // get_event_keyが取得できてget_event_key_splitが取得できないことはないため、unwrapのチェックは行わない
+        let splits = eventkey_alias.get_event_key_split(key);
         let mut start_idx = 0;
         for key in splits.unwrap() {
             if !ret.is_object() {
@@ -193,19 +199,15 @@ pub fn get_event_value<'a>(key: &str, event_value: &'a Value) -> Option<&'a Valu
     }
 }
 
-pub fn get_thread_num() -> usize {
+pub fn get_thread_num(thread_number: Option<usize>) -> usize {
     let cpu_num = num_cpus::get();
-    configs::CONFIG
-        .read()
-        .unwrap()
-        .thread_number
-        .unwrap_or(cpu_num)
+    thread_number.unwrap_or(cpu_num)
 }
 
-pub fn create_tokio_runtime() -> Runtime {
+pub fn create_tokio_runtime(thread_number: Option<usize>) -> Runtime {
     Builder::new_multi_thread()
-        .worker_threads(get_thread_num())
-        .thread_name("yea-thread")
+        .worker_threads(get_thread_num(thread_number))
+        .thread_name("hayabusa-thread")
         .build()
         .unwrap()
 }
@@ -220,8 +222,11 @@ pub fn create_rec_info(data: Value, path: String, keys: &Nested<String>) -> Evtx
     // あと、serde_jsonのValueからvalue["Event"]みたいな感じで値を取得する処理がなんか遅いので、そういう意味でも早くなるかも
     // それと、serde_jsonでは内部的に標準ライブラリのhashmapを使用しているが、hashbrownを使った方が早くなるらしい。標準ライブラリがhashbrownを採用したためserde_jsonについても高速化した。
     let mut key_2_values = HashMap::new();
+
+    let binding = STORED_EKEY_ALIAS.read().unwrap();
+    let eventkey_alias = binding.as_ref().unwrap();
     for key in keys.iter() {
-        let val = get_event_value(key, &data);
+        let val = get_event_value(key, &data, eventkey_alias);
         if val.is_none() {
             continue;
         }
@@ -265,8 +270,8 @@ pub fn write_color_buffer(
 }
 
 /// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
-pub fn get_writable_color(color: Option<Color>) -> Option<Color> {
-    if configs::CONFIG.read().unwrap().no_color {
+pub fn get_writable_color(color: Option<Color>, config: &Config) -> Option<Color> {
+    if config.no_color {
         None
     } else {
         color
@@ -382,21 +387,15 @@ pub fn check_setting_path(base_path: &Path, path: &str, ignore_err: bool) -> Opt
 }
 
 /// rule configのファイルの所在を確認する関数。
-pub fn check_rule_config() -> Result<(), String> {
+pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
     // rules/configのフォルダが存在するかを確認する
-    let exist_rule_config_folder =
-        if configs::CONFIG.read().unwrap().config == CURRENT_EXE_PATH.to_path_buf() {
-            check_setting_path(
-                &configs::CONFIG.read().unwrap().config,
-                "rules/config",
-                false,
-            )
-            .is_some()
-        } else {
-            check_setting_path(&configs::CONFIG.read().unwrap().config, "", false).is_some()
-        };
+    let exist_rule_config_folder = if config_path == &CURRENT_EXE_PATH.to_path_buf() {
+        check_setting_path(config_path, "rules/config", false).is_some()
+    } else {
+        check_setting_path(config_path, "", false).is_some()
+    };
     if !exist_rule_config_folder {
-        return Err("The required rules config files were not found. Please download them with --update-rules".to_string());
+        return Err("The required rules and config files were not found. Please download them with the update-rules command.".to_string());
     }
 
     // 各種ファイルを確認する
@@ -410,7 +409,7 @@ pub fn check_rule_config() -> Result<(), String> {
     ];
     let mut not_exist_file = vec![];
     for file in &files {
-        if check_setting_path(&configs::CONFIG.read().unwrap().config, file, false).is_none() {
+        if check_setting_path(config_path, file, false).is_none() {
             not_exist_file.push(*file);
         }
     }
@@ -425,20 +424,23 @@ pub fn check_rule_config() -> Result<(), String> {
 }
 
 ///タイムゾーンに合わせた情報を情報を取得する関数
-pub fn format_time(time: &DateTime<Utc>, date_only: bool) -> String {
-    if configs::CONFIG.read().unwrap().utc || configs::CONFIG.read().unwrap().iso_8601 {
-        format_rfc(time, date_only)
+pub fn format_time(time: &DateTime<Utc>, date_only: bool, output_option: &OutputOption) -> String {
+    if output_option.utc || output_option.iso_8601 {
+        format_rfc(time, date_only, output_option)
     } else {
-        format_rfc(&time.with_timezone(&Local), date_only)
+        format_rfc(&time.with_timezone(&Local), date_only, output_option)
     }
 }
 
 /// return rfc time format string by option
-fn format_rfc<Tz: TimeZone>(time: &DateTime<Tz>, date_only: bool) -> String
+fn format_rfc<Tz: TimeZone>(
+    time: &DateTime<Tz>,
+    date_only: bool,
+    time_args: &OutputOption,
+) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
-    let time_args = configs::CONFIG.read().unwrap();
     if time_args.rfc_2822 {
         if date_only {
             time.format("%a, %e %b %Y").to_string()
@@ -489,6 +491,26 @@ pub fn check_file_expect_not_exist(path: &Path, exist_alert_str: String) -> bool
         AlertMessage::alert(&exist_alert_str).ok();
     }
     ret
+}
+
+pub fn output_and_data_stack_for_html(
+    output_str: &str,
+    section_name: &str,
+    html_report_flag: bool,
+) {
+    write_color_buffer(
+        &BufferWriter::stdout(ColorChoice::Always),
+        None,
+        output_str,
+        true,
+    )
+    .ok();
+
+    if html_report_flag {
+        let mut output_data = Nested::<String>::new();
+        output_data.extend(vec![format!("- {}", output_str)]);
+        htmlreport::add_md_data(section_name.to_string(), output_data);
+    }
 }
 
 #[cfg(test)]

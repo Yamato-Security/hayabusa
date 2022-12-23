@@ -1,43 +1,35 @@
 use crate::detections::message::AlertMessage;
 use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
+use crate::options::htmlreport;
+use crate::options::profile::{load_profile, Profile};
 use chrono::{DateTime, Utc};
-use clap::{ColorChoice, Command, CommandFactory, Parser};
+use clap::{Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use terminal_size::{terminal_size, Width};
 
+use super::message::create_output_filter_config;
+use super::utils::check_setting_path;
+
 lazy_static! {
-    pub static ref CONFIG: RwLock<Config> = RwLock::new(Config::parse());
+    pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
+    pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
-    pub static ref EVENTKEY_ALIAS: EventKeyAliasConfig = load_eventkey_alias(
-        utils::check_setting_path(&CONFIG.read().unwrap().config, "eventkey_alias.txt", false)
-            .unwrap_or_else(|| {
-                utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "rules/config/eventkey_alias.txt",
-                    true,
-                )
-                .unwrap()
-            })
-            .to_str()
-            .unwrap()
-    );
     pub static ref IDS_REGEX: Regex =
         Regex::new(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$").unwrap();
 }
 
 pub struct ConfigReader {
     pub app: Command,
-    pub headless_help: String,
-    pub event_timeline_config: EventInfoConfig,
-    pub target_eventids: TargetEventIds,
+    pub config: Option<Config>,
 }
 
 impl Default for ConfigReader {
@@ -46,43 +38,342 @@ impl Default for ConfigReader {
     }
 }
 
-#[derive(Parser, Clone)]
-#[command(
-    name = "Hayabusa",
-    override_usage = "hayabusa.exe [OTHER-ACTIONS] <INPUT> [OUTPUT] [OPTIONS]",
-    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\n{name} {version}\n{author}\n\n{usage-heading}\n  {usage}\n\n{all-args}",
-    version,
-    term_width = 400
-)]
-pub struct Config {
-    /// Directory of multiple .evtx files
-    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIRECTORY")]
-    pub directory: Option<PathBuf>,
+#[derive(Debug, Clone)]
+pub struct StoredStatic {
+    pub config: Config,
+    pub config_path: PathBuf,
+    pub eventkey_alias: EventKeyAliasConfig,
+    pub ch_config: HashMap<String, String>,
+    pub quiet_errors_flag: bool,
+    pub verbose_flag: bool,
+    pub metrics_flag: bool,
+    pub logon_summary_flag: bool,
+    pub output_option: Option<OutputOption>,
+    pub pivot_keyword_list_flag: bool,
+    pub default_details: HashMap<String, String>,
+    pub html_report_flag: bool,
+    pub profiles: Option<Vec<(CompactString, Profile)>>,
+    pub event_timeline_config: EventInfoConfig,
+    pub target_eventids: TargetEventIds,
+    pub thread_number: Option<usize>,
+}
+impl StoredStatic {
+    /// main.rsでパースした情報からデータを格納する関数
+    pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
+        let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
+        let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.quiet_errors,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.quiet_errors,
+            Some(Action::LogonSummary(opt)) => opt.input_args.quiet_errors,
+            Some(Action::Metrics(opt)) => opt.input_args.quiet_errors,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.quiet_errors,
+            _ => false,
+        };
+        let binding = Path::new("./rules/config").to_path_buf();
+        let config_path = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => &opt.output_options.input_args.config,
+            Some(Action::JsonTimeline(opt)) => &opt.output_options.input_args.config,
+            Some(Action::LogonSummary(opt)) => &opt.input_args.config,
+            Some(Action::Metrics(opt)) => &opt.input_args.config,
+            Some(Action::PivotKeywordsList(opt)) => &opt.input_args.config,
+            _ => &binding,
+        };
+        let verbose_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.verbose,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.verbose,
+            Some(Action::LogonSummary(opt)) => opt.input_args.verbose,
+            Some(Action::Metrics(opt)) => opt.input_args.verbose,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.verbose,
+            _ => false,
+        };
+        let mut ret = StoredStatic {
+            config: input_config.as_ref().unwrap().to_owned(),
+            config_path: config_path.to_path_buf(),
+            ch_config: create_output_filter_config(
+                utils::check_setting_path(config_path, "channel_abbreviations.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/channel_abbreviations.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            default_details: Self::get_default_details(
+                utils::check_setting_path(config_path, "default_details.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/default_details.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            eventkey_alias: load_eventkey_alias(
+                utils::check_setting_path(config_path, "eventkey_alias.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/eventkey_alias.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            logon_summary_flag: action_id == 2,
+            metrics_flag: action_id == 3,
+            output_option: extract_output_options(input_config.as_ref().unwrap()),
+            pivot_keyword_list_flag: action_id == 4,
+            quiet_errors_flag,
+            verbose_flag,
+            html_report_flag: htmlreport::check_html_flag(input_config.as_ref().unwrap()),
+            profiles: None,
+            thread_number: check_thread_number(input_config.as_ref().unwrap()),
+            event_timeline_config: load_eventcode_info(
+                utils::check_setting_path(config_path, "channel_eid_info.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/channel_eid_info.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+            target_eventids: load_target_ids(
+                utils::check_setting_path(config_path, "target_event_IDs.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/target_event_IDs.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+            ),
+        };
+        ret.profiles = load_profile(
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/default_profile.yaml",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+            check_setting_path(
+                &CURRENT_EXE_PATH.to_path_buf(),
+                "config/profiles.yaml",
+                true,
+            )
+            .unwrap()
+            .to_str()
+            .unwrap(),
+            Some(&ret),
+        );
+        ret
+    }
+    /// detailsのdefault値をファイルから読み取る関数
+    pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
+        let read_result = utils::read_csv(filepath);
+        match read_result {
+            Err(_e) => {
+                AlertMessage::alert(&_e).ok();
+                HashMap::new()
+            }
+            Ok(lines) => {
+                let mut ret: HashMap<String, String> = HashMap::new();
+                lines
+                    .iter()
+                    .try_for_each(|line| -> Result<(), String> {
+                        let provider = match line.get(0) {
+                            Some(_provider) => _provider.trim(),
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read provider in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        let eid = match line.get(1) {
+                            Some(eid_str) => match eid_str.trim().parse::<i64>() {
+                                Ok(_eid) => _eid,
+                                _ => {
+                                    return Result::Err(
+                                        "EventID parsing error in default_details.txt.".to_string(),
+                                    )
+                                }
+                            },
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read EventID in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        let details = match line.get(2) {
+                            Some(detail) => detail.trim(),
+                            _ => {
+                                return Result::Err(
+                                    "Failed to read details in default_details.txt.".to_string(),
+                                )
+                            }
+                        };
+                        ret.insert(format!("{}_{}", provider, eid), details.to_string());
+                        Ok(())
+                    })
+                    .ok();
+                ret
+            }
+        }
+    }
+}
 
-    /// File path to one .evtx file
-    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE")]
-    pub filepath: Option<PathBuf>,
+/// config情報からthred_numberの情報を抽出する関数
+fn check_thread_number(config: &Config) -> Option<usize> {
+    match config.action.as_ref()? {
+        Action::CsvTimeline(opt) => opt.output_options.input_args.thread_number,
+        Action::JsonTimeline(opt) => opt.output_options.input_args.thread_number,
+        Action::LogonSummary(opt) => opt.input_args.thread_number,
+        Action::Metrics(opt) => opt.input_args.thread_number,
+        Action::PivotKeywordsList(opt) => opt.input_args.thread_number,
+        _ => None,
+    }
+}
 
-    /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis")]
-    pub live_analysis: bool,
-
-    /// Specify custom rule config directory (default: ./rules/config)
-    #[arg(
-        help_heading = Some("Advanced"),
-        short = 'c',
-        long = "rules-config",
-        default_value = "./rules/config",
-        hide_default_value = true,
-        value_name = "DIRECTORY"
+// コマンド生成用のClapの定義
+#[derive(Subcommand, Clone, Debug)]
+pub enum Action {
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400
     )]
-    pub config: PathBuf,
+    /// Save the timeline in CSV format.
+    CsvTimeline(CsvOutputOption),
 
-    /// Quiet errors mode: do not save error logs
-    #[arg(help_heading = Some("Advanced"), short = 'Q', long = "quiet-errors")]
-    pub quiet_errors: bool,
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400
+    )]
+    /// Save the timeline in JSON/JSONL format.
+    JsonTimeline(JSONOutputOption),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400
+    )]
+    /// Print a summary of successful and failed logons
+    LogonSummary(LogonSummaryOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400
+    )]
+    /// Print event ID metrics
+    Metrics(MetricsOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400
+    )]
+    /// Create a list of pivot keywords
+    PivotKeywordsList(PivotKeywordOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
+    )]
+    /// Update to the latest rules in the hayabusa-rules github repository
+    UpdateRules(UpdateOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        version
+    )]
+    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
+    LevelTuning(LevelTuningOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.0.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400
+    )]
+    /// Set default output profile
+    SetDefaultProfile(DefaultProfileOption),
+
+    /// Print the list of contributors
+    ListContributors,
+
+    /// List the output profiles
+    ListProfiles,
+}
+
+impl Action {
+    pub fn to_usize(action: Option<&Action>) -> usize {
+        if let Some(a) = action {
+            match a {
+                Action::CsvTimeline(_) => 0,
+                Action::JsonTimeline(_) => 1,
+                Action::LogonSummary(_) => 2,
+                Action::Metrics(_) => 3,
+                Action::PivotKeywordsList(_) => 4,
+                Action::UpdateRules(_) => 5,
+                Action::LevelTuning(_) => 6,
+                Action::SetDefaultProfile(_) => 7,
+                Action::ListContributors => 8,
+                Action::ListProfiles => 9,
+            }
+        } else {
+            100
+        }
+    }
+    pub fn get_action_name(action: Option<&Action>) -> &str {
+        if let Some(a) = action {
+            match a {
+                Action::CsvTimeline(_) => "csv-timeline",
+                Action::JsonTimeline(_) => "json-timeline",
+                Action::LogonSummary(_) => "logon-summary",
+                Action::Metrics(_) => "metrics",
+                Action::PivotKeywordsList(_) => "pivot-keywords-list",
+                Action::UpdateRules(_) => "update-rules",
+                Action::LevelTuning(_) => "level-tuning",
+                Action::SetDefaultProfile(_) => "set-default-profile",
+                Action::ListContributors => "list-contributors",
+                Action::ListProfiles => "list-profiles",
+            }
+        } else {
+            ""
+        }
+    }
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct DefaultProfileOption {
+    /// Specify output profile
+    #[arg(short = 'p', long = "profile")]
+    pub profile: Option<String>,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct UpdateOption {
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
         help_heading = Some("Advanced"), 
@@ -93,62 +384,39 @@ pub struct Config {
         value_name = "DIRECTORY/FILE"
     )]
     pub rules: PathBuf,
+}
 
-    /// Thread number (default: optimal number for performance)
-    #[arg(help_heading = Some("Advanced"), short, long = "thread-number", value_name = "NUMBER")]
-    pub thread_number: Option<usize>,
+#[derive(Args, Clone, Debug)]
+pub struct LevelTuningOption {
+    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
+    #[arg(
+        short = 'f',
+        long = "file",
+        default_value = "./rules/config/level_tuning.txt",
+        hide_default_value = true,
+        value_name = "FILE"
+    )]
+    pub level_tuning: PathBuf,
+}
 
-    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',')]
-    pub evtx_file_ext: Option<Vec<String>>,
+#[derive(Args, Clone, Debug)]
+pub struct MetricsOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
 
-    /// Save detail Results Summary in html (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="html-report", value_name = "FILE")]
-    pub html_report: Option<PathBuf>,
-
-    /// Save the timeline in JSON format (ex: -j -o results.json)
-    #[arg(help_heading = Some("Output"), short = 'j', long = "json", requires = "output")]
-    pub json_timeline: bool,
-
-    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
-    pub jsonl_timeline: bool,
-
-    /// Save the timeline in CSV format (ex: results.csv)
+    /// Save the Metrics in CSV format (ex: metrics.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
+}
 
-    /// Specify output profile
-    #[arg(help_heading = Some("Output"), short = 'P', long = "profile")]
-    pub profile: Option<String>,
+#[derive(Args, Clone, Debug)]
+pub struct PivotKeywordOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
 
-    /// Disable color output
-    #[arg(help_heading = Some("Display Settings"), long = "no-color")]
-    pub no_color: bool,
-
-    /// Do not display result summary
-    #[arg(help_heading = Some("Display Settings"), long = "no-summary")]
-    pub no_summary: bool,
-
-    /// Quiet mode: do not display the launch banner
-    #[arg(help_heading = Some("Display Settings"), short, long)]
-    pub quiet: bool,
-
-    /// Output verbose information
-    #[arg(help_heading = Some("Display Settings"), short = 'v', long)]
-    pub verbose: bool,
-
-    /// Output event frequency timeline
-    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline")]
-    pub visualize_timeline: bool,
-
-    /// Print debug information (memory usage, etc...)
-    #[clap(help_heading = Some("Display Settings"), long = "debug", hide = true)]
-    pub debug: bool,
-
-    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
-    pub eid_filter: bool,
+    /// Save pivot words to separate files (ex: pivot-keywords.txt)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    pub output: Option<PathBuf>,
 
     /// Enable rules marked as deprecated
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules")]
@@ -181,42 +449,69 @@ pub struct Config {
     #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE")]
     pub start_timeline: Option<String>,
 
-    /// Print the list of contributors
-    #[arg(help_heading = Some("Other Actions"), long)]
-    pub contributors: bool,
+    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
+    pub eid_filter: bool,
+}
 
-    /// Print a summary of successful and failed logons
-    #[arg(help_heading = Some("Other Actions"), short = 'L', long = "logon-summary")]
-    pub logon_summary: bool,
+#[derive(Args, Clone, Debug)]
+pub struct LogonSummaryOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
 
-    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
+    /// Save the Logon summary in CSV format (ex: logon-summary.csv)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    pub output: Option<PathBuf>,
+}
+
+/// Options can be set when outputting
+#[derive(Args, Clone, Debug)]
+pub struct OutputOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
+
+    /// Specify output profile
+    #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
+    pub profile: Option<String>,
+
+    /// Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    pub output: Option<PathBuf>,
+
+    /// Enable rules marked as deprecated
+    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules")]
+    pub enable_deprecated_rules: bool,
+
+    /// Ignore rules according to status (ex: experimental) (ex: stable,test)
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',')]
+    pub exclude_status: Option<Vec<String>>,
+
+    /// Minimum level for rules (default: informational)
     #[arg(
-        help_heading = Some("Other Actions"), 
-        long = "level-tuning",
+        help_heading = Some("Filtering"), 
+        short = 'm',
+        long = "min-level",
+        default_value = "informational",
         hide_default_value = true,
-        value_name = "FILE"
+        value_name = "LEVEL"
     )]
-    pub level_tuning: Option<Option<String>>,
+    pub min_level: String,
 
-    /// List the output profiles
-    #[arg(help_heading = Some("Other Actions"), long = "list-profiles")]
-    pub list_profile: bool,
+    /// Enable rules marked as noisy
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules")]
+    pub enable_noisy_rules: bool,
 
-    /// Print event ID metrics
-    #[arg(help_heading = Some("Other Actions"), short='M', long)]
-    pub metrics: bool,
+    /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE")]
+    pub end_timeline: Option<String>,
 
-    /// Create a list of pivot keywords
-    #[arg(help_heading = Some("Other Actions"), short = 'p', long = "pivot-keywords-list")]
-    pub pivot_keywords_list: bool,
+    /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE")]
+    pub start_timeline: Option<String>,
 
-    /// Set default output profile
-    #[arg(help_heading = Some("Other Actions"), long = "set-default-profile", value_name = "PROFILE")]
-    pub set_default_profile: Option<String>,
-
-    /// Update to the latest rules in the hayabusa-rules github repository
-    #[arg(help_heading = Some("Other Actions"), short = 'u', long = "update-rules")]
-    pub update_rules: bool,
+    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
+    pub eid_filter: bool,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
     #[arg(help_heading = Some("Time Format"), long = "European-time")]
@@ -245,6 +540,110 @@ pub struct Config {
     /// Output time in UTC format (default: local time)
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC")]
     pub utc: bool,
+
+    /// Output event frequency timeline
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline")]
+    pub visualize_timeline: bool,
+
+    /// Specify a custom rule directory or file (default: ./rules)
+    #[arg(
+        help_heading = Some("Advanced"), 
+        short = 'r',
+        long,
+        default_value = "./rules",
+        hide_default_value = true,
+        value_name = "DIRECTORY/FILE"
+    )]
+    pub rules: PathBuf,
+
+    /// Save detail Results Summary in html (ex: results.html)
+    #[arg(help_heading = Some("Output"), short = 'H', long="html-report", value_name = "FILE")]
+    pub html_report: Option<PathBuf>,
+
+    /// Do not display result summary
+    #[arg(help_heading = Some("Display Settings"), long = "no-summary")]
+    pub no_summary: bool,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct InputOption {
+    /// Directory of multiple .evtx files
+    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIRECTORY")]
+    pub directory: Option<PathBuf>,
+
+    /// File path to one .evtx file
+    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE")]
+    pub filepath: Option<PathBuf>,
+
+    /// Analyze the local C:\Windows\System32\winevt\Logs folder
+    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis")]
+    pub live_analysis: bool,
+
+    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',')]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Thread number (default: optimal number for performance)
+    #[arg(short = 't', long = "thread-number", value_name = "NUMBER")]
+    pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(short = 'Q', long = "quiet-errors")]
+    pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+        short = 'c',
+        long = "rules-config",
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "DIRECTORY"
+    )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(short = 'v', long)]
+    pub verbose: bool,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct CsvOutputOption {
+    #[clap(flatten)]
+    pub output_options: OutputOption,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct JSONOutputOption {
+    #[clap(flatten)]
+    pub output_options: OutputOption,
+
+    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
+    pub jsonl_timeline: bool,
+}
+
+#[derive(Parser, Clone, Debug)]
+#[clap(
+    author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+    help_template = "\nHayabusa 2.0.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}",
+    term_width = 400,
+    disable_help_flag = true
+)]
+pub struct Config {
+    #[command(subcommand)]
+    pub action: Option<Action>,
+
+    /// Disable color output
+    #[arg(long = "no-color", global = true)]
+    pub no_color: bool,
+
+    /// Quiet mode: do not display the launch banner
+    #[arg(short, long, global = true)]
+    pub quiet: bool,
+
+    /// Print debug information (memory usage, etc...)
+    #[clap(long = "debug", global = true, hide = true)]
+    pub debug: bool,
 }
 
 impl ConfigReader {
@@ -256,37 +655,12 @@ impl ConfigReader {
             400
         };
         let build_cmd = Config::command()
+            .disable_version_flag(true)
             .color(ColorChoice::Auto)
             .term_width(help_term_width);
         ConfigReader {
             app: build_cmd,
-            headless_help: String::default(),
-            event_timeline_config: load_eventcode_info(
-                utils::check_setting_path(&parse.config, "channel_eid_info.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/channel_eid_info.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
-            ),
-            target_eventids: load_target_ids(
-                utils::check_setting_path(&parse.config, "target_event_IDs.txt", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/target_event_IDs.txt",
-                            true,
-                        )
-                        .unwrap()
-                    })
-                    .to_str()
-                    .unwrap(),
-            ),
+            config: Some(parse),
         }
     }
 }
@@ -343,50 +717,51 @@ pub struct TargetEventTime {
     end_time: Option<DateTime<Utc>>,
 }
 
-impl Default for TargetEventTime {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl TargetEventTime {
-    pub fn new() -> Self {
+    pub fn new(stored_static: &StoredStatic) -> Self {
         let mut parse_success_flag = true;
-        let start_time = if let Some(s_time) = &CONFIG.read().unwrap().start_timeline {
-            match DateTime::parse_from_str(s_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
-                .or_else(|_| DateTime::parse_from_str(s_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
-            {
-                Ok(dt) => Some(dt.with_timezone(&Utc)),
-                Err(_) => {
-                    AlertMessage::alert(
-                        "start-timeline field: the timestamp format is not correct.",
-                    )
-                    .ok();
-                    parse_success_flag = false;
-                    None
+        let mut get_time = |input_time: Option<&String>, error_contents: &str| {
+            if let Some(time) = input_time {
+                match DateTime::parse_from_str(time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
+                    .or_else(|_| DateTime::parse_from_str(time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
+                {
+                    Ok(dt) => Some(dt.with_timezone(&Utc)),
+                    Err(_) => {
+                        AlertMessage::alert(error_contents)
+                        .ok();
+                        parse_success_flag = false;
+                        None
+                    }
                 }
+            } else {
+                None
             }
-        } else {
-            None
         };
-        let end_time = if let Some(e_time) = &CONFIG.read().unwrap().end_timeline {
-            match DateTime::parse_from_str(e_time, "%Y-%m-%d %H:%M:%S %z") // 2014-11-28 21:00:09 +09:00
-            .or_else(|_| DateTime::parse_from_str(e_time, "%Y/%m/%d %H:%M:%S %z")) // 2014/11/28 21:00:09 +09:00
-        {
-            Ok(dt) => Some(dt.with_timezone(&Utc)),
-            Err(_) => {
-                    AlertMessage::alert(
-                        "end-timeline field: the timestamp format is not correct.",
-                    )
-                    .ok();
-                    parse_success_flag = false;
-                    None
-                }
+        match &stored_static.config.action.as_ref().unwrap() {
+            Action::CsvTimeline(option) => {
+                let start_time = get_time(
+                    option.output_options.start_timeline.as_ref(),
+                    "start-timeline field: the timestamp format is not correct.",
+                );
+                let end_time = get_time(
+                    option.output_options.end_timeline.as_ref(),
+                    "end-timeline field: the timestamp format is not correct.",
+                );
+                Self::set(parse_success_flag, start_time, end_time)
             }
-        } else {
-            None
-        };
-        Self::set(parse_success_flag, start_time, end_time)
+            Action::JsonTimeline(option) => {
+                let start_time = get_time(
+                    option.output_options.start_timeline.as_ref(),
+                    "start-timeline field: the timestamp format is not correct.",
+                );
+                let end_time = get_time(
+                    option.output_options.start_timeline.as_ref(),
+                    "end-timeline field: the timestamp format is not correct.",
+                );
+                Self::set(parse_success_flag, start_time, end_time)
+            }
+            _ => Self::set(parse_success_flag, None, None),
+        }
     }
 
     pub fn set(
@@ -452,7 +827,7 @@ impl Default for EventKeyAliasConfig {
     }
 }
 
-fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
+pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
     let mut config = EventKeyAliasConfig::new();
 
     // eventkey_aliasが読み込めなかったらエラーで終了とする。
@@ -527,6 +902,116 @@ pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
 pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
     let ret: HashSet<String> = arg.unwrap_or(&Vec::new()).iter().cloned().collect();
     ret
+}
+
+/// configから出力に関連したオプションの値を格納した構造体を抽出する関数
+fn extract_output_options(config: &Config) -> Option<OutputOption> {
+    match &config.action.as_ref()? {
+        Action::CsvTimeline(option) => Some(option.output_options.clone()),
+        Action::JsonTimeline(option) => Some(option.output_options.clone()),
+        Action::PivotKeywordsList(option) => Some(OutputOption {
+            input_args: option.input_args.clone(),
+            output: option.output.clone(),
+            enable_deprecated_rules: option.enable_deprecated_rules,
+            enable_noisy_rules: option.enable_noisy_rules,
+            profile: None,
+            exclude_status: option.exclude_status.clone(),
+            min_level: option.min_level.clone(),
+            end_timeline: option.end_timeline.clone(),
+            start_timeline: option.start_timeline.clone(),
+            eid_filter: option.eid_filter,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+        }),
+        Action::Metrics(option) => Some(OutputOption {
+            input_args: option.input_args.clone(),
+            output: option.output.clone(),
+            enable_deprecated_rules: false,
+            enable_noisy_rules: false,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+        }),
+        Action::LogonSummary(option) => Some(OutputOption {
+            input_args: option.input_args.clone(),
+            output: option.output.clone(),
+            enable_deprecated_rules: false,
+            enable_noisy_rules: false,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+        }),
+        Action::SetDefaultProfile(_) => Some(OutputOption {
+            input_args: InputOption {
+                directory: None,
+                filepath: None,
+                live_analysis: false,
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+            },
+            output: None,
+            enable_deprecated_rules: false,
+            enable_noisy_rules: false,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+        }),
+        _ => None,
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -3,26 +3,25 @@ extern crate downcast_rs;
 extern crate serde;
 extern crate serde_derive;
 
-use crate::htmlreport::HTML_REPORT_FLAG;
 use bytesize::ByteSize;
 use chrono::{DateTime, Datelike, Local};
+use clap::Command;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
+use hayabusa::debug::checkpoint_process_timer::CHECKPOINT;
 use hayabusa::detections::configs::{
-    load_pivot_keywords, ConfigReader, EventInfoConfig, TargetEventIds, TargetEventTime, CONFIG,
-    CURRENT_EXE_PATH,
+    load_pivot_keywords, Action, ConfigReader, EventInfoConfig, EventKeyAliasConfig, StoredStatic,
+    TargetEventIds, TargetEventTime, CURRENT_EXE_PATH, STORED_EKEY_ALIAS, STORED_STATIC,
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
-use hayabusa::detections::message::{
-    AlertMessage, ERROR_LOG_STACK, LOGONSUMMARY_FLAG, METRICS_FLAG, PIVOT_KEYWORD_LIST_FLAG,
-    QUIET_ERRORS_FLAG,
-};
+use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hayabusa::detections::pivot::PivotKeyword;
 use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
+use hayabusa::detections::utils::{check_setting_path, output_and_data_stack_for_html};
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
-use hayabusa::options::profile::PROFILES;
+use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
 use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
@@ -62,8 +61,12 @@ static GLOBAL: MiMalloc = MiMalloc;
 const MAX_DETECT_RECORDS: usize = 5000;
 
 fn main() {
-    let mut app = App::new();
-    app.exec();
+    let mut config_reader = ConfigReader::new();
+    // コマンドのパース情報を作成してstatic変数に格納する
+    let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+    config_reader.config = None;
+    let mut app = App::new(stored_static.thread_number);
+    app.exec(&mut config_reader.app, &mut stored_static);
     app.rt.shutdown_background();
 }
 
@@ -72,39 +75,21 @@ pub struct App {
     rule_keys: Nested<String>,
 }
 
-impl Default for App {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl App {
-    pub fn new() -> App {
+    pub fn new(thread_number: Option<usize>) -> App {
         App {
-            rt: utils::create_tokio_runtime(),
+            rt: utils::create_tokio_runtime(thread_number),
             rule_keys: Nested::<String>::new(),
         }
     }
 
-    fn exec(&mut self) {
-        let mut configreader = ConfigReader::new();
-        if *PIVOT_KEYWORD_LIST_FLAG {
-            load_pivot_keywords(
-                utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "config/pivot_keywords.txt",
-                    true,
-                )
-                .unwrap()
-                .to_str()
-                .unwrap(),
-            );
-        }
-        if PROFILES.is_none() {
+    fn exec(&mut self, app: &mut Command, stored_static: &mut StoredStatic) {
+        if stored_static.profiles.is_none() {
             return;
         }
+
         let analysis_start_time: DateTime<Local> = Local::now();
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
             output_data.extend(vec![format!(
                 "- Start time: {}",
@@ -116,16 +101,38 @@ impl App {
             );
         }
 
-        // Show usage when no arguments.
-        if std::env::args().len() == 1 {
-            self.output_logo();
-            println!();
-            configreader.app.print_help().ok();
+        // 引数がなかった時にhelpを出力するためのサブコマンド出力。引数がなくても動作するサブコマンドはhelpを出力しない
+        let subcommand_name = Action::get_action_name(stored_static.config.action.as_ref());
+        if stored_static.config.action.is_some()
+            && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
+        {
+            if !stored_static.config.quiet {
+                self.output_logo(stored_static);
+                println!();
+            }
+            app.find_subcommand(subcommand_name)
+                .unwrap()
+                .clone()
+                .print_help()
+                .ok();
             println!();
             return;
         }
-        if !configs::CONFIG.read().unwrap().quiet {
-            self.output_logo();
+
+        // Show usage when no arguments.
+        if std::env::args().len() == 1
+            || (stored_static.config.quiet && std::env::args().len() == 2)
+        {
+            if !stored_static.config.quiet {
+                self.output_logo(stored_static);
+                println!();
+            }
+            app.print_help().ok();
+            println!();
+            return;
+        }
+        if !stored_static.config.quiet {
+            self.output_logo(stored_static);
             println!();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
@@ -142,94 +149,6 @@ impl App {
             return;
         }
 
-        if configs::CONFIG.read().unwrap().list_profile {
-            let profile_list = options::profile::get_profile_list("config/profiles.yaml");
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                None,
-                "List of available profiles:",
-                true,
-            )
-            .ok();
-            for profile in profile_list.iter() {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Green),
-                    &format!("- {:<25}", &format!("{}:", profile[0])),
-                    false,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &profile[1],
-                    true,
-                )
-                .ok();
-            }
-            println!();
-            return;
-        }
-
-        if configs::CONFIG.read().unwrap().update_rules {
-            // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
-            let latest_version_data = if let Ok(data) = Update::get_latest_hayabusa_version() {
-                data
-            } else {
-                None
-            };
-            let now_version = &format!("v{}", configreader.app.get_version().unwrap());
-
-            match Update::update_rules(configs::CONFIG.read().unwrap().rules.to_str().unwrap()) {
-                Ok(output) => {
-                    if output != "You currently have the latest rules." {
-                        write_color_buffer(
-                            &BufferWriter::stdout(ColorChoice::Always),
-                            None,
-                            "Rules updated successfully.",
-                            true,
-                        )
-                        .ok();
-                    }
-                }
-                Err(e) => {
-                    if e.message().is_empty() {
-                        AlertMessage::alert("Failed to update rules.").ok();
-                    } else {
-                        AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
-                    }
-                }
-            }
-            println!();
-            if latest_version_data.is_some()
-                && now_version
-                    != &latest_version_data
-                        .as_ref()
-                        .unwrap_or(now_version)
-                        .replace('\"', "")
-            {
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &format!(
-                        "There is a new version of Hayabusa: {}",
-                        latest_version_data.unwrap().replace('\"', "")
-                    ),
-                    true,
-                )
-                .ok();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
-                    true,
-                )
-                .ok();
-                println!();
-            }
-
-            return;
-        }
         // 実行時のexeファイルのパスをベースに変更する必要があるためデフォルトの値であった場合はそのexeファイルと同一階層を探すようにする
         if !CURRENT_EXE_PATH.join("config").exists() && !Path::new("./config").exists() {
             AlertMessage::alert(
@@ -239,54 +158,18 @@ impl App {
             return;
         }
         // カレントディレクトリ以外からの実行の際にrules-configオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG.read().unwrap().config == Path::new("./rules/config") {
-            configs::CONFIG.write().unwrap().config =
+        if stored_static.config_path == Path::new("./rules/config") {
+            stored_static.config_path =
                 utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules/config", true)
                     .unwrap();
         }
 
-        // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
-        if configs::CONFIG.read().unwrap().rules == Path::new("./rules") {
-            configs::CONFIG.write().unwrap().rules =
-                utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true).unwrap();
-        }
-        // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
-        if let Err(e) = utils::check_rule_config() {
-            AlertMessage::alert(&e).ok();
-            return;
-        }
-
-        // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-        if let Some(csv_path) = &configs::CONFIG.read().unwrap().output {
-            let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-            pivot_key_unions.iter().for_each(|(key, _)| {
-                let keywords_file_name =
-                    csv_path.as_path().display().to_string() + "-" + key + ".txt";
-                utils::check_file_expect_not_exist(
-                    Path::new(&keywords_file_name),
-                    format!(
-                        " The file {} already exists. Please specify a different filename.",
-                        &keywords_file_name
-                    ),
-                );
-            });
-            if utils::check_file_expect_not_exist(
-                csv_path,
-                format!(
-                    " The file {} already exists. Please specify a different filename.",
-                    csv_path.as_os_str().to_str().unwrap()
-                ),
-            ) {
-                return;
-            }
-        }
-
-        let time_filter = TargetEventTime::default();
+        let time_filter = TargetEventTime::new(stored_static);
         if !time_filter.is_parse_success() {
             return;
         }
 
-        if *METRICS_FLAG {
+        if stored_static.metrics_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -296,7 +179,7 @@ impl App {
             .ok();
             println!();
         }
-        if *LOGONSUMMARY_FLAG {
+        if stored_static.logon_summary_flag {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -305,19 +188,6 @@ impl App {
             )
             .ok();
             println!();
-        }
-
-        if let Some(html_path) = &configs::CONFIG.read().unwrap().html_report {
-            // if already exists same html report file. output alert message and exit
-            if utils::check_file_expect_not_exist(
-                html_path.as_path(),
-                format!(
-                    " The file {} already exists. Please specify a different filename.",
-                    html_path.to_str().unwrap()
-                ),
-            ) {
-                return;
-            }
         }
 
         write_color_buffer(
@@ -330,279 +200,432 @@ impl App {
             true,
         )
         .ok();
-        let target_extensions =
-            configs::get_target_extensions(CONFIG.read().unwrap().evtx_file_ext.as_ref());
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .set_checkpoint(analysis_start_time);
+        let target_extensions = if stored_static.output_option.is_some() {
+            configs::get_target_extensions(
+                stored_static
+                    .output_option
+                    .as_ref()
+                    .unwrap()
+                    .input_args
+                    .evtx_file_ext
+                    .as_ref(),
+            )
+        } else {
+            HashSet::default()
+        };
 
-        if configs::CONFIG.read().unwrap().live_analysis {
-            let live_analysis_list = self.collect_liveanalysis_files(&target_extensions);
-            if live_analysis_list.is_none() {
-                return;
-            }
-            self.analysis_files(
-                live_analysis_list.unwrap(),
-                &time_filter,
-                configreader.event_timeline_config,
-                configreader.target_eventids,
-            );
-        } else if let Some(filepath) = &configs::CONFIG.read().unwrap().filepath {
-            let mut replaced_filepath = filepath.display().to_string();
-            if replaced_filepath.starts_with('"') {
-                replaced_filepath.remove(0);
-            }
-            if replaced_filepath.ends_with('"') {
-                replaced_filepath.remove(replaced_filepath.len() - 1);
-            }
-            let check_path = Path::new(&replaced_filepath);
-            if !check_path.exists() {
-                AlertMessage::alert(&format!(
-                    " The file {} does not exist. Please specify a valid file path.",
-                    filepath.as_os_str().to_str().unwrap()
-                ))
-                .ok();
-                return;
-            }
-            if !target_extensions.contains(
-                check_path
-                    .extension()
-                    .unwrap_or_else(|| OsStr::new("."))
-                    .to_str()
-                    .unwrap(),
-            ) || check_path
-                .file_stem()
-                .unwrap_or_else(|| OsStr::new("."))
-                .to_str()
-                .unwrap()
-                .trim()
-                .starts_with('.')
-            {
-                AlertMessage::alert(
-                    "--filepath only accepts .evtx files. Hidden files are ignored.",
-                )
-                .ok();
-                return;
-            }
+        match &stored_static.config.action.as_ref().unwrap() {
+            Action::CsvTimeline(_) | Action::JsonTimeline(_) => {
+                // カレントディレクトリ以外からの実行の際にrulesオプションの指定がないとエラーが発生することを防ぐための処理
+                if stored_static.output_option.as_ref().unwrap().rules == Path::new("./rules") {
+                    stored_static.output_option.as_mut().unwrap().rules =
+                        utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "rules", true)
+                            .unwrap();
+                }
+                // rule configのフォルダ、ファイルを確認してエラーがあった場合は終了とする
+                if let Err(e) = utils::check_rule_config(&stored_static.config_path) {
+                    AlertMessage::alert(&e).ok();
+                    return;
+                }
 
-            self.analysis_files(
-                vec![check_path.to_path_buf()],
-                &time_filter,
-                configreader.event_timeline_config,
-                configreader.target_eventids,
-            );
-        } else if let Some(directory) = &configs::CONFIG.read().unwrap().directory {
-            let evtx_files = Self::collect_evtxfiles(
-                directory.as_os_str().to_str().unwrap(),
-                &target_extensions,
-            );
-            if evtx_files.is_empty() {
-                AlertMessage::alert("No .evtx files were found.").ok();
+                if stored_static.profiles.is_none() {
+                    return;
+                }
+                if let Some(html_path) = &stored_static.output_option.as_ref().unwrap().html_report
+                {
+                    // if already exists same html report file. output alert message and exit
+                    if utils::check_file_expect_not_exist(
+                        html_path.as_path(),
+                        format!(
+                            " The file {} already exists. Please specify a different filename.",
+                            html_path.to_str().unwrap()
+                        ),
+                    ) {
+                        return;
+                    }
+                }
+                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                    if utils::check_file_expect_not_exist(
+                        path.as_path(),
+                        format!(
+                            " The file {} already exists. Please specify a different filename.",
+                            path.as_os_str().to_str().unwrap()
+                        ),
+                    ) {
+                        return;
+                    }
+                }
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+
+                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                    if let Ok(metadata) = fs::metadata(path) {
+                        let output_saved_str = format!(
+                            "Saved file: {} ({})",
+                            path.display(),
+                            ByteSize::b(metadata.len()).to_string_as(false)
+                        );
+                        output_and_data_stack_for_html(
+                            &output_saved_str,
+                            "General Overview {#general_overview}",
+                            stored_static.html_report_flag,
+                        );
+                    }
+                }
+                if stored_static.html_report_flag {
+                    let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
+                    htmlreport::create_html_file(
+                        html_str,
+                        stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .html_report
+                            .as_ref()
+                            .unwrap()
+                            .to_str()
+                            .unwrap_or(""),
+                    )
+                }
+            }
+            Action::ListContributors => {
+                self.print_contributors();
                 return;
             }
-            self.analysis_files(
-                evtx_files,
-                &time_filter,
-                configreader.event_timeline_config,
-                configreader.target_eventids,
-            );
-        } else if configs::CONFIG.read().unwrap().contributors {
-            self.print_contributors();
-            return;
-        } else if configs::CONFIG.read().unwrap().level_tuning.is_some() {
-            let level_tuning_val = &configs::CONFIG
-                .read()
-                .unwrap()
-                .level_tuning
-                .to_owned()
-                .unwrap();
-            let level_tuning_config_path = match level_tuning_val {
-                Some(path) => path.to_owned(),
-                _ => utils::check_setting_path(
-                    &CONFIG.read().unwrap().config,
-                    "level_tuning.txt",
-                    false,
-                )
-                .unwrap_or_else(|| {
+            Action::LogonSummary(_) | Action::Metrics(_) => {
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                    if let Ok(metadata) = fs::metadata(path) {
+                        let output_saved_str = format!(
+                            "Saved file: {} ({})",
+                            path.display(),
+                            ByteSize::b(metadata.len()).to_string_as(false)
+                        );
+                        output_and_data_stack_for_html(
+                            &output_saved_str,
+                            "General Overview {#general_overview}",
+                            stored_static.html_report_flag,
+                        );
+                    }
+                }
+            }
+            Action::PivotKeywordsList(_) => {
+                // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
+                if let Some(csv_path) = &stored_static.output_option.as_ref().unwrap().output {
+                    let mut error_flag = false;
+                    let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                    pivot_key_unions.iter().for_each(|(key, _)| {
+                        let keywords_file_name =
+                            csv_path.as_path().display().to_string() + "-" + key + ".txt";
+                        if utils::check_file_expect_not_exist(
+                            Path::new(&keywords_file_name),
+                            format!(
+                                " The file {} already exists. Please specify a different filename.",
+                                &keywords_file_name
+                            ),
+                        ) {
+                            error_flag = true
+                        };
+                    });
+                    if error_flag {
+                        return;
+                    }
+                }
+                load_pivot_keywords(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/level_tuning.txt",
+                        "config/pivot_keywords.txt",
                         true,
                     )
                     .unwrap()
-                })
-                .display()
-                .to_string(),
-            };
+                    .to_str()
+                    .unwrap(),
+                );
 
-            if Path::new(&level_tuning_config_path).exists() {
-                if let Err(err) = LevelTuning::run(
-                    &level_tuning_config_path,
-                    configs::CONFIG
-                        .read()
+                self.analysis_start(&target_extensions, &time_filter, stored_static);
+
+                // pivotのファイルの作成。pivot.rsに投げたい
+                let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
+                let create_output =
+                    |mut output: String, key: &String, pivot_keyword: &PivotKeyword| {
+                        write!(output, "{}: ( ", key).ok();
+                        for i in pivot_keyword.fields.iter() {
+                            write!(output, "%{}% ", i).ok();
+                        }
+                        writeln!(output, "):").ok();
+
+                        for i in pivot_keyword.keywords.iter() {
+                            writeln!(output, "{}", i).ok();
+                        }
+                        writeln!(output).ok();
+
+                        output
+                    };
+                if let Some(pivot_file) = &stored_static.output_option.as_ref().unwrap().output {
+                    pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                        let mut f = BufWriter::new(
+                            fs::File::create(
+                                pivot_file.as_path().display().to_string() + "-" + key + ".txt",
+                            )
+                            .unwrap(),
+                        );
+                        f.write_all(
+                            create_output(String::default(), key, pivot_keyword).as_bytes(),
+                        )
+                        .unwrap();
+                    });
+                    //output to stdout
+                    let mut output =
+                        "Pivot keyword results saved to the following files:\n".to_string();
+
+                    pivot_key_unions.iter().for_each(|(key, _)| {
+                        writeln!(
+                            output,
+                            "{}",
+                            &(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                        )
+                        .ok();
+                    });
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &output,
+                        true,
+                    )
+                    .ok();
+                } else {
+                    //標準出力の場合
+                    let output = "The following pivot keywords were found:".to_string();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &output,
+                        true,
+                    )
+                    .ok();
+
+                    pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                        write_color_buffer(
+                            &BufferWriter::stdout(ColorChoice::Always),
+                            None,
+                            &create_output(String::default(), key, pivot_keyword),
+                            true,
+                        )
+                        .ok();
+                    });
+                }
+            }
+            Action::UpdateRules(_) => {
+                let update_target = match &stored_static.config.action.as_ref().unwrap() {
+                    Action::UpdateRules(option) => Some(option.rules.to_owned()),
+                    _ => None,
+                };
+                // エラーが出た場合はインターネット接続がそもそもできないなどの問題点もあるためエラー等の出力は行わない
+                let latest_version_data = if let Ok(data) = Update::get_latest_hayabusa_version() {
+                    data
+                } else {
+                    None
+                };
+                let now_version = &format!("v{}", env!("CARGO_PKG_VERSION"));
+
+                match Update::update_rules(update_target.unwrap().to_str().unwrap(), stored_static)
+                {
+                    Ok(output) => {
+                        if output != "You currently have the latest rules." {
+                            write_color_buffer(
+                                &BufferWriter::stdout(ColorChoice::Always),
+                                None,
+                                "Rules updated successfully.",
+                                true,
+                            )
+                            .ok();
+                        }
+                    }
+                    Err(e) => {
+                        if e.message().is_empty() {
+                            AlertMessage::alert("Failed to update rules.").ok();
+                        } else {
+                            AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
+                        }
+                    }
+                }
+                println!();
+                if latest_version_data.is_some()
+                    && now_version
+                        != &latest_version_data
+                            .as_ref()
+                            .unwrap_or(now_version)
+                            .replace('\"', "")
+                {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        &format!(
+                            "There is a new version of Hayabusa: {}",
+                            latest_version_data.unwrap().replace('\"', "")
+                        ),
+                        true,
+                    )
+                    .ok();
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        None,
+                        "You can download it at https://github.com/Yamato-Security/hayabusa/releases",
+                        true,
+                    )
+                    .ok();
+                    println!();
+                }
+
+                return;
+            }
+            Action::LevelTuning(option) => {
+                let level_tuning_config_path = if option.level_tuning.to_str().unwrap()
+                    != "./rules/config/level_tuning.txt"
+                {
+                    utils::check_setting_path(
+                        option
+                            .level_tuning
+                            .parent()
+                            .unwrap_or_else(|| Path::new("")),
+                        option
+                            .level_tuning
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .unwrap_or_default(),
+                        false,
+                    )
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/level_tuning.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .display()
+                    .to_string()
+                } else {
+                    utils::check_setting_path(&stored_static.config_path, "level_tuning.txt", false)
+                        .unwrap_or_else(|| {
+                            utils::check_setting_path(
+                                &CURRENT_EXE_PATH.to_path_buf(),
+                                "rules/config/level_tuning.txt",
+                                true,
+                            )
+                            .unwrap()
+                        })
+                        .display()
+                        .to_string()
+                };
+
+                let rules_path = if stored_static.output_option.as_ref().is_some() {
+                    stored_static
+                        .output_option
+                        .as_ref()
                         .unwrap()
                         .rules
                         .as_os_str()
                         .to_str()
-                        .unwrap(),
-                ) {
-                    AlertMessage::alert(&err).ok();
-                }
-            } else {
-                AlertMessage::alert(
-                    "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
-                )
-                .ok();
-            }
-            return;
-        } else {
-            write_color_buffer(
-                &BufferWriter::stdout(ColorChoice::Always),
-                None,
-                &configreader.headless_help,
-                true,
-            )
-            .ok();
-            return;
-        }
+                        .unwrap()
+                } else {
+                    "./rules"
+                };
 
-        let analysis_end_time: DateTime<Local> = Local::now();
-        let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
-        let elapsed_output_str = format!("Elapsed time: {}", &analysis_duration.hhmmssxxx());
-        write_color_buffer(
-            &BufferWriter::stdout(ColorChoice::Always),
-            None,
-            &elapsed_output_str,
-            true,
-        )
-        .ok();
-
-        if *HTML_REPORT_FLAG {
-            let mut output_data = Nested::<String>::new();
-            output_data.extend(vec![format!("- {}", elapsed_output_str)]);
-            htmlreport::add_md_data(
-                "General Overview {#general_overview}".to_string(),
-                output_data,
-            );
-        }
-
-        let output_path = &configs::CONFIG.read().unwrap().output;
-        if let Some(path) = output_path {
-            if let Ok(metadata) = fs::metadata(path) {
-                let output_saved_str = format!(
-                    "Saved file: {} ({})",
-                    path.display(),
-                    ByteSize::b(metadata.len()).to_string_as(false)
-                );
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &output_saved_str,
-                    true,
-                )
-                .ok();
-
-                if *HTML_REPORT_FLAG {
-                    let mut output_data = Nested::<String>::new();
-                    output_data.extend(vec![format!("- {}", output_saved_str)]);
-                    htmlreport::add_md_data(
-                        "General Overview {#general_overview}".to_string(),
-                        output_data,
-                    );
-                }
-            }
-        };
-
-        // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
-        if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
-            AlertMessage::create_error_log();
-        }
-
-        if *PIVOT_KEYWORD_LIST_FLAG {
-            let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
-            let create_output = |mut output: String, key: &String, pivot_keyword: &PivotKeyword| {
-                write!(output, "{}: ", key).ok();
-
-                write!(output, "( ").ok();
-                for i in pivot_keyword.fields.iter() {
-                    write!(output, "%{}% ", i).ok();
-                }
-                writeln!(output, "):").ok();
-
-                for i in pivot_keyword.keywords.iter() {
-                    writeln!(output, "{}", i).ok();
-                }
-                writeln!(output).ok();
-
-                output
-            };
-
-            //ファイル出力の場合
-            if let Some(pivot_file) = &configs::CONFIG.read().unwrap().output {
-                pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
-                    let mut f = BufWriter::new(
-                        fs::File::create(
-                            pivot_file.as_path().display().to_string() + "-" + key + ".txt",
-                        )
-                        .unwrap(),
-                    );
-                    f.write_all(create_output(String::default(), key, pivot_keyword).as_bytes())
-                        .unwrap();
-                });
-                //output to stdout
-                let mut output =
-                    "Pivot keyword results saved to the following files:\n".to_string();
-
-                pivot_key_unions.iter().for_each(|(key, _)| {
-                    writeln!(
-                        output,
-                        "{}",
-                        &(pivot_file.as_path().display().to_string() + "-" + key + ".txt")
+                if Path::new(&level_tuning_config_path).exists() {
+                    if let Err(err) =
+                        LevelTuning::run(&level_tuning_config_path, rules_path, stored_static)
+                    {
+                        AlertMessage::alert(&err).ok();
+                    }
+                } else {
+                    AlertMessage::alert(
+                        "Need rule_levels.txt file to use --level-tuning option [default: ./rules/config/level_tuning.txt]",
                     )
                     .ok();
-                });
+                }
+                return;
+            }
+            Action::SetDefaultProfile(_) => {
+                if let Err(e) = set_default_profile(
+                    check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "config/default_profile.yaml",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                    check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "config/profiles.yaml",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                    stored_static,
+                ) {
+                    AlertMessage::alert(&e).ok();
+                } else {
+                    println!("Successfully updated the default profile.");
+                }
+                return;
+            }
+            Action::ListProfiles => {
+                let profile_list =
+                    options::profile::get_profile_list("config/profiles.yaml", stored_static);
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &output,
+                    "List of available profiles:",
                     true,
                 )
                 .ok();
-            } else {
-                //標準出力の場合
-                let output = "The following pivot keywords were found:".to_string();
-                write_color_buffer(
-                    &BufferWriter::stdout(ColorChoice::Always),
-                    None,
-                    &output,
-                    true,
-                )
-                .ok();
-
-                pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
+                for profile in profile_list.iter() {
+                    write_color_buffer(
+                        &BufferWriter::stdout(ColorChoice::Always),
+                        Some(Color::Green),
+                        &format!("- {:<25}", &format!("{}:", profile[0])),
+                        false,
+                    )
+                    .ok();
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
-                        &create_output(String::default(), key, pivot_keyword),
+                        &profile[1],
                         true,
                     )
                     .ok();
-                });
+                }
+                println!();
+                return;
             }
         }
-        if *HTML_REPORT_FLAG {
-            let html_str = HTML_REPORTER.read().unwrap().to_owned().create_html();
-            htmlreport::create_html_file(
-                html_str,
-                configs::CONFIG
-                    .read()
-                    .unwrap()
-                    .html_report
-                    .as_ref()
-                    .unwrap()
-                    .to_str()
-                    .unwrap_or("")
-                    .to_string(),
-            )
+
+        // 処理時間の出力
+        let analysis_end_time: DateTime<Local> = Local::now();
+        let analysis_duration = analysis_end_time.signed_duration_since(analysis_start_time);
+        let elapsed_output_str = format!("Elapsed time: {}", &analysis_duration.hhmmssxxx());
+        output_and_data_stack_for_html(
+            &elapsed_output_str,
+            "General Overview {#general_overview}",
+            stored_static.html_report_flag,
+        );
+
+        // Qオプションを付けた場合もしくはパースのエラーがない場合はerrorのstackが0となるのでエラーログファイル自体が生成されない。
+        if ERROR_LOG_STACK.lock().unwrap().len() > 0 {
+            AlertMessage::create_error_log(stored_static.quiet_errors_flag);
         }
-        if configs::CONFIG.read().unwrap().debug {
+
+        // Debugフラグをつけていた時にはメモリ利用情報などの統計情報を画面に出力する
+        if stored_static.config.debug {
+            CHECKPOINT.lock().as_ref().unwrap().output_stocked_result();
             println!();
             println!("Memory usage stats:");
             unsafe {
@@ -612,10 +635,116 @@ impl App {
         println!();
     }
 
+    fn analysis_start(
+        &mut self,
+        target_extensions: &HashSet<String>,
+        time_filter: &TargetEventTime,
+        stored_static: &StoredStatic,
+    ) {
+        if stored_static.output_option.is_none() {
+        } else if stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .input_args
+            .live_analysis
+        {
+            let live_analysis_list =
+                self.collect_liveanalysis_files(target_extensions, stored_static);
+            if live_analysis_list.is_none() {
+                return;
+            }
+            self.analysis_files(
+                live_analysis_list.unwrap(),
+                time_filter,
+                &stored_static.event_timeline_config,
+                &stored_static.target_eventids,
+                stored_static,
+            );
+        } else if let Some(directory) = &stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .input_args
+            .directory
+        {
+            let evtx_files = Self::collect_evtxfiles(
+                directory.as_os_str().to_str().unwrap(),
+                target_extensions,
+                stored_static,
+            );
+            if evtx_files.is_empty() {
+                AlertMessage::alert("No .evtx files were found.").ok();
+                return;
+            }
+            self.analysis_files(
+                evtx_files,
+                time_filter,
+                &stored_static.event_timeline_config,
+                &stored_static.target_eventids,
+                stored_static,
+            );
+        } else {
+            // directory, live_analysis以外はfilepathの指定の場合
+            if let Some(filepath) = &stored_static
+                .output_option
+                .as_ref()
+                .unwrap()
+                .input_args
+                .filepath
+            {
+                let mut replaced_filepath = filepath.display().to_string();
+                if replaced_filepath.starts_with('"') {
+                    replaced_filepath.remove(0);
+                }
+                if replaced_filepath.ends_with('"') {
+                    replaced_filepath.remove(replaced_filepath.len() - 1);
+                }
+                let check_path = Path::new(&replaced_filepath);
+                if !check_path.exists() {
+                    AlertMessage::alert(&format!(
+                        " The file {} does not exist. Please specify a valid file path.",
+                        filepath.as_os_str().to_str().unwrap()
+                    ))
+                    .ok();
+                    return;
+                }
+                if !target_extensions.contains(
+                    check_path
+                        .extension()
+                        .unwrap_or_else(|| OsStr::new("."))
+                        .to_str()
+                        .unwrap(),
+                ) || check_path
+                    .file_stem()
+                    .unwrap_or_else(|| OsStr::new("."))
+                    .to_str()
+                    .unwrap()
+                    .trim()
+                    .starts_with('.')
+                {
+                    AlertMessage::alert(
+                        "--filepath only accepts .evtx files. Hidden files are ignored.",
+                    )
+                    .ok();
+                    return;
+                }
+                self.analysis_files(
+                    vec![check_path.to_path_buf()],
+                    time_filter,
+                    &stored_static.event_timeline_config,
+                    &stored_static.target_eventids,
+                    stored_static,
+                );
+            }
+        }
+    }
+
     #[cfg(not(target_os = "windows"))]
     fn collect_liveanalysis_files(
         &self,
         _target_extensions: &HashSet<String>,
+        _stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
         AlertMessage::alert("-l / --liveanalysis needs to be run as Administrator on Windows.")
             .ok();
@@ -627,12 +756,14 @@ impl App {
     fn collect_liveanalysis_files(
         &self,
         target_extensions: &HashSet<String>,
+        stored_static: &StoredStatic,
     ) -> Option<Vec<PathBuf>> {
         if is_elevated() {
             let log_dir = env::var("windir").expect("windir is not found");
             let evtx_files = Self::collect_evtxfiles(
                 &[log_dir, "System32\\winevt\\Logs".to_string()].join("/"),
                 target_extensions,
+                stored_static,
             );
             if evtx_files.is_empty() {
                 AlertMessage::alert("No .evtx files were found.").ok();
@@ -647,7 +778,11 @@ impl App {
         }
     }
 
-    fn collect_evtxfiles(dir_path: &str, target_extensions: &HashSet<String>) -> Vec<PathBuf> {
+    fn collect_evtxfiles(
+        dir_path: &str,
+        target_extensions: &HashSet<String>,
+        stored_static: &StoredStatic,
+    ) -> Vec<PathBuf> {
         let mut dirpath = dir_path.to_string();
         if dirpath.starts_with('"') {
             dirpath.remove(0);
@@ -658,10 +793,10 @@ impl App {
         let entries = fs::read_dir(dirpath);
         if entries.is_err() {
             let errmsg = format!("{}", entries.unwrap_err());
-            if configs::CONFIG.read().unwrap().verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -679,7 +814,8 @@ impl App {
             let path = e.unwrap().path();
             if path.is_dir() {
                 path.to_str().map(|path_str| {
-                    let subdir_ret = Self::collect_evtxfiles(path_str, target_extensions);
+                    let subdir_ret =
+                        Self::collect_evtxfiles(path_str, target_extensions, stored_static);
                     ret.extend(subdir_ret);
                     Option::Some(())
                 });
@@ -721,14 +857,21 @@ impl App {
             }
         }
     }
+
     fn analysis_files(
         &mut self,
         evtx_files: Vec<PathBuf>,
         time_filter: &TargetEventTime,
-        event_timeline_config: EventInfoConfig,
-        target_event_ids: TargetEventIds,
+        event_timeline_config: &EventInfoConfig,
+        target_event_ids: &TargetEventIds,
+        stored_static: &StoredStatic,
     ) {
-        let level = configs::CONFIG.read().unwrap().min_level.to_uppercase();
+        let level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .min_level
+            .to_uppercase();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
@@ -745,14 +888,12 @@ impl App {
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{}", total_size_output);
         println!();
-        if !(configs::CONFIG.read().unwrap().metrics
-            || configs::CONFIG.read().unwrap().logon_summary)
-        {
+        if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
             println!("Loading detections rules. Please wait.");
             println!();
         }
 
-        if *HTML_REPORT_FLAG {
+        if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
             output_data.extend(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
@@ -765,10 +906,16 @@ impl App {
         }
 
         let rule_files = detection::Detection::parse_rule_files(
-            level,
-            &configs::CONFIG.read().unwrap().rules,
-            &filter::exclude_ids(),
+            level.as_str(),
+            &stored_static.output_option.as_ref().unwrap().rules,
+            &filter::exclude_ids(stored_static),
+            stored_static,
         );
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .rap_check_point("Rule Parse Processing Time");
 
         if rule_files.is_empty() {
             AlertMessage::alert(
@@ -784,8 +931,11 @@ impl App {
         let mut detection = detection::Detection::new(rule_files);
         let mut total_records: usize = 0;
         let mut tl = Timeline::new();
+
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
         for evtx_file in evtx_files {
-            if configs::CONFIG.read().unwrap().verbose {
+            if stored_static.verbose_flag {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
@@ -794,27 +944,52 @@ impl App {
                 detection,
                 time_filter,
                 tl.to_owned(),
-                &target_event_ids,
+                target_event_ids,
+                stored_static,
             );
             total_records += cnt_tmp;
             pb.inc();
         }
-        if *METRICS_FLAG {
-            tl.tm_stats_dsp_msg(event_timeline_config);
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .rap_check_point("Analysis Processing Time");
+        if stored_static.metrics_flag {
+            tl.tm_stats_dsp_msg(event_timeline_config, stored_static);
         }
-        if *LOGONSUMMARY_FLAG {
-            tl.tm_logon_stats_dsp_msg();
+        if stored_static.logon_summary_flag {
+            tl.tm_logon_stats_dsp_msg(stored_static);
         }
-        if configs::CONFIG.read().unwrap().output.is_some() {
+        if stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .output
+            .is_some()
+        {
             println!();
             println!();
             println!("Analysis finished. Please wait while the results are being saved.");
         }
         println!();
-        detection.add_aggcondition_msges(&self.rt);
-        if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG || *PIVOT_KEYWORD_LIST_FLAG) {
-            after_fact(total_records);
+        detection.add_aggcondition_msges(&self.rt, stored_static);
+        if !(stored_static.metrics_flag
+            || stored_static.logon_summary_flag
+            || stored_static.pivot_keyword_list_flag)
+        {
+            after_fact(
+                total_records,
+                stored_static.output_option.as_ref().unwrap(),
+                stored_static.config.no_color,
+                stored_static,
+            );
         }
+        CHECKPOINT
+            .lock()
+            .as_mut()
+            .unwrap()
+            .rap_check_point("Output Processing Time");
     }
 
     // Windowsイベントログファイルを1ファイル分解析する。
@@ -825,6 +1000,7 @@ impl App {
         time_filter: &TargetEventTime,
         mut tl: Timeline,
         target_event_ids: &TargetEventIds,
+        stored_static: &StoredStatic,
     ) -> (detection::Detection, usize, Timeline) {
         let path = evtx_filepath.display();
         let parser = self.evtx_to_jsons(&evtx_filepath);
@@ -836,6 +1012,8 @@ impl App {
         let mut parser = parser.unwrap();
         let mut records = parser.records_json_value();
 
+        let verbose_flag = stored_static.verbose_flag;
+        let quiet_errors_flag = stored_static.quiet_errors_flag;
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -854,10 +1032,10 @@ impl App {
                         evtx_filepath,
                         record_result.unwrap_err()
                     );
-                    if configs::CONFIG.read().unwrap().verbose {
+                    if verbose_flag {
                         AlertMessage::alert(&errmsg).ok();
                     }
-                    if !*QUIET_ERRORS_FLAG {
+                    if !quiet_errors_flag {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
@@ -868,9 +1046,13 @@ impl App {
 
                 let data = record_result.as_ref().unwrap().data.borrow();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(data)
-                    || (configs::CONFIG.read().unwrap().eid_filter
-                        && !self._is_target_event_id(data, target_event_ids))
+                if !self._is_valid_channel(data, &stored_static.eventkey_alias)
+                    || (stored_static.output_option.as_ref().unwrap().eid_filter
+                        && !self._is_target_event_id(
+                            data,
+                            target_event_ids,
+                            &stored_static.eventkey_alias,
+                        ))
                 {
                     continue;
                 }
@@ -894,9 +1076,14 @@ impl App {
             ));
 
             // timeline機能の実行
-            tl.start(&records_per_detect);
+            tl.start(
+                &records_per_detect,
+                stored_static.metrics_flag,
+                stored_static.logon_summary_flag,
+                &stored_static.eventkey_alias,
+            );
 
-            if !(*METRICS_FLAG || *LOGONSUMMARY_FLAG) {
+            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
                 // ruleファイルの検知
                 detection = detection.start(&self.rt, records_per_detect);
             }
@@ -944,8 +1131,13 @@ impl App {
     }
 
     /// target_eventids.txtの設定を元にフィルタする。 trueであれば検知確認対象のEventIDであることを意味する。
-    fn _is_target_event_id(&self, data: &Value, target_event_ids: &TargetEventIds) -> bool {
-        let eventid = utils::get_event_value(&utils::get_event_id_key(), data);
+    fn _is_target_event_id(
+        &self,
+        data: &Value,
+        target_event_ids: &TargetEventIds,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) -> bool {
+        let eventid = utils::get_event_value(&utils::get_event_id_key(), data, eventkey_alias);
         if eventid.is_none() {
             return true;
         }
@@ -958,8 +1150,8 @@ impl App {
     }
 
     /// レコードのチャンネルの値が正しい(Stringの形でありnullでないもの)ことを判定する関数
-    fn _is_valid_channel(&self, data: &Value) -> bool {
-        let channel = utils::get_event_value("Event.System.Channel", data);
+    fn _is_valid_channel(&self, data: &Value, eventkey_alias: &EventKeyAliasConfig) -> bool {
+        let channel = utils::get_event_value("Event.System.Channel", data, eventkey_alias);
         if channel.is_none() {
             return false;
         }
@@ -988,11 +1180,11 @@ impl App {
     }
 
     /// output logo
-    fn output_logo(&self) {
+    fn output_logo(&self, stored_static: &StoredStatic) {
         let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
             .unwrap();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        let output_color = if configs::CONFIG.read().unwrap().no_color {
+        let output_color = if stored_static.config.no_color {
             None
         } else {
             Some(Color::Green)
@@ -1047,16 +1239,51 @@ impl App {
         }
         true
     }
+
+    fn check_is_valid_args_num(&self, action: Option<&Action>) -> bool {
+        match action.as_ref().unwrap() {
+            Action::CsvTimeline(_)
+            | Action::JsonTimeline(_)
+            | Action::LogonSummary(_)
+            | Action::Metrics(_)
+            | Action::PivotKeywordsList(_)
+            | Action::SetDefaultProfile(_) => {
+                if std::env::args().len() == 2 {
+                    return false;
+                }
+                true
+            }
+            _ => true,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use crate::App;
     use hashbrown::HashSet;
+    use hayabusa::detections::configs::{Action, Config, StoredStatic, UpdateOption};
+
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            })),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        }))
+    }
 
     #[test]
     fn test_collect_evtxfiles() {
-        let files = App::collect_evtxfiles("test_files/evtx", &HashSet::from(["evtx".to_string()]));
+        let files = App::collect_evtxfiles(
+            "test_files/evtx",
+            &HashSet::from(["evtx".to_string()]),
+            &create_dummy_stored_static(),
+        );
         assert_eq!(3, files.len());
 
         files.iter().for_each(|file| {

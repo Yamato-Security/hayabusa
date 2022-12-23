@@ -3,8 +3,9 @@ use lazy_static::lazy_static;
 use serde_json::Value;
 use std::sync::RwLock;
 
-use crate::detections::configs;
 use crate::detections::utils::get_serde_number_to_string;
+
+use super::configs::EventKeyAliasConfig;
 
 #[derive(Debug)]
 pub struct PivotKeyword {
@@ -34,8 +35,8 @@ impl PivotKeyword {
 
 ///levelがlowより大きいレコードの場合、keywordがrecord内にみつかれば、
 ///それをPIVOT_KEYWORD.keywordsに入れる。
-pub fn insert_pivot_keyword(event_record: &Value) {
-    //levelがlow異常なら続ける
+pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAliasConfig) {
+    //levelがlow以上なら続ける
     let mut is_exist_event_key = false;
     let mut tmp_event_record: &Value = event_record;
     for s in ["Event", "System", "Level"] {
@@ -59,7 +60,7 @@ pub fn insert_pivot_keyword(event_record: &Value) {
     let mut pivots = PIVOT_KEYWORD.write().unwrap();
     pivots.iter_mut().into_iter().for_each(|(_, pivot)| {
         for field in &pivot.fields {
-            if let Some(array_str) = configs::EVENTKEY_ALIAS.get_event_key(&String::from(field)) {
+            if let Some(array_str) = eventkey_alias.get_event_key(&String::from(field)) {
                 let split: Vec<&str> = array_str.split('.').collect();
                 let mut is_exist_event_key = false;
                 let mut tmp_event_record: &Value = event_record;
@@ -86,9 +87,12 @@ pub fn insert_pivot_keyword(event_record: &Value) {
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::load_pivot_keywords;
+    use crate::detections::configs::CURRENT_EXE_PATH;
     use crate::detections::pivot::insert_pivot_keyword;
     use crate::detections::pivot::PIVOT_KEYWORD;
+    use crate::detections::utils;
     use serde_json;
 
     #[test]
@@ -106,7 +110,19 @@ mod tests {
                 }
             }
         }"#;
-        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(
+            &serde_json::from_str(record_json_str).unwrap(),
+            &load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
+        );
 
         assert!(!PIVOT_KEYWORD
             .write()
@@ -132,7 +148,19 @@ mod tests {
                 }
             }
         }"#;
-        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(
+            &serde_json::from_str(record_json_str).unwrap(),
+            &load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
+        );
 
         assert!(PIVOT_KEYWORD
             .write()
@@ -158,7 +186,19 @@ mod tests {
                 }
             }
         }"#;
-        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(
+            &serde_json::from_str(record_json_str).unwrap(),
+            &load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
+        );
 
         assert!(!PIVOT_KEYWORD
             .write()
@@ -184,7 +224,19 @@ mod tests {
                 }
             }
         }"#;
-        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(
+            &serde_json::from_str(record_json_str).unwrap(),
+            &load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
+        );
 
         assert!(!PIVOT_KEYWORD
             .write()
@@ -210,7 +262,19 @@ mod tests {
                 }
             }
         }"#;
-        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(
+            &serde_json::from_str(record_json_str).unwrap(),
+            &load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
+        );
 
         assert!(!PIVOT_KEYWORD
             .write()
@@ -236,7 +300,19 @@ mod tests {
                 }
             }
         }"#;
-        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(
+            &serde_json::from_str(record_json_str).unwrap(),
+            &load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
+        );
 
         assert!(PIVOT_KEYWORD
             .write()
@@ -262,7 +338,19 @@ mod tests {
                 }
             }
         }"#;
-        insert_pivot_keyword(&serde_json::from_str(record_json_str).unwrap());
+        insert_pivot_keyword(
+            &serde_json::from_str(record_json_str).unwrap(),
+            &load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            ),
+        );
 
         assert!(!PIVOT_KEYWORD
             .write()

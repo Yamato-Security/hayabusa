@@ -1,12 +1,18 @@
 # Changes
 
+## 2.0.0 [2022/12/24]
+
+**New Features:**
+
+- Command usage and help menu are now done by subcommands. (#656) (@hitenkoku)
+
 ## 1.9.0 [2022/12/24]
 
 **New Features:**
 
 - Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
 - Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
-- 
+
 **Enhancements:**
 
 - Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@hitenkoku)
@@ -25,7 +31,7 @@
 
 **Enhancements:**
 
-- Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
+- Specified the minimum Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
 - Reduced memory usage. (#806) (@fukusuket)
 - Added the support for the `%RenderedMessage%` field in output profiles which is the rendered message in logs forwarded by WEC. (#760) (@hitenkoku)
 

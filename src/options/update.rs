@@ -1,3 +1,4 @@
+use crate::detections::configs::StoredStatic;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::write_color_buffer;
 use crate::filter;
@@ -20,12 +21,12 @@ pub struct Update {}
 impl Update {
     /// get latest hayabusa version number.
     pub fn get_latest_hayabusa_version() -> Result<Option<String>, Box<dyn std::error::Error>> {
-        let res = reqwest::blocking::Client::new()
-            .get("https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest")
-            .header("User-Agent", "HayabusaUpdateChecker")
-            .header("Accept", "application/vnd.github.v3+json")
-            .send()?;
-        let text = res.text()?;
+        let text =
+            ureq::get("https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest")
+                .set("User-Agent", "HayabusaUpdateChecker")
+                .set("Accept", "application/vnd.github.v3+json")
+                .call()?
+                .into_string()?;
         let json_res: Value = serde_json::from_str(&text)?;
 
         if json_res["tag_name"].is_null() {
@@ -36,7 +37,10 @@ impl Update {
     }
 
     /// update rules(hayabusa-rules subrepository)
-    pub fn update_rules(rule_path: &str) -> Result<String, git2::Error> {
+    pub fn update_rules(
+        rule_path: &str,
+        stored_staic: &StoredStatic,
+    ) -> Result<String, git2::Error> {
         let mut result;
         let mut prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
         let mut prev_modified_rules: HashSet<String> = HashSet::default();
@@ -56,18 +60,19 @@ impl Update {
             // case of exist hayabusa-rules repository
             Update::_repo_main_reset_hard(hayabusa_rule_repo.as_ref().unwrap())?;
             // case of failed fetching origin/main, git clone is not executed so network error has occurred possibly.
-            prev_modified_rules = Update::get_updated_rules(rule_path, &prev_modified_time);
+            prev_modified_rules =
+                Update::get_updated_rules(rule_path, &prev_modified_time, stored_staic);
             prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
             result = Update::pull_repository(&hayabusa_rule_repo.unwrap());
         } else {
             // case of no exist hayabusa-rules repository in rules.
             // execute update because submodule information exists if hayabusa repository exists submodule information.
 
-            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
             let rules_path = Path::new(rule_path);
             if !rules_path.exists() {
                 create_dir(rules_path).ok();
             }
+            prev_modified_time = fs::metadata(rule_path).unwrap().modified().unwrap();
             if rule_path == "./rules" {
                 let hayabusa_repo = hayabusa_repo.unwrap();
                 let submodules = hayabusa_repo.submodules()?;
@@ -100,7 +105,8 @@ impl Update {
             }
         }
         if result.is_ok() {
-            let updated_modified_rules = Update::get_updated_rules(rule_path, &prev_modified_time);
+            let updated_modified_rules =
+                Update::get_updated_rules(rule_path, &prev_modified_time, stored_staic);
             result =
                 Update::print_diff_modified_rule_dates(prev_modified_rules, updated_modified_rules);
         }
@@ -180,14 +186,19 @@ impl Update {
     }
 
     /// Create rules folder files Hashset. Format is "[rule title in yaml]|[filepath]|[filemodified date]|[rule type in yaml]"
-    fn get_updated_rules(rule_folder_path: &str, target_date: &SystemTime) -> HashSet<String> {
-        let mut rulefile_loader = ParseYaml::new();
+    fn get_updated_rules(
+        rule_folder_path: &str,
+        target_date: &SystemTime,
+        stored_staic: &StoredStatic,
+    ) -> HashSet<String> {
+        let mut rulefile_loader = ParseYaml::new(stored_staic);
         // level in read_dir is hard code to check all rules.
         rulefile_loader
             .read_dir(
                 rule_folder_path,
                 "INFORMATIONAL",
-                &filter::RuleExclude::default(),
+                &filter::RuleExclude::new(),
+                stored_staic,
             )
             .ok();
 
@@ -267,20 +278,36 @@ impl Update {
 
 #[cfg(test)]
 mod tests {
-    use crate::options::update::Update;
-    use std::time::SystemTime;
+    use crate::{
+        detections::configs::{Action, Config, StoredStatic, UpdateOption},
+        options::update::Update,
+    };
+    use std::{path::Path, time::SystemTime};
 
     #[test]
     fn test_get_updated_rules() {
         let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
-
-        let prev_modified_rules =
-            Update::get_updated_rules("test_files/rules/level_yaml", &prev_modified_time);
+        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            })),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        }));
+        let prev_modified_rules = Update::get_updated_rules(
+            "test_files/rules/level_yaml",
+            &prev_modified_time,
+            &dummy_stored_static,
+        );
         assert_eq!(prev_modified_rules.len(), 5);
 
         let target_time: SystemTime = SystemTime::now();
-        let prev_modified_rules2 =
-            Update::get_updated_rules("test_files/rules/level_yaml", &target_time);
+        let prev_modified_rules2 = Update::get_updated_rules(
+            "test_files/rules/level_yaml",
+            &target_time,
+            &dummy_stored_static,
+        );
         assert_eq!(prev_modified_rules2.len(), 0);
     }
 }

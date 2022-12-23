@@ -1,5 +1,4 @@
-use crate::detections::message::{LOGONSUMMARY_FLAG, METRICS_FLAG};
-use crate::detections::{detection::EvtxRecordInfo, utils};
+use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
 use compact_str::CompactString;
 use hashbrown::HashMap;
 
@@ -52,33 +51,41 @@ impl EventMetrics {
         }
     }
 
-    pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo]) {
+    pub fn evt_stats_start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        metrics_flag: bool,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) {
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
-        if !*METRICS_FLAG {
+        if !metrics_flag {
             return;
         }
 
-        //let mut filesize = 0;
         // _recordsから、EventIDを取り出す。
-        self.stats_time_cnt(records);
+        self.stats_time_cnt(records, eventkey_alias);
 
         // EventIDで集計
-        //let evtstat_map = HashMap::new();
-        self.stats_eventid(records);
+        self.stats_eventid(records, eventkey_alias);
     }
 
-    pub fn logon_stats_start(&mut self, records: &[EvtxRecordInfo]) {
+    pub fn logon_stats_start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        logon_summary_flag: bool,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) {
         // 引数でlogon-summaryオプションが指定されている時だけ、統計情報を出力する。
-        if !*LOGONSUMMARY_FLAG {
+        if !logon_summary_flag {
             return;
         }
 
-        self.stats_time_cnt(records);
+        self.stats_time_cnt(records, eventkey_alias);
 
-        self.stats_login_eventid(records);
+        self.stats_login_eventid(records, eventkey_alias);
     }
 
-    fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo]) {
+    fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
         if records.is_empty() {
             return;
         }
@@ -89,6 +96,7 @@ impl EventMetrics {
             if let Some(evttime) = utils::get_event_value(
                 "Event.System.TimeCreated_attributes.SystemTime",
                 &record.record,
+                eventkey_alias,
             )
             .map(|evt_value| evt_value.to_string())
             {
@@ -104,15 +112,17 @@ impl EventMetrics {
     }
 
     /// EventID`で集計
-    fn stats_eventid(&mut self, records: &[EvtxRecordInfo]) {
+    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
         //        let mut evtstat_map = HashMap::new();
         for record in records.iter() {
-            let channel = if let Some(ch) = utils::get_event_value("Channel", &record.record) {
+            let channel = if let Some(ch) =
+                utils::get_event_value("Channel", &record.record, eventkey_alias)
+            {
                 ch.to_string()
             } else {
                 "-".to_string()
             };
-            if let Some(idnum) = utils::get_event_value("EventID", &record.record) {
+            if let Some(idnum) = utils::get_event_value("EventID", &record.record, eventkey_alias) {
                 let count: &mut usize = self
                     .stats_list
                     .entry((idnum.to_string().replace('\"', ""), channel))
@@ -122,7 +132,11 @@ impl EventMetrics {
         }
     }
     // Login event
-    fn stats_login_eventid(&mut self, records: &[EvtxRecordInfo]) {
+    fn stats_login_eventid(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        eventkey_alias: &EventKeyAliasConfig,
+    ) {
         let logontype_map: HashMap<&str, &str> = HashMap::from([
             ("0", "0 - System"),
             ("2", "2 - Interactive"),
@@ -138,7 +152,7 @@ impl EventMetrics {
             ("13", "13 - CachedUnlock"),
         ]);
         for record in records.iter() {
-            if let Some(evtid) = utils::get_event_value("EventID", &record.record) {
+            if let Some(evtid) = utils::get_event_value("EventID", &record.record, eventkey_alias) {
                 let idnum: i64 = if evtid.is_number() {
                     evtid.as_i64().unwrap()
                 } else {
@@ -146,7 +160,7 @@ impl EventMetrics {
                 };
 
                 if !(utils::get_serde_number_to_string(
-                    utils::get_event_value("Channel", &record.record)
+                    utils::get_event_value("Channel", &record.record, eventkey_alias)
                         .unwrap_or(&serde_json::Value::Null),
                 )
                 .unwrap_or_else(|| "n/a".to_string())
@@ -159,21 +173,21 @@ impl EventMetrics {
 
                 let username = CompactString::from(
                     utils::get_serde_number_to_string(
-                        utils::get_event_value("TargetUserName", &record.record)
+                        utils::get_event_value("TargetUserName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
                     .unwrap_or_else(|| "n/a".to_string())
                     .replace(['"', '\''], ""),
                 );
                 let logontype = utils::get_serde_number_to_string(
-                    utils::get_event_value("LogonType", &record.record)
+                    utils::get_event_value("LogonType", &record.record, eventkey_alias)
                         .unwrap_or(&serde_json::Value::Null),
                 )
                 .unwrap_or_else(|| "n/a".to_string())
                 .replace(['"', '\''], "");
                 let hostname = CompactString::from(
                     utils::get_serde_number_to_string(
-                        utils::get_event_value("Computer", &record.record)
+                        utils::get_event_value("Computer", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
                     .unwrap_or_else(|| "n/a".to_string())
@@ -182,7 +196,7 @@ impl EventMetrics {
 
                 let source_computer = CompactString::from(
                     utils::get_serde_number_to_string(
-                        utils::get_event_value("WorkstationName", &record.record)
+                        utils::get_event_value("WorkstationName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
                     .unwrap_or_else(|| "n/a".to_string())
@@ -191,7 +205,7 @@ impl EventMetrics {
 
                 let source_ip = CompactString::from(
                     utils::get_serde_number_to_string(
-                        utils::get_event_value("IpAddress", &record.record)
+                        utils::get_event_value("IpAddress", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
                     .unwrap_or_else(|| "n/a".to_string())

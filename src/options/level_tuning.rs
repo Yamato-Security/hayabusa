@@ -1,3 +1,4 @@
+use crate::detections::configs::StoredStatic;
 use crate::detections::utils::write_color_buffer;
 use crate::detections::{configs, utils};
 use crate::filter::RuleExclude;
@@ -10,7 +11,11 @@ use termcolor::{BufferWriter, ColorChoice};
 pub struct LevelTuning {}
 
 impl LevelTuning {
-    pub fn run(level_tuning_config_path: &str, rules_path: &str) -> Result<(), String> {
+    pub fn run(
+        level_tuning_config_path: &str,
+        rules_path: &str,
+        stored_static: &StoredStatic,
+    ) -> Result<(), String> {
         let read_result = utils::read_csv(level_tuning_config_path);
         if read_result.is_err() {
             return Result::Err(read_result.as_ref().unwrap_err().to_string());
@@ -35,22 +40,29 @@ impl LevelTuning {
                         || _level.starts_with("medium")
                         || _level.starts_with("high")
                         || _level.starts_with("critical") {
-                            _level.split('#').collect::<Vec<&str>>()[0]
-                        } else {
+                            _level.split('#').collect::<Vec<&str>>()[0].to_string()
+                        } else if _level.starts_with("info"){
+                            _level.split('#').collect::<Vec<&str>>()[0].to_string().replace("info", "informational")
+                        }
+                        else {
                             return Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string())
                         }
                     }
                 _ => return Result::Err("Failed to read level...".to_string())
             };
-            tuning_map.insert(id.to_string(), level.to_string());
+            tuning_map.insert(id.to_string(), level);
             Ok(())
         })?;
 
         // Read Rule files
-        let mut rulefile_loader = ParseYaml::new();
+        let mut rulefile_loader = ParseYaml::new(stored_static);
         //noisy rules and exclude rules treats as update target
-        let result_readdir =
-            rulefile_loader.read_dir(rules_path, "informational", &RuleExclude::default());
+        let result_readdir = rulefile_loader.read_dir(
+            rules_path,
+            "informational",
+            &RuleExclude::new(),
+            stored_static,
+        );
         if result_readdir.is_err() {
             return Result::Err(format!("{}", result_readdir.unwrap_err()));
         }
@@ -71,7 +83,7 @@ impl LevelTuning {
                 };
                 let past_level = "level: ".to_string() + rule["level"].as_str().unwrap();
 
-                if new_level.starts_with("informational") {
+                if new_level.starts_with("informational") || new_level.starts_with("info") {
                     content = content.replace(&past_level, "level: informational");
                 }
                 if new_level.starts_with("low") {
@@ -115,12 +127,27 @@ impl LevelTuning {
 #[cfg(test)]
 mod tests {
 
+    use std::path::Path;
+
     use super::*;
+    use crate::detections::configs::{Action, Config, LevelTuningOption};
+
+    fn create_dummy_stored_static(level_tuning_path: &str) -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::LevelTuning(LevelTuningOption {
+                level_tuning: Path::new(level_tuning_path).to_path_buf(),
+            })),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        }))
+    }
 
     #[test]
     fn rule_level_failed_to_open_file() -> Result<(), String> {
         let level_tuning_config_path = "./none.txt";
-        let res = LevelTuning::run(level_tuning_config_path, "");
+        let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
         let expected = Result::Err("Cannot open file. [file:./none.txt]".to_string());
         assert_eq!(res, expected);
         Ok(())
@@ -129,7 +156,8 @@ mod tests {
     #[test]
     fn rule_level_id_error_file() -> Result<(), String> {
         let level_tuning_config_path = "./test_files/config/level_tuning_error1.txt";
-        let res = LevelTuning::run(level_tuning_config_path, "");
+        let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
         let expected = Result::Err("Failed to read level tuning file. 12345678-1234-1234-1234-12 is not correct id format, fix it.".to_string());
         assert_eq!(res, expected);
         Ok(())
@@ -138,7 +166,8 @@ mod tests {
     #[test]
     fn rule_level_level_error_file() -> Result<(), String> {
         let level_tuning_config_path = "./test_files/config/level_tuning_error2.txt";
-        let res = LevelTuning::run(level_tuning_config_path, "");
+        let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
         let expected = Result::Err(
             "level tuning file's level must in informational, low, medium, high, critical"
                 .to_string(),
@@ -166,7 +195,8 @@ mod tests {
         file.write_all(buf).unwrap();
         file.flush().unwrap();
 
-        let res = LevelTuning::run(level_tuning_config_path, path);
+        let dummy_stored_static = create_dummy_stored_static(path);
+        let res = LevelTuning::run(level_tuning_config_path, path, &dummy_stored_static);
         assert_eq!(res, Ok(()));
 
         assert_eq!(fs::read_to_string(path).unwrap(), expected_rule);

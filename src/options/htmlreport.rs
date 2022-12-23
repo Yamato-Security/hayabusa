@@ -9,10 +9,9 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::sync::RwLock;
 
-use crate::detections::configs;
+use crate::detections::configs::{Action, Config};
 
 lazy_static! {
-    pub static ref HTML_REPORT_FLAG: bool = configs::CONFIG.read().unwrap().html_report.is_some();
     pub static ref HTML_REPORTER: RwLock<HtmlReporter> = RwLock::new(HtmlReporter::new());
 }
 
@@ -64,13 +63,24 @@ impl Default for HtmlReporter {
     }
 }
 
+pub fn check_html_flag(config: &Config) -> bool {
+    if config.action.as_ref().is_none() {
+        return false;
+    }
+    match &config.action.as_ref().unwrap() {
+        Action::CsvTimeline(option) => option.output_options.html_report.is_some(),
+        Action::JsonTimeline(option) => option.output_options.html_report.is_some(),
+        _ => false,
+    }
+}
+
 /// get html report section data in HashMap
 fn get_init_md_data_map() -> (Nested<String>, HashMap<String, Nested<String>>) {
     let mut ret = HashMap::new();
     let mut section_order = Nested::<String>::new();
     section_order.extend(vec![
-        "General Overview {#general_overview}".to_string(),
-        "Results Summary {#results_summary}".to_string(),
+        "General Overview {#general_overview}",
+        "Results Summary {#results_summary}",
     ]);
     for section in section_order.iter() {
         ret.insert(section.to_owned(), Nested::<String>::new());
@@ -91,8 +101,8 @@ pub fn add_md_data(section_name: String, data: Nested<String>) {
 }
 
 /// create html file
-pub fn create_html_file(input_html: String, path_str: String) {
-    let path = Path::new(&path_str);
+pub fn create_html_file(input_html: String, path_str: &str) {
+    let path = Path::new(path_str);
     if !path.parent().unwrap().exists() {
         create_dir(path.parent().unwrap()).ok();
     }

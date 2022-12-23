@@ -1,5 +1,5 @@
 extern crate lazy_static;
-use crate::detections::configs::{self, CURRENT_EXE_PATH};
+use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
 use crate::options::profile::Profile;
 use crate::options::profile::Profile::{AllFieldInfo, Details, Literal};
@@ -19,6 +19,8 @@ use std::io::{self, BufWriter, Write};
 use std::path::Path;
 use std::sync::Mutex;
 use termcolor::{BufferWriter, ColorChoice};
+
+use super::configs::EventKeyAliasConfig;
 
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
@@ -40,36 +42,11 @@ lazy_static! {
     pub static ref MESSAGEKEYS: Mutex<HashSet<DateTime<Utc>>> = Mutex::new(HashSet::new());
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
-    pub static ref QUIET_ERRORS_FLAG: bool = configs::CONFIG.read().unwrap().quiet_errors;
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
-    pub static ref METRICS_FLAG: bool = configs::CONFIG.read().unwrap().metrics;
-    pub static ref LOGONSUMMARY_FLAG: bool = configs::CONFIG.read().unwrap().logon_summary;
     pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
             .unwrap(),
-    );
-    pub static ref CH_CONFIG: HashMap<String, String> = create_output_filter_config(
-        utils::check_setting_path(&configs::CONFIG.read().unwrap().config, "channel_abbreviations.txt", false).unwrap_or_else(|| {
-            utils::check_setting_path(
-                &CURRENT_EXE_PATH.to_path_buf(),
-                "rules/config/channel_abbreviations.txt", true
-            ).unwrap()
-            })
-        .to_str()
-        .unwrap(),
-    );
-    pub static ref PIVOT_KEYWORD_LIST_FLAG: bool =
-        configs::CONFIG.read().unwrap().pivot_keywords_list;
-    pub static ref DEFAULT_DETAILS: HashMap<String, String> = get_default_details(
-        utils::check_setting_path(&configs::CONFIG.read().unwrap().config, "default_details.txt", false).unwrap_or_else(|| {
-            utils::check_setting_path(
-                &CURRENT_EXE_PATH.to_path_buf(),
-                "rules/config/default_details.txt", true
-            ).unwrap()
-        })
-        .to_str()
-        .unwrap()
     );
     pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
         ("critical", "crit"),
@@ -126,9 +103,10 @@ pub fn insert(
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<String, Profile>,
     is_agg: bool,
+    eventkey_alias: EventKeyAliasConfig,
 ) {
     if !is_agg {
-        let parsed_detail = parse_message(event_record, output)
+        let parsed_detail = parse_message(event_record, output, &eventkey_alias)
             .chars()
             .filter(|&c| !c.is_control())
             .collect::<CompactString>();
@@ -168,6 +146,7 @@ pub fn insert(
                         profile.convert(&parse_message(
                             event_record,
                             CompactString::new(p.to_value()),
+                            &eventkey_alias,
                         )),
                     ))
                 }
@@ -179,7 +158,11 @@ pub fn insert(
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
-fn parse_message(event_record: &Value, output: CompactString) -> CompactString {
+fn parse_message(
+    event_record: &Value,
+    output: CompactString,
+    eventkey_alias: &EventKeyAliasConfig,
+) -> CompactString {
     let mut return_message = output;
     let mut hash_map: HashMap<String, String> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
@@ -191,8 +174,7 @@ fn parse_message(event_record: &Value, output: CompactString) -> CompactString {
             .take(target_length)
             .collect::<String>();
 
-        let array_str = if let Some(_array_str) = configs::EVENTKEY_ALIAS.get_event_key(&target_str)
-        {
+        let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(&target_str) {
             _array_str.to_string()
         } else {
             format!("Event.EventData.{}", target_str)
@@ -249,63 +231,10 @@ pub fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
     return utils::str_time_to_datetime(system_time.as_str().unwrap_or(""));
 }
 
-/// detailsのdefault値をファイルから読み取る関数
-pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
-    let read_result = utils::read_csv(filepath);
-    match read_result {
-        Err(_e) => {
-            AlertMessage::alert(&_e).ok();
-            HashMap::new()
-        }
-        Ok(lines) => {
-            let mut ret: HashMap<String, String> = HashMap::new();
-            lines
-                .iter()
-                .try_for_each(|line| -> Result<(), String> {
-                    let provider = match line.get(0) {
-                        Some(_provider) => _provider.trim(),
-                        _ => {
-                            return Result::Err(
-                                "Failed to read provider in default_details.txt.".to_string(),
-                            )
-                        }
-                    };
-                    let eid = match line.get(1) {
-                        Some(eid_str) => match eid_str.trim().parse::<i64>() {
-                            Ok(_eid) => _eid,
-                            _ => {
-                                return Result::Err(
-                                    "Parse Error EventID in default_details.txt.".to_string(),
-                                )
-                            }
-                        },
-                        _ => {
-                            return Result::Err(
-                                "Failed to read EventID in default_details.txt.".to_string(),
-                            )
-                        }
-                    };
-                    let details = match line.get(2) {
-                        Some(detail) => detail.trim(),
-                        _ => {
-                            return Result::Err(
-                                "Failed to read details in default_details.txt.".to_string(),
-                            )
-                        }
-                    };
-                    ret.insert(format!("{}_{}", provider, eid), details.to_string());
-                    Ok(())
-                })
-                .ok();
-            ret
-        }
-    }
-}
-
 impl AlertMessage {
     ///対象のディレクトリが存在することを確認後、最初の定型文を追加して、ファイルのbufwriterを返す関数
-    pub fn create_error_log() {
-        if *QUIET_ERRORS_FLAG {
+    pub fn create_error_log(quiet_errors_flag: bool) {
+        if quiet_errors_flag {
             return;
         }
         let file_path = format!(
@@ -363,8 +292,10 @@ impl AlertMessage {
 
 #[cfg(test)]
 mod tests {
+    use crate::detections::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH};
     use crate::detections::message::{get, insert_message, AlertMessage, DetectInfo};
     use crate::detections::message::{parse_message, MESSAGES};
+    use crate::detections::utils;
     use chrono::Utc;
     use compact_str::CompactString;
     use hashbrown::HashMap;
@@ -373,7 +304,7 @@ mod tests {
     use std::thread;
     use std::time::Duration;
 
-    use super::{create_output_filter_config, get_default_details};
+    use super::create_output_filter_config;
 
     #[test]
     fn test_error_message() {
@@ -411,7 +342,17 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% computername:%ComputerName%")
+                CompactString::new("commandline:%CommandLine% computername:%ComputerName%"),
+                &load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                )
             ),
             expected,
         );
@@ -432,7 +373,20 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
         let expected = "alias:no_alias";
         assert_eq!(
-            parse_message(&event_record, CompactString::new("alias:%NoAlias%")),
+            parse_message(
+                &event_record,
+                CompactString::new("alias:%NoAlias%"),
+                &load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                ),
+            ),
             expected,
         );
     }
@@ -460,7 +414,17 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("NoExistAlias:%NoAliasNoHit%")
+                CompactString::new("NoExistAlias:%NoAliasNoHit%"),
+                &load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                )
             ),
             expected,
         );
@@ -488,7 +452,17 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% computername:%ComputerName%")
+                CompactString::new("commandline:%CommandLine% computername:%ComputerName%"),
+                &load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                )
             ),
             expected,
         );
@@ -521,7 +495,17 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% data:%Data%")
+                CompactString::new("commandline:%CommandLine% data:%Data%"),
+                &load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                )
             ),
             expected,
         );
@@ -554,7 +538,17 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% data:%Data[2]%")
+                CompactString::new("commandline:%CommandLine% data:%Data[2]%"),
+                &load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                )
             ),
             expected,
         );
@@ -587,7 +581,17 @@ mod tests {
         assert_eq!(
             parse_message(
                 &event_record,
-                CompactString::new("commandline:%CommandLine% data:%Data[0]%")
+                CompactString::new("commandline:%CommandLine% data:%Data[0]%"),
+                &load_eventkey_alias(
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/eventkey_alias.txt",
+                        true,
+                    )
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+                )
             ),
             expected,
         );
@@ -623,7 +627,7 @@ mod tests {
             ("Microsoft-Windows-Sysmon_1".to_string(), "Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%".to_string()),
             ("Service Control Manager_7031".to_string(), "Svc: %param1% | Crash Count: %param2% | Action: %param5%".to_string()),
         ]);
-        let actual = get_default_details("test_files/config/default_details.txt");
+        let actual = StoredStatic::get_default_details("test_files/config/default_details.txt");
         _check_hashmap_element(&expected, actual);
     }
 

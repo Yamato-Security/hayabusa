@@ -1,5 +1,5 @@
-use crate::detections::configs;
-use crate::detections::message::{AlertMessage, ERROR_LOG_STACK, QUIET_ERRORS_FLAG};
+use crate::detections::configs::{self, StoredStatic};
+use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
 use hashbrown::HashMap;
 use regex::Regex;
 use std::fs::File;
@@ -30,30 +30,35 @@ impl Default for RuleExclude {
     }
 }
 
-pub fn exclude_ids() -> RuleExclude {
+pub fn exclude_ids(stored_static: &StoredStatic) -> RuleExclude {
     let mut exclude_ids = RuleExclude::default();
+    exclude_ids.insert_ids(
+        &format!(
+            "{}/noisy_rules.txt",
+            stored_static.config_path.as_path().display(),
+        ),
+        stored_static,
+    );
 
-    exclude_ids.insert_ids(&format!(
-        "{}/noisy_rules.txt",
-        configs::CONFIG.read().unwrap().config.as_path().display()
-    ));
-
-    exclude_ids.insert_ids(&format!(
-        "{}/exclude_rules.txt",
-        configs::CONFIG.read().unwrap().config.as_path().display()
-    ));
+    exclude_ids.insert_ids(
+        &format!(
+            "{}/exclude_rules.txt",
+            stored_static.config_path.as_path().display(),
+        ),
+        stored_static,
+    );
 
     exclude_ids
 }
 
 impl RuleExclude {
-    fn insert_ids(&mut self, filename: &str) {
+    fn insert_ids(&mut self, filename: &str, stored_static: &StoredStatic) {
         let f = File::open(filename);
         if f.is_err() {
-            if configs::CONFIG.read().unwrap().verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::warn(&format!("{} does not exist", filename)).ok();
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()

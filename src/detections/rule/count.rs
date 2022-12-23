@@ -1,8 +1,8 @@
-use crate::detections::configs;
+use crate::detections::configs::EventKeyAliasConfig;
+use crate::detections::configs::StoredStatic;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
-use crate::detections::message::QUIET_ERRORS_FLAG;
 use crate::detections::rule::AggResult;
 use crate::detections::rule::RuleNode;
 use chrono::{DateTime, TimeZone, Utc};
@@ -16,8 +16,20 @@ use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
-pub fn count(rule: &mut RuleNode, record: &Value) {
-    let key = create_count_key(rule, record);
+pub fn count(
+    rule: &mut RuleNode,
+    record: &Value,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
+) {
+    let key = create_count_key(
+        rule,
+        record,
+        verbose_flag,
+        quiet_errors_flag,
+        eventkey_alias,
+    );
     let field_name: String = match rule.get_agg_condition() {
         None => String::default(),
         Some(aggcondition) => aggcondition
@@ -26,8 +38,16 @@ pub fn count(rule: &mut RuleNode, record: &Value) {
             .unwrap_or(&String::default())
             .to_owned(),
     };
-    let field_value =
-        get_alias_value_in_record(rule, &field_name, record, false).unwrap_or_default();
+    let field_value = get_alias_value_in_record(
+        rule,
+        &field_name,
+        record,
+        false,
+        verbose_flag,
+        quiet_errors_flag,
+        eventkey_alias,
+    )
+    .unwrap_or_default();
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();
     countup(
         rule,
@@ -59,11 +79,14 @@ fn get_alias_value_in_record(
     alias: &str,
     record: &Value,
     is_by_alias: bool,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
 ) -> Option<String> {
     if alias.is_empty() {
         return None;
     }
-    match utils::get_event_value(alias, record) {
+    match utils::get_event_value(alias, record, eventkey_alias) {
         Some(value) => Some(value.to_string().replace('\"', "")),
         None => {
             let errmsg = match is_by_alias {
@@ -74,7 +97,7 @@ fn get_alias_value_in_record(
             .unwrap()
             .to_str()
             .unwrap(),
-          utils::get_event_value(&utils::get_event_id_key(), record).unwrap()
+          utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias).unwrap()
         ),
                 false => format!(
           "count field clause alias value not found in count process. rule file:{} EventID:{}",
@@ -83,13 +106,13 @@ fn get_alias_value_in_record(
             .unwrap()
             .to_str()
             .unwrap(),
-          utils::get_event_value(&utils::get_event_id_key(), record).unwrap()
+          utils::get_event_value(&utils::get_event_id_key(), record, eventkey_alias).unwrap()
         ),
             };
-            if configs::CONFIG.read().unwrap().verbose {
+            if verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -103,24 +126,41 @@ fn get_alias_value_in_record(
 /// countでgroupbyなどの情報を区分するためのハッシュマップのキーを作成する関数。
 /// 以下の場合は空文字を返却
 /// groupbyの指定がない、groubpbyで指定したエイリアスがレコードに存在しない場合は_のみとする。空文字ではキーを指定してデータを取得することができなかった
-pub fn create_count_key(rule: &RuleNode, record: &Value) -> String {
+pub fn create_count_key(
+    rule: &RuleNode,
+    record: &Value,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    eventkey_alias: &EventKeyAliasConfig,
+) -> String {
     let agg_condition = rule.get_agg_condition().unwrap();
     if agg_condition._by_field_name.is_some() {
         let by_field_key = agg_condition._by_field_name.as_ref().unwrap();
-        get_alias_value_in_record(rule, by_field_key, record, true)
-            .unwrap_or_else(|| "_".to_string())
+        get_alias_value_in_record(
+            rule,
+            by_field_key,
+            record,
+            true,
+            verbose_flag,
+            quiet_errors_flag,
+            eventkey_alias,
+        )
+        .unwrap_or_else(|| "_".to_string())
     } else {
         "_".to_string()
     }
 }
 
 ///現状のレコードの状態から条件式に一致しているかを判定する関数
-pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
+pub fn aggregation_condition_select(
+    rule: &RuleNode,
+    stored_static: &StoredStatic,
+) -> Vec<AggResult> {
     // recordでaliasが登録されている前提とする
     let value_map = &rule.countdata;
     let mut ret = Vec::new();
     for (key, value) in value_map {
-        ret.append(&mut judge_timeframe(rule, value, key));
+        ret.append(&mut judge_timeframe(rule, value, key, stored_static));
     }
     ret
 }
@@ -129,7 +169,7 @@ pub fn aggregation_condition_select(rule: &RuleNode) -> Vec<AggResult> {
 pub fn get_str_agg_eq(rule: &RuleNode) -> String {
     //この関数はaggregation ruleのパースが正常終了した後に呼ばれる想定のためOptionの判定は行わない
     let agg_condition = rule.detection.aggregation_condition.as_ref().unwrap();
-    let mut ret: String = "".to_owned();
+    let mut ret: String = String::default();
     match agg_condition._cmp_op {
         AggregationConditionToken::EQ => {
             ret.push_str("== ");
@@ -171,26 +211,26 @@ pub struct TimeFrameInfo {
 
 impl TimeFrameInfo {
     /// timeframeの文字列をパースし、構造体を返す関数
-    pub fn parse_tframe(mut value: String) -> TimeFrameInfo {
-        let mut ttype: String = "".to_string();
+    pub fn parse_tframe(mut value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
+        let mut ttype = "";
         if value.contains('s') {
-            ttype = "s".to_owned();
+            ttype = "s";
             value.retain(|c| c != 's');
         } else if value.contains('m') {
-            ttype = "m".to_owned();
+            ttype = "m";
             value.retain(|c| c != 'm')
         } else if value.contains('h') {
-            ttype = "h".to_owned();
+            ttype = "h";
             value.retain(|c| c != 'h');
         } else if value.contains('d') {
-            ttype = "d".to_owned();
+            ttype = "d";
             value.retain(|c| c != 'd');
         } else {
             let errmsg = format!("Timeframe is invalid. Input value:{}", value);
-            if configs::CONFIG.read().unwrap().verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -198,17 +238,16 @@ impl TimeFrameInfo {
             }
         }
         TimeFrameInfo {
-            timetype: ttype,
+            timetype: ttype.to_string(),
             timenum: value.parse::<i64>(),
         }
     }
 }
 
 /// TimeFrameInfoで格納されたtimeframeの値を秒数に変換した結果を返す関数
-pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
+pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Option<i64> {
     let timeframe = rule.detection.timeframe.as_ref();
-    timeframe?;
-    let tfi = timeframe.as_ref().unwrap();
+    let tfi = timeframe?;
     match &tfi.timenum {
         Ok(n) => {
             if tfi.timetype == "d" {
@@ -223,10 +262,10 @@ pub fn get_sec_timeframe(rule: &RuleNode) -> Option<i64> {
         }
         Err(err) => {
             let errmsg = format!("Timeframe number is invalid. timeframe. {}", err);
-            if configs::CONFIG.read().unwrap().verbose {
+            if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
-            if !*QUIET_ERRORS_FLAG {
+            if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
@@ -447,6 +486,7 @@ pub fn judge_timeframe(
     rule: &RuleNode,
     time_datas: &[AggRecordTimeInfo],
     key: &str,
+    stored_static: &StoredStatic,
 ) -> Vec<AggResult> {
     let mut ret: Vec<AggResult> = Vec::new();
     if time_datas.is_empty() {
@@ -460,7 +500,7 @@ pub fn judge_timeframe(
     // timeframeの設定がルールにない時は最初と最後の要素の時間差をtimeframeに設定する。
     let def_frame = datas.last().unwrap().record_time.timestamp()
         - datas.first().unwrap().record_time.timestamp();
-    let frame = get_sec_timeframe(rule).unwrap_or(def_frame);
+    let frame = get_sec_timeframe(rule, stored_static).unwrap_or(def_frame);
 
     // left <= i < rightの範囲にあるdata[i]がtimeframe内にあるデータであると考える
     let mut left: i64 = 0;
@@ -494,7 +534,16 @@ pub fn judge_timeframe(
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use crate::detections;
+    use crate::detections::configs::Action;
+    use crate::detections::configs::Config;
+    use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::InputOption;
+    use crate::detections::configs::OutputOption;
+    use crate::detections::configs::StoredStatic;
+    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
     use crate::detections::utils;
@@ -521,6 +570,48 @@ mod tests {
         "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
       }
     }"#;
+
+    fn create_dummy_stored_static() -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                    },
+                    profile: None,
+                    output: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                },
+            })),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        }))
+    }
 
     #[test]
     /// countのカッコ内の記載及びcount byの記載がない場合(timeframeなし)にruleで検知ができることのテスト
@@ -812,7 +903,10 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        let init_result = rule_node.init();
+        let dummy_stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+
+        let init_result = rule_node.init(&dummy_stored_static);
         assert!(init_result.is_ok());
         let target = vec![SIMPLE_RECORD_STR, record_str];
         for record in target {
@@ -820,7 +914,12 @@ mod tests {
                 Ok(rec) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(rec, "testpath".to_owned(), &keys);
-                    let _result = rule_node.select(&recinfo);
+                    let _result = rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.verbose_flag,
+                        dummy_stored_static.quiet_errors_flag,
+                        &dummy_stored_static.eventkey_alias,
+                    );
                 }
                 Err(_) => {
                     panic!("failed to parse json record.");
@@ -832,7 +931,7 @@ mod tests {
             rule_node.countdata.get(&"_".to_owned()).unwrap().len() as i32,
             2
         );
-        let judge_result = rule_node.judge_satisfy_aggcondition();
+        let judge_result = rule_node.judge_satisfy_aggcondition(&dummy_stored_static);
         assert_eq!(judge_result.len(), 0);
     }
     #[test]
@@ -1577,16 +1676,24 @@ mod tests {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
         let test = rule_yaml.next().unwrap();
         let mut rule_node = create_rule("testpath".to_string(), test);
-        let error_checker = rule_node.init();
+        let error_checker = rule_node.init(&create_dummy_stored_static());
         if error_checker.is_err() {
             panic!("Failed to init rulenode");
         }
+        let dummy_stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(dummy_stored_static.eventkey_alias.clone());
+
         for record_str in records_str {
             match serde_json::from_str(record_str) {
                 Ok(record) => {
                     let keys = detections::rule::get_detection_keys(&rule_node);
                     let recinfo = utils::create_rec_info(record, "testpath".to_owned(), &keys);
-                    let result = &rule_node.select(&recinfo);
+                    let result = &rule_node.select(
+                        &recinfo,
+                        dummy_stored_static.verbose_flag,
+                        dummy_stored_static.quiet_errors_flag,
+                        &dummy_stored_static.eventkey_alias,
+                    );
                     assert_eq!(result, &true);
                 }
                 Err(_rec) => {
@@ -1594,7 +1701,7 @@ mod tests {
                 }
             }
         }
-        let agg_results = &rule_node.judge_satisfy_aggcondition();
+        let agg_results = &rule_node.judge_satisfy_aggcondition(&dummy_stored_static);
         assert_eq!(agg_results.len(), expect_agg_results.len());
 
         let mut expect_data = vec![];

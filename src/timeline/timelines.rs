@@ -1,9 +1,10 @@
 use std::fs::File;
 use std::io::BufWriter;
+use std::path::PathBuf;
 
-use crate::detections::configs::EventInfoConfig;
-use crate::detections::message::{AlertMessage, CH_CONFIG, LOGONSUMMARY_FLAG, METRICS_FLAG};
-use crate::detections::{configs::CONFIG, detection::EvtxRecordInfo};
+use crate::detections::configs::{Action, EventInfoConfig, EventKeyAliasConfig, StoredStatic};
+use crate::detections::detection::EvtxRecordInfo;
+use crate::detections::message::AlertMessage;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
@@ -38,44 +39,62 @@ impl Timeline {
         Timeline { stats: statistic }
     }
 
-    pub fn start(&mut self, records: &[EvtxRecordInfo]) {
-        self.stats.evt_stats_start(records);
-        self.stats.logon_stats_start(records);
+    pub fn start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        metrics_flag: bool,
+        logon_summary_flag: bool,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) {
+        self.stats
+            .evt_stats_start(records, metrics_flag, eventkey_alias);
+        self.stats
+            .logon_stats_start(records, logon_summary_flag, eventkey_alias);
     }
 
-    pub fn tm_stats_dsp_msg(&mut self, event_timeline_config: EventInfoConfig) {
-        if !*METRICS_FLAG {
-            return;
-        }
+    pub fn tm_stats_dsp_msg(
+        &mut self,
+        event_timeline_config: &EventInfoConfig,
+        stored_static: &StoredStatic,
+    ) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        if CONFIG.read().unwrap().filepath.is_some() {
-            sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-            sammsges.push(total_event_record);
-            sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-            sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        } else {
-            sammsges.push(total_event_record);
+        let mut wtr;
+        let target;
+
+        match &stored_static.config.action.as_ref().unwrap() {
+            Action::Metrics(option) => {
+                if option.input_args.filepath.is_some() {
+                    sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+                    sammsges.push(total_event_record);
+                    sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+                    sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+                } else {
+                    sammsges.push(total_event_record);
+                }
+                wtr = if let Some(csv_path) = option.output.as_ref() {
+                    // output to file
+                    match File::create(csv_path) {
+                        Ok(file) => {
+                            target = Box::new(BufWriter::new(file));
+                            Some(WriterBuilder::new().from_writer(target))
+                        }
+                        Err(err) => {
+                            AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                            process::exit(1);
+                        }
+                    }
+                } else {
+                    None
+                };
+            }
+            _ => {
+                return;
+            }
         }
 
         let header = vec!["Count", "Percent", "Channel", "ID", "Event"];
-        let target;
-        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
-            // output to file
-            match File::create(csv_path) {
-                Ok(file) => {
-                    target = Box::new(BufWriter::new(file));
-                    Some(WriterBuilder::new().from_writer(target))
-                }
-                Err(err) => {
-                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
-                    process::exit(1);
-                }
-            }
-        } else {
-            None
-        };
         if let Some(ref mut w) = wtr {
             w.write_record(&header).ok();
         }
@@ -91,12 +110,13 @@ impl Timeline {
         mapsorted.sort_by(|x, y| y.1.cmp(x.1));
 
         // イベントID毎の出力メッセージ生成
-        let stats_msges: Vec<Vec<String>> = self.tm_stats_set_msg(mapsorted, event_timeline_config);
+        let stats_msges: Vec<Vec<String>> =
+            self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
 
         for msgprint in sammsges.iter() {
             println!("{}", msgprint);
         }
-        if CONFIG.read().unwrap().output.is_some() {
+        if wtr.is_some() {
             for msg in stats_msges.iter() {
                 if let Some(ref mut w) = wtr {
                     w.write_record(msg).ok();
@@ -107,36 +127,40 @@ impl Timeline {
         println!("{stats_tb}");
     }
 
-    pub fn tm_logon_stats_dsp_msg(&mut self) {
-        if !*LOGONSUMMARY_FLAG {
-            return;
-        }
+    pub fn tm_logon_stats_dsp_msg(&mut self, stored_static: &StoredStatic) {
         // 出力メッセージ作成
         let mut sammsges: Vec<String> = Vec::new();
         let total_event_record = format!("\n\nTotal Event Records: {}\n", self.stats.total);
-        if CONFIG.read().unwrap().filepath.is_some() {
-            sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-            sammsges.push(total_event_record);
-            sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-            sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
-        } else {
-            sammsges.push(total_event_record);
-        }
-        for msgprint in sammsges.iter() {
-            println!("{}", msgprint);
-        }
+        if let Action::LogonSummary(logon_summary_option) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
+            if logon_summary_option.input_args.filepath.is_some() {
+                sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
+                sammsges.push(total_event_record);
+                sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
+                sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+            } else {
+                sammsges.push(total_event_record);
+            }
 
-        self.tm_loginstats_tb_set_msg();
+            for msgprint in sammsges.iter() {
+                println!("{}", msgprint);
+            }
+
+            self.tm_loginstats_tb_set_msg(&logon_summary_option.output);
+        }
     }
 
     // イベントID毎の出力メッセージ生成
     fn tm_stats_set_msg(
         &self,
         mapsorted: Vec<(&(std::string::String, std::string::String), &usize)>,
-        event_timeline_config: EventInfoConfig,
+        event_timeline_config: &EventInfoConfig,
+        stored_static: &StoredStatic,
     ) -> Vec<Vec<String>> {
         let mut msges: Vec<Vec<String>> = Vec::new();
 
+        let channel_config = &stored_static.ch_config;
         for ((event_id, channel), event_cnt) in mapsorted.iter() {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
@@ -149,7 +173,7 @@ impl Timeline {
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
-            let ch = CH_CONFIG
+            let ch = channel_config
                 .get(fmted_channel.to_lowercase().as_str())
                 .unwrap_or(&fmted_channel)
                 .to_string();
@@ -179,7 +203,7 @@ impl Timeline {
     }
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
-    fn tm_loginstats_tb_set_msg(&self) {
+    fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
         println!(" Logon Summary:\n");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
@@ -191,14 +215,14 @@ impl Timeline {
             }
         } else {
             println!(" Successful Logons:");
-            self.tm_loginstats_tb_dsp_msg("Successful");
+            self.tm_loginstats_tb_dsp_msg("Successful", output);
             println!("\n\n Failed Logons:");
-            self.tm_loginstats_tb_dsp_msg("Failed");
+            self.tm_loginstats_tb_dsp_msg("Failed", output);
         }
     }
 
     /// ユーザ毎のログイン統計情報出力
-    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str) {
+    fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
         let header = vec![
             logon_res,
             "User",
@@ -208,7 +232,7 @@ impl Timeline {
             "Source Ip",
         ];
         let target;
-        let mut wtr = if let Some(csv_path) = &CONFIG.read().unwrap().output {
+        let mut wtr = if let Some(csv_path) = output {
             // output to file
             match File::create(csv_path) {
                 Ok(file) => {

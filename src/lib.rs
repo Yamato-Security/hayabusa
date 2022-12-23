@@ -1,4 +1,5 @@
 pub mod afterfact;
+pub mod debug;
 pub mod detections;
 pub mod filter;
 pub mod notify;
