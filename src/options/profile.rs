@@ -291,7 +291,7 @@ pub fn set_default_profile(
             ))
         }
     } else {
-        Err("Failed to set the default profile file. profile option should set.".to_string())
+        Err("Failed to set the default profile file. Please specify a profile.".to_string())
     }
 }
 

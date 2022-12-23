@@ -1,9 +1,8 @@
 extern crate csv;
 
-use crate::detections::utils::{format_time, write_color_buffer};
-use crate::options::profile::Profile;
+use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
-    AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
+    self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
     Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
     RuleModifiedDate, RuleTitle, Status, Timestamp,
 };
@@ -40,7 +39,6 @@ pub struct EvtxRecordInfo {
     pub record: Value,         // 1レコード分のデータをJSON形式にシリアライズしたもの
     pub data_string: String,
     pub key_2_value: HashMap<String, String>,
-    pub record_information: Option<CompactString>,
 }
 
 impl EvtxRecordInfo {
@@ -216,11 +214,6 @@ impl Detection {
     /// 条件に合致したレコードを格納するための関数
     fn insert_message(rule: &RuleNode, record_info: &EvtxRecordInfo, stored_static: &StoredStatic) {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
-        let recinfo = if let Some(tmp) = record_info.record_information.as_ref() {
-            tmp.to_owned()
-        } else {
-            CompactString::from("-")
-        };
         let rec_id = if stored_static
             .profiles
             .as_ref()
@@ -245,24 +238,6 @@ impl Detection {
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
                 .unwrap_or_else(|| "-".to_string()),
         );
-        let default_output = match stored_static
-            .default_details
-            .get(&format!("{}_{}", provider, &eid))
-        {
-            Some(str) => CompactString::from(str),
-            None => recinfo.to_owned(),
-        };
-        let opt_record_info = if stored_static
-            .profiles
-            .as_ref()
-            .unwrap()
-            .iter()
-            .any(|(_s, p)| *p == AllFieldInfo(Default::default()))
-        {
-            recinfo
-        } else {
-            CompactString::from("-")
-        };
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
@@ -312,7 +287,7 @@ impl Detection {
                     );
                 }
                 EventID(_) => {
-                    profile_converter.insert(key.as_str(), EventID(eid.to_owned()));
+                    profile_converter.insert(key.to_string(), EventID(eid.clone()));
                 }
                 RecordID(_) => {
                     profile_converter.insert(key.as_str(), RecordID(rec_id.to_owned()));
@@ -324,10 +299,6 @@ impl Detection {
                             rule.yaml["title"].as_str().unwrap_or(""),
                         )),
                     );
-                }
-                AllFieldInfo(_) => {
-                    profile_converter
-                        .insert(key.as_str(), AllFieldInfo(opt_record_info.to_owned()));
                 }
                 RuleFile(_) => {
                     profile_converter.insert(
@@ -462,6 +433,16 @@ impl Detection {
                 _ => {}
             }
         }
+        let details_fmt_str = match rule.yaml["details"].as_str() {
+            Some(s) => s.to_string(),
+            None => match stored_static
+                .default_details
+                .get(&format!("{}_{}", provider, &eid))
+            {
+                Some(str) => str.to_string(),
+                None => create_recordinfos(&record_info.record),
+            },
+        };
 
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
@@ -474,13 +455,13 @@ impl Detection {
             ),
             eventid: eid,
             detail: CompactString::default(),
-            record_information: opt_record_info,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
         };
+
         message::insert(
             &record_info.record,
-            CompactString::new(rule.yaml["details"].as_str().unwrap_or(&default_output)),
+            CompactString::new(details_fmt_str),
             detect_info,
             time,
             &mut profile_converter,
@@ -546,9 +527,6 @@ impl Detection {
                             rule.yaml["title"].as_str().unwrap_or(""),
                         )),
                     );
-                }
-                AllFieldInfo(_) => {
-                    profile_converter.insert(key.as_str(), AllFieldInfo(CompactString::from("-")));
                 }
                 RuleFile(_) => {
                     profile_converter.insert(
@@ -661,7 +639,6 @@ impl Detection {
             computername: CompactString::from("-"),
             eventid: CompactString::from("-"),
             detail: output,
-            record_information: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
         };

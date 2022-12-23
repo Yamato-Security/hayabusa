@@ -1,17 +1,26 @@
 # Changes
 
-## 1.x.x [2022/xx/xx]
+## 2.0.0 [2022/12/24]
 
 **New Features:**
 
-- XXX
+- Command usage and help menu are now done by subcommands. (#656) (@hitenkoku)
+
+## 1.9.0 [2022/12/24]
+
+**New Features:**
+
+- Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
+- Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
 
 **Enhancements:**
 
-- Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
-- Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@YamatoSecurity)
-- By optimizating binary, binary size is compressed and processing time is slightly improved. (#824) (@YamatoSecurity)
-- Separated help menu by subcommand. (#656) (@hitenkoku)
+- Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@hitenkoku)
+- Added output of logon types, source computer and source IP address in Logon Summary as well as failed logons. (#835) (@garigariganzy @hitenkoku)
+- Optimized speed and memory usage. (#787) (@fukusuket)
+- Changed output color in eggs ascii art.(#839) (@hitenkoku)
+- Made the `--debug` option hidden by default. (#841) (@hitenkoku)
+- Added color to the ascii art eggs. (#839) (@hitenkoku)
 
 **Bug Fixes:**
 
@@ -22,7 +31,7 @@
 
 **Enhancements:**
 
-- Specified the minium Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
+- Specified the minimum Rust version `rust-version` field in `Cargo.toml` to avoid build dependency errors. (#802) (@hitenkoku)
 - Reduced memory usage. (#806) (@fukusuket)
 - Added the support for the `%RenderedMessage%` field in output profiles which is the rendered message in logs forwarded by WEC. (#760) (@hitenkoku)
 
