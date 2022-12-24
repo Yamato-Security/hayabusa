@@ -870,7 +870,11 @@ pub fn load_pivot_keywords(path: &str) {
 
     read_result.unwrap().iter().for_each(|line| {
         let mut map = line.split('.').take(2);
-        if map.size_hint().0 != 2 {
+        if let Some(size) = map.size_hint().1 {
+            if size < 2 {
+                return;
+            }
+        } else {
             return;
         }
         let key = map.next().unwrap();
