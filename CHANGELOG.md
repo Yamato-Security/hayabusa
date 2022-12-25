@@ -1,5 +1,11 @@
 # Changes
 
+## 2.x.x [xxxx/xx/xx]
+
+**Enhancements:**
+
+- Speed improvements.  (#847) (@hitenkoku)
+
 ## 2.0.0 [2022/12/24]
 
 **New Features:**
