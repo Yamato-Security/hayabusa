@@ -769,7 +769,7 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "base64 0.20.0",
  "bytesize",
