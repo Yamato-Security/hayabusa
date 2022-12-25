@@ -321,12 +321,7 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(
-                        detect_info
-                            .ext_field
-                            .iter()
-                            .map(|x| x.0.to_string().trim().to_string()),
-                    )?;
+                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim().to_string()))?;
                     plus_header = false;
                 }
                 wtr.write_record(
@@ -338,19 +333,20 @@ fn emit_csv<W: std::io::Write>(
             }
             // 各種集計作業
             if !output_option.no_summary {
-                let level_map: HashMap<String, u128> = HashMap::from([
-                    ("INFORMATIONAL".to_owned(), 1),
-                    ("LOW".to_owned(), 2),
-                    ("MEDIUM".to_owned(), 3),
-                    ("HIGH".to_owned(), 4),
-                    ("CRITICAL".to_owned(), 5),
+                let level_map: HashMap<&str, u128> = HashMap::from([
+                    ("INFORMATIONAL", 1),
+                    ("LOW", 2),
+                    ("MEDIUM", 3),
+                    ("HIGH", 4),
+                    ("CRITICAL", 5),
                 ]);
                 let level_suffix = *level_map
                     .get(
-                        &LEVEL_FULL
+                        LEVEL_FULL
                             .get(&detect_info.level.as_str())
                             .unwrap_or(&"undefined")
-                            .to_uppercase(),
+                            .to_uppercase()
+                            .as_str(),
                     )
                     .unwrap_or(&0) as usize;
 
@@ -606,10 +602,7 @@ fn emit_csv<W: std::io::Write>(
         }
     }
     if html_output_flag {
-        htmlreport::add_md_data(
-            "Results Summary {#results_summary}".to_string(),
-            html_output_stock,
-        );
+        htmlreport::add_md_data("Results Summary {#results_summary}", html_output_stock);
     }
     Ok(())
 }
@@ -1032,19 +1025,10 @@ fn _get_timestamp(output_option: &OutputOption, time: &DateTime<Utc>) -> i64 {
 fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
     match profile {
         Profile::MitreTactics(_) | Profile::MitreTags(_) | Profile::OtherTags(_) => {
-            let ret: Vec<String> = target_data
-                .to_owned()
-                .split(": ")
-                .map(|x| x.to_string())
-                .collect();
-            ret
+            target_data.split(": ").map(|x| x.to_string()).collect()
         }
         Profile::Details(_) | Profile::AllFieldInfo(_) => {
-            let ret: Vec<String> = target_data
-                .to_owned()
-                .split(" ¦ ")
-                .map(|x| x.to_string())
-                .collect();
+            let ret: Vec<String> = target_data.split(" ¦ ").map(|x| x.to_string()).collect();
             if target_data == &ret[0] && !target_data.contains(": ") {
                 vec![]
             } else {
@@ -1057,7 +1041,7 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
 
 /// JSONの出力フォーマットに合わせた文字列を出力する関数
 fn _create_json_output_format(
-    key: &String,
+    key: &str,
     value: &str,
     key_quote_exclude_flag: bool,
     concat_flag: bool,
@@ -1132,7 +1116,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
             let output_val =
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
             target.push(_create_json_output_format(
-                &key.to_string(),
+                key,
                 &output_val,
                 key.starts_with('\"'),
                 output_val.starts_with('\"'),
@@ -1147,13 +1131,12 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                     let mut key_index_stock = vec![];
                     for detail_contents in vec_data.iter() {
                         // 分解してキーとなりえる箇所を抽出する
-                        let space_split: Vec<&str> = detail_contents.split(' ').collect();
                         let mut tmp_stock = vec![];
-                        for sp in space_split.iter() {
+                        for sp in detail_contents.split(' ') {
                             if sp.ends_with(':') && sp.len() > 2 {
                                 stocked_value.push(tmp_stock);
                                 tmp_stock = vec![];
-                                key_index_stock.push(sp.replace(':', "").to_owned());
+                                key_index_stock.push(sp.replace(':', ""));
                             } else {
                                 tmp_stock.push(sp.to_owned());
                             }
@@ -1166,7 +1149,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                         let mut tmp = if key_idx >= key_index_stock.len() {
                             String::default()
                         } else if value_idx == 0 && !value.is_empty() {
-                            key.to_string().to_owned()
+                            key.to_string()
                         } else {
                             key_index_stock[key_idx].to_string()
                         };
@@ -1232,22 +1215,20 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                     target.push(output_stock.join("\n"));
                 }
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
-                    let tmp_val: Vec<&str> = val.split(": ").collect();
-
                     let key = _convert_valid_json_str(&[key.as_str()], false);
-                    let values: Vec<&&str> = tmp_val.iter().filter(|x| x.trim() != "").collect();
-                    let mut value: Vec<String> = vec![];
-
-                    if values.is_empty() {
+                    let values = val.split(": ").filter(|x| x.trim() != "");
+                    let values_len = values.size_hint().0;
+                    if values_len == 0 {
                         continue;
                     }
-                    for (idx, tag_val) in values.iter().enumerate() {
+                    let mut value: Vec<String> = vec![];
+                    for (idx, tag_val) in values.enumerate() {
                         if idx == 0 {
                             value.push("[\n".to_string());
                         }
                         let insert_val = format!("        \"{}\"", tag_val.trim());
                         value.push(insert_val);
-                        if idx != values.len() - 1 {
+                        if idx != values_len - 1 {
                             value.push(",\n".to_string());
                         }
                     }
@@ -1349,19 +1330,12 @@ fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<
         .into_iter()
     {
         if let Some(author) = yaml["author"].as_str() {
-            let authors_vec: Nested<String> = author
-                .to_string()
-                .split(',')
-                .into_iter()
-                .map(|s| {
-                    // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
-                    let tmp: Vec<&str> = s.split('(').collect();
-                    // データの中にdouble quote と single quoteが入っているためここで除外する
-                    tmp[0].to_string()
-                })
-                .collect();
             let mut ret = Nested::<String>::new();
-            for author in authors_vec.iter() {
+            for author in author.to_string().split(',').into_iter().map(|s| {
+                // 各要素の括弧以降の記載は名前としないためtmpの一番最初の要素のみを参照する
+                // データの中にdouble quote と single quoteが入っているためここで除外する
+                s.split('(').next().unwrap_or_default().to_string()
+            }) {
                 ret.extend(author.split(';'));
             }
 
@@ -1521,9 +1495,9 @@ mod tests {
                 html_report: None,
                 no_summary: false,
             };
-            let mut profile_converter: HashMap<String, Profile> = HashMap::from([
+            let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
-                    "Timestamp".to_string(),
+                    "Timestamp",
                     Profile::Timestamp(CompactString::from(format_time(
                         &expect_time,
                         false,
@@ -1531,53 +1505,47 @@ mod tests {
                     ))),
                 ),
                 (
-                    "Computer".to_string(),
+                    "Computer",
                     Profile::Computer(CompactString::from(test_computername)),
                 ),
                 (
-                    "Channel".to_string(),
+                    "Channel",
                     Profile::Channel(CompactString::from(
                         mock_ch_filter
                             .get(&"Security".to_ascii_lowercase())
                             .unwrap_or(&String::default()),
                     )),
                 ),
+                ("Level", Profile::Level(CompactString::from(test_level))),
                 (
-                    "Level".to_string(),
-                    Profile::Level(CompactString::from(test_level)),
-                ),
-                (
-                    "EventID".to_string(),
+                    "EventID",
                     Profile::EventID(CompactString::from(test_eventid)),
                 ),
                 (
-                    "MitreAttack".to_string(),
+                    "MitreAttack",
                     Profile::MitreTactics(CompactString::from(test_attack)),
                 ),
                 (
-                    "RecordID".to_string(),
+                    "RecordID",
                     Profile::RecordID(CompactString::from(test_record_id)),
                 ),
                 (
-                    "RuleTitle".to_string(),
+                    "RuleTitle",
                     Profile::RuleTitle(CompactString::from(test_title)),
                 ),
                 (
-                    "RecordInformation".to_string(),
+                    "RecordInformation",
                     Profile::AllFieldInfo(CompactString::from(test_recinfo)),
                 ),
                 (
-                    "RuleFile".to_string(),
+                    "RuleFile",
                     Profile::RuleFile(CompactString::from(test_rulepath)),
                 ),
                 (
-                    "EvtxFile".to_string(),
+                    "EvtxFile",
                     Profile::EvtxFile(CompactString::from(test_filepath)),
                 ),
-                (
-                    "Tags".to_string(),
-                    Profile::MitreTags(CompactString::from(test_attack)),
-                ),
+                ("Tags", Profile::MitreTags(CompactString::from(test_attack))),
             ]);
             message::insert(
                 &event,
@@ -1615,7 +1583,6 @@ mod tests {
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
                 + &expect_tz
-                    .to_owned()
                     .format("%Y-%m-%d %H:%M:%S%.3f %:z")
                     .to_string()
                 + ","
@@ -1680,10 +1647,7 @@ mod tests {
         let expect_header = "Timestamp ‖ Computer ‖ Channel ‖ EventID ‖ Level ‖ RecordID ‖ RuleTitle ‖ Details ‖ RecordInformation\n";
         let expect_tz = test_timestamp.with_timezone(&Local);
 
-        let expect_no_header = expect_tz
-            .to_owned()
-            .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-            .to_string()
+        let expect_no_header = expect_tz.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
             + " ‖ "
             + test_computername
             + " ‖ "

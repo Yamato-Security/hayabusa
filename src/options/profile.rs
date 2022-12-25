@@ -8,6 +8,7 @@ use crate::options::profile::Profile::{
 };
 use crate::yaml;
 use compact_str::CompactString;
+use itertools::Itertools;
 use nested::Nested;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
@@ -188,16 +189,15 @@ pub fn load_profile(
                 });
             Some(ret)
         } else {
-            let profile_names: Vec<&str> = profile_data
-                .as_hash()
-                .unwrap()
-                .keys()
-                .map(|k| k.as_str().unwrap())
-                .collect();
             AlertMessage::alert(&format!(
                 "Invalid profile specified: {}\nPlease specify one of the following profiles:\n {}",
                 profile_name,
-                profile_names.join(", ")
+                profile_data
+                    .as_hash()
+                    .unwrap()
+                    .keys()
+                    .map(|k| k.as_str().unwrap())
+                    .join(", ")
             ))
             .ok();
             None
@@ -272,16 +272,14 @@ pub fn set_default_profile(
                 };
                 result
             } else {
-                let profile_names: Vec<&str> = prof_all_data
-                    .as_hash()
-                    .unwrap()
-                    .keys()
-                    .map(|k| k.as_str().unwrap())
-                    .collect();
                 Err(format!(
                     "Invalid profile specified: {}\nPlease specify one of the following profiles:\n{}",
                     profile_name,
-                    profile_names.join(", ")
+                    prof_all_data
+                    .as_hash()
+                    .unwrap()
+                    .keys()
+                    .map(|k| k.as_str().unwrap()).join(", ")
                 ))
             }
         } else {

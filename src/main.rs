@@ -95,10 +95,7 @@ impl App {
                 "- Start time: {}",
                 analysis_start_time.format("%Y/%m/%d %H:%M")
             )]);
-            htmlreport::add_md_data(
-                "General Overview {#general_overview}".to_string(),
-                output_data,
-            );
+            htmlreport::add_md_data("General Overview {#general_overview}", output_data);
         }
 
         // 引数がなかった時にhelpを出力するためのサブコマンド出力。引数がなくても動作するサブコマンドはhelpを出力しない
@@ -134,8 +131,8 @@ impl App {
             println!();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
-                &analysis_start_time.month().to_owned(),
-                &analysis_start_time.day().to_owned()
+                &analysis_start_time.month(),
+                &analysis_start_time.day()
             ));
         }
         if !self.is_matched_architecture_and_binary() {
@@ -397,11 +394,11 @@ impl App {
                     .ok();
                 } else {
                     //標準出力の場合
-                    let output = "The following pivot keywords were found:".to_string();
+                    let output = "The following pivot keywords were found:";
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
-                        &output,
+                        output,
                         true,
                     )
                     .ok();
@@ -897,10 +894,7 @@ impl App {
                 format!("- Analyzed event files: {}", evtx_files.len()),
                 format!("- {}", total_size_output),
             ]);
-            htmlreport::add_md_data(
-                "General Overview #{general_overview}".to_string(),
-                output_data,
-            );
+            htmlreport::add_md_data("General Overview #{general_overview}", output_data);
         }
 
         let rule_files = detection::Detection::parse_rule_files(

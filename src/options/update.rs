@@ -202,7 +202,7 @@ impl Update {
             )
             .ok();
 
-        let hash_set_keys: HashSet<String> = rulefile_loader
+        rulefile_loader
             .files
             .into_iter()
             .filter_map(|(filepath, yaml)| {
@@ -220,8 +220,7 @@ impl Update {
                 }
                 Option::None
             })
-            .collect();
-        hash_set_keys
+            .collect()
     }
 
     /// print updated rule files.

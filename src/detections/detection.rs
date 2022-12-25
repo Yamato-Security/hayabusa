@@ -175,8 +175,7 @@ impl Detection {
                 continue;
             }
 
-            let agg_results = rule.judge_satisfy_aggcondition(stored_static);
-            for value in agg_results {
+            for value in rule.judge_satisfy_aggcondition(stored_static) {
                 Detection::insert_agg_message(rule, value, stored_static);
             }
         }
@@ -242,15 +241,15 @@ impl Detection {
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
-        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let level = rule.yaml["level"].as_str().unwrap_or("-");
 
-        let mut profile_converter: HashMap<String, Profile> = HashMap::new();
+        let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Timestamp(CompactString::from(format_time(
                             &time,
                             false,
@@ -260,7 +259,7 @@ impl Detection {
                 }
                 Computer(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Computer(CompactString::from(
                             record_info.record["Event"]["System"]["Computer"]
                                 .to_string()
@@ -270,7 +269,7 @@ impl Detection {
                 }
                 Channel(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Channel(CompactString::from(
                             stored_static
                                 .ch_config
@@ -281,24 +280,21 @@ impl Detection {
                 }
                 Level(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Level(CompactString::from(
-                            LEVEL_ABBR_MAP
-                                .get(&level.as_str())
-                                .unwrap_or(&level.as_str())
-                                .to_string(),
+                            LEVEL_ABBR_MAP.get(level).unwrap_or(&level).to_string(),
                         )),
                     );
                 }
                 EventID(_) => {
-                    profile_converter.insert(key.to_string(), EventID(eid.clone()));
+                    profile_converter.insert(key.as_str(), EventID(eid.clone()));
                 }
                 RecordID(_) => {
-                    profile_converter.insert(key.to_string(), RecordID(rec_id.to_owned()));
+                    profile_converter.insert(key.as_str(), RecordID(rec_id.to_owned()));
                 }
                 RuleTitle(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleTitle(CompactString::from(
                             rule.yaml["title"].as_str().unwrap_or(""),
                         )),
@@ -306,7 +302,7 @@ impl Detection {
                 }
                 RuleFile(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleFile(CompactString::from(
                             Path::new(&rule.rulepath)
                                 .file_name()
@@ -318,7 +314,7 @@ impl Detection {
                 }
                 EvtxFile(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         EvtxFile(CompactString::from(
                             Path::new(&record_info.evtx_filepath)
                                 .to_str()
@@ -334,7 +330,7 @@ impl Detection {
                             .join(" ¦ "),
                     );
 
-                    profile_converter.insert(key.to_string(), MitreTactics(tactics));
+                    profile_converter.insert(key.as_str(), MitreTactics(tactics));
                 }
                 MitreTags(_) => {
                     let techniques = CompactString::from(
@@ -352,7 +348,7 @@ impl Detection {
                             })
                             .join(" ¦ "),
                     );
-                    profile_converter.insert(key.to_string(), MitreTags(techniques));
+                    profile_converter.insert(key.as_str(), MitreTags(techniques));
                 }
                 OtherTags(_) => {
                     let tags = CompactString::from(
@@ -366,11 +362,11 @@ impl Detection {
                             })
                             .join(" ¦ "),
                     );
-                    profile_converter.insert(key.to_string(), OtherTags(tags));
+                    profile_converter.insert(key.as_str(), OtherTags(tags));
                 }
                 RuleAuthor(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleAuthor(CompactString::from(
                             rule.yaml["author"].as_str().unwrap_or("-"),
                         )),
@@ -378,7 +374,7 @@ impl Detection {
                 }
                 RuleCreationDate(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleCreationDate(CompactString::from(
                             rule.yaml["date"].as_str().unwrap_or("-"),
                         )),
@@ -386,7 +382,7 @@ impl Detection {
                 }
                 RuleModifiedDate(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleModifiedDate(CompactString::from(
                             rule.yaml["modified"].as_str().unwrap_or("-"),
                         )),
@@ -394,7 +390,7 @@ impl Detection {
                 }
                 Status(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Status(CompactString::from(
                             rule.yaml["status"].as_str().unwrap_or("-"),
                         )),
@@ -402,13 +398,13 @@ impl Detection {
                 }
                 RuleID(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleID(CompactString::from(rule.yaml["id"].as_str().unwrap_or("-"))),
                     );
                 }
                 Provider(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Provider(CompactString::from(
                             record_info.record["Event"]["System"]["Provider_attributes"]["Name"]
                                 .to_string()
@@ -432,7 +428,7 @@ impl Detection {
                     } else {
                         CompactString::from("n/a")
                     };
-                    profile_converter.insert(key.to_string(), Provider(convert_value));
+                    profile_converter.insert(key.as_str(), Provider(convert_value));
                 }
                 _ => {}
             }
@@ -451,12 +447,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
-            level: CompactString::from(
-                LEVEL_ABBR_MAP
-                    .get(&level.as_str())
-                    .unwrap_or(&level.as_str())
-                    .to_string(),
-            ),
+            level: CompactString::from(LEVEL_ABBR_MAP.get(level).unwrap_or(&level).to_string()),
             computername: CompactString::from(
                 record_info.record["Event"]["System"]["Computer"]
                     .to_string()
@@ -493,15 +484,15 @@ impl Detection {
         let tag_info: &Nested<String> = &Detection::get_tag_info(rule);
         let output = Detection::create_count_output(rule, &agg_result);
 
-        let mut profile_converter: HashMap<String, Profile> = HashMap::new();
-        let level = rule.yaml["level"].as_str().unwrap_or("-").to_string();
+        let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
+        let level = rule.yaml["level"].as_str().unwrap_or("-");
         let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Timestamp(CompactString::from(format_time(
                             &agg_result.start_timedate,
                             false,
@@ -510,31 +501,28 @@ impl Detection {
                     );
                 }
                 Computer(_) => {
-                    profile_converter.insert(key.to_string(), Computer(CompactString::from("-")));
+                    profile_converter.insert(key.as_str(), Computer(CompactString::from("-")));
                 }
                 Channel(_) => {
-                    profile_converter.insert(key.to_string(), Channel(CompactString::from("-")));
+                    profile_converter.insert(key.as_str(), Channel(CompactString::from("-")));
                 }
                 Level(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Level(CompactString::from(
-                            LEVEL_ABBR_MAP
-                                .get(&level.as_str())
-                                .unwrap_or(&level.as_str())
-                                .to_string(),
+                            LEVEL_ABBR_MAP.get(level).unwrap_or(&level).to_string(),
                         )),
                     );
                 }
                 EventID(_) => {
-                    profile_converter.insert(key.to_string(), EventID(CompactString::from("-")));
+                    profile_converter.insert(key.as_str(), EventID(CompactString::from("-")));
                 }
                 RecordID(_) => {
-                    profile_converter.insert(key.to_string(), RecordID(CompactString::from("")));
+                    profile_converter.insert(key.as_str(), RecordID(CompactString::from("")));
                 }
                 RuleTitle(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleTitle(CompactString::from(
                             rule.yaml["title"].as_str().unwrap_or(""),
                         )),
@@ -542,7 +530,7 @@ impl Detection {
                 }
                 RuleFile(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleFile(CompactString::from(
                             Path::new(&rule.rulepath)
                                 .file_name()
@@ -553,7 +541,7 @@ impl Detection {
                     );
                 }
                 EvtxFile(_) => {
-                    profile_converter.insert(key.to_string(), EvtxFile(CompactString::from("-")));
+                    profile_converter.insert(key.as_str(), EvtxFile(CompactString::from("-")));
                 }
                 MitreTactics(_) => {
                     let tactics = CompactString::from(
@@ -562,7 +550,7 @@ impl Detection {
                             .filter(|x| tags_config_values.contains(&&x.to_string()))
                             .join(" ¦ "),
                     );
-                    profile_converter.insert(key.to_string(), MitreTactics(tactics));
+                    profile_converter.insert(key.as_str(), MitreTactics(tactics));
                 }
                 MitreTags(_) => {
                     let techniques = CompactString::from(
@@ -580,7 +568,7 @@ impl Detection {
                             })
                             .join(" ¦ "),
                     );
-                    profile_converter.insert(key.to_string(), MitreTags(techniques));
+                    profile_converter.insert(key.as_str(), MitreTags(techniques));
                 }
                 OtherTags(_) => {
                     let tags = CompactString::from(
@@ -594,11 +582,11 @@ impl Detection {
                             })
                             .join(" ¦ "),
                     );
-                    profile_converter.insert(key.to_string(), OtherTags(tags));
+                    profile_converter.insert(key.as_str(), OtherTags(tags));
                 }
                 RuleAuthor(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleAuthor(CompactString::from(
                             rule.yaml["author"].as_str().unwrap_or("-"),
                         )),
@@ -606,7 +594,7 @@ impl Detection {
                 }
                 RuleCreationDate(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleCreationDate(CompactString::from(
                             rule.yaml["date"].as_str().unwrap_or("-"),
                         )),
@@ -614,7 +602,7 @@ impl Detection {
                 }
                 RuleModifiedDate(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleModifiedDate(CompactString::from(
                             rule.yaml["modified"].as_str().unwrap_or("-"),
                         )),
@@ -622,7 +610,7 @@ impl Detection {
                 }
                 Status(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         Status(CompactString::from(
                             rule.yaml["status"].as_str().unwrap_or("-"),
                         )),
@@ -630,15 +618,15 @@ impl Detection {
                 }
                 RuleID(_) => {
                     profile_converter.insert(
-                        key.to_string(),
+                        key.as_str(),
                         RuleID(CompactString::from(rule.yaml["id"].as_str().unwrap_or("-"))),
                     );
                 }
                 Provider(_) => {
-                    profile_converter.insert(key.to_string(), Provider(CompactString::from("-")));
+                    profile_converter.insert(key.as_str(), Provider(CompactString::from("-")));
                 }
                 RenderedMessage(_) => {
-                    profile_converter.insert(key.to_string(), Provider(CompactString::from("-")));
+                    profile_converter.insert(key.as_str(), Provider(CompactString::from("-")));
                 }
                 _ => {}
             }
@@ -647,12 +635,7 @@ impl Detection {
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
-            level: CompactString::from(
-                LEVEL_ABBR_MAP
-                    .get(&level.as_str())
-                    .unwrap_or(&level.as_str())
-                    .to_string(),
-            ),
+            level: CompactString::from(*LEVEL_ABBR_MAP.get(level).unwrap_or(&level)),
             computername: CompactString::from("-"),
             eventid: CompactString::from("-"),
             detail: output,
@@ -688,12 +671,10 @@ impl Detection {
                     .unwrap_or(&Vec::default())
                     .iter()
                     .map(|info| {
-                        if let Some(tag) =
-                            TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default()))
-                        {
+                        if let Some(tag) = TAGS_CONFIG.get(info.as_str().unwrap_or_default()) {
                             tag.to_owned()
                         } else {
-                            info.as_str().unwrap_or(&String::default()).to_owned()
+                            info.as_str().unwrap_or_default().to_owned()
                         }
                     }),
             ),
@@ -715,46 +696,52 @@ impl Detection {
     ///aggregation conditionのcount部分の検知出力文の文字列を返す関数
     fn create_count_output(rule: &RuleNode, agg_result: &AggResult) -> CompactString {
         // 条件式部分の出力
-        let mut ret: String = "[condition] ".to_owned();
-        let agg_condition_raw_str: Vec<&str> = rule.yaml["detection"]["condition"]
-            .as_str()
-            .unwrap()
-            .split('|')
-            .collect();
+        let mut ret: String = "[condition] ".to_string();
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでunwrap前の確認は行わない
         let agg_condition = rule.get_agg_condition().unwrap();
         let exist_timeframe = rule.yaml["detection"]["timeframe"].as_str().unwrap_or("") != "";
         // この関数が呼び出されている段階で既にaggregation conditionは存在する前提なのでagg_conditionの配列の長さは2となる
-        ret.push_str(agg_condition_raw_str[1].trim());
+        ret.push_str(
+            rule.yaml["detection"]["condition"]
+                .as_str()
+                .unwrap()
+                .split('|')
+                .nth(1)
+                .unwrap_or_default()
+                .trim(),
+        );
         if exist_timeframe {
             ret.push_str(" in timeframe");
         }
 
-        let _ = write!(ret, " [result] count:{}", agg_result.data);
+        write!(ret, " [result] count:{}", agg_result.data).ok();
         if agg_condition._field_name.is_some() {
-            let _ = write!(
+            write!(
                 ret,
                 " {}:{}",
                 agg_condition._field_name.as_ref().unwrap(),
                 agg_result.field_values.join("/")
-            );
+            )
+            .ok();
         }
 
         if agg_condition._by_field_name.is_some() {
-            let _ = write!(
+            write!(
                 ret,
                 " {}:{}",
                 agg_condition._by_field_name.as_ref().unwrap(),
                 agg_result.key
-            );
+            )
+            .ok();
         }
 
         if exist_timeframe {
-            let _ = write!(
+            write!(
                 ret,
                 " timeframe:{}",
                 rule.yaml["detection"]["timeframe"].as_str().unwrap()
-            );
+            )
+            .ok();
         }
 
         CompactString::from(ret)
@@ -812,7 +799,7 @@ impl Detection {
         println!();
 
         let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
-        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| v.to_owned()).sum();
+        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| *v).sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
@@ -874,10 +861,7 @@ impl Detection {
             html_report_stock.push(format!("- {}", tmp_total_detect_output));
         }
         if !html_report_stock.is_empty() {
-            htmlreport::add_md_data(
-                "General Overview {#general_overview}".to_string(),
-                html_report_stock,
-            );
+            htmlreport::add_md_data("General Overview {#general_overview}", html_report_stock);
         }
     }
 }

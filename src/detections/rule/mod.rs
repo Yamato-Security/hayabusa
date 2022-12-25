@@ -77,13 +77,7 @@ impl RuleNode {
     ) -> bool {
         let result = self.detection.select(event_record, eventkey_alias);
         if result && self.has_agg_condition() {
-            count::count(
-                self,
-                &event_record.record,
-                verbose_flag,
-                quiet_errors_flag,
-                eventkey_alias,
-            );
+            count::count(self, &event_record.record, verbose_flag, quiet_errors_flag);
         }
         result
     }
@@ -205,7 +199,7 @@ impl DetectionNode {
 
         // aggregation condition(conditionのパイプ以降の部分)をパース
         let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
-        let compile_result = agg_compiler.compile(condition_str);
+        let compile_result = agg_compiler.compile(&condition_str);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.push(err_msg);
         } else if let Result::Ok(info) = compile_result {

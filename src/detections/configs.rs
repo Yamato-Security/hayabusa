@@ -852,10 +852,10 @@ pub fn load_eventkey_alias(path: &str) -> EventKeyAliasConfig {
         config
             .key_to_eventkey
             .insert(alias.to_owned(), event_key.to_owned());
-        let splits = event_key.split('.').map(|s| s.len()).collect();
-        config
-            .key_to_split_eventkey
-            .insert(alias.to_owned(), splits);
+        config.key_to_split_eventkey.insert(
+            alias.to_owned(),
+            event_key.split('.').map(|s| s.len()).collect(),
+        );
     });
     config.key_to_eventkey.shrink_to_fit();
     config
@@ -869,25 +869,31 @@ pub fn load_pivot_keywords(path: &str) {
     }
 
     read_result.unwrap().iter().for_each(|line| {
-        let map: Vec<&str> = line.split('.').collect();
-        if map.len() != 2 {
+        let mut map = line.split('.').take(2);
+        if let Some(size) = map.size_hint().1 {
+            if size < 2 {
+                return;
+            }
+        } else {
             return;
         }
+        let key = map.next().unwrap();
+        let value = map.next().unwrap();
 
         //存在しなければ、keyを作成
         PIVOT_KEYWORD
             .write()
             .unwrap()
-            .entry(map[0].to_string())
+            .entry(key.to_string())
             .or_insert_with(PivotKeyword::new);
 
         PIVOT_KEYWORD
             .write()
             .unwrap()
-            .get_mut(&map[0].to_string())
+            .get_mut(&key.to_string())
             .unwrap()
             .fields
-            .insert(map[1].to_string());
+            .insert(value.to_string());
     });
 }
 

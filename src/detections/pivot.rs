@@ -61,10 +61,9 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     pivots.iter_mut().into_iter().for_each(|(_, pivot)| {
         for field in &pivot.fields {
             if let Some(array_str) = eventkey_alias.get_event_key(&String::from(field)) {
-                let split: Vec<&str> = array_str.split('.').collect();
                 let mut is_exist_event_key = false;
                 let mut tmp_event_record: &Value = event_record;
-                for s in split {
+                for s in array_str.split('.') {
                     if let Some(record) = tmp_event_record.get(s) {
                         is_exist_event_key = true;
                         tmp_event_record = record;

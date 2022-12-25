@@ -1,5 +1,6 @@
 use crate::detections::configs::EventKeyAliasConfig;
 use crate::detections::configs::StoredStatic;
+use crate::detections::configs::STORED_EKEY_ALIAS;
 use crate::detections::message;
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
@@ -16,36 +17,31 @@ use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
-pub fn count(
-    rule: &mut RuleNode,
-    record: &Value,
-    verbose_flag: bool,
-    quiet_errors_flag: bool,
-    eventkey_alias: &EventKeyAliasConfig,
-) {
+pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_errors_flag: bool) {
     let key = create_count_key(
         rule,
         record,
         verbose_flag,
         quiet_errors_flag,
-        eventkey_alias,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     );
-    let field_name: String = match rule.get_agg_condition() {
-        None => String::default(),
+    let binding = String::default();
+    let field_name = match rule.get_agg_condition() {
+        None => "",
         Some(aggcondition) => aggcondition
             ._field_name
             .as_ref()
-            .unwrap_or(&String::default())
-            .to_owned(),
+            .unwrap_or(&binding)
+            .as_str(),
     };
     let field_value = get_alias_value_in_record(
         rule,
-        &field_name,
+        field_name,
         record,
         false,
         verbose_flag,
         quiet_errors_flag,
-        eventkey_alias,
+        STORED_EKEY_ALIAS.read().unwrap().as_ref().unwrap(),
     )
     .unwrap_or_default();
     let default_time = Utc.with_ymd_and_hms(1977, 1, 1, 0, 0, 0).unwrap();

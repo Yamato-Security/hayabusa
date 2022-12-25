@@ -1,6 +1,6 @@
 use nested::Nested;
 use regex::Regex;
-use std::{cmp::Ordering, collections::VecDeque};
+use std::cmp::Ordering;
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
@@ -257,12 +257,22 @@ impl LeafMatcher for DefaultMatcher {
 
         // Pipeが指定されていればパースする
         let emp = String::default();
-        let mut keys: VecDeque<&str> = key_list.get(0).unwrap_or(&emp).split('|').collect(); // key_listが空はあり得ない
-        keys.pop_front(); // 一つ目はただのキーで、2つめ以降がpipe
-        while !keys.is_empty() {
-            let key = keys.pop_front().unwrap();
-            let pipe_element = PipeElement::new(key, &pattern, key_list)?;
-            self.pipes.push(pipe_element);
+        // 一つ目はただのキーで、2つめ以降がpipe
+        let keys = key_list.get(0).unwrap_or(&emp).split('|').skip(1); // key_listが空はあり得ない
+        let mut err_msges = vec![];
+        keys.for_each(|key| {
+            let pipe_element = PipeElement::new(key, &pattern, key_list);
+            match pipe_element {
+                Ok(element) => {
+                    self.pipes.push(element);
+                }
+                Err(e) => {
+                    err_msges.push(e);
+                }
+            }
+        });
+        if !err_msges.is_empty() {
+            return Err(err_msges);
         }
         if self.pipes.len() >= 2 {
             // 現状では複数のパイプは対応していない
@@ -357,11 +367,7 @@ enum PipeElement {
 }
 
 impl PipeElement {
-    fn new(
-        key: &str,
-        pattern: &str,
-        key_list: &Nested<String>,
-    ) -> Result<PipeElement, Vec<String>> {
+    fn new(key: &str, pattern: &str, key_list: &Nested<String>) -> Result<PipeElement, String> {
         let pipe_element = match key {
             "startswith" => Option::Some(PipeElement::Startswith),
             "endswith" => Option::Some(PipeElement::Endswith),
@@ -375,11 +381,10 @@ impl PipeElement {
         if let Some(elment) = pipe_element {
             Result::Ok(elment)
         } else {
-            let errmsg = format!(
+            Result::Err(format!(
                 "An unknown pipe element was specified. key:{}",
                 utils::concat_selection_key(key_list)
-            );
-            Result::Err(vec![errmsg])
+            ))
         }
     }
 

@@ -7,6 +7,7 @@ use crate::options::htmlreport;
 
 use compact_str::CompactString;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
 
@@ -295,12 +296,10 @@ pub fn create_recordinfos(record: &Value) -> String {
         }
     });
 
-    let summary: Vec<String> = output
+    output
         .iter()
         .map(|(key, value)| format!("{}: {}", key, value))
-        .collect();
-
-    summary.join(" ¦ ")
+        .join(" ¦ ")
 }
 
 /**
@@ -509,7 +508,7 @@ pub fn output_and_data_stack_for_html(
     if html_report_flag {
         let mut output_data = Nested::<String>::new();
         output_data.extend(vec![format!("- {}", output_str)]);
-        htmlreport::add_md_data(section_name.to_string(), output_data);
+        htmlreport::add_md_data(section_name, output_data);
     }
 }
 

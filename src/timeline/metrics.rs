@@ -89,7 +89,7 @@ impl EventMetrics {
         if records.is_empty() {
             return;
         }
-        self.filepath = records[0].evtx_filepath.as_str().to_owned();
+        self.filepath = records[0].evtx_filepath.to_owned();
         // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
         // sortしないことにより計算量が改善されています。
         for record in records.iter() {
