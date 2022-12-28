@@ -23,7 +23,7 @@ jobs:
       - name: generage coverage data
         uses: actions-rs/cargo@v1
         with:
-          command: llvm-cov run
+          command: llvm-cov
           args: --lcov --output-path /tmp/coverage.info
         env:
           RUST_TEST_THREADS: 1
