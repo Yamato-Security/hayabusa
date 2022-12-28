@@ -3,11 +3,11 @@ on: [push]
 name: Code Coverage
 
 jobs:
-  lint:
+  coverage:
     runs-on: ubuntu-latest
     permissions:
-      issues: read 
-      pull-requests: read 
+      issues: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v1
         with:
@@ -16,16 +16,21 @@ jobs:
         with:
           toolchain: nightly
           override: true
-      - uses: actions-rs/cargo@v1
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@88e7c2e1da2693cf72d58fce9416206818e61dea # https://github.com/dtolnay/rust-toolchain/commit/88e7c2e1da2693cf72d58fce9416206818e61dea
         with:
-          command: test
-          args: --all-features --no-fail-fast
+          toolchain: nightly
+          components: cargo-llvm-cov
+      - name: Prepare llvm-tools
+        run: rustup component add llvm-tools-preview
+      - name: generage coverage data
+        uses: actions-rs/cargo@v1
+        with:
+          command: llvm-cov run
+          args: --lcov --output-path /tmp/coverage.info
         env:
           RUST_TEST_THREADS: 1
           CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-      - uses: actions-rs/grcov@v0.1
       - uses: codecov/codecov-action@v3
         with:
           directory: /tmp/
