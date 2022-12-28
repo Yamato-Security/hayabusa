@@ -2,9 +2,17 @@
 
 ## 2.x.x [xxxx/xx/xx]
 
+**New Features:**
+
+- XXX
+
 **Enhancements:**
 
 - Speed improvements.  (#847) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed successful login csv is not output when using the logon-timeline function. (#849) (@hitenkoku)
 
 ## 2.0.0 [2022/12/24]
 
