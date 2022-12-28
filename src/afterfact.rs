@@ -1212,7 +1212,11 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                         }
                     }
                     output_stock.push("    }".to_string());
-                    target.push(output_stock.join("\n"));
+                    if jsonl_output_flag {
+                        target.push(output_stock.join(""));
+                    } else {
+                        target.push(output_stock.join("\n"));
+                    }
                 }
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
                     let key = _convert_valid_json_str(&[key.as_str()], false);
