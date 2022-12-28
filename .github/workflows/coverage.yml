@@ -17,7 +17,7 @@ jobs:
           toolchain: nightly
           override: true
       - name: Install llvm-cov
-        components: cargo install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
       - name: Prepare llvm-tools
         run: rustup component add llvm-tools-preview
       - name: generage coverage data
