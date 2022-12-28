@@ -1,12 +1,18 @@
 # Changes
 
+## 1.9.1 [20XX/XX/XX]
+
+**Bug Fixes:**
+
+- Fixed successful login csv is not output when using the logon-timeline function. (#849) (@hitenkoku)
+
 ## 1.9.0 [2022/12/24]
 
 **New Features:**
 
 - Added a new pipe keyword. (`|endswithfield`) (#740) (@hach1yon)
 - Added `--debug` option to display memory utilization at runtime. (#788) (@fukusuket)
-- 
+
 **Enhancements:**
 
 - Updated clap crate package to version 4 and changed the `--visualize-timeline` short option `-V` to `-T`. (#725) (@hitenkoku)
