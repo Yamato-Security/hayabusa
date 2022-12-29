@@ -1256,7 +1256,7 @@ mod tests {
 
     use crate::App;
     use hashbrown::HashSet;
-    use hayabusa::detections::configs::{Action, Config, StoredStatic, UpdateOption};
+    use hayabusa::detections::configs::{Action, Config, ConfigReader, StoredStatic, UpdateOption};
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
@@ -1286,5 +1286,15 @@ mod tests {
                 });
             assert_eq!(is_contains, &true);
         })
+    }
+
+    #[test]
+    fn test_exec_none_storedstatic() {
+        let mut app = App::new(None);
+        let mut config_reader = ConfigReader::new();
+        let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+        config_reader.config = None;
+        stored_static.profiles = None;
+        app.exec(&mut config_reader.app, &mut stored_static);
     }
 }

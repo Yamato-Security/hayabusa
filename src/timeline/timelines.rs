@@ -233,8 +233,9 @@ impl Timeline {
         ];
         let target;
         let mut wtr = if let Some(csv_path) = output {
+            let file_name = csv_path.as_path().display().to_string() + "-" + logon_res + ".csv";
             // output to file
-            match File::create(csv_path) {
+            match File::create(file_name) {
                 Ok(file) => {
                     target = Box::new(BufWriter::new(file));
                     Some(WriterBuilder::new().from_writer(target))
