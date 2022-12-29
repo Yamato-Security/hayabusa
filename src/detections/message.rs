@@ -103,10 +103,10 @@ pub fn insert(
     time: DateTime<Utc>,
     profile_converter: &mut HashMap<&str, Profile>,
     is_agg: bool,
-    eventkey_alias: EventKeyAliasConfig,
+    eventkey_alias: &EventKeyAliasConfig,
 ) {
     if !is_agg {
-        let parsed_detail = parse_message(event_record, output, &eventkey_alias)
+        let parsed_detail = parse_message(event_record, output, eventkey_alias)
             .chars()
             .filter(|&c| !c.is_control())
             .collect::<CompactString>();
@@ -146,7 +146,7 @@ pub fn insert(
                         profile.convert(&parse_message(
                             event_record,
                             CompactString::new(p.to_value()),
-                            &eventkey_alias,
+                            eventkey_alias,
                         )),
                     ))
                 }

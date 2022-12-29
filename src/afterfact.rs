@@ -1551,6 +1551,16 @@ mod tests {
                 ),
                 ("Tags", Profile::MitreTags(CompactString::from(test_attack))),
             ]);
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
             message::insert(
                 &event,
                 CompactString::new(output),
@@ -1567,16 +1577,7 @@ mod tests {
                 expect_time,
                 &mut profile_converter,
                 false,
-                load_eventkey_alias(
-                    utils::check_setting_path(
-                        &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/eventkey_alias.txt",
-                        true,
-                    )
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                ),
+                &eventkey_alias,
             );
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();

@@ -25,12 +25,12 @@ use serde_json::Value;
 use std::fmt::Write;
 use std::path::Path;
 
+use crate::detections::configs::STORED_EKEY_ALIAS;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{load_eventkey_alias, StoredStatic, CURRENT_EXE_PATH, STORED_STATIC};
+use super::configs::{StoredStatic, STORED_STATIC};
 use super::message::{self, LEVEL_ABBR_MAP};
-use super::utils;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -458,7 +458,8 @@ impl Detection {
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
         };
-
+        let binding = STORED_EKEY_ALIAS.read().unwrap();
+        let eventkey_alias = binding.as_ref().unwrap();
         message::insert(
             &record_info.record,
             CompactString::new(details_fmt_str),
@@ -466,16 +467,7 @@ impl Detection {
             time,
             &mut profile_converter,
             false,
-            load_eventkey_alias(
-                utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "rules/config/eventkey_alias.txt",
-                    true,
-                )
-                .unwrap()
-                .to_str()
-                .unwrap(),
-            ),
+            eventkey_alias,
         );
     }
 
@@ -642,6 +634,8 @@ impl Detection {
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
         };
+        let binding = STORED_EKEY_ALIAS.read().unwrap();
+        let eventkey_alias = binding.as_ref().unwrap();
         message::insert(
             &Value::default(),
             CompactString::new(rule.yaml["details"].as_str().unwrap_or("-")),
@@ -649,16 +643,7 @@ impl Detection {
             agg_result.start_timedate,
             &mut profile_converter,
             true,
-            load_eventkey_alias(
-                utils::check_setting_path(
-                    &CURRENT_EXE_PATH.to_path_buf(),
-                    "rules/config/eventkey_alias.txt",
-                    true,
-                )
-                .unwrap()
-                .to_str()
-                .unwrap(),
-            ),
+            eventkey_alias,
         )
     }
 

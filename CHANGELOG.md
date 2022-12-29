@@ -8,7 +8,8 @@
 
 **Enhancements:**
 
-- Speed improvements.  (#847) (@hitenkoku)
+- Speed improvements. (#847) (@hitenkoku)
+- Improved speed by improving io process. (#858) (@fukusuket)
 
 **Bug Fixes:**
 
