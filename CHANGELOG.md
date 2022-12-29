@@ -12,6 +12,7 @@
 
 **Bug Fixes:**
 
+- Fixed successful login csv is not output when using the logon-timeline function. (#849) (@hitenkoku)
 - Removed unnecessary line breaks when using `-J` option. (#852) (@hitenkoku)
 
 ## 2.0.0 [2022/12/24]
