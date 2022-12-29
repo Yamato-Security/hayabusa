@@ -307,17 +307,17 @@ fn emit_csv<W: std::io::Write>(
                     false,
                 )
                 .ok();
-            } else if json_output_flag {
-                // JSON output
-                wtr.write_field("{")?;
-                wtr.write_field(&output_json_str(&detect_info.ext_field, jsonl_output_flag))?;
-                wtr.write_field("}")?;
             } else if jsonl_output_flag {
                 // JSONL output format
                 wtr.write_field(format!(
                     "{{ {} }}",
                     &output_json_str(&detect_info.ext_field, jsonl_output_flag)
                 ))?;
+            } else if json_output_flag {
+                // JSON output
+                wtr.write_field("{")?;
+                wtr.write_field(&output_json_str(&detect_info.ext_field, jsonl_output_flag))?;
+                wtr.write_field("}")?;
             } else {
                 // csv output format
                 if plus_header {
@@ -1212,7 +1212,11 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                         }
                     }
                     output_stock.push("    }".to_string());
-                    target.push(output_stock.join("\n"));
+                    if jsonl_output_flag {
+                        target.push(output_stock.join(""));
+                    } else {
+                        target.push(output_stock.join("\n"));
+                    }
                 }
                 Profile::MitreTags(_) | Profile::MitreTactics(_) | Profile::OtherTags(_) => {
                     let key = _convert_valid_json_str(&[key.as_str()], false);
