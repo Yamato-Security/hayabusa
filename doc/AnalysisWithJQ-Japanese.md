@@ -1,8 +1,9 @@
 # 目次
 
 - [目次](#目次)
-- [Hayabusaの結果をｊｑで分析する](#hayabusaの結果をｊｑで分析する)
+- [Hayabusaの結果をjqで分析する](#hayabusaの結果をjqで分析する)
   - [著者](#著者)
+  - [翻訳](#翻訳)
   - [この文書について](#この文書について)
   - [jqのインストール](#jqのインストール)
   - [JSON形式について](#json形式について)
@@ -18,11 +19,15 @@
     - [6. PowerShellログの再構築](#6-powershellログの再構築)
 
 
-# Hayabusaの結果をｊｑで分析する
+# Hayabusaの結果をjqで分析する
 
 ## 著者
 
 田中ザック ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2022/12/21
+
+## 翻訳
+
+Fukusuke Takahashi (@fukusuket)
 
 ## この文書について
 
