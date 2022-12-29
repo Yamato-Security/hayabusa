@@ -1,0 +1,33 @@
+on: [push]
+
+name: Code Coverage
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: Install llvm-cov
+        run: cargo install cargo-llvm-cov
+      - name: Prepare llvm-tools
+        run: rustup component add llvm-tools-preview
+      - name: generage coverage data
+        uses: actions-rs/cargo@v1
+        with:
+          command: llvm-cov
+          args: --lcov --output-path /tmp/coverage.info
+        env:
+          RUST_TEST_THREADS: 1
+          CARGO_INCREMENTAL: "0"
+      - uses: codecov/codecov-action@v3
+        with:
+          directory: /tmp/
