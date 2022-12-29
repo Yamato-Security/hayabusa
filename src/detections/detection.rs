@@ -467,7 +467,7 @@ impl Detection {
             time,
             &mut profile_converter,
             false,
-            &eventkey_alias,
+            eventkey_alias,
         );
     }
 
