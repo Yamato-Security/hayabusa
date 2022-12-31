@@ -271,11 +271,42 @@ fn emit_csv<W: std::io::Write>(
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
+    let level_map: HashMap<&str, u128> = HashMap::from([
+        ("INFORMATIONAL", 1),
+        ("LOW", 2),
+        ("MEDIUM", 3),
+        ("HIGH", 4),
+        ("CRITICAL", 5),
+    ]);
+
+    let get_level_suffix = |level_str: &str| {
+        *level_map
+            .get(
+                LEVEL_FULL
+                    .get(level_str)
+                    .unwrap_or(&"undefined")
+                    .to_uppercase()
+                    .as_str(),
+            )
+            .unwrap_or(&0) as usize
+    };
+
     for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(output_option, time));
-        for (_, detect_info) in detect_infos.iter().enumerate() {
+        for (_, detect_info) in detect_infos
+            .iter()
+            .sorted_by_key(|a| {
+                format!(
+                    "{}:{}:{}",
+                    get_level_suffix(a.level.as_str()),
+                    a.ruletitle,
+                    a.computername
+                )
+            })
+            .enumerate()
+        {
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
@@ -333,22 +364,7 @@ fn emit_csv<W: std::io::Write>(
             }
             // 各種集計作業
             if !output_option.no_summary {
-                let level_map: HashMap<&str, u128> = HashMap::from([
-                    ("INFORMATIONAL", 1),
-                    ("LOW", 2),
-                    ("MEDIUM", 3),
-                    ("HIGH", 4),
-                    ("CRITICAL", 5),
-                ]);
-                let level_suffix = *level_map
-                    .get(
-                        LEVEL_FULL
-                            .get(&detect_info.level.as_str())
-                            .unwrap_or(&"undefined")
-                            .to_uppercase()
-                            .as_str(),
-                    )
-                    .unwrap_or(&0) as usize;
+                let level_suffix = get_level_suffix(a.level.as_str());
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
