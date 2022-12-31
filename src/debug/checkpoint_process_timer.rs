@@ -50,3 +50,38 @@ impl CheckPointProcessTimer {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::{DateTime, Local};
+    use nested::Nested;
+
+    use crate::debug::checkpoint_process_timer::CheckPointProcessTimer;
+
+    #[test]
+    fn test_set_check_point() {
+        let mut actual = CheckPointProcessTimer::create_checkpoint_timer();
+        let now: DateTime<Local> = Local::now();
+        actual.set_checkpoint(now);
+        assert_eq!(actual.prev_checkpoint.unwrap(), now);
+    }
+
+    #[test]
+    fn test_rap_check_point() {
+        let mut actual = CheckPointProcessTimer {
+            prev_checkpoint: None,
+            stocked_results: Nested::<String>::new(),
+        };
+        actual.rap_check_point("Test");
+        let now: DateTime<Local> = Local::now();
+        actual.set_checkpoint(now);
+        actual.rap_check_point("Test2");
+
+        assert!(actual.prev_checkpoint.is_some());
+        assert_eq!(actual.stocked_results.len(), 1);
+        assert!(actual.stocked_results[0].starts_with("Test2:"));
+        assert_ne!(actual.prev_checkpoint.unwrap(), now);
+
+        actual.output_stocked_result();
+    }
+}
