@@ -31,6 +31,7 @@ use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
+#[derive(Debug)]
 pub struct Colors {
     pub output_color: termcolor::Color,
     pub table_color: comfy_table::Color,
@@ -1375,6 +1376,7 @@ fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<
 
 #[cfg(test)]
 mod tests {
+    use crate::afterfact::Colors;
     use crate::afterfact::_get_serialized_disp_output;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
@@ -1398,6 +1400,8 @@ mod tests {
     use std::fs::{read_to_string, remove_file};
     use std::io;
     use std::path::Path;
+
+    use super::set_output_color;
 
     #[test]
     fn test_emit_csv_output() {
@@ -1762,5 +1766,26 @@ mod tests {
         ];
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
+    }
+
+    fn check_hashmap_data(
+        target: HashMap<CompactString, Colors>,
+        expected: HashMap<CompactString, Colors>,
+    ) {
+        assert_eq!(target.len(), expected.len());
+        for (k, v) in target {
+            assert!(expected.get(&k).is_some());
+            assert_eq!(
+                format!("{:?}", v),
+                format!("{:?}", expected.get(&k).unwrap())
+            );
+        }
+    }
+
+    #[test]
+    /// To confirm that empty character color mapping data is returned when the no_color flag is given.
+    fn test_set_output_color_no_color_flag() {
+        let expect: HashMap<CompactString, Colors> = HashMap::new();
+        check_hashmap_data(set_output_color(true), expect);
     }
 }
