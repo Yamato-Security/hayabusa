@@ -31,6 +31,7 @@ use std::process;
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 use terminal_size::Width;
 
+#[derive(Debug)]
 pub struct Colors {
     pub output_color: termcolor::Color,
     pub table_color: comfy_table::Color,
@@ -271,11 +272,48 @@ fn emit_csv<W: std::io::Write>(
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
+    let level_map: HashMap<&str, u128> = HashMap::from([
+        ("INFORMATIONAL", 1),
+        ("LOW", 2),
+        ("MEDIUM", 3),
+        ("HIGH", 4),
+        ("CRITICAL", 5),
+    ]);
+
+    let get_level_suffix = |level_str: &str| {
+        *level_map
+            .get(
+                LEVEL_FULL
+                    .get(level_str)
+                    .unwrap_or(&"undefined")
+                    .to_uppercase()
+                    .as_str(),
+            )
+            .unwrap_or(&0) as usize
+    };
+
     for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(output_option, time));
-        for (_, detect_info) in detect_infos.iter().enumerate() {
+        for detect_info in detect_infos.iter().sorted_by(|a, b| {
+            Ord::cmp(
+                &format!(
+                    "{}:{}:{}:{}",
+                    get_level_suffix(a.level.as_str()),
+                    a.eventid,
+                    a.rulepath,
+                    a.computername
+                ),
+                &format!(
+                    "{}:{}:{}:{}",
+                    get_level_suffix(b.level.as_str()),
+                    b.eventid,
+                    b.rulepath,
+                    b.computername
+                ),
+            )
+        }) {
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
@@ -333,22 +371,7 @@ fn emit_csv<W: std::io::Write>(
             }
             // 各種集計作業
             if !output_option.no_summary {
-                let level_map: HashMap<&str, u128> = HashMap::from([
-                    ("INFORMATIONAL", 1),
-                    ("LOW", 2),
-                    ("MEDIUM", 3),
-                    ("HIGH", 4),
-                    ("CRITICAL", 5),
-                ]);
-                let level_suffix = *level_map
-                    .get(
-                        LEVEL_FULL
-                            .get(&detect_info.level.as_str())
-                            .unwrap_or(&"undefined")
-                            .to_uppercase()
-                            .as_str(),
-                    )
-                    .unwrap_or(&0) as usize;
+                let level_suffix = get_level_suffix(detect_info.level.as_str());
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
@@ -1359,6 +1382,7 @@ fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<
 
 #[cfg(test)]
 mod tests {
+    use crate::afterfact::Colors;
     use crate::afterfact::_get_serialized_disp_output;
     use crate::afterfact::emit_csv;
     use crate::afterfact::format_time;
@@ -1383,6 +1407,8 @@ mod tests {
     use std::io;
     use std::path::Path;
 
+    use super::set_output_color;
+
     #[test]
     fn test_emit_csv_output() {
         let mock_ch_filter =
@@ -1392,6 +1418,7 @@ mod tests {
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
+        let test_computername2 = "testcomputer2";
         let test_eventid = "1111";
         let test_channel = "Sec";
         let output = "pokepoke";
@@ -1510,7 +1537,7 @@ mod tests {
                 ),
                 (
                     "Computer",
-                    Profile::Computer(CompactString::from(test_computername)),
+                    Profile::Computer(CompactString::from(test_computername2)),
                 ),
                 (
                     "Channel",
@@ -1568,6 +1595,27 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername2),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                false,
+                &eventkey_alias,
+            );
+            *profile_converter.get_mut("Computer").unwrap() =
+                Profile::Computer(CompactString::from(test_computername));
+
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -1592,6 +1640,34 @@ mod tests {
                     .to_string()
                 + ","
                 + test_computername
+                + ","
+                + test_channel
+                + ","
+                + test_level
+                + ","
+                + test_eventid
+                + ","
+                + test_attack
+                + ","
+                + test_record_id
+                + ","
+                + test_title
+                + ","
+                + output
+                + ","
+                + test_recinfo
+                + ","
+                + test_rulepath
+                + ","
+                + test_filepath
+                + ","
+                + test_attack
+                + "\n"
+                + &expect_tz
+                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                    .to_string()
+                + ","
+                + test_computername2
                 + ","
                 + test_channel
                 + ","
@@ -1746,5 +1822,26 @@ mod tests {
         ];
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
         assert_eq!(_get_serialized_disp_output(&data, false), expect_no_header);
+    }
+
+    fn check_hashmap_data(
+        target: HashMap<CompactString, Colors>,
+        expected: HashMap<CompactString, Colors>,
+    ) {
+        assert_eq!(target.len(), expected.len());
+        for (k, v) in target {
+            assert!(expected.get(&k).is_some());
+            assert_eq!(
+                format!("{:?}", v),
+                format!("{:?}", expected.get(&k).unwrap())
+            );
+        }
+    }
+
+    #[test]
+    /// To confirm that empty character color mapping data is returned when the no_color flag is given.
+    fn test_set_output_color_no_color_flag() {
+        let expect: HashMap<CompactString, Colors> = HashMap::new();
+        check_hashmap_data(set_output_color(true), expect);
     }
 }
