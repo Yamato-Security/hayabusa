@@ -10,6 +10,7 @@
 
 - Speed improvements. (#847) (@hitenkoku)
 - Improved speed by improving io process. (#858) (@fukusuket)
+- Fixed not sorting the order of output of detections of the same time per run. (#827) (@hitenkoku)
 
 **Bug Fixes:**
 
