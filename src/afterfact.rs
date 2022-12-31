@@ -302,14 +302,14 @@ fn emit_csv<W: std::io::Write>(
                     "{}:{}:{}:{}",
                     get_level_suffix(a.level.as_str()),
                     a.eventid,
-                    a.ruletitle,
+                    a.rulepath,
                     a.computername
                 ),
                 &format!(
                     "{}:{}:{}:{}",
                     get_level_suffix(b.level.as_str()),
                     b.eventid,
-                    b.ruletitle,
+                    b.rulepath,
                     b.computername
                 ),
             )
