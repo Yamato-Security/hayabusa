@@ -296,18 +296,22 @@ fn emit_csv<W: std::io::Write>(
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
         timestamps.push(_get_timestamp(output_option, time));
-        for (_, detect_info) in detect_infos
-            .iter()
-            .sorted_by_key(|a| {
-                format!(
+        for detect_info in detect_infos.iter().sorted_by(|a, b| {
+            Ord::cmp(
+                &format!(
                     "{}:{}:{}",
                     get_level_suffix(a.level.as_str()),
                     a.ruletitle,
                     a.computername
-                )
-            })
-            .enumerate()
-        {
+                ),
+                &format!(
+                    "{}:{}:{}",
+                    get_level_suffix(b.level.as_str()),
+                    b.ruletitle,
+                    b.computername
+                ),
+            )
+        }) {
             if !detect_info.is_condition {
                 detected_record_idset.insert(CompactString::from(format!(
                     "{}_{}",
