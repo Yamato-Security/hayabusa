@@ -364,7 +364,7 @@ fn emit_csv<W: std::io::Write>(
             }
             // 各種集計作業
             if !output_option.no_summary {
-                let level_suffix = get_level_suffix(a.level.as_str());
+                let level_suffix = get_level_suffix(detect_info.level.as_str());
 
                 if !detected_rule_files.contains(&detect_info.rulepath) {
                     detected_rule_files.insert(detect_info.rulepath.to_owned());
