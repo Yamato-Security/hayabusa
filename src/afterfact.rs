@@ -301,15 +301,15 @@ fn emit_csv<W: std::io::Write>(
                 &format!(
                     "{}:{}:{}:{}",
                     get_level_suffix(a.level.as_str()),
-                    a.ruletitle,
                     a.eventid,
+                    a.ruletitle,
                     a.computername
                 ),
                 &format!(
                     "{}:{}:{}:{}",
                     get_level_suffix(b.level.as_str()),
-                    b.ruletitle,
                     b.eventid,
+                    b.ruletitle,
                     b.computername
                 ),
             )
