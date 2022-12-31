@@ -299,15 +299,17 @@ fn emit_csv<W: std::io::Write>(
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
                 &format!(
-                    "{}:{}:{}",
+                    "{}:{}:{}:{}",
                     get_level_suffix(a.level.as_str()),
                     a.ruletitle,
+                    a.eventid,
                     a.computername
                 ),
                 &format!(
-                    "{}:{}:{}",
+                    "{}:{}:{}:{}",
                     get_level_suffix(b.level.as_str()),
                     b.ruletitle,
+                    b.eventid,
                     b.computername
                 ),
             )
