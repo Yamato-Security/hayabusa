@@ -1412,6 +1412,7 @@ mod tests {
         let test_title = "test_title";
         let test_level = "high";
         let test_computername = "testcomputer";
+        let test_computername2 = "testcomputer2";
         let test_eventid = "1111";
         let test_channel = "Sec";
         let output = "pokepoke";
@@ -1530,7 +1531,7 @@ mod tests {
                 ),
                 (
                     "Computer",
-                    Profile::Computer(CompactString::from(test_computername)),
+                    Profile::Computer(CompactString::from(test_computername2)),
                 ),
                 (
                     "Channel",
@@ -1588,6 +1589,27 @@ mod tests {
                     rulepath: CompactString::from(test_rulepath),
                     ruletitle: CompactString::from(test_title),
                     level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername2),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                false,
+                &eventkey_alias,
+            );
+            *profile_converter.get_mut("Computer").unwrap() =
+                Profile::Computer(CompactString::from(test_computername));
+
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
                     computername: CompactString::from(test_computername),
                     eventid: CompactString::from(test_eventid),
                     detail: CompactString::default(),
@@ -1612,6 +1634,34 @@ mod tests {
                     .to_string()
                 + ","
                 + test_computername
+                + ","
+                + test_channel
+                + ","
+                + test_level
+                + ","
+                + test_eventid
+                + ","
+                + test_attack
+                + ","
+                + test_record_id
+                + ","
+                + test_title
+                + ","
+                + output
+                + ","
+                + test_recinfo
+                + ","
+                + test_rulepath
+                + ","
+                + test_filepath
+                + ","
+                + test_attack
+                + "\n"
+                + &expect_tz
+                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                    .to_string()
+                + ","
+                + test_computername2
                 + ","
                 + test_channel
                 + ","
