@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_create_html() {
-        let mut html_reporter = HtmlReporter::new();
+        let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![
             "- Analyzed event files: 581".to_string(),
