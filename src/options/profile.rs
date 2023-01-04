@@ -361,6 +361,49 @@ mod tests {
         test_get_profile_names();
     }
 
+    #[test]
+    fn test_get_profile_list_err_load() {
+        let dummy_stored_static =
+            create_dummy_stored_static(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                    },
+                    profile: None,
+                    output: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                },
+            }));
+        assert_eq!(
+            Nested::<Vec<String>>::new(),
+            get_profile_list("test_files/not_exist_path", &dummy_stored_static)
+        );
+    }
+
     /// プロファイルオプションが設定されていないときにロードをした場合のテスト
     fn test_load_profile_without_profile_option() {
         let expect: Vec<(CompactString, Profile)> = vec![
