@@ -170,6 +170,7 @@ mod tests {
             "- Elapsed time: 00:00:29.035".to_string(),
             "".to_string(),
         ]);
+        html_reporter.section_order.push("No Exist Section");
         html_reporter.md_datas.insert(
             "General Overview {#general_overview}".to_string(),
             general_data.to_owned(),
