@@ -309,4 +309,31 @@ mod tests {
         );
         assert_eq!(prev_modified_rules2.len(), 0);
     }
+
+    #[test]
+    fn test_no_diff_print_diff_modified_rule_dates() {
+        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
+        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+            })),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        }));
+        let prev_modified_rules = Update::get_updated_rules(
+            "test_files/rules/level_yaml",
+            &prev_modified_time,
+            &dummy_stored_static,
+        );
+        let dummy_after_updated_rules = prev_modified_rules.clone();
+
+        let actual =
+            Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
+        assert!(actual.is_ok());
+        assert_eq!(
+            actual.unwrap(),
+            "You currently have the latest rules.".to_string()
+        );
+    }
 }
