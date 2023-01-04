@@ -152,6 +152,8 @@ mod tests {
         options::htmlreport::{self, HtmlReporter},
     };
 
+    use super::HTML_REPORTER;
+
     fn create_dummy_stored_static(action: Option<Action>) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
             action,
@@ -408,5 +410,37 @@ mod tests {
             expect
         );
         assert!(remove_dir_all("./test-html").is_ok());
+    }
+
+    #[test]
+    fn test_add_md_data() {
+        let mut html_reporter = HtmlReporter::default();
+        let mut general_data = Nested::<String>::new();
+        general_data.extend(vec![
+            "- Analyzed event files: 581".to_string(),
+            "- Total file size: 148.5 MB".to_string(),
+            "- Excluded rules: 12".to_string(),
+            "- Noisy rules: 5 (Disabled)".to_string(),
+            "- Experimental rules: 1935 (65.97%)".to_string(),
+            "- Stable rules: 215 (7.33%)".to_string(),
+            "- Test rules: 783 (26.70%)".to_string(),
+            "- Hayabusa rules: 138".to_string(),
+            "- Sigma rules: 2795".to_string(),
+            "- Total enabled detection rules: 2933".to_string(),
+            "- Elapsed time: 00:00:29.035".to_string(),
+            "".to_string(),
+        ]);
+        html_reporter.section_order.push("No Exist Section");
+        let expect_key = "AddTest {#add_test}";
+        htmlreport::add_md_data(expect_key, general_data.clone());
+        let actual_html_reporter = HTML_REPORTER.read().unwrap().clone();
+        let expect_general_data: Vec<&str> = general_data.iter().collect();
+        for (k, v) in actual_html_reporter.md_datas.iter() {
+            if k == expect_key {
+                assert_eq!(v.iter().collect::<Vec<&str>>(), expect_general_data);
+            } else {
+                assert_eq!(v.len(), 0);
+            }
+        }
     }
 }
