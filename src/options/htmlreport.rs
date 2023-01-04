@@ -137,9 +137,20 @@ pub fn create_html_file(input_html: String, path_str: &str) {
 #[cfg(test)]
 mod tests {
 
+    use std::path::Path;
+
     use nested::Nested;
 
-    use crate::options::htmlreport::HtmlReporter;
+    use crate::{options::htmlreport::{HtmlReporter, self}, detections::configs::{Action, CsvOutputOption, OutputOption, InputOption, StoredStatic, Config}};
+
+    fn create_dummy_stored_static(action: Option<Action>) -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action,
+            no_color: false,
+            quiet: false,
+            debug: false,
+        }))
+    }
 
     #[test]
     fn test_create_html() {
@@ -176,5 +187,92 @@ mod tests {
         );
 
         assert_eq!(html_reporter.create_html(), expect_str);
+    }
+
+    #[test]
+    fn test_none_config_check_html_flag() {
+        let none_action = create_dummy_stored_static(None);
+        assert!(!htmlreport::check_html_flag(&none_action.config));
+    }
+
+    #[test]
+    fn test_with_config_check_html_flag_csvtimeline() {
+        let enable_csv_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                profile: None,
+                output: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: Some(Path::new("./dummy").to_path_buf()),
+                no_summary: false,
+            },
+        });
+        let csv_html_flag_enable = create_dummy_stored_static(
+            Some(enable_csv_action)
+        );
+        assert!(htmlreport::check_html_flag(&csv_html_flag_enable.config));
+
+        let disable_csv_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                profile: None,
+                output: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+            },
+        });
+        let csv_html_flag_disable = create_dummy_stored_static(
+            Some(disable_csv_action)
+        );
+        assert!(!htmlreport::check_html_flag(&csv_html_flag_disable.config));
     }
 }
