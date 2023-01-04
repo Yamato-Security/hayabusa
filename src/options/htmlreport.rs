@@ -137,11 +137,20 @@ pub fn create_html_file(input_html: String, path_str: &str) {
 #[cfg(test)]
 mod tests {
 
-    use std::path::Path;
+    use std::{
+        fs::{read_to_string, remove_dir_all},
+        path::Path,
+    };
 
     use nested::Nested;
 
-    use crate::{options::htmlreport::{HtmlReporter, self}, detections::configs::{Action, CsvOutputOption, OutputOption, InputOption, StoredStatic, Config, JSONOutputOption}};
+    use crate::{
+        detections::configs::{
+            Action, Config, CsvOutputOption, InputOption, JSONOutputOption, OutputOption,
+            StoredStatic,
+        },
+        options::htmlreport::{self, HtmlReporter},
+    };
 
     fn create_dummy_stored_static(action: Option<Action>) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
@@ -232,9 +241,7 @@ mod tests {
                 no_summary: false,
             },
         });
-        let csv_html_flag_enable = create_dummy_stored_static(
-            Some(enable_csv_action)
-        );
+        let csv_html_flag_enable = create_dummy_stored_static(Some(enable_csv_action));
         assert!(htmlreport::check_html_flag(&csv_html_flag_enable.config));
 
         let disable_csv_action = Action::CsvTimeline(CsvOutputOption {
@@ -271,9 +278,7 @@ mod tests {
                 no_summary: false,
             },
         });
-        let csv_html_flag_disable = create_dummy_stored_static(
-            Some(disable_csv_action)
-        );
+        let csv_html_flag_disable = create_dummy_stored_static(Some(disable_csv_action));
         assert!(!htmlreport::check_html_flag(&csv_html_flag_disable.config));
     }
 
@@ -314,9 +319,7 @@ mod tests {
             },
             jsonl_timeline: false,
         });
-        let json_html_flag_enable = create_dummy_stored_static(
-            Some(enable_json_action)
-        );
+        let json_html_flag_enable = create_dummy_stored_static(Some(enable_json_action));
         assert!(htmlreport::check_html_flag(&json_html_flag_enable.config));
 
         let disable_json_action = Action::JsonTimeline(JSONOutputOption {
@@ -354,10 +357,56 @@ mod tests {
             },
             jsonl_timeline: false,
         });
-        let json_html_flag_disable = create_dummy_stored_static(
-            Some(disable_json_action)
-        );
+        let json_html_flag_disable = create_dummy_stored_static(Some(disable_json_action));
         assert!(!htmlreport::check_html_flag(&json_html_flag_disable.config));
     }
 
+    #[test]
+    fn test_create_html_file() {
+        let mut html_reporter = HtmlReporter::default();
+        let mut general_data = Nested::<String>::new();
+        general_data.extend(vec![
+            "- Analyzed event files: 581".to_string(),
+            "- Total file size: 148.5 MB".to_string(),
+            "- Excluded rules: 12".to_string(),
+            "- Noisy rules: 5 (Disabled)".to_string(),
+            "- Experimental rules: 1935 (65.97%)".to_string(),
+            "- Stable rules: 215 (7.33%)".to_string(),
+            "- Test rules: 783 (26.70%)".to_string(),
+            "- Hayabusa rules: 138".to_string(),
+            "- Sigma rules: 2795".to_string(),
+            "- Total enabled detection rules: 2933".to_string(),
+            "- Elapsed time: 00:00:29.035".to_string(),
+            "".to_string(),
+        ]);
+        html_reporter.section_order.push("No Exist Section");
+        html_reporter.md_datas.insert(
+            "General Overview {#general_overview}".to_string(),
+            general_data.to_owned(),
+        );
+        let gen_data = general_data.iter().collect::<Vec<&str>>();
+        let general_overview_str = format!(
+            "<ul>\n<li>{}</li>\n</ul>",
+            gen_data[..general_data.len() - 1]
+                .join("</li>\n<li>")
+                .replace("- ", "")
+        );
+        let expect_str = format!(
+            "<h2 id=\"general_overview\">General Overview</h2>\n{}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n",
+            general_overview_str
+        );
+        htmlreport::create_html_file(
+            html_reporter.create_html(),
+            "./test-html/test_create_html_file.html",
+        );
+
+        let header = r#"<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" type="text/css" href="./config/html_report/hayabusa_report.css"><link rel="icon" type="image/png" href="./config/html_report/favicon.png"></head><body><section><img id="logo" src="./config/html_report/logo.png">"#;
+        let footer = "</section></body></html>\n";
+        let expect = format!("{}{}{}", header, expect_str, footer);
+        assert_eq!(
+            read_to_string("./test-html/test_create_html_file.html").unwrap(),
+            expect
+        );
+        assert!(remove_dir_all("./test-html").is_ok());
+    }
 }
