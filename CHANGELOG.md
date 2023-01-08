@@ -1,11 +1,11 @@
 # Changes
 
-## 1.9.1 [20XX/XX/XX]
+## 1.9.1 [2022/01/10]
 
 **Bug Fixes:**
 
-- Fixed successful login csv is not output when using the logon-timeline function. (#849) (@hitenkoku)
-- Removed unnecessary line breaks when using `-J` option. (#852) (@hitenkoku)
+- Successful login CSV results were not correctly being outputted when using the logon timeline function. (#849) (@hitenkoku)
+- Removed unnecessary line breaks that would occur when using the `-J, --jsonl` option. (#852) (@hitenkoku)
 
 ## 1.9.0 [2022/12/24]
 
