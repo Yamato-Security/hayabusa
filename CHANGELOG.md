@@ -1,21 +1,17 @@
 # Changes
 
-## 2.x.x [xxxx/xx/xx]
-
-**New Features:**
-
-- XXX
+## 2.1.0 [2022/01/10]
 
 **Enhancements:**
 
 - Speed improvements. (#847) (@hitenkoku)
-- Improved speed by improving io process. (#858) (@fukusuket)
-- Fixed not sorting the order of output of detections of the same time per run. (#827) (@hitenkoku)
+- Improved speed by up to 20% by improving I/O processesing. (#858) (@fukusuket)
+- The timeline order of detections are now sorted to a fixed order even when the timestamp is identical. (#827) (@hitenkoku)
 
 **Bug Fixes:**
 
-- Fixed successful login csv is not output when using the logon-timeline function. (#849) (@hitenkoku)
-- Removed unnecessary line breaks when using `-J` option. (#852) (@hitenkoku)
+- Successful login CSV results were not correctly being outputted when using the logon timeline function. (#849) (@hitenkoku)
+- Removed unnecessary line breaks that would occur when using the `-J, --jsonl` option. (#852) (@hitenkoku)
 
 ## 2.0.0 [2022/12/24]
 
