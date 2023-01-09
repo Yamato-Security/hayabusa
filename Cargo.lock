@@ -628,8 +628,8 @@ dependencies = [
 
 [[package]]
 name = "evtx"
-version = "0.8.4"
-source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=542d46b#542d46b968a56bff8f0906d8371f92c3b1d4692c"
+version = "0.8.3"
+source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=6ba5440#6ba54403aaff22562ba34736fe6c9b4a2e8f637c"
 dependencies = [
  "anyhow",
  "bitflags",
