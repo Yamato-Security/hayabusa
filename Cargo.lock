@@ -628,8 +628,8 @@ dependencies = [
 
 [[package]]
 name = "evtx"
-version = "0.8.3"
-source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=9c1576b#9c1576b4462e4c874ad3b0a44d53719cdd890ce0"
+version = "0.8.4"
+source = "git+https://github.com/Yamato-Security/hayabusa-evtx.git?rev=542d46b#542d46b968a56bff8f0906d8371f92c3b1d4692c"
 dependencies = [
  "anyhow",
  "bitflags",
@@ -643,7 +643,7 @@ dependencies = [
  "indoc",
  "jemallocator",
  "log",
- "quick-xml 0.26.0",
+ "quick-xml",
  "rayon",
  "rpmalloc",
  "serde",
@@ -794,7 +794,7 @@ dependencies = [
  "openssl",
  "pbr",
  "pulldown-cmark",
- "quick-xml 0.27.1",
+ "quick-xml",
  "rand",
  "regex",
  "serde",
@@ -1434,15 +1434,6 @@ name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
-
-[[package]]
-name = "quick-xml"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f50b1c63b38611e7d4d7f68b82d3ad0cc71a2ad2e7f61fc10f1328d917c93cd"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "quick-xml"
