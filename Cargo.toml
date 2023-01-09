@@ -40,8 +40,8 @@ num-format = "*"
 comfy-table = "6.*"
 pulldown-cmark = { version = "0.9.*", default-features = false, features = ["simd"] }
 horrorshow = "0.8.*"
-mimalloc = { version = "*", default-features = false }
-libmimalloc-sys = { version = "*",  features = ["extended"] }
+mimalloc = { version = "=0.1.32", default-features = false }
+libmimalloc-sys = { version = "=0.1.28",  features = ["extended"] }
 nested="*"
 compact_str = "0.6.*"
 ureq = "*"
