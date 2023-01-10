@@ -1,4 +1,4 @@
-****<div align="center">
+<div align="center">
  <p>
     <img alt="Hayabusa Logo" src="logo.png" width="60%">
  </p>
