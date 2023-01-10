@@ -1,4 +1,4 @@
-<div align="center">
+****<div align="center">
  <p>
     <img alt="Hayabusa Logo" src="logo.png" width="60%">
  </p>
@@ -74,7 +74,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [`json-timeline`コマンド](#json-timelineコマンド)
   - [`logon-summary`コマンド](#logon-summaryコマンド)
   - [`metrics`コマンド](#metricsコマンド)
-- [`pivot-keywords-list`コマンド](#pivot-keywords-listコマンド)
+  - [`pivot-keywords-list`コマンド](#pivot-keywords-listコマンド)
   - [`update-rules`コマンド](#update-rulesコマンド)
   - [`level-tuning`コマンド](#level-tuningコマンド)
   - [`set-default-profile`コマンド](#set-default-profileコマンド)
@@ -244,7 +244,7 @@ hayabusa-2.1.0-win-x64.exe update-rules
 
 Rustがインストールされている場合、以下のコマンドでソースコードからコンパイルすることができます:
 
-注意: hayabusaをコンパイルするためにはRust(rustc)が`1.65.0`以上であることが必要です。
+注意: hayabusaをコンパイルするためにはRust(rustc)が`1.66.0`以上であることが必要です。
 
 ```bash
 cargo build --release
@@ -569,7 +569,7 @@ Output:
   -o, --output <FILE>       成功と失敗したログオン情報の要約を出力する (例: metrics.csv)
 ```
 
-# `pivot-keywords-list`コマンド
+## `pivot-keywords-list`コマンド
 
 ```
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
@@ -783,7 +783,7 @@ Processes.Image
 
 ## ログオン情報の要約
 
-``logon-summary`コマンドを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。単体のevtxファイルを解析したい場合は`-f`オプションを利用してください。複数のevtxファイルを対象としたい場合は`-d` オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。
+`logon-summary`コマンドを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。単体のevtxファイルを解析したい場合は`-f`オプションを利用してください。複数のevtxファイルを対象としたい場合は`-d` オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。
 
 # サンプルevtxファイルでHayabusaをテストする
 
