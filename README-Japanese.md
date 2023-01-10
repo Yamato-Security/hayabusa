@@ -566,7 +566,7 @@ Advanced:
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
 
 Output:
-  -o, --output <FILE>       成功と失敗したログオン情報の要約を出力する (例: metrics.csv)
+  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: metrics.csv)
 ```
 
 ## `pivot-keywords-list`コマンド
@@ -589,7 +589,7 @@ Advanced:
       --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
 
 Output:
-  -o, --output <FILE>       成功と失敗したログオン情報の要約を出力する (例: pivot-keywords.txt)
+  -o, --output <FILE>       ピボットキーワードの一覧を複数ファイルに出力する (例: pivot-keywords.txt)
 
 Filtering:
       --enable-deprecated-rules  Deprecatedルールを有効にする
