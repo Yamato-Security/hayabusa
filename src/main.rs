@@ -601,6 +601,9 @@ impl App {
                 println!();
                 return;
             }
+            Action::Search(_) => {
+                todo!("ここでsearch処理を呼び出す");
+            }
         }
 
         // 処理時間の出力
