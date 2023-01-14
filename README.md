@@ -52,7 +52,8 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Critical Alert Filtering and Computer Grouping in Timeline Explorer](#critical-alert-filtering-and-computer-grouping-in-timeline-explorer)
   - [Analysis with the Elastic Stack Dashboard](#analysis-with-the-elastic-stack-dashboard)
   - [Analysis in Timesketch](#analysis-in-timesketch)
-- [Analyzing Sample Timeline Results](#analyzing-sample-timeline-results)
+- [Importing and Analyzing Timeline Results](#importing-and-analyzing-timeline-results)
+- [Analyzing JSON-formatted results with JQ](#analyzing-json-formatted-results-with-jq)
 - [Features](#features)
 - [Downloads](#downloads)
 - [Git cloning](#git-cloning)
@@ -178,13 +179,17 @@ Hayabusa hopes to let analysts get 80% of their work done in 20% of the time whe
 
 ![Timesketch](screenshots/TimesketchAnalysis.png)
 
-# Analyzing Sample Timeline Results
+# Importing and Analyzing Timeline Results
 
 You can learn how to analyze CSV timelines in Excel and Timeline Explorer [here](doc/CSV-AnalysisWithExcelAndTimelineExplorer-English.pdf).
 
 You can learn how to import CSV files into Elastic Stack [here](doc/ElasticStackImport/ElasticStackImport-English.md).
 
 You can learn how to import CSV files into Timesketch [here](doc/TimesketchImport/TimesketchImport-English.md).
+
+# Analyzing JSON-formatted results with JQ
+
+You can learn how to analyze JSON-formatted results with `jq` [here](doc/AnalysisWithJQ-English.md).
 
 # Features
 
