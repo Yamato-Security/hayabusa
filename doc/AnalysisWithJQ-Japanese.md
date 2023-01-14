@@ -546,6 +546,12 @@ PowerShellログの残念な点は、複数のログに分割されることが�
 }
 ```
 
+通信されたドメインをリストアップしたい場合は、以下のコマンドを使用できます:
+
+`cat results.json | jq 'select ( .Details.TgtHost ) ? | .Details.TgtHost ' -r | sort | uniq | grep "\."`
+
+> ※ NETBIOSホスト名を削除するために、`.`のgrepフィルタが追加されています。
+
 ### 8. 実行可能なバイナリのハッシュ値の抽出
 
 Sysmon EID `1` プロセス生成ログで、バイナリのハッシュを計算するようにsysmonを設定できます。

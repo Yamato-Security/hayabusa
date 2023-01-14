@@ -542,6 +542,12 @@ This will give you the JSON results such as this:
 }
 ```
 
+If you want to list up domains that were contacted, you can use the following command:
+
+`cat results.json | jq 'select ( .Details.TgtHost ) ? | .Details.TgtHost ' -r | sort | uniq | grep "\."`
+
+> Note: I added a grep filter for `.` to remove NETBIOS hostnames.
+
 ### 8. Extracting Executable Binary Hashes
 
 In Sysmon EID `1` Process Creation logs, sysmon can be configured to calculate hashes of the binary.
