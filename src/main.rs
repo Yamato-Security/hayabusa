@@ -27,6 +27,7 @@ use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
+use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
@@ -91,10 +92,13 @@ impl App {
         let analysis_start_time: DateTime<Local> = Local::now();
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
-            output_data.extend(vec![format!(
-                "- Start time: {}",
-                analysis_start_time.format("%Y/%m/%d %H:%M")
-            )]);
+            output_data.extend(vec![
+                format!("- Command line: {}", std::env::args().join(" ")),
+                format!(
+                    "- Start time: {}",
+                    analysis_start_time.format("%Y/%m/%d %H:%M")
+                ),
+            ]);
             htmlreport::add_md_data("General Overview {#general_overview}", output_data);
         }
 
