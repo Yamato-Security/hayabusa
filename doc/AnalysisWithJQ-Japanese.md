@@ -17,6 +17,8 @@
     - [4. 出力をCSVに保存する](#4-出力をcsvに保存する)
     - [5. アラートがもっとも多い日付の検索](#5-アラートがもっとも多い日付の検索)
     - [6. PowerShellログの再構築](#6-powershellログの再構築)
+    - [7. 疑わしいネットワーク接続の検出](#7-疑わしいネットワーク接続の検出)
+    - [8. 実行可能なバイナリのハッシュ値の抽出](#8-実行可能なバイナリのハッシュ値の抽出)
 
 
 # Hayabusaの結果をjqで分析する
@@ -55,7 +57,7 @@ Hayabusaでは、結果を`.json` または `.jsonl` で出力し、`jq`を使�
 
 ## jqのインストール
 
-[https://stedolan.github.io/jq/](https://stedolan.github.io/jq/)を参照してください。
+[https://stedolan.github.io/jq/](https://stedolan.github.io/jq/)を参照し、`jq`コマンドをインストールしてください。
 
 ## JSON形式について
 
@@ -71,7 +73,7 @@ JSONログは、中括弧 `{` `}`で囲まれたオブジェクトのリスト�
 
 オブジェクト内にオブジェクトをいくつでもネストできます。
 
-例:
+この例は、 `Details` はルートオブジェクト内でネストされたオブジェクトです:
 ```
 {
     "Timestamp": "2016-08-19 08:06:57.658 +09:00",
@@ -135,17 +137,17 @@ JSONログは、中括弧 `{` `}`で囲まれたオブジェクトのリスト�
 
 これには2つの問題があります。
 最初の問題は、配列を走査するためにすべての`jq`クエリは`.[]`ではじまる必要があり、手間がかかる点です。
-さらに大きな問題は、そのようなログをパースするには、配列内のすべてのデータをロードする必要があることです。
+さらに大きな問題は、そのようなログをパースするには、はじめに配列内のすべてのデータをロードする必要があることです。
 これは、非常に大きなJSONファイルがあり、十分なメモリがない場合に問題となります。
 そこで、必要なCPUとメモリの使用量を減らすために、巨大な配列にすべてを入れないJSONL(JSON Lines) 形式が一般的になりました。
 HayabusaはJSONおよびJSONL形式で出力しますが、JSON形式は配列で出力されなくなりました。
 唯一の違いは、JSON形式はテキスト エディターまたはコンソールで読みやすいのに対し、JSONL形式はすべてのJSONオブジェクトを1行に格納することです。
-JSONL形式はわずかに高速でサイズが小さいため、ログを別のものにインポートするだけでログを確認しない場合に最適です。
+JSONL形式はわずかに高速でサイズが小さいため、ログをSIEMなどにインポートするだけで、ログを見ない場合に最適です。
 一方JSON形式は手動チェックを行うときに最適です。
 
 ## JSON結果ファイルの作成
 
-バージョン1.xのHayabusaでは、`-j -o results.json` または`-J -o results.jsonl`で結果をJSONに保存できます。
+現在バージョン2.xのHayabusaでは、`hayabusa json-timeline -d <directory> -o results.json`でJSON、`hayabusa json-timeline -d <directory> -J -o results.jsonl` でJSONLに結果を保存できます。
 
 Hayabusaはデフォルトのstandardプロファイルを使用し、分析用に最小限のデータのみをDetailsオブジェクトに保存します。
 evtxログの全フィールド情報を保存する場合は、`--profile all-field-info`で`all-field-info`プロファイルを指定します。
@@ -156,20 +158,21 @@ evtxログの全フィールド情報を保存する場合は、`--profile all-f
 
 `AllFieldInfo`より`Details`を使う1つ目の利点は、重要なフィールドのみが保存され、ファイルスペースを節約するためにフィールド名が短縮されていることです。
 欠点は、実際には気にしていたデータの欠落可能性があることです。
-2つ目の利点は、Hayabusaがより画一的な方法でフィールドを保存できることです。
+2つ目の利点は、Hayabusaがフィールド名を正規化することで、より画一的な方法でフィールドを保存できることです。
 たとえば、通常元のWindowsログでは、ユーザー名は`SubjectUserName`か`TargetUserName`にあります。
 しかし、ユーザー名が`AccountName`にある場合もあれば、ターゲットユーザ名が`SubjectUserName`にある場合もあります。
+残念ながらWindowsイベントログには、一貫性のないフィールド名が多くあります。
 Hayabusaはこれらのフィールドを正規化します。これによりアナリストは、イベントID間の無数の癖や不一致を理解する必要がなくなり、共通の名前を分析するだけで済みます。
 
-この例の1つは、ユーザーフィールドです。
+ユーザーフィールドの例を次に示します。
 Hayabusaは、`SubjectUserName`, `TargetUserName`, `AccountName`などのフィールドを以下の方法で正規化します:
-  * `SrcUser` (ソースユーザー): リモートユーザー **から** アクションが発生したとき・
+  * `SrcUser` (ソースユーザー): ユーザー **から** アクションが発生したとき。（通常はリモートユーザー）
   * `TgtUser` (ターゲットユーザー): ユーザー **への** アクションが発生したとき。 (たとえば、 ユーザー **への** ログオン)
-  * `User`: 現在ログインしているユーザーによってアクションが発生したとき。
+  * `User`: 現在ログインしているユーザーによってアクションが発生したとき。（アクションにとくに方向がないとき）
 
 他の例はプロセスです。
 元のWindowsイベントログでは、プロセスフィールドは複数の命名規則で参照されます:`ProcessName`、 `Image`、 `processPath`、 `Application`、 `WindowsDefenderProcessName`など。
-アナリストは、まずこれらのフィールド名の違いに精通する必要があり、またこれらのフィールドをログからすべて抽出、結合しなければなりません。
+フィールドの正規化がなければ、アナリストは、まずこれらのフィールド名の違いに精通する必要があり、またこれらのフィールドをログからすべて抽出、結合しなければなりません。
 
 Hayabusaが提供する`Details` オブジェクト内で正規化された1つの`Proc`フィールドを使うことで、多くの時間と手間を節約できます。
 
@@ -280,12 +283,12 @@ Hayabusaには、イベントIDに基づいてイベント数と比率を出力�
  391 8
  ```
 
-EID (イベントID)は一意でなく、同じイベントIDでもまったく異なるイベントが発生し得えます。
+EID (イベントID) は一意でないことを考慮することが重要です。同じイベントIDでもまったく異なるイベントが発生し得えます。
 そのため`Channel`も確認することが重要です。
 
 このフィールド情報は、次のように追加できます:
 
- `cat sample-super.json | jq -j '.Channel, " ", .EventID, "\n"' | sort | uniq -c | sort -nr | head -n 10`
+`cat results.json | jq -j ' .Channel , " " , .EventID , "\n" ' | sort | uniq -c | sort -nr | head -n 10`
 
 `-j`(join)オプションを`jq`に追加して、コンマで区切られ、改行文字`\n`で終わるすべてのフィールドを結合します。
 これにより、次の出力が得られます:
@@ -306,7 +309,7 @@ EID (イベントID)は一意でなく、同じイベントIDでもまったく�
 
 次のようにすることで、ルールタイトルも追加できます:
 
-`cat sample-super.json | jq -j '.Channel, " ", .EventID, " ", .RuleTitle, "\n"' | sort | uniq -c | sort -nr | head -n 10`
+`cat results.json | jq -j ' .Channel , " " , .EventID , " " , .RuleTitle , "\n" ' | sort | uniq -c | sort -nr | head -n 10`
 
 これにより、次の出力が得られます:
 ```
@@ -332,7 +335,7 @@ EID (イベントID)は一意でなく、同じイベントIDでもまったく�
 
 `4624`成功ログオンイベントをすべて抽出する例です:
 
-`cat results.json | jq 'select (.EventID == 4624)'`
+`cat results.json | jq 'select ( .EventID == 4624 ) '`
 
 これにより、EID `4624`のすべてのJSONオブジェクトが返されます:
 ```
@@ -393,17 +396,17 @@ EID (イベントID)は一意でなく、同じイベントIDでもまったく�
 
 しかし、この方法には問題があります。
 `jq: error (at <stdin>:10636): Cannot index string with string "Type"`というエラーが出力される場合もあります。
-`Cannot index string with string`エラーが出力されるときは常に、`jq`に存在しないフィールドの出力を指示していることになり、間違ったタイプであることを意味します。
+`Cannot index string with string`エラーが出力されるときは、`jq`に存在しないフィールドの出力を指示しているか、間違ったタイプであることを意味します。
 このエラーは、フィールドの末尾に`?`を追加することで取り除くことができます。
 エラーを無視するには、以下のように`jq`に指示します。
 
-例: `cat results.json | jq 'select ( (.EventID == 4624) and (.Details.Type? == 3) )'`
+例: `cat results.json | jq 'select ( ( .EventID == 4624 ) and ( .Details.Type? == 3 ) ) '`
 
 特定の条件でフィルタリングした後、`jq`クエリの中で`|`を使うことで、関心のある特定のフィールドを選択できます。
 
 たとえば、ターゲットユーザー名`TgtUser`とソースIPアドレス`SrcIP`を抽出します:
 
-`cat results.json | jq -j 'select ( (.EventID == 4624) and (.Details.Type? == 3)) | .Details.TgtUser, " ", .Details.SrcIP, "\n"'`
+`cat results.json | jq -j 'select ( ( .EventID == 4624 ) and ( .Details.Type? == 3 ) ) | .Details.TgtUser , " " , .Details.SrcIP , "\n" '`
 
 ここでも、複数のフィールドを選択して出力するため、`jq`に`-j` (join) オプションを追加します。
 その後、例のように特定IPアドレスがタイプ3ネットワークログオンでログオンした回数を探すために `sort`、 `uniq -c`などを実行できます。
@@ -418,7 +421,7 @@ EID (イベントID)は一意でなく、同じイベントIDでもまったく�
 `| @csv`を使用してCSVファイルに保存できますが、データを配列として渡す必要があります。
 これはこれまでに行ったように、出力したいフィールドを`[ ]`角括弧で囲み、配列に変換することで実現できます。
 
-例: `cat results.json | jq 'select ( (.Channel == "Sec") and (.EventID == 4624) ) | [.Timestamp, .Computer, .Details[]?] | @csv' -r`
+例: `cat results.json | jq 'select ( (.Channel == "Sec" ) and ( .EventID == 4624 ) ) | [ .Timestamp , .Computer , .Details[]? ] | @csv ' -r`
 
 注釈:
   * `Details` オブジェクトの全フィールドを選択するためには、`[]`を追加します。
@@ -436,7 +439,7 @@ EID (イベントID)は一意でなく、同じイベントIDでもまったく�
 "2019-05-12 02:10:10.889 +09:00","IEWIN7",9,"IEUser","","::1","0x1bbdce"
 ```
 
-誰がログオンに成功したかを確認するだけであれば、最後のLID (ログオンID) フィールドは必要ないかもしれません。
+誰がログオンに成功したかを確認するだけであれば、最後の`LID` (ログオンID) フィールドは必要ないかもしれません。
 `del`関数を使用して、不要な列を削除できます。
 
 例: `cat results.json | jq 'select ( (.Channel == "Sec") and (.EventID == 4624) ) | [.Timestamp, .Computer, .Details[]?] | del(.[6]) | @csv' -r`
@@ -454,7 +457,7 @@ Hayabusaはデフォルトで、重大度に応じてアラートがもっとも
 しかし、2番目や3番目にアラートが多かった日付を探したいこともあります。
 タイムスタンプの文字列をスライスし、年、月、日などを必要に応じてグループ化することでこれを実現できます。
 
-例: `cat results.json | jq '.Timestamp | .[:10]' -r | sort | uniq -c | sort`
+例: `cat results.json | jq ' .Timestamp | .[:10] ' -r | sort | uniq -c | sort`
 
 `.[:10]`は`jq`に`Timestamp`の最初の10バイトを抽出するように指示しています。
 
@@ -472,7 +475,7 @@ Hayabusaはデフォルトで、重大度に応じてアラートがもっとも
 イベントがもっとも多い月を知りたい場合は、`.[:10]`を`.[:7]`に変更し、最初の7バイトを抽出します。
 
 `high`アラートがもっとも多い日付を一覧表示する場合は、次のようにします:
-`cat results.json | jq 'select (.Level == "high") | .Timestamp | .[:10]' -r | sort | uniq -c | sort`
+`cat results.json | jq 'select ( .Level == "high" ) | .Timestamp | .[:10] ' -r | sort | uniq -c | sort`
 
 必要に応じて、`select`関数にコンピューター名、イベントIDなどの条件を追加していくこともできます。
 
@@ -481,9 +484,9 @@ Hayabusaはデフォルトで、重大度に応じてアラートがもっとも
 PowerShellログの残念な点は、複数のログに分割されることが多く、読みにくいことです。
 攻撃者が実行したコマンドだけを抽出することで、ログを読みやすくできます。
 
-たとえば、`4104`スクリプトブロックログの場合、そのフィールドだけを抽出して、読みやすいタイムラインを作成できます。
+たとえば、EID`4104`のスクリプトブロックログの場合、そのフィールドだけを抽出して、読みやすいタイムラインを作成できます。
 
-`cat results.json | jq 'select(.EventID == 4104) | .Timestamp[:16], " ", .Details.ScriptBlock, "\n"' -jr`
+`cat results.json | jq 'select ( .EventID == 4104) | .Timestamp[:16] , " " , .Details.ScriptBlock , "\n" ' -jr`
 
 これにより、タイムラインは次のようになります:
 ```
@@ -497,3 +500,72 @@ PowerShellログの残念な点は、複数のログに分割されることが�
 2022-12-24 10:57 prompt
 2022-12-24 10:57 ls
 ```
+
+### 7. 疑わしいネットワーク接続の検出
+
+次のコマンドを使用して、最初にすべてのターゲットIPアドレスのリストを取得できます:
+
+`cat results.json | jq 'select ( .Details.TgtIP? ) | .Details.TgtIP ' -r | sort | uniq`
+
+脅威インテリジェンスがある場合は、IPアドレスが悪意のあるものとして知られているかどうかを確認できます。
+
+また、特定のターゲットIPアドレスが接続された回数を以下のようにカウントできます:
+
+`cat results.json | jq 'select ( .Details.TgtIP? ) | .Details.TgtIP ' -r | sort | uniq -c | sort -n`
+
+`TgtIP` を `SrcIP` に変更することで、ソースIPアドレスに対しても、脅威インテリジェンスを用いた同様なチェックを実行できます。
+
+ある環境から`93.184.220.29`という悪意のあるIPアドレスへ接続されていたことを発見したとします。
+次のクエリを使用して、これらのイベントの詳細を取得できます:
+
+`cat results.json | jq 'select ( .Details.TgtIP? == "93.184.220.29" ) '`
+
+これにより、次のような結果のJSONが得られます:
+```
+{
+  "Timestamp": "2019-07-30 06:33:20.711 +09:00",
+  "Computer": "MSEDGEWIN10",
+  "Channel": "Sysmon",
+  "EventID": 3,
+  "Level": "med",
+  "RecordID": 4908,
+  "RuleTitle": "Net Conn (Sysmon Alert)",
+  "Details": {
+    "Proto": "tcp",
+    "SrcIP": "10.0.2.15",
+    "SrcPort": 49827,
+    "SrcHost": "MSEDGEWIN10.home",
+    "TgtIP": "93.184.220.29",
+    "TgtPort": 80,
+    "TgtHost": "",
+    "User": "MSEDGEWIN10\\IEUser",
+    "Proc": "C:\\Windows\\System32\\mshta.exe",
+    "PID": 3164,
+    "PGUID": "747F3D96-661E-5D3F-0000-00107F248700"
+  }
+}
+```
+
+### 8. 実行可能なバイナリのハッシュ値の抽出
+
+Sysmon EID `1` プロセス生成ログで、バイナリのハッシュを計算するようにsysmonを設定できます。
+セキュリティアナリストは、脅威インテリジェンスを使用して、これらのハッシュを既知の悪意のあるハッシュと比較できます。
+次のように `Hashes` フィールドを抽出できます:
+
+`cat results.json | jq 'select ( .Details.Hashes? ) | .Details.Hashes ' -r`
+
+これにより、このようなハッシュのリストが得られます:
+
+```
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+```
+
+Sysmonは通常、`MD5`、`SHA1`、`IMPHASH`など複数のハッシュを計算します。
+これらのハッシュは、`jq` の正規表現か、より良い性能のために文字列スライスを使うことで、抽出できます。
+
+たとえば、次のようにMD5ハッシュを抽出して重複を削除できます:
+
+`cat results.json | jq 'select ( .Details.Hashes? ) | .Details.Hashes | .[4:36] ' -r | sort | uniq`
