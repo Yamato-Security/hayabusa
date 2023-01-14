@@ -1259,8 +1259,13 @@ mod tests {
     use std::path::Path;
 
     use crate::App;
+    use chrono::Local;
     use hashbrown::HashSet;
-    use hayabusa::detections::configs::{Action, Config, ConfigReader, StoredStatic, UpdateOption};
+    use hayabusa::{
+        detections::configs::{Action, Config, ConfigReader, StoredStatic, UpdateOption},
+        options::htmlreport::HTML_REPORTER,
+    };
+    use itertools::Itertools;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
@@ -1300,5 +1305,28 @@ mod tests {
         config_reader.config = None;
         stored_static.profiles = None;
         app.exec(&mut config_reader.app, &mut stored_static);
+    }
+
+    #[test]
+    fn test_exec_general_html_output() {
+        let mut app = App::new(None);
+        let mut config_reader = ConfigReader::new();
+        let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+        config_reader.config = None;
+        stored_static.config.action = None;
+        stored_static.html_report_flag = true;
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let expect_general_contents = vec![
+            format!("- Command line: {}", std::env::args().join(" ")),
+            format!("- Start time: {}", Local::now().format("%Y/%m/%d %H:%M")),
+        ];
+
+        let actual = &HTML_REPORTER.read().unwrap().md_datas;
+        let general_contents = actual.get("General Overview {#general_overview}").unwrap();
+        assert_eq!(expect_general_contents.len(), general_contents.len());
+
+        for actual_general_contents in general_contents.iter() {
+            assert!(expect_general_contents.contains(&actual_general_contents.to_string()));
+        }
     }
 }
