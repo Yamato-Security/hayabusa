@@ -1,16 +1,16 @@
 # Table of Contents
 
 - [Table of Contents](#table-of-contents)
-- [Analysing Hayabusa Results with JQ](#analysing-hayabusa-results-with-jq)
+- [Analysing Hayabusa Results with jq](#analysing-hayabusa-results-with-jq)
   - [Author](#author)
   - [About](#about)
-  - [Installing JQ](#installing-jq)
+  - [Installing jq](#installing-jq)
   - [About the JSON Format](#about-the-json-format)
   - [About the JSON and JSONL Formats with Hayabusa](#about-the-json-and-jsonl-formats-with-hayabusa)
   - [Creating JSON Results Files](#creating-json-results-files)
     - [Benefits of Using Details Over AllFieldInfo](#benefits-of-using-details-over-allfieldinfo)
-  - [JQ Lessons/Recipes](#jq-lessonsrecipes)
-    - [1. Manual Checking with JQ and Less In Color](#1-manual-checking-with-jq-and-less-in-color)
+  - [jq Lessons/Recipes](#jq-lessonsrecipes)
+    - [1. Manual Checking with jq and Less In Color](#1-manual-checking-with-jq-and-less-in-color)
     - [2. Metrics](#2-metrics)
     - [3. Filtering on Certain Data](#3-filtering-on-certain-data)
     - [4. Saving Output to CSV](#4-saving-output-to-csv)
@@ -20,7 +20,7 @@
     - [8. Extracting Executable Binary Hashes](#8-extracting-executable-binary-hashes)
 
 
-# Analysing Hayabusa Results with JQ
+# Analysing Hayabusa Results with jq
 
 ## Author
 
@@ -50,7 +50,7 @@ Now that JSON has become a very popular log format and most cloud providers use 
 In this guide, I will first explain how to utilize `jq` for those who have never used it before and then explain more complex usages along with real world examples.
 I recommend using linux, macOS or linux on Windows in order to be able to combine `jq` with other useful commands such as `sort`, `uniq`, `grep`, `sed`, etc...
 
-## Installing JQ
+## Installing jq
 
 Please refer to [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/) and install the `jq` command.
 
@@ -171,11 +171,11 @@ Without field normalization, an analyst would have to first be knowledgeable abo
 
 An analyst can save a lot of time and trouble by just using the normalized single `Proc` field that Hayabusa provides in the `Details` object.
 
-## JQ Lessons/Recipes
+## jq Lessons/Recipes
 
 I will now list several lessons/recipes of practical examples that may help you in your work.
 
-### 1. Manual Checking with JQ and Less In Color
+### 1. Manual Checking with jq and Less In Color
 
 This is one of the first things to do to understand what fields are in the logs.
 You could simply do a `less results.json` but a better way is the following:
