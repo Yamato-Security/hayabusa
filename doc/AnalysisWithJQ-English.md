@@ -16,13 +16,15 @@
     - [4. Saving Output to CSV](#4-saving-output-to-csv)
     - [5. Finding Dates with Most Alerts](#5-finding-dates-with-most-alerts)
     - [6. Reconstructing PowerShell Logs](#6-reconstructing-powershell-logs)
+    - [7. Finding Suspicious Network Connections](#7-finding-suspicious-network-connections)
+    - [8. Extracting Executable Binary Hashes](#8-extracting-executable-binary-hashes)
 
 
 # Analysing Hayabusa Results with JQ
 
 ## Author
 
-Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2022/12/21
+Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2023/01/15
 
 ## About
 
@@ -43,14 +45,14 @@ If there were only a few failed logons, then it is likely that an administrator 
 However, if there were hundreds or more failed logons in a short period of time by a certain IP address, then it is likely that the IP address is malicious.
 
 Learning how to use `jq` will help you master not just analyzing Windows event logs, but all JSON formatted logs.
-Now that JSON has become a very popular log format and most cloud providers use it for their logs, being able to parse them with `jq` has become an essential skill for the modern security engineer.
+Now that JSON has become a very popular log format and most cloud providers use it for their logs, being able to parse them with `jq` has become an essential skill for the modern security analyst.
 
-In this guide, I will fist explain how to utilize `jq` for those who have never used it before and then explain more complex usages along with real world examples.
+In this guide, I will first explain how to utilize `jq` for those who have never used it before and then explain more complex usages along with real world examples.
 I recommend using linux, macOS or linux on Windows in order to be able to combine `jq` with other useful commands such as `sort`, `uniq`, `grep`, `sed`, etc...
 
 ## Installing JQ
 
-Please refer to [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/).
+Please refer to [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/) and install the `jq` command.
 
 ## About the JSON Format
 
@@ -64,9 +66,9 @@ The keys must be strings, but the values may be one of the following:
   * boolean (Ex: `true`, `false`)
   * `null`
 
-You can nest as many objects inside objects.
+You can nest as many objects as you want inside objects.
 
-Example:
+In this example, `Details` is a nested object inside a root object:
 ```
 {
     "Timestamp": "2016-08-19 08:06:57.658 +09:00",
@@ -130,43 +132,44 @@ Example:
 
 There are two problems with this.
 The first issue is that `jq` queries will become more cumbersome as everything has to start with an extra `.[]` to tell it to look into that array.
-The much bigger issue is that in order for anything to parse such logs, it is necessary to load in all of the data in the array.
+The much bigger issue is that in order for anything to parse such logs, it is necessary to first load in all of the data in the array.
 This becomes a problem if you have very big JSON files and not an abundance of memory.
 In order to lessen the required CPU and memory usage, the JSONL (JSON Lines) format, which does not put everything into a giant array, has become more popular.
-Hayabusa outputs in JSON and JSONL formats, however the JSON format is not outputted inside an array anymore.
+Hayabusa outputs in JSON and JSONL formats, however the JSON format is not saved inside an array anymore.
 The only difference is that the JSON format is easier to read in a text editor or on the console, while the JSONL format stores every JSON object on one single line.
-JSONL format will be slightly faster and smaller in size so is ideal if you are only going to import the logs into something else but not look at them.
-JSON format is ideal if you are also going to do some manual checking.
+The JSONL format will be slightly faster and smaller in size so is ideal if you are only going to import the logs into a SIEM, etc... but not look at them.
+The JSON format is ideal if you are also going to do some manual checking.
 
 ## Creating JSON Results Files
 
-In the 1.x version of Hayabusa, you can save the results in JSON with `-j -o results.json` or `-J -o results.jsonl`.
+In the current 2.x version of Hayabusa, you can save the results in JSON with `hayabusa json-timeline -d <directory> -o results.json` or `hayabusa json-timeline -d <directory> -J -o results.jsonl` for JSONL format.
 
 Hayabusa will use the default `standard` profile and only save the minimal amount of data for analysis in the `Details` object.
 If you want to save all of the original field information in the .evtx logs, you can use the `all-field-info` profile with the option `--profile all-field-info`.
 This will save all of the field information to the `AllFieldInfo` object.
-If you want to save both the `Details` and `AllFieldInfo` objects just in case, you can use the `super-verbose` option.
+If you want to save both the `Details` and `AllFieldInfo` objects just in case, you can use the `super-verbose` profile.
 
 ### Benefits of Using Details Over AllFieldInfo
 
 The first benefit of using `Details` over `AllFieldInfo` is that only the important fields are saved, and the field names have been shortened to save file space.
 The downside is that there is a possibility of missing data that you actually cared about but was missed.
-The second benefit is that Hayabusa will save the fields in a more uniform manner.
-For example, in original Windows logs, the username is usually in a `SubjectUserName` or `TargetUserName` field. 
-However, sometimes the username will be in the `AccountName` field, sometimes the target user will actually be in the `SubjectUserName` field, etc...
+The second benefit is that Hayabusa will save the fields in a more uniform manner by normalizing the field names.
+For example, in original Windows logs, the user name is usually in a `SubjectUserName` or `TargetUserName` field. 
+However, sometimes the username will be in an `AccountName` field, sometimes the target user will actually be in the `SubjectUserName` field, etc...
+Unfortunately, there a many inconsistant field names in Windows event logs.
 Hayabusa tries to normalize these fields, so an analyst only has to parse out a common name instead of having to understand the infinite amount of quirks and discrepancies between event IDs in Windows.
 
-One example of this is the user field.
+Here is an example of the user field.
 Hayabusa will normalize `SubjectUserName`, `TargetUserName`, `AccountName`, etc... in the following manner:
-  * `SrcUser` (Source User): when an action happens **from** a remote user.
+  * `SrcUser` (Source User): when an action happens **from** a user. (Usually a remote user.)
   * `TgtUser` (Target User): when an action happens **to** a user. (For example, a logon **to** a user.)
-  * `User`: when an action happens by a currently logged in user.
+  * `User`: when an action happens by a currently logged in user. (There is no particular direction in the action.)
 
 Another example are processes.
 In the original Windows event logs, the process field is referred to with multiple naming conventions: `ProcessName`, `Image`, `processPath`, `Application`, `WindowsDefenderProcessName`, etc...
-The analyst will have to first be knowledgeable about all of the different field names, then extract out all the logs with these field names, then combine them together. 
+Without field normalization, an analyst would have to first be knowledgeable about all of the different field names, then extract out all the logs with these field names, then combine them together. 
 
-An analyst can save a lot of time and trouble just using the normalized single `Proc` field that Hayabusa provides in the `Details` object.
+An analyst can save a lot of time and trouble by just using the normalized single `Proc` field that Hayabusa provides in the `Details` object.
 
 ## JQ Lessons/Recipes
 
@@ -179,19 +182,19 @@ You could simply do a `less results.json` but a better way is the following:
 `cat results.json | jq -C | less -R`
 
 By passing to `jq`, it will neatly format all of the fields for you if they were not formatted neatly to begin with.
-By using the `-C` (color) option with `jq` and `-R` (raw output) option with less, you can scroll up and down in color.
+By using the `-C` (color) option with `jq` and `-R` (raw output) option with `less`, you can scroll up and down in color.
 
 ### 2. Metrics
 
 Hayabusa already has functionality to print the number and percent of events based on event IDs, however, this is also good to know how to do with `jq`.
-This will let you customize the data you are taking metrics on.
+This will let you customize the data you want to create metrics for.
 
 Let's first extract a list of Event IDs with the following command:
 
 `cat results.json | jq '.EventID'`
 
 This will extract just the Event ID number from each log.
-After `jq`, in single quotes just type a `.` and the field name you want to extract.
+After `jq`, in single quotes, just type a `.` and the field name you want to extract.
 You should see a long list like this:
 
 ```
@@ -210,7 +213,7 @@ You should see a long list like this:
 11
 ```
 
-Now lets pipe the results to the `sort` and `uniq -c` commands to count how many times the event IDs occurred:
+Now, pipe the results to the `sort` and `uniq -c` commands to count how many times the event IDs occurred:
 
 `cat results.json | jq '.EventID' | sort | uniq -c`
 
@@ -232,7 +235,7 @@ You should see something like this:
  ```
 
  The left is the count, and the right is the Event ID.
- As you can see it is not sorted so hard to tell what event IDs happened the most.
+ As you can see it is not sorted, so it is hard to tell what event IDs occured the most.
 
  You can add a `sort -n` at the end to fix this:
 
@@ -275,17 +278,18 @@ This will give you:
  391 8
  ```
 
- You may know that EIDs (Event IDs) are not unique, and you may have completely different events but the same Event ID.
- Therefore, it is important to also check the `Channel`.
+It is important to consider that EIDs (Event IDs) are not unique, so you may have completely different events with the same Event ID.
+Therefore, it is important to also check the `Channel`.
 
- We can add this field information like this:
+We can add this field information like this:
 
- `cat sample-super.json | jq -j '.Channel, " ", .EventID, "\n"' | sort | uniq -c | sort -nr | head -n 10`
+`cat results.json | jq -j ' .Channel , " " , .EventID , "\n" ' | sort | uniq -c | sort -nr | head -n 10`
 
- We add the `-j` (join) option to `jq` to join all the fields together delimited by commas and ending with a `\n` new line character.
- This will give us:
- ```
- 12277 Sec 4688
+We add the `-j` (join) option to `jq` to join all the fields together delimited by commas and ending with a `\n` new line character.
+
+This will give us:
+```
+12277 Sec 4688
 7135 Sec 4625
 2584 Sec 5145
 2321 Sysmon 1
@@ -301,7 +305,7 @@ This will give you:
 
 We can add the rule title as follows:
 
-`cat sample-super.json | jq -j '.Channel, " ", .EventID, " ", .RuleTitle, "\n"' | sort | uniq -c | sort -nr | head -n 10`
+`cat results.json | jq -j ' .Channel , " " , .EventID , " " , .RuleTitle , "\n" ' | sort | uniq -c | sort -nr | head -n 10`
 
 This will give us:
 ```
@@ -315,19 +319,19 @@ This will give us:
  680 PwSh 4103 PwSh Pipeline Exec
  433 Sec 5140 NetShare Access
  342 Sec 4648 Explicit Logon
- ```
+```
 
- You can now freely extract any data from the logs and count the occurrences.
+You can now freely extract any data from the logs and count the occurrences.
 
 
 ### 3. Filtering on Certain Data
 
 Many times you will want to filter on certain Event IDs, users, processes, LIDs(Logon IDs), etc...
-You can do that with `select` inside the `jq` query.
+You can do that with `select` inside of the `jq` query.
 
-For example, lets extract all of the `4624` successful logon events:
+For example, let us extract all of the `4624` successful logon events:
 
-`cat results.json | jq 'select (.EventID == 4624)'`
+`cat results.json | jq 'select ( .EventID == 4624 ) '`
 
 This will return all of the JSON objects for EID `4624`:
 ```
@@ -378,27 +382,27 @@ This will return all of the JSON objects for EID `4624`:
   }
   ```
 
-  If you want to filter on multiple conditions, you can use keywords like `and`, `or` and `not`.
+If you want to filter on multiple conditions, you can use keywords like `and`, `or` and `not`.
 
-  For example, lets search for `4624` events where the type is `3` (Network logon).
+For example, let us search for `4624` events where the type is `3` (Network logon).
 
-`cat results.json | jq 'select ( (.EventID == 4624) and (.Details.Type == 3) )'`
+`cat results.json | jq 'select ( ( .EventID == 4624 ) and ( .Details.Type == 3 ) ) '`
 
 This will return all objects where the `EventID` is `4624` and the nested `"Details": { "Type" }` field is `3`.
 
 There is a problem though.
 You may notice errors saying `jq: error (at <stdin>:10636): Cannot index string with string "Type"`.
-Any time you see the error `Cannot index string with string`, it means that you are telling `jq` to output a field that does not exist and therefore is a wrong type.
-You can get rid of the errors by adding a `?` to the end of the field.
+Any time you see the error `Cannot index string with string`, it means that you are telling `jq` to output a field that does not exist or is the wrong type.
+You can get rid of these errors by adding a `?` to the end of the field.
 This tells `jq` to ignore the errors.
 
-Example: `cat results.json | jq 'select ( (.EventID == 4624) and (.Details.Type? == 3) )'`
+Example: `cat results.json | jq 'select ( ( .EventID == 4624 ) and ( .Details.Type? == 3 ) ) '`
 
 Now, after filtering on certain criteria, we can use a `|` inside the `jq` query to now select certain fields of interest.
 
-For example, lets extract out the target username `TgtUser` and source IP address `SrcIP`:
+For example, let us extract out the target user name `TgtUser` and source IP address `SrcIP`:
 
-`cat results.json | jq -j 'select ( (.EventID == 4624) and (.Details.Type? == 3)) | .Details.TgtUser, " ", .Details.SrcIP, "\n"'`
+`cat results.json | jq -j 'select ( ( .EventID == 4624 ) and ( .Details.Type? == 3 ) ) | .Details.TgtUser , " " , .Details.SrcIP , "\n" '`
 
 Again, we add the `-j` (join) option to `jq` to select multiple fields to output.
 You can then run `sort`, `uniq -c`, etc... like in the previous examples to find out how many times a certain IP address logged into a user via a type 3 network logon.
@@ -406,14 +410,14 @@ You can then run `sort`, `uniq -c`, etc... like in the previous examples to find
 ### 4. Saving Output to CSV
 
 Unfortunately, the fields in Windows event logs will differ completely according to the type of event, so it is not easily possible to create comma separated timelines by fields without having hundreds of columns.
-However, it is possible to create field separated timelines with single types of events.
-Two common examples are Security `4624` (Successful logon) and `4625` (Failed logons) to check for lateral movement and password guessing/spraying.
+However, it is possible to create field separated timelines for single types of events.
+Two common examples are Security `4624` (Successful Logons) and `4625` (Failed Logons) to check for lateral movement and password guessing/spraying.
 
 In this example, we are extracting out just Security 4624 logs and outputting the timestamp, computer name and all `Details` information.
 We save it to a CSV file by using `| @csv`, however, we need to pass the data as an array.
 We can do that by selecting the fields we want to output as we did previously and enclose them with `[ ]` square brackets to turn them into an array.
 
-Example: `cat results.json | jq 'select ( (.Channel == "Sec") and (.EventID == 4624) ) | [.Timestamp, .Computer, .Details[]?] | @csv' -r`
+Example: `cat results.json | jq 'select ( (.Channel == "Sec" ) and ( .EventID == 4624 ) ) | [ .Timestamp , .Computer , .Details[]? ] | @csv ' -r`
 
 Notes:
   * To select all of the fields in the `Details` object we add `[]`.
@@ -431,10 +435,10 @@ Results:
 "2019-05-12 02:10:10.889 +09:00","IEWIN7",9,"IEUser","","::1","0x1bbdce"
 ```
 
-If we are just checking who had successful logons, we may not need the last LID (Logon ID) field.
+If we are just checking who had successful logons, we may not need the last `LID` (Logon ID) field.
 You can delete any unneeded column with the `del` function.
 
-Example: `cat results.json | jq 'select ( (.Channel == "Sec") and (.EventID == 4624) ) | [.Timestamp, .Computer, .Details[]?] | del(.[6]) | @csv' -r`
+Example: `cat results.json | jq 'select ( ( .Channel == "Sec" ) and ( .EventID == 4624 ) ) | [ .Timestamp , .Computer , .Details[]? ] | del( .[6] ) | @csv ' -r`
 
 The array counts from `0` so to remove the 7th field, we use `6`.
 
@@ -447,9 +451,9 @@ While it is possible to add a heading inside the `jq` query, it is usually easie
 
 Hayabusa will, by default, tell you the dates that had the most alerts according to severity levels.
 However, you may want to find the second, third, etc... most dates with alerts as well.
-We can do that with string slicing the timestamp to group by year, month or date depending on our needs.
+We can do that with string slicing the timestamp to group by year, month or date depending on your needs.
 
-Example: `cat results.json | jq '.Timestamp | .[:10]' -r | sort | uniq -c | sort`
+Example: `cat results.json | jq ' .Timestamp | .[:10] ' -r | sort | uniq -c | sort`
 
 `.[:10]` tells `jq` to extract just the first 10 bytes from `Timestamp`.
 
@@ -467,18 +471,18 @@ This will give us the dates with the most events:
 If you want to know the month with the most events, you can just change `.[:10]` to `.[:7]` to extract the first 7 bytes.
 
 If you want to list up the dates with the most `high` alerts, you can do this:
-`cat results.json | jq 'select (.Level == "high") | .Timestamp | .[:10]' -r | sort | uniq -c | sort`
+`cat results.json | jq 'select ( .Level == "high" ) | .Timestamp | .[:10] ' -r | sort | uniq -c | sort`
 
-You can keep addind conditions to the `select` function according to computer name, event ID, etc... depending on your needs.
+You can keep adding filter conditions to the `select` function according to computer name, event ID, etc... depending on your needs.
 
 ### 6. Reconstructing PowerShell Logs
 
 An unfortunate thing about PowerShell logs is that the logs will often be broken up into multiple logs making them hard to read.
 We can make the logs much easier to read by extracting out just the commands that the attacker ran.
 
-For example, if have `4104` ScriptBlock logs, we can extract out just that field to create an easy to read timeline.
+For example, if you have EID `4104` ScriptBlock logs, you can extract out just that field to create an easy to read timeline.
 
-`cat results.json | jq 'select(.EventID == 4104) | .Timestamp[:16], " ", .Details.ScriptBlock, "\n"' -jr`
+`cat results.json | jq 'select ( .EventID == 4104) | .Timestamp[:16] , " " , .Details.ScriptBlock , "\n" ' -jr`
 
 This will result in a timeline as follows:
 ```
@@ -492,3 +496,72 @@ This will result in a timeline as follows:
 2022-12-24 10:57 prompt
 2022-12-24 10:57 ls
 ```
+
+### 7. Finding Suspicious Network Connections
+
+You can first get a list of all the target IP addresses with the following command:
+
+`cat results.json | jq 'select ( .Details.TgtIP? ) | .Details.TgtIP ' -r | sort | uniq`
+
+If you have threat intelligence, you can check to see if any of the IP addresses are known to be malicious.
+
+You can count up times a certain target IP address was connected to with the following:
+
+`cat results.json | jq 'select ( .Details.TgtIP? ) | .Details.TgtIP ' -r | sort | uniq -c | sort -n`
+
+By changing `TgtIP` to `SrcIP`, you can do the same threat intelligence checking for malicious IP addresses based on source IP addresses.
+
+Let us say that you found that the malicious IP address of `93.184.220.29` being connected to from your environment.
+You can get details on those events with the following query:
+
+`cat results.json | jq 'select ( .Details.TgtIP? == "93.184.220.29" ) '`
+
+This will give you the JSON results such as this:
+```
+{
+  "Timestamp": "2019-07-30 06:33:20.711 +09:00",
+  "Computer": "MSEDGEWIN10",
+  "Channel": "Sysmon",
+  "EventID": 3,
+  "Level": "med",
+  "RecordID": 4908,
+  "RuleTitle": "Net Conn (Sysmon Alert)",
+  "Details": {
+    "Proto": "tcp",
+    "SrcIP": "10.0.2.15",
+    "SrcPort": 49827,
+    "SrcHost": "MSEDGEWIN10.home",
+    "TgtIP": "93.184.220.29",
+    "TgtPort": 80,
+    "TgtHost": "",
+    "User": "MSEDGEWIN10\\IEUser",
+    "Proc": "C:\\Windows\\System32\\mshta.exe",
+    "PID": 3164,
+    "PGUID": "747F3D96-661E-5D3F-0000-00107F248700"
+  }
+}
+```
+
+### 8. Extracting Executable Binary Hashes
+
+In Sysmon EID `1` Process Creation logs, sysmon can be configured to calculate hashes of the binary.
+Security analysts can compare these hashes against known malicious hashes with threat intelligence.
+You can extract out the `Hashes` field with the following:
+
+`cat results.json | jq 'select ( .Details.Hashes? ) | .Details.Hashes ' -r`
+
+This will give you a list of hashes like this:
+
+```
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+MD5=E112A827FAB9F8378C76040187A6F336,SHA256=ED369187681A62247E38D930320F1CD771756D0B7B67072D8EC655EF99E14AEB,IMPHASH=8EEAA9499666119D13B3F44ECD77A729
+```
+
+Sysmon will usually calculate multiple hashes like `MD5`, `SHA1` and `IMPHASH`.
+You can extract out these hashes with regular expressions in `jq` or just use string splicing for better performance.
+
+For example, you can extract out the MD5 hashes and remove duplicates with the following:
+
+`cat results.json | jq 'select ( .Details.Hashes? ) | .Details.Hashes | .[4:36] ' -r | sort | uniq`
