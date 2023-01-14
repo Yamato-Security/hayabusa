@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added executed command line to HTML report. (#877) (@hitenkoku)
 
 **Bug Fixes:**
 
