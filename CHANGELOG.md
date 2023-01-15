@@ -1,6 +1,6 @@
 # Changes
 
-## 2.2.0 [2022/XX/XX]
+## 2.2.0 [2023/2/22]
 
 **New Features:**
 
@@ -8,13 +8,13 @@
 
 **Enhancements:**
 
-- Added executed command line to HTML report. (#877) (@hitenkoku)
+- Added the executed command line to the HTML report. (#877) (@hitenkoku)
 
 **Bug Fixes:**
 
 - XXX
 
-## 2.1.0 [2022/01/10]
+## 2.1.0 [2023/01/10]
 
 **Enhancements:**
 
