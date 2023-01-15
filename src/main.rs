@@ -1049,13 +1049,16 @@ impl App {
 
                 let data = record_result.as_ref().unwrap().data.borrow();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(data, &stored_static.eventkey_alias)
-                    || (stored_static.output_option.as_ref().unwrap().eid_filter
-                        && !self._is_target_event_id(
-                            data,
-                            target_event_ids,
-                            &stored_static.eventkey_alias,
-                        ))
+                if !self._is_valid_channel(
+                    data,
+                    &stored_static.eventkey_alias,
+                    "Event.System.Channel",
+                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
+                    && !self._is_target_event_id(
+                        data,
+                        target_event_ids,
+                        &stored_static.eventkey_alias,
+                    ))
                 {
                     continue;
                 }
@@ -1279,8 +1282,14 @@ impl App {
     }
 
     /// レコードのチャンネルの値が正しい(Stringの形でありnullでないもの)ことを判定する関数
-    fn _is_valid_channel(&self, data: &Value, eventkey_alias: &EventKeyAliasConfig) -> bool {
-        let channel = utils::get_event_value("Event.System.Channel", data, eventkey_alias);
+    fn _is_valid_channel(
+        &self,
+        data: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+        channel_key: &str,
+    ) -> bool {
+        let channel = utils::get_event_value(channel_key, data, eventkey_alias);
+        println!("dbg {:?}", channel);
         if channel.is_none() {
             return false;
         }
