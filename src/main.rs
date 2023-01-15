@@ -4,7 +4,7 @@ extern crate serde;
 extern crate serde_derive;
 
 use bytesize::ByteSize;
-use chrono::{DateTime, Datelike, Local};
+use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};

@@ -18,7 +18,7 @@ use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
-use serde_json::Value;
+use serde_json::{Error, Value};
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io;
@@ -94,6 +94,40 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
     Result::Ok(Nested::from_iter(
         reader.lines().map(|line| line.unwrap_or_default()),
     ))
+}
+
+/// convert json fmt string to serde_json Value.
+pub fn read_json_to_value(
+    filename: &str,
+) -> Result<impl Iterator<Item = Result<Value, Error>>, String> {
+    let filepath = if filename.starts_with("./") {
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
+    } else {
+        filename.to_string()
+    };
+    let f = File::open(filepath);
+    if f.is_err() {
+        let errmsg = format!("Cannot open file. [file:{}]", filename);
+        return Result::Err(errmsg);
+    }
+    let reader = BufReader::new(f.unwrap());
+
+    let ret = reader
+        .lines()
+        .filter_map_ok(|line| {
+            let json_raw = format!("{{\"Event\": {{ \"EventData\": {} }}}} ", line);
+            // println!("dbg; {:?}", json_raw);
+            Some(serde_json::from_str(&json_raw))
+        })
+        .map(|a| {
+            // println!("dbg result: {:?}", a);
+            a.unwrap()
+        });
+    Result::Ok(ret)
 }
 
 pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
