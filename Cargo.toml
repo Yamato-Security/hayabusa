@@ -10,8 +10,8 @@ include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 itertools = "*"
 dashmap = "*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "9c1576b" } # 0.8.3 2022/12/20 update
-quick-xml = {version = "0.26.*", features = ["serialize"] }
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "6ba5440" } # 0.8.3 2023/01/09 update
+quick-xml = {version = "0.27.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
 serde_derive = "1.*"
