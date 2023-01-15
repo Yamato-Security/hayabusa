@@ -383,7 +383,7 @@ pub struct DefaultProfileOption {
 }
 
 #[derive(Args, Clone, Debug)]
-#[clap(group(ArgGroup::new("search_input").required(true).args(["keyword", "regex"]).multiple(false)))]
+#[clap(group(ArgGroup::new("search_input").args(["keywords", "regex"]).required(true).multiple(false)))]
 pub struct SearchOption {
     /// Search condition by keyword
     #[arg(
@@ -392,7 +392,7 @@ pub struct SearchOption {
         long,
         value_name = "KEYWORDS"
     )]
-    pub keyword: Vec<String>,
+    pub keywords: Vec<String>,
 
     /// Search condition by Regex
     #[arg(
@@ -401,7 +401,7 @@ pub struct SearchOption {
         long,
         value_name = "REGEX"
     )]
-    pub regex: String,
+    pub regex: Option<String>,
 
     /// Ignore case
     #[arg(
