@@ -931,14 +931,25 @@ impl App {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) = self.analysis_file(
-                evtx_file,
-                detection,
-                time_filter,
-                tl.to_owned(),
-                target_event_ids,
-                stored_static,
-            );
+            (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
+                self.analysis_json_file(
+                    evtx_file,
+                    detection,
+                    time_filter,
+                    tl.to_owned(),
+                    target_event_ids,
+                    stored_static,
+                )
+            } else {
+                self.analysis_file(
+                    evtx_file,
+                    detection,
+                    time_filter,
+                    tl.to_owned(),
+                    target_event_ids,
+                    stored_static,
+                )
+            };
             total_records += cnt_tmp;
             pb.inc();
         }
@@ -1052,6 +1063,132 @@ impl App {
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
                 let timestamp = record_result.as_ref().unwrap().timestamp;
                 if !time_filter.is_target(&Some(timestamp)) {
+                    continue;
+                }
+
+                records_per_detect.push(data.to_owned());
+            }
+            if records_per_detect.is_empty() {
+                break;
+            }
+
+            let records_per_detect = self.rt.block_on(App::create_rec_infos(
+                records_per_detect,
+                &path,
+                self.rule_keys.to_owned(),
+            ));
+
+            // timeline機能の実行
+            tl.start(
+                &records_per_detect,
+                stored_static.metrics_flag,
+                stored_static.logon_summary_flag,
+                &stored_static.eventkey_alias,
+            );
+
+            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+                // ruleファイルの検知
+                detection = detection.start(&self.rt, records_per_detect);
+            }
+        }
+
+        (detection, record_cnt, tl)
+    }
+
+    // JSON形式のイベントログファイルを1ファイル分解析する。
+    fn analysis_json_file(
+        &self,
+        filepath: PathBuf,
+        mut detection: detection::Detection,
+        time_filter: &TargetEventTime,
+        mut tl: Timeline,
+        target_event_ids: &TargetEventIds,
+        stored_static: &StoredStatic,
+    ) -> (detection::Detection, usize, Timeline) {
+        let path = filepath.display();
+        let mut record_cnt = 0;
+        // json形式はレコードごとに改行が入っている
+        let json_f = utils::read_json_to_value(filepath.to_str().unwrap_or_default()); // ファイルが存在しなければエラーとする
+        if let Err(e) = json_f {
+            AlertMessage::alert(&e).ok();
+            return (detection, record_cnt, tl);
+        }
+        let mut records = json_f.unwrap();
+        let verbose_flag = stored_static.verbose_flag;
+        let quiet_errors_flag = stored_static.quiet_errors_flag;
+        loop {
+            let mut records_per_detect = vec![];
+            while records_per_detect.len() < MAX_DETECT_RECORDS {
+                // パースに失敗している場合、エラーメッセージを出力
+                let next_rec = records.next();
+                if next_rec.is_none() {
+                    break;
+                }
+                record_cnt += 1;
+
+                let record_result = next_rec.unwrap();
+                if record_result.is_err() {
+                    let errmsg = format!(
+                        "Failed to parse event file. EventFile:{} Error:{}",
+                        path,
+                        record_result.unwrap_err()
+                    );
+                    if verbose_flag {
+                        AlertMessage::alert(&errmsg).ok();
+                    }
+                    if !quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[ERROR] {}", errmsg));
+                    }
+                    continue;
+                }
+
+                let data = record_result.unwrap();
+                // println!("dbgjson: {:?}", data);
+                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                if !self._is_valid_channel(
+                    &data,
+                    &stored_static.eventkey_alias,
+                    "Event.EventData.Channel",
+                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
+                    && !self._is_target_event_id(
+                        &data,
+                        target_event_ids,
+                        &stored_static.eventkey_alias,
+                    ))
+                {
+                    continue;
+                }
+
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = match NaiveDateTime::parse_from_str(
+                    &data["Event"]["EventData"]["@timestamp"]
+                        .to_string()
+                        .replace("\\\"", "")
+                        .replace('"', ""),
+                    "%Y-%m-%dT%H:%M:%S%.3fZ",
+                ) {
+                    Ok(without_timezone_datetime) => {
+                        println!("dbgjson: success parse");
+                        Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
+                    }
+                    Err(e) => {
+                        AlertMessage::alert(&format!(
+                            "timestamp parse error. filepath:{},{} {}",
+                            path,
+                            &data["Event"]["EventData"]["@timestamp"]
+                                .to_string()
+                                .replace("\\\"", "")
+                                .replace('"', ""),
+                            e
+                        ))
+                        .ok();
+                        None
+                    }
+                };
+                if !time_filter.is_target(&timestamp) {
                     continue;
                 }
 
