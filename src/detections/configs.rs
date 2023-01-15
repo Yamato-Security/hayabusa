@@ -48,6 +48,7 @@ pub struct StoredStatic {
     pub verbose_flag: bool,
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
+    pub search_flag: bool,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
     pub default_details: HashMap<String, String>,
@@ -67,6 +68,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.input_args.quiet_errors,
             Some(Action::Metrics(opt)) => opt.input_args.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.quiet_errors,
+            Some(Action::Search(opt)) => opt.input_args.quiet_errors,
             _ => false,
         };
         let binding = Path::new("./rules/config").to_path_buf();
@@ -76,6 +78,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => &opt.input_args.config,
             Some(Action::Metrics(opt)) => &opt.input_args.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.input_args.config,
+            Some(Action::Search(opt)) => &opt.input_args.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
@@ -84,6 +87,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.input_args.verbose,
             Some(Action::Metrics(opt)) => opt.input_args.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.verbose,
+            Some(Action::Search(opt)) => opt.input_args.verbose,
             _ => false,
         };
         let mut ret = StoredStatic {
@@ -130,6 +134,7 @@ impl StoredStatic {
             ),
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
+            search_flag: action_id == 10,
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
             quiet_errors_flag,
@@ -385,6 +390,9 @@ pub struct DefaultProfileOption {
 #[derive(Args, Clone, Debug)]
 #[clap(group(ArgGroup::new("search_input").args(["keywords", "regex"]).required(true).multiple(false)))]
 pub struct SearchOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
+
     /// Search condition by keyword
     #[arg(
         help_heading = Some("Filtering"),

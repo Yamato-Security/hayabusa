@@ -184,6 +184,16 @@ impl App {
             .ok();
             println!();
         }
+        if stored_static.search_flag {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Searching...",
+                true,
+            )
+            .ok();
+            println!();
+        }
 
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
