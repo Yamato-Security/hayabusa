@@ -383,7 +383,7 @@ pub struct DefaultProfileOption {
 pub struct UpdateOption {
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"), 
+        help_heading = Some("Advanced"),
         short = 'r',
         long,
         default_value = "./rules",
@@ -435,7 +435,7 @@ pub struct PivotKeywordOption {
 
     /// Minimum level for rules (default: informational)
     #[arg(
-        help_heading = Some("Filtering"), 
+        help_heading = Some("Filtering"),
         short = 'm',
         long = "min-level",
         default_value = "informational",
@@ -495,7 +495,7 @@ pub struct OutputOption {
 
     /// Minimum level for rules (default: informational)
     #[arg(
-        help_heading = Some("Filtering"), 
+        help_heading = Some("Filtering"),
         short = 'm',
         long = "min-level",
         default_value = "informational",
@@ -554,7 +554,7 @@ pub struct OutputOption {
 
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"), 
+        help_heading = Some("Advanced"),
         short = 'r',
         long,
         default_value = "./rules",
