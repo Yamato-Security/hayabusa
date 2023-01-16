@@ -1178,7 +1178,6 @@ impl App {
                     "%Y-%m-%dT%H:%M:%S%.3fZ",
                 ) {
                     Ok(without_timezone_datetime) => {
-                        println!("dbgjson: success parse");
                         Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
                     }
                     Err(e) => {
@@ -1293,7 +1292,6 @@ impl App {
         channel_key: &str,
     ) -> bool {
         let channel = utils::get_event_value(channel_key, data, eventkey_alias);
-        println!("dbg {:?}", channel);
         if channel.is_none() {
             return false;
         }

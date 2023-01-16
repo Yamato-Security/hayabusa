@@ -120,13 +120,9 @@ pub fn read_json_to_value(
         .lines()
         .filter_map_ok(|line| {
             let json_raw = format!("{{\"Event\": {{ \"EventData\": {} }}}} ", line);
-            // println!("dbg; {:?}", json_raw);
             Some(serde_json::from_str(&json_raw))
         })
-        .map(|a| {
-            // println!("dbg result: {:?}", a);
-            a.unwrap()
-        });
+        .map(|a| a.unwrap());
     Result::Ok(ret)
 }
 
