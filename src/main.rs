@@ -213,6 +213,7 @@ impl App {
                     .input_args
                     .evtx_file_ext
                     .as_ref(),
+                stored_static.json_input_flag,
             )
         } else {
             HashSet::default()

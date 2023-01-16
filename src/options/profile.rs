@@ -452,6 +452,7 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                json_input: false,
             }));
         assert_eq!(
             Some(expect),
@@ -499,6 +500,7 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                json_input: false,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -577,6 +579,7 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                json_input: false,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(
