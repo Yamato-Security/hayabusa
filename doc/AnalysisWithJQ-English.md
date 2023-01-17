@@ -470,6 +470,7 @@ This will give us the dates with the most events:
 If you want to know the month with the most events, you can just change `.[:10]` to `.[:7]` to extract the first 7 bytes.
 
 If you want to list up the dates with the most `high` alerts, you can do this:
+
 `cat results.json | jq 'select ( .Level == "high" ) | .Timestamp | .[:10] ' -r | sort | uniq -c | sort`
 
 You can keep adding filter conditions to the `select` function according to computer name, event ID, etc... depending on your needs.
