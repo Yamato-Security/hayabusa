@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Added the executed command line to the HTML report. (#877) (@hitenkoku)
+- Improved speed by EID matching process changed. (#882) (@fukusuket)
 
 **Bug Fixes:**
 
