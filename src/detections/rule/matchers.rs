@@ -1617,7 +1617,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     value: Security
         details: 'command=%CommandLine%'
         "#;
@@ -1639,7 +1639,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     value: Securiteen
         details: 'command=%CommandLine%'
         "#;
@@ -1846,9 +1846,9 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     value: Security
-                Takoyaki: 
+                Takoyaki:
                     value: null
         details: 'command=%CommandLine%'
         "#;

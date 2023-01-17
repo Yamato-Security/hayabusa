@@ -560,7 +560,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
@@ -582,7 +582,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
@@ -604,7 +604,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
