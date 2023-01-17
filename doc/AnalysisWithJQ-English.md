@@ -15,7 +15,7 @@
   - [1. Manual Checking with jq and Less In Color](#1-manual-checking-with-jq-and-less-in-color)
   - [2. Metrics](#2-metrics)
   - [3. Filtering on Certain Data](#3-filtering-on-certain-data)
-  - [4. Saving Output to CSV](#4-saving-output-to-csv)
+  - [4. Saving Output to CSV format](#4-saving-output-to-csv-format)
   - [5. Finding Dates with Most Alerts](#5-finding-dates-with-most-alerts)
   - [6. Reconstructing PowerShell Logs](#6-reconstructing-powershell-logs)
   - [7. Finding Suspicious Network Connections](#7-finding-suspicious-network-connections)
@@ -406,7 +406,7 @@ For example, let us extract out the target user name `TgtUser` and source IP add
 Again, we add the `-j` (join) option to `jq` to select multiple fields to output.
 You can then run `sort`, `uniq -c`, etc... like in the previous examples to find out how many times a certain IP address logged into a user via a type 3 network logon.
 
-## 4. Saving Output to CSV
+## 4. Saving Output to CSV format
 
 Unfortunately, the fields in Windows event logs will differ completely according to the type of event, so it is not easily possible to create comma separated timelines by fields without having hundreds of columns.
 However, it is possible to create field separated timelines for single types of events.
