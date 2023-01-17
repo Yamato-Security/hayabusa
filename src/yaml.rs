@@ -370,6 +370,7 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                json_input: false,
             })),
             no_color: false,
             quiet: false,
