@@ -281,7 +281,7 @@ impl LeafMatcher for DefaultMatcher {
             self.match_str_len = match select_value.as_str() {
                 None => None, // strに変換できない場合は、文字列長マッチによる比較はしない
                 Some(s) if s.contains('*') | s.contains('?') => None, //ワイルドカードを含む場合は、文字列長マッチによる比較はしない
-                Some(s) => Some(s.len())
+                Some(s) => Some(s.len()),
             };
         }
         if n >= 2 {
