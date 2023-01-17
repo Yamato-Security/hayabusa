@@ -377,6 +377,12 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         let event_value = self.get_event_value(event_record);
+        if self.get_key() == "EventID" && !self.select_value.is_null() {
+            if let Some(event_id) = self.select_value.as_i64() {
+                // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
+                return event_value.unwrap() == &event_id.to_string();
+            }
+        }
         return self
             .matcher
             .as_ref()
@@ -610,5 +616,47 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_event_id_wildcard() {
+        // EventIDのワイルドカードマッチが正しく検知することを確認する。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 41*3
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_event_id_question() {
+        // EventIDのクエスチョン?1文字マッチが正しく検知することを確認する。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 41?3
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
     }
 }

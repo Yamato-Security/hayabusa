@@ -53,7 +53,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Elastic Stackダッシュボードでの解析](#elastic-stackダッシュボードでの解析)
   - [Timesketchでの解析](#timesketchでの解析)
 - [タイムライン結果のインポートと解析について](#タイムライン結果のインポートと解析について)
-- [JQによるJSON形式の結果の解析](#jqによるjson形式の結果の解析)
+- [jqによるJSON形式の結果の解析](#jqによるjson形式の結果の解析)
 - [特徴＆機能](#特徴機能)
 - [ダウンロード](#ダウンロード)
 - [Gitクローン](#gitクローン)
@@ -192,7 +192,7 @@ CSVのタイムラインをElastic Stackにインポートする方法は[こち
 
 CSVのタイムラインをTimesketchにインポートする方法は[こちら](doc/TimesketchImport/TimesketchImport-Japanese.md)で紹介しています。
 
-# JQによるJSON形式の結果の解析
+# jqによるJSON形式の結果の解析
 
 JSON形式の結果を`jq`で解析する方法については、[こちら](/doc/AnalysisWithJQ-Japanese.md)を参照してください。
 

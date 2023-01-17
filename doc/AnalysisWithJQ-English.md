@@ -1,32 +1,31 @@
-# Table of Contents
-
-- [Table of Contents](#table-of-contents)
-- [Analysing Hayabusa Results with jq](#analysing-hayabusa-results-with-jq)
-  - [Author](#author)
-  - [About](#about)
-  - [Installing jq](#installing-jq)
-  - [About the JSON Format](#about-the-json-format)
-  - [About the JSON and JSONL Formats with Hayabusa](#about-the-json-and-jsonl-formats-with-hayabusa)
-  - [Creating JSON Results Files](#creating-json-results-files)
-    - [Benefits of Using Details Over AllFieldInfo](#benefits-of-using-details-over-allfieldinfo)
-  - [jq Lessons/Recipes](#jq-lessonsrecipes)
-    - [1. Manual Checking with jq and Less In Color](#1-manual-checking-with-jq-and-less-in-color)
-    - [2. Metrics](#2-metrics)
-    - [3. Filtering on Certain Data](#3-filtering-on-certain-data)
-    - [4. Saving Output to CSV](#4-saving-output-to-csv)
-    - [5. Finding Dates with Most Alerts](#5-finding-dates-with-most-alerts)
-    - [6. Reconstructing PowerShell Logs](#6-reconstructing-powershell-logs)
-    - [7. Finding Suspicious Network Connections](#7-finding-suspicious-network-connections)
-    - [8. Extracting Executable Binary Hashes](#8-extracting-executable-binary-hashes)
-
-
 # Analysing Hayabusa Results with jq
 
-## Author
+# Table of Contents
+
+- [Analysing Hayabusa Results with jq](#analysing-hayabusa-results-with-jq)
+- [Table of Contents](#table-of-contents)
+- [Author](#author)
+- [About](#about)
+- [Installing jq](#installing-jq)
+- [About the JSON Format](#about-the-json-format)
+- [About the JSON and JSONL Formats with Hayabusa](#about-the-json-and-jsonl-formats-with-hayabusa)
+- [Creating JSON Results Files](#creating-json-results-files)
+  - [Benefits of Using Details Over AllFieldInfo](#benefits-of-using-details-over-allfieldinfo)
+- [jq Lessons/Recipes](#jq-lessonsrecipes)
+  - [1. Manual Checking with jq and Less In Color](#1-manual-checking-with-jq-and-less-in-color)
+  - [2. Metrics](#2-metrics)
+  - [3. Filtering on Certain Data](#3-filtering-on-certain-data)
+  - [4. Saving Output to CSV format](#4-saving-output-to-csv-format)
+  - [5. Finding Dates with Most Alerts](#5-finding-dates-with-most-alerts)
+  - [6. Reconstructing PowerShell Logs](#6-reconstructing-powershell-logs)
+  - [7. Finding Suspicious Network Connections](#7-finding-suspicious-network-connections)
+  - [8. Extracting Executable Binary Hashes](#8-extracting-executable-binary-hashes)
+
+# Author
 
 Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2023/01/15
 
-## About
+# About
 
 Being able to identify, extract out and create metrics against important fields in logs is an essential skill for DFIR and threat hunting analysts.
 Hayabusa results are usually saved to `.csv` files in order to import into programs like Excel or Timeline Explorer for timeline analysis.
@@ -50,11 +49,11 @@ Now that JSON has become a very popular log format and most cloud providers use 
 In this guide, I will first explain how to utilize `jq` for those who have never used it before and then explain more complex usages along with real world examples.
 I recommend using linux, macOS or linux on Windows in order to be able to combine `jq` with other useful commands such as `sort`, `uniq`, `grep`, `sed`, etc...
 
-## Installing jq
+# Installing jq
 
 Please refer to [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/) and install the `jq` command.
 
-## About the JSON Format
+# About the JSON Format
 
 JSON logs are a list of objects contained in curly brackets `{` `}`.
 Inside these objects are key-value pairs separated by colons.
@@ -88,7 +87,7 @@ In this example, `Details` is a nested object inside a root object:
 }
 ```
 
-## About the JSON and JSONL Formats with Hayabusa
+# About the JSON and JSONL Formats with Hayabusa
 
 In earlier versions, Hayabusa would use the traditional JSON format of putting all of the `{ xxx }` log objects into one giant array.
 
@@ -140,7 +139,7 @@ The only difference is that the JSON format is easier to read in a text editor o
 The JSONL format will be slightly faster and smaller in size so is ideal if you are only going to import the logs into a SIEM, etc... but not look at them.
 The JSON format is ideal if you are also going to do some manual checking.
 
-## Creating JSON Results Files
+# Creating JSON Results Files
 
 In the current 2.x version of Hayabusa, you can save the results in JSON with `hayabusa json-timeline -d <directory> -o results.json` or `hayabusa json-timeline -d <directory> -J -o results.jsonl` for JSONL format.
 
@@ -149,7 +148,7 @@ If you want to save all of the original field information in the .evtx logs, you
 This will save all of the field information to the `AllFieldInfo` object.
 If you want to save both the `Details` and `AllFieldInfo` objects just in case, you can use the `super-verbose` profile.
 
-### Benefits of Using Details Over AllFieldInfo
+## Benefits of Using Details Over AllFieldInfo
 
 The first benefit of using `Details` over `AllFieldInfo` is that only the important fields are saved, and the field names have been shortened to save file space.
 The downside is that there is a possibility of missing data that you actually cared about but was missed.
@@ -171,11 +170,11 @@ Without field normalization, an analyst would have to first be knowledgeable abo
 
 An analyst can save a lot of time and trouble by just using the normalized single `Proc` field that Hayabusa provides in the `Details` object.
 
-## jq Lessons/Recipes
+# jq Lessons/Recipes
 
 I will now list several lessons/recipes of practical examples that may help you in your work.
 
-### 1. Manual Checking with jq and Less In Color
+## 1. Manual Checking with jq and Less In Color
 
 This is one of the first things to do to understand what fields are in the logs.
 You could simply do a `less results.json` but a better way is the following:
@@ -184,7 +183,7 @@ You could simply do a `less results.json` but a better way is the following:
 By passing to `jq`, it will neatly format all of the fields for you if they were not formatted neatly to begin with.
 By using the `-C` (color) option with `jq` and `-R` (raw output) option with `less`, you can scroll up and down in color.
 
-### 2. Metrics
+## 2. Metrics
 
 Hayabusa already has functionality to print the number and percent of events based on event IDs, however, this is also good to know how to do with `jq`.
 This will let you customize the data you want to create metrics for.
@@ -324,7 +323,7 @@ This will give us:
 You can now freely extract any data from the logs and count the occurrences.
 
 
-### 3. Filtering on Certain Data
+## 3. Filtering on Certain Data
 
 Many times you will want to filter on certain Event IDs, users, processes, LIDs(Logon IDs), etc...
 You can do that with `select` inside of the `jq` query.
@@ -407,7 +406,7 @@ For example, let us extract out the target user name `TgtUser` and source IP add
 Again, we add the `-j` (join) option to `jq` to select multiple fields to output.
 You can then run `sort`, `uniq -c`, etc... like in the previous examples to find out how many times a certain IP address logged into a user via a type 3 network logon.
 
-### 4. Saving Output to CSV
+## 4. Saving Output to CSV format
 
 Unfortunately, the fields in Windows event logs will differ completely according to the type of event, so it is not easily possible to create comma separated timelines by fields without having hundreds of columns.
 However, it is possible to create field separated timelines for single types of events.
@@ -447,7 +446,7 @@ You can now save the CSV file by adding `> 4624-logs.csv` and then import it int
 Note that you will need to add a header to do filtering.
 While it is possible to add a heading inside the `jq` query, it is usually easiest just to manually add a top row after saving the file.
 
-### 5. Finding Dates with Most Alerts
+## 5. Finding Dates with Most Alerts
 
 Hayabusa will, by default, tell you the dates that had the most alerts according to severity levels.
 However, you may want to find the second, third, etc... most dates with alerts as well.
@@ -471,11 +470,12 @@ This will give us the dates with the most events:
 If you want to know the month with the most events, you can just change `.[:10]` to `.[:7]` to extract the first 7 bytes.
 
 If you want to list up the dates with the most `high` alerts, you can do this:
+
 `cat results.json | jq 'select ( .Level == "high" ) | .Timestamp | .[:10] ' -r | sort | uniq -c | sort`
 
 You can keep adding filter conditions to the `select` function according to computer name, event ID, etc... depending on your needs.
 
-### 6. Reconstructing PowerShell Logs
+## 6. Reconstructing PowerShell Logs
 
 An unfortunate thing about PowerShell logs is that the logs will often be broken up into multiple logs making them hard to read.
 We can make the logs much easier to read by extracting out just the commands that the attacker ran.
@@ -497,7 +497,7 @@ This will result in a timeline as follows:
 2022-12-24 10:57 ls
 ```
 
-### 7. Finding Suspicious Network Connections
+## 7. Finding Suspicious Network Connections
 
 You can first get a list of all the target IP addresses with the following command:
 
@@ -548,7 +548,7 @@ If you want to list up domains that were contacted, you can use the following co
 
 > Note: I added a grep filter for `.` to remove NETBIOS hostnames.
 
-### 8. Extracting Executable Binary Hashes
+## 8. Extracting Executable Binary Hashes
 
 In Sysmon EID `1` Process Creation logs, sysmon can be configured to calculate hashes of the binary.
 Security analysts can compare these hashes against known malicious hashes with threat intelligence.
