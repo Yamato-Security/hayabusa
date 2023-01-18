@@ -281,7 +281,7 @@ impl LeafSelectionNode {
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
     fn get_event_value<'a>(&self, record: &'a EvtxRecordInfo) -> Option<&'a String> {
-        // keyが指定されたいない場合は
+        // keyが指定されていない場合はそのままのレコードのデータを取得する
         if self.key_list.is_empty() {
             return Option::Some(&record.data_string);
         }
