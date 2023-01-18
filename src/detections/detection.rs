@@ -191,6 +191,7 @@ impl Detection {
                 record_info,
                 stored_static.verbose_flag,
                 stored_static.quiet_errors_flag,
+                stored_static.json_input_flag,
                 &stored_static.eventkey_alias,
             );
             if !result {
@@ -240,7 +241,8 @@ impl Detection {
         );
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
-        let time = message::get_event_time(&record_info.record).unwrap_or(default_time);
+        let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
+            .unwrap_or(default_time);
         let level = rule.yaml["level"].as_str().unwrap_or("-");
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();

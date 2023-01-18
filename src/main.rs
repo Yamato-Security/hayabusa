@@ -1412,15 +1412,57 @@ mod tests {
     use chrono::Local;
     use hashbrown::HashSet;
     use hayabusa::{
-        detections::configs::{Action, Config, ConfigReader, StoredStatic, UpdateOption},
+        detections::{
+            configs::{
+                Action, Config, ConfigReader, CsvOutputOption, InputOption, OutputOption,
+                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
+            },
+            detection,
+            message::MESSAGES,
+            rule::create_rule,
+        },
         options::htmlreport::HTML_REPORTER,
+        timeline::timelines::Timeline,
     };
     use itertools::Itertools;
+    use yaml_rust::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::UpdateRules(UpdateOption {
-                rules: Path::new("./rules").to_path_buf(),
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                    },
+                    profile: None,
+                    output: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                },
+                json_input: true,
             })),
             no_color: false,
             quiet: false,
@@ -1478,5 +1520,44 @@ mod tests {
         for actual_general_contents in general_contents.iter() {
             assert!(expect_general_contents.contains(&actual_general_contents.to_string()));
         }
+    }
+
+    #[test]
+    fn test_analysis_json_file() {
+        let mut app = App::new(None);
+        let stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetEventIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.json").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 2);
     }
 }

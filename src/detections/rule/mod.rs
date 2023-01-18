@@ -73,11 +73,18 @@ impl RuleNode {
         event_record: &EvtxRecordInfo,
         verbose_flag: bool,
         quiet_errors_flag: bool,
+        json_input_flag: bool,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
         let result = self.detection.select(event_record, eventkey_alias);
         if result && self.has_agg_condition() {
-            count::count(self, &event_record.record, verbose_flag, quiet_errors_flag);
+            count::count(
+                self,
+                &event_record.record,
+                verbose_flag,
+                quiet_errors_flag,
+                json_input_flag,
+            );
         }
         result
     }
@@ -436,6 +443,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
                     expect_select
@@ -948,6 +956,7 @@ mod tests {
                     &recinfo,
                     dummy_stored_static.verbose_flag,
                     dummy_stored_static.quiet_errors_flag,
+                    dummy_stored_static.json_input_flag,
                     &dummy_stored_static.eventkey_alias,
                 );
                 assert!(rule_node.detection.aggregation_condition.is_some());
