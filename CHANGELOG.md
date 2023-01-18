@@ -9,8 +9,9 @@
 **Enhancements:**
 
 - Added the executed command line to the HTML report. (#877) (@hitenkoku)
-- Approximately 3% speed increase by performing exact string matching on Event IDs. (#882) (@fukusuket)
-- Approximately 14% speed increase by filtering before regex usage. (#883) (@fukusuket)
+- Approximately 3% speed increase and memory usage reduction by performing exact string matching on Event IDs. (#882) (@fukusuket)
+- Approximately 14% speed increase and memory usage reduction by filtering before regex usage. (#883) (@fukusuket)
+- Approximately 8% speed increase and memory usage reduction by case-insensitive comparisons instead of regex usage. (#884) (@fukusuket)
 - Added support json formatted event log input. (#386) (@hitenkoku)
 
 **Bug Fixes:**
