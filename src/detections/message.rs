@@ -481,8 +481,8 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
-                        "data2", 
+                        "data1",
+                        "data2",
                         "data3"
                     ]
                 },
@@ -524,8 +524,8 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
-                        "data2", 
+                        "data1",
+                        "data2",
                         "data3"
                     ]
                 },
@@ -567,7 +567,7 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
+                        "data1",
                         "data2",
                         "data3"
                     ]
