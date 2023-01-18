@@ -284,7 +284,7 @@ impl LeafMatcher for DefaultMatcher {
                 Some(s) => Some(s.len()),
             };
         }
-        if n >= 2 {
+    else if n >= 2 {
             // 現状では複数のパイプは対応していない
             let errmsg = format!(
                 "Multiple pipe elements cannot be used. key:{}",
