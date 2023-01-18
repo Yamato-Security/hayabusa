@@ -1156,6 +1156,7 @@ impl App {
                 let data = &mut record_result.unwrap();
                 // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
                 data["Event"]["System"] = data["Event"]["EventData"].clone();
+                data["Event"]["UserData"] = data["Event"]["EventData"].clone();
                 // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
                 data["Event"]["System"]["Computer"] =
                     data["Event"]["EventData"]["Hostname"].clone();
