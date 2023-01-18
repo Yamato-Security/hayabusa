@@ -1162,12 +1162,12 @@ impl App {
                     data["Event"]["EventData"]["Hostname"].clone();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
                 if !self._is_valid_channel(
-                    &data,
+                    data,
                     &stored_static.eventkey_alias,
                     "Event.EventData.Channel",
                 ) || (stored_static.output_option.as_ref().unwrap().eid_filter
                     && !self._is_target_event_id(
-                        &data,
+                        data,
                         target_event_ids,
                         &stored_static.eventkey_alias,
                     ))
