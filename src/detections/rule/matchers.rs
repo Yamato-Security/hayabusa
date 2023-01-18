@@ -184,7 +184,7 @@ impl LeafMatcher for AllowlistFileMatcher {
 /// ワイルドカードの処理やパイプ
 pub struct DefaultMatcher {
     re: Option<Regex>,
-    match_str_len: Option<usize>,
+    match_str: Option<String>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
 }
@@ -193,7 +193,7 @@ impl DefaultMatcher {
     pub fn new() -> DefaultMatcher {
         DefaultMatcher {
             re: Option::None,
-            match_str_len: Option::None,
+            match_str: Option::None,
             pipes: Vec::new(),
             key_list: Nested::<String>::new(),
         }
@@ -278,10 +278,10 @@ impl LeafMatcher for DefaultMatcher {
         }
         let n = self.pipes.len();
         if n == 0 {
-            self.match_str_len = match select_value.as_str() {
+            self.match_str = match select_value.as_str() {
                 None => None, // strに変換できない場合は、文字列長マッチによる比較はしない
                 Some(s) if s.contains('*') | s.contains('?') => None, //ワイルドカードを含む場合は、文字列長マッチによる比較はしない
-                Some(s) => Some(s.len()),
+                Some(s) => Some(s.to_string()),
             };
         } else if n >= 2 {
             // 現状では複数のパイプは対応していない
@@ -358,12 +358,13 @@ impl LeafMatcher for DefaultMatcher {
             self.re.as_ref().unwrap().is_match(event_value_str)
         } else {
             // 通常の検索はこっち
-            if let Some(match_str_length) = self.match_str_len {
-                // 正規表現マッチは重いので、文字列の長さが一致するかだけをまずチェックする
+            if let Some(match_str) = &self.match_str {
                 // パイプやワイルドカードを持つ場合は、この分岐には入らず、以降の正規表現マッチのみ
-                if match_str_length != event_value_str.len() {
-                    return false;
+                // 正規表現マッチは重いので、文字列の長さが一致するかをまずチェックする
+                if match_str.len() == event_value_str.len() {
+                    return match_str.eq_ignore_ascii_case(event_value_str);
                 }
+                return false;
             }
             self.is_regex_fullmatch(event_value_str)
         }
