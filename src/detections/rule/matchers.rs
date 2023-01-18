@@ -283,8 +283,7 @@ impl LeafMatcher for DefaultMatcher {
                 Some(s) if s.contains('*') | s.contains('?') => None, //ワイルドカードを含む場合は、文字列長マッチによる比較はしない
                 Some(s) => Some(s.len()),
             };
-        }
-    else if n >= 2 {
+        } else if n >= 2 {
             // 現状では複数のパイプは対応していない
             let errmsg = format!(
                 "Multiple pipe elements cannot be used. key:{}",
