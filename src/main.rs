@@ -301,7 +301,7 @@ impl App {
                 self.print_contributors();
                 return;
             }
-            Action::LogonSummary(_) | Action::Metrics(_) => {
+            Action::LogonSummary(_) | Action::Metrics(_) | Action::Search(_) => {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
                 if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
                     if let Ok(metadata) = fs::metadata(path) {
@@ -611,9 +611,6 @@ impl App {
                 println!();
                 return;
             }
-            Action::Search(_) => {
-                todo!("ここでsearch処理を呼び出す");
-            }
         }
 
         // 処理時間の出力
@@ -896,7 +893,10 @@ impl App {
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{}", total_size_output);
         println!();
-        if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+        if !(stored_static.metrics_flag
+            || stored_static.logon_summary_flag
+            || stored_static.search_flag)
+        {
             println!("Loading detections rules. Please wait.");
             println!();
         }
@@ -965,6 +965,10 @@ impl App {
         }
         if stored_static.logon_summary_flag {
             tl.tm_logon_stats_dsp_msg(stored_static);
+        }
+        // TODO メインの表示させる処理
+        if stored_static.logon_summary_flag {
+            println!("TODO: CREATE HERE");
         }
         if stored_static
             .output_option
@@ -1088,7 +1092,11 @@ impl App {
                 &stored_static.eventkey_alias,
             );
 
-            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+            // 以下のコマンドの際にはルールにかけない
+            if !(stored_static.metrics_flag
+                || stored_static.logon_summary_flag
+                || stored_static.search_flag)
+            {
                 // ruleファイルの検知
                 detection = detection.start(&self.rt, records_per_detect);
             }
