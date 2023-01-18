@@ -11,6 +11,7 @@
 - Added the executed command line to the HTML report. (#877) (@hitenkoku)
 - Approximately 3% speed increase by performing exact string matching on Event IDs. (#882) (@fukusuket)
 - Approximately 14% speed increase by filtering before regex usage. (#883) (@fukusuket)
+- Added support json formatted event log input. (#386) (@hitenkoku)
 
 **Bug Fixes:**
 
