@@ -37,14 +37,14 @@ jobs:
       - name: csv-timeline
         run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out.csv -q
 
-      - name: csv-timeline(-P super-verbose)
-        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -P super-verbose -q
+      - name: csv-timeline(-p super-verbose)
+        run: cd main && cargo run --release -- csv-timeline -d ../hayabusa-sample-evtx -o out-s.csv -p super-verbose -q
 
       - name: json-timeline
         run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.json -q
 
-      - name: json-timeline(-P super-verbose)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -P super-verbose -q
+      - name: json-timeline(-p super-verbose)
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q
 
       - name: json-timeline(-J)
         run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -J
@@ -58,11 +58,11 @@ jobs:
       - name: pivot-keywords-list
         run: cd main && cargo run --release -- pivot-keywords-list -d ../hayabusa-sample-evtx -o p.csv -q
 
-      - name: pivot-keywords-list
-        run: cd main && cargo run --release -- level-tuning --level-tuning ./rules/config/level_tuning.txt -q
+      - name: level-tuning
+        run: cd main && cargo run --release -- level-tuning -f ./rules/config/level_tuning.txt -q
 
       - name: set-default-profile
-        run: cd main && cargo run --release -- set-default-profile -q
+        run: cd main && cargo run --release -- set-default-profile -p verbose -q
 
       - name: list-contributors
         run: cd main && cargo run --release -- list-contributors -q
