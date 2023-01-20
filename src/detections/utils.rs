@@ -6,7 +6,7 @@ use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::options::htmlreport;
 
 use compact_str::CompactString;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
@@ -326,11 +326,12 @@ pub fn get_writable_color(color: Option<Color>, config: &Config) -> Option<Color
  * CSVのrecord infoカラムに出力する文字列を作る
  */
 pub fn create_recordinfos(record: &Value) -> String {
-    let mut output = vec![];
+    let mut output = HashSet::new();
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
+    let mut output_vec: Vec<&(String, String)> = output.iter().collect();
     // 同じレコードなら毎回同じ出力になるようにソートしておく
-    output.sort_by(|(left, left_data), (right, right_data)| {
+    output_vec.sort_by(|(left, left_data), (right, right_data)| {
         let ord = left.cmp(right);
         if ord == Ordering::Equal {
             left_data.cmp(right_data)
@@ -339,7 +340,7 @@ pub fn create_recordinfos(record: &Value) -> String {
         }
     });
 
-    output
+    output_vec
         .iter()
         .map(|(key, value)| format!("{}: {}", key, value))
         .join(" ¦ ")
@@ -352,7 +353,7 @@ fn _collect_recordinfo<'a>(
     keys: &mut Vec<&'a str>,
     parent_key: &'a str,
     value: &'a Value,
-    output: &mut Vec<(String, String)>,
+    output: &mut HashSet<(String, String)>,
 ) {
     match value {
         Value::Array(ary) => {
@@ -394,7 +395,7 @@ fn _collect_recordinfo<'a>(
                     };
                     acc
                 });
-                output.push((parent_key.to_string(), strval));
+                output.insert((parent_key.to_string(), strval));
             }
         }
     }
