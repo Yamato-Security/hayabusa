@@ -1153,10 +1153,14 @@ impl App {
                 {
                     continue;
                 }
-
+                let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
+                    &data["Event"]["EventData"]["TimeGenerated"]
+                } else {
+                    &data["Event"]["EventData"]["@timestamp"]
+                };
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
                 let timestamp = match NaiveDateTime::parse_from_str(
-                    &data["Event"]["EventData"]["@timestamp"]
+                    &target_timestamp
                         .to_string()
                         .replace("\\\"", "")
                         .replace('"', ""),
