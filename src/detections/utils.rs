@@ -122,17 +122,17 @@ pub fn read_json_to_value(filename: &str) -> Result<impl Iterator<Item = Value>,
             .filter(|s| !s.trim().is_empty())
             .join("},")
     );
-    let test: Result<Value, Error> = serde_json::from_str(&json);
-    if test.is_err() {
-        return Err(test.unwrap_err().to_string());
+    let all_record_json: Result<Value, Error> = serde_json::from_str(&json);
+    if let Err(err_msg) = all_record_json {
+        return Err(err_msg.to_string());
     }
-    let contents_base = test.unwrap().as_array().unwrap().clone();
-    let ret = contents_base
+    let array_records = all_record_json.unwrap().as_array().unwrap().clone();
+    let ret = array_records
         .into_iter()
         .map(|record| {
             let mut inserted_eventdata: Value =
                 serde_json::from_str("{\"Event\":{\"EventData\": 0}}").unwrap();
-            inserted_eventdata["Event"]["EventData"] = record.clone();
+            inserted_eventdata["Event"]["EventData"] = record;
             Some(inserted_eventdata)
         })
         .map(|v| v.unwrap());
