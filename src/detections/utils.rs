@@ -97,9 +97,7 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
 }
 
 /// convert json fmt string to serde_json Value.
-pub fn read_json_to_value(
-    filename: &str,
-) -> Result<impl Iterator<Item = Result<Value, Error>>, String> {
+pub fn read_json_to_value(filename: &str) -> Result<impl Iterator<Item = Value>, String> {
     let filepath = if filename.starts_with("./") {
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
             .unwrap()
@@ -114,15 +112,30 @@ pub fn read_json_to_value(
         let errmsg = format!("Cannot open file. [file:{}]", filename);
         return Result::Err(errmsg);
     }
-    let reader = BufReader::new(f.unwrap());
-
-    let ret = reader
-        .lines()
-        .filter_map_ok(|line| {
-            let json_raw = format!("{{\"Event\": {{ \"EventData\": {} }}}} ", line);
-            Some(serde_json::from_str(&json_raw))
+    let mut reader = BufReader::new(f.unwrap());
+    let mut contents = String::default();
+    reader.read_to_string(&mut contents).ok();
+    let json = format!(
+        "[{}}}]",
+        contents
+            .split('}')
+            .filter(|s| !s.trim().is_empty())
+            .join("},")
+    );
+    let test: Result<Value, Error> = serde_json::from_str(&json);
+    if test.is_err() {
+        return Err(test.unwrap_err().to_string());
+    }
+    let contents_base = test.unwrap().as_array().unwrap().clone();
+    let ret = contents_base
+        .into_iter()
+        .map(|record| {
+            let mut inserted_eventdata: Value =
+                serde_json::from_str("{\"Event\":{\"EventData\": 0}}").unwrap();
+            inserted_eventdata["Event"]["EventData"] = record.clone();
+            Some(inserted_eventdata)
         })
-        .map(|a| a.unwrap());
+        .map(|v| v.unwrap());
     Result::Ok(ret)
 }
 

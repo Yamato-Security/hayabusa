@@ -1122,8 +1122,6 @@ impl App {
             return (detection, record_cnt, tl);
         }
         let mut records = json_f.unwrap();
-        let verbose_flag = stored_static.verbose_flag;
-        let quiet_errors_flag = stored_static.quiet_errors_flag;
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -1134,26 +1132,7 @@ impl App {
                 }
                 record_cnt += 1;
 
-                let record_result = next_rec.unwrap();
-                if record_result.is_err() {
-                    let errmsg = format!(
-                        "Failed to parse event file. EventFile:{} Error:{}",
-                        path,
-                        record_result.unwrap_err()
-                    );
-                    if verbose_flag {
-                        AlertMessage::alert(&errmsg).ok();
-                    }
-                    if !quiet_errors_flag {
-                        ERROR_LOG_STACK
-                            .lock()
-                            .unwrap()
-                            .push(format!("[ERROR] {}", errmsg));
-                    }
-                    continue;
-                }
-
-                let data = &mut record_result.unwrap();
+                let mut data = next_rec.unwrap();
                 // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
                 data["Event"]["System"] = data["Event"]["EventData"].clone();
                 data["Event"]["UserData"] = data["Event"]["EventData"].clone();
@@ -1162,12 +1141,12 @@ impl App {
                     data["Event"]["EventData"]["Hostname"].clone();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
                 if !self._is_valid_channel(
-                    data,
+                    &data,
                     &stored_static.eventkey_alias,
                     "Event.EventData.Channel",
                 ) || (stored_static.output_option.as_ref().unwrap().eid_filter
                     && !self._is_target_event_id(
-                        data,
+                        &data,
                         target_event_ids,
                         &stored_static.eventkey_alias,
                     ))
