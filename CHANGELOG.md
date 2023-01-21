@@ -1,6 +1,6 @@
 # Changes
 
-## 2.x.x [xxxx/xx/xx]
+## 2.2.0 [2023/2/22]
 
 **New Features:**
 
@@ -8,14 +8,31 @@
 
 **Enhancements:**
 
-- Speed improvements. (#847) (@hitenkoku)
-- Improved speed by improving io process. (#858) (@fukusuket)
-- Fixed not sorting the order of output of detections of the same time per run. (#827) (@hitenkoku)
+- Added the executed command line to the HTML report. (#877) (@hitenkoku)
+- Approximately 3% speed increase and memory usage reduction by performing exact string matching on Event IDs. (#882) (@fukusuket)
+- Approximately 14% speed increase and memory usage reduction by filtering before regex usage. (#883) (@fukusuket)
+- Approximately 8% speed increase and memory usage reduction by case-insensitive comparisons instead of regex usage. (#884) (@fukusuket)
 
 **Bug Fixes:**
 
-- Fixed successful login csv is not output when using the logon-timeline function. (#849) (@hitenkoku)
-- Removed unnecessary line breaks when using `-J` option. (#852) (@hitenkoku)
+- XXX
+
+**Vulnerability Fixes:**
+
+- Updated the git2 and gitlib2 crates to prevent a possible SSH MITM attack (CVE-2023-22742) when updating rules and config files. (#888) (@YamatoSecurity)
+
+## 2.1.0 [2023/01/10]
+
+**Enhancements:**
+
+- Speed improvements. (#847) (@hitenkoku)
+- Improved speed by up to 20% by improving I/O processesing. (#858) (@fukusuket)
+- The timeline order of detections are now sorted to a fixed order even when the timestamp is identical. (#827) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Successful login CSV results were not correctly being outputted when using the logon timeline function. (#849) (@hitenkoku)
+- Removed unnecessary line breaks that would occur when using the `-J, --jsonl` option. (#852) (@hitenkoku)
 
 ## 2.0.0 [2022/12/24]
 
