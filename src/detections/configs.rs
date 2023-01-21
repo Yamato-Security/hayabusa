@@ -708,7 +708,7 @@ impl TargetEventIds {
 }
 
 fn load_target_ids(path: &str) -> TargetEventIds {
-    let mut ret = TargetEventIds::new();
+    let mut ret = TargetEventIds::default();
     let lines = utils::read_txt(path); // ファイルが存在しなければエラーとする
     if lines.is_err() {
         AlertMessage::alert(lines.as_ref().unwrap_err()).ok();
