@@ -397,6 +397,7 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                json_input: false,
             }));
         assert_eq!(
             Nested::<Vec<String>>::new(),
