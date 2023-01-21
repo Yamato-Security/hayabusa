@@ -615,8 +615,8 @@ pub struct InputOption {
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
-    /// Input json format
-    #[arg(short, short, long = "json_input")]
+    /// Scan JSON-formatted logs instead of .evtx
+    #[arg(short, short = 'J', long = "JSON-input")]
     pub json_input: bool,
 
     #[clap(flatten)]
@@ -628,12 +628,12 @@ pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
+    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output")]
     pub jsonl_timeline: bool,
 
-    /// Input json format
-    #[arg(short, short, long = "json_input")]
+    /// Scan JSON-formatted logs instead of .evtx
+    #[arg(short, short = 'J', long = "JSON-input")]
     pub json_input: bool,
 }
 
