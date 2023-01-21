@@ -354,8 +354,10 @@ mod tests {
             &dummy_stored_static,
         );
         let mut dummy_after_updated_rules = prev_modified_rules.clone();
-        dummy_after_updated_rules
-            .insert("Dummy New|-|test_files/rules/yaml\\1.yml|Other".to_string());
+        dummy_after_updated_rules.insert(format!(
+            "Dummy New|-|{}|Other",
+            Path::new("test_files/rules/yaml/1.yml").to_str().unwrap()
+        ));
         let actual =
             Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
         assert!(actual.is_ok());
