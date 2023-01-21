@@ -18,6 +18,10 @@
 
 - XXX
 
+**Vulnerability Fixes:**
+
+- Updated the git2 and gitlib2 crates to prevent a possible SSH MITM attack (CVE-2023-22742) when updating rules and config files. (#888) (@YamatoSecurity)
+
 ## 2.1.0 [2023/01/10]
 
 **Enhancements:**
