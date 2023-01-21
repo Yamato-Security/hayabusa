@@ -45,6 +45,7 @@ libmimalloc-sys = { version = "*",  features = ["extended"] }
 nested="*"
 compact_str = "0.6.*"
 ureq = "*"
+mockall = "*"
 
 [profile.dev]
 debug = 0
