@@ -175,6 +175,15 @@ mod tests {
     }
 
     #[test]
+    fn rule_level_level_error_empty_line() {
+        let level_tuning_config_path = "./test_files/config/level_tuning_error3.txt";
+        let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
+        let expected = Result::Err("Failed to read level...".to_string());
+        assert_eq!(res, expected);
+    }
+
+    #[test]
     fn test_level_tuning_update_rule_files() {
         let level_tuning_config_path = "./test_files/config/level_tuning.txt";
         let rule_str = r#"
