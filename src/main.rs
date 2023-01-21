@@ -32,7 +32,7 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use pbr::ProgressBar;
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
@@ -1135,6 +1135,19 @@ impl App {
                 let mut data = next_rec.unwrap();
                 // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
                 data["Event"]["System"] = data["Event"]["EventData"].clone();
+                data["Event"]["System"]
+                    .as_object_mut()
+                    .unwrap()
+                    .insert("EventRecordID".to_string(), Value::from(1));
+                data["Event"]["System"].as_object_mut().unwrap().insert(
+                    "Provider_attributes".to_string(),
+                    Value::Object(Map::from_iter(vec![("Name".to_string(), Value::from(1))])),
+                );
+
+                data["Event"]["System"]["EventRecordID"] =
+                    data["Event"]["EventData"]["RecordNumber"].clone();
+                data["Event"]["System"]["Provider_attributes"]["Name"] =
+                    data["Event"]["EventData"]["SourceName"].clone();
                 data["Event"]["UserData"] = data["Event"]["EventData"].clone();
                 // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
                 data["Event"]["System"]["Computer"] =
