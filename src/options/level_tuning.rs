@@ -142,27 +142,25 @@ mod tests {
     }
 
     #[test]
-    fn rule_level_failed_to_open_file() -> Result<(), String> {
+    fn rule_level_failed_to_open_file() {
         let level_tuning_config_path = "./none.txt";
         let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
         let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
         let expected = Result::Err("Cannot open file. [file:./none.txt]".to_string());
         assert_eq!(res, expected);
-        Ok(())
     }
 
     #[test]
-    fn rule_level_id_error_file() -> Result<(), String> {
+    fn rule_level_id_error_file() {
         let level_tuning_config_path = "./test_files/config/level_tuning_error1.txt";
         let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
         let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
         let expected = Result::Err("Failed to read level tuning file. 12345678-1234-1234-1234-12 is not correct id format, fix it.".to_string());
         assert_eq!(res, expected);
-        Ok(())
     }
 
     #[test]
-    fn rule_level_level_error_file() -> Result<(), String> {
+    fn rule_level_level_error_file() {
         let level_tuning_config_path = "./test_files/config/level_tuning_error2.txt";
         let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
         let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
@@ -171,7 +169,6 @@ mod tests {
                 .to_string(),
         );
         assert_eq!(res, expected);
-        Ok(())
     }
 
     #[test]
