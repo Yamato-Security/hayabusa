@@ -355,8 +355,6 @@ mod tests {
         );
         let mut dummy_after_updated_rules = prev_modified_rules.clone();
         dummy_after_updated_rules
-            .insert("Dummy New|-|./test_files/rules/yaml\\1.yml|Other".to_string());
-        dummy_after_updated_rules
             .insert("Dummy New|-|test_files/rules/yaml\\1.yml|Other".to_string());
         let actual =
             Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
