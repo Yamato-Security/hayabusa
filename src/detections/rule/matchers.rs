@@ -390,7 +390,8 @@ impl LeafMatcher for DefaultMatcher {
                 if len > event_value_str.len() {
                     return false;
                 }
-                if event_value_str.is_ascii() { // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+                if event_value_str.is_ascii() {
+                    // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
                     return match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
                 }
             }
@@ -401,7 +402,8 @@ impl LeafMatcher for DefaultMatcher {
                 if len1 > len2 {
                     return false;
                 }
-                if event_value_str.is_ascii() { // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+                if event_value_str.is_ascii() {
+                    // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
                     return match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
                 }
             }
