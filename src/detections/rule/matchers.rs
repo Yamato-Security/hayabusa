@@ -185,6 +185,8 @@ impl LeafMatcher for AllowlistFileMatcher {
 pub struct DefaultMatcher {
     re: Option<Regex>,
     match_str: Option<String>,
+    starts_with: Option<String>,
+    ends_with: Option<String>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
 }
@@ -194,6 +196,8 @@ impl DefaultMatcher {
         DefaultMatcher {
             re: Option::None,
             match_str: Option::None,
+            starts_with: Option::None,
+            ends_with: Option::None,
             pipes: Vec::new(),
             key_list: Nested::<String>::new(),
         }
@@ -278,9 +282,24 @@ impl LeafMatcher for DefaultMatcher {
         }
         let n = self.pipes.len();
         if n == 0 {
+            // 正規表現マッチは遅いため、できるだけstd::stringのlen/stars_with/ends_with/containsでマッチ判定させるための処理
+
             self.match_str = match select_value.as_str() {
-                None => None, // strに変換できない場合は、文字列長マッチによる比較はしない
-                Some(s) if s.contains('*') | s.contains('?') => None, //ワイルドカードを含む場合は、文字列長マッチによる比較はしない
+                None => None,
+                Some(s) if s.contains('?') => None,
+                Some(s) if s.chars().filter(|c| *c == '*').count() == 1 && !s.ends_with(r"\*") => {
+                    if s.starts_with('*') {
+                        if let Some(x) = s.strip_prefix('*') {
+                            self.ends_with = Some(x.to_string());
+                        }
+                    } else if s.ends_with('*') {
+                        if let Some(x) = s.strip_suffix('*') {
+                            self.starts_with = Some(x.to_string());
+                        }
+                    }
+                    None
+                }
+                Some(s) if s.contains('*') => None,
                 Some(s) => Some(s.to_string()),
             };
         } else if n >= 2 {
@@ -359,12 +378,29 @@ impl LeafMatcher for DefaultMatcher {
         } else {
             // 通常の検索はこっち
             if let Some(match_str) = &self.match_str {
-                // パイプやワイルドカードを持つ場合は、この分岐には入らず、以降の正規表現マッチのみ
-                // 正規表現マッチは重いので、文字列の長さが一致するかをまずチェックする
                 if match_str.len() == event_value_str.len() {
                     return match_str.eq_ignore_ascii_case(event_value_str);
                 }
                 return false;
+            }
+            if let Some(match_str) = &self.starts_with {
+                let len = match_str.len();
+                if len > event_value_str.len() {
+                    return false;
+                }
+                if event_value_str.is_ascii() {
+                    return match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
+                }
+            }
+            if let Some(match_str) = &self.ends_with {
+                let len1 = match_str.len();
+                let len2 = event_value_str.len();
+                if len1 > len2 {
+                    return false;
+                }
+                if event_value_str.is_ascii() {
+                    return match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
+                }
             }
             self.is_regex_fullmatch(event_value_str)
         }
@@ -1894,5 +1930,41 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_wildcard_converted_starts_with_match() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: Power*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_ends_with_match() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*shell'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
     }
 }
