@@ -1977,6 +1977,25 @@ mod tests {
     }
 
     #[test]
+    fn test_wildcard_converted_starts_with_exact_val() {
+        // ワイルドカード1文字を末尾に含みかつ、＊を除く比較対象文字がちょうど一致する場合
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: A-HOST*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_wildcard_converted_starts_with_shorter_val_notdetect() {
         // ワイルドカード1文字を末尾に含みかつ、比較対象文字のほうが文字数が少ない場合はマッチしない
         let rule_str = r#"
@@ -2022,6 +2041,25 @@ mod tests {
         detection:
             selection:
                 Computer: '*-HOST'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_ends_with_starts_with_exact_val() {
+        // ワイルドカード1文字を先頭に含みかつ、＊を除く比較対象文字がちょうど一致する場合
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*A-HOST'
         details: 'command=%CommandLine%'
         "#;
 
