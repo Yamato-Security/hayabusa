@@ -2033,7 +2033,7 @@ mod tests {
 
     #[test]
     fn test_two_wildcards() {
-        // ワイルドカード1文字を先頭に含む場合、ends_with相当のマッチ
+        // ワイルドカード2文字以上を含む場合、正規表現マッチ
         let rule_str = r#"
         enabled: true
         detection:
