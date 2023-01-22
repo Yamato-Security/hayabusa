@@ -283,24 +283,24 @@ impl LeafMatcher for DefaultMatcher {
         let n = self.pipes.len();
         if n == 0 {
             // 正規表現マッチは遅いため、できるだけstd::stringのlen/stars_with/ends_with/containsでマッチ判定させるための処理
-
             self.match_str = match select_value.as_str() {
                 None => None,
-                Some(s) if s.contains('?') => None,
-                Some(s) if s.chars().filter(|c| *c == '*').count() == 1 && !s.ends_with(r"\*") => {
+                Some(s) if s.contains('?') => None, // ?を含む場合は、正規表現マッチのみ
+                Some(s) if s.chars().filter(|c| *c == '*').count() == 1 && s.is_ascii() => {
+                    // ワイルドカード1文字だけ含む場合は、is_match()で、starts_with/ends_with相当のマッチに変換
                     if s.starts_with('*') {
                         if let Some(x) = s.strip_prefix('*') {
-                            self.ends_with = Some(x.to_string());
+                            self.ends_with = Some(x.replace(r"\\", r"\"));
                         }
-                    } else if s.ends_with('*') {
+                    } else if s.ends_with('*') && !s.ends_with(r"\\\*") {
                         if let Some(x) = s.strip_suffix('*') {
-                            self.starts_with = Some(x.to_string());
+                            self.starts_with = Some(x.replace(r"\\", r"\"));
                         }
                     }
                     None
                 }
-                Some(s) if s.contains('*') => None,
-                Some(s) => Some(s.to_string()),
+                Some(s) if s.contains('*') => None, //先頭・末尾のワイルドカード以外は、正規表現マッチのみ
+                Some(s) => Some(s.replace(r"\\", r"\")), //ワイルドカードを含まない場合は、is_match()で、文字列長マッチに変換
             };
         } else if n >= 2 {
             // 現状では複数のパイプは対応していない
@@ -378,30 +378,34 @@ impl LeafMatcher for DefaultMatcher {
         } else {
             // 通常の検索はこっち
             if let Some(match_str) = &self.match_str {
+                //ワイルドカードを含まない場合はこの分岐。文字数を比較
                 if match_str.len() == event_value_str.len() {
                     return match_str.eq_ignore_ascii_case(event_value_str);
                 }
                 return false;
             }
             if let Some(match_str) = &self.starts_with {
+                // ワイルドカードを末尾に1つだけ含む場合はこの分岐。starts_with相当のマッチで比較
                 let len = match_str.len();
                 if len > event_value_str.len() {
                     return false;
                 }
-                if event_value_str.is_ascii() {
+                if event_value_str.is_ascii() { // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
                     return match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
                 }
             }
             if let Some(match_str) = &self.ends_with {
+                // ワイルドカードを先頭に1つだけ含む場合はこの分岐。ends_with相当のマッチで比較
                 let len1 = match_str.len();
                 let len2 = event_value_str.len();
                 if len1 > len2 {
                     return false;
                 }
-                if event_value_str.is_ascii() {
+                if event_value_str.is_ascii() { // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
                     return match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
                 }
             }
+            // 文字数/starts_with/ends_with検索に変換できなかった場合は、正規表現マッチで比較
             self.is_regex_fullmatch(event_value_str)
         }
     }
@@ -1933,17 +1937,18 @@ mod tests {
     }
 
     #[test]
-    fn test_wildcard_converted_starts_with_match() {
+    fn test_wildcard_converted_starts_with() {
+        // ワイルドカード1文字を末尾に含む場合、stars_with相当のマッチ
         let rule_str = r#"
         enabled: true
         detection:
             selection:
-                Computer: Power*
+                Computer: A-*
         details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"{
-            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell"}},
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
@@ -1951,17 +1956,94 @@ mod tests {
     }
 
     #[test]
-    fn test_wildcard_converted_ends_with_match() {
+    fn test_wildcard_converted_starts_with_notdetect() {
+        // ワイルドカード1文字を末尾に含む場合、stars_with相当のマッチ
         let rule_str = r#"
         enabled: true
         detection:
             selection:
-                Computer: '*shell'
+                Computer: AA-*
         details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"{
-            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell"}},
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_wildcard_converted_starts_with_multibytes() {
+        //ワイルドカードを含むかつascii以外のパターンは正規表現マッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: 社員端末*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "社員端末A"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_ends_with() {
+        // ワイルドカード1文字を先頭に含む場合、ends_with相当のマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*-HOST'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_ends_with_notedetect() {
+        // ワイルドカード1文字を先頭に含む場合、ends_with相当のマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*-HOSTA'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_two_wildcards() {
+        // ワイルドカード1文字を先頭に含む場合、ends_with相当のマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*-HOST-*'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST-1"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
