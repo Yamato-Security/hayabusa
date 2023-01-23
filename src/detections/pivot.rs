@@ -100,7 +100,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -138,7 +138,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -176,7 +176,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -214,7 +214,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -252,7 +252,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "infomational"
                 },
@@ -290,7 +290,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "low"
                 },
@@ -328,7 +328,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "-"
                 },
