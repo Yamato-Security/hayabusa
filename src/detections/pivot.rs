@@ -46,13 +46,14 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
         }
     }
     if is_exist_event_key {
-        let hash_value = get_serde_number_to_string(tmp_event_record);
-
-        if hash_value.is_some() && hash_value.as_ref().unwrap() == &"infomational"
-            || hash_value.as_ref().unwrap() == &"undefined"
-            || hash_value.as_ref().unwrap() == &"-"
-        {
-            return;
+        if let Some(event_record_str) = get_serde_number_to_string(tmp_event_record) {
+            let exclude_check_str = event_record_str.as_str();
+            if exclude_check_str == "infomational"
+                || exclude_check_str == "undefined"
+                || exclude_check_str == "-"
+            {
+                return;
+            }
         }
     } else {
         return;
