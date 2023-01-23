@@ -163,7 +163,7 @@ impl EventMetrics {
                     utils::get_event_value("Channel", &record.record, eventkey_alias)
                         .unwrap_or(&serde_json::Value::Null),
                 )
-                .unwrap_or("n/a")
+                .unwrap_or_else(|| "n/a".to_string())
                 .replace(['"', '\''], "")
                     == "Security"
                     && (idnum == 4624 || idnum == 4625))
@@ -176,21 +176,21 @@ impl EventMetrics {
                         utils::get_event_value("TargetUserName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or("n/a")
+                    .unwrap_or_else(|| "n/a".to_string())
                     .replace(['"', '\''], ""),
                 );
                 let logontype = utils::get_serde_number_to_string(
                     utils::get_event_value("LogonType", &record.record, eventkey_alias)
                         .unwrap_or(&serde_json::Value::Null),
                 )
-                .unwrap_or("n/a")
+                .unwrap_or_else(|| "n/a".to_string())
                 .replace(['"', '\''], "");
                 let hostname = CompactString::from(
                     utils::get_serde_number_to_string(
                         utils::get_event_value("Computer", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or("n/a")
+                    .unwrap_or_else(|| "n/a".to_string())
                     .replace(['"', '\''], ""),
                 );
 
@@ -199,7 +199,7 @@ impl EventMetrics {
                         utils::get_event_value("WorkstationName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or("n/a")
+                    .unwrap_or_else(|| "n/a".to_string())
                     .replace(['"', '\''], ""),
                 );
 
@@ -208,7 +208,7 @@ impl EventMetrics {
                         utils::get_event_value("IpAddress", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or("n/a")
+                    .unwrap_or_else(|| "n/a".to_string())
                     .replace(['"', '\''], ""),
                 );
 

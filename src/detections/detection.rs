@@ -237,7 +237,7 @@ impl Detection {
         .unwrap_or_default();
         let eid = CompactString::from(
             get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-                .unwrap_or("-"),
+                .unwrap_or_else(|| "-".to_string()),
         );
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
