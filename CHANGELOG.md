@@ -12,7 +12,8 @@
 - Approximately 3% speed increase and memory usage reduction by performing exact string matching on Event IDs. (#882) (@fukusuket)
 - Approximately 14% speed increase and memory usage reduction by filtering before regex usage. (#883) (@fukusuket)
 - Approximately 8% speed increase and memory usage reduction by case-insensitive comparisons instead of regex usage. (#884) (@fukusuket)
-- Added support json formatted event log input. (#386) (@hitenkoku)
+- Approximately 5% speed increase and memory usage reduction by reducing regex usage in wildcard expressions. (#890) (@fukusuket)
+- Added support for JSON-formatted event logs as input. (#386) (@hitenkoku)
 
 **Bug Fixes:**
 
