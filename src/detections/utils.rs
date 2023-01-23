@@ -190,7 +190,12 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
 /// serde:Valueの型を確認し、文字列を返します。
 pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
     if value.is_string() {
-        Option::Some(value.as_str().unwrap_or("").to_string())
+        let val_str = value.as_str().unwrap_or("");
+        if val_str.ends_with(",") {
+            Option::Some(val_str[..val_str.len() - 1].to_string())
+        } else {
+            Option::Some(val_str.to_string())
+        }
     } else if value.is_object() || value.is_null() {
         // Object type is not specified record value.
         Option::None
@@ -342,7 +347,13 @@ pub fn create_recordinfos(record: &Value) -> String {
 
     output_vec
         .iter()
-        .map(|(key, value)| format!("{}: {}", key, value))
+        .map(|(key, value)| {
+            if value.ends_with(",") {
+                format!("{}: {}", key, &value[..value.len() - 1])
+            } else {
+                format!("{}: {}", key, value)
+            }
+        })
         .join(" ¦ ")
 }
 
