@@ -210,6 +210,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Enterprise-wide threat hunting and DFIR on all endpoints with [Velociraptor](https://docs.velociraptor.app/).
 * Output to CSV, JSON/JSONL and HTML Summary Reports.
 * Daily Sigma rule updates.
+* Support for JSON-formatted log input.
 
 # Downloads
 
@@ -230,7 +231,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa-2.1.0-win-x64.exe update-rules
+hayabusa-2.2.0-win-x64.exe update-rules
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -339,22 +340,22 @@ You may experience slow runtime especially on the first run after a reboot due t
 
 ## Windows
 
-In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.  
+In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.
 
-64-bit example: `hayabusa-2.1.0-win-x64.exe`
+64-bit example: `hayabusa-2.2.0-win-x64.exe`
 
 ## Linux
 
 You first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-2.1.0-lin-gnu
+chmod +x ./hayabusa-2.2.0-lin-gnu
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-2.1.0-lin-gnu
+./hayabusa-2.2.0-lin-gnu
 ```
 
 ## macOS
@@ -362,13 +363,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-2.1.0-mac-intel
+chmod +x ./hayabusa-2.2.0-mac-intel
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-2.1.0-mac-intel
+./hayabusa-2.2.0-mac-intel
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -382,7 +383,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-2.1.0-mac-intel
+./hayabusa-2.2.0-mac-intel
 ```
 
 The following warning will pop up, so please click "Open".
@@ -435,6 +436,7 @@ Options:
 Usage: csv-timeline <INPUT> [OPTIONS]
 
 Options:
+  -J, --JSON-input                Scan JSON-formatted logs instead of .evtx
   -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
@@ -487,6 +489,7 @@ Options:
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
   -v, --verbose                   Output verbose information
+  -J, --JSON-input                Scan JSON-formatted logs instead of .evtx
 
 Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
@@ -501,7 +504,7 @@ Output:
   -p, --profile <PROFILE>   Specify output profile
   -o, --output <FILE>       Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
   -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
-  -J, --jsonl               Save the timeline in JSONL format (ex: -J -o results.jsonl)
+  -L, --JSONL-output        Save the timeline in JSONL format (ex: -L -o results.jsonl)
 
 Filtering:
       --enable-deprecated-rules  Enable rules marked as deprecated
@@ -655,104 +658,104 @@ Options:
 * Run hayabusa against one Windows event log file with default standard profile:
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -f eventlog.evtx
+hayabusa-2.2.0-win-x64.exe csv-timeline -f eventlog.evtx
 ```
 
 * Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
 ```
 
 * Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `super-verbose` profile!):
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
 ```
 
 * Save the timline in JSON format:
 
 ```
-hayabusa-2.1.0-win-x64.exe json-timeline -d .\hayabusa-sample-evtx -o results.json
+hayabusa-2.2.0-win-x64.exe json-timeline -d .\hayabusa-sample-evtx -o results.json
 ```
 
 * Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
 ```
 
 * Only run hayabusa rules for logs that are enabled by default on Windows:
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
 ```
 
 * Only run hayabusa rules for sysmon logs:
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
 ```
 
 * Only run sigma rules:
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
 ```
 
 * Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
 ```
 
 * Only run rules to analyze logons and output in the UTC timezone:
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
 ```
 
 * Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -l -m low
+hayabusa-2.2.0-win-x64.exe csv-timeline -l -m low
 ```
 
 * Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
 
 ```
-hayabusa-2.1.0-win-x64.exe pivot-keywords-list -l -m critical -o keywords.txt
+hayabusa-2.2.0-win-x64.exe pivot-keywords-list -l -m critical -o keywords.txt
 ```
 
 * Print Event ID metrics:
 
 ```
-hayabusa-2.1.0-win-x64.exe metrics -f Security.evtx
+hayabusa-2.2.0-win-x64.exe metrics -f Security.evtx
 ```
 
 * Print logon summary:
 
 ```
-hayabusa-2.1.0-win-x64.exe logon-summary -f Security.evtx
+hayabusa-2.2.0-win-x64.exe logon-summary -f Security.evtx
 ```
 
 * Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -v
+hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -v
 ```
 
 * Verbose output example:
 
 ```
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
-1 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.20 % 1s 
+1 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.20 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
-2 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.39 % 1s 
+2 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.39 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
-3 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.59 % 1s 
+3 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.59 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
-4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s 
+4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
 ```
@@ -760,7 +763,7 @@ Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_
 * Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
 
 ```
-hayabusa-2.1.0-win-x64.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
+hayabusa-2.2.0-win-x64.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
 ```
 
 * Quiet error mode:
@@ -1092,7 +1095,7 @@ You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignor
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-2.1.0-win-x64.exe level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-2.2.0-win-x64.exe level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:
