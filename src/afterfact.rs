@@ -1462,6 +1462,7 @@ mod tests {
                 html_report: None,
                 no_summary: true,
             },
+            json_input: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),

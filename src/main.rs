@@ -4,7 +4,7 @@ extern crate serde;
 extern crate serde_derive;
 
 use bytesize::ByteSize;
-use chrono::{DateTime, Datelike, Local};
+use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
@@ -32,7 +32,7 @@ use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use pbr::ProgressBar;
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
@@ -213,6 +213,7 @@ impl App {
                     .input_args
                     .evtx_file_ext
                     .as_ref(),
+                stored_static.json_input_flag,
             )
         } else {
             HashSet::default()
@@ -935,14 +936,25 @@ impl App {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) = self.analysis_file(
-                evtx_file,
-                detection,
-                time_filter,
-                tl.to_owned(),
-                target_event_ids,
-                stored_static,
-            );
+            (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
+                self.analysis_json_file(
+                    evtx_file,
+                    detection,
+                    time_filter,
+                    tl.to_owned(),
+                    target_event_ids,
+                    stored_static,
+                )
+            } else {
+                self.analysis_file(
+                    evtx_file,
+                    detection,
+                    time_filter,
+                    tl.to_owned(),
+                    target_event_ids,
+                    stored_static,
+                )
+            };
             total_records += cnt_tmp;
             pb.inc();
         }
@@ -1042,13 +1054,16 @@ impl App {
 
                 let data = record_result.as_ref().unwrap().data.borrow();
                 // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(data, &stored_static.eventkey_alias)
-                    || (stored_static.output_option.as_ref().unwrap().eid_filter
-                        && !self._is_target_event_id(
-                            data,
-                            target_event_ids,
-                            &stored_static.eventkey_alias,
-                        ))
+                if !self._is_valid_channel(
+                    data,
+                    &stored_static.eventkey_alias,
+                    "Event.System.Channel",
+                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
+                    && !self._is_target_event_id(
+                        data,
+                        target_event_ids,
+                        &stored_static.eventkey_alias,
+                    ))
                 {
                     continue;
                 }
@@ -1056,6 +1071,132 @@ impl App {
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
                 let timestamp = record_result.as_ref().unwrap().timestamp;
                 if !time_filter.is_target(&Some(timestamp)) {
+                    continue;
+                }
+
+                records_per_detect.push(data.to_owned());
+            }
+            if records_per_detect.is_empty() {
+                break;
+            }
+
+            let records_per_detect = self.rt.block_on(App::create_rec_infos(
+                records_per_detect,
+                &path,
+                self.rule_keys.to_owned(),
+            ));
+
+            // timeline機能の実行
+            tl.start(
+                &records_per_detect,
+                stored_static.metrics_flag,
+                stored_static.logon_summary_flag,
+                &stored_static.eventkey_alias,
+            );
+
+            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+                // ruleファイルの検知
+                detection = detection.start(&self.rt, records_per_detect);
+            }
+        }
+
+        (detection, record_cnt, tl)
+    }
+
+    // JSON形式のイベントログファイルを1ファイル分解析する。
+    fn analysis_json_file(
+        &self,
+        filepath: PathBuf,
+        mut detection: detection::Detection,
+        time_filter: &TargetEventTime,
+        mut tl: Timeline,
+        target_event_ids: &TargetEventIds,
+        stored_static: &StoredStatic,
+    ) -> (detection::Detection, usize, Timeline) {
+        let path = filepath.display();
+        let mut record_cnt = 0;
+        // json形式はレコードごとに改行が入っている
+        let json_f = utils::read_json_to_value(filepath.to_str().unwrap_or_default()); // ファイルが存在しなければエラーとする
+        if let Err(e) = json_f {
+            AlertMessage::alert(&e).ok();
+            return (detection, record_cnt, tl);
+        }
+        let mut records = json_f.unwrap();
+        loop {
+            let mut records_per_detect = vec![];
+            while records_per_detect.len() < MAX_DETECT_RECORDS {
+                // パースに失敗している場合、エラーメッセージを出力
+                let next_rec = records.next();
+                if next_rec.is_none() {
+                    break;
+                }
+                record_cnt += 1;
+
+                let mut data = next_rec.unwrap();
+                // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
+                data["Event"]["System"] = data["Event"]["EventData"].clone();
+                data["Event"]["System"]
+                    .as_object_mut()
+                    .unwrap()
+                    .insert("EventRecordID".to_string(), Value::from(1));
+                data["Event"]["System"].as_object_mut().unwrap().insert(
+                    "Provider_attributes".to_string(),
+                    Value::Object(Map::from_iter(vec![("Name".to_string(), Value::from(1))])),
+                );
+
+                data["Event"]["System"]["EventRecordID"] =
+                    data["Event"]["EventData"]["RecordNumber"].clone();
+                data["Event"]["System"]["Provider_attributes"]["Name"] =
+                    data["Event"]["EventData"]["SourceName"].clone();
+                data["Event"]["UserData"] = data["Event"]["EventData"].clone();
+                // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
+                data["Event"]["System"]["Computer"] =
+                    data["Event"]["EventData"]["Hostname"].clone();
+                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                if !self._is_valid_channel(
+                    &data,
+                    &stored_static.eventkey_alias,
+                    "Event.EventData.Channel",
+                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
+                    && !self._is_target_event_id(
+                        &data,
+                        target_event_ids,
+                        &stored_static.eventkey_alias,
+                    ))
+                {
+                    continue;
+                }
+                let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
+                    &data["Event"]["EventData"]["TimeGenerated"]
+                } else {
+                    &data["Event"]["EventData"]["@timestamp"]
+                };
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = match NaiveDateTime::parse_from_str(
+                    &target_timestamp
+                        .to_string()
+                        .replace("\\\"", "")
+                        .replace('"', ""),
+                    "%Y-%m-%dT%H:%M:%S%.3fZ",
+                ) {
+                    Ok(without_timezone_datetime) => {
+                        Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
+                    }
+                    Err(e) => {
+                        AlertMessage::alert(&format!(
+                            "timestamp parse error. filepath:{},{} {}",
+                            path,
+                            &data["Event"]["EventData"]["@timestamp"]
+                                .to_string()
+                                .replace("\\\"", "")
+                                .replace('"', ""),
+                            e
+                        ))
+                        .ok();
+                        None
+                    }
+                };
+                if !time_filter.is_target(&timestamp) {
                     continue;
                 }
 
@@ -1146,8 +1287,13 @@ impl App {
     }
 
     /// レコードのチャンネルの値が正しい(Stringの形でありnullでないもの)ことを判定する関数
-    fn _is_valid_channel(&self, data: &Value, eventkey_alias: &EventKeyAliasConfig) -> bool {
-        let channel = utils::get_event_value("Event.System.Channel", data, eventkey_alias);
+    fn _is_valid_channel(
+        &self,
+        data: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+        channel_key: &str,
+    ) -> bool {
+        let channel = utils::get_event_value(channel_key, data, eventkey_alias);
         if channel.is_none() {
             return false;
         }
@@ -1262,15 +1408,57 @@ mod tests {
     use chrono::Local;
     use hashbrown::HashSet;
     use hayabusa::{
-        detections::configs::{Action, Config, ConfigReader, StoredStatic, UpdateOption},
+        detections::{
+            configs::{
+                Action, Config, ConfigReader, CsvOutputOption, InputOption, OutputOption,
+                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
+            },
+            detection,
+            message::MESSAGES,
+            rule::create_rule,
+        },
         options::htmlreport::HTML_REPORTER,
+        timeline::timelines::Timeline,
     };
     use itertools::Itertools;
+    use yaml_rust::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::UpdateRules(UpdateOption {
-                rules: Path::new("./rules").to_path_buf(),
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                    },
+                    profile: None,
+                    output: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                },
+                json_input: true,
             })),
             no_color: false,
             quiet: false,
@@ -1328,5 +1516,44 @@ mod tests {
         for actual_general_contents in general_contents.iter() {
             assert!(expect_general_contents.contains(&actual_general_contents.to_string()));
         }
+    }
+
+    #[test]
+    fn test_analysis_json_file() {
+        let mut app = App::new(None);
+        let stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetEventIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.json").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 2);
     }
 }

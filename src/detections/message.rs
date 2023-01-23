@@ -226,8 +226,12 @@ pub fn get(time: DateTime<Utc>) -> Vec<DetectInfo> {
     }
 }
 
-pub fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
-    let system_time = &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"];
+pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<DateTime<Utc>> {
+    let system_time = if json_input_flag {
+        &event_record["Event"]["System"]["@timestamp"]
+    } else {
+        &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"]
+    };
     return utils::str_time_to_datetime(system_time.as_str().unwrap_or(""));
 }
 
@@ -477,8 +481,8 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
-                        "data2", 
+                        "data1",
+                        "data2",
                         "data3"
                     ]
                 },
@@ -520,8 +524,8 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
-                        "data2", 
+                        "data1",
+                        "data2",
                         "data3"
                     ]
                 },
@@ -563,7 +567,7 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
+                        "data1",
                         "data2",
                         "data3"
                     ]

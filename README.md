@@ -339,7 +339,7 @@ You may experience slow runtime especially on the first run after a reboot due t
 
 ## Windows
 
-In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.  
+In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.
 
 64-bit example: `hayabusa-2.1.0-win-x64.exe`
 
@@ -746,13 +746,13 @@ hayabusa-2.1.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -v
 
 ```
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
-1 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.20 % 1s 
+1 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.20 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
-2 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.39 % 1s 
+2 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.39 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
-3 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.59 % 1s 
+3 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.59 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
-4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s 
+4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s
 Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
 5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
 ```

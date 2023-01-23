@@ -56,6 +56,7 @@ pub struct StoredStatic {
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
     pub thread_number: Option<usize>,
+    pub json_input_flag: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -84,6 +85,11 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.input_args.verbose,
             Some(Action::Metrics(opt)) => opt.input_args.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.verbose,
+            _ => false,
+        };
+        let json_input_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.json_input,
+            Some(Action::JsonTimeline(opt)) => opt.json_input,
             _ => false,
         };
         let mut ret = StoredStatic {
@@ -163,6 +169,7 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
             ),
+            json_input_flag,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -376,7 +383,7 @@ pub struct DefaultProfileOption {
 pub struct UpdateOption {
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"), 
+        help_heading = Some("Advanced"),
         short = 'r',
         long,
         default_value = "./rules",
@@ -428,7 +435,7 @@ pub struct PivotKeywordOption {
 
     /// Minimum level for rules (default: informational)
     #[arg(
-        help_heading = Some("Filtering"), 
+        help_heading = Some("Filtering"),
         short = 'm',
         long = "min-level",
         default_value = "informational",
@@ -488,7 +495,7 @@ pub struct OutputOption {
 
     /// Minimum level for rules (default: informational)
     #[arg(
-        help_heading = Some("Filtering"), 
+        help_heading = Some("Filtering"),
         short = 'm',
         long = "min-level",
         default_value = "informational",
@@ -547,7 +554,7 @@ pub struct OutputOption {
 
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"), 
+        help_heading = Some("Advanced"),
         short = 'r',
         long,
         default_value = "./rules",
@@ -608,6 +615,10 @@ pub struct InputOption {
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
+    /// Scan JSON-formatted logs instead of .evtx
+    #[arg(short, short = 'J', long = "JSON-input")]
+    pub json_input: bool,
+
     #[clap(flatten)]
     pub output_options: OutputOption,
 }
@@ -617,9 +628,13 @@ pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
+    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output")]
     pub jsonl_timeline: bool,
+
+    /// Scan JSON-formatted logs instead of .evtx
+    #[arg(short, short = 'J', long = "JSON-input")]
+    pub json_input: bool,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -897,10 +912,14 @@ pub fn load_pivot_keywords(path: &str) {
     });
 }
 
-/// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
-pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
+/// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数。--json-inputがtrueの場合はjsonのみを対象とする
+pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
-    target_file_extensions.insert(String::from("evtx"));
+    if json_input_flag {
+        target_file_extensions.insert(String::from("json"));
+    } else {
+        target_file_extensions.insert(String::from("evtx"));
+    }
     target_file_extensions
 }
 
@@ -1143,7 +1162,7 @@ mod tests {
     fn test_get_target_extensions() {
         let data = vec!["evtx_data".to_string(), "evtx_stars".to_string()];
         let arg = Some(&data);
-        let ret = configs::get_target_extensions(arg);
+        let ret = configs::get_target_extensions(arg, false);
         let expect: HashSet<&str> = HashSet::from(["evtx", "evtx_data", "evtx_stars"]);
         assert_eq!(ret.len(), expect.len());
         for contents in expect.iter() {
@@ -1153,7 +1172,7 @@ mod tests {
 
     #[test]
     fn no_target_extensions() {
-        let ret = configs::get_target_extensions(None);
+        let ret = configs::get_target_extensions(None, false);
         let expect: HashSet<&str> = HashSet::from(["evtx"]);
         assert_eq!(ret.len(), expect.len());
         for contents in expect.iter() {

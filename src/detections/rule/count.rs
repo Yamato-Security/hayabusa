@@ -17,7 +17,13 @@ use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
-pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_errors_flag: bool) {
+pub fn count(
+    rule: &mut RuleNode,
+    record: &Value,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    json_input_flag: bool,
+) {
     let key = create_count_key(
         rule,
         record,
@@ -49,7 +55,7 @@ pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_erro
         rule,
         key,
         field_value,
-        message::get_event_time(record).unwrap_or(default_time),
+        message::get_event_time(record, json_input_flag).unwrap_or(default_time),
     );
 }
 
@@ -602,6 +608,7 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                json_input: false,
             })),
             no_color: false,
             quiet: false,
@@ -914,6 +921,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
                     );
                 }
@@ -1688,6 +1696,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
                     );
                     assert_eq!(result, &true);
