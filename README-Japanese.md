@@ -437,6 +437,7 @@ Options:
 
 ```
 Options:
+  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイルをスキャンする
   -t, --thread-number <NUMBER>    スレッド数 (デフォルト: パフォーマンスに最適な数値)
   -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIRECTORY>  ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
@@ -489,6 +490,8 @@ Options:
   -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
   -c, --rules-config <DIRECTORY>  ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
   -v, --verbose                   詳細な情報を出力する
+  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイルをスキャンする
+
 
 Input:
   -d, --directory <DIRECTORY>  .evtxファイルを持つディレクトリのパス
@@ -503,7 +506,7 @@ Output:
   -p, --profile <PROFILE>   利用する出力プロファイル名を指定する
   -o, --output <FILE>       タイムラインを保存する (csv-timelineの例: result.csv, json-timelineの例: result.json)
   -H, --html-report <FILE>  HTML形式で詳細な結果を出力する (例: results.html)
-  -J, --jsonl               JSONL形式でタイムラインを保存する (ex: -J -o results.jsonl)
+  -L, --JSONL-ourput        JSONL形式でタイムラインを保存する (ex: -L -o results.jsonl)
 
 Filtering:
       --enable-deprecated-rules  Deprecatedルールを有効にする
