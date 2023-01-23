@@ -844,7 +844,7 @@ impl Detection {
             format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
         println!("{}", tmp_total_detect_output);
         println!();
-        println!("Scanning files. Please wait.");
+        println!("Scanning in progress. Please wait.");
         println!();
         if stored_static.html_report_flag {
             html_report_stock.push(format!("- {}", tmp_total_detect_output));
