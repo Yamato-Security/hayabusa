@@ -435,7 +435,6 @@ Options:
 Usage: csv-timeline <INPUT> [OPTIONS]
 
 Options:
-  -J, --JSON-input                Scan JSON-formatted logs instead of .evtx
   -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
@@ -488,7 +487,6 @@ Options:
   -Q, --quiet-errors              Quiet errors mode: do not save error logs
   -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
   -v, --verbose                   Output verbose information
-  -J, --JSON-input                Scan JSON-formatted logs instead of .evtx
 
 Input:
   -d, --directory <DIRECTORY>  Directory of multiple .evtx files
@@ -503,7 +501,7 @@ Output:
   -p, --profile <PROFILE>   Specify output profile
   -o, --output <FILE>       Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
   -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
-  -L, --JSONL-ourput        Save the timeline in JSONL format (ex: -L -o results.jsonl)
+  -J, --jsonl               Save the timeline in JSONL format (ex: -J -o results.jsonl)
 
 Filtering:
       --enable-deprecated-rules  Enable rules marked as deprecated
