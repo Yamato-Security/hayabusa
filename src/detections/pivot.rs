@@ -48,9 +48,9 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
     if is_exist_event_key {
         let hash_value = get_serde_number_to_string(tmp_event_record);
 
-        if hash_value.is_some() && hash_value.as_ref().unwrap() == "infomational"
-            || hash_value.as_ref().unwrap() == "undefined"
-            || hash_value.as_ref().unwrap() == "-"
+        if hash_value.is_some() && hash_value.as_ref().unwrap() == &"infomational"
+            || hash_value.as_ref().unwrap() == &"undefined"
+            || hash_value.as_ref().unwrap() == &"-"
         {
             return;
         }
@@ -76,7 +76,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
                         if value == "-" || value == "127.0.0.1" || value == "::1" {
                             continue;
                         }
-                        pivot.keywords.insert(value);
+                        pivot.keywords.insert(value.to_string());
                     };
                 }
             }
