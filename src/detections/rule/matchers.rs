@@ -181,6 +181,7 @@ impl LeafMatcher for AllowlistFileMatcher {
 }
 
 // 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/stars_with/ends_withでマッチ判定するためのenum
+#[derive(PartialEq, Debug)]
 enum FastMatch {
     Exact(String),
     StartsWith(String),
@@ -229,14 +230,14 @@ impl DefaultMatcher {
             .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
     }
 
-    fn eq_ignore_case(event_value_str: &String, match_str: &String) -> bool {
+    fn eq_ignore_case(event_value_str: &str, match_str: &str) -> bool {
         if match_str.len() == event_value_str.len() {
             return match_str.eq_ignore_ascii_case(event_value_str);
         }
         false
     }
 
-    fn starts_with_ignore_case(event_value_str: &String, match_str: &String) -> Option<bool> {
+    fn starts_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<bool> {
         let len = match_str.len();
         if len > event_value_str.len() {
             return Some(false);
@@ -249,7 +250,7 @@ impl DefaultMatcher {
         None
     }
 
-    fn ends_with_ignore_case(event_value_str: &String, match_str: &String) -> Option<bool> {
+    fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<bool> {
         let len1 = match_str.len();
         let len2 = event_value_str.len();
         if len1 > len2 {
@@ -639,12 +640,14 @@ mod tests {
     use super::super::matchers::{
         AllowlistFileMatcher, DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher,
     };
+
     use super::super::selectionnodes::{
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
     use crate::detections::configs::{
         Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS,
     };
+    use crate::detections::rule::matchers::FastMatch;
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
 
@@ -2158,5 +2161,72 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_eq_ignore_case() {
+        assert_eq!(DefaultMatcher::eq_ignore_case("abc", "abc"), true);
+        assert_eq!(DefaultMatcher::eq_ignore_case("AbC", "abc"), true);
+        assert_eq!(DefaultMatcher::eq_ignore_case("abc", "ab"), false);
+        assert_eq!(DefaultMatcher::eq_ignore_case("ab", "abc"), false);
+    }
+
+    #[test]
+    fn test_starts_with_ignore_case() {
+        assert_eq!(
+            DefaultMatcher::starts_with_ignore_case("abc", "ab").unwrap(),
+            true
+        );
+        assert_eq!(
+            DefaultMatcher::starts_with_ignore_case("AbC", "ab").unwrap(),
+            true
+        );
+        assert_eq!(
+            DefaultMatcher::starts_with_ignore_case("abc", "abcd").unwrap(),
+            false
+        );
+        assert_eq!(
+            DefaultMatcher::starts_with_ignore_case("aab", "ab").unwrap(),
+            false
+        );
+    }
+
+    #[test]
+    fn test_ends_with_ignore_case() {
+        assert_eq!(
+            DefaultMatcher::ends_with_ignore_case("abc", "bc").unwrap(),
+            true
+        );
+        assert_eq!(
+            DefaultMatcher::ends_with_ignore_case("AbC", "bc").unwrap(),
+            true
+        );
+        assert_eq!(
+            DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap(),
+            false
+        );
+        assert_eq!(
+            DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap(),
+            false
+        );
+    }
+    #[test]
+    fn test_convert_to_fast_match() {
+        assert_eq!(DefaultMatcher::convert_to_fast_match("ab?"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("a*c"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*ab*"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*"),None);
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("abc*").unwrap(),
+            FastMatch::StartsWith("abc".to_string())
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("*abc").unwrap(),
+            FastMatch::EndsWith("abc".to_string())
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("abc").unwrap(),
+            FastMatch::Exact("abc".to_string())
+        );
     }
 }
