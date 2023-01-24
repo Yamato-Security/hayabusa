@@ -225,6 +225,40 @@ impl DefaultMatcher {
             .iter()
             .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
     }
+
+    fn eq_ignore_case(event_value_str: &String, match_str: &String) -> bool {
+        if match_str.len() == event_value_str.len() {
+            return match_str.eq_ignore_ascii_case(event_value_str);
+        }
+        false
+    }
+
+    fn starts_with_ignore_case(event_value_str: &String, match_str: &String) -> Option<bool> {
+        let len = match_str.len();
+        if len > event_value_str.len() {
+            return Some(false);
+        }
+        // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+        if event_value_str.is_ascii() {
+            let match_result = match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
+            return Some(match_result);
+        }
+        None
+    }
+
+    fn ends_with_ignore_case(event_value_str: &String, match_str: &String) -> Option<bool> {
+        let len1 = match_str.len();
+        let len2 = event_value_str.len();
+        if len1 > len2 {
+            return Some(false);
+        }
+        // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+        if event_value_str.is_ascii() {
+            let match_result = match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
+            return Some(match_result);
+        }
+        None
+    }
 }
 
 impl LeafMatcher for DefaultMatcher {
@@ -379,32 +413,18 @@ impl LeafMatcher for DefaultMatcher {
             // 通常の検索はこっち
             if let Some(match_str) = &self.match_str {
                 //ワイルドカードを含まない場合はこの分岐。文字数を比較
-                if match_str.len() == event_value_str.len() {
-                    return match_str.eq_ignore_ascii_case(event_value_str);
-                }
-                return false;
+                return Self::eq_ignore_case(event_value_str, match_str);
             }
             if let Some(match_str) = &self.starts_with {
                 // ワイルドカードを末尾に1つだけ含む場合はこの分岐。starts_with相当のマッチで比較
-                let len = match_str.len();
-                if len > event_value_str.len() {
-                    return false;
-                }
-                if event_value_str.is_ascii() {
-                    // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
-                    return match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
+                if let Some(is_match) = Self::starts_with_ignore_case(event_value_str, match_str) {
+                    return is_match;
                 }
             }
             if let Some(match_str) = &self.ends_with {
                 // ワイルドカードを先頭に1つだけ含む場合はこの分岐。ends_with相当のマッチで比較
-                let len1 = match_str.len();
-                let len2 = event_value_str.len();
-                if len1 > len2 {
-                    return false;
-                }
-                if event_value_str.is_ascii() {
-                    // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
-                    return match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
+                if let Some(is_match) = Self::ends_with_ignore_case(event_value_str, match_str) {
+                    return is_match;
                 }
             }
             // 文字数/starts_with/ends_with検索に変換できなかった場合は、正規表現マッチで比較
@@ -673,7 +693,7 @@ mod tests {
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
                         dummy_stored_static.json_input_flag,
-                        &dummy_stored_static.eventkey_alias
+                        &dummy_stored_static.eventkey_alias,
                     ),
                     expect_select
                 );
