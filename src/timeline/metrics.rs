@@ -1,6 +1,6 @@
 use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
 use compact_str::CompactString;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct EventMetrics {
@@ -19,6 +19,13 @@ pub struct EventMetrics {
         ),
         [usize; 2],
     >,
+    search_result: HashSet<(
+        CompactString,
+        CompactString,
+        CompactString,
+        CompactString,
+        CompactString,
+    )>,
 }
 /**
 * Windows Event Logの統計情報を出力する
@@ -40,6 +47,13 @@ impl EventMetrics {
             ),
             [usize; 2],
         >,
+        search_result: HashSet<(
+            CompactString,
+            CompactString,
+            CompactString,
+            CompactString,
+            CompactString,
+        )>,
     ) -> EventMetrics {
         EventMetrics {
             total,
@@ -48,6 +62,7 @@ impl EventMetrics {
             end_time,
             stats_list,
             stats_login_list,
+            search_result,
         }
     }
 
@@ -83,6 +98,21 @@ impl EventMetrics {
         self.stats_time_cnt(records, eventkey_alias);
 
         self.stats_login_eventid(records, eventkey_alias);
+    }
+
+    pub fn search_start(&mut self, records: &[EvtxRecordInfo], search_flag: bool, keyword: &str) {
+        if !search_flag {
+            return;
+        }
+        println!("Search_start");
+        self.search_keyword(records, keyword);
+    }
+
+    fn search_keyword(&mut self, records: &[EvtxRecordInfo], keyword: &str) {
+        if records.is_empty() {
+            return;
+        }
+        println!("{:?}, {}", records, keyword);
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {

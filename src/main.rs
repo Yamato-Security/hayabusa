@@ -967,7 +967,7 @@ impl App {
             tl.tm_logon_stats_dsp_msg(stored_static);
         }
         // TODO メインの表示させる処理
-        if stored_static.logon_summary_flag {
+        if stored_static.search_flag {
             println!("TODO: CREATE HERE");
         }
         if stored_static
@@ -985,6 +985,7 @@ impl App {
         detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
+            || stored_static.search_flag
             || stored_static.pivot_keyword_list_flag)
         {
             after_fact(
@@ -1054,16 +1055,19 @@ impl App {
                 }
 
                 let data = record_result.as_ref().unwrap().data.borrow();
-                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(data, &stored_static.eventkey_alias)
-                    || (stored_static.output_option.as_ref().unwrap().eid_filter
-                        && !self._is_target_event_id(
-                            data,
-                            target_event_ids,
-                            &stored_static.eventkey_alias,
-                        ))
-                {
-                    continue;
+                // Searchならすべてのフィルタを無視
+                if !stored_static.search_flag {
+                    // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                    if !self._is_valid_channel(data, &stored_static.eventkey_alias)
+                        || (stored_static.output_option.as_ref().unwrap().eid_filter
+                            && !self._is_target_event_id(
+                                data,
+                                target_event_ids,
+                                &stored_static.eventkey_alias,
+                            ))
+                    {
+                        continue;
+                    }
                 }
 
                 // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
@@ -1089,6 +1093,7 @@ impl App {
                 &records_per_detect,
                 stored_static.metrics_flag,
                 stored_static.logon_summary_flag,
+                stored_static.search_flag,
                 &stored_static.eventkey_alias,
             );
 

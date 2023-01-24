@@ -12,7 +12,7 @@ use csv::WriterBuilder;
 use downcast_rs::__std::process;
 
 use super::metrics::EventMetrics;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct Timeline {
@@ -33,9 +33,17 @@ impl Timeline {
         let endtm = String::default();
         let statslst = HashMap::new();
         let statsloginlst = HashMap::new();
+        let search_result = HashSet::new();
 
-        let statistic =
-            EventMetrics::new(totalcnt, filepath, starttm, endtm, statslst, statsloginlst);
+        let statistic = EventMetrics::new(
+            totalcnt,
+            filepath,
+            starttm,
+            endtm,
+            statslst,
+            statsloginlst,
+            search_result,
+        );
         Timeline { stats: statistic }
     }
 
@@ -44,12 +52,16 @@ impl Timeline {
         records: &[EvtxRecordInfo],
         metrics_flag: bool,
         logon_summary_flag: bool,
+        search_flag: bool,
         eventkey_alias: &EventKeyAliasConfig,
     ) {
         self.stats
             .evt_stats_start(records, metrics_flag, eventkey_alias);
         self.stats
             .logon_stats_start(records, logon_summary_flag, eventkey_alias);
+
+        let keyword = "Logon"; // Sample Keyword
+        self.stats.search_start(records, search_flag, keyword);
     }
 
     pub fn tm_stats_dsp_msg(
