@@ -324,7 +324,10 @@ impl LeafMatcher for DefaultMatcher {
             return Result::Err(vec![errmsg]);
         }
         let pattern = yaml_value.unwrap();
-
+        if self.key_list.is_empty() {
+            self.case_ignore_fast_match =
+                Self::convert_to_fast_match(format!("{}{}{}", '*', pattern, '*').as_str())
+        }
         // Pipeが指定されていればパースする
         let emp = String::default();
         // 一つ目はただのキーで、2つめ以降がpipe
@@ -359,6 +362,9 @@ impl LeafMatcher for DefaultMatcher {
                     }
                     PipeElement::Endswith => {
                         Self::convert_to_fast_match(format!("{}{}", '*', val).as_str())
+                    }
+                    PipeElement::Contains => {
+                        Self::convert_to_fast_match(format!("{}{}{}", '*', val, '*').as_str())
                     }
                     _ => None,
                 };
@@ -434,8 +440,11 @@ impl LeafMatcher for DefaultMatcher {
 
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
-            // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
-            self.re.as_ref().unwrap().is_match(event_value_str)
+            // この場合ただのgrep検索
+            match &self.case_ignore_fast_match.as_ref().unwrap() {
+                FastMatch::Contains(s) => event_value_str.to_lowercase().contains(s),
+                _ => false,
+            }
         } else {
             // 通常の検索はこっち
             if let Some(fast_matcher) = &self.case_ignore_fast_match {
