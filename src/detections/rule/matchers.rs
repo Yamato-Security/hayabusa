@@ -180,13 +180,18 @@ impl LeafMatcher for AllowlistFileMatcher {
     }
 }
 
+// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/stars_with/ends_withでマッチ判定するためのenum
+enum FastMatch {
+    Exact(String),
+    StartsWith(String),
+    EndsWith(String),
+}
+
 /// デフォルトのマッチクラス
 /// ワイルドカードの処理やパイプ
 pub struct DefaultMatcher {
     re: Option<Regex>,
-    match_str: Option<String>,
-    starts_with: Option<String>,
-    ends_with: Option<String>,
+    case_ignore_fast_match: Option<FastMatch>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
 }
@@ -195,9 +200,7 @@ impl DefaultMatcher {
     pub fn new() -> DefaultMatcher {
         DefaultMatcher {
             re: Option::None,
-            match_str: Option::None,
-            starts_with: Option::None,
-            ends_with: Option::None,
+            case_ignore_fast_match: Option::None,
             pipes: Vec::new(),
             key_list: Nested::<String>::new(),
         }
@@ -259,6 +262,22 @@ impl DefaultMatcher {
         }
         None
     }
+
+    // ワイルドカードマッチを高速なstd::stringのlen/stars_with/ends_withに変換するための関数
+    fn convert_to_fast_match(s: &str) -> Option<FastMatch> {
+        if s.contains('?') || s.chars().filter(|c| *c == '*').count() > 1 {
+            return None; // ? or *が2つ以上あるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
+        } else if s.starts_with('*') && s.is_ascii() {
+            let s = s.strip_prefix('*').unwrap();
+            return Some(FastMatch::EndsWith(s.replace(r"\\", r"\")));
+        } else if s.ends_with('*') && !s.ends_with(r"\\\*") && s.is_ascii() {
+            let s = s.strip_suffix('*').unwrap();
+            return Some(FastMatch::StartsWith(s.replace(r"\\", r"\")));
+        } else if s.contains('*') {
+            return None; // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
+        }
+        Some(FastMatch::Exact(s.replace(r"\\", r"\")))
+    }
 }
 
 impl LeafMatcher for DefaultMatcher {
@@ -316,26 +335,23 @@ impl LeafMatcher for DefaultMatcher {
         }
         let n = self.pipes.len();
         if n == 0 {
-            // 正規表現マッチは遅いため、できるだけstd::stringのlen/stars_with/ends_with/containsでマッチ判定させるための処理
-            self.match_str = match select_value.as_str() {
-                None => None,
-                Some(s) if s.contains('?') => None, // ?を含む場合は、正規表現マッチのみ
-                Some(s) if s.chars().filter(|c| *c == '*').count() == 1 && s.is_ascii() => {
-                    // ワイルドカード1文字だけ含む場合は、is_match()で、starts_with/ends_with相当のマッチに変換
-                    if s.starts_with('*') {
-                        if let Some(x) = s.strip_prefix('*') {
-                            self.ends_with = Some(x.replace(r"\\", r"\"));
-                        }
-                    } else if s.ends_with('*') && !s.ends_with(r"\\\*") {
-                        if let Some(x) = s.strip_suffix('*') {
-                            self.starts_with = Some(x.replace(r"\\", r"\"));
-                        }
-                    }
-                    None
-                }
-                Some(s) if s.contains('*') => None, //先頭・末尾のワイルドカード以外は、正規表現マッチのみ
-                Some(s) => Some(s.replace(r"\\", r"\")), //ワイルドカードを含まない場合は、is_match()で、文字列長マッチに変換
+            // パイプがないケース
+            if let Some(val) = select_value.as_str() {
+                self.case_ignore_fast_match = Self::convert_to_fast_match(val);
             };
+        } else if n == 1 {
+            // パイプがあるケース
+            if let Some(val) = select_value.as_str() {
+                self.case_ignore_fast_match = match &self.pipes[0] {
+                    PipeElement::Startswith => {
+                        Self::convert_to_fast_match(format!("{}{}", val, '*').as_str())
+                    }
+                    PipeElement::Endswith => {
+                        Self::convert_to_fast_match(format!("{}{}", '*', val).as_str())
+                    }
+                    _ => None,
+                };
+            }
         } else if n >= 2 {
             // 現状では複数のパイプは対応していない
             let errmsg = format!(
@@ -411,22 +427,16 @@ impl LeafMatcher for DefaultMatcher {
             self.re.as_ref().unwrap().is_match(event_value_str)
         } else {
             // 通常の検索はこっち
-            if let Some(match_str) = &self.match_str {
-                //ワイルドカードを含まない場合はこの分岐。文字数を比較
-                return Self::eq_ignore_case(event_value_str, match_str);
-            }
-            if let Some(match_str) = &self.starts_with {
-                // ワイルドカードを末尾に1つだけ含む場合はこの分岐。starts_with相当のマッチで比較
-                if let Some(is_match) = Self::starts_with_ignore_case(event_value_str, match_str) {
+            if let Some(fast_matcher) = &self.case_ignore_fast_match {
+                let fast_match_result = match fast_matcher {
+                    FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
+                    FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
+                    FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                };
+                if let Some(is_match) = fast_match_result {
                     return is_match;
                 }
-            }
-            if let Some(match_str) = &self.ends_with {
-                // ワイルドカードを先頭に1つだけ含む場合はこの分岐。ends_with相当のマッチで比較
-                if let Some(is_match) = Self::ends_with_ignore_case(event_value_str, match_str) {
-                    return is_match;
-                }
-            }
+            };
             // 文字数/starts_with/ends_with検索に変換できなかった場合は、正規表現マッチで比較
             self.is_regex_fullmatch(event_value_str)
         }
