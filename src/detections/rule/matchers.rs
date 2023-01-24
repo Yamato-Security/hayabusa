@@ -186,6 +186,7 @@ enum FastMatch {
     Exact(String),
     StartsWith(String),
     EndsWith(String),
+    Contains(String),
 }
 
 /// デフォルトのマッチクラス
@@ -266,8 +267,17 @@ impl DefaultMatcher {
 
     // ワイルドカードマッチを高速なstd::stringのlen/stars_with/ends_withに変換するための関数
     fn convert_to_fast_match(s: &str) -> Option<FastMatch> {
-        if s.contains('?') || s.chars().filter(|c| *c == '*').count() > 1 {
-            return None; // ? or *が2つ以上あるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
+        if s.contains('?') {
+            return None;
+        } else if s.chars().filter(|c| *c == '*').count() == 2
+            && s.starts_with('*')
+            && s.ends_with('*')
+        {
+            let s = s.strip_prefix('*').unwrap();
+            let s = s.strip_suffix('*').unwrap();
+            return Some(FastMatch::Contains(s.to_lowercase().replace(r"\\", r"\")));
+        } else if s.chars().filter(|c| *c == '*').count() > 1 {
+            return None;
         } else if s.starts_with('*') && s.is_ascii() {
             let s = s.strip_prefix('*').unwrap();
             return Some(FastMatch::EndsWith(s.replace(r"\\", r"\")));
@@ -433,6 +443,7 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                    FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
                 };
                 if let Some(is_match) = fast_match_result {
                     return is_match;
@@ -2214,8 +2225,8 @@ mod tests {
     fn test_convert_to_fast_match() {
         assert_eq!(DefaultMatcher::convert_to_fast_match("ab?"), None);
         assert_eq!(DefaultMatcher::convert_to_fast_match("a*c"), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match("*ab*"), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*"),None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*"), None);
         assert_eq!(
             DefaultMatcher::convert_to_fast_match("abc*").unwrap(),
             FastMatch::StartsWith("abc".to_string())
@@ -2223,6 +2234,10 @@ mod tests {
         assert_eq!(
             DefaultMatcher::convert_to_fast_match("*abc").unwrap(),
             FastMatch::EndsWith("abc".to_string())
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("*abc*").unwrap(),
+            FastMatch::Contains("abc".to_string())
         );
         assert_eq!(
             DefaultMatcher::convert_to_fast_match("abc").unwrap(),
