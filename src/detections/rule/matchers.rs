@@ -2170,50 +2170,26 @@ mod tests {
 
     #[test]
     fn test_eq_ignore_case() {
-        assert_eq!(DefaultMatcher::eq_ignore_case("abc", "abc"), true);
-        assert_eq!(DefaultMatcher::eq_ignore_case("AbC", "abc"), true);
-        assert_eq!(DefaultMatcher::eq_ignore_case("abc", "ab"), false);
-        assert_eq!(DefaultMatcher::eq_ignore_case("ab", "abc"), false);
+        assert!(DefaultMatcher::eq_ignore_case("abc", "abc"));
+        assert!(DefaultMatcher::eq_ignore_case("AbC", "abc"));
+        assert!(!DefaultMatcher::eq_ignore_case("abc", "ab"));
+        assert!(!DefaultMatcher::eq_ignore_case("ab", "abc"));
     }
 
     #[test]
     fn test_starts_with_ignore_case() {
-        assert_eq!(
-            DefaultMatcher::starts_with_ignore_case("abc", "ab").unwrap(),
-            true
-        );
-        assert_eq!(
-            DefaultMatcher::starts_with_ignore_case("AbC", "ab").unwrap(),
-            true
-        );
-        assert_eq!(
-            DefaultMatcher::starts_with_ignore_case("abc", "abcd").unwrap(),
-            false
-        );
-        assert_eq!(
-            DefaultMatcher::starts_with_ignore_case("aab", "ab").unwrap(),
-            false
-        );
+        assert!(DefaultMatcher::starts_with_ignore_case("abc", "ab").unwrap(),);
+        assert!(DefaultMatcher::starts_with_ignore_case("AbC", "ab").unwrap(),);
+        assert!(!DefaultMatcher::starts_with_ignore_case("abc", "abcd").unwrap(),);
+        assert!(!DefaultMatcher::starts_with_ignore_case("aab", "ab").unwrap(),);
     }
 
     #[test]
     fn test_ends_with_ignore_case() {
-        assert_eq!(
-            DefaultMatcher::ends_with_ignore_case("abc", "bc").unwrap(),
-            true
-        );
-        assert_eq!(
-            DefaultMatcher::ends_with_ignore_case("AbC", "bc").unwrap(),
-            true
-        );
-        assert_eq!(
-            DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap(),
-            false
-        );
-        assert_eq!(
-            DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap(),
-            false
-        );
+        assert!(DefaultMatcher::ends_with_ignore_case("abc", "bc").unwrap());
+        assert!(DefaultMatcher::ends_with_ignore_case("AbC", "bc").unwrap());
+        assert!(!DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap());
+        assert!(!DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap());
     }
     #[test]
     fn test_convert_to_fast_match() {
