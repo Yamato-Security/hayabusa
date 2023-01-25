@@ -325,8 +325,14 @@ impl LeafMatcher for DefaultMatcher {
         }
         let pattern = yaml_value.unwrap();
         if self.key_list.is_empty() {
-            self.case_ignore_fast_match =
-                Self::convert_to_fast_match(format!("{}{}{}", '*', pattern, '*').as_str())
+            let mut ptn = pattern.clone();
+            if !ptn.starts_with('*') {
+                ptn = format!("{}{}", '*', ptn);
+            }
+            if !ptn.ends_with('*') {
+                ptn = format!("{}{}", ptn, '*');
+            }
+            self.case_ignore_fast_match = Self::convert_to_fast_match(&ptn);
         }
         // Pipeが指定されていればパースする
         let emp = String::default();
@@ -348,12 +354,12 @@ impl LeafMatcher for DefaultMatcher {
             return Err(err_msges);
         }
         let n = self.pipes.len();
-        if n == 0 {
+        if n == 0 && !self.key_list.is_empty() {
             // パイプがないケース
             if let Some(val) = select_value.as_str() {
                 self.case_ignore_fast_match = Self::convert_to_fast_match(val);
             };
-        } else if n == 1 {
+        } else if n == 1 && !self.key_list.is_empty() {
             // パイプがあるケース
             if let Some(val) = select_value.as_str() {
                 self.case_ignore_fast_match = match &self.pipes[0] {
@@ -378,6 +384,14 @@ impl LeafMatcher for DefaultMatcher {
             return Result::Err(vec![errmsg]);
         }
 
+        let need_regex = !matches!(
+            &self.case_ignore_fast_match,
+            Some(FastMatch::Exact(_)) | Some(FastMatch::Contains(_))
+        );
+        if !need_regex {
+            // FastMatch::Exact or Contains検索に置き換えられたときは正規表現は不要
+            return Result::Ok(());
+        }
         let is_eqfield = self
             .pipes
             .iter()
@@ -419,12 +433,12 @@ impl LeafMatcher for DefaultMatcher {
 
         // yamlにnullが設定されていた場合
         // keylistが空(==JSONのgrep検索)の場合、無視する。
-        if self.key_list.is_empty() && self.re.is_none() {
+        if self.key_list.is_empty() && self.re.is_none() && self.case_ignore_fast_match.is_none() {
             return false;
         }
 
         // yamlにnullが設定されていた場合
-        if self.re.is_none() {
+        if self.re.is_none() && self.case_ignore_fast_match.is_none() {
             // レコード内に対象のフィールドが存在しなければ検知したものとして扱う
             for v in self.key_list.iter() {
                 if recinfo.get_value(v).is_none() {
@@ -439,28 +453,19 @@ impl LeafMatcher for DefaultMatcher {
         }
 
         let event_value_str = event_value.unwrap();
-        if self.key_list.is_empty() {
-            // この場合ただのgrep検索
-            match &self.case_ignore_fast_match.as_ref().unwrap() {
-                FastMatch::Contains(s) => event_value_str.to_lowercase().contains(s),
-                _ => false,
-            }
-        } else {
-            // 通常の検索はこっち
-            if let Some(fast_matcher) = &self.case_ignore_fast_match {
-                let fast_match_result = match fast_matcher {
-                    FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
-                    FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
-                    FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                    FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
-                };
-                if let Some(is_match) = fast_match_result {
-                    return is_match;
-                }
+        if let Some(fast_matcher) = &self.case_ignore_fast_match {
+            let fast_match_result = match fast_matcher {
+                FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
+                FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
+                FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
             };
-            // 文字数/starts_with/ends_with検索に変換できなかった場合は、正規表現マッチで比較
-            self.is_regex_fullmatch(event_value_str)
-        }
+            if let Some(is_match) = fast_match_result {
+                return is_match;
+            }
+        };
+        // 文字数/starts_with/ends_with検索に変換できなかった場合は、正規表現マッチで比較
+        self.is_regex_fullmatch(event_value_str)
     }
 }
 
@@ -788,11 +793,11 @@ mod tests {
             assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
 
-            assert!(matcher.re.is_some());
-            let re = matcher.re.as_ref();
+            assert!(matcher.case_ignore_fast_match.is_some());
+            let fast_match = matcher.case_ignore_fast_match.as_ref().unwrap();
             assert_eq!(
-                re.unwrap().as_str(),
-                r"(?i)Microsoft\-Windows\-PowerShell/Operational"
+                *fast_match,
+                FastMatch::Exact("Microsoft-Windows-PowerShell/Operational".to_string())
             );
         }
 
@@ -811,10 +816,7 @@ mod tests {
             let matcher = child_node.matcher.as_ref().unwrap();
             assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
-
-            assert!(matcher.re.is_some());
-            let re = matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "(?i)4103");
+            assert!(matcher.case_ignore_fast_match.is_none());
         }
 
         // ContextInfo
@@ -837,9 +839,12 @@ mod tests {
             let hostapp_en_matcher = hostapp_en_matcher.as_ref().unwrap();
             assert!(hostapp_en_matcher.is::<DefaultMatcher>());
             let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(hostapp_en_matcher.re.is_some());
-            let re = hostapp_en_matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "(?i)Host Application");
+            assert!(hostapp_en_matcher.case_ignore_fast_match.is_some());
+            let fast_match = hostapp_en_matcher.case_ignore_fast_match.as_ref().unwrap();
+            assert_eq!(
+                *fast_match,
+                FastMatch::Exact("Host Application".to_string())
+            );
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
             let hostapp_jp_node = ancestors[1] as &dyn SelectionNode;
@@ -851,9 +856,12 @@ mod tests {
             let hostapp_jp_matcher = hostapp_jp_matcher.as_ref().unwrap();
             assert!(hostapp_jp_matcher.is::<DefaultMatcher>());
             let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(hostapp_jp_matcher.re.is_some());
-            let re = hostapp_jp_matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "(?i)ホスト アプリケーション");
+            assert!(hostapp_jp_matcher.case_ignore_fast_match.is_some());
+            let fast_match = hostapp_jp_matcher.case_ignore_fast_match.as_ref().unwrap();
+            assert_eq!(
+                *fast_match,
+                FastMatch::Exact("ホスト アプリケーション".to_string())
+            );
         }
 
         // ImagePath
@@ -1702,6 +1710,24 @@ mod tests {
         check_select(rule_str, record_json_str, true);
     }
 
+    #[test]
+    fn test_grep_match_with_slash() {
+        // wildcardは大文字小文字関係なくマッチする。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                - \\127.0.0.1
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"\\\\127.0.0.1"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+        check_select(rule_str, record_json_str, true);
+    }
     #[test]
     fn test_grep_not_match() {
         // wildcardは大文字小文字関係なくマッチする。
