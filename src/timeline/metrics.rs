@@ -112,7 +112,13 @@ impl EventMetrics {
         if records.is_empty() {
             return;
         }
-        println!("{:?}, {}", records, keyword);
+
+        for record in records.iter() {
+            if record.data_string.contains(keyword) {
+                println!("find \"{}\"", keyword);
+                println!("{:?}", record.data_string);
+            }
+        }
     }
 
     fn stats_time_cnt(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {

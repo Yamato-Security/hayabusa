@@ -1094,6 +1094,7 @@ impl App {
                 stored_static.metrics_flag,
                 stored_static.logon_summary_flag,
                 stored_static.search_flag,
+                &stored_static.search_option,
                 &stored_static.eventkey_alias,
             );
 

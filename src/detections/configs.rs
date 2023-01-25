@@ -49,6 +49,7 @@ pub struct StoredStatic {
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
     pub search_flag: bool,
+    pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
     pub default_details: HashMap<String, String>,
@@ -135,6 +136,7 @@ impl StoredStatic {
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
             search_flag: action_id == 10,
+            search_option: extract_search_options(input_config.as_ref().unwrap()),
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
             quiet_errors_flag,
@@ -968,6 +970,20 @@ pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
 pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
     let ret: HashSet<String> = arg.unwrap_or(&Vec::new()).iter().cloned().collect();
     ret
+}
+
+fn extract_search_options(config: &Config) -> Option<SearchOption> {
+    match &config.action.as_ref()? {
+        Action::Search(option) => Some(SearchOption {
+            input_args: option.input_args.clone(),
+            keywords: option.keywords.clone(),
+            regex: option.regex.clone(),
+            ignore_case: option.ignore_case.clone(),
+            filter: option.filter.clone(),
+            output: option.output.clone(),
+        }),
+        _ => None,
+    }
 }
 
 /// configから出力に関連したオプションの値を格納した構造体を抽出する関数

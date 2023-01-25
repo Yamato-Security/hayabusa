@@ -2,7 +2,9 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
 
-use crate::detections::configs::{Action, EventInfoConfig, EventKeyAliasConfig, StoredStatic};
+use crate::detections::configs::{
+    Action, EventInfoConfig, EventKeyAliasConfig, SearchOption, StoredStatic,
+};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -53,6 +55,7 @@ impl Timeline {
         metrics_flag: bool,
         logon_summary_flag: bool,
         search_flag: bool,
+        search_option: &Option<SearchOption>,
         eventkey_alias: &EventKeyAliasConfig,
     ) {
         self.stats
@@ -60,8 +63,10 @@ impl Timeline {
         self.stats
             .logon_stats_start(records, logon_summary_flag, eventkey_alias);
 
-        let keyword = "Logon"; // Sample Keyword
-        self.stats.search_start(records, search_flag, keyword);
+        if search_flag {
+            let keyword = &search_option.clone().unwrap().keywords[0]; // Sample Keyword
+            self.stats.search_start(records, search_flag, keyword);
+        }
     }
 
     pub fn tm_stats_dsp_msg(
