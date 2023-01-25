@@ -458,7 +458,14 @@ impl LeafMatcher for DefaultMatcher {
                 FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                 FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                 FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
+                FastMatch::Contains(s) => {
+                    if self.key_list.is_empty(){
+                        let s = s.replace(r"\", r"\\");
+                        Some(event_value_str.to_lowercase().contains(&s))
+                    } else {
+                        Some(event_value_str.to_lowercase().contains(s))
+                    }
+                },
             };
             if let Some(is_match) = fast_match_result {
                 return is_match;
@@ -1717,13 +1724,13 @@ mod tests {
         enabled: true
         detection:
             selection:
-                - \\127.0.0.1
+                - \\\\127.0.0.1\\admin$\\
         details: 'command=%CommandLine%'
         "#;
 
         let record_json_str = r#"
         {
-            "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"\\\\127.0.0.1"}},
+            "Event": {"System": {"EventID": 4103, "Channel": "security", "Computer":"\\\\127.0.0.1\\ADMIN$\\_"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
         check_select(rule_str, record_json_str, true);
