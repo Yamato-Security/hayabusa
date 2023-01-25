@@ -180,7 +180,7 @@ impl LeafMatcher for AllowlistFileMatcher {
     }
 }
 
-// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/stars_with/ends_withでマッチ判定するためのenum
+// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/starts_with/ends_withでマッチ判定するためのenum
 #[derive(PartialEq, Debug)]
 enum FastMatch {
     Exact(String),
@@ -264,7 +264,7 @@ impl DefaultMatcher {
         None
     }
 
-    // ワイルドカードマッチを高速なstd::stringのlen/stars_with/ends_withに変換するための関数
+    // ワイルドカードマッチを高速なstd::stringのlen/starts_with/ends_withに変換するための関数
     fn convert_to_fast_match(s: &str) -> Option<FastMatch> {
         if s.contains('?') || s.chars().filter(|c| *c == '*').count() > 1 {
             return None;
