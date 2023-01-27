@@ -57,6 +57,7 @@ pub struct StoredStatic {
     pub target_eventids: TargetEventIds,
     pub thread_number: Option<usize>,
     pub json_input_flag: bool,
+    pub geo_ip_db_path: Option<PathBuf>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -91,6 +92,11 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.json_input,
             Some(Action::JsonTimeline(opt)) => opt.json_input,
             _ => false,
+        };
+        let geo_ip_db_path = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.geo_ip.clone(),
+            Some(Action::JsonTimeline(opt)) => opt.geo_ip.clone(),
+            _ => None,
         };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -170,6 +176,7 @@ impl StoredStatic {
                     .unwrap(),
             ),
             json_input_flag,
+            geo_ip_db_path,
         };
         ret.profiles = load_profile(
             check_setting_path(
