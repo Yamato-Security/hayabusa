@@ -815,6 +815,7 @@ dependencies = [
  "lazy_static",
  "libmimalloc-sys",
  "lock_api",
+ "maxminddb",
  "mimalloc",
  "mockall",
  "nested",
@@ -1161,6 +1162,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "maxminddb"
+version = "0.17.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d13fa57adcc4f3aca91e511b3cdaa58ed8cbcbf97f20e342a11218c76e127f51"
+dependencies = [
+ "log",
+ "serde",
 ]
 
 [[package]]

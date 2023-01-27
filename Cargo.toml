@@ -46,6 +46,7 @@ nested="*"
 compact_str = "0.6.*"
 ureq = "*"
 mockall = "*"
+maxminddb = "0.*"
 
 [profile.dev]
 debug = 0
