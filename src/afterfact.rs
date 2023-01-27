@@ -1463,6 +1463,7 @@ mod tests {
                 no_summary: true,
             },
             json_input: false,
+            geo_ip: None,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),

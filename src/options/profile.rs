@@ -398,6 +398,7 @@ mod tests {
                     no_summary: false,
                 },
                 json_input: false,
+                geo_ip: None,
             }));
         assert_eq!(
             Nested::<Vec<String>>::new(),
@@ -497,6 +498,7 @@ mod tests {
                     no_summary: false,
                 },
                 json_input: false,
+                geo_ip: None,
             }));
         assert_eq!(
             Some(expect),
@@ -545,6 +547,7 @@ mod tests {
                     no_summary: false,
                 },
                 json_input: false,
+                geo_ip: None,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -624,6 +627,7 @@ mod tests {
                     no_summary: false,
                 },
                 json_input: false,
+                geo_ip: None,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(
