@@ -444,7 +444,13 @@ impl Detection {
                         &record_info.record,
                         eventkey_alias,
                     );
-                    let mut tgt_data = alias_data.split("🦅");
+                    let geo_data = GEOIP_DB_PARSER.read().unwrap().as_ref().unwrap().convert_ip_to_geo(&alias_data);
+                    if let Err(e) = geo_data {
+                        AlertMessage::alert(&format!("{:?}",e)).ok();
+                        continue;
+                    }
+                    let binding = geo_data.unwrap();
+                    let mut tgt_data = binding.split('🦅');
                     profile_converter.insert("TgtASN", TgtASN(tgt_data.next().unwrap().into()));
                     profile_converter
                         .insert("TgtCountry", TgtCountry(tgt_data.next().unwrap().into()));
@@ -464,7 +470,14 @@ impl Detection {
                         &record_info.record,
                         eventkey_alias,
                     );
-                    let mut src_data = alias_data.split("🦅");
+
+                    let geo_data = GEOIP_DB_PARSER.read().unwrap().as_ref().unwrap().convert_ip_to_geo(&alias_data);
+                    if let Err(e) = geo_data {
+                        AlertMessage::alert(&format!("{:?}",e)).ok();
+                        continue;
+                    }
+                    let binding = geo_data.unwrap();
+                    let mut src_data = binding.split('🦅');
                     profile_converter.insert("SrcASN", SrcASN(src_data.next().unwrap().into()));
                     profile_converter
                         .insert("SrcCountry", SrcCountry(src_data.next().unwrap().into()));
