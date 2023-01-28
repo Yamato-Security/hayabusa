@@ -96,16 +96,12 @@ impl StoredStatic {
             _ => false,
         };
         let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => {
-                GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip)
-            },
-            Some(Action::JsonTimeline(opt)) => {
-                GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip)
-            },
+            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip),
+            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip),
             _ => Ok(None),
         };
-        if let Err(err_msg) =  geo_ip_db_result {
-            AlertMessage::alert(err_msg);
+        if let Err(err_msg) = geo_ip_db_result {
+            AlertMessage::alert(err_msg).ok();
             process::exit(1);
         }
         let mut ret = StoredStatic {
