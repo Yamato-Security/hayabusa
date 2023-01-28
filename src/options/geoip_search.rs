@@ -78,6 +78,8 @@ impl GeoIPSearch {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::GeoIPSearch;
 
     #[test]
@@ -92,5 +94,26 @@ mod tests {
         )
         .unwrap()
         .is_none())
+    }
+
+    #[test]
+    fn test_not_exist_files() {
+        let target_files = vec![
+            "GeoLite2-NoExist1.mmdb",
+            "GeoLite2-NoExist2.mmdb",
+            "GeoLite2-NoExist3.mmdb",
+        ];
+        let test_path = Path::new("test_files/mmdb").to_path_buf();
+        let mut expect_err_msg = vec![];
+        for file_path in &target_files {
+            expect_err_msg.push(format!(
+                "Cannot find the appropriate MaxMind GeoIP database files. filepath: {:?}",
+                test_path.join(file_path)
+            ));
+        }
+        assert_eq!(
+            GeoIPSearch::check_exist_geo_ip_files(&Some(test_path), target_files),
+            Err(expect_err_msg.join("\n"))
+        )
     }
 }
