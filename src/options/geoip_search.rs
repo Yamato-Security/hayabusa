@@ -160,9 +160,9 @@ mod tests {
 
         // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
         let target_files = vec![
-            "GeoLite2-ASN-Test.mmdb",
-            "GeoLite2-Country-Test.mmdb",
-            "GeoLite2-City-Test.mmdb",
+            "GeoLite2-ASN.mmdb",
+            "GeoLite2-Country.mmdb",
+            "GeoLite2-City.mmdb",
         ];
         assert_eq!(
             GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
@@ -181,10 +181,13 @@ mod tests {
         let test_path = Path::new("test_files/mmdb").to_path_buf();
 
         // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
+        // GeoLite2-ASN.mmdb -> GeoLite2.ASN-Test.mmdb
+        // GeoLite2-Country.mmdb -> GeoLite2.Country-Test.mmdb
+        // GeoLite2-City.mmdb -> GeoLite2.City-Test.mmdb
         let target_files = vec![
-            "GeoLite2-ASN-Test.mmdb",
-            "GeoLite2-Country-Test.mmdb",
-            "GeoLite2-City-Test.mmdb",
+            "GeoLite2-ASN.mmdb",
+            "GeoLite2-Country.mmdb",
+            "GeoLite2-City.mmdb",
         ];
         assert_eq!(
             GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
