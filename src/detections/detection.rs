@@ -4,7 +4,8 @@ use crate::detections::utils::{create_recordinfos, format_time, write_color_buff
 use crate::options::profile::Profile::{
     self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
     Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
-    RuleModifiedDate, RuleTitle, Status, Timestamp,
+    RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity, TgtCountry,
+    Timestamp,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -247,6 +248,8 @@ impl Detection {
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
+        let binding = STORED_EKEY_ALIAS.read().unwrap();
+        let eventkey_alias = binding.as_ref().unwrap();
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -432,6 +435,41 @@ impl Detection {
                     };
                     profile_converter.insert(key.as_str(), Provider(convert_value));
                 }
+                TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    let alias_data = Self::get_alias_data(
+                        vec!["%DestAddress%", "%DestinationIp%"],
+                        &record_info.record,
+                        eventkey_alias,
+                    );
+                    let mut tgt_data = alias_data.split("🦅");
+                    profile_converter.insert("TgtASN", TgtASN(tgt_data.next().unwrap().into()));
+                    profile_converter
+                        .insert("TgtCountry", TgtCountry(tgt_data.next().unwrap().into()));
+                    profile_converter.insert("TgtCity", TgtCity(tgt_data.next().unwrap().into()));
+                }
+                SrcASN(_) | SrcCountry(_) | SrcCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    let alias_data = Self::get_alias_data(
+                        vec![
+                            "%IpAddress%",
+                            "%ClientAddress%",
+                            "%SourceAddress%",
+                            "%SourceIp%",
+                        ],
+                        &record_info.record,
+                        eventkey_alias,
+                    );
+                    let mut src_data = alias_data.split("🦅");
+                    profile_converter.insert("SrcASN", SrcASN(src_data.next().unwrap().into()));
+                    profile_converter
+                        .insert("SrcCountry", SrcCountry(src_data.next().unwrap().into()));
+                    profile_converter.insert("SrcCity", SrcCity(src_data.next().unwrap().into()));
+                }
                 _ => {}
             }
         }
@@ -446,8 +484,6 @@ impl Detection {
             },
         };
 
-        let binding = STORED_EKEY_ALIAS.read().unwrap();
-        let eventkey_alias = binding.as_ref().unwrap();
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
@@ -461,21 +497,6 @@ impl Detection {
             detail: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
-            src_geo: Self::get_alias_data(
-                vec![
-                    "%IpAddress%",
-                    "%ClientAddress%",
-                    "%SourceAddress%",
-                    "%SourceIp%",
-                ],
-                &record_info.record,
-                eventkey_alias,
-            ),
-            dst_geo: Self::get_alias_data(
-                vec!["%DestAddress%", "%DestinationIp%"],
-                &record_info.record,
-                eventkey_alias,
-            ),
         };
         message::insert(
             &record_info.record,
@@ -637,6 +658,22 @@ impl Detection {
                 RenderedMessage(_) => {
                     profile_converter.insert(key.as_str(), Provider(CompactString::from("-")));
                 }
+                TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    profile_converter.insert("TgtASN", TgtASN("-".into()));
+                    profile_converter.insert("TgtCountry", TgtCountry("-".into()));
+                    profile_converter.insert("TgtCity", TgtCity("-".into()));
+                }
+                SrcASN(_) | SrcCountry(_) | SrcCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    profile_converter.insert("SrcASN", SrcASN("-".into()));
+                    profile_converter.insert("SrcCountry", SrcCountry("-".into()));
+                    profile_converter.insert("SrcCity", SrcCity("-".into()));
+                }
                 _ => {}
             }
         }
@@ -650,8 +687,6 @@ impl Detection {
             detail: output,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
-            src_geo: CompactString::from("-"),
-            dst_geo: CompactString::from("-"),
         };
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();

@@ -31,8 +31,6 @@ pub struct DetectInfo {
     pub eventid: CompactString,
     pub detail: CompactString,
     pub ext_field: Vec<(CompactString, Profile)>,
-    pub src_geo: CompactString,
-    pub dst_geo: CompactString,
     pub is_condition: bool,
 }
 
@@ -663,8 +661,6 @@ mod tests {
                 detail: CompactString::default(),
                 ext_field: vec![],
                 is_condition: false,
-                src_geo: CompactString::from("-"),
-                dst_geo: CompactString::from("-"),
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }

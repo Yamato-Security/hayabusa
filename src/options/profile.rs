@@ -4,7 +4,8 @@ use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
     AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, Level, Literal, MitreTactics,
     MitreTags, OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate,
-    RuleFile, RuleID, RuleModifiedDate, RuleTitle, Status, Timestamp,
+    RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN,
+    TgtCity, TgtCountry, Timestamp,
 };
 use crate::yaml;
 use compact_str::CompactString;
@@ -38,6 +39,12 @@ pub enum Profile {
     Provider(CompactString),
     Details(CompactString),
     RenderedMessage(CompactString),
+    SrcASN(CompactString),
+    SrcCountry(CompactString),
+    SrcCity(CompactString),
+    TgtASN(CompactString),
+    TgtCountry(CompactString),
+    TgtCity(CompactString),
     Literal(CompactString), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
@@ -48,7 +55,8 @@ impl Profile {
             | RuleTitle(v) | AllFieldInfo(v) | RuleFile(v) | EvtxFile(v) | MitreTactics(v)
             | MitreTags(v) | OtherTags(v) | RuleAuthor(v) | RuleCreationDate(v)
             | RuleModifiedDate(v) | Status(v) | RuleID(v) | Provider(v) | Details(v)
-            | RenderedMessage(v) | Literal(v) => v.to_string(),
+            | RenderedMessage(v) | SrcASN(v) | SrcCountry(v) | SrcCity(v) | TgtASN(v)
+            | TgtCountry(v) | TgtCity(v) | Literal(v) => v.to_string(),
         }
     }
 
@@ -73,6 +81,12 @@ impl Profile {
             RuleID(_) => RuleID(converted_string.to_owned()),
             Provider(_) => Provider(converted_string.to_owned()),
             RenderedMessage(_) => RenderedMessage(converted_string.to_owned()),
+            SrcASN(_) => SrcASN(converted_string.to_owned()),
+            SrcCountry(_) => SrcCountry(converted_string.to_owned()),
+            SrcCity(_) => SrcCity(converted_string.to_owned()),
+            TgtASN(_) => TgtASN(converted_string.to_owned()),
+            TgtCountry(_) => TgtCountry(converted_string.to_owned()),
+            TgtCity(_) => TgtCity(converted_string.to_owned()),
             p => p.to_owned(),
         }
     }
@@ -174,6 +188,23 @@ pub fn load_profile(
     }
     let profile_data = &profile_all[0];
     let mut ret: Vec<(CompactString, Profile)> = vec![];
+
+    // insert preserved keyword when get-ip option specified.
+    if opt_stored_static.unwrap().geo_ip_db_path.is_some() {
+        ret.push((CompactString::from("SrcASN"), Profile::from("SrcASN")));
+        ret.push((
+            CompactString::from("SrcCountry"),
+            Profile::from("SrcCountry"),
+        ));
+        ret.push((CompactString::from("SrcCity"), Profile::from("SrcCity")));
+        ret.push((CompactString::from("TgtASN"), Profile::from("TgtASN")));
+        ret.push((
+            CompactString::from("TgtCountry"),
+            Profile::from("TgtCountry"),
+        ));
+        ret.push((CompactString::from("TgtCity"), Profile::from("TgtCity")));
+    }
+
     if let Some(profile_name) = profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
