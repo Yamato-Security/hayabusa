@@ -129,7 +129,7 @@ impl ConditionCompiler {
 
         let result = self.compile_condition_body(&replaced_condition, name_2_node);
         if let Result::Err(msg) = result {
-            Result::Err(format!("A condition parse error has occured. {}", msg))
+            Result::Err(format!("A condition parse error has occurred. {msg}"))
         } else {
             result
         }
@@ -413,7 +413,7 @@ impl ConditionCompiler {
                 let ref_node = RefSelectionNode::new(selection_node);
                 return Result::Ok(Box::new(ref_node));
             } else {
-                let err_msg = format!("{} is not defined.", selection_name);
+                let err_msg = format!("{selection_name} is not defined.");
                 return Result::Err(err_msg);
             }
         }

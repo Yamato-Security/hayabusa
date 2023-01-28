@@ -130,12 +130,11 @@ fn read_profile_data(
     if let Ok(loaded_profile) = yml.read_file(Path::new(profile_path).to_path_buf()) {
         match YamlLoader::load_from_str(&loaded_profile) {
             Ok(profile_yml) => Ok(profile_yml),
-            Err(e) => Err(format!("Parse error: {}. {}", profile_path, e)),
+            Err(e) => Err(format!("Parse error: {profile_path}. {e}")),
         }
     } else {
         Err(format!(
-            "The profile file({}) does not exist. Please check your default profile.",
-            profile_path
+            "The profile file({profile_path}) does not exist. Please check your default profile."
         ))
     }
 }
@@ -288,8 +287,7 @@ pub fn set_default_profile(
                 let result = match dump_result {
                     Ok(_) => match buf_wtr.write_all(out_str.as_bytes()) {
                         Err(e) => Err(format!(
-                            "Failed to set the default profile file({}). {}",
-                            profile_path, e
+                            "Failed to set the default profile file({profile_path}). {e}"
                         )),
                         _ => {
                             buf_wtr.flush().ok();
@@ -297,8 +295,7 @@ pub fn set_default_profile(
                         }
                     },
                     Err(e) => Err(format!(
-                        "Failed to set the default profile file({}). {}",
-                        profile_path, e
+                        "Failed to set the default profile file({profile_path}). {e}"
                     )),
                 };
                 result
@@ -315,8 +312,7 @@ pub fn set_default_profile(
             }
         } else {
             Err(format!(
-                "Failed to set the default profile file({}).",
-                profile_path
+                "Failed to set the default profile file({profile_path})."
             ))
         }
     } else {

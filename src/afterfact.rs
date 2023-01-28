@@ -170,7 +170,7 @@ pub fn after_fact(
     stored_static: &StoredStatic,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
-        AlertMessage::alert(&format!("Failed to write CSV. {}", err)).ok();
+        AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
     };
 
@@ -180,7 +180,7 @@ pub fn after_fact(
         match File::create(path) {
             Ok(file) => Box::new(BufWriter::new(file)),
             Err(err) => {
-                AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
                 process::exit(1);
             }
         }
@@ -569,7 +569,7 @@ fn emit_csv<W: std::io::Write>(
         if html_output_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
-            html_output_stock.push(format!("- {}", reduction_output));
+            html_output_stock.push(format!("- {reduction_output}"));
         }
 
         _print_unique_results(
@@ -699,9 +699,9 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
 /// return str position in output file
 fn _format_cellpos(colval: &str, column: ColPos) -> String {
     match column {
-        ColPos::First => format!("{} ", colval),
-        ColPos::Last => format!(" {}", colval),
-        ColPos::Other => format!(" {} ", colval),
+        ColPos::First => format!("{colval} "),
+        ColPos::Last => format!(" {colval}"),
+        ColPos::Other => format!(" {colval} "),
     }
 }
 
@@ -806,7 +806,7 @@ fn _print_detection_summary_by_date(
     write_color_buffer(&buf_wtr, None, output_header, true).ok();
 
     if stored_static.html_report_flag {
-        html_output_stock.push(format!("- {}", output_header));
+        html_output_stock.push(format!("- {output_header}"));
     }
     for (idx, level) in level_abbr.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -834,13 +834,13 @@ fn _print_detection_summary_by_date(
             LEVEL_FULL.get(&level[1].as_str()).unwrap(),
             &max_detect_str
         );
-        write!(wtr, "{}", output_str).ok();
+        write!(wtr, "{output_str}").ok();
         if idx != level_abbr.len() - 1 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
         if stored_static.html_report_flag {
-            html_output_stock.push(format!("    - {}", output_str));
+            html_output_stock.push(format!("    - {output_str}"));
         }
     }
     buf_wtr.print(&wtr).ok();
@@ -1073,7 +1073,7 @@ fn _create_json_output_format(
     let head = if key_quote_exclude_flag {
         key.to_string()
     } else {
-        format!("\"{}\"", key)
+        format!("\"{key}\"")
     };
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
@@ -1149,7 +1149,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
             match profile {
                 Profile::AllFieldInfo(_) | Profile::Details(_) => {
                     let mut output_stock: Vec<String> = vec![];
-                    output_stock.push(format!("    \"{}\": {{", key));
+                    output_stock.push(format!("    \"{key}\": {{"));
                     let mut stocked_value = vec![];
                     let mut key_index_stock = vec![];
                     for detail_contents in vec_data.iter() {
@@ -1201,7 +1201,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                             || is_remain_split_stock
                         {
                             // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
-                            let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                            let output_tmp = format!("{tmp}: {output_value_stock}");
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
@@ -1220,7 +1220,7 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                             key_idx += 1;
                         }
                         if value_idx == stocked_value.len() - 1 {
-                            let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                            let output_tmp = format!("{tmp}: {output_value_stock}");
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
@@ -1632,7 +1632,7 @@ mod tests {
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
 
-            println!("message: {:?}", detect_infos);
+            println!("message: {detect_infos:?}");
         }
         let expect =
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
@@ -1833,10 +1833,7 @@ mod tests {
         assert_eq!(target.len(), expected.len());
         for (k, v) in target {
             assert!(expected.get(&k).is_some());
-            assert_eq!(
-                format!("{:?}", v),
-                format!("{:?}", expected.get(&k).unwrap())
-            );
+            assert_eq!(format!("{v:?}"), format!("{:?}", expected.get(&k).unwrap()));
         }
     }
 

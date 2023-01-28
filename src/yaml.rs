@@ -83,7 +83,7 @@ impl ParseYaml {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             return io::Result::Ok(String::default());
         }
@@ -115,7 +115,7 @@ impl ParseYaml {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("[WARN] {}", errmsg));
+                        .push(format!("[WARN] {errmsg}"));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -136,7 +136,7 @@ impl ParseYaml {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("[WARN] {}", errmsg));
+                        .push(format!("[WARN] {errmsg}"));
                 }
                 self.errorrule_count += 1;
                 return io::Result::Ok(String::default());
@@ -201,7 +201,7 @@ impl ParseYaml {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[WARN] {}", errmsg));
+                            .push(format!("[WARN] {errmsg}"));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
@@ -222,7 +222,7 @@ impl ParseYaml {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[WARN] {}", errmsg));
+                            .push(format!("[WARN] {errmsg}"));
                     }
                     self.errorrule_count += 1;
                     return io::Result::Ok(ret);
@@ -299,7 +299,7 @@ impl ParseYaml {
             *status_cnt += 1;
 
             if stored_static.verbose_flag {
-                println!("Loaded yml file path: {}", filepath);
+                println!("Loaded yml file path: {filepath}");
             }
 
             // 指定されたレベルより低いルールは無視する

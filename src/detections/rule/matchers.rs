@@ -567,7 +567,7 @@ impl PipeElement {
             let prev_idx = idx;
             for wildcard in &wildcards {
                 let cur_pattern: String = pattern.chars().skip(idx).collect::<String>();
-                if cur_pattern.starts_with(&format!(r"\\{}", wildcard)) {
+                if cur_pattern.starts_with(&format!(r"\\{wildcard}")) {
                     // wildcardの前にエスケープ文字が2つある場合
                     cur_str = format!("{}{}", cur_str, r"\");
                     pattern_splits.push(cur_str);
@@ -576,9 +576,9 @@ impl PipeElement {
                     cur_str = String::default();
                     idx += 3;
                     break;
-                } else if cur_pattern.starts_with(&format!(r"\{}", wildcard)) {
+                } else if cur_pattern.starts_with(&format!(r"\{wildcard}")) {
                     // wildcardの前にエスケープ文字が1つある場合
-                    cur_str = format!("{}{}", cur_str, wildcard);
+                    cur_str = format!("{cur_str}{wildcard}");
                     idx += 2;
                     break;
                 } else if cur_pattern.starts_with(wildcard) {
@@ -625,7 +625,7 @@ impl PipeElement {
                     wildcard_regex_value.to_string()
                 };
 
-                format!("{}{}", acc, regex_value)
+                format!("{acc}{regex_value}")
             },
         );
 

@@ -40,8 +40,7 @@ impl GeoIPSearch {
                 let mmdb_path = path.join(file_name);
                 if !mmdb_path.exists() {
                     combined_err.push(format!(
-                        "Cannot find the appropriate MaxMind GeoIP database files. filepath: {:?}",
-                        mmdb_path
+                        "Cannot find the appropriate MaxMind GeoIP database files. filepath: {mmdb_path:?}"
                     ));
                 }
             }
@@ -67,7 +66,7 @@ impl GeoIPSearch {
         let asn: geoip2::Asn = self.asn_reader.lookup(addr)?;
         let country: geoip2::Country = self.country_reader.lookup(addr)?;
         let city: geoip2::City = self.city_reader.lookup(addr)?;
-        let geo_data = format!("{:#?}🦅{:#?}🦅{:#?}", asn, country, city);
+        let geo_data = format!("{asn:#?}🦅{country:#?}🦅{city:#?}");
         IP_MAP
             .lock()
             .unwrap()

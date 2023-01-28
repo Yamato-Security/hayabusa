@@ -272,7 +272,7 @@ impl StoredStatic {
                                 )
                             }
                         };
-                        ret.insert(format!("{}_{}", provider, eid), details.to_string());
+                        ret.insert(format!("{provider}_{eid}"), details.to_string());
                         Ok(())
                     })
                     .ok();

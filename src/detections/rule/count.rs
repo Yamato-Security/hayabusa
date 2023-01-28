@@ -118,7 +118,7 @@ fn get_alias_value_in_record(
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             None
         }
@@ -228,7 +228,7 @@ impl TimeFrameInfo {
             ttype = "d";
             value.retain(|c| c != 'd');
         } else {
-            let errmsg = format!("Timeframe is invalid. Input value:{}", value);
+            let errmsg = format!("Timeframe is invalid. Input value:{value}");
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -236,7 +236,7 @@ impl TimeFrameInfo {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
         }
         TimeFrameInfo {
@@ -263,7 +263,7 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
             }
         }
         Err(err) => {
-            let errmsg = format!("Timeframe number is invalid. timeframe. {}", err);
+            let errmsg = format!("Timeframe number is invalid. timeframe. {err}");
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -271,7 +271,7 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             Option::None
         }

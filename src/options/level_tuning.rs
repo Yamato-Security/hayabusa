@@ -27,7 +27,7 @@ impl LevelTuning {
             // 1つ目の要素も存在しない場合はread_csvの段階で読み飛ばされるためget(0)がNoneにはならない
             let id = line.get(0).unwrap();
             if !configs::IDS_REGEX.is_match(id) {
-                return Result::Err(format!("Failed to read level tuning file. {} is not correct id format, fix it.", id));
+                return Result::Err(format!("Failed to read level tuning file. {id} is not correct id format, fix it."));
             }
 
             let level = match line.get(1) {
@@ -71,7 +71,7 @@ impl LevelTuning {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &format!("path: {}", path),
+                    &format!("path: {path}"),
                     true,
                 )
                 .ok();

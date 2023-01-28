@@ -177,7 +177,7 @@ pub fn parse_message(
         let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(&target_str) {
             _array_str.to_string()
         } else {
-            format!("Event.EventData.{}", target_str)
+            format!("Event.EventData.{target_str}")
         };
 
         let mut tmp_event_record: &Value = event_record;
@@ -264,12 +264,9 @@ impl AlertMessage {
             .ok();
         let error_logs = ERROR_LOG_STACK.lock().unwrap();
         error_logs.iter().for_each(|error_log| {
-            writeln!(error_log_writer, "{}", error_log).ok();
+            writeln!(error_log_writer, "{error_log}").ok();
         });
-        println!(
-            "Errors were generated. Please check {} for details.",
-            file_path
-        );
+        println!("Errors were generated. Please check {file_path} for details.");
         println!();
     }
 
@@ -278,7 +275,7 @@ impl AlertMessage {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
             None,
-            &format!("[ERROR] {}", contents),
+            &format!("[ERROR] {contents}"),
             true,
         )
     }
@@ -288,7 +285,7 @@ impl AlertMessage {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
             None,
-            &format!("[WARN] {}", contents),
+            &format!("[WARN] {contents}"),
             true,
         )
     }

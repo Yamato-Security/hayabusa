@@ -130,8 +130,8 @@ pub fn create_html_file(input_html: String, path_str: &str) {
         }
     );
 
-    writeln!(html_writer, "{}", html_data).ok();
-    println!("HTML report: {}", path_str);
+    writeln!(html_writer, "{html_data}").ok();
+    println!("HTML report: {path_str}");
 }
 
 #[cfg(test)]
@@ -194,8 +194,7 @@ mod tests {
                 .replace("- ", "")
         );
         let expect_str = format!(
-            "<h2 id=\"general_overview\">General Overview</h2>\n{}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n",
-            general_overview_str
+            "<h2 id=\"general_overview\">General Overview</h2>\n{general_overview_str}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n"
         );
 
         assert_eq!(html_reporter.create_html(), expect_str);
@@ -402,8 +401,7 @@ mod tests {
                 .replace("- ", "")
         );
         let expect_str = format!(
-            "<h2 id=\"general_overview\">General Overview</h2>\n{}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n",
-            general_overview_str
+            "<h2 id=\"general_overview\">General Overview</h2>\n{general_overview_str}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n"
         );
         htmlreport::create_html_file(
             html_reporter.create_html(),
@@ -412,7 +410,7 @@ mod tests {
 
         let header = r#"<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" type="text/css" href="./config/html_report/hayabusa_report.css"><link rel="icon" type="image/png" href="./config/html_report/favicon.png"></head><body><section><img id="logo" src="./config/html_report/logo.png">"#;
         let footer = "</section></body></html>\n";
-        let expect = format!("{}{}{}", header, expect_str, footer);
+        let expect = format!("{header}{expect_str}{footer}");
         assert_eq!(
             read_to_string("./test-html/test_create_html_file.html").unwrap(),
             expect
