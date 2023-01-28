@@ -31,6 +31,8 @@ pub struct DetectInfo {
     pub eventid: CompactString,
     pub detail: CompactString,
     pub ext_field: Vec<(CompactString, Profile)>,
+    pub src_geo: CompactString,
+    pub dst_geo: CompactString,
     pub is_condition: bool,
 }
 
@@ -158,7 +160,7 @@ pub fn insert(
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
-fn parse_message(
+pub fn parse_message(
     event_record: &Value,
     output: CompactString,
     eventkey_alias: &EventKeyAliasConfig,
@@ -661,6 +663,8 @@ mod tests {
                 detail: CompactString::default(),
                 ext_field: vec![],
                 is_condition: false,
+                src_geo: CompactString::from("-"),
+                dst_geo: CompactString::from("-"),
             };
             sample_detects.push((sample_event_time, detect_info, rng.gen_range(0..10)));
         }

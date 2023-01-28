@@ -29,7 +29,7 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{StoredStatic, STORED_STATIC};
+use super::configs::{EventKeyAliasConfig, StoredStatic, STORED_STATIC};
 use super::message::{self, LEVEL_ABBR_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体
@@ -446,6 +446,8 @@ impl Detection {
             },
         };
 
+        let binding = STORED_EKEY_ALIAS.read().unwrap();
+        let eventkey_alias = binding.as_ref().unwrap();
         let detect_info = DetectInfo {
             rulepath: CompactString::from(&rule.rulepath),
             ruletitle: CompactString::from(rule.yaml["title"].as_str().unwrap_or("-")),
@@ -459,9 +461,22 @@ impl Detection {
             detail: CompactString::default(),
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
+            src_geo: Self::get_alias_data(
+                vec![
+                    "%IpAddress%",
+                    "%ClientAddress%",
+                    "%SourceAddress%",
+                    "%SourceIp%",
+                ],
+                &record_info.record,
+                eventkey_alias,
+            ),
+            dst_geo: Self::get_alias_data(
+                vec!["%DestAddress%", "%DestinationIp%"],
+                &record_info.record,
+                eventkey_alias,
+            ),
         };
-        let binding = STORED_EKEY_ALIAS.read().unwrap();
-        let eventkey_alias = binding.as_ref().unwrap();
         message::insert(
             &record_info.record,
             CompactString::new(details_fmt_str),
@@ -635,6 +650,8 @@ impl Detection {
             detail: output,
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: true,
+            src_geo: CompactString::from("-"),
+            dst_geo: CompactString::from("-"),
         };
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
@@ -852,6 +869,22 @@ impl Detection {
         if !html_report_stock.is_empty() {
             htmlreport::add_md_data("General Overview {#general_overview}", html_report_stock);
         }
+    }
+
+    /// Retrieve the value of a given alias in a record.
+    fn get_alias_data(
+        target_alias: Vec<&str>,
+        record: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) -> CompactString {
+        for alias in target_alias {
+            let search_data =
+                message::parse_message(record, CompactString::from(alias), eventkey_alias);
+            if search_data != "n/a" {
+                return search_data;
+            }
+        }
+        CompactString::from("-")
     }
 }
 
