@@ -948,19 +948,30 @@ impl Detection {
 
 #[cfg(test)]
 mod tests {
+    use crate::detections;
+    use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::InputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
+    use crate::detections::configs::CURRENT_EXE_PATH;
+    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::detection::Detection;
+    use crate::detections::message;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
+    use crate::detections::rule::RuleNode;
+    use crate::detections::utils;
     use crate::filter;
+    use crate::options::profile::Profile;
     use chrono::TimeZone;
     use chrono::Utc;
+    use compact_str::CompactString;
+    use serde_json::Value;
     use std::path::Path;
+    use yaml_rust::Yaml;
     use yaml_rust::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
@@ -1193,6 +1204,116 @@ mod tests {
             Detection::create_count_output(&rule_node, &agg_result),
             expected_output
         );
+    }
+
+    #[test]
+    fn test_insert_message_with_geoip() {
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                profile: None,
+                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+            },
+            json_input: false,
+            geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        {
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
+
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+            {
+                "Event": {
+                    "EventData": {
+                        "CommandRLine": "hoge",
+                        "IpAddress": "89.160.20.128",
+                        "DestAddress": "2.125.160.216"
+                    },
+                    "System": {
+                        "TimeCreated_attributes": {
+                            "SystemTime": "1996-02-27T01:05:01Z"
+                        },
+                        "EventRecordID": "11111",
+                        "Channel": "Security"
+                    }
+                }
+            }
+        "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
+            let keys = detections::rule::get_detection_keys(&dummy_rule);
+
+            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+            assert!(detect_infos.len() == 1);
+            let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
+                ("SrcASN".into(), Profile::SrcASN("Bredband2 AB".into())),
+                ("SrcCountry".into(), Profile::SrcCountry("Sweden".into())),
+                ("SrcCity".into(), Profile::SrcCity("Linköping".into())),
+                ("TgtASN".into(), Profile::TgtASN("n/a".into())),
+                (
+                    "TgtCountry".into(),
+                    Profile::TgtCountry("United Kingdom".into()),
+                ),
+                ("TgtCity".into(), Profile::TgtCity("Boxford".into())),
+            ];
+            let ext_field = detect_infos[0].ext_field.clone();
+            for expect in expect_geo_ip_data.iter() {
+                assert!(ext_field.contains(expect));
+            }
+        }
     }
 
     #[test]
