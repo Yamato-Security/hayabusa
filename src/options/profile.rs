@@ -371,6 +371,7 @@ mod tests {
 
     use crate::detections::configs::{
         Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic, UpdateOption,
+        GEOIP_DB_PARSER,
     };
     use crate::options::profile::{get_profile_list, load_profile, Profile};
     use compact_str::CompactString;
@@ -539,6 +540,7 @@ mod tests {
                 json_input: false,
                 geo_ip: None,
             }));
+        *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
             Some(expect),
             load_profile(
