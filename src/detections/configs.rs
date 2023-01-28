@@ -96,16 +96,37 @@ impl StoredStatic {
             _ => false,
         };
         let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip),
-            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip),
+            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+                &opt.geo_ip,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ),
+            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+                &opt.geo_ip,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ),
             _ => Ok(None),
         };
         if let Err(err_msg) = geo_ip_db_result {
-            AlertMessage::alert(err_msg).ok();
+            AlertMessage::alert(&err_msg).ok();
             process::exit(1);
         }
         if let Some(geo_ip_db_path) = geo_ip_db_result.unwrap() {
-            *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(&geo_ip_db_path));
+            *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(
+                &geo_ip_db_path,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ));
         };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
