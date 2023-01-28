@@ -1,8 +1,9 @@
 extern crate lazy_static;
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
-use crate::options::profile::Profile;
-use crate::options::profile::Profile::{AllFieldInfo, Details, Literal};
+use crate::options::profile::Profile::{
+    self, AllFieldInfo, Details, Literal, SrcASN, SrcCity, SrcCountry, TgtASN, TgtCity, TgtCountry,
+};
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
 use dashmap::DashMap;
@@ -139,6 +140,15 @@ pub fn insert(
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
+            SrcASN(_) | SrcCountry(_) | SrcCity(_) | TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
+                replaced_profiles.push((
+                    key.to_owned(),
+                    profile_converter
+                        .get(key.to_string().as_str())
+                        .unwrap()
+                        .to_owned(),
+                ))
+            }
             _ => {
                 if let Some(p) = profile_converter.get(key.to_string().as_str()) {
                     replaced_profiles.push((

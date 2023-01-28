@@ -190,18 +190,30 @@ pub fn load_profile(
 
     // insert preserved keyword when get-ip option specified.
     if GEOIP_DB_PARSER.read().unwrap().is_some() {
-        ret.push((CompactString::from("SrcASN"), Profile::from("SrcASN")));
+        ret.push((
+            CompactString::from("SrcASN"),
+            SrcASN(CompactString::default()),
+        ));
         ret.push((
             CompactString::from("SrcCountry"),
-            Profile::from("SrcCountry"),
+            SrcCountry(CompactString::default()),
         ));
-        ret.push((CompactString::from("SrcCity"), Profile::from("SrcCity")));
-        ret.push((CompactString::from("TgtASN"), Profile::from("TgtASN")));
+        ret.push((
+            CompactString::from("SrcCity"),
+            SrcCity(CompactString::default()),
+        ));
+        ret.push((
+            CompactString::from("TgtASN"),
+            TgtASN(CompactString::default()),
+        ));
         ret.push((
             CompactString::from("TgtCountry"),
-            Profile::from("TgtCountry"),
+            TgtCountry(CompactString::default()),
         ));
-        ret.push((CompactString::from("TgtCity"), Profile::from("TgtCity")));
+        ret.push((
+            CompactString::from("TgtCity"),
+            TgtCity(CompactString::default()),
+        ));
     }
 
     if let Some(profile_name) = profile {
