@@ -188,6 +188,45 @@ pub fn load_profile(
     let profile_data = &profile_all[0];
     let mut ret: Vec<(CompactString, Profile)> = vec![];
 
+    if let Some(profile_name) = profile {
+        let target_data = &profile_data[profile_name.as_str()];
+        if !target_data.is_badvalue() {
+            target_data
+                .as_hash()
+                .unwrap()
+                .into_iter()
+                .for_each(|(k, v)| {
+                    ret.push((
+                        CompactString::from(k.as_str().unwrap()),
+                        Profile::from(v.as_str().unwrap()),
+                    ));
+                });
+        } else {
+            AlertMessage::alert(&format!(
+                "Invalid profile specified: {}\nPlease specify one of the following profiles:\n {}",
+                profile_name,
+                profile_data
+                    .as_hash()
+                    .unwrap()
+                    .keys()
+                    .map(|k| k.as_str().unwrap())
+                    .join(", ")
+            ))
+            .ok();
+            return None;
+        }
+    } else {
+        profile_data
+            .as_hash()
+            .unwrap()
+            .into_iter()
+            .for_each(|(k, v)| {
+                ret.push((
+                    CompactString::from(k.as_str().unwrap()),
+                    Profile::from(v.as_str().unwrap()),
+                ));
+            });
+    }
     // insert preserved keyword when get-ip option specified.
     if GEOIP_DB_PARSER.read().unwrap().is_some() {
         ret.push((
@@ -215,48 +254,7 @@ pub fn load_profile(
             TgtCity(CompactString::default()),
         ));
     }
-
-    if let Some(profile_name) = profile {
-        let target_data = &profile_data[profile_name.as_str()];
-        if !target_data.is_badvalue() {
-            target_data
-                .as_hash()
-                .unwrap()
-                .into_iter()
-                .for_each(|(k, v)| {
-                    ret.push((
-                        CompactString::from(k.as_str().unwrap()),
-                        Profile::from(v.as_str().unwrap()),
-                    ));
-                });
-            Some(ret)
-        } else {
-            AlertMessage::alert(&format!(
-                "Invalid profile specified: {}\nPlease specify one of the following profiles:\n {}",
-                profile_name,
-                profile_data
-                    .as_hash()
-                    .unwrap()
-                    .keys()
-                    .map(|k| k.as_str().unwrap())
-                    .join(", ")
-            ))
-            .ok();
-            None
-        }
-    } else {
-        profile_data
-            .as_hash()
-            .unwrap()
-            .into_iter()
-            .for_each(|(k, v)| {
-                ret.push((
-                    CompactString::from(k.as_str().unwrap()),
-                    Profile::from(v.as_str().unwrap()),
-                ));
-            });
-        Some(ret)
-    }
+    Some(ret)
 }
 
 /// デフォルトプロファイルを設定する関数
