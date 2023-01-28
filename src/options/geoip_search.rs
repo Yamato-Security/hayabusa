@@ -113,18 +113,20 @@ impl GeoIPSearch {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::GeoIPSearch;
+    use crate::options::geoip_search::IP_MAP;
+    use compact_str::CompactString;
+    use std::{net::IpAddr, path::Path, str::FromStr};
 
     #[test]
     fn test_no_specified_geo_ip_option() {
+        // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
         assert!(GeoIPSearch::check_exist_geo_ip_files(
             &None,
             vec![
-                "GeoLite2-ASN.mmdb",
-                "GeoLite2-Country.mmdb",
-                "GeoLite2-City.mmdb",
+                "GeoLite2-ASN-Test.mmdb",
+                "GeoLite2-Country-Test.mmdb",
+                "GeoLite2-City-Test.mmdb",
             ]
         )
         .unwrap()
@@ -150,5 +152,51 @@ mod tests {
             GeoIPSearch::check_exist_geo_ip_files(&Some(test_path), target_files),
             Err(expect_err_msg.join("\n"))
         )
+    }
+
+    #[test]
+    fn test_convert_ip_to_geo() {
+        let test_path = Path::new("test_files/mmdb").to_path_buf();
+
+        // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
+        let target_files = vec![
+            "GeoLite2-ASN-Test.mmdb",
+            "GeoLite2-Country-Test.mmdb",
+            "GeoLite2-City-Test.mmdb",
+        ];
+        assert_eq!(
+            GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
+            Ok(Some(test_path.clone()))
+        );
+        IP_MAP.lock().unwrap().clear();
+        let geo_ip = GeoIPSearch::new(&test_path, target_files);
+        let expect = "n/a🦅United Kingdom🦅Boxford";
+        let actual = geo_ip.convert_ip_to_geo("2.125.160.216");
+        assert!(actual.is_ok());
+        assert_eq!(expect, actual.unwrap());
+    }
+
+    #[test]
+    fn test_already_convert_ip_to_geo() {
+        let test_path = Path::new("test_files/mmdb").to_path_buf();
+
+        // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
+        let target_files = vec![
+            "GeoLite2-ASN-Test.mmdb",
+            "GeoLite2-Country-Test.mmdb",
+            "GeoLite2-City-Test.mmdb",
+        ];
+        assert_eq!(
+            GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
+            Ok(Some(test_path.clone()))
+        );
+        let geo_ip = GeoIPSearch::new(&test_path, target_files);
+        IP_MAP.lock().unwrap().insert(
+            IpAddr::from_str("2.125.160.216").unwrap(),
+            "this is dummy".into(),
+        );
+        let actual = geo_ip.convert_ip_to_geo("2.125.160.216");
+        assert!(actual.is_ok());
+        assert_eq!(CompactString::from("this is dummy"), actual.unwrap());
     }
 }
