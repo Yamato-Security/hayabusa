@@ -63,10 +63,46 @@ impl GeoIPSearch {
             return Ok(cached_data.to_string());
         }
 
-        let asn: geoip2::Asn = self.asn_reader.lookup(addr)?;
-        let country: geoip2::Country = self.country_reader.lookup(addr)?;
-        let city: geoip2::City = self.city_reader.lookup(addr)?;
-        let geo_data = format!("{asn:#?}🦅{country:#?}🦅{city:#?}");
+        let asn_search: Result<geoip2::Asn, MaxMindDBError> = self.asn_reader.lookup(addr);
+        let country_search: Result<geoip2::Country, MaxMindDBError> =
+            self.country_reader.lookup(addr);
+        let city_search: Result<geoip2::City, MaxMindDBError> = self.city_reader.lookup(addr);
+
+        let output_asn = if let Ok(asn) = asn_search {
+            asn.autonomous_system_organization.unwrap_or("n/a")
+        } else {
+            "n/a"
+        };
+
+        let output_country = if let Ok(country_data) = country_search {
+            if let Some(country) = country_data.country {
+                let mut ret = "n/a";
+                if let Some(name_tree) = country.names {
+                    ret = name_tree.get("en").unwrap_or(&"n/a")
+                }
+                ret
+            } else {
+                "n/a"
+            }
+        } else {
+            "n/a"
+        };
+
+        let output_city = if let Ok(city_data) = city_search {
+            if let Some(city) = city_data.city {
+                let mut ret = "n/a";
+                if let Some(name_tree) = city.names {
+                    ret = name_tree.get("en").unwrap_or(&"n/a")
+                }
+                ret
+            } else {
+                "n/a"
+            }
+        } else {
+            "n/a"
+        };
+
+        let geo_data = format!("{output_asn}🦅{output_country}🦅{output_city}");
         IP_MAP
             .lock()
             .unwrap()
