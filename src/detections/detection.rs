@@ -30,7 +30,7 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{EventKeyAliasConfig, StoredStatic, STORED_STATIC, GEOIP_DB_PARSER};
+use super::configs::{EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, STORED_STATIC};
 use super::message::{self, LEVEL_ABBR_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体
@@ -444,9 +444,14 @@ impl Detection {
                         &record_info.record,
                         eventkey_alias,
                     );
-                    let geo_data = GEOIP_DB_PARSER.read().unwrap().as_ref().unwrap().convert_ip_to_geo(&alias_data);
+                    let geo_data = GEOIP_DB_PARSER
+                        .read()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .convert_ip_to_geo(&alias_data);
                     if let Err(e) = geo_data {
-                        AlertMessage::alert(&format!("{:?}",e)).ok();
+                        AlertMessage::alert(&format!("{:?}", e)).ok();
                         continue;
                     }
                     let binding = geo_data.unwrap();
@@ -471,9 +476,14 @@ impl Detection {
                         eventkey_alias,
                     );
 
-                    let geo_data = GEOIP_DB_PARSER.read().unwrap().as_ref().unwrap().convert_ip_to_geo(&alias_data);
+                    let geo_data = GEOIP_DB_PARSER
+                        .read()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .convert_ip_to_geo(&alias_data);
                     if let Err(e) = geo_data {
-                        AlertMessage::alert(&format!("{:?}",e)).ok();
+                        AlertMessage::alert(&format!("{:?}", e)).ok();
                         continue;
                     }
                     let binding = geo_data.unwrap();

@@ -104,7 +104,7 @@ impl StoredStatic {
             AlertMessage::alert(err_msg).ok();
             process::exit(1);
         }
-        if let Some (geo_ip_db_path) = geo_ip_db_result.unwrap() {
+        if let Some(geo_ip_db_path) = geo_ip_db_result.unwrap() {
             *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(&geo_ip_db_path));
         };
         let mut ret = StoredStatic {
