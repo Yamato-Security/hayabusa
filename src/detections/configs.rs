@@ -23,6 +23,7 @@ use super::utils::check_setting_path;
 lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
     pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
+    pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =
@@ -59,7 +60,6 @@ pub struct StoredStatic {
     pub target_eventids: TargetEventIds,
     pub thread_number: Option<usize>,
     pub json_input_flag: bool,
-    pub geo_ip_db_path: Option<PathBuf>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -104,6 +104,9 @@ impl StoredStatic {
             AlertMessage::alert(err_msg).ok();
             process::exit(1);
         }
+        if let Some (geo_ip_db_path) = geo_ip_db_result.unwrap() {
+            *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(&geo_ip_db_path));
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -182,7 +185,6 @@ impl StoredStatic {
                     .unwrap(),
             ),
             json_input_flag,
-            geo_ip_db_path: geo_ip_db_result.unwrap(),
         };
         ret.profiles = load_profile(
             check_setting_path(

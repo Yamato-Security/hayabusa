@@ -30,7 +30,7 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{EventKeyAliasConfig, StoredStatic, STORED_STATIC};
+use super::configs::{EventKeyAliasConfig, StoredStatic, STORED_STATIC, GEOIP_DB_PARSER};
 use super::message::{self, LEVEL_ABBR_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体

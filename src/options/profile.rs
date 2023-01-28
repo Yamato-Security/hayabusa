@@ -1,4 +1,4 @@
-use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH};
+use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
@@ -190,7 +190,7 @@ pub fn load_profile(
     let mut ret: Vec<(CompactString, Profile)> = vec![];
 
     // insert preserved keyword when get-ip option specified.
-    if opt_stored_static.unwrap().geo_ip_db_path.is_some() {
+    if GEOIP_DB_PARSER.read().unwrap().is_some() {
         ret.push((CompactString::from("SrcASN"), Profile::from("SrcASN")));
         ret.push((
             CompactString::from("SrcCountry"),
