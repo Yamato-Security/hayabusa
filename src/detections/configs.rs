@@ -1,6 +1,7 @@
 use crate::detections::message::AlertMessage;
 use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
+use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::profile::{load_profile, Profile};
 use chrono::{DateTime, Utc};
@@ -12,6 +13,7 @@ use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
 use std::path::{Path, PathBuf};
+use std::process;
 use std::sync::RwLock;
 use terminal_size::{terminal_size, Width};
 
@@ -93,11 +95,19 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.json_input,
             _ => false,
         };
-        let geo_ip_db_path = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.geo_ip.clone(),
-            Some(Action::JsonTimeline(opt)) => opt.geo_ip.clone(),
-            _ => None,
+        let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => {
+                GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip)
+            },
+            Some(Action::JsonTimeline(opt)) => {
+                GeoIPSearch::check_exist_geo_ip_files(&opt.geo_ip)
+            },
+            _ => Ok(None),
         };
+        if let Err(err_msg) =  geo_ip_db_result {
+            AlertMessage::alert(err_msg);
+            process::exit(1);
+        }
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -176,7 +186,7 @@ impl StoredStatic {
                     .unwrap(),
             ),
             json_input_flag,
-            geo_ip_db_path,
+            geo_ip_db_path: geo_ip_db_result.unwrap(),
         };
         ret.profiles = load_profile(
             check_setting_path(
