@@ -242,7 +242,7 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
+    // level is divided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
