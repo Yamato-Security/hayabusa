@@ -2,7 +2,7 @@ use compact_str::CompactString;
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
 use maxminddb::{geoip2, MaxMindDBError, Reader};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::{net::IpAddr, str::FromStr};
 
@@ -16,7 +16,7 @@ pub struct GeoIPSearch {
 }
 
 impl GeoIPSearch {
-    pub fn new(path: &PathBuf, asn_country_city_filename: Vec<&str>) -> GeoIPSearch {
+    pub fn new(path: &Path, asn_country_city_filename: Vec<&str>) -> GeoIPSearch {
         GeoIPSearch {
             asn_reader: maxminddb::Reader::open_readfile(path.join(asn_country_city_filename[0]))
                 .unwrap(),
