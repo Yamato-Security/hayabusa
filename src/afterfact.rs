@@ -1099,42 +1099,33 @@ fn _create_json_output_format(
 
 /// JSONの値に対して文字列の出力形式をJSON出力でエラーにならないようにするための変換を行う関数
 fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
-    let tmp = if input.len() == 1 {
+    let con_cal = if input.len() == 1 {
         input[0].to_string()
     } else if concat_flag {
         input.join(": ")
     } else {
         input[1..].join(": ")
     };
-    let char_cnt = tmp.char_indices().count();
-    let con_val = tmp.as_str();
+    let char_cnt = con_cal.char_indices().count();
     if char_cnt == 0 {
-        tmp
-    } else if con_val.starts_with('\"') {
-        let addition_header = if !con_val.starts_with('\"') { "\"" } else { "" };
-        let addition_quote = if !con_val.ends_with('\"') && concat_flag {
+        con_cal
+    } else if con_cal.starts_with('\"') {
+        let addition_header = if !con_cal.starts_with('\"') { "\"" } else { "" };
+        let addition_quote = if !con_cal.ends_with('\"') && concat_flag {
             "\""
-        } else if !con_val.ends_with('\"') {
+        } else if !con_cal.ends_with('\"') {
             "\\\""
         } else {
             ""
         };
         [
             addition_header,
-            con_val
-                .to_string()
-                .replace('\\', "\\\\")
-                .replace('\"', "\\\"")
-                .trim(),
+            con_cal.replace('\\', "\\\\").replace('\"', "\\\"").trim(),
             addition_quote,
         ]
         .join("")
     } else {
-        con_val
-            .replace('\\', "\\\\")
-            .replace('\"', "\\\"")
-            .trim()
-            .to_string()
+        con_cal.trim().replace('\\', "\\\\").replace('\"', "\\\"")
     }
 }
 
@@ -1200,11 +1191,11 @@ fn output_json_str(
                     let mut output_value_stock = String::default();
                     for (value_idx, value) in stocked_value.iter().enumerate() {
                         let mut tmp = if key_idx >= key_index_stock.len() {
-                            String::default()
+                            ""
                         } else if value_idx == 0 && !value.is_empty() {
-                            key.to_string()
+                            key.as_str()
                         } else {
-                            key_index_stock[key_idx].to_string()
+                            key_index_stock[key_idx].as_str()
                         };
                         if !output_value_stock.is_empty() {
                             output_value_stock.push_str(" | ");
@@ -1246,7 +1237,7 @@ fn output_json_str(
                                 )
                             ));
                             output_value_stock.clear();
-                            tmp = String::default();
+                            tmp = "";
                             key_idx += 1;
                         }
                         if value_idx == stocked_value.len() - 1 {
