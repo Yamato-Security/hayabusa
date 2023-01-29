@@ -433,7 +433,7 @@ impl Detection {
                     } else {
                         CompactString::from("n/a")
                     };
-                    profile_converter.insert(key.as_str(), Provider(convert_value));
+                    profile_converter.insert(key.as_str(), RenderedMessage(convert_value));
                 }
                 TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
                     if profile_converter.contains_key(key.as_str()) {
@@ -683,7 +683,8 @@ impl Detection {
                     profile_converter.insert(key.as_str(), Provider(CompactString::from("-")));
                 }
                 RenderedMessage(_) => {
-                    profile_converter.insert(key.as_str(), Provider(CompactString::from("-")));
+                    profile_converter
+                        .insert(key.as_str(), RenderedMessage(CompactString::from("-")));
                 }
                 TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
                     if profile_converter.contains_key(key.as_str()) {
