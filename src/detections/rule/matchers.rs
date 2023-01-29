@@ -268,14 +268,15 @@ impl DefaultMatcher {
     // ワイルドカードマッチを高速なstd::stringのlen/starts_with/ends_withに変換するための関数
     fn convert_to_fast_match(s: &str) -> Option<FastMatch> {
         let wildcard_count = s.chars().filter(|c| *c == '*').count();
-        if s.contains('?')
-            || wildcard_count > 2
-            || s.ends_with(r"\\\*")
-            || (!s.is_ascii() && s.contains('*'))
-        {
+        let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
+        if s.contains('?') || s.ends_with(r"\\\*") || (!s.is_ascii() && s.contains('*')) {
             // 高速なマッチに変換できないパターンは、正規表現マッチのみ
             return None;
-        } else if s.starts_with('*') && s.ends_with('*') && wildcard_count == 2 {
+        } else if s.starts_with('*')
+            && s.ends_with('*')
+            && wildcard_count == 2
+            && !is_literal_asterisk(s)
+        {
             // *が先頭と末尾だけは、containsに変換
             return Some(FastMatch::Contains(
                 s.to_lowercase().replacen('*', "", 2).replace(r"\\", r"\"),
@@ -283,7 +284,7 @@ impl DefaultMatcher {
         } else if s.starts_with('*') && wildcard_count == 1 {
             // *が先頭は、ends_withに変換
             return Some(FastMatch::EndsWith(s.replace('*', "").replace(r"\\", r"\")));
-        } else if s.ends_with('*') && wildcard_count == 1 {
+        } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
             // *が末尾は、starts_withに変換
             return Some(FastMatch::StartsWith(
                 s.replace('*', "").replace(r"\\", r"\"),
@@ -2218,10 +2219,16 @@ mod tests {
         assert_eq!(DefaultMatcher::convert_to_fast_match("ab?"), None);
         assert_eq!(DefaultMatcher::convert_to_fast_match("a*c"), None);
         assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b*"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\*"), None);
         assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*"), None);
         assert_eq!(
             DefaultMatcher::convert_to_fast_match("abc*").unwrap(),
             FastMatch::StartsWith("abc".to_string())
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match(r"abc\\*").unwrap(),
+            FastMatch::StartsWith(r"abc\".to_string())
         );
         assert_eq!(
             DefaultMatcher::convert_to_fast_match("*abc").unwrap(),
@@ -2238,6 +2245,10 @@ mod tests {
         assert_eq!(
             DefaultMatcher::convert_to_fast_match("あいう").unwrap(),
             FastMatch::Exact("あいう".to_string())
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match(r"\\\\127.0.0.1\\").unwrap(),
+            FastMatch::Exact(r"\\127.0.0.1\".to_string())
         );
     }
 }
