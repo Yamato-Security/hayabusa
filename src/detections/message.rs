@@ -139,8 +139,13 @@ pub fn insert(
                         .push((key.to_owned(), AllFieldInfo(CompactString::from(rec))));
                 }
             }
-            Literal(_) | SrcASN(_) | SrcCountry(_) | SrcCity(_) | TgtASN(_) | TgtCountry(_)
-            | TgtCity(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
+            Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
+            SrcASN(_) | SrcCountry(_) | SrcCity(_) | TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
+                replaced_profiles.push((
+                    key.to_owned(),
+                    profile_converter.get(key.as_str()).unwrap().to_owned(),
+                ))
+            }
             _ => {
                 if let Some(p) = profile_converter.get(key.to_string().as_str()) {
                     replaced_profiles.push((

@@ -488,10 +488,14 @@ impl Detection {
                     }
                     let binding = geo_data.unwrap();
                     let mut src_data = binding.split('🦅');
-                    profile_converter.insert("SrcASN", SrcASN(src_data.next().unwrap().into()));
                     profile_converter
-                        .insert("SrcCountry", SrcCountry(src_data.next().unwrap().into()));
-                    profile_converter.insert("SrcCity", SrcCity(src_data.next().unwrap().into()));
+                        .insert("SrcASN", SrcASN(src_data.next().unwrap_or("").into()));
+                    profile_converter.insert(
+                        "SrcCountry",
+                        SrcCountry(src_data.next().unwrap_or("n/a").into()),
+                    );
+                    profile_converter
+                        .insert("SrcCity", SrcCity(src_data.next().unwrap_or("n/a").into()));
                 }
                 _ => {}
             }
