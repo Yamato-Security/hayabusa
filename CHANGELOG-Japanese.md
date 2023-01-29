@@ -15,6 +15,7 @@
 - ワイルドカード表現における正規表現の使用量を削減することで、約5%の速度向上とメモリ使用量の削減を実現した。 (#890) (@fukusuket)
 - 正規表現の使用を避けることで、さらなる高速化とメモリ使用量の削減を実現した。 (#894) (@fukusuket)
 - JSON形式のイベントログファイルの入力に対応した。(#386) (@hitenkoku)
+- `csv-timeline`と `json-timeline` に送信元 IP と送信先 IP の ASN, City, Country情報を追加する `--geo-ip` オプションを追加した。(要MaxMInd GeoIP Databaseファイル)(#879) (@hitenkoku)
 
 **バグ修正:**
 
