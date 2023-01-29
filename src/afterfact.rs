@@ -1,4 +1,6 @@
-use crate::detections::configs::{Action, OutputOption, StoredStatic, CURRENT_EXE_PATH};
+use crate::detections::configs::{
+    Action, OutputOption, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
+};
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport;
@@ -349,12 +351,20 @@ fn emit_csv<W: std::io::Write>(
                 // JSONL output format
                 wtr.write_field(format!(
                     "{{ {} }}",
-                    &output_json_str(&detect_info.ext_field, jsonl_output_flag)
+                    &output_json_str(
+                        &detect_info.ext_field,
+                        jsonl_output_flag,
+                        GEOIP_DB_PARSER.read().unwrap().is_some()
+                    )
                 ))?;
             } else if json_output_flag {
                 // JSON output
                 wtr.write_field("{")?;
-                wtr.write_field(&output_json_str(&detect_info.ext_field, jsonl_output_flag))?;
+                wtr.write_field(&output_json_str(
+                    &detect_info.ext_field,
+                    jsonl_output_flag,
+                    GEOIP_DB_PARSER.read().unwrap().is_some(),
+                ))?;
                 wtr.write_field("}")?;
             } else {
                 // csv output format
@@ -1129,12 +1139,25 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
 }
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bool) -> String {
+fn output_json_str(
+    ext_field: &[(CompactString, Profile)],
+    jsonl_output_flag: bool,
+    is_included_geo_ip: bool,
+) -> String {
     let mut target: Vec<String> = vec![];
+    let ext_field_map: HashMap<CompactString, Profile> = HashMap::from_iter(ext_field.to_owned());
+    let key_add_to_details = vec![
+        "SrcASN",
+        "SrcCountry",
+        "SrcCity",
+        "TgtASN",
+        "TgtCountry",
+        "TgtCity",
+    ];
     for (key, profile) in ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
-        if vec_data.is_empty() {
+        if !key_add_to_details.contains(&key.as_str()) && vec_data.is_empty() {
             let tmp_val: Vec<&str> = val.split(": ").collect();
             let output_val =
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
@@ -1147,6 +1170,13 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
             ));
         } else {
             match profile {
+                // process geo-ip profile in details sections to include geo-ip data in details section.
+                Profile::SrcASN(_)
+                | Profile::SrcCountry(_)
+                | Profile::SrcCity(_)
+                | Profile::TgtASN(_)
+                | Profile::TgtCountry(_)
+                | Profile::TgtCity(_) => continue,
                 Profile::AllFieldInfo(_) | Profile::Details(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));
@@ -1224,14 +1254,41 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
-                            output_stock.push(_create_json_output_format(
-                                &key,
-                                &fmted_val,
-                                key.starts_with('\"'),
-                                fmted_val.starts_with('\"'),
-                                8,
+                            let last_contents_end = if is_included_geo_ip { "," } else { "" };
+                            output_stock.push(format!(
+                                "{}{last_contents_end}",
+                                _create_json_output_format(
+                                    &key,
+                                    &fmted_val,
+                                    key.starts_with('\"'),
+                                    fmted_val.starts_with('\"'),
+                                    8,
+                                )
                             ));
                             key_idx += 1;
+                        }
+                    }
+                    if is_included_geo_ip {
+                        for (suffix_cnt, target_key) in key_add_to_details.iter().enumerate() {
+                            let val = ext_field_map
+                                .get(&CompactString::from(*target_key))
+                                .unwrap()
+                                .to_value();
+                            let output_end_fmt = if suffix_cnt == key_add_to_details.len() - 1 {
+                                ""
+                            } else {
+                                ","
+                            };
+                            output_stock.push(format!(
+                                "{}{output_end_fmt}",
+                                _create_json_output_format(
+                                    target_key,
+                                    &val,
+                                    target_key.starts_with('\"'),
+                                    val.starts_with('\"'),
+                                    8
+                                )
+                            ));
                         }
                     }
                     output_stock.push("    }".to_string());
