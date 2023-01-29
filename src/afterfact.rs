@@ -1543,11 +1543,12 @@ mod tests {
                 ),
                 (
                     "Channel",
-                    Profile::Channel(CompactString::from(
+                    Profile::Channel(
                         mock_ch_filter
-                            .get(&"Security".to_ascii_lowercase())
-                            .unwrap_or(&String::default()),
-                    )),
+                            .get(&CompactString::from("security"))
+                            .unwrap_or(&CompactString::default())
+                            .to_owned(),
+                    ),
                 ),
                 ("Level", Profile::Level(CompactString::from(test_level))),
                 (

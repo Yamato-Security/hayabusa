@@ -188,19 +188,19 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
-pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
+pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<CompactString> {
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
         if val_str.ends_with(',') {
-            Some(val_str.strip_suffix(',').unwrap().to_string())
+            Some(CompactString::from(val_str.strip_suffix(',').unwrap()))
         } else {
-            Option::Some(val_str.to_string())
+            Option::Some(CompactString::from(val_str))
         }
     } else if value.is_object() || value.is_null() {
         // Object type is not specified record value.
         Option::None
     } else {
-        Some(value.to_string())
+        Some(CompactString::from(value.to_string()))
     }
 }
 
@@ -572,6 +572,7 @@ mod tests {
     use std::path::Path;
 
     use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
+    use compact_str::CompactString;
     use regex::Regex;
     use serde_json::Value;
 
@@ -681,7 +682,7 @@ mod tests {
 
         assert_eq!(
             utils::get_serde_number_to_string(&event_record["Event"]["System"]["EventID"]),
-            Some("11111".to_string())
+            Some(CompactString::from("11111"))
         );
     }
 

@@ -46,14 +46,14 @@ pub struct StoredStatic {
     pub config: Config,
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
-    pub ch_config: HashMap<String, String>,
+    pub ch_config: HashMap<CompactString, CompactString>,
     pub quiet_errors_flag: bool,
     pub verbose_flag: bool,
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
-    pub default_details: HashMap<String, String>,
+    pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
     pub event_timeline_config: EventInfoConfig,
@@ -229,7 +229,7 @@ impl StoredStatic {
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数
-    pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
+    pub fn get_default_details(filepath: &str) -> HashMap<CompactString, CompactString> {
         let read_result = utils::read_csv(filepath);
         match read_result {
             Err(_e) => {
@@ -237,7 +237,7 @@ impl StoredStatic {
                 HashMap::new()
             }
             Ok(lines) => {
-                let mut ret: HashMap<String, String> = HashMap::new();
+                let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
                 lines
                     .iter()
                     .try_for_each(|line| -> Result<(), String> {
@@ -272,7 +272,10 @@ impl StoredStatic {
                                 )
                             }
                         };
-                        ret.insert(format!("{provider}_{eid}"), details.to_string());
+                        ret.insert(
+                            CompactString::from(format!("{provider}_{eid}")),
+                            CompactString::from(details),
+                        );
                         Ok(())
                     })
                     .ok();

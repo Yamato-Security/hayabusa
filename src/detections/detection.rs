@@ -223,10 +223,8 @@ impl Detection {
             .iter()
             .any(|(_s, p)| *p == RecordID(Default::default()))
         {
-            CompactString::from(
-                get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
-                    .unwrap_or_default(),
-            )
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
+                .unwrap_or_default()
         } else {
             CompactString::from("")
         };
@@ -236,10 +234,8 @@ impl Detection {
             &record_info.record["Event"]["System"]["Provider_attributes"]["Name"],
         )
         .unwrap_or_default();
-        let eid = CompactString::from(
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-                .unwrap_or_else(|| "-".to_string()),
-        );
+        let eid = get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+            .unwrap_or_else(|| "-".into());
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
@@ -247,7 +243,7 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-");
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
-        let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
+        let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
@@ -275,12 +271,13 @@ impl Detection {
                 Channel(_) => {
                     profile_converter.insert(
                         key.as_str(),
-                        Channel(CompactString::from(
+                        Channel(
                             stored_static
                                 .ch_config
-                                .get(&ch_str.to_ascii_lowercase())
-                                .unwrap_or(&ch_str.to_string()),
-                        )),
+                                .get(&CompactString::from(ch_str.to_ascii_lowercase()))
+                                .unwrap_or(ch_str)
+                                .to_owned(),
+                        ),
                     );
                 }
                 Level(_) => {
@@ -331,7 +328,7 @@ impl Detection {
                     let tactics = CompactString::from(
                         &tag_info
                             .iter()
-                            .filter(|x| tags_config_values.contains(&&x.to_string()))
+                            .filter(|x| tags_config_values.contains(&&CompactString::from(*x)))
                             .join(" ¦ "),
                     );
 
@@ -342,7 +339,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !tags_config_values.contains(&&x.to_string())
+                                !tags_config_values.contains(&&CompactString::from(*x))
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -360,7 +357,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !(TAGS_CONFIG.values().contains(&x.to_string())
+                                !(TAGS_CONFIG.values().contains(&CompactString::from(*x))
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
@@ -504,7 +501,7 @@ impl Detection {
             Some(s) => s.to_string(),
             None => match stored_static
                 .default_details
-                .get(&format!("{}_{}", provider, &eid))
+                .get(&CompactString::from(format!("{provider}_{eid}")))
             {
                 Some(str) => str.to_string(),
                 None => create_recordinfos(&record_info.record),
@@ -543,7 +540,7 @@ impl Detection {
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-");
-        let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
+        let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -604,7 +601,7 @@ impl Detection {
                     let tactics = CompactString::from(
                         &tag_info
                             .iter()
-                            .filter(|x| tags_config_values.contains(&&x.to_string()))
+                            .filter(|x| tags_config_values.contains(&&CompactString::from(*x)))
                             .join(" ¦ "),
                     );
                     profile_converter.insert(key.as_str(), MitreTactics(tactics));
@@ -614,7 +611,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !tags_config_values.contains(&&x.to_string())
+                                !tags_config_values.contains(&&CompactString::from(*x))
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -632,7 +629,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !(tags_config_values.contains(&&x.to_string())
+                                !(tags_config_values.contains(&&CompactString::from(*x))
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
@@ -741,7 +738,7 @@ impl Detection {
                         if let Some(tag) = TAGS_CONFIG.get(info.as_str().unwrap_or_default()) {
                             tag.to_owned()
                         } else {
-                            info.as_str().unwrap_or_default().to_owned()
+                            CompactString::from(info.as_str().unwrap_or_default())
                         }
                     }),
             ),
@@ -753,7 +750,7 @@ impl Detection {
                     .map(|info| {
                         match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
                             Some(s) => s.to_owned(),
-                            _ => info.as_str().unwrap_or("").to_string(),
+                            _ => CompactString::from(info.as_str().unwrap_or("")),
                         }
                     }),
             ),
