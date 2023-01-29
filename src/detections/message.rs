@@ -621,7 +621,7 @@ mod tests {
         let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
-            ("Security".into(), "Sec".into()),
+            ("security".into(), "Sec".into()),
             ("xxx".into(), "yyy".into()),
         ]);
         _check_hashmap_element(&expected, actual);
