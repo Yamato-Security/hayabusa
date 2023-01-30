@@ -658,7 +658,7 @@ pub struct CsvOutputOption {
     #[arg(short, short = 'J', long = "JSON-input")]
     pub json_input: bool,
 
-    /// Scan JSON-formatted logs instead of .evtx
+    /// Add log enhancement for IP address (ASN, City and Country: Required MaxMind GeoIP databases)
     #[arg(short, long = "geo-ip", value_name = "DIR")]
     pub geo_ip: Option<PathBuf>,
 
