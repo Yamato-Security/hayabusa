@@ -449,10 +449,16 @@ impl Detection {
                         .convert_ip_to_geo(&alias_data);
                     if let Err(e) = geo_data {
                         AlertMessage::alert(&format!("{e:?}")).ok();
+                        profile_converter.insert("TgtASN", TgtASN("n/a".into()));
+                        profile_converter.insert("TgtCountry", TgtCountry("n/a".into()));
+                        profile_converter.insert("TgtCity", TgtCity("n/a".into()));
                         continue;
                     }
                     let binding = geo_data.unwrap();
-                    let mut tgt_data = binding.split('🦅');
+                    let mut tgt_data =
+                        binding
+                            .split('🦅')
+                            .map(|x| if x.is_empty() { "n/a" } else { x });
                     profile_converter.insert("TgtASN", TgtASN(tgt_data.next().unwrap().into()));
                     profile_converter
                         .insert("TgtCountry", TgtCountry(tgt_data.next().unwrap().into()));
@@ -481,18 +487,20 @@ impl Detection {
                         .convert_ip_to_geo(&alias_data);
                     if let Err(e) = geo_data {
                         AlertMessage::alert(&format!("{e:?}")).ok();
+                        profile_converter.insert("SrcASN", SrcASN("n/a".into()));
+                        profile_converter.insert("SrcCountry", SrcCountry(("n/a").into()));
+                        profile_converter.insert("SrcCity", SrcCity(("n/a").into()));
                         continue;
                     }
                     let binding = geo_data.unwrap();
-                    let mut src_data = binding.split('🦅');
+                    let mut src_data =
+                        binding
+                            .split('🦅')
+                            .map(|x| if x.is_empty() { "n/a" } else { x });
+                    profile_converter.insert("SrcASN", SrcASN(src_data.next().unwrap().into()));
                     profile_converter
-                        .insert("SrcASN", SrcASN(src_data.next().unwrap_or("").into()));
-                    profile_converter.insert(
-                        "SrcCountry",
-                        SrcCountry(src_data.next().unwrap_or("n/a").into()),
-                    );
-                    profile_converter
-                        .insert("SrcCity", SrcCity(src_data.next().unwrap_or("n/a").into()));
+                        .insert("SrcCountry", SrcCountry(src_data.next().unwrap().into()));
+                    profile_converter.insert("SrcCity", SrcCity(src_data.next().unwrap().into()));
                 }
                 _ => {}
             }
