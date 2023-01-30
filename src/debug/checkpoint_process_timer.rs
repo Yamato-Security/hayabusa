@@ -46,7 +46,7 @@ impl CheckPointProcessTimer {
     /// ストックした結果を出力する関数
     pub fn output_stocked_result(&self) {
         for output in self.stocked_results.iter() {
-            println!("{}", output);
+            println!("{output}");
         }
     }
 }

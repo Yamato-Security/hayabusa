@@ -83,7 +83,7 @@ impl Update {
                     submodule.update(true, None)?;
                     let submodule_repo = submodule.open()?;
                     if let Err(e) = Update::pull_repository(&submodule_repo) {
-                        AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
+                        AlertMessage::alert(&format!("Failed submodule update. {e}")).ok();
                         is_success_submodule_update = false;
                     }
                 }
@@ -132,7 +132,7 @@ impl Update {
             .find_remote("origin")?
             .fetch(&["main"], None, None)
             .map_err(|e| {
-                AlertMessage::alert(&format!("Failed git fetch to rules folder. {}", e)).ok();
+                AlertMessage::alert(&format!("Failed git fetch to rules folder. {e}")).ok();
             }) {
             Ok(it) => it,
             Err(_err) => return Err(git2::Error::from_str(&String::default())),
@@ -258,7 +258,7 @@ impl Update {
         }
         println!();
         for (key, value) in &update_count_by_rule_type {
-            println!("Updated {} rules: {}", key, value);
+            println!("Updated {key} rules: {value}");
         }
         if !&update_count_by_rule_type.is_empty() {
             Ok("Rule updated".to_string())

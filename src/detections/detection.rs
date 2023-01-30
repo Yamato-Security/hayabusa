@@ -80,7 +80,7 @@ impl Detection {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             return vec![];
         }
@@ -106,12 +106,12 @@ impl Detection {
                     ERROR_LOG_STACK
                         .lock()
                         .unwrap()
-                        .push(format!("[WARN] {}", errmsg_body));
+                        .push(format!("[WARN] {errmsg_body}"));
                     err_msgs.iter().for_each(|err_msg| {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[WARN] {}", err_msg));
+                            .push(format!("[WARN] {err_msg}"));
                     });
                 }
                 parseerror_count += 1;
@@ -768,9 +768,9 @@ impl Detection {
                     value,
                     disable_flag
                 );
-                println!("{}", output_str);
+                println!("{output_str}");
                 if stored_static.html_report_flag {
-                    html_report_stock.push(format!("- {}", output_str));
+                    html_report_stock.push(format!("- {output_str}"));
                 }
             }
         });
@@ -778,7 +778,7 @@ impl Detection {
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 Some(Color::Red),
-                &format!("Rule parsing errors: {}", err_rc),
+                &format!("Rule parsing errors: {err_rc}"),
                 true,
             )
             .ok();
@@ -818,7 +818,7 @@ impl Detection {
                 )
                 .ok();
                 if stored_static.html_report_flag {
-                    html_report_stock.push(format!("- {}", output_str));
+                    html_report_stock.push(format!("- {output_str}"));
                 }
             }
         });
@@ -827,7 +827,7 @@ impl Detection {
         let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
-            let output_str = format!("{} rules: {}", key, value);
+            let output_str = format!("{key} rules: {value}");
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
                 None,
@@ -836,18 +836,18 @@ impl Detection {
             )
             .ok();
             if stored_static.html_report_flag {
-                html_report_stock.push(format!("- {}", output_str));
+                html_report_stock.push(format!("- {output_str}"));
             }
         });
 
         let tmp_total_detect_output =
-            format!("Total enabled detection rules: {}", total_loaded_rule_cnt);
-        println!("{}", tmp_total_detect_output);
+            format!("Total enabled detection rules: {total_loaded_rule_cnt}");
+        println!("{tmp_total_detect_output}");
         println!();
         println!("Scanning in progress. Please wait.");
         println!();
         if stored_static.html_report_flag {
-            html_report_stock.push(format!("- {}", tmp_total_detect_output));
+            html_report_stock.push(format!("- {tmp_total_detect_output}"));
         }
         if !html_report_stock.is_empty() {
             htmlreport::add_md_data("General Overview {#general_overview}", html_report_stock);

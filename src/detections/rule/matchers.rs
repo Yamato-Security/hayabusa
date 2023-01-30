@@ -180,12 +180,13 @@ impl LeafMatcher for AllowlistFileMatcher {
     }
 }
 
-// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/starts_with/ends_withでマッチ判定するためのenum
+// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/starts_with/ends_with/containsでマッチ判定するためのenum
 #[derive(PartialEq, Debug)]
 enum FastMatch {
     Exact(String),
     StartsWith(String),
     EndsWith(String),
+    Contains(String),
 }
 
 /// デフォルトのマッチクラス
@@ -266,17 +267,33 @@ impl DefaultMatcher {
 
     // ワイルドカードマッチを高速なstd::stringのlen/starts_with/ends_withに変換するための関数
     fn convert_to_fast_match(s: &str) -> Option<FastMatch> {
-        if s.contains('?') || s.chars().filter(|c| *c == '*').count() > 1 {
+        let wildcard_count = s.chars().filter(|c| *c == '*').count();
+        let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
+        if s.contains('?') || s.ends_with(r"\\\*") || (!s.is_ascii() && s.contains('*')) {
+            // 高速なマッチに変換できないパターンは、正規表現マッチのみ
             return None;
-        } else if s.starts_with('*') && s.is_ascii() {
-            let s = s.strip_prefix('*').unwrap();
-            return Some(FastMatch::EndsWith(s.replace(r"\\", r"\")));
-        } else if s.ends_with('*') && !s.ends_with(r"\\\*") && s.is_ascii() {
-            let s = s.strip_suffix('*').unwrap();
-            return Some(FastMatch::StartsWith(s.replace(r"\\", r"\")));
+        } else if s.starts_with('*')
+            && s.ends_with('*')
+            && wildcard_count == 2
+            && !is_literal_asterisk(s)
+        {
+            // *が先頭と末尾だけは、containsに変換
+            return Some(FastMatch::Contains(
+                s.to_lowercase().replacen('*', "", 2).replace(r"\\", r"\"),
+            ));
+        } else if s.starts_with('*') && wildcard_count == 1 {
+            // *が先頭は、ends_withに変換
+            return Some(FastMatch::EndsWith(s.replace('*', "").replace(r"\\", r"\")));
+        } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
+            // *が末尾は、starts_withに変換
+            return Some(FastMatch::StartsWith(
+                s.replace('*', "").replace(r"\\", r"\"),
+            ));
         } else if s.contains('*') {
-            return None; // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
+            // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
+            return None;
         }
+        // *を含まない場合は、文字列長マッチに変換
         Some(FastMatch::Exact(s.replace(r"\\", r"\")))
     }
 }
@@ -339,8 +356,10 @@ impl LeafMatcher for DefaultMatcher {
             if let Some(val) = select_value.as_str() {
                 self.case_ignore_fast_match = Self::convert_to_fast_match(val);
             };
-            if matches!(&self.case_ignore_fast_match, Some(FastMatch::Exact(_)))
-                && !self.key_list.is_empty()
+            if matches!(
+                &self.case_ignore_fast_match,
+                Some(FastMatch::Exact(_)) | Some(FastMatch::Contains(_))
+            ) && !self.key_list.is_empty()
             {
                 // FastMatch::Exact検索に置き換えられたときは正規表現は不要
                 return Result::Ok(());
@@ -354,6 +373,9 @@ impl LeafMatcher for DefaultMatcher {
                     }
                     PipeElement::Endswith => {
                         Self::convert_to_fast_match(format!("{}{}", '*', val).as_str())
+                    }
+                    PipeElement::Contains => {
+                        Self::convert_to_fast_match(format!("{}{}{}", '*', val, '*').as_str())
                     }
                     _ => None,
                 };
@@ -436,6 +458,7 @@ impl LeafMatcher for DefaultMatcher {
                 FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                 FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                 FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
             };
             if let Some(is_match) = fast_match_result {
                 return is_match;
@@ -567,7 +590,7 @@ impl PipeElement {
             let prev_idx = idx;
             for wildcard in &wildcards {
                 let cur_pattern: String = pattern.chars().skip(idx).collect::<String>();
-                if cur_pattern.starts_with(&format!(r"\\{}", wildcard)) {
+                if cur_pattern.starts_with(&format!(r"\\{wildcard}")) {
                     // wildcardの前にエスケープ文字が2つある場合
                     cur_str = format!("{}{}", cur_str, r"\");
                     pattern_splits.push(cur_str);
@@ -576,9 +599,9 @@ impl PipeElement {
                     cur_str = String::default();
                     idx += 3;
                     break;
-                } else if cur_pattern.starts_with(&format!(r"\{}", wildcard)) {
+                } else if cur_pattern.starts_with(&format!(r"\{wildcard}")) {
                     // wildcardの前にエスケープ文字が1つある場合
-                    cur_str = format!("{}{}", cur_str, wildcard);
+                    cur_str = format!("{cur_str}{wildcard}");
                     idx += 2;
                     break;
                 } else if cur_pattern.starts_with(wildcard) {
@@ -625,7 +648,7 @@ impl PipeElement {
                     wildcard_regex_value.to_string()
                 };
 
-                format!("{}{}", acc, regex_value)
+                format!("{acc}{regex_value}")
             },
         );
 
@@ -2196,18 +2219,36 @@ mod tests {
         assert_eq!(DefaultMatcher::convert_to_fast_match("ab?"), None);
         assert_eq!(DefaultMatcher::convert_to_fast_match("a*c"), None);
         assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b*"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\*"), None);
         assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*"), None);
         assert_eq!(
             DefaultMatcher::convert_to_fast_match("abc*").unwrap(),
             FastMatch::StartsWith("abc".to_string())
         );
         assert_eq!(
+            DefaultMatcher::convert_to_fast_match(r"abc\\*").unwrap(),
+            FastMatch::StartsWith(r"abc\".to_string())
+        );
+        assert_eq!(
             DefaultMatcher::convert_to_fast_match("*abc").unwrap(),
             FastMatch::EndsWith("abc".to_string())
         );
         assert_eq!(
+            DefaultMatcher::convert_to_fast_match("*abc*").unwrap(),
+            FastMatch::Contains("abc".to_string())
+        );
+        assert_eq!(
             DefaultMatcher::convert_to_fast_match("abc").unwrap(),
             FastMatch::Exact("abc".to_string())
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("あいう").unwrap(),
+            FastMatch::Exact("あいう".to_string())
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match(r"\\\\127.0.0.1\\").unwrap(),
+            FastMatch::Exact(r"\\127.0.0.1\".to_string())
         );
     }
 }

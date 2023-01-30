@@ -352,14 +352,14 @@ impl App {
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                 let create_output =
                     |mut output: String, key: &String, pivot_keyword: &PivotKeyword| {
-                        write!(output, "{}: ( ", key).ok();
+                        write!(output, "{key}: ( ").ok();
                         for i in pivot_keyword.fields.iter() {
-                            write!(output, "%{}% ", i).ok();
+                            write!(output, "%{i}% ").ok();
                         }
                         writeln!(output, "):").ok();
 
                         for i in pivot_keyword.keywords.iter() {
-                            writeln!(output, "{}", i).ok();
+                            writeln!(output, "{i}").ok();
                         }
                         writeln!(output).ok();
 
@@ -449,7 +449,7 @@ impl App {
                         if e.message().is_empty() {
                             AlertMessage::alert("Failed to update rules.").ok();
                         } else {
-                            AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
+                            AlertMessage::alert(&format!("Failed to update rules. {e:?}  ")).ok();
                         }
                     }
                 }
@@ -800,7 +800,7 @@ impl App {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             return vec![];
         }
@@ -853,7 +853,7 @@ impl App {
                 .ok();
             }
             Err(err) => {
-                AlertMessage::alert(&format!("{}", err)).ok();
+                AlertMessage::alert(&format!("{err}")).ok();
             }
         }
     }
@@ -886,7 +886,7 @@ impl App {
             total_file_size += ByteSize::b(meta.unwrap().len());
         }
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
-        println!("{}", total_size_output);
+        println!("{total_size_output}");
         println!();
         if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
             println!("Loading detections rules. Please wait.");
@@ -897,7 +897,7 @@ impl App {
             let mut output_data = Nested::<String>::new();
             output_data.extend(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
-                format!("- {}", total_size_output),
+                format!("- {total_size_output}"),
             ]);
             htmlreport::add_md_data("General Overview #{general_overview}", output_data);
         }
@@ -1047,7 +1047,7 @@ impl App {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[ERROR] {}", errmsg));
+                            .push(format!("[ERROR] {errmsg}"));
                     }
                     continue;
                 }
@@ -1315,7 +1315,7 @@ impl App {
                 Option::Some(evtx_parser)
             }
             Err(e) => {
-                eprintln!("{}", e);
+                eprintln!("{e}");
                 Option::None
             }
         }

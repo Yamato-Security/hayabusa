@@ -87,7 +87,7 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
     };
     let f = File::open(filepath);
     if f.is_err() {
-        let errmsg = format!("Cannot open file. [file:{}]", filename);
+        let errmsg = format!("Cannot open file. [file:{filename}]");
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
@@ -109,7 +109,7 @@ pub fn read_json_to_value(filename: &str) -> Result<impl Iterator<Item = Value>,
     };
     let f = File::open(filepath);
     if f.is_err() {
-        let errmsg = format!("Cannot open file. [file:{}]", filename);
+        let errmsg = format!("Cannot open file. [file:{filename}]");
         return Result::Err(errmsg);
     }
     let mut reader = BufReader::new(f.unwrap());
@@ -142,7 +142,7 @@ pub fn read_json_to_value(filename: &str) -> Result<impl Iterator<Item = Value>,
 pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
     let f = File::open(filename);
     if f.is_err() {
-        return Result::Err(format!("Cannot open file. [file:{}]", filename));
+        return Result::Err(format!("Cannot open file. [file:{filename}]"));
     }
     let mut contents: String = String::new();
     let mut ret = Nested::<Vec<String>>::new();
@@ -311,9 +311,9 @@ pub fn write_color_buffer(
     let mut buf = wtr.buffer();
     buf.set_color(ColorSpec::new().set_fg(color)).ok();
     if newline_flag {
-        writeln!(buf, "{}", output_str).ok();
+        writeln!(buf, "{output_str}").ok();
     } else {
-        write!(buf, "{}", output_str).ok();
+        write!(buf, "{output_str}").ok();
     }
     wtr.print(&buf)
 }
@@ -351,7 +351,7 @@ pub fn create_recordinfos(record: &Value) -> String {
             if value.ends_with(',') {
                 format!("{}: {}", key, &value[..value.len() - 1])
             } else {
-                format!("{}: {}", key, value)
+                format!("{key}: {value}")
             }
         })
         .join(" ¦ ")
@@ -562,7 +562,7 @@ pub fn output_and_data_stack_for_html(
 
     if html_report_flag {
         let mut output_data = Nested::<String>::new();
-        output_data.extend(vec![format!("- {}", output_str)]);
+        output_data.extend(vec![format!("- {output_str}")]);
         htmlreport::add_md_data(section_name, output_data);
     }
 }
