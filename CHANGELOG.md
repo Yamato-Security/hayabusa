@@ -14,6 +14,7 @@
 - Approximately 8% speed increase and memory usage reduction by case-insensitive comparisons instead of regex usage. (#884) (@fukusuket)
 - Approximately 5% speed increase and memory usage reduction by reducing regex usage in wildcard expressions. (#890) (@fukusuket)
 - Further speed increase and memory usage reduction by removing unnecessary regex usage. (#894) (@fukusuket)
+- Approximately 3% speed increase and 10% memory usage reduction by reducing regex usage. (#898) (@fukuseket)
 - Added support for JSON-formatted event logs as input. (#386) (@hitenkoku)
 
 **Bug Fixes:**
