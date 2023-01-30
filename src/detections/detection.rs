@@ -447,7 +447,7 @@ impl Detection {
                         .as_ref()
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
-                    if let Err(e) = geo_data {
+                    if geo_data.is_err() {
                         profile_converter.insert("TgtASN", TgtASN("n/a".into()));
                         profile_converter.insert("TgtCountry", TgtCountry("n/a".into()));
                         profile_converter.insert("TgtCity", TgtCity("n/a".into()));
@@ -484,7 +484,7 @@ impl Detection {
                         .as_ref()
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
-                    if let Err(e) = geo_data {
+                    if geo_data.is_err() {
                         profile_converter.insert("SrcASN", SrcASN("n/a".into()));
                         profile_converter.insert("SrcCountry", SrcCountry(("n/a").into()));
                         profile_converter.insert("SrcCity", SrcCity(("n/a").into()));
