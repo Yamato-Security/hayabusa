@@ -1006,9 +1006,8 @@ impl App {
         if stored_static.logon_summary_flag {
             tl.tm_logon_stats_dsp_msg(stored_static);
         }
-        // TODO メインの表示させる処理
         if stored_static.search_flag {
-            println!("TODO: CREATE HERE");
+            tl.search_dsp_msg(stored_static);
         }
         if stored_static.output_path.is_some() {
             println!();

@@ -15,11 +15,13 @@ use downcast_rs::__std::process;
 use nested::Nested;
 
 use super::metrics::EventMetrics;
+use super::search::EventSearch;
 use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct Timeline {
     pub stats: EventMetrics,
+    pub event_search: EventSearch,
 }
 
 impl Default for Timeline {
@@ -38,14 +40,17 @@ impl Timeline {
 
         let statistic = EventMetrics::new(
             totalcnt,
-            filepath,
+            filepath.clone(),
             starttm,
             endtm,
             statslst,
             statsloginlst,
-            search_result,
         );
-        Timeline { stats: statistic }
+        let search = EventSearch::new(totalcnt, filepath, search_result);
+        Timeline {
+            stats: statistic,
+            event_search: search,
+        }
     }
 
     pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
@@ -340,6 +345,22 @@ impl Timeline {
             println!(" No logon {logon_res} events were detected.");
         } else {
             println!("{logins_stats_tb}");
+        }
+    }
+
+    /// Search結果出力
+    pub fn search_dsp_msg(&mut self, stored_static: &StoredStatic) {
+        println!("TODO: CREATE HERE");
+        let mut sammsges: Vec<String> = Vec::new();
+        if let Action::Search(search_summary_option) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
+            println!("This is search output phase");
+            sammsges.push(format!("\n\nTotal findings: {}\n", self.event_search.total));
+
+            for msgprint in sammsges.iter() {
+                println!("{}", msgprint);
+            }
         }
     }
 }
