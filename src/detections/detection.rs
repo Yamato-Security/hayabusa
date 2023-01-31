@@ -472,6 +472,7 @@ impl Detection {
                             "%ClientAddress%",
                             "%SourceAddress%",
                             "%SourceIp%",
+                            "%UserDataAddress%",
                         ],
                         &record_info.record,
                         eventkey_alias,
