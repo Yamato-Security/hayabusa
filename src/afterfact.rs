@@ -1145,13 +1145,16 @@ fn output_json_str(
         "TgtCountry",
         "TgtCity",
     ];
-    let key_add_to_details_cnt = key_add_to_details.iter().filter(|target_key| {
-        ext_field_map
-            .get(&CompactString::from(**target_key))
-            .unwrap()
-            .to_value()
-            != "-"
-    }).count();
+    let key_add_to_details_cnt = key_add_to_details
+        .iter()
+        .filter(|target_key| {
+            ext_field_map
+                .get(&CompactString::from(**target_key))
+                .unwrap()
+                .to_value()
+                != "-"
+        })
+        .count();
     for (key, profile) in ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
@@ -1252,12 +1255,12 @@ fn output_json_str(
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
-                            let last_contents_end = if is_included_geo_ip
-                                && key_add_to_details_cnt > 0 {
-                                ","
-                            } else {
-                                ""
-                            };
+                            let last_contents_end =
+                                if is_included_geo_ip && key_add_to_details_cnt > 0 {
+                                    ","
+                                } else {
+                                    ""
+                                };
                             output_stock.push(format!(
                                 "{}{last_contents_end}",
                                 _create_json_output_format(

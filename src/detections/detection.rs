@@ -13,14 +13,15 @@ use itertools::Itertools;
 use nested::Nested;
 use std::default::Default;
 use termcolor::{BufferWriter, Color, ColorChoice};
+use yaml_rust::YamlLoader;
 
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
-use crate::filter;
 use crate::options::htmlreport;
 use crate::yaml::ParseYaml;
+use crate::{filter, yaml};
 use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
@@ -30,8 +31,11 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, STORED_STATIC};
+use super::configs::{
+    EventKeyAliasConfig, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER, STORED_STATIC,
+};
 use super::message::{self, LEVEL_ABBR_MAP};
+use super::utils;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -246,6 +250,40 @@ impl Detection {
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
+
+        let mut geo_ip_mapping = vec![];
+        if GEOIP_DB_PARSER.read().unwrap().is_some() {
+            let yml_parser = yaml::ParseYaml::new(stored_static);
+            let geo_ip_file_path =
+                utils::check_setting_path(&stored_static.config_path, "geoip_field_mapping", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/geoip_field_mapping.txt",
+                            true,
+                        )
+                        .unwrap()
+                    });
+            let binding = geo_ip_file_path.clone();
+            let output_path_str = binding.to_str().unwrap();
+
+            geo_ip_mapping = if let Ok(loaded_profile) = yml_parser.read_file(geo_ip_file_path) {
+                match YamlLoader::load_from_str(&loaded_profile) {
+                    Ok(geo_ip_map) => geo_ip_map,
+                    Err(e) => {
+                        AlertMessage::alert(&format!("Parse error: {output_path_str}. {e}")).ok();
+                        YamlLoader::load_from_str("").unwrap()
+                    }
+                }
+            } else {
+                AlertMessage::alert(&format!(
+                    "not found geoip field mapping file. filepath: {output_path_str}"
+                ))
+                .ok();
+                YamlLoader::load_from_str("").unwrap()
+            };
+        }
+
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -436,8 +474,21 @@ impl Detection {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
+                    let target_alias = &geo_ip_mapping[0]["TgtIP"];
+                    // initialize geo-ip Tgt associated fields
+                    profile_converter.insert("TgtASN", TgtASN("-".into()));
+                    profile_converter.insert("TgtCountry", TgtCountry("-".into()));
+                    profile_converter.insert("TgtCity", TgtCity("-".into()));
+                    if target_alias.is_badvalue() {
+                        continue;
+                    }
                     let alias_data = Self::get_alias_data(
-                        vec!["%DestAddress%", "%DestinationIp%"],
+                        target_alias
+                            .as_vec()
+                            .unwrap()
+                            .iter()
+                            .map(|x| x.as_str().unwrap())
+                            .collect(),
                         &record_info.record,
                         eventkey_alias,
                     );
@@ -448,32 +499,42 @@ impl Detection {
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
                     if geo_data.is_err() {
-                        profile_converter.insert("TgtASN", TgtASN("-".into()));
-                        profile_converter.insert("TgtCountry", TgtCountry("-".into()));
-                        profile_converter.insert("TgtCity", TgtCity("-".into()));
                         continue;
                     }
                     let binding = geo_data.unwrap();
                     let mut tgt_data = binding
                         .split('🦅')
                         .map(|x| if x.is_empty() { "-" } else { x });
-                    profile_converter.insert("TgtASN", TgtASN(tgt_data.next().unwrap().into()));
                     profile_converter
-                        .insert("TgtCountry", TgtCountry(tgt_data.next().unwrap().into()));
-                    profile_converter.insert("TgtCity", TgtCity(tgt_data.next().unwrap().into()));
+                        .entry("TgtASN")
+                        .and_modify(|p| *p = TgtASN(tgt_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("TgtCountry")
+                        .and_modify(|p| *p = TgtCountry(tgt_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("TgtCity")
+                        .and_modify(|p| *p = TgtCity(tgt_data.next().unwrap().into()));
                 }
                 SrcASN(_) | SrcCountry(_) | SrcCity(_) => {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
+                    let target_alias = &geo_ip_mapping[0]["SrcIP"];
+                    // initialize geo-ip Tgt associated fields
+                    profile_converter.insert("SrcASN", SrcASN("-".into()));
+                    profile_converter.insert("SrcCountry", SrcCountry("-".into()));
+                    profile_converter.insert("SrcCity", SrcCity("-".into()));
+                    if target_alias.is_badvalue() {
+                        continue;
+                    }
+
                     let alias_data = Self::get_alias_data(
-                        vec![
-                            "%IpAddress%",
-                            "%ClientAddress%",
-                            "%SourceAddress%",
-                            "%SourceIp%",
-                            "%UserDataAddress%",
-                        ],
+                        target_alias
+                            .as_vec()
+                            .unwrap()
+                            .iter()
+                            .map(|x| x.as_str().unwrap())
+                            .collect(),
                         &record_info.record,
                         eventkey_alias,
                     );
@@ -485,19 +546,21 @@ impl Detection {
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
                     if geo_data.is_err() {
-                        profile_converter.insert("SrcASN", SrcASN("-".into()));
-                        profile_converter.insert("SrcCountry", SrcCountry(("-").into()));
-                        profile_converter.insert("SrcCity", SrcCity(("-").into()));
                         continue;
                     }
                     let binding = geo_data.unwrap();
                     let mut src_data = binding
                         .split('🦅')
                         .map(|x| if x.is_empty() { "-" } else { x });
-                    profile_converter.insert("SrcASN", SrcASN(src_data.next().unwrap().into()));
                     profile_converter
-                        .insert("SrcCountry", SrcCountry(src_data.next().unwrap().into()));
-                    profile_converter.insert("SrcCity", SrcCity(src_data.next().unwrap().into()));
+                        .entry("SrcASN")
+                        .and_modify(|p| *p = SrcASN(src_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("SrcCountry")
+                        .and_modify(|p| *p = SrcCountry(src_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("SrcCity")
+                        .and_modify(|p| *p = SrcCity(src_data.next().unwrap().into()));
                 }
                 _ => {}
             }
