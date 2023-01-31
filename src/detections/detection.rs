@@ -474,11 +474,14 @@ impl Detection {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
-                    let target_alias = &geo_ip_mapping[0]["TgtIP"];
                     // initialize geo-ip Tgt associated fields
                     profile_converter.insert("TgtASN", TgtASN("-".into()));
                     profile_converter.insert("TgtCountry", TgtCountry("-".into()));
                     profile_converter.insert("TgtCity", TgtCity("-".into()));
+                    if geo_ip_mapping.is_empty() {
+                        continue;
+                    }
+                    let target_alias = &geo_ip_mapping[0]["TgtIP"];
                     if target_alias.is_badvalue() {
                         continue;
                     }
@@ -519,11 +522,14 @@ impl Detection {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
-                    let target_alias = &geo_ip_mapping[0]["SrcIP"];
                     // initialize geo-ip Tgt associated fields
                     profile_converter.insert("SrcASN", SrcASN("-".into()));
                     profile_converter.insert("SrcCountry", SrcCountry("-".into()));
                     profile_converter.insert("SrcCity", SrcCity("-".into()));
+                    if geo_ip_mapping.is_empty() {
+                        continue;
+                    }
+                    let target_alias = &geo_ip_mapping[0]["SrcIP"];
                     if target_alias.is_badvalue() {
                         continue;
                     }
