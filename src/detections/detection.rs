@@ -448,16 +448,15 @@ impl Detection {
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
                     if geo_data.is_err() {
-                        profile_converter.insert("TgtASN", TgtASN("n/a".into()));
-                        profile_converter.insert("TgtCountry", TgtCountry("n/a".into()));
-                        profile_converter.insert("TgtCity", TgtCity("n/a".into()));
+                        profile_converter.insert("TgtASN", TgtASN("-".into()));
+                        profile_converter.insert("TgtCountry", TgtCountry("-".into()));
+                        profile_converter.insert("TgtCity", TgtCity("-".into()));
                         continue;
                     }
                     let binding = geo_data.unwrap();
-                    let mut tgt_data =
-                        binding
-                            .split('🦅')
-                            .map(|x| if x.is_empty() { "n/a" } else { x });
+                    let mut tgt_data = binding
+                        .split('🦅')
+                        .map(|x| if x.is_empty() { "-" } else { x });
                     profile_converter.insert("TgtASN", TgtASN(tgt_data.next().unwrap().into()));
                     profile_converter
                         .insert("TgtCountry", TgtCountry(tgt_data.next().unwrap().into()));
@@ -485,16 +484,15 @@ impl Detection {
                         .unwrap()
                         .convert_ip_to_geo(&alias_data);
                     if geo_data.is_err() {
-                        profile_converter.insert("SrcASN", SrcASN("n/a".into()));
-                        profile_converter.insert("SrcCountry", SrcCountry(("n/a").into()));
-                        profile_converter.insert("SrcCity", SrcCity(("n/a").into()));
+                        profile_converter.insert("SrcASN", SrcASN("-".into()));
+                        profile_converter.insert("SrcCountry", SrcCountry(("-").into()));
+                        profile_converter.insert("SrcCity", SrcCity(("-").into()));
                         continue;
                     }
                     let binding = geo_data.unwrap();
-                    let mut src_data =
-                        binding
-                            .split('🦅')
-                            .map(|x| if x.is_empty() { "n/a" } else { x });
+                    let mut src_data = binding
+                        .split('🦅')
+                        .map(|x| if x.is_empty() { "-" } else { x });
                     profile_converter.insert("SrcASN", SrcASN(src_data.next().unwrap().into()));
                     profile_converter
                         .insert("SrcCountry", SrcCountry(src_data.next().unwrap().into()));
@@ -1310,7 +1308,7 @@ mod tests {
                 ("SrcASN".into(), Profile::SrcASN("Bredband2 AB".into())),
                 ("SrcCountry".into(), Profile::SrcCountry("Sweden".into())),
                 ("SrcCity".into(), Profile::SrcCity("Linköping".into())),
-                ("TgtASN".into(), Profile::TgtASN("n/a".into())),
+                ("TgtASN".into(), Profile::TgtASN("-".into())),
                 (
                     "TgtCountry".into(),
                     Profile::TgtCountry("United Kingdom".into()),
