@@ -57,8 +57,13 @@ impl GeoIPSearch {
     /// convert IP address string to geo data
     pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDBError> {
         if target_ip == "-" {
-            return Ok("n/a🦅n/a🦅n/a".to_string());
+            return Ok("-🦅-🦅-".to_string());
+        } else if target_ip.contains("127.0.0.1") || target_ip.contains("::1") {
+            return Ok("localhost🦅-🦅-".to_string());
+        } else if target_ip.contains("LOCAL") {
+            return Ok("Private🦅-🦅-".to_string());
         }
+
         let addr;
         if let Ok(conv) = IpAddr::from_str(target_ip) {
             addr = conv;
