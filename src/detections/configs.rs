@@ -13,9 +13,10 @@ use nested::Nested;
 use regex::Regex;
 use std::env::current_exe;
 use std::path::{Path, PathBuf};
-use std::process;
 use std::sync::RwLock;
+use std::{fs, process};
 use terminal_size::{terminal_size, Width};
+use yaml_rust::{Yaml, YamlLoader};
 
 use super::message::create_output_filter_config;
 use super::utils::check_setting_path;
@@ -24,6 +25,7 @@ lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
     pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
     pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
+    pub static ref GEOIP_DB_YAML: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =
@@ -127,6 +129,31 @@ impl StoredStatic {
                     "GeoLite2-City.mmdb",
                 ],
             ));
+            let geo_ip_file_path =
+                utils::check_setting_path(config_path, "geoip_field_mapping", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/geoip_field_mapping.yaml",
+                            true,
+                        )
+                        .unwrap()
+                    });
+            let binding = geo_ip_file_path.clone();
+            let output_path_str = binding.to_str().unwrap();
+
+            let geo_ip_mapping = if let Ok(loaded_yaml) =
+                YamlLoader::load_from_str(&fs::read_to_string(geo_ip_file_path).unwrap())
+            {
+                loaded_yaml
+            } else {
+                AlertMessage::alert(&format!(
+                    "not found geoip field mapping file. filepath: {output_path_str}"
+                ))
+                .ok();
+                YamlLoader::load_from_str("").unwrap()
+            };
+            *GEOIP_DB_YAML.write().unwrap() = Some(geo_ip_mapping);
         };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),

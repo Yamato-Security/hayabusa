@@ -13,15 +13,14 @@ use itertools::Itertools;
 use nested::Nested;
 use std::default::Default;
 use termcolor::{BufferWriter, Color, ColorChoice};
-use yaml_rust::YamlLoader;
 
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
+use crate::filter;
 use crate::options::htmlreport;
 use crate::yaml::ParseYaml;
-use crate::{filter, yaml};
 use hashbrown::HashMap;
 use serde_json::Value;
 use std::fmt::Write;
@@ -32,10 +31,9 @@ use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use super::configs::{
-    EventKeyAliasConfig, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER, STORED_STATIC,
+    EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, STORED_STATIC,
 };
 use super::message::{self, LEVEL_ABBR_MAP};
-use super::utils;
 
 // イベントファイルの1レコード分の情報を保持する構造体
 #[derive(Clone, Debug)]
@@ -251,39 +249,6 @@ impl Detection {
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
 
-        let mut geo_ip_mapping = vec![];
-        if GEOIP_DB_PARSER.read().unwrap().is_some() {
-            let yml_parser = yaml::ParseYaml::new(stored_static);
-            let geo_ip_file_path =
-                utils::check_setting_path(&stored_static.config_path, "geoip_field_mapping", false)
-                    .unwrap_or_else(|| {
-                        utils::check_setting_path(
-                            &CURRENT_EXE_PATH.to_path_buf(),
-                            "rules/config/geoip_field_mapping.txt",
-                            true,
-                        )
-                        .unwrap()
-                    });
-            let binding = geo_ip_file_path.clone();
-            let output_path_str = binding.to_str().unwrap();
-
-            geo_ip_mapping = if let Ok(loaded_profile) = yml_parser.read_file(geo_ip_file_path) {
-                match YamlLoader::load_from_str(&loaded_profile) {
-                    Ok(geo_ip_map) => geo_ip_map,
-                    Err(e) => {
-                        AlertMessage::alert(&format!("Parse error: {output_path_str}. {e}")).ok();
-                        YamlLoader::load_from_str("").unwrap()
-                    }
-                }
-            } else {
-                AlertMessage::alert(&format!(
-                    "not found geoip field mapping file. filepath: {output_path_str}"
-                ))
-                .ok();
-                YamlLoader::load_from_str("").unwrap()
-            };
-        }
-
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -478,6 +443,8 @@ impl Detection {
                     profile_converter.insert("TgtASN", TgtASN("-".into()));
                     profile_converter.insert("TgtCountry", TgtCountry("-".into()));
                     profile_converter.insert("TgtCity", TgtCity("-".into()));
+                    let binding = GEOIP_DB_YAML.read().unwrap();
+                    let geo_ip_mapping = binding.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
@@ -526,6 +493,8 @@ impl Detection {
                     profile_converter.insert("SrcASN", SrcASN("-".into()));
                     profile_converter.insert("SrcCountry", SrcCountry("-".into()));
                     profile_converter.insert("SrcCity", SrcCity("-".into()));
+                    let binding = GEOIP_DB_YAML.read().unwrap();
+                    let geo_ip_mapping = binding.as_ref().unwrap();
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
