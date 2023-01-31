@@ -261,4 +261,61 @@ mod tests {
         assert!(actual.is_ok());
         assert_eq!(CompactString::from("this is dummy"), actual.unwrap());
     }
+
+    #[test]
+    fn test_check_in_private_range_v4() {
+        let test_path = Path::new("test_files/mmdb").to_path_buf();
+
+        // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
+        let target_files = vec![
+            "GeoLite2-ASN.mmdb",
+            "GeoLite2-Country.mmdb",
+            "GeoLite2-City.mmdb",
+        ];
+        assert_eq!(
+            GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
+            Ok(Some(test_path.clone()))
+        );
+        IP_MAP.lock().unwrap().clear();
+        let geo_ip = GeoIPSearch::new(&test_path, target_files);
+        let loopback = geo_ip.convert_ip_to_geo("127.0.0.1");
+        assert!(loopback.is_ok());
+        assert_eq!("localhost🦅-🦅-", loopback.unwrap());
+        let actual_class_a = geo_ip.convert_ip_to_geo("10.1.1.128");
+        assert!(actual_class_a.is_ok());
+        assert_eq!("Private🦅-🦅-", actual_class_a.unwrap());
+        let actual_class_b = geo_ip.convert_ip_to_geo("172.19.128.128");
+        assert!(actual_class_b.is_ok());
+        assert_eq!("Private🦅-🦅-", actual_class_b.unwrap());
+        let actual_class_c = geo_ip.convert_ip_to_geo("192.168.128.128");
+        assert!(actual_class_c.is_ok());
+        assert_eq!("Private🦅-🦅-", actual_class_c.unwrap());
+    }
+
+    #[test]
+    fn test_check_in_private_range_v6() {
+        let test_path = Path::new("test_files/mmdb").to_path_buf();
+
+        // Test files from https://github.com/maxmind/MaxMind-DB/tree/a8ae5b4ac0aa730e2783f708cdaa208aca20e9ec/test-data
+        let target_files = vec![
+            "GeoLite2-ASN.mmdb",
+            "GeoLite2-Country.mmdb",
+            "GeoLite2-City.mmdb",
+        ];
+        assert_eq!(
+            GeoIPSearch::check_exist_geo_ip_files(&Some(test_path.clone()), target_files.clone()),
+            Ok(Some(test_path.clone()))
+        );
+        IP_MAP.lock().unwrap().clear();
+        let geo_ip = GeoIPSearch::new(&test_path, target_files);
+        let loopback = geo_ip.convert_ip_to_geo("::1");
+        assert!(loopback.is_ok());
+        assert_eq!("localhost🦅-🦅-", loopback.unwrap());
+        let link_local = geo_ip.convert_ip_to_geo("fe80::123:33ef:fe11:1");
+        assert!(link_local.is_ok());
+        assert_eq!("Private🦅-🦅-", link_local.unwrap());
+        let global_unicast = geo_ip.convert_ip_to_geo("2001:1234:abcd:1234::1");
+        assert!(global_unicast.is_ok());
+        assert_eq!("Private🦅-🦅-", global_unicast.unwrap());
+    }
 }
