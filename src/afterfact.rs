@@ -1245,7 +1245,18 @@ fn output_json_str(
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
-                            let last_contents_end = if is_included_geo_ip { "," } else { "" };
+                            let last_contents_end = if is_included_geo_ip
+                                && key_add_to_details.iter().any(|target_key| {
+                                    ext_field_map
+                                        .get(&CompactString::from(*target_key))
+                                        .unwrap()
+                                        .to_value()
+                                        != "-"
+                                }) {
+                                ","
+                            } else {
+                                ""
+                            };
                             output_stock.push(format!(
                                 "{}{last_contents_end}",
                                 _create_json_output_format(
@@ -1265,6 +1276,9 @@ fn output_json_str(
                                 .get(&CompactString::from(*target_key))
                                 .unwrap()
                                 .to_value();
+                            if val == "-" {
+                                continue;
+                            }
                             let output_end_fmt = if suffix_cnt == key_add_to_details.len() - 1 {
                                 ""
                             } else {
