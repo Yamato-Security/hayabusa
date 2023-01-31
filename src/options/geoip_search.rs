@@ -1,3 +1,4 @@
+use cidr_utils::cidr::IpCidr;
 use compact_str::CompactString;
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
@@ -54,6 +55,31 @@ impl GeoIPSearch {
         }
     }
 
+    /// check target_ip in private IP range.
+    fn check_in_private_ip_range(&self, target_ip: &IpAddr) -> bool {
+        let private_cidr = if target_ip.is_ipv4() {
+            vec![
+                IpCidr::from_str("10/8").unwrap(),
+                IpCidr::from_str("172.16/12").unwrap(),
+                IpCidr::from_str("192.168/16").unwrap(),
+            ]
+        } else {
+            vec![
+                IpCidr::from_str("::/128").unwrap(),    // IPv6 Unspecified
+                IpCidr::from_str("2000::/3").unwrap(),  // IPv6 Global Unicast
+                IpCidr::from_str("FE80::/10").unwrap(), // IPv6 Link Local Unicast
+                IpCidr::from_str("FC00::/7").unwrap(),  // IPv6 Unique Local Address
+                IpCidr::from_str("FF00::/8").unwrap(),  // IPv6 Multicast Address
+            ]
+        };
+        for cidr in private_cidr {
+            if cidr.contains(*target_ip) {
+                return true;
+            }
+        }
+        false
+    }
+
     /// convert IP address string to geo data
     pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDBError> {
         let addr;
@@ -67,6 +93,10 @@ impl GeoIPSearch {
 
         if addr.is_loopback() {
             return Ok("localhost🦅-🦅-".to_string());
+        }
+
+        if self.check_in_private_ip_range(&addr) {
+            return Ok("Private🦅-🦅-".to_string());
         }
 
         // If the IP address is the same, the result obtained is the same, so the lookup process is omitted by obtaining the result of a hit from the cache.
