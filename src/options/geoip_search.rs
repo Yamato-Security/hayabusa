@@ -56,14 +56,6 @@ impl GeoIPSearch {
 
     /// convert IP address string to geo data
     pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDBError> {
-        if target_ip == "-" {
-            return Ok("-🦅-🦅-".to_string());
-        } else if target_ip.contains("127.0.0.1") || target_ip.contains("::1") {
-            return Ok("localhost🦅-🦅-".to_string());
-        } else if target_ip.contains("LOCAL") {
-            return Ok("Private🦅-🦅-".to_string());
-        }
-
         let addr;
         if let Ok(conv) = IpAddr::from_str(target_ip) {
             addr = conv;
@@ -72,6 +64,10 @@ impl GeoIPSearch {
                 "Failed Convert IP Address. input: {target_ip}"
             )));
         };
+
+        if addr.is_loopback() {
+            return Ok("localhost🦅-🦅-".to_string());
+        }
 
         // If the IP address is the same, the result obtained is the same, so the lookup process is omitted by obtaining the result of a hit from the cache.
         if let Some(cached_data) = IP_MAP.lock().unwrap().get(&addr) {
