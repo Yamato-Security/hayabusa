@@ -185,7 +185,7 @@ mod tests {
         );
         IP_MAP.lock().unwrap().clear();
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
-        let expect = "n/a🦅United Kingdom🦅Boxford";
+        let expect = "-🦅United Kingdom🦅Boxford";
         let actual = geo_ip.convert_ip_to_geo("2.125.160.216");
         assert!(actual.is_ok());
         assert_eq!(expect, actual.unwrap());
