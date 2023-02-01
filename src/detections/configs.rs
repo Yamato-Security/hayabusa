@@ -139,18 +139,20 @@ impl StoredStatic {
                         )
                         .unwrap()
                     });
-            let binding = geo_ip_file_path.clone();
-            let output_path_str = binding.to_str().unwrap();
+            if !geo_ip_file_path.exists() {
+                AlertMessage::alert(
+                    "Could not find the geoip_field_mapping.yaml config file. Please run update-rules."
+                )
+                .ok();
+                process::exit(1);
+            }
 
             let geo_ip_mapping = if let Ok(loaded_yaml) =
                 YamlLoader::load_from_str(&fs::read_to_string(geo_ip_file_path).unwrap())
             {
                 loaded_yaml
             } else {
-                AlertMessage::alert(&format!(
-                    "not found geoip field mapping file. filepath: {output_path_str}"
-                ))
-                .ok();
+                AlertMessage::alert("Parse error in geoip_field_mapping.yaml.").ok();
                 YamlLoader::load_from_str("").unwrap()
             };
             *GEOIP_DB_YAML.write().unwrap() = Some(geo_ip_mapping);

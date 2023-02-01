@@ -1272,19 +1272,18 @@ fn output_json_str(
                         }
                     }
                     if is_included_geo_ip {
-                        for (geo_ip_field_cnt, target_key) in
-                            key_add_to_details.iter().enumerate()
+                        for (geo_ip_field_cnt, target_key) in key_add_to_details.iter().enumerate()
                         {
                             let val = ext_field_map
                                 .get(&CompactString::from(*target_key))
                                 .unwrap()
                                 .to_value();
-                            let output_end_fmt =
-                                if geo_ip_field_cnt == key_add_to_details.len() - 1 {
-                                    ""
-                                } else {
-                                    ","
-                                };
+                            let output_end_fmt = if geo_ip_field_cnt == key_add_to_details.len() - 1
+                            {
+                                ""
+                            } else {
+                                ","
+                            };
                             output_stock.push(format!(
                                 "{}{output_end_fmt}",
                                 _create_json_output_format(
