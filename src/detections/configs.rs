@@ -25,7 +25,8 @@ lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
     pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
     pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
-    pub static ref GEOIP_DB_YAML: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
+    pub static ref GEOIP_DB_YAML: RwLock<Option<HashMap<CompactString, Yaml>>> = RwLock::new(None);
+    pub static ref GEOIP_FILTER: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =
@@ -146,7 +147,6 @@ impl StoredStatic {
                 .ok();
                 process::exit(1);
             }
-
             let geo_ip_mapping = if let Ok(loaded_yaml) =
                 YamlLoader::load_from_str(&fs::read_to_string(geo_ip_file_path).unwrap())
             {
@@ -155,7 +155,22 @@ impl StoredStatic {
                 AlertMessage::alert("Parse error in geoip_field_mapping.yaml.").ok();
                 YamlLoader::load_from_str("").unwrap()
             };
-            *GEOIP_DB_YAML.write().unwrap() = Some(geo_ip_mapping);
+            let target_map = &geo_ip_mapping[0];
+            *GEOIP_FILTER.write().unwrap() =
+                Some(target_map["Filter"].as_vec().unwrap().to_owned());
+            let mut static_geoip_conf = HashMap::new();
+            let check_target_map = vec!["SrcIP", "TgtIP"];
+            for check_key in check_target_map {
+                if !target_map[check_key].is_badvalue()
+                    && !target_map[check_key].as_vec().unwrap().is_empty()
+                {
+                    static_geoip_conf.insert(
+                        CompactString::from(check_key),
+                        target_map[check_key].clone(),
+                    );
+                }
+            }
+            *GEOIP_DB_YAML.write().unwrap() = Some(static_geoip_conf);
         };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),

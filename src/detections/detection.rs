@@ -13,6 +13,7 @@ use itertools::Itertools;
 use nested::Nested;
 use std::default::Default;
 use termcolor::{BufferWriter, Color, ColorChoice};
+use yaml_rust::Yaml;
 
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::pivot::insert_pivot_keyword;
@@ -31,7 +32,7 @@ use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
 use super::configs::{
-    EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, STORED_STATIC,
+    EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC,
 };
 use super::message::{self, LEVEL_ABBR_MAP};
 
@@ -448,12 +449,13 @@ impl Detection {
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
-                    let target_alias = &geo_ip_mapping[0]["TgtIP"];
-                    if target_alias.is_badvalue() {
+                    let target_alias = &geo_ip_mapping.get("TgtIP");
+                    if target_alias.is_none() {
                         continue;
                     }
                     let alias_data = Self::get_alias_data(
                         target_alias
+                            .unwrap()
                             .as_vec()
                             .unwrap()
                             .iter()
@@ -498,13 +500,35 @@ impl Detection {
                     if geo_ip_mapping.is_empty() {
                         continue;
                     }
-                    let target_alias = &geo_ip_mapping[0]["SrcIP"];
-                    if target_alias.is_badvalue() {
+                    let target_alias = &geo_ip_mapping.get("SrcIP");
+                    if target_alias.is_none() || GEOIP_FILTER.read().unwrap().is_none() {
+                        continue;
+                    }
+
+                    let binding = GEOIP_FILTER.read().unwrap();
+                    let target_condition = binding.as_ref().unwrap();
+                    let mut geoip_target_flag = false;
+                    for condition in target_condition.iter() {
+                        geoip_target_flag = condition.as_hash().unwrap().iter().any(
+                            |(target_channel, target_eids)| {
+                                ch_str.as_str() == target_channel.as_str().unwrap()
+                                    && target_eids
+                                        .as_vec()
+                                        .unwrap()
+                                        .contains(&Yaml::from_str(eid.as_str()))
+                            },
+                        );
+                        if geoip_target_flag {
+                            break;
+                        }
+                    }
+                    if !geoip_target_flag {
                         continue;
                     }
 
                     let alias_data = Self::get_alias_data(
                         target_alias
+                            .unwrap()
                             .as_vec()
                             .unwrap()
                             .iter()
