@@ -1137,7 +1137,7 @@ fn output_json_str(
 ) -> String {
     let mut target: Vec<String> = vec![];
     let ext_field_map: HashMap<CompactString, Profile> = HashMap::from_iter(ext_field.to_owned());
-    let mut key_add_to_details = vec![
+    let key_add_to_details = vec![
         "SrcASN",
         "SrcCountry",
         "SrcCity",
@@ -1145,13 +1145,17 @@ fn output_json_str(
         "TgtCountry",
         "TgtCity",
     ];
-    key_add_to_details.retain(|target_key| {
-        ext_field_map
-            .get(&CompactString::from(*target_key))
-            .unwrap()
-            .to_value()
-            != "-"
-    });
+    let valid_key_add_to_details: Vec<&str> = key_add_to_details
+        .iter()
+        .filter(|target_key| {
+            ext_field_map
+                .get(&CompactString::from(**target_key))
+                .unwrap()
+                .to_value()
+                != "-"
+        })
+        .copied()
+        .collect();
     for (key, profile) in ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
@@ -1272,18 +1276,19 @@ fn output_json_str(
                         }
                     }
                     if is_included_geo_ip {
-                        for (geo_ip_field_cnt, target_key) in key_add_to_details.iter().enumerate()
+                        for (geo_ip_field_cnt, target_key) in
+                            valid_key_add_to_details.iter().enumerate()
                         {
                             let val = ext_field_map
                                 .get(&CompactString::from(*target_key))
                                 .unwrap()
                                 .to_value();
-                            let output_end_fmt = if geo_ip_field_cnt == key_add_to_details.len() - 1
-                            {
-                                ""
-                            } else {
-                                ","
-                            };
+                            let output_end_fmt =
+                                if geo_ip_field_cnt == valid_key_add_to_details.len() - 1 {
+                                    ""
+                                } else {
+                                    ","
+                                };
                             output_stock.push(format!(
                                 "{}{output_end_fmt}",
                                 _create_json_output_format(
