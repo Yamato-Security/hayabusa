@@ -100,6 +100,10 @@ impl GeoIPSearch {
 
     /// convert IP address string to geo data
     pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDBError> {
+        if target_ip == "ローカル" || target_ip == "LOCAL" {
+            return Ok("localhost🦅-🦅-".to_string());
+        }
+
         let addr;
         if let Ok(conv) = IpAddr::from_str(target_ip) {
             addr = conv;
@@ -109,7 +113,7 @@ impl GeoIPSearch {
             )));
         };
 
-        if addr.is_loopback() {
+        if addr.is_loopback() || target_ip == "0.0.0.0" {
             return Ok("localhost🦅-🦅-".to_string());
         }
 
