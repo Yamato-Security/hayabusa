@@ -103,9 +103,13 @@ impl GeoIPSearch {
         if target_ip == "ローカル" || target_ip == "LOCAL" {
             return Ok("localhost🦅-🦅-".to_string());
         }
-
+        let target = if target_ip.starts_with("::ffff:") {
+            target_ip.replace("::ffff:", "")
+        } else {
+            target_ip.to_string()
+        };
         let addr;
-        if let Ok(conv) = IpAddr::from_str(target_ip) {
+        if let Ok(conv) = IpAddr::from_str(&target) {
             addr = conv;
         } else {
             return Err(MaxMindDBError::IoError(format!(
