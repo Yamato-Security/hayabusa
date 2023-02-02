@@ -1257,7 +1257,7 @@ fn output_json_str(
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
                             let last_contents_end =
-                                if is_included_geo_ip && !key_add_to_details.is_empty() {
+                                if is_included_geo_ip && !valid_key_add_to_details.is_empty() {
                                     ","
                                 } else {
                                     ""
