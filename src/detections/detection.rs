@@ -4,7 +4,8 @@ use crate::detections::utils::{create_recordinfos, format_time, write_color_buff
 use crate::options::profile::Profile::{
     self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
     Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
-    RuleModifiedDate, RuleTitle, Status, Timestamp,
+    RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity, TgtCountry,
+    Timestamp,
 };
 use chrono::{TimeZone, Utc};
 use compact_str::CompactString;
@@ -12,6 +13,7 @@ use itertools::Itertools;
 use nested::Nested;
 use std::default::Default;
 use termcolor::{BufferWriter, Color, ColorChoice};
+use yaml_rust::Yaml;
 
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
 use crate::detections::pivot::insert_pivot_keyword;
@@ -29,7 +31,9 @@ use crate::detections::configs::STORED_EKEY_ALIAS;
 use std::sync::Arc;
 use tokio::{runtime::Runtime, spawn, task::JoinHandle};
 
-use super::configs::{StoredStatic, STORED_STATIC};
+use super::configs::{
+    EventKeyAliasConfig, StoredStatic, GEOIP_DB_PARSER, GEOIP_DB_YAML, GEOIP_FILTER, STORED_STATIC,
+};
 use super::message::{self, LEVEL_ABBR_MAP};
 
 // イベントファイルの1レコード分の情報を保持する構造体
@@ -222,10 +226,8 @@ impl Detection {
             .iter()
             .any(|(_s, p)| *p == RecordID(Default::default()))
         {
-            CompactString::from(
-                get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
-                    .unwrap_or_default(),
-            )
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
+                .unwrap_or_default()
         } else {
             CompactString::from("")
         };
@@ -235,10 +237,8 @@ impl Detection {
             &record_info.record["Event"]["System"]["Provider_attributes"]["Name"],
         )
         .unwrap_or_default();
-        let eid = CompactString::from(
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-                .unwrap_or_else(|| "-".to_string()),
-        );
+        let eid = get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
+            .unwrap_or_else(|| "-".into());
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
@@ -246,7 +246,10 @@ impl Detection {
         let level = rule.yaml["level"].as_str().unwrap_or("-");
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
-        let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
+        let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
+        let binding = STORED_EKEY_ALIAS.read().unwrap();
+        let eventkey_alias = binding.as_ref().unwrap();
+
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
                 Timestamp(_) => {
@@ -272,12 +275,13 @@ impl Detection {
                 Channel(_) => {
                     profile_converter.insert(
                         key.as_str(),
-                        Channel(CompactString::from(
+                        Channel(
                             stored_static
                                 .ch_config
-                                .get(&ch_str.to_ascii_lowercase())
-                                .unwrap_or(&ch_str.to_string()),
-                        )),
+                                .get(&CompactString::from(ch_str.to_ascii_lowercase()))
+                                .unwrap_or(ch_str)
+                                .to_owned(),
+                        ),
                     );
                 }
                 Level(_) => {
@@ -328,7 +332,7 @@ impl Detection {
                     let tactics = CompactString::from(
                         &tag_info
                             .iter()
-                            .filter(|x| tags_config_values.contains(&&x.to_string()))
+                            .filter(|x| tags_config_values.contains(&&CompactString::from(*x)))
                             .join(" ¦ "),
                     );
 
@@ -339,7 +343,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !tags_config_values.contains(&&x.to_string())
+                                !tags_config_values.contains(&&CompactString::from(*x))
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -357,7 +361,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !(TAGS_CONFIG.values().contains(&x.to_string())
+                                !(TAGS_CONFIG.values().contains(&CompactString::from(*x))
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
@@ -430,7 +434,152 @@ impl Detection {
                     } else {
                         CompactString::from("n/a")
                     };
-                    profile_converter.insert(key.as_str(), Provider(convert_value));
+                    profile_converter.insert(key.as_str(), RenderedMessage(convert_value));
+                }
+                TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    // initialize GeoIP Tgt associated fields
+                    profile_converter.insert("TgtASN", TgtASN("-".into()));
+                    profile_converter.insert("TgtCountry", TgtCountry("-".into()));
+                    profile_converter.insert("TgtCity", TgtCity("-".into()));
+                    let binding = GEOIP_DB_YAML.read().unwrap();
+                    let geo_ip_mapping = binding.as_ref().unwrap();
+                    if geo_ip_mapping.is_empty() {
+                        continue;
+                    }
+                    let target_alias = &geo_ip_mapping.get("TgtIP");
+                    if target_alias.is_none() {
+                        continue;
+                    }
+                    let binding = GEOIP_FILTER.read().unwrap();
+                    let target_condition = binding.as_ref().unwrap();
+                    let mut geoip_target_flag = false;
+                    for condition in target_condition.iter() {
+                        geoip_target_flag = condition.as_hash().unwrap().iter().any(
+                            |(target_channel, target_eids)| {
+                                ch_str.as_str() == target_channel.as_str().unwrap()
+                                    && target_eids
+                                        .as_vec()
+                                        .unwrap()
+                                        .contains(&Yaml::from_str(eid.as_str()))
+                            },
+                        );
+                        if geoip_target_flag {
+                            break;
+                        }
+                    }
+                    if !geoip_target_flag {
+                        continue;
+                    }
+                    let alias_data = Self::get_alias_data(
+                        target_alias
+                            .unwrap()
+                            .as_vec()
+                            .unwrap()
+                            .iter()
+                            .map(|x| x.as_str().unwrap())
+                            .collect(),
+                        &record_info.record,
+                        eventkey_alias,
+                    );
+                    let geo_data = GEOIP_DB_PARSER
+                        .read()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .convert_ip_to_geo(&alias_data);
+                    if geo_data.is_err() {
+                        continue;
+                    }
+                    let binding = geo_data.unwrap();
+                    let mut tgt_data = binding
+                        .split('🦅')
+                        .map(|x| if x.is_empty() { "-" } else { x });
+                    profile_converter
+                        .entry("TgtASN")
+                        .and_modify(|p| *p = TgtASN(tgt_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("TgtCountry")
+                        .and_modify(|p| *p = TgtCountry(tgt_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("TgtCity")
+                        .and_modify(|p| *p = TgtCity(tgt_data.next().unwrap().into()));
+                }
+                SrcASN(_) | SrcCountry(_) | SrcCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    // initialize GeoIP Tgt associated fields
+                    profile_converter.insert("SrcASN", SrcASN("-".into()));
+                    profile_converter.insert("SrcCountry", SrcCountry("-".into()));
+                    profile_converter.insert("SrcCity", SrcCity("-".into()));
+                    let binding = GEOIP_DB_YAML.read().unwrap();
+                    let geo_ip_mapping = binding.as_ref().unwrap();
+                    if geo_ip_mapping.is_empty() {
+                        continue;
+                    }
+                    let target_alias = &geo_ip_mapping.get("SrcIP");
+                    if target_alias.is_none() || GEOIP_FILTER.read().unwrap().is_none() {
+                        continue;
+                    }
+
+                    let binding = GEOIP_FILTER.read().unwrap();
+                    let target_condition = binding.as_ref().unwrap();
+                    let mut geoip_target_flag = false;
+                    for condition in target_condition.iter() {
+                        geoip_target_flag = condition.as_hash().unwrap().iter().any(
+                            |(target_channel, target_eids)| {
+                                ch_str.as_str() == target_channel.as_str().unwrap()
+                                    && target_eids
+                                        .as_vec()
+                                        .unwrap()
+                                        .contains(&Yaml::from_str(eid.as_str()))
+                            },
+                        );
+                        if geoip_target_flag {
+                            break;
+                        }
+                    }
+                    if !geoip_target_flag {
+                        continue;
+                    }
+
+                    let alias_data = Self::get_alias_data(
+                        target_alias
+                            .unwrap()
+                            .as_vec()
+                            .unwrap()
+                            .iter()
+                            .map(|x| x.as_str().unwrap())
+                            .collect(),
+                        &record_info.record,
+                        eventkey_alias,
+                    );
+
+                    let geo_data = GEOIP_DB_PARSER
+                        .read()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .convert_ip_to_geo(&alias_data);
+                    if geo_data.is_err() {
+                        continue;
+                    }
+                    let binding = geo_data.unwrap();
+                    let mut src_data = binding
+                        .split('🦅')
+                        .map(|x| if x.is_empty() { "-" } else { x });
+                    profile_converter
+                        .entry("SrcASN")
+                        .and_modify(|p| *p = SrcASN(src_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("SrcCountry")
+                        .and_modify(|p| *p = SrcCountry(src_data.next().unwrap().into()));
+                    profile_converter
+                        .entry("SrcCity")
+                        .and_modify(|p| *p = SrcCity(src_data.next().unwrap().into()));
                 }
                 _ => {}
             }
@@ -439,7 +588,7 @@ impl Detection {
             Some(s) => s.to_string(),
             None => match stored_static
                 .default_details
-                .get(&format!("{}_{}", provider, &eid))
+                .get(&CompactString::from(format!("{provider}_{eid}")))
             {
                 Some(str) => str.to_string(),
                 None => create_recordinfos(&record_info.record),
@@ -460,8 +609,6 @@ impl Detection {
             ext_field: stored_static.profiles.as_ref().unwrap().to_owned(),
             is_condition: false,
         };
-        let binding = STORED_EKEY_ALIAS.read().unwrap();
-        let eventkey_alias = binding.as_ref().unwrap();
         message::insert(
             &record_info.record,
             CompactString::new(details_fmt_str),
@@ -480,7 +627,7 @@ impl Detection {
 
         let mut profile_converter: HashMap<&str, Profile> = HashMap::new();
         let level = rule.yaml["level"].as_str().unwrap_or("-");
-        let tags_config_values: Vec<&String> = TAGS_CONFIG.values().collect();
+        let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -541,7 +688,7 @@ impl Detection {
                     let tactics = CompactString::from(
                         &tag_info
                             .iter()
-                            .filter(|x| tags_config_values.contains(&&x.to_string()))
+                            .filter(|x| tags_config_values.contains(&&CompactString::from(*x)))
                             .join(" ¦ "),
                     );
                     profile_converter.insert(key.as_str(), MitreTactics(tactics));
@@ -551,7 +698,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !tags_config_values.contains(&&x.to_string())
+                                !tags_config_values.contains(&&CompactString::from(*x))
                                     && (x.starts_with("attack.t")
                                         || x.starts_with("attack.g")
                                         || x.starts_with("attack.s"))
@@ -569,7 +716,7 @@ impl Detection {
                         &tag_info
                             .iter()
                             .filter(|x| {
-                                !(tags_config_values.contains(&&x.to_string())
+                                !(tags_config_values.contains(&&CompactString::from(*x))
                                     || x.starts_with("attack.t")
                                     || x.starts_with("attack.g")
                                     || x.starts_with("attack.s"))
@@ -620,7 +767,24 @@ impl Detection {
                     profile_converter.insert(key.as_str(), Provider(CompactString::from("-")));
                 }
                 RenderedMessage(_) => {
-                    profile_converter.insert(key.as_str(), Provider(CompactString::from("-")));
+                    profile_converter
+                        .insert(key.as_str(), RenderedMessage(CompactString::from("-")));
+                }
+                TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    profile_converter.insert("TgtASN", TgtASN("-".into()));
+                    profile_converter.insert("TgtCountry", TgtCountry("-".into()));
+                    profile_converter.insert("TgtCity", TgtCity("-".into()));
+                }
+                SrcASN(_) | SrcCountry(_) | SrcCity(_) => {
+                    if profile_converter.contains_key(key.as_str()) {
+                        continue;
+                    }
+                    profile_converter.insert("SrcASN", SrcASN("-".into()));
+                    profile_converter.insert("SrcCountry", SrcCountry("-".into()));
+                    profile_converter.insert("SrcCity", SrcCity("-".into()));
                 }
                 _ => {}
             }
@@ -661,7 +825,7 @@ impl Detection {
                         if let Some(tag) = TAGS_CONFIG.get(info.as_str().unwrap_or_default()) {
                             tag.to_owned()
                         } else {
-                            info.as_str().unwrap_or_default().to_owned()
+                            CompactString::from(info.as_str().unwrap_or_default())
                         }
                     }),
             ),
@@ -673,7 +837,7 @@ impl Detection {
                     .map(|info| {
                         match TAGS_CONFIG.get(info.as_str().unwrap_or(&String::default())) {
                             Some(s) => s.to_owned(),
-                            _ => info.as_str().unwrap_or("").to_string(),
+                            _ => CompactString::from(info.as_str().unwrap_or("")),
                         }
                     }),
             ),
@@ -853,23 +1017,50 @@ impl Detection {
             htmlreport::add_md_data("General Overview {#general_overview}", html_report_stock);
         }
     }
+
+    /// Retrieve the value of a given alias in a record.
+    fn get_alias_data(
+        target_alias: Vec<&str>,
+        record: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) -> CompactString {
+        for alias in target_alias {
+            let search_data =
+                message::parse_message(record, CompactString::from(alias), eventkey_alias);
+            if search_data != "n/a" {
+                return search_data;
+            }
+        }
+        CompactString::from("-")
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::detections;
+    use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::InputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
+    use crate::detections::configs::CURRENT_EXE_PATH;
+    use crate::detections::configs::STORED_EKEY_ALIAS;
     use crate::detections::detection::Detection;
+    use crate::detections::message;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::AggResult;
+    use crate::detections::rule::RuleNode;
+    use crate::detections::utils;
     use crate::filter;
+    use crate::options::profile::Profile;
     use chrono::TimeZone;
     use chrono::Utc;
+    use compact_str::CompactString;
+    use serde_json::Value;
     use std::path::Path;
+    use yaml_rust::Yaml;
     use yaml_rust::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
@@ -908,6 +1099,7 @@ mod tests {
                     no_summary: false,
                 },
                 json_input: false,
+                geo_ip: None,
             })),
             no_color: false,
             quiet: false,
@@ -1104,5 +1296,221 @@ mod tests {
     }
 
     #[test]
-    fn test_create_fields_value() {}
+    fn test_insert_message_with_geoip() {
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                profile: None,
+                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+            },
+            json_input: false,
+            geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        {
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
+
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+            {
+                "Event": {
+                    "EventData": {
+                        "CommandRLine": "hoge",
+                        "IpAddress": "89.160.20.128",
+                        "DestAddress": "2.125.160.216"
+                    },
+                    "System": {
+                        "TimeCreated_attributes": {
+                            "SystemTime": "1996-02-27T01:05:01Z"
+                        },
+                        "EventRecordID": "11111",
+                        "Channel": "Security",
+                        "EventID": "4624"
+                    }
+                }
+            }
+        "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
+            let keys = detections::rule::get_detection_keys(&dummy_rule);
+
+            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+            assert!(detect_infos.len() == 1);
+            let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
+                ("SrcASN".into(), Profile::SrcASN("Bredband2 AB".into())),
+                ("SrcCountry".into(), Profile::SrcCountry("Sweden".into())),
+                ("SrcCity".into(), Profile::SrcCity("Linköping".into())),
+                ("TgtASN".into(), Profile::TgtASN("-".into())),
+                (
+                    "TgtCountry".into(),
+                    Profile::TgtCountry("United Kingdom".into()),
+                ),
+                ("TgtCity".into(), Profile::TgtCity("Boxford".into())),
+            ];
+            let ext_field = detect_infos[0].ext_field.clone();
+            for expect in expect_geo_ip_data.iter() {
+                assert!(ext_field.contains(expect));
+            }
+        }
+    }
+
+    #[test]
+    fn test_filtered_insert_message_with_geoip() {
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                },
+                profile: None,
+                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+            },
+            json_input: false,
+            geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            no_color: false,
+            quiet: false,
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        {
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
+
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+            {
+                "Event": {
+                    "EventData": {
+                        "CommandRLine": "hoge",
+                        "IpAddress": "89.160.20.128",
+                        "DestAddress": "2.125.160.216"
+                    },
+                    "System": {
+                        "TimeCreated_attributes": {
+                            "SystemTime": "1996-02-27T01:05:01Z"
+                        },
+                        "EventRecordID": "11111",
+                        "Channel": "Dummy",
+                        "EventID": "4624"
+                    }
+                }
+            }
+        "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let dummy_rule = RuleNode::new(test_rulepath.to_string(), Yaml::from_str(""));
+            let keys = detections::rule::get_detection_keys(&dummy_rule);
+
+            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            Detection::insert_message(&dummy_rule, &input_evtxrecord, &stored_static);
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+            assert!(detect_infos.len() == 1);
+            let expect_geo_ip_data: Vec<(CompactString, Profile)> = vec![
+                ("SrcASN".into(), Profile::SrcASN("-".into())),
+                ("SrcCountry".into(), Profile::SrcCountry("-".into())),
+                ("SrcCity".into(), Profile::SrcCity("-".into())),
+                ("TgtASN".into(), Profile::TgtASN("-".into())),
+                ("TgtCountry".into(), Profile::TgtCountry("-".into())),
+                ("TgtCity".into(), Profile::TgtCity("-".into())),
+            ];
+            let ext_field = detect_infos[0].ext_field.clone();
+            for expect in expect_geo_ip_data.iter() {
+                assert!(ext_field.contains(expect));
+            }
+        }
+    }
 }

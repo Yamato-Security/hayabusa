@@ -478,6 +478,7 @@ mod tests {
                     no_summary: false,
                 },
                 json_input: false,
+                geo_ip: None,
             })),
             no_color: false,
             quiet: false,

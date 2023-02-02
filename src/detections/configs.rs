@@ -1,6 +1,7 @@
 use crate::detections::message::AlertMessage;
 use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
+use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::profile::{load_profile, Profile};
 use chrono::{DateTime, Utc};
@@ -13,7 +14,9 @@ use regex::Regex;
 use std::env::current_exe;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
+use std::{fs, process};
 use terminal_size::{terminal_size, Width};
+use yaml_rust::{Yaml, YamlLoader};
 
 use super::message::create_output_filter_config;
 use super::utils::check_setting_path;
@@ -21,6 +24,9 @@ use super::utils::check_setting_path;
 lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
     pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
+    pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
+    pub static ref GEOIP_DB_YAML: RwLock<Option<HashMap<CompactString, Yaml>>> = RwLock::new(None);
+    pub static ref GEOIP_FILTER: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =
@@ -43,14 +49,14 @@ pub struct StoredStatic {
     pub config: Config,
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
-    pub ch_config: HashMap<String, String>,
+    pub ch_config: HashMap<CompactString, CompactString>,
     pub quiet_errors_flag: bool,
     pub verbose_flag: bool,
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
-    pub default_details: HashMap<String, String>,
+    pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
     pub event_timeline_config: EventInfoConfig,
@@ -91,6 +97,88 @@ impl StoredStatic {
             Some(Action::CsvTimeline(opt)) => opt.json_input,
             Some(Action::JsonTimeline(opt)) => opt.json_input,
             _ => false,
+        };
+        let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+                &opt.geo_ip,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ),
+            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+                &opt.geo_ip,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ),
+            _ => Ok(None),
+        };
+        if let Err(err_msg) = geo_ip_db_result {
+            AlertMessage::alert(&err_msg).ok();
+            process::exit(1);
+        }
+        if let Some(geo_ip_db_path) = geo_ip_db_result.unwrap() {
+            *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(
+                &geo_ip_db_path,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ));
+            let geo_ip_file_path =
+                utils::check_setting_path(config_path, "geoip_field_mapping", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/geoip_field_mapping.yaml",
+                            true,
+                        )
+                        .unwrap()
+                    });
+            if !geo_ip_file_path.exists() {
+                AlertMessage::alert(
+                    "Could not find the geoip_field_mapping.yaml config file. Please run update-rules."
+                )
+                .ok();
+                process::exit(1);
+            }
+            let geo_ip_mapping = if let Ok(loaded_yaml) =
+                YamlLoader::load_from_str(&fs::read_to_string(geo_ip_file_path).unwrap())
+            {
+                loaded_yaml
+            } else {
+                AlertMessage::alert("Parse error in geoip_field_mapping.yaml.").ok();
+                YamlLoader::load_from_str("").unwrap()
+            };
+            let target_map = &geo_ip_mapping[0];
+            let empty_yaml_vec: Vec<Yaml> = vec![];
+            *GEOIP_FILTER.write().unwrap() = Some(
+                target_map["Filter"]
+                    .as_vec()
+                    .unwrap_or(&empty_yaml_vec)
+                    .to_owned(),
+            );
+            let mut static_geoip_conf = HashMap::new();
+            let check_target_map = vec!["SrcIP", "TgtIP"];
+            for check_key in check_target_map {
+                if !target_map[check_key].is_badvalue()
+                    && !target_map[check_key]
+                        .as_vec()
+                        .unwrap_or(&empty_yaml_vec)
+                        .is_empty()
+                {
+                    static_geoip_conf.insert(
+                        CompactString::from(check_key),
+                        target_map[check_key].clone(),
+                    );
+                }
+            }
+            *GEOIP_DB_YAML.write().unwrap() = Some(static_geoip_conf);
         };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -193,7 +281,7 @@ impl StoredStatic {
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数
-    pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
+    pub fn get_default_details(filepath: &str) -> HashMap<CompactString, CompactString> {
         let read_result = utils::read_csv(filepath);
         match read_result {
             Err(_e) => {
@@ -201,7 +289,7 @@ impl StoredStatic {
                 HashMap::new()
             }
             Ok(lines) => {
-                let mut ret: HashMap<String, String> = HashMap::new();
+                let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
                 lines
                     .iter()
                     .try_for_each(|line| -> Result<(), String> {
@@ -236,7 +324,10 @@ impl StoredStatic {
                                 )
                             }
                         };
-                        ret.insert(format!("{provider}_{eid}"), details.to_string());
+                        ret.insert(
+                            CompactString::from(format!("{provider}_{eid}")),
+                            CompactString::from(details),
+                        );
                         Ok(())
                     })
                     .ok();
@@ -619,6 +710,10 @@ pub struct CsvOutputOption {
     #[arg(short, short = 'J', long = "JSON-input")]
     pub json_input: bool,
 
+    /// Add GeoIP (ASN, city, country) info to IP addresses
+    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
+    pub geo_ip: Option<PathBuf>,
+
     #[clap(flatten)]
     pub output_options: OutputOption,
 }
@@ -635,6 +730,10 @@ pub struct JSONOutputOption {
     /// Scan JSON-formatted logs instead of .evtx
     #[arg(short, short = 'J', long = "JSON-input")]
     pub json_input: bool,
+
+    /// Add GeoIP (ASN, city, country) info to IP addresses
+    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
+    pub geo_ip: Option<PathBuf>,
 }
 
 #[derive(Parser, Clone, Debug)]

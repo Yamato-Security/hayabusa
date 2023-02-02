@@ -8,6 +8,7 @@ use crate::detections::message::AlertMessage;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
+use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
 
@@ -165,7 +166,7 @@ impl Timeline {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
 
-            let fmted_channel = channel.replace('\"', "");
+            let fmted_channel = CompactString::from(channel.replace('\"', ""));
 
             // イベント情報取得(eventtitleなど)
             let conf = event_timeline_config

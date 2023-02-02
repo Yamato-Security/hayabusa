@@ -1,5 +1,6 @@
 extern crate bytesize;
 extern crate downcast_rs;
+extern crate maxminddb;
 extern crate serde;
 extern crate serde_derive;
 
@@ -1459,6 +1460,7 @@ mod tests {
                     no_summary: false,
                 },
                 json_input: true,
+                geo_ip: None,
             })),
             no_color: false,
             quiet: false,
