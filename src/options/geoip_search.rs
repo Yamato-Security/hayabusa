@@ -211,7 +211,7 @@ mod tests {
         let mut expect_err_msg = vec![];
         for file_path in &target_files {
             expect_err_msg.push(format!(
-                "Cannot find the appropriate MaxMind GeoIP database files. filepath: {:?}",
+                "Cannot find the appropriate MaxMind GeoIP .mmdb database files. filepath: {:?}",
                 test_path.join(file_path)
             ));
         }
