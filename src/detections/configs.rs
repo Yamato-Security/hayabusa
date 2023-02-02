@@ -156,8 +156,13 @@ impl StoredStatic {
                 YamlLoader::load_from_str("").unwrap()
             };
             let target_map = &geo_ip_mapping[0];
-            *GEOIP_FILTER.write().unwrap() =
-                Some(target_map["Filter"].as_vec().unwrap().to_owned());
+            let empty_yaml_vel: Vec<Yaml> = vec![];
+            *GEOIP_FILTER.write().unwrap() = Some(
+                target_map["Filter"]
+                    .as_vec()
+                    .unwrap_or(&empty_yaml_vel)
+                    .to_owned(),
+            );
             let mut static_geoip_conf = HashMap::new();
             let check_target_map = vec!["SrcIP", "TgtIP"];
             for check_key in check_target_map {
