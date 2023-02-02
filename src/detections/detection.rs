@@ -453,6 +453,26 @@ impl Detection {
                     if target_alias.is_none() {
                         continue;
                     }
+                    let binding = GEOIP_FILTER.read().unwrap();
+                    let target_condition = binding.as_ref().unwrap();
+                    let mut geoip_target_flag = false;
+                    for condition in target_condition.iter() {
+                        geoip_target_flag = condition.as_hash().unwrap().iter().any(
+                            |(target_channel, target_eids)| {
+                                ch_str.as_str() == target_channel.as_str().unwrap()
+                                    && target_eids
+                                        .as_vec()
+                                        .unwrap()
+                                        .contains(&Yaml::from_str(eid.as_str()))
+                            },
+                        );
+                        if geoip_target_flag {
+                            break;
+                        }
+                    }
+                    if !geoip_target_flag {
+                        continue;
+                    }
                     let alias_data = Self::get_alias_data(
                         target_alias
                             .unwrap()
@@ -1353,7 +1373,8 @@ mod tests {
                             "SystemTime": "1996-02-27T01:05:01Z"
                         },
                         "EventRecordID": "11111",
-                        "Channel": "Security"
+                        "Channel": "Security",
+                        "EventID": "4624"
                     }
                 }
             }
