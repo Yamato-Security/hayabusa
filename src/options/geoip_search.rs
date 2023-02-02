@@ -288,7 +288,7 @@ mod tests {
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
         let loopback = geo_ip.convert_ip_to_geo("127.0.0.1");
         assert!(loopback.is_ok());
-        assert_eq!("localhost🦅-🦅-", loopback.unwrap());
+        assert_eq!("Local🦅-🦅-", loopback.unwrap());
         let actual_class_a = geo_ip.convert_ip_to_geo("10.1.1.128");
         assert!(actual_class_a.is_ok());
         assert_eq!("Private🦅-🦅-", actual_class_a.unwrap());
@@ -318,7 +318,7 @@ mod tests {
         let geo_ip = GeoIPSearch::new(&test_path, target_files);
         let loopback = geo_ip.convert_ip_to_geo("::1");
         assert!(loopback.is_ok());
-        assert_eq!("localhost🦅-🦅-", loopback.unwrap());
+        assert_eq!("Local🦅-🦅-", loopback.unwrap());
         let link_local = geo_ip.convert_ip_to_geo("fe80::123:33ef:fe11:1");
         assert!(link_local.is_ok());
         assert_eq!("Private🦅-🦅-", link_local.unwrap());
