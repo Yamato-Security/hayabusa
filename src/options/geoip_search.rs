@@ -30,7 +30,7 @@ impl GeoIPSearch {
         }
     }
 
-    /// check existence files in specified path by geo-ip option.
+    /// check existence files in specified path by GeoIP option.
     pub fn check_exist_geo_ip_files(
         geo_ip_dir_path: &Option<PathBuf>,
         check_files: Vec<&str>,
@@ -41,7 +41,7 @@ impl GeoIPSearch {
                 let mmdb_path = path.join(file_name);
                 if !mmdb_path.exists() {
                     combined_err.push(format!(
-                        "Cannot find the appropriate MaxMind GeoIP database files. filepath: {mmdb_path:?}"
+                        "Cannot find the appropriate MaxMind GeoIP .mmdb database files. filepath: {mmdb_path:?}"
                     ));
                 }
             }
@@ -101,7 +101,7 @@ impl GeoIPSearch {
     /// convert IP address string to geo data
     pub fn convert_ip_to_geo(&self, target_ip: &str) -> Result<String, MaxMindDBError> {
         if target_ip == "ローカル" || target_ip == "LOCAL" {
-            return Ok("localhost🦅-🦅-".to_string());
+            return Ok("Local🦅-🦅-".to_string());
         }
         let target = if target_ip.starts_with("::ffff:") {
             target_ip.replace("::ffff:", "")
@@ -118,7 +118,7 @@ impl GeoIPSearch {
         };
 
         if addr.is_loopback() || target_ip == "0.0.0.0" {
-            return Ok("localhost🦅-🦅-".to_string());
+            return Ok("Local🦅-🦅-".to_string());
         }
 
         if self.check_in_private_ip_range(&addr) {

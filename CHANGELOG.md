@@ -4,7 +4,8 @@
 
 **New Features:**
 
-- XXX
+- Added support for input of JSON-formatted event logs (`-J, --JSON-input`). (#386) (@hitenkoku)
+- Log enrichment by outputting the ASN organization, city and country of source and destination IP addresses based on MaxMind GeoIP databases (`-G, --GeoIP`). (#879) (@hitenkoku)
 
 **Enhancements:**
 
@@ -15,8 +16,6 @@
 - Approximately 5% speed increase and memory usage reduction by reducing regex usage in wildcard expressions. (#890) (@fukusuket)
 - Further speed increase and memory usage reduction by removing unnecessary regex usage. (#894) (@fukusuket)
 - Approximately 3% speed increase and 10% memory usage reduction by reducing regex usage. (#898) (@fukuseket)
-- Added support for JSON-formatted event logs as input. (#386) (@hitenkoku)
-- Added Log enrichment(ASN, City, Country of sources IP and Destination IP. Required MaxMind GeoIP database files) `--geo-ip`  option in `csv-timeline` and `json-timeline`. (#879) (@hitenkoku)
 
 **Bug Fixes:**
 

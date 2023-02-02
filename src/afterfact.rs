@@ -1172,7 +1172,7 @@ fn output_json_str(
             ));
         } else {
             match profile {
-                // process geo-ip profile in details sections to include geo-ip data in details section.
+                // process GeoIP profile in details sections to include GeoIP data in details section.
                 Profile::SrcASN(_)
                 | Profile::SrcCountry(_)
                 | Profile::SrcCity(_)

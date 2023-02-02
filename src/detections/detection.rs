@@ -440,7 +440,7 @@ impl Detection {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
-                    // initialize geo-ip Tgt associated fields
+                    // initialize GeoIP Tgt associated fields
                     profile_converter.insert("TgtASN", TgtASN("-".into()));
                     profile_converter.insert("TgtCountry", TgtCountry("-".into()));
                     profile_converter.insert("TgtCity", TgtCity("-".into()));
@@ -511,7 +511,7 @@ impl Detection {
                     if profile_converter.contains_key(key.as_str()) {
                         continue;
                     }
-                    // initialize geo-ip Tgt associated fields
+                    // initialize GeoIP Tgt associated fields
                     profile_converter.insert("SrcASN", SrcASN("-".into()));
                     profile_converter.insert("SrcCountry", SrcCountry("-".into()));
                     profile_converter.insert("SrcCity", SrcCity("-".into()));

@@ -710,8 +710,8 @@ pub struct CsvOutputOption {
     #[arg(short, short = 'J', long = "JSON-input")]
     pub json_input: bool,
 
-    /// Add log enhancement for IP address (ASN, City and Country: Required MaxMind GeoIP databases)
-    #[arg(short, long = "geo-ip", value_name = "DIR")]
+    /// Add GeoIP (ASN, city, country) info to IP addresses
+    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
     pub geo_ip: Option<PathBuf>,
 
     #[clap(flatten)]
@@ -731,8 +731,8 @@ pub struct JSONOutputOption {
     #[arg(short, short = 'J', long = "JSON-input")]
     pub json_input: bool,
 
-    /// Add log enhancement for IP address (ASN, City and Country: Required MaxMind GeoIP databases)
-    #[arg(short, long = "geo-ip", value_name = "DIR")]
+    /// Add GeoIP (ASN, city, country) info to IP addresses
+    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
     pub geo_ip: Option<PathBuf>,
 }
 
