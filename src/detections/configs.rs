@@ -479,7 +479,7 @@ pub struct UpdateOption {
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "DIRECTORY/FILE"
+        value_name = "DIR/FILE"
     )]
     pub rules: PathBuf,
 }
@@ -548,7 +548,7 @@ pub struct PivotKeywordOption {
     pub start_timeline: Option<String>,
 
     /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter")]
     pub eid_filter: bool,
 }
 
@@ -572,7 +572,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
     pub profile: Option<String>,
 
-    /// Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
+    /// Save the timeline in format (ex: results.csv, results.json, etc...)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
@@ -608,7 +608,7 @@ pub struct OutputOption {
     pub start_timeline: Option<String>,
 
     /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter")]
     pub eid_filter: bool,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -650,15 +650,15 @@ pub struct OutputOption {
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "DIRECTORY/FILE"
+        value_name = "DIR/FILE"
     )]
     pub rules: PathBuf,
 
     /// Save detail Results Summary in html (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="html-report", value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE")]
     pub html_report: Option<PathBuf>,
 
-    /// Do not display result summary
+    /// Do not display results summary
     #[arg(help_heading = Some("Display Settings"), long = "no-summary")]
     pub no_summary: bool,
 }
@@ -666,7 +666,7 @@ pub struct OutputOption {
 #[derive(Args, Clone, Debug)]
 pub struct InputOption {
     /// Directory of multiple .evtx files
-    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIRECTORY")]
+    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR")]
     pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file
@@ -681,8 +681,8 @@ pub struct InputOption {
     #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',')]
     pub evtx_file_ext: Option<Vec<String>>,
 
-    /// Thread number (default: optimal number for performance)
-    #[arg(short = 't', long = "thread-number", value_name = "NUMBER")]
+    /// Number of threads (default: optimal number for performance)
+    #[arg(short = 't', long = "threads", value_name = "NUMBER")]
     pub thread_number: Option<usize>,
 
     /// Quiet errors mode: do not save error logs
@@ -695,7 +695,7 @@ pub struct InputOption {
         long = "rules-config",
         default_value = "./rules/config",
         hide_default_value = true,
-        value_name = "DIRECTORY"
+        value_name = "DIR"
     )]
     pub config: PathBuf,
 
