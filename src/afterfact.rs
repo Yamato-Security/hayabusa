@@ -147,17 +147,13 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
 
     let (header_raw, footer_raw) =
         build_time_markers(&timestamps, marker_num, length - (side_margin_size * 2));
-    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2), 5);
+    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2), 5_usize);
     for header_str in header_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
     }
-    writeln!(
-        wtr,
-        "{}{}",
-        " ".repeat(side_margin_size - 1),
-        sparkline.unwrap_or_default()
-    )
-    .ok();
+    for line in sparkline.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), line).ok();
+    }
     for footer_str in footer_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), footer_str).ok();
     }
