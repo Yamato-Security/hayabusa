@@ -5,7 +5,7 @@ use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::profile::{load_profile, Profile};
 use chrono::{DateTime, Utc};
-use clap::{Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ArgGroup};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
@@ -508,6 +508,7 @@ pub struct MetricsOption {
 }
 
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub input_args: InputOption,
@@ -534,6 +535,15 @@ pub struct PivotKeywordOption {
         value_name = "LEVEL"
     )]
     pub min_level: String,
+
+    /// Specified level for rules
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'e',
+        long = "exact-level",
+        value_name = "LEVEL"
+    )]
+    pub exact_level: Option<String>,
 
     /// Enable rules marked as noisy
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules")]
@@ -564,6 +574,7 @@ pub struct LogonSummaryOption {
 
 /// Options can be set when outputting
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
@@ -594,6 +605,15 @@ pub struct OutputOption {
         value_name = "LEVEL"
     )]
     pub min_level: String,
+
+    /// Specified level for rules
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'e',
+        long = "exact-level",
+        value_name = "LEVEL"
+    )]
+    pub exact_level: Option<String>,
 
     /// Enable rules marked as noisy
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules")]
@@ -1041,6 +1061,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             profile: None,
             exclude_status: option.exclude_status.clone(),
             min_level: option.min_level.clone(),
+            exact_level: option.exact_level.clone(),
             end_timeline: option.end_timeline.clone(),
             start_timeline: option.start_timeline.clone(),
             eid_filter: option.eid_filter,
@@ -1064,6 +1085,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             profile: None,
             exclude_status: None,
             min_level: String::default(),
+            exact_level: None,
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
@@ -1087,6 +1109,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             profile: None,
             exclude_status: None,
             min_level: String::default(),
+            exact_level: None,
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
@@ -1119,6 +1142,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             profile: None,
             exclude_status: None,
             min_level: String::default(),
+            exact_level: None,
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
