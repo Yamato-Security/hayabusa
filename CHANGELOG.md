@@ -16,6 +16,7 @@
 - Approximately 5% speed increase and memory usage reduction by reducing regex usage in wildcard expressions. (#890) (@fukusuket)
 - Further speed increase and memory usage reduction by removing unnecessary regex usage. (#894) (@fukusuket)
 - Approximately 3% speed increase and 10% memory usage reduction by reducing regex usage. (#898) (@fukuseket)
+- Improved `--visualize-timeline`  output to multi-line by library update. (#902) (@hitenkoku)
 
 **Bug Fixes:**
 
