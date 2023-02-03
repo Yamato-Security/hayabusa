@@ -674,5 +674,4 @@ mod tests {
         .unwrap();
         assert_eq!(yaml.files.len(), 1);
     }
-
 }

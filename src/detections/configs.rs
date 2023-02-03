@@ -5,7 +5,7 @@ use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::profile::{load_profile, Profile};
 use chrono::{DateTime, Utc};
-use clap::{Args, ColorChoice, Command, CommandFactory, Parser, Subcommand, ArgGroup};
+use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
