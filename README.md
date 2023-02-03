@@ -56,7 +56,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Analyzing JSON-formatted results with JQ](#analyzing-json-formatted-results-with-jq)
 - [Features](#features)
 - [Downloads](#downloads)
-- [Git cloning](#git-cloning)
+- [Git Cloning](#git-cloning)
 - [Advanced: Compiling From Source (Optional)](#advanced-compiling-from-source-optional)
   - [Updating Rust Packages](#updating-rust-packages)
   - [Cross-compiling 32-bit Windows Binaries](#cross-compiling-32-bit-windows-binaries)
@@ -72,17 +72,29 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 - [Usage](#usage)
   - [Main Help Menu](#main-help-menu)
   - [`csv-timeline` command](#csv-timeline-command)
+    - [`csv-timeline` command examples](#csv-timeline-command-examples)
+    - [`csv-timeline` command config files](#csv-timeline-command-config-files)
   - [`json-timeline` command](#json-timeline-command)
+    - [`json-timeline` command examples](#json-timeline-command-examples)
   - [`logon-summary` command](#logon-summary-command)
+    - [`logon-summary` command example](#logon-summary-command-example)
   - [`metrics` command](#metrics-command)
+    - [`metrics` command examples](#metrics-command-examples)
+    - [`metrics` command config file](#metrics-command-config-file)
   - [`pivot-keywords-list` command](#pivot-keywords-list-command)
+    - [`pivot-keyword-list` command example](#pivot-keyword-list-command-example)
+    - [`pivot-keyword-list` config file](#pivot-keyword-list-config-file)
   - [`update-rules` command](#update-rules-command)
+    - [`update-rules` command example](#update-rules-command-example)
   - [`level-tuning` command](#level-tuning-command)
+    - [`level-tuning` command examples](#level-tuning-command-examples)
+    - [`level-tuning` config file](#level-tuning-config-file)
   - [`set-default-profile` command](#set-default-profile-command)
   - [`list-profiles` command](#list-profiles-command)
-  - [Usage Examples](#usage-examples)
-  - [Pivot Keyword Generator](#pivot-keyword-generator)
-  - [Logon Summary Generator](#logon-summary-generator)
+  - [Advanced](#advanced)
+    - [GeoIP Log Enrichment](#geoip-log-enrichment)
+      - [GeoIP config file](#geoip-config-file)
+      - [Automatic updates of GeoIP databases](#automatic-updates-of-geoip-databases)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
 - [Hayabusa Output](#hayabusa-output)
   - [Profiles](#profiles)
@@ -211,12 +223,14 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Output to CSV, JSON/JSONL and HTML Summary Reports.
 * Daily Sigma rule updates.
 * Support for JSON-formatted log input.
+* Log field normalization.
+* Log enrichment by adding GeoIP (ASN, city, country) information to IP addresses.
 
 # Downloads
 
 Please download the latest stable version of Hayabusa with compiled binaries or compile the source code from the [Releases](https://github.com/Yamato-Security/hayabusa/releases) page.
 
-# Git cloning
+# Git Cloning
 
 You can `git clone` the repository with the following command and compile binary from source code:
 
@@ -231,7 +245,7 @@ Note: If you forget to use --recursive option, the `rules` folder, which is mana
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
 ```bash
-hayabusa-2.2.0-win-x64.exe update-rules
+hayabusa.exe update-rules
 ```
 
 If the update fails, you may need to rename the `rules` folder and try again.
@@ -342,20 +356,18 @@ You may experience slow runtime especially on the first run after a reboot due t
 
 In a Command/PowerShell Prompt or Windows Terminal, just run the appropriate 32-bit or 64-bit Windows binary.
 
-64-bit example: `hayabusa-2.2.0-win-x64.exe`
-
 ## Linux
 
 You first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-2.2.0-lin-gnu
+chmod +x ./hayabusa
 ```
 
 Then run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-2.2.0-lin-gnu
+./hayabusa
 ```
 
 ## macOS
@@ -363,13 +375,13 @@ Then run it from the Hayabusa root directory:
 From Terminal or iTerm2, you first need to make the binary executable.
 
 ```bash
-chmod +x ./hayabusa-2.2.0-mac-intel
+chmod +x ./hayabusa
 ```
 
 Then, try to run it from the Hayabusa root directory:
 
 ```bash
-./hayabusa-2.2.0-mac-intel
+./hayabusa
 ```
 
 On the latest version of macOS, you may receive the following security error when you try to run it:
@@ -383,7 +395,7 @@ Click "Cancel" and then from System Preferences, open "Security & Privacy" and f
 After that, try to run it again.
 
 ```bash
-./hayabusa-2.2.0-mac-intel
+./hayabusa
 ```
 
 The following warning will pop up, so please click "Open".
@@ -432,78 +444,32 @@ Options:
 
 ## `csv-timeline` command
 
+The `csv-timeline` command will create a forensics timeline of events in CSV format.
+
 ```
 Usage: csv-timeline <INPUT> [OPTIONS]
 
 Options:
-  -J, --JSON-input                Scan JSON-formatted logs instead of .evtx
-  -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
-  -Q, --quiet-errors              Quiet errors mode: do not save error logs
-  -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
-  -v, --verbose                   Output verbose information
+  -t, --threads <NUMBER>        Number of threads (default: optimal number for performance)
+  -Q, --quiet-errors            Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>      Specify custom rule config directory (default: ./rules/config)
+  -v, --verbose                 Output verbose information
+  -J, --JSON-input              Scan JSON-formatted logs instead of .evtx
+  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
 
 Input:
-  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
-  -f, --file <FILE>            File path to one .evtx file
-  -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Advanced:
       --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -r, --rules <DIRECTORY/FILE>           Specify a custom rule directory or file (default: ./rules)
+  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
 
 Output:
   -p, --profile <PROFILE>   Specify output profile
-  -o, --output <FILE>       Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
-  -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
-
-Filtering:
-      --enable-deprecated-rules  Enable rules marked as deprecated
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-  -n, --enable-noisy-rules       Enable rules marked as noisy
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-  -e, --eid-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-
-Time Format:
-      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-  -U, --UTC               Output time in UTC format (default: local time)
-
-Display Settings:
-  -T, --visualize-timeline  Output event frequency timeline
-      --no-summary          Do not display result summary
-```
-
-## `json-timeline` command
-
-```
-Usage: json-timeline <INPUT> [OPTIONS]
-
-Options:
-  -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
-  -Q, --quiet-errors              Quiet errors mode: do not save error logs
-  -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
-  -v, --verbose                   Output verbose information
-  -J, --JSON-input                Scan JSON-formatted logs instead of .evtx
-
-Input:
-  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
-  -f, --file <FILE>            File path to one .evtx file
-  -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
-
-Advanced:
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-  -r, --rules <DIRECTORY/FILE>           Specify a custom rule directory or file (default: ./rules)
-
-Output:
-  -p, --profile <PROFILE>   Specify output profile
-  -o, --output <FILE>       Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
-  -H, --html-report <FILE>  Save detail Results Summary in html (ex: results.html)
+  -o, --output <FILE>       Save the timeline in format (ex: results.csv, results.json, etc...)
+  -H, --HTML-report <FILE>  Save detail Results Summary in html (ex: results.html)
   -L, --JSONL-output        Save the timeline in JSONL format (ex: -L -o results.jsonl)
 
 Filtering:
@@ -513,7 +479,7 @@ Filtering:
   -n, --enable-noisy-rules       Enable rules marked as noisy
       --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-  -e, --eid-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+  -E, --EID-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
 
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
@@ -526,24 +492,194 @@ Time Format:
 
 Display Settings:
   -T, --visualize-timeline  Output event frequency timeline
-      --no-summary          Do not display result summary
+      --no-summary          Do not display results summary
 ```
 
+### `csv-timeline` command examples
+
+* Run hayabusa against one Windows event log file with default standard profile:
+
+```
+hayabusa.exe csv-timeline -f eventlog.evtx
+```
+
+* Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
+```
+
+* Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `super-verbose` profile!):
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
+```
+
+* Enable the EID (Event ID) filter:
+
+> Note: Enabling the EID filter will speed up the analysis by about 10-15% but there is a possibility of missing alerts.
+
+```
+hayabusa.exe csv-timeline -E -d .\hayabusa-sample-evtx -o results.csv
+```
+
+* Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
+```
+
+* Only run hayabusa rules for logs that are enabled by default on Windows:
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
+```
+
+* Only run hayabusa rules for sysmon logs:
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
+```
+
+* Only run sigma rules:
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
+```
+
+* Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
+
+> Note: Recently, deprecated rules are now located in a separate directory in the sigma repository so are not included by default anymore in Hayabusa.
+> Therefore, you probably have no need to enable deprecated rules.
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
+```
+
+* Only run rules to analyze logons and output in the UTC timezone:
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
+```
+
+* Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
+
+```
+hayabusa.exe csv-timeline -l -m low
+```
+
+* Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
+
+```
+hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -v
+```
+
+* Verbose output example:
+
+```
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
+1 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.20 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
+2 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.39 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
+3 / 509 [>-------------------------------------------------------------------------------------------------------------] 0.59 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
+4 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.79 % 1s
+Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
+5 / 509 [=>------------------------------------------------------------------------------------------------------------] 0.98 % 1s
+```
+
+* Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
+
+```
+hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
+```
+
+* Quiet error mode:
+By default, hayabusa will save error messages to error log files.
+If you do not want to save error messages, please add `-Q`.
+
+### `csv-timeline` command config files
+
+
+
+## `json-timeline` command
+
+The `json-timeline` command will create a forensics timeline of events in JSON or JSONL format.
+
+```
+Usage: json-timeline <INPUT> [OPTIONS]
+
+Options:
+  -t, --threads <NUMBER>        Number of threads (default: optimal number for performance)
+  -Q, --quiet-errors            Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>      Specify custom rule config directory (default: ./rules/config)
+  -v, --verbose                 Output verbose information
+  -J, --JSON-input              Scan JSON-formatted logs instead of .evtx
+  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
+
+Input:
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+
+Advanced:
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
+
+Output:
+  -p, --profile <PROFILE>   Specify output profile
+  -o, --output <FILE>       Save the timeline in format (ex: results.csv, results.json, etc...)
+  -H, --HTML-report <FILE>  Save detail Results Summary in html (ex: results.html)
+  -L, --JSONL-output        Save the timeline in JSONL format (ex: -L -o results.jsonl)
+
+Filtering:
+      --enable-deprecated-rules  Enable rules marked as deprecated
+      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
+  -n, --enable-noisy-rules       Enable rules marked as noisy
+      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+
+Time Format:
+      --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
+      --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
+      --RFC-2822          Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
+      --RFC-3339          Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
+      --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
+      --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
+  -U, --UTC               Output time in UTC format (default: local time)
+
+Display Settings:
+  -T, --visualize-timeline  Output event frequency timeline
+      --no-summary          Do not display results summary
+```
+
+### `json-timeline` command examples
+
+The options and config files for `json-timeline` are the same as `csv-timeline` but one extra option `-L, --JSONL-output` for outputting to JSONL format.
+Outputting to JSONL will be faster and smaller file size than JSON so is good if you are going to just import the results into another tool but JSON is better if you are going to manually analyze the results with a text editor.
+
 ## `logon-summary` command
+
+You can use the `logon-summary` command to output logon information summary (logon usernames and successful and failed logon count).
+You can display the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
 
 ```
 Usage: logon-summary <INPUT> [OPTIONS]
 
 Options:
-  -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
-  -Q, --quiet-errors              Quiet errors mode: do not save error logs
-  -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
-  -v, --verbose                   Output verbose information
+  -t, --threads <NUMBER>    Number of threads (default: optimal number for performance)
+  -Q, --quiet-errors        Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>  Specify custom rule config directory (default: ./rules/config)
+  -v, --verbose             Output verbose information
+  -h, --help                Print help
 
 Input:
-  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
-  -f, --file <FILE>            File path to one .evtx file
-  -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Advanced:
       --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -552,21 +688,28 @@ Output:
   -o, --output <FILE>  Save the Logon summary in CSV format (ex: logon-summary.csv)
 ```
 
+### `logon-summary` command example
+
+* Print logon summary: `hayabusa.exe logon-summary -f Security.evtx`
+* Save logon summary results: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
+
 ## `metrics` command
+
+You can use the `metrics` command to print out the total number and percentage of Event IDs seperated by Channels.
 
 ```
 Usage: metrics <INPUT> [OPTIONS]
 
 Options:
-  -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
-  -Q, --quiet-errors              Quiet errors mode: do not save error logs
-  -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
-  -v, --verbose                   Output verbose information
+  -t, --threads <NUMBER>    Number of threads (default: optimal number for performance)
+  -Q, --quiet-errors        Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>  Specify custom rule config directory (default: ./rules/config)
+  -v, --verbose             Output verbose information
 
 Input:
-  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
-  -f, --file <FILE>            File path to one .evtx file
-  -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Advanced:
       --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -575,21 +718,48 @@ Output:
   -o, --output <FILE>  Save the Metrics in CSV format (ex: metrics.csv)
 ```
 
+### `metrics` command examples
+
+* Print Event ID metrics from a single file: `hayabusa.exe metrics -f Security.evtx`
+
+* Print Event ID metrics from a directory: `hayabusa.exe metrics -d ../logs`
+
+* Save results to a CSV file: `hayabusa.exe metrics -f metrics.csv`
+
+
+### `metrics` command config file
+
+The channel, event IDs and titles of the events are defined in `rules/config/channel_eid_info.txt`.
+
+Example:
+```
+Channel,EventID,EventTitle
+Microsoft-Windows-Sysmon/Operational,1,Process Creation.
+Microsoft-Windows-Sysmon/Operational,2,File Creation Timestamp Changed. (Possible Timestomping)
+Microsoft-Windows-Sysmon/Operational,3,Network Connection.
+Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
+```
+
 ## `pivot-keywords-list` command
+
+You can use the `pivot-keywords-list` command to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. 
+
+Important: by default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `pivot-keyword-list` command with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
 
 ```
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
 
 Options:
-  -t, --thread-number <NUMBER>    Thread number (default: optimal number for performance)
-  -Q, --quiet-errors              Quiet errors mode: do not save error logs
-  -c, --rules-config <DIRECTORY>  Specify custom rule config directory (default: ./rules/config)
-  -v, --verbose                   Output verbose information
+  -t, --threads <NUMBER>    Number of threads (default: optimal number for performance)
+  -Q, --quiet-errors        Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>  Specify custom rule config directory (default: ./rules/config)
+  -v, --verbose             Output verbose information
+  -h, --help                Print help
 
 Input:
-  -d, --directory <DIRECTORY>  Directory of multiple .evtx files
-  -f, --file <FILE>            File path to one .evtx file
-  -l, --live-analysis          Analyze the local C:\Windows\System32\winevt\Logs folder
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Advanced:
       --target-file-ext <EVTX_FILE_EXT>  Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -604,10 +774,38 @@ Filtering:
   -n, --enable-noisy-rules       Enable rules marked as noisy
       --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-  -e, --eid-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+  -E, --EID-filter               Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
 ```
 
+### `pivot-keyword-list` command example
+
+* Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
+
+```
+hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
+```
+
+### `pivot-keyword-list` config file
+
+You can customize what keywords you want to search for by editing `./config/pivot_keywords.txt`.
+This is the default setting:
+
+```txt
+Users.SubjectUserName
+Users.TargetUserName
+Users.User
+Logon IDs.SubjectLogonId
+Logon IDs.TargetLogonId
+Workstation Names.WorkstationName
+Ip Addresses.IpAddress
+Processes.Image
+```
+
+The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields.
+
 ## `update-rules` command
+
+The `update-rules` command will sync the `rules` folder with the [Hayabusa rules github repository](https://github.com/Yamato-Security/hayabusa-rules), updating the rules and config files.
 
 ```
 Usage: update-rules [OPTIONS]
@@ -617,10 +815,18 @@ Options:
   -q, --quiet     Quiet mode: do not display the launch banner
 
 Advanced:
-  -r, --rules <DIRECTORY/FILE>  Specify a custom rule directory or file (default: ./rules)
+  -r, --rules <DIR/FILE>  Specify a custom rule directory or file (default: ./rules)
 ```
 
+### `update-rules` command example
+
+You will normally just execute this: `hayabusa.exe update-rules`
+
 ## `level-tuning` command
+
+The `level-tuning` command will let you tune the alert levels for rules, either raising or decreasing the risk level according to your environment. 
+
+> Warning: Anytime you run `update-rules`, the original alert level will overwrite any settings you have changed, so you will need to run the `level-tuning` command after every time you run `update-rules` if you want to change the levels.
 
 ```
 Usage: level-tuning [OPTIONS]
@@ -629,6 +835,23 @@ Options:
   -f, --file <FILE>   Tune alert levels (default: ./rules/config/level_tuning.txt)
       --no-color      Disable color output
   -q, --quiet         Quiet mode: do not display the launch banner
+```
+
+### `level-tuning` command examples
+
+Normal usage: `hayabusa.exe level-tuning`
+
+Tune rule alert levels based on your custom config file: `hayabusa.exe level-tuning -f my_level_tuning.txt`
+
+### `level-tuning` config file
+
+The default file used when no file is specified is at `./rules/config/level_tuning.txt`.
+You specify the unique rule ID and what level (`critical`, `high`, `medium`, `low`, `informational`) you want to set it at. 
+
+Example:
+```
+id,new_level
+570ae5ec-33dc-427c-b815-db86228ad43e,informational # 'Application Uninstalled'. Originally low.
 ```
 
 ## `set-default-profile` command
@@ -652,146 +875,44 @@ Options:
   -q, --quiet     Quiet mode: do not display the launch banner
 ```
 
+## Advanced
 
-## Usage Examples
+### GeoIP Log Enrichment
 
-* Run hayabusa against one Windows event log file with default standard profile:
+You can add GeoIP (ASN organization, city and country) information to SrcIP (source IP) fields and TgtIP (target IP) fields with the free GeoLite2 geolocation data.
 
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -f eventlog.evtx
-```
+Steps:
+1. First sign up for a MaxMind account [here](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data).
+2. Download the three `.mmdb` files from the [download page](https://www.maxmind.com/en/accounts/current/geoip/downloads) and save them to a directory. The filenames should be called `GeoLite2-ASN.mmdb`,	`GeoLite2-City.mmdb` and `GeoLite2-Country.mmdb`.
+3. When running the `csv-timeline` or `json-timeline` commands, add the `-G` option followed by the directory with the MaxMind databases.
 
-* Run hayabusa against the sample-evtx directory with multiple Windows event log files with the verbose profile:
+When `csv-timeline` is used, the following 6 columns will be additionally outputted: `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry`.
+When `json-timeline` is used, the same `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry` fields will be added to the `Details` object, but only if they contain information.
 
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -p verbose
-```
+When `SrcIP` or `TgtIP` is localhost (`127.0.0.1`, `::1`, etc...), `SrcASN` or `TgtASN` will be outputted as `Local`.
+When `SrcIP` or `TgtIP` is a private IP address (`10.0.0.0/8`, `fe80::/10`, etc...), `SrcASN` or `TgtASN` will be outputted as `Private`.
 
-* Export to a single CSV file for further analysis with excel, timeline explorer, elastic stack, etc... and include all field information (Warning: your file output size will become much larger with the `super-verbose` profile!):
+#### GeoIP config file
 
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verbose
-```
+The field names that contain source and target IP addresses that get looked up in the GeoIP databases are defined in `rules/config/geoip_field_mapping.yaml`.
+You can add to this list if necessary.
+There is also a filter section in this file that determines what events to extract IP address information from.
 
-* Save the timline in JSON format:
+#### Automatic updates of GeoIP databases
 
-```
-hayabusa-2.2.0-win-x64.exe json-timeline -d .\hayabusa-sample-evtx -o results.json
-```
+MaxMind GeoIP databases are updated every 2 weeks.
+You can install the MaxMind `geoipupdate` tool [here](https://github.com/maxmind/geoipupdate) in order to automatically update these databases.
 
-* Only run hayabusa rules (the default is to run all the rules in `-r .\rules`):
+Steps on macOS:
+1. `brew install geoipupdate`
+2. Edit `/usr/local/etc/GeoIP.conf`: Put in your `AccountID` and `LicenseKey` you create after logging into the MaxMind website. Make sure the `EditionIDs` line says `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
+3. Run `geoipupdate`.
+4. add `-g /usr/local/var/GeoIP` when you want to add GeoIP information.
 
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa -o results.csv
-```
-
-* Only run hayabusa rules for logs that are enabled by default on Windows:
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin -o results.csv
-```
-
-* Only run hayabusa rules for sysmon logs:
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\sysmon -o results.csv
-```
-
-* Only run sigma rules:
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\sigma -o results.csv
-```
-
-* Enable deprecated rules (those with `status` marked as `deprecated`) and noisy rules (those whose rule ID is listed in `.\rules\config\noisy_rules.txt`):
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx --enable-noisy-rules --enable-deprecated-rules -o results.csv
-```
-
-* Only run rules to analyze logons and output in the UTC timezone:
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -r .\rules\hayabusa\builtin\Security\LogonLogoff\Logon -U -o results.csv
-```
-
-* Run on a live Windows machine (requires Administrator privileges) and only detect alerts (potentially malicious behavior):
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -l -m low
-```
-
-* Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
-
-```
-hayabusa-2.2.0-win-x64.exe pivot-keywords-list -l -m critical -o keywords.txt
-```
-
-* Print Event ID metrics:
-
-```
-hayabusa-2.2.0-win-x64.exe metrics -f Security.evtx
-```
-
-* Print logon summary:
-
-```
-hayabusa-2.2.0-win-x64.exe logon-summary -f Security.evtx
-```
-
-* Print verbose information (useful for determining which files take long to process, parsing errors, etc...):
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d .\hayabusa-sample-evtx -v
-```
-
-* Verbose output example:
-
-```
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1027.004_Obfuscated Files or Information\u{a0}Compile After Delivery/sysmon.evtx"
-1 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.20 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.004_Steal or Forge Kerberos Tickets AS-REP Roasting/Security.evtx"
-2 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.39 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1558.003_Steal or Forge Kerberos Tickets\u{a0}Kerberoasting/Security.evtx"
-3 / 509 [>-------------------------------------------------------------------------------------------------------------------------------------------] 0.59 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1197_BITS Jobs/Windows-BitsClient.evtx"
-4 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.79 % 1s
-Checking target evtx FilePath: "./hayabusa-sample-evtx/YamatoSecurity/T1218.004_Signed Binary Proxy Execution\u{a0}InstallUtil/sysmon.evtx"
-5 / 509 [=>------------------------------------------------------------------------------------------------------------------------------------------] 0.98 % 1s
-```
-
-* Output to a CSV format compatible to import into [Timesketch](https://timesketch.org/):
-
-```
-hayabusa-2.2.0-win-x64.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-import.csv -p timesketch -U
-```
-
-* Quiet error mode:
-By default, hayabusa will save error messages to error log files.
-If you do not want to save error messages, please add `-Q`.
-
-## Pivot Keyword Generator
-
-You can use the `pivot-keywords-list` command to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. You can customize what keywords you want to search for by editing `./config/pivot_keywords.txt`.
-This is the default setting:
-
-```txt
-Users.SubjectUserName
-Users.TargetUserName
-Users.User
-Logon IDs.SubjectLogonId
-Logon IDs.TargetLogonId
-Workstation Names.WorkstationName
-Ip Addresses.IpAddress
-Processes.Image
-```
-
-The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields. By default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `pivot-keyword-list` command with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
-
-## Logon Summary Generator
-
-You can use the `logon-summary` command to output logon information summary (logon usernames and successful and failed logon count).
-You can display the logon information for one evtx file with `-f` or multiple evtx files with the `-d` option.
+Steps on Windows:
+1. Download the latest Windows binary (Ex: `geoipupdate_4.10.0_windows_amd64.zip`) from the [Releases](https://github.com/maxmind/geoipupdate/releases) page.
+2. Edit `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`: Put in your `AccountID` and `LicenseKey` you create after logging into the MaxMind website. Make sure the `EditionIDs` line says `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
+3. Run the `geoipupdate` executable.
 
 # Testing Hayabusa on Sample Evtx Files
 
@@ -1095,7 +1216,7 @@ You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignor
 
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa-2.2.0-win-x64.exe level-tuning` which will update the `level` line in the rule file.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe level-tuning` which will update the `level` line in the rule file.
 Please note that the rule file will be updated directly.
 
 `./rules/config/level_tuning.txt` sample line:
