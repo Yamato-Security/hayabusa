@@ -66,7 +66,8 @@ impl ParseYaml {
     pub fn read_dir<P: AsRef<Path>>(
         &mut self,
         path: P,
-        level: &str,
+        min_level: &str,
+        target_level: &str,
         exclude_ids: &RuleExclude,
         stored_static: &StoredStatic,
     ) -> io::Result<String> {
@@ -152,7 +153,13 @@ impl ParseYaml {
                 let entry = entry?;
                 // フォルダは再帰的に呼び出す。
                 if entry.file_type()?.is_dir() {
-                    self.read_dir(entry.path(), level, exclude_ids, stored_static)?;
+                    self.read_dir(
+                        entry.path(),
+                        min_level,
+                        target_level,
+                        exclude_ids,
+                        stored_static,
+                    )?;
                     return io::Result::Ok(ret);
                 }
                 // ファイル以外は無視
@@ -308,10 +315,14 @@ impl ParseYaml {
                 .unwrap_or("informational")
                 .to_uppercase();
             let doc_level_num = self.level_map.get(doc_level).unwrap_or(&1);
-            let args_level_num = self.level_map.get(level).unwrap_or(&1);
-            if doc_level_num < args_level_num {
+            let args_level_num = self.level_map.get(min_level).unwrap_or(&1);
+            let target_level_num = self.level_map.get(target_level).unwrap_or(&0);
+            if doc_level_num < args_level_num
+                || (target_level_num != &0_u128 && doc_level_num != target_level_num)
+            {
                 return Option::None;
             }
+
             Option::Some((filepath, yaml_doc))
         });
         self.files.extend(files);
