@@ -365,6 +365,7 @@ mod tests {
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -398,6 +399,7 @@ mod tests {
         let _ = &yaml.read_dir(
             "test_files/rules/yaml/1.yml",
             &String::default(),
+            "",
             &exclude_ids,
             &dummy_stored_static,
         );
@@ -414,6 +416,7 @@ mod tests {
         let _ = &yaml.read_dir(
             "test_files/rules/yaml/",
             &String::default(),
+            "",
             &exclude_ids,
             &dummy_stored_static,
         );
@@ -455,6 +458,7 @@ mod tests {
         yaml.read_dir(
             path,
             "",
+            "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         )
@@ -469,7 +473,8 @@ mod tests {
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
-            "informational",
+            "INFORMATIONAL",
+            "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         )
@@ -484,6 +489,7 @@ mod tests {
         yaml.read_dir(
             path,
             "LOW",
+            "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         )
@@ -498,6 +504,7 @@ mod tests {
         yaml.read_dir(
             path,
             "MEDIUM",
+            "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         )
@@ -512,6 +519,7 @@ mod tests {
         yaml.read_dir(
             path,
             "HIGH",
+            "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         )
@@ -526,6 +534,7 @@ mod tests {
         yaml.read_dir(
             path,
             "CRITICAL",
+            "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         )
@@ -539,6 +548,7 @@ mod tests {
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         yaml.read_dir(
             path,
+            "",
             "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
@@ -554,6 +564,7 @@ mod tests {
         yaml.read_dir(
             path,
             "",
+            "",
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
         )
@@ -566,7 +577,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
-        yaml.read_dir(path, "", &exclude_ids, &dummy_stored_static)
+        yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
             .unwrap();
         assert_eq!(yaml.rule_load_cnt.get("excluded").unwrap().to_owned(), 0);
     }
@@ -576,11 +587,92 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
         let exclude_ids = RuleExclude::new();
-        yaml.read_dir(path, "", &exclude_ids, &dummy_stored_static)
+        yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
             .unwrap();
         assert_eq!(
             yaml.rule_status_cnt.get("deprecated").unwrap().to_owned(),
             1
         );
     }
+
+    #[test]
+    fn test_info_exact_level_read_yaml() {
+        let dummy_stored_static = create_dummy_stored_static();
+        let path = Path::new("test_files/rules/level_yaml");
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "INFORMATIONAL",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_low_exact_level_read_yaml() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "LOW",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_medium_exact_level_read_yaml() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "MEDIUM",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_high_exact_level_read_yaml() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "HIGH",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 1);
+    }
+
+    #[test]
+    fn test_critical_exact_level_read_yaml() {
+        let path = Path::new("test_files/rules/level_yaml");
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        yaml.read_dir(
+            path,
+            "",
+            "CRITICAL",
+            &filter::exclude_ids(&dummy_stored_static),
+            &dummy_stored_static,
+        )
+        .unwrap();
+        assert_eq!(yaml.files.len(), 1);
+    }
+
 }

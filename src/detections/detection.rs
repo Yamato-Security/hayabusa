@@ -1089,6 +1089,7 @@ mod tests {
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -1121,6 +1122,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let cole = Detection::parse_rule_files(
             level,
+            "",
             opt_rule_path,
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
@@ -1326,6 +1328,7 @@ mod tests {
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
+                exact_level: None,
                 enable_noisy_rules: false,
                 end_timeline: None,
                 start_timeline: None,
@@ -1437,6 +1440,7 @@ mod tests {
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
+                exact_level: None,
                 enable_noisy_rules: false,
                 end_timeline: None,
                 start_timeline: None,
