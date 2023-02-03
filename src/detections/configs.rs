@@ -536,7 +536,7 @@ pub struct PivotKeywordOption {
     )]
     pub min_level: String,
 
-    /// Specified level for rules
+    /// Scan for only specific levels (informational, low, medium, high, critical)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'e',
@@ -606,7 +606,7 @@ pub struct OutputOption {
     )]
     pub min_level: String,
 
-    /// Specified level for rules
+    /// Scan for only specific levels (informational, low, medium, high, critical)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'e',
