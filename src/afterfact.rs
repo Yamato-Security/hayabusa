@@ -143,7 +143,7 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     } else {
         timestamps.len() - 2
     };
-    let marker_num = min(timestamp_marker_max, 10);
+    let marker_num = min(timestamp_marker_max, 18);
 
     let (header_raw, footer_raw) =
         build_time_markers(&timestamps, marker_num, length - (side_margin_size * 2));
