@@ -1503,6 +1503,7 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    json_input: false,
                 },
                 profile: None,
                 output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1526,7 +1527,6 @@ mod tests {
                 html_report: None,
                 no_summary: true,
             },
-            json_input: false,
             geo_ip: None,
         });
         let dummy_config = Some(Config {
@@ -1570,6 +1570,7 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    json_input: false,
                 },
                 profile: None,
                 output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1824,6 +1825,7 @@ mod tests {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                json_input: false,
             },
             profile: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
