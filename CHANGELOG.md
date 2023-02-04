@@ -6,6 +6,7 @@
 
 - Added support for input of JSON-formatted event logs (`-J, --JSON-input`). (#386) (@hitenkoku)
 - Log enrichment by outputting the ASN organization, city and country of source and destination IP addresses based on MaxMind GeoIP databases (`-G, --GeoIP`). (#879) (@hitenkoku)
+- Added the `-e, --exact-level` option to scan for only specific rule levels. (#899) (@hitenkoku)
 
 **Enhancements:**
 

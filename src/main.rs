@@ -873,6 +873,14 @@ impl App {
             .unwrap()
             .min_level
             .to_uppercase();
+        let target_level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .exact_level
+            .as_ref()
+            .unwrap_or(&String::default())
+            .to_uppercase();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
@@ -904,7 +912,8 @@ impl App {
         }
 
         let rule_files = detection::Detection::parse_rule_files(
-            level.as_str(),
+            &level,
+            &target_level,
             &stored_static.output_option.as_ref().unwrap().rules,
             &filter::exclude_ids(stored_static),
             stored_static,
@@ -1443,6 +1452,7 @@ mod tests {
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
