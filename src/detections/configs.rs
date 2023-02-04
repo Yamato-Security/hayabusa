@@ -18,7 +18,7 @@ use std::{fs, process};
 use terminal_size::{terminal_size, Width};
 use yaml_rust::{Yaml, YamlLoader};
 
-use super::message::create_output_filter_config;
+use super::message::{create_output_filter_config, LEVEL_ABBR_MAP};
 use super::utils::check_setting_path;
 
 lazy_static! {
@@ -98,6 +98,54 @@ impl StoredStatic {
             Some(Action::JsonTimeline(opt)) => opt.json_input,
             _ => false,
         };
+        let is_valid_min_level = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => LEVEL_ABBR_MAP
+                .keys()
+                .any(|level| &opt.output_options.min_level.to_lowercase() == level),
+            Some(Action::JsonTimeline(opt)) => LEVEL_ABBR_MAP
+                .keys()
+                .any(|level| &opt.output_options.min_level.to_lowercase() == level),
+            Some(Action::PivotKeywordsList(opt)) => LEVEL_ABBR_MAP
+                .keys()
+                .any(|level| &opt.min_level.to_lowercase() == level),
+            _ => true,
+        };
+        let is_valid_exact_level = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => {
+                opt.output_options.exact_level.is_none()
+                    || LEVEL_ABBR_MAP.keys().any(|level| {
+                        &opt.output_options
+                            .exact_level
+                            .as_ref()
+                            .unwrap()
+                            .to_lowercase()
+                            == level
+                    })
+            }
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.exact_level.is_none()
+                    || LEVEL_ABBR_MAP.keys().any(|level| {
+                        &opt.output_options
+                            .exact_level
+                            .as_ref()
+                            .unwrap()
+                            .to_lowercase()
+                            == level
+                    })
+            }
+            Some(Action::PivotKeywordsList(opt)) => {
+                opt.exact_level.is_none()
+                    || LEVEL_ABBR_MAP
+                        .keys()
+                        .any(|level| &opt.exact_level.as_ref().unwrap().to_lowercase() == level)
+            }
+            _ => true,
+        };
+        if !is_valid_min_level || !is_valid_exact_level {
+            AlertMessage::alert(" You specified an invalid level. Please specify informational, low, medium, high or critical.").ok();
+            process::exit(1);
+        }
+
         let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
                 &opt.geo_ip,
