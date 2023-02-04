@@ -1073,14 +1073,14 @@ dependencies = [
 
 [[package]]
 name = "krapslog"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69be1fdca62e048720f77a9258e2f504a30bd7a7b46da9df3f311e7c4695199b"
+checksum = "a3197557485abcc0aa5cea5a1e14c0b5272afe48bab12990745f94cc36a143fa"
 dependencies = [
  "anyhow",
  "atty",
  "chrono",
- "clap 3.2.23",
+ "clap 4.1.4",
  "file-chunker",
  "memmap2",
  "num_cpus",
