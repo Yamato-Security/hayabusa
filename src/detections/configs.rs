@@ -782,7 +782,7 @@ pub struct InputOption {
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
     /// Scan JSON-formatted logs instead of .evtx
-    #[arg(short, short = 'J', long = "JSON-input")]
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input")]
     pub json_input: bool,
 
     /// Add GeoIP (ASN, city, country) info to IP addresses
@@ -803,7 +803,7 @@ pub struct JSONOutputOption {
     pub jsonl_timeline: bool,
 
     /// Scan JSON-formatted logs instead of .evtx
-    #[arg(short, short = 'J', long = "JSON-input")]
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input")]
     pub json_input: bool,
 
     /// Add GeoIP (ASN, city, country) info to IP addresses
