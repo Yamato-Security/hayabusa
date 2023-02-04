@@ -94,8 +94,11 @@ impl StoredStatic {
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.json_input,
-            Some(Action::JsonTimeline(opt)) => opt.json_input,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.json_input,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.json_input,
+            Some(Action::LogonSummary(opt)) => opt.input_args.json_input,
+            Some(Action::Metrics(opt)) => opt.input_args.json_input,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.json_input,
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
@@ -748,6 +751,10 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE")]
     pub filepath: Option<PathBuf>,
 
+    /// Scan JSON-formatted logs instead of .evtx
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input")]
+    pub json_input: bool,
+
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis")]
     pub live_analysis: bool,
@@ -781,10 +788,6 @@ pub struct InputOption {
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
-    /// Scan JSON-formatted logs instead of .evtx
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input")]
-    pub json_input: bool,
-
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
     pub geo_ip: Option<PathBuf>,
@@ -801,10 +804,6 @@ pub struct JSONOutputOption {
     /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
     #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output")]
     pub jsonl_timeline: bool,
-
-    /// Scan JSON-formatted logs instead of .evtx
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input")]
-    pub json_input: bool,
 
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
@@ -1190,6 +1189,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                json_input: false,
             },
             output: None,
             enable_deprecated_rules: false,
