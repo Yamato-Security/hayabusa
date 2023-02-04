@@ -1144,11 +1144,8 @@ fn output_json_str(
     let valid_key_add_to_details: Vec<&str> = key_add_to_details
         .iter()
         .filter(|target_key| {
-            ext_field_map
-                .get(&CompactString::from(**target_key))
-                .unwrap()
-                .to_value()
-                != "-"
+            let target = ext_field_map.get(&CompactString::from(**target_key));
+            target.is_some() && target.unwrap().to_value() != "-"
         })
         .copied()
         .collect();
