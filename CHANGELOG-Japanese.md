@@ -18,6 +18,8 @@
 - 正規表現の使用を避けることで、さらなる高速化とメモリ使用量の削減を実現した。 (#894) (@fukusuket)
 - 正規表現の使用量を減らすことで、約3%の速度向上と約10%のメモリ使用量削減を実現した。 (#898) (@fukuseket)
 - ライブラリの更新によって`-T, --visualize-timeline`の出力を複数行にするように変更した。 (#902) (@hitenkoku)
+- Longオプションを基にしたオプションの並べ替えを行った。 (#904) (@hitenkoku)
+- `-J, --json-input`オプションを`logon-summary`, `metrics`, `pivot-keywords-list`サブコマンドに対応させた。 (#908) (@hitenkoku)
 
 **バグ修正:**
 
