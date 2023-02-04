@@ -18,7 +18,7 @@ use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
-use serde_json::{Error, Value};
+use serde_json::{json, Value};
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io;
@@ -112,30 +112,16 @@ pub fn read_json_to_value(filename: &str) -> Result<impl Iterator<Item = Value>,
         let errmsg = format!("Cannot open file. [file:{filename}]");
         return Result::Err(errmsg);
     }
-    let mut reader = BufReader::new(f.unwrap());
-    let mut contents = String::default();
-    reader.read_to_string(&mut contents).ok();
-    let json = format!(
-        "[{}}}]",
-        contents
-            .split('}')
-            .filter(|s| !s.trim().is_empty())
-            .join("},")
-    );
-    let all_record_json: Result<Value, Error> = serde_json::from_str(&json);
-    if let Err(err_msg) = all_record_json {
-        return Err(err_msg.to_string());
-    }
-    let array_records = all_record_json.unwrap().as_array().unwrap().clone();
-    let ret = array_records
+    let reader = BufReader::new(f.unwrap());
+    let ret = reader
+        .lines()
         .into_iter()
-        .map(|record| {
-            let mut inserted_eventdata: Value =
-                serde_json::from_str("{\"Event\":{\"EventData\": 0}}").unwrap();
-            inserted_eventdata["Event"]["EventData"] = record;
-            Some(inserted_eventdata)
-        })
-        .map(|v| v.unwrap());
+        .filter_map(|s| s.ok())
+        .filter(|s| !s.trim().is_empty())
+        .map(|line| {
+            let v: Value = serde_json::from_str(&line).unwrap();
+            json!({"Event":{"EventData": v}})
+        });
     Result::Ok(ret)
 }
 
