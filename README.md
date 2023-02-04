@@ -75,7 +75,7 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [`csv-timeline` command examples](#csv-timeline-command-examples)
     - [`csv-timeline` command config files](#csv-timeline-command-config-files)
   - [`json-timeline` command](#json-timeline-command)
-    - [`json-timeline` command examples](#json-timeline-command-examples)
+    - [`json-timeline` command examples and config files](#json-timeline-command-examples-and-config-files)
   - [`logon-summary` command](#logon-summary-command)
     - [`logon-summary` command example](#logon-summary-command-example)
   - [`metrics` command](#metrics-command)
@@ -96,8 +96,8 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
       - [GeoIP config file](#geoip-config-file)
       - [Automatic updates of GeoIP databases](#automatic-updates-of-geoip-databases)
 - [Testing Hayabusa on Sample Evtx Files](#testing-hayabusa-on-sample-evtx-files)
-- [Hayabusa Output](#hayabusa-output)
-  - [Profiles](#profiles)
+- [Hayabusa CSV and JSON/L Output](#hayabusa-csv-and-jsonl-output)
+  - [Output Profiles](#output-profiles)
     - [1. `minimal` profile output](#1-minimal-profile-output)
     - [2. `standard` profile output](#2-standard-profile-output)
     - [3. `verbose` profile output](#3-verbose-profile-output)
@@ -111,16 +111,13 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Level Abbrevations](#level-abbrevations)
   - [MITRE ATT\&CK Tactics Abbreviations](#mitre-attck-tactics-abbreviations)
   - [Channel Abbreviations](#channel-abbreviations)
-- [Other Abbreviations](#other-abbreviations)
+  - [Other Abbreviations](#other-abbreviations)
   - [Progress Bar](#progress-bar)
   - [Color Output](#color-output)
   - [Results Summary](#results-summary-1)
     - [Event Fequency Timeline](#event-fequency-timeline)
 - [Hayabusa Rules](#hayabusa-rules)
   - [Hayabusa v.s. Converted Sigma Rules](#hayabusa-vs-converted-sigma-rules)
-  - [Detection Rule Tuning](#detection-rule-tuning)
-  - [Detection Level Tuning](#detection-level-tuning)
-  - [Event ID Filtering](#event-id-filtering)
 - [Other Windows Event Log Analyzers and Related Resources](#other-windows-event-log-analyzers-and-related-resources)
 - [Windows Logging Recommendations](#windows-logging-recommendations)
 - [Sysmon Related Projects](#sysmon-related-projects)
@@ -223,7 +220,7 @@ You can learn how to analyze JSON-formatted results with `jq` [here](doc/Analysi
 * Output to CSV, JSON/JSONL and HTML Summary Reports.
 * Daily Sigma rule updates.
 * Support for JSON-formatted log input.
-* Log field normalization.
+* Log field normalization. (Converting multiple fields with different naming conventions into the same field name.)
 * Log enrichment by adding GeoIP (ASN, city, country) information to IP addresses.
 
 # Downloads
@@ -601,11 +598,43 @@ If you do not want to save error messages, please add `-Q`.
 
 ### `csv-timeline` command config files
 
+`./rules/config/channel_abbreviations.txt`: Mappings of channel names and their abbreviations.
 
+`./rules/config/default_details.txt`: The configuration file for what default field information (`%Details%` field) should be outputted if no `details:` line is specified in a rule.
+This is based on provider name and event IDs.
+
+`./rules/config/eventkey_alias.txt`: This file has the mappings of short name aliases for fields and their original longer field names.
+
+Example: 
+```
+InstanceID,Event.UserData.UMDFHostDeviceArrivalBegin.InstanceId
+IntegrityLevel,Event.EventData.IntegrityLevel
+IpAddress,Event.EventData.IpAddress
+```
+
+If a field is not defined here, Hayabusa will automatically check under `Event.EventData` for the field.
+
+`./rules/config/exclude_rules.txt`: This file has a list of rule IDs that will be excluded from use.
+Usually this is because one rule has replaced another or the rule cannot be used in the first place.
+Like firewalls and IDSes, any signature-based tool will require some tuning to fit your environment so you may need to permanently or temporarily exclude certain rules.
+You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `./rules/config/exclude_rules.txt` in order to ignore any rule that you do not need or cannot be used.
+
+`./rules/config/noisy_rules.txt`: This file a list of rule IDs that are disabled by default but can be enabled by enabling noisy rules with the `-n, --enable-noisy-rules` option.
+These rules are usually noisy by nature or due to false positives.
+
+`./rules/config/target_event_IDs.txt`: Only the event IDs specified in this file will be scanned if the EID filter is enabled.
+By default, Hayabusa will scan all events, but if you want to improve performance, please use the `-E, --EID-filter` option.
+This usually results in a 10~15% speed improvement.
 
 ## `json-timeline` command
 
 The `json-timeline` command will create a forensics timeline of events in JSON or JSONL format.
+Outputting to JSONL will be faster and smaller file size than JSON so is good if you are going to just import the results into another tool.
+JSON is better if you are going to manually analyze the results with a text editor.
+CSV output is good for importing smaller timelines (usually less than 2GB) into tools like Excel or Timeline Explorer.
+JSONL is best for importing into tools like Elastic Stack.
+JSON is best for more detailed analysis of data (including large results files) with tools like `jq` as the `Details` fields are separated for easier analysis.
+(In the CSV output, all of the event log fields are in one big `Details` column making sorting of data, etc... more difficult.)
 
 ```
 Usage: json-timeline <INPUT> [OPTIONS]
@@ -656,10 +685,9 @@ Display Settings:
       --no-summary          Do not display results summary
 ```
 
-### `json-timeline` command examples
+### `json-timeline` command examples and config files
 
 The options and config files for `json-timeline` are the same as `csv-timeline` but one extra option `-L, --JSONL-output` for outputting to JSONL format.
-Outputting to JSONL will be faster and smaller file size than JSON so is good if you are going to just import the results into another tool but JSON is better if you are going to manually analyze the results with a text editor.
 
 ## `logon-summary` command
 
@@ -826,7 +854,6 @@ You will normally just execute this: `hayabusa.exe update-rules`
 
 The `level-tuning` command will let you tune the alert levels for rules, either raising or decreasing the risk level according to your environment. 
 
-> Warning: Anytime you run `update-rules`, the original alert level will overwrite any settings you have changed, so you will need to run the `level-tuning` command after every time you run `update-rules` if you want to change the levels.
 
 ```
 Usage: level-tuning [OPTIONS]
@@ -844,15 +871,25 @@ Normal usage: `hayabusa.exe level-tuning`
 Tune rule alert levels based on your custom config file: `hayabusa.exe level-tuning -f my_level_tuning.txt`
 
 ### `level-tuning` config file
+ 
+Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
+However, the actual risk level will differ between environments.
+You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe level-tuning` which will update the `level` line in the rule file.
+Please note that the rule file will be updated directly.
 
-The default file used when no file is specified is at `./rules/config/level_tuning.txt`.
-You specify the unique rule ID and what level (`critical`, `high`, `medium`, `low`, `informational`) you want to set it at. 
+> Warning: Anytime you run `update-rules`, the original alert level will overwrite any settings you have changed, so you will need to run the `level-tuning` command after every time you run `update-rules` if you want to change the levels.
 
-Example:
-```
+
+`./rules/config/level_tuning.txt` sample line:
+
+```csv
 id,new_level
-570ae5ec-33dc-427c-b815-db86228ad43e,informational # 'Application Uninstalled'. Originally low.
+00000000-0000-0000-0000-000000000000,informational # sample level tuning line
 ```
+
+In this case, the risk level of the rule with an `id` of `00000000-0000-0000-0000-000000000000` in the rules directory will have its `level` rewritten to `informational`.
+The possible levels to set are `critical`, `high`, `medium`, `low` and `informational`.
+
 
 ## `set-default-profile` command
 
@@ -924,11 +961,11 @@ You can download the sample evtx files to a new `hayabusa-sample-evtx` sub-direc
 git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
 ```
 
-# Hayabusa Output
+# Hayabusa CSV and JSON/L Output
 
-## Profiles
+## Output Profiles
 
-Hayabusa has 5 pre-defined profiles to use in `config/profiles.yaml`:
+Hayabusa has 5 pre-defined output profiles to use in `config/profiles.yaml`:
 
 1. `minimal`
 2. `standard` (default)
@@ -941,7 +978,7 @@ Hayabusa has 5 pre-defined profiles to use in `config/profiles.yaml`:
 
 You can easily customize or add your own profiles by editing this file.
 You can also easily change the default profile with `set-default-profile -P <profile>`.
-Use the `csv-timeline --list-profiles` option to show the available profiles and their field information.
+Use the `list-profiles` command to show the available profiles and their field information.
 
 ### 1. `minimal` profile output
 
@@ -1091,7 +1128,7 @@ You can freely edit these abbreviations in the `./rules/config/channel_abbreviat
 * `WinRM` : `Microsoft-Windows-WinRM/Operational`
 * `WMI` : `Microsoft-Windows-WMI-Activity/Operational`
 
-# Other Abbreviations
+## Other Abbreviations
 
 The following abbreviations are used in rules in order to make the output as concise as possible:
 
@@ -1190,8 +1227,8 @@ Please check out the current rules to use as a template in creating new ones or 
 ## Hayabusa v.s. Converted Sigma Rules
 
 Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
-A converter is needed as hayabusa rules do not support `|contains|all`, `1 of selection*`, `all of selection*` and regular expressions that do not work with the [Rust regex crate](https://docs.rs/regex/1.5.4/regex/) by default.
-Almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
+A converter is needed as hayabusa rules do not support `|contains|all`, `1 of selection*`, and `all of selection*`.
+However, almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
 Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
 
 1. An extra `details` field to display additional information taken from only the useful fields in the log.
@@ -1201,38 +1238,9 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 
 **Limitations**: To our knowledge, hayabusa provides the greatest support for sigma rules out of any open source Windows event log analysis tool, however, there are still rules that are not supported:
 
-1. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification).
+1. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification/blob/main/Sigma_specification.md).
 2. Rules that use `|near` or `|base64offset|contains`.
 
-## Detection Rule Tuning
-
-Like firewalls and IDSes, any signature-based tool will require some tuning to fit your environment so you may need to permanently or temporarily exclude certain rules.
-
-You can add a rule ID (Example: `4fe151c2-ecf9-4fae-95ae-b88ec9c2fca6`) to `./rules/config/exclude_rules.txt` in order to ignore any rule that you do not need or cannot be used.
-
-You can also add a rule ID to `./rules/config/noisy_rules.txt` in order to ignore the rule by default but still be able to use the rule with the `-n` or `--enable-noisy-rules` option.
-
-## Detection Level Tuning
-
-Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
-However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe level-tuning` which will update the `level` line in the rule file.
-Please note that the rule file will be updated directly.
-
-`./rules/config/level_tuning.txt` sample line:
-
-```csv
-id,new_level
-00000000-0000-0000-0000-000000000000,informational # sample level tuning line
-```
-
-In this case, the risk level of the rule with an `id` of `00000000-0000-0000-0000-000000000000` in the rules directory will have its `level` rewritten to `informational`.
-
-## Event ID Filtering
-
-By default, hayabusa scan all events.
-If you want to improve performance, Please use the `-e, --eid-filter` option. By ignorning events that have no detection rules.
-The IDs defined in `./rules/config/target_event_IDs.txt` will be scanned.
 
 # Other Windows Event Log Analyzers and Related Resources
 
@@ -1300,7 +1308,8 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 # Contribution
 
-We would love any form of contribution. Pull requests, rule creation and sample evtx logs are the best but feature requests, notifying us of bugs, etc... are also very welcome.
+We would love any form of contribution. 
+Pull requests, rule creation and sample evtx logs are the best but feature requests, notifying us of bugs, etc... are also very welcome.
 
 At the least, if you like our tool then please give us a star on GitHub and show your support!
 
