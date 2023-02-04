@@ -768,10 +768,15 @@ pub struct InputOption {
 
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
     #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 55)]
-   pub evtx_file_ext: Option<Vec<String>>,
+    pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
-    #[arg(short = 't', long = "threads", value_name = "NUMBER", display_order = 55)]
+    #[arg(
+        short = 't',
+        long = "threads",
+        value_name = "NUMBER",
+        display_order = 55
+    )]
     pub thread_number: Option<usize>,
 
     /// Quiet errors mode: do not save error logs
@@ -796,10 +801,14 @@ pub struct InputOption {
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
-
     // display_order value is defined acronym of long option (A=10 B=11,...,Z=35,a=36, b=37...,z=61)
     /// Add GeoIP (ASN, city, country) info to IP addresses
-    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR", display_order = 16)]
+    #[arg(
+        short = 'G',
+        long = "GeoIP",
+        value_name = "MAXMIND-DB-DIR",
+        display_order = 16
+    )]
     pub geo_ip: Option<PathBuf>,
 
     #[clap(flatten)]
@@ -816,7 +825,12 @@ pub struct JSONOutputOption {
     pub jsonl_timeline: bool,
 
     /// Add GeoIP (ASN, city, country) info to IP addresses
-    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR", display_order = 16)]
+    #[arg(
+        short = 'G',
+        long = "GeoIP",
+        value_name = "MAXMIND-DB-DIR",
+        display_order = 16
+    )]
     pub geo_ip: Option<PathBuf>,
 }
 
