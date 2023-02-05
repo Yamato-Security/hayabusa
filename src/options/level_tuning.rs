@@ -58,6 +58,7 @@ impl LevelTuning {
         let result_readdir = rulefile_loader.read_dir(
             rules_path,
             "informational",
+            "",
             &RuleExclude::new(),
             stored_static,
         );

@@ -67,14 +67,21 @@ impl Detection {
 
     // ルールファイルをパースします。
     pub fn parse_rule_files(
-        level: &str,
+        min_level: &str,
+        target_level: &str,
         rulespath: &Path,
         exclude_ids: &filter::RuleExclude,
         stored_static: &StoredStatic,
     ) -> Vec<RuleNode> {
         // ルールファイルのパースを実行
         let mut rulefile_loader = ParseYaml::new(stored_static);
-        let result_readdir = rulefile_loader.read_dir(rulespath, level, exclude_ids, stored_static);
+        let result_readdir = rulefile_loader.read_dir(
+            rulespath,
+            min_level,
+            target_level,
+            exclude_ids,
+            stored_static,
+        );
         if result_readdir.is_err() {
             let errmsg = format!("{}", result_readdir.unwrap_err());
             if stored_static.verbose_flag {
@@ -1082,6 +1089,7 @@ mod tests {
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -1114,6 +1122,7 @@ mod tests {
         let dummy_stored_static = create_dummy_stored_static();
         let cole = Detection::parse_rule_files(
             level,
+            "",
             opt_rule_path,
             &filter::exclude_ids(&dummy_stored_static),
             &dummy_stored_static,
@@ -1319,6 +1328,7 @@ mod tests {
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
+                exact_level: None,
                 enable_noisy_rules: false,
                 end_timeline: None,
                 start_timeline: None,
@@ -1430,6 +1440,7 @@ mod tests {
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
+                exact_level: None,
                 enable_noisy_rules: false,
                 end_timeline: None,
                 start_timeline: None,
