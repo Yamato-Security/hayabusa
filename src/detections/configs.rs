@@ -759,7 +759,7 @@ pub struct InputOption {
     pub filepath: Option<PathBuf>,
 
     /// Scan JSON-formatted logs instead of .evtx
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 100)]
+    #[arg(short = 'J', long = "JSON-input", display_order = 100)]
     pub json_input: bool,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
