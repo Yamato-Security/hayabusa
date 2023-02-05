@@ -582,7 +582,7 @@ pub struct PivotKeywordOption {
     pub enable_deprecated_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 310)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -603,7 +603,7 @@ pub struct PivotKeywordOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
-        display_order = 310
+        display_order = 311
     )]
     pub exact_level: Option<String>,
 
