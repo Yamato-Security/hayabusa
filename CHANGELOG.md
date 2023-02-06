@@ -18,6 +18,8 @@
 - Further speed increase and memory usage reduction by removing unnecessary regex usage. (#894) (@fukusuket)
 - Approximately 3% speed increase and 10% memory usage reduction by reducing regex usage. (#898) (@fukuseket)
 - Improved `-T, --visualize-timeline` by increasing the height of the markers to make it easier to read. (#902) (@hitenkoku)
+- Reordered options based on Long option. (#904) (@hitenkoku)
+- Added support `-J, --json-input` option to `logon-summary`, `metrics`, `pivot-keywords-list` subcommands. (#908) (@hitenkoku)
 
 **Bug Fixes:**
 

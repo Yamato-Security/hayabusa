@@ -94,8 +94,11 @@ impl StoredStatic {
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.json_input,
-            Some(Action::JsonTimeline(opt)) => opt.json_input,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.json_input,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.json_input,
+            Some(Action::LogonSummary(opt)) => opt.input_args.json_input,
+            Some(Action::Metrics(opt)) => opt.input_args.json_input,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.json_input,
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
@@ -403,7 +406,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
@@ -411,7 +415,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
@@ -419,7 +424,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
@@ -427,7 +433,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Print event ID metrics
     Metrics(MetricsOption),
@@ -435,7 +442,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
@@ -443,7 +451,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
@@ -452,7 +461,7 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        version
+        disable_help_flag = true
     )]
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
@@ -460,7 +469,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
@@ -514,7 +524,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
     /// Specify output profile
-    #[arg(short = 'p', long = "profile")]
+    #[arg(short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 }
 
@@ -527,7 +537,8 @@ pub struct UpdateOption {
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "DIR/FILE"
+        value_name = "DIR/FILE",
+        display_order = 440
     )]
     pub rules: PathBuf,
 }
@@ -540,7 +551,8 @@ pub struct LevelTuningOption {
         long = "file",
         default_value = "./rules/config/level_tuning.txt",
         hide_default_value = true,
-        value_name = "FILE"
+        value_name = "FILE",
+        display_order = 320
     )]
     pub level_tuning: PathBuf,
 }
@@ -551,7 +563,7 @@ pub struct MetricsOption {
     pub input_args: InputOption,
 
     /// Save the Metrics in CSV format (ex: metrics.csv)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 }
 
@@ -562,15 +574,15 @@ pub struct PivotKeywordOption {
     pub input_args: InputOption,
 
     /// Save pivot words to separate files (ex: pivot-keywords.txt)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
     /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules")]
+    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',')]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -580,7 +592,8 @@ pub struct PivotKeywordOption {
         long = "min-level",
         default_value = "informational",
         hide_default_value = true,
-        value_name = "LEVEL"
+        value_name = "LEVEL",
+        display_order = 390
     )]
     pub min_level: String,
 
@@ -589,24 +602,25 @@ pub struct PivotKeywordOption {
         help_heading = Some("Filtering"),
         short = 'e',
         long = "exact-level",
-        value_name = "LEVEL"
+        value_name = "LEVEL",
+        display_order = 311
     )]
     pub exact_level: Option<String>,
 
     /// Enable rules marked as noisy
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules")]
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
     pub end_timeline: Option<String>,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
     /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter")]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 }
 
@@ -616,7 +630,7 @@ pub struct LogonSummaryOption {
     pub input_args: InputOption,
 
     /// Save the Logon summary in CSV format (ex: logon-summary.csv)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 }
 
@@ -628,19 +642,19 @@ pub struct OutputOption {
     pub input_args: InputOption,
 
     /// Specify output profile
-    #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
+    #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 
     /// Save the timeline in format (ex: results.csv, results.json, etc...)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
     /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules")]
+    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',')]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -650,7 +664,8 @@ pub struct OutputOption {
         long = "min-level",
         default_value = "informational",
         hide_default_value = true,
-        value_name = "LEVEL"
+        value_name = "LEVEL",
+        display_order = 390,
     )]
     pub min_level: String,
 
@@ -659,56 +674,57 @@ pub struct OutputOption {
         help_heading = Some("Filtering"),
         short = 'e',
         long = "exact-level",
-        value_name = "LEVEL"
+        value_name = "LEVEL",
+        display_order = 311
     )]
     pub exact_level: Option<String>,
 
     /// Enable rules marked as noisy
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules")]
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
     pub end_timeline: Option<String>,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
     /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter")]
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time")]
+    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
     pub european_time: bool,
 
     /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), long = "ISO-8601")]
+    #[arg(help_heading = Some("Time Format"), long = "ISO-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822")]
+    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
     pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339")]
+    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
     pub rfc_3339: bool,
 
     /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time")]
+    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
     pub us_military_time: bool,
 
     /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time")]
+    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
     pub us_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC")]
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
 
     /// Output event frequency timeline
-    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline")]
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 480)]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)
@@ -718,43 +734,53 @@ pub struct OutputOption {
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "DIR/FILE"
+        value_name = "DIR/FILE",
+        display_order = 440
     )]
     pub rules: PathBuf,
 
     /// Save detail Results Summary in html (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80)]
     pub html_report: Option<PathBuf>,
 
     /// Do not display results summary
-    #[arg(help_heading = Some("Display Settings"), long = "no-summary")]
+    #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct InputOption {
     /// Directory of multiple .evtx files
-    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR")]
+    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", display_order = 300)]
     pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file
-    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE")]
+    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
     pub filepath: Option<PathBuf>,
 
+    /// Scan JSON-formatted logs instead of .evtx
+    #[arg(short = 'J', long = "JSON-input", display_order = 100)]
+    pub json_input: bool,
+
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis")]
+    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", display_order = 380)]
     pub live_analysis: bool,
 
     /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',')]
+    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
-    #[arg(short = 't', long = "threads", value_name = "NUMBER")]
+    #[arg(
+        short = 't',
+        long = "threads",
+        value_name = "NUMBER",
+        display_order = 460
+    )]
     pub thread_number: Option<usize>,
 
     /// Quiet errors mode: do not save error logs
-    #[arg(short = 'Q', long = "quiet-errors")]
+    #[arg(short = 'Q', long = "quiet-errors", display_order = 430)]
     pub quiet_errors: bool,
 
     /// Specify custom rule config directory (default: ./rules/config)
@@ -763,23 +789,26 @@ pub struct InputOption {
         long = "rules-config",
         default_value = "./rules/config",
         hide_default_value = true,
-        value_name = "DIR"
+        value_name = "DIR",
+        display_order = 440
     )]
     pub config: PathBuf,
 
     /// Output verbose information
-    #[arg(short = 'v', long)]
+    #[arg(short = 'v', long, display_order = 480)]
     pub verbose: bool,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
-    /// Scan JSON-formatted logs instead of .evtx
-    #[arg(short, short = 'J', long = "JSON-input")]
-    pub json_input: bool,
-
+    // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses
-    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
+    #[arg(
+        short = 'G',
+        long = "GeoIP",
+        value_name = "MAXMIND-DB-DIR",
+        display_order = 70
+    )]
     pub geo_ip: Option<PathBuf>,
 
     #[clap(flatten)]
@@ -792,15 +821,16 @@ pub struct JSONOutputOption {
     pub output_options: OutputOption,
 
     /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output")]
+    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output", display_order = 100)]
     pub jsonl_timeline: bool,
 
-    /// Scan JSON-formatted logs instead of .evtx
-    #[arg(short, short = 'J', long = "JSON-input")]
-    pub json_input: bool,
-
     /// Add GeoIP (ASN, city, country) info to IP addresses
-    #[arg(short = 'G', long = "GeoIP", value_name = "MAXMIND-DB-DIR")]
+    #[arg(
+        short = 'G',
+        long = "GeoIP",
+        value_name = "MAXMIND-DB-DIR",
+        display_order = 70
+    )]
     pub geo_ip: Option<PathBuf>,
 }
 
@@ -816,11 +846,11 @@ pub struct Config {
     pub action: Option<Action>,
 
     /// Disable color output
-    #[arg(long = "no-color", global = true)]
+    #[arg(long = "no-color", global = true, display_order = 400)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
-    #[arg(short, long, global = true)]
+    #[arg(short, long, global = true, display_order = 430)]
     pub quiet: bool,
 
     /// Print debug information (memory usage, etc...)
@@ -1183,6 +1213,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                json_input: false,
             },
             output: None,
             enable_deprecated_rules: false,

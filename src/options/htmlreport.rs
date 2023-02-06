@@ -219,6 +219,7 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    json_input: false,
                 },
                 profile: None,
                 output: None,
@@ -242,7 +243,6 @@ mod tests {
                 html_report: Some(Path::new("./dummy").to_path_buf()),
                 no_summary: false,
             },
-            json_input: false,
             geo_ip: None,
         });
         let csv_html_flag_enable = create_dummy_stored_static(Some(enable_csv_action));
@@ -259,6 +259,7 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    json_input: false,
                 },
                 profile: None,
                 output: None,
@@ -282,7 +283,6 @@ mod tests {
                 html_report: None,
                 no_summary: false,
             },
-            json_input: false,
             geo_ip: None,
         });
         let csv_html_flag_disable = create_dummy_stored_static(Some(disable_csv_action));
@@ -302,6 +302,7 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    json_input: false,
                 },
                 profile: None,
                 output: None,
@@ -326,7 +327,6 @@ mod tests {
                 no_summary: false,
             },
             jsonl_timeline: false,
-            json_input: false,
             geo_ip: None,
         });
         let json_html_flag_enable = create_dummy_stored_static(Some(enable_json_action));
@@ -343,6 +343,7 @@ mod tests {
                     quiet_errors: false,
                     config: Path::new("./rules/config").to_path_buf(),
                     verbose: false,
+                    json_input: false,
                 },
                 profile: None,
                 output: None,
@@ -367,7 +368,6 @@ mod tests {
                 no_summary: false,
             },
             jsonl_timeline: false,
-            json_input: false,
             geo_ip: None,
         });
         let json_html_flag_disable = create_dummy_stored_static(Some(disable_json_action));
