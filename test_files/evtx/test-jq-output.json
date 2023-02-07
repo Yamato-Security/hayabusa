@@ -1,5 +1,4 @@
-[
-  {
+{
     "EventTime": "2020-05-01 22:55:23",
     "port": 60737,
     "Message": "Process accessed:\r\nRuleName: -\r\nUtcTime: 2020-05-02 02:55:23.551\r\nSourceProcessGUID: {6bbf237a-cafb-5eac-1000-000000000400}\r\nSourceProcessId: 900\r\nSourceThreadId: 504\r\nSourceImage: C:\\windows\\system32\\svchost.exe\r\nTargetProcessGUID: {6bbf237a-cb97-5eac-6202-000000000400}\r\nTargetProcessId: 2092\r\nTargetImage: C:\\windows\\System32\\svchost.exe\r\nGrantedAccess: 0x1000\r\nCallTrace: C:\\windows\\SYSTEM32\\ntdll.dll+9c584|C:\\windows\\SYSTEM32\\psmserviceexthost.dll+222a3|C:\\windows\\SYSTEM32\\psmserviceexthost.dll+1a172|C:\\windows\\SYSTEM32\\psmserviceexthost.dll+19e3b|C:\\windows\\SYSTEM32\\psmserviceexthost.dll+19318|C:\\windows\\SYSTEM32\\ntdll.dll+3089d|C:\\windows\\SYSTEM32\\ntdll.dll+34634|C:\\windows\\System32\\KERNEL32.DLL+17bd4|C:\\windows\\SYSTEM32\\ntdll.dll+6ced1",
@@ -8,7 +7,7 @@
     "TargetProcessId": "2092",
     "SourceModuleName": "eventlog",
     "tags": [
-      "mordorDataset"
+        "mordorDataset"
     ],
     "@version": "1",
     "SourceImage": "C:\\windows\\system32\\svchost.exe",
@@ -43,8 +42,8 @@
     "RuleName": "-",
     "ExecutionProcessID": 3496,
     "ProviderGuid": "{5770385F-C22A-43E0-BF4C-06F5698FFBD9}"
-  },
-  {
+}
+{
     "EventTime": "2020-05-01 22:55:28",
     "port": 60737,
     "Message": "File created:\r\nRuleName: -\r\nUtcTime: 2020-05-02 02:55:28.893\r\nProcessGuid: {5aa8ec29-cada-5eac-2700-000000000400}\r\nProcessId: 1560\r\nImage: C:\\windows\\System32\\svchost.exe\r\nTargetFilename: C:\\Windows\\ServiceState\\EventLog\\Data\\lastalive1.dat\r\nCreationUtcTime: 2020-05-02 01:21:27.463",
@@ -52,7 +51,7 @@
     "EventID": 11,
     "SourceModuleName": "eventlog",
     "tags": [
-      "mordorDataset"
+        "mordorDataset"
     ],
     "@version": "1",
     "SourceName": "Microsoft-Windows-Sysmon",
@@ -83,5 +82,4 @@
     "RuleName": "-",
     "ExecutionProcessID": 3428,
     "ProviderGuid": "{5770385F-C22A-43E0-BF4C-06F5698FFBD9}"
-  }
-]
+}

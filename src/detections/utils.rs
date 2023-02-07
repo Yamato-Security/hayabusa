@@ -18,15 +18,15 @@ use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
-use serde_json::{json, Value};
+use serde_json::{json, Error, Value};
 use std::cmp::Ordering;
 use std::fs::File;
-use std::io;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
 use std::vec;
+use std::{fs, io};
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
 use super::configs::{Config, EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
@@ -97,7 +97,7 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
 }
 
 /// convert json fmt string to serde_json Value.
-pub fn read_json_to_value(filename: &str) -> Result<impl Iterator<Item = Value>, String> {
+pub fn read_json_to_value(filename: &str) -> Result<Vec<Value>, String> {
     let filepath = if filename.starts_with("./") {
         check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
             .unwrap()
@@ -107,22 +107,61 @@ pub fn read_json_to_value(filename: &str) -> Result<impl Iterator<Item = Value>,
     } else {
         filename.to_string()
     };
-    let f = File::open(filepath);
+    let f = File::open(filepath.clone());
     if f.is_err() {
         let errmsg = format!("Cannot open file. [file:{filename}]");
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
-    let ret = reader
-        .lines()
-        .into_iter()
-        .filter_map(|s| s.ok())
-        .filter(|s| !s.trim().is_empty())
-        .map(|line| {
-            let v: Value = serde_json::from_str(&line).unwrap();
-            json!({"Event":{"EventData": v}})
-        });
-    Result::Ok(ret)
+    let mut peekable_lines = reader.lines().peekable();
+    let first_line = peekable_lines.peek().unwrap();
+    let is_jsonl = match first_line {
+        Ok(s) => serde_json::from_str::<Value>(s).is_ok(),
+        Err(_) => false,
+    };
+    if is_jsonl {
+        let ret: Vec<Value> = peekable_lines
+            .into_iter()
+            .filter_map(|s| s.ok())
+            .filter(|s| !s.trim().is_empty())
+            .map(|line| {
+                let v: Value = serde_json::from_str(&line).unwrap();
+                json!({"Event":{"EventData": v}})
+            })
+            .collect();
+        return Result::Ok(ret);
+    }
+    let file_contents = fs::read_to_string(&filepath).unwrap();
+    let json_value: Result<Vec<Value>, Error> = serde_json::from_str(&file_contents);
+    match json_value {
+        Ok(records) => {
+            let ret = records
+                .into_iter()
+                .map(|record| json!({"Event":{"EventData": record}}))
+                .collect();
+            Result::Ok(ret)
+        }
+        Err(_) => {
+            let newline_replaced_contents = file_contents.replace('\n', "");
+            let json = format!(
+                "[{}]",
+                newline_replaced_contents
+                    .split("}{")
+                    .filter(|s| !s.trim().is_empty())
+                    .join("},{")
+            );
+            let all_record_json: Result<Value, Error> = serde_json::from_str(&json);
+            if let Err(err_msg) = all_record_json {
+                return Err(err_msg.to_string());
+            }
+            let records = all_record_json.unwrap().as_array().unwrap().clone();
+            let ret: Vec<Value> = records
+                .into_iter()
+                .map(|record| json!({"Event":{"EventData": record}}))
+                .collect();
+            Result::Ok(ret)
+        }
+    }
 }
 
 pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
@@ -753,6 +792,51 @@ mod tests {
                 .to_str()
                 .unwrap(),
             "fake"
+        );
+    }
+
+    #[test]
+    fn test_json_array_file_to_serde_json_value() {
+        let path = "test_files/evtx/test.json";
+        let records = utils::read_json_to_value(&path.to_string()).unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(
+            records[0]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:26.493Z"
+        );
+        assert_eq!(
+            records[1]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:30.540Z"
+        );
+    }
+
+    #[test]
+    fn test_jsonl_file_to_serde_json_value() {
+        let path = "test_files/evtx/test.jsonl";
+        let records = utils::read_json_to_value(&path.to_string()).unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(
+            records[0]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:26.493Z"
+        );
+        assert_eq!(
+            records[1]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:30.540Z"
+        );
+    }
+
+    #[test]
+    fn test_jq_c_file_to_serde_json_value() {
+        let path = "test_files/evtx/test-jq-output.json";
+        let records = utils::read_json_to_value(&path.to_string()).unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(
+            records[0]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:26.493Z"
+        );
+        assert_eq!(
+            records[1]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:30.540Z"
         );
     }
 }
