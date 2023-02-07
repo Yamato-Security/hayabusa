@@ -142,7 +142,7 @@ pub fn read_json_to_value(filename: &str) -> Result<Vec<Value>, String> {
             Result::Ok(ret)
         }
         Err(_) => {
-            let newline_replaced_contents = file_contents.replace('\n', "");
+            let newline_replaced_contents = file_contents.replace('\n', "").replace('\r', "");
             let json = format!(
                 "[{}]",
                 newline_replaced_contents
