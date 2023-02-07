@@ -798,7 +798,7 @@ mod tests {
     #[test]
     fn test_json_array_file_to_serde_json_value() {
         let path = "test_files/evtx/test.json";
-        let records = utils::read_json_to_value(&path.to_string()).unwrap();
+        let records = utils::read_json_to_value(path).unwrap();
         assert_eq!(records.len(), 2);
         assert_eq!(
             records[0]["Event"]["EventData"]["@timestamp"],
@@ -813,7 +813,7 @@ mod tests {
     #[test]
     fn test_jsonl_file_to_serde_json_value() {
         let path = "test_files/evtx/test.jsonl";
-        let records = utils::read_json_to_value(&path.to_string()).unwrap();
+        let records = utils::read_json_to_value(path).unwrap();
         assert_eq!(records.len(), 2);
         assert_eq!(
             records[0]["Event"]["EventData"]["@timestamp"],
@@ -828,7 +828,7 @@ mod tests {
     #[test]
     fn test_jq_c_file_to_serde_json_value() {
         let path = "test_files/evtx/test-jq-output.json";
-        let records = utils::read_json_to_value(&path.to_string()).unwrap();
+        let records = utils::read_json_to_value(path).unwrap();
         assert_eq!(records.len(), 2);
         assert_eq!(
             records[0]["Event"]["EventData"]["@timestamp"],
