@@ -1086,7 +1086,6 @@ mod tests {
                         json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),

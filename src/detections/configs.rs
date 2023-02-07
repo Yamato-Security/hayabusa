@@ -63,6 +63,7 @@ pub struct StoredStatic {
     pub target_eventids: TargetEventIds,
     pub thread_number: Option<usize>,
     pub json_input_flag: bool,
+    pub output_path: Option<PathBuf>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -231,6 +232,14 @@ impl StoredStatic {
             }
             *GEOIP_DB_YAML.write().unwrap() = Some(static_geoip_conf);
         };
+        let output_path = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::Metrics(opt)) => opt.output.as_ref(),
+            Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
+            Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
+            _ => None
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -309,6 +318,7 @@ impl StoredStatic {
                     .unwrap(),
             ),
             json_input_flag,
+            output_path: output_path.cloned(),
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -1137,7 +1147,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         Action::JsonTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: option.enable_deprecated_rules,
             enable_noisy_rules: option.enable_noisy_rules,
             profile: None,
@@ -1161,7 +1170,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
@@ -1185,7 +1193,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
@@ -1219,7 +1226,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 verbose: false,
                 json_input: false,
             },
-            output: None,
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
