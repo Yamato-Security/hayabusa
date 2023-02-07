@@ -645,10 +645,6 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 
-    /// Save the timeline in format (ex: results.csv, results.json, etc...)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
-    pub output: Option<PathBuf>,
-
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
@@ -811,6 +807,10 @@ pub struct CsvOutputOption {
     )]
     pub geo_ip: Option<PathBuf>,
 
+    /// Save the timeline in format (ex: results.csv)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
     #[clap(flatten)]
     pub output_options: OutputOption,
 }
@@ -819,6 +819,10 @@ pub struct CsvOutputOption {
 pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
+
+    /// Save the timeline in format (ex: results.json)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
 
     /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
     #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output", display_order = 100)]
