@@ -238,7 +238,7 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.output.as_ref(),
             Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
-            _ => None
+            _ => None,
         };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),

@@ -979,10 +979,7 @@ impl App {
         if stored_static.logon_summary_flag {
             tl.tm_logon_stats_dsp_msg(stored_static);
         }
-        if stored_static
-            .output_path
-            .is_some()
-        {
+        if stored_static.output_path.is_some() {
             println!();
             println!();
             println!("Analysis finished. Please wait while the results are being saved.");
