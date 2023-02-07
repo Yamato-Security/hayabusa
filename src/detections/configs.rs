@@ -573,11 +573,11 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save pivot words to separate files (ex: pivot-keywords.txt)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    /// Save pivot words to separate files (ex: -o PivotKeywords)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAMES-BASE", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Enable rules marked as deprecated
+    /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
@@ -607,7 +607,7 @@ pub struct PivotKeywordOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy
+    /// Enable rules marked as noisy (config file: ./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
@@ -619,7 +619,7 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+    /// Scan for only common Event IDs (approximately 20%+ speed increase)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 }
@@ -649,7 +649,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Enable rules marked as deprecated
+    /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
@@ -679,7 +679,7 @@ pub struct OutputOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy
+    /// Enable rules marked as noisy (config file: ./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
@@ -691,7 +691,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+    /// Scan for only common Event IDs (approximately 20%+ speed increase)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 
@@ -723,7 +723,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
 
-    /// Output event frequency timeline
+    /// Output event frequency timeline (terminal needs to support unicode)
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 480)]
     pub visualize_timeline: bool,
 
@@ -743,7 +743,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80)]
     pub html_report: Option<PathBuf>,
 
-    /// Do not display results summary
+    /// Do not display results summary (approx. 10% speed increase)
     #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
 }
@@ -758,7 +758,7 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
     pub filepath: Option<PathBuf>,
 
-    /// Scan JSON-formatted logs instead of .evtx
+    /// Scan JSON-formatted logs instead of .evtx (.json or .jsonl)
     #[arg(short = 'J', long = "JSON-input", display_order = 100)]
     pub json_input: bool,
 
@@ -766,7 +766,7 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", display_order = 380)]
     pub live_analysis: bool,
 
-    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
     #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
 
