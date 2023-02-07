@@ -583,7 +583,7 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save pivot words to separate files (ex: -o PivotKeywords)
+    /// Save pivot words to separate files (ex: PivotKeywords)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAMES-BASE", display_order = 410)]
     pub output: Option<PathBuf>,
 
@@ -617,7 +617,7 @@ pub struct PivotKeywordOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy (config file: ./rules/config/noisy_rules.txt)
+    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
@@ -629,7 +629,7 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Scan for only common Event IDs (approximately 20%+ speed increase)
+    /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 }
@@ -685,7 +685,7 @@ pub struct OutputOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy (config file: ./rules/config/noisy_rules.txt)
+    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
@@ -697,7 +697,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Scan for only common Event IDs (approximately 20%+ speed increase)
+    /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 
@@ -745,11 +745,11 @@ pub struct OutputOption {
     )]
     pub rules: PathBuf,
 
-    /// Save detail Results Summary in html (ex: results.html)
+    /// Save Results Summary details to an HTML report (ex: results.html)
     #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80)]
     pub html_report: Option<PathBuf>,
 
-    /// Do not display results summary (approx. 10% speed increase)
+    /// Do not display Results Summary (slightly faster speed)
     #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
 }
@@ -764,7 +764,7 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
     pub filepath: Option<PathBuf>,
 
-    /// Scan JSON-formatted logs instead of .evtx (.json or .jsonl)
+    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
     #[arg(short = 'J', long = "JSON-input", display_order = 100)]
     pub json_input: bool,
 
@@ -817,7 +817,7 @@ pub struct CsvOutputOption {
     )]
     pub geo_ip: Option<PathBuf>,
 
-    /// Save the timeline in format (ex: results.csv)
+    /// Save the timeline in CSV format (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
@@ -830,7 +830,7 @@ pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Save the timeline in format (ex: results.json)
+    /// Save the timeline in JSON format (ex: results.json)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 
