@@ -222,7 +222,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: None,
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -244,6 +243,7 @@ mod tests {
                 no_summary: false,
             },
             geo_ip: None,
+            output: None,
         });
         let csv_html_flag_enable = create_dummy_stored_static(Some(enable_csv_action));
         assert!(htmlreport::check_html_flag(&csv_html_flag_enable.config));
@@ -262,7 +262,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: None,
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -284,6 +283,7 @@ mod tests {
                 no_summary: false,
             },
             geo_ip: None,
+            output: None,
         });
         let csv_html_flag_disable = create_dummy_stored_static(Some(disable_csv_action));
         assert!(!htmlreport::check_html_flag(&csv_html_flag_disable.config));
@@ -305,7 +305,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: None,
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -328,6 +327,7 @@ mod tests {
             },
             jsonl_timeline: false,
             geo_ip: None,
+            output: None,
         });
         let json_html_flag_enable = create_dummy_stored_static(Some(enable_json_action));
         assert!(htmlreport::check_html_flag(&json_html_flag_enable.config));
@@ -346,7 +346,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: None,
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -369,6 +368,7 @@ mod tests {
             },
             jsonl_timeline: false,
             geo_ip: None,
+            output: None,
         });
         let json_html_flag_disable = create_dummy_stored_static(Some(disable_json_action));
         assert!(!htmlreport::check_html_flag(&json_html_flag_disable.config));

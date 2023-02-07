@@ -416,7 +416,6 @@ mod tests {
                         json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
@@ -438,6 +437,7 @@ mod tests {
                     no_summary: false,
                 },
                 geo_ip: None,
+                output: None,
             }));
         assert_eq!(
             Nested::<Vec<String>>::new(),
@@ -517,7 +517,6 @@ mod tests {
                         json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
@@ -539,6 +538,7 @@ mod tests {
                     no_summary: false,
                 },
                 geo_ip: None,
+                output: None,
             }));
         *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
@@ -568,7 +568,6 @@ mod tests {
                         json_input: false,
                     },
                     profile: Some("minimal".to_string()),
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
@@ -590,6 +589,7 @@ mod tests {
                     no_summary: false,
                 },
                 geo_ip: None,
+                output: None,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -649,7 +649,6 @@ mod tests {
                         json_input: false,
                     },
                     profile: Some("not_exist".to_string()),
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
@@ -671,6 +670,7 @@ mod tests {
                     no_summary: false,
                 },
                 geo_ip: None,
+                output: None,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(

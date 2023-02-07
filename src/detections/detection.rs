@@ -1107,6 +1107,7 @@ mod tests {
                     no_summary: false,
                 },
                 geo_ip: None,
+                output: None,
             })),
             no_color: false,
             quiet: false,
@@ -1324,7 +1325,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -1346,6 +1346,7 @@ mod tests {
                 no_summary: true,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -1436,7 +1437,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -1458,6 +1458,7 @@ mod tests {
                 no_summary: true,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
