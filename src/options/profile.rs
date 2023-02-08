@@ -413,6 +413,7 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
                     output: None,
@@ -436,7 +437,6 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
-                json_input: false,
                 geo_ip: None,
             }));
         assert_eq!(
@@ -514,6 +514,7 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
                     output: None,
@@ -537,7 +538,6 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
-                json_input: false,
                 geo_ip: None,
             }));
         *GEOIP_DB_PARSER.write().unwrap() = None;
@@ -565,6 +565,7 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: Some("minimal".to_string()),
                     output: None,
@@ -588,7 +589,6 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
-                json_input: false,
                 geo_ip: None,
             }));
 
@@ -646,6 +646,7 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: Some("not_exist".to_string()),
                     output: None,
@@ -669,7 +670,6 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
-                json_input: false,
                 geo_ip: None,
             }));
         //両方のファイルが存在しない場合
