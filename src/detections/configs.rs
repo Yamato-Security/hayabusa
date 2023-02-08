@@ -63,6 +63,7 @@ pub struct StoredStatic {
     pub target_eventids: TargetEventIds,
     pub thread_number: Option<usize>,
     pub json_input_flag: bool,
+    pub output_path: Option<PathBuf>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -231,6 +232,14 @@ impl StoredStatic {
             }
             *GEOIP_DB_YAML.write().unwrap() = Some(static_geoip_conf);
         };
+        let output_path = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::Metrics(opt)) => opt.output.as_ref(),
+            Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
+            Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
+            _ => None,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -309,6 +318,7 @@ impl StoredStatic {
                     .unwrap(),
             ),
             json_input_flag,
+            output_path: output_path.cloned(),
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -573,11 +583,11 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save pivot words to separate files (ex: pivot-keywords.txt)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    /// Save pivot words to separate files (ex: PivotKeywords)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAMES-BASE", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Enable rules marked as deprecated
+    /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
@@ -607,7 +617,7 @@ pub struct PivotKeywordOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy
+    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
@@ -619,7 +629,7 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+    /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 }
@@ -645,11 +655,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 
-    /// Save the timeline in format (ex: results.csv, results.json, etc...)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
-    pub output: Option<PathBuf>,
-
-    /// Enable rules marked as deprecated
+    /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
@@ -679,7 +685,7 @@ pub struct OutputOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy
+    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
@@ -691,7 +697,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
+    /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 
@@ -723,7 +729,7 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
 
-    /// Output event frequency timeline
+    /// Output event frequency timeline (terminal needs to support unicode)
     #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 480)]
     pub visualize_timeline: bool,
 
@@ -739,11 +745,11 @@ pub struct OutputOption {
     )]
     pub rules: PathBuf,
 
-    /// Save detail Results Summary in html (ex: results.html)
+    /// Save Results Summary details to an HTML report (ex: results.html)
     #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80)]
     pub html_report: Option<PathBuf>,
 
-    /// Do not display results summary
+    /// Do not display Results Summary (slightly faster speed)
     #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
 }
@@ -758,7 +764,7 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
     pub filepath: Option<PathBuf>,
 
-    /// Scan JSON-formatted logs instead of .evtx
+    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
     #[arg(short = 'J', long = "JSON-input", display_order = 100)]
     pub json_input: bool,
 
@@ -766,7 +772,7 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", display_order = 380)]
     pub live_analysis: bool,
 
-    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
     #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
 
@@ -811,6 +817,10 @@ pub struct CsvOutputOption {
     )]
     pub geo_ip: Option<PathBuf>,
 
+    /// Save the timeline in CSV format (ex: results.csv)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
     #[clap(flatten)]
     pub output_options: OutputOption,
 }
@@ -819,6 +829,10 @@ pub struct CsvOutputOption {
 pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
+
+    /// Save the timeline in JSON format (ex: results.json)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
 
     /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
     #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output", display_order = 100)]
@@ -1133,7 +1147,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         Action::JsonTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: option.enable_deprecated_rules,
             enable_noisy_rules: option.enable_noisy_rules,
             profile: None,
@@ -1157,7 +1170,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
@@ -1181,7 +1193,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
@@ -1215,7 +1226,6 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 verbose: false,
                 json_input: false,
             },
-            output: None,
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,

@@ -16,7 +16,7 @@ use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use yaml_rust::YamlLoader;
 
@@ -163,7 +163,7 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
 
 pub fn after_fact(
     all_record_cnt: usize,
-    output_option: &OutputOption,
+    output_option: &Option<PathBuf>,
     no_color_flag: bool,
     stored_static: &StoredStatic,
 ) {
@@ -173,7 +173,7 @@ pub fn after_fact(
     };
 
     let mut displayflag = false;
-    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option.output {
+    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option {
         // output to file
         match File::create(path) {
             Ok(file) => Box::new(BufWriter::new(file)),
@@ -1503,7 +1503,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -1525,6 +1524,7 @@ mod tests {
                 no_summary: true,
             },
             geo_ip: None,
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -1570,7 +1570,6 @@ mod tests {
                     json_input: false,
                 },
                 profile: None,
-                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
@@ -1825,7 +1824,6 @@ mod tests {
                 json_input: false,
             },
             profile: None,
-            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             enable_deprecated_rules: false,
             exclude_status: None,
             min_level: "informational".to_string(),

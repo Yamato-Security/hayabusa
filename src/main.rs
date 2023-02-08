@@ -250,7 +250,7 @@ impl App {
                         return;
                     }
                 }
-                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_path {
                     if utils::check_file_expect_not_exist(
                         path.as_path(),
                         format!(
@@ -263,7 +263,7 @@ impl App {
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
-                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_path {
                     if let Ok(metadata) = fs::metadata(path) {
                         let output_saved_str = format!(
                             "Saved file: {} ({})",
@@ -299,7 +299,7 @@ impl App {
             }
             Action::LogonSummary(_) | Action::Metrics(_) => {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_path {
                     if let Ok(metadata) = fs::metadata(path) {
                         let output_saved_str = format!(
                             "Saved file: {} ({})",
@@ -316,7 +316,7 @@ impl App {
             }
             Action::PivotKeywordsList(_) => {
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-                if let Some(csv_path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(csv_path) = &stored_static.output_path {
                     let mut error_flag = false;
                     let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                     pivot_key_unions.iter().for_each(|(key, _)| {
@@ -366,7 +366,7 @@ impl App {
 
                         output
                     };
-                if let Some(pivot_file) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(pivot_file) = &stored_static.output_path {
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         let mut f = BufWriter::new(
                             fs::File::create(
@@ -979,13 +979,7 @@ impl App {
         if stored_static.logon_summary_flag {
             tl.tm_logon_stats_dsp_msg(stored_static);
         }
-        if stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .output
-            .is_some()
-        {
+        if stored_static.output_path.is_some() {
             println!();
             println!();
             println!("Analysis finished. Please wait while the results are being saved.");
@@ -998,7 +992,7 @@ impl App {
         {
             after_fact(
                 total_records,
-                stored_static.output_option.as_ref().unwrap(),
+                &stored_static.output_path,
                 stored_static.config.no_color,
                 stored_static,
             );
@@ -1449,7 +1443,6 @@ mod tests {
                         json_input: true,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
@@ -1471,6 +1464,7 @@ mod tests {
                     no_summary: false,
                 },
                 geo_ip: None,
+                output: None,
             })),
             no_color: false,
             quiet: false,
