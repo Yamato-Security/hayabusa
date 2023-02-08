@@ -1131,7 +1131,7 @@ impl App {
             AlertMessage::alert(&e).ok();
             return (detection, record_cnt, tl);
         }
-        let mut records = json_f.unwrap();
+        let mut records = json_f.unwrap().into_iter();
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {
@@ -1558,7 +1558,7 @@ mod tests {
         let target_event_ids = TargetEventIds::default();
 
         let actual = app.analysis_json_file(
-            Path::new("test_files/evtx/test.json").to_path_buf(),
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
             detection,
             &target_time_filter,
             tl,
