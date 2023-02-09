@@ -1213,9 +1213,10 @@ fn output_json_str(
                     let mut key_idx = 0;
                     let mut output_value_stock = String::default();
                     for (value_idx, value) in stocked_value.iter().enumerate() {
-                        let mut tmp = if key_idx >= key_index_stock.len() {
-                            ""
-                        } else if value_idx == 0 && !value.is_empty() {
+                        if key_idx >= key_index_stock.len() {
+                            break;
+                        }
+                        let mut tmp = if value_idx == 0 && !value.is_empty() {
                             key.as_str()
                         } else {
                             key_index_stock[key_idx].as_str()
@@ -1225,21 +1226,12 @@ fn output_json_str(
                         }
                         output_value_stock.push_str(&value.join(" "));
                         //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                        let is_remain_split_stock = if key_idx == key_index_stock.len() - 2
+                        let is_remain_split_stock = key_idx == key_index_stock.len() - 2
                             && value_idx < stocked_value.len() - 1
                             && !output_value_stock.is_empty()
-                        {
-                            let mut ret = true;
-                            for remain_value in stocked_value[value_idx + 1..].iter() {
-                                if remain_value.is_empty() {
-                                    ret = false;
-                                    break;
-                                }
-                            }
-                            ret
-                        } else {
-                            false
-                        };
+                            && !stocked_value[value_idx + 1..]
+                                .iter()
+                                .any(|remain_value| remain_value.is_empty());
                         if (value_idx < stocked_value.len() - 1
                             && stocked_value[value_idx + 1].is_empty())
                             || is_remain_split_stock
@@ -1263,7 +1255,9 @@ fn output_json_str(
                             tmp = "";
                             key_idx += 1;
                         }
-                        if value_idx == stocked_value.len() - 1 {
+                        if value_idx == stocked_value.len() - 1
+                            && !(tmp.is_empty() && stocked_value.is_empty())
+                        {
                             let output_tmp = format!("{tmp}: {output_value_stock}");
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
