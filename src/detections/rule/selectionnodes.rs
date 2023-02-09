@@ -281,7 +281,7 @@ impl LeafSelectionNode {
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
     fn get_event_value<'a>(&self, record: &'a EvtxRecordInfo) -> Option<&'a String> {
-        // keyが指定されたいない場合は
+        // keyが指定されていない場合はそのままのレコードのデータを取得する
         if self.key_list.is_empty() {
             return Option::Some(&record.data_string);
         }
@@ -455,12 +455,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -477,6 +478,8 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             })),
             no_color: false,
             quiet: false,
@@ -498,6 +501,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
                     expect_select
@@ -559,7 +563,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
@@ -581,7 +585,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
@@ -603,7 +607,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'

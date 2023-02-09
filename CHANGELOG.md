@@ -1,10 +1,12 @@
 # Changes
 
-## 2.2.0 [2023/2/22]
+## 2.2.0 [2023/2/22] "Ninja Day Release"
 
 **New Features:**
 
-- XXX
+- Added support for input of JSON-formatted event logs (`-J, --JSON-input`). (#386) (@hitenkoku)
+- Log enrichment by outputting the ASN organization, city and country of source and destination IP addresses based on MaxMind GeoIP databases (`-G, --GeoIP`). (#879) (@hitenkoku)
+- Added the `-e, --exact-level` option to scan for only specific rule levels. (#899) (@hitenkoku)
 
 **Enhancements:**
 
@@ -13,16 +15,22 @@
 - Approximately 14% speed increase and memory usage reduction by filtering before regex usage. (#883) (@fukusuket)
 - Approximately 8% speed increase and memory usage reduction by case-insensitive comparisons instead of regex usage. (#884) (@fukusuket)
 - Approximately 5% speed increase and memory usage reduction by reducing regex usage in wildcard expressions. (#890) (@fukusuket)
+- Further speed increase and memory usage reduction by removing unnecessary regex usage. (#894) (@fukusuket)
+- Approximately 3% speed increase and 10% memory usage reduction by reducing regex usage. (#898) (@fukuseket)
+- Improved `-T, --visualize-timeline` by increasing the height of the markers to make it easier to read. (#902) (@hitenkoku)
+- Reduced memory usage by approximately 50% when reading JSON/L formatted logs. (#906) (@fukusuket)
+- Alphabetically sorted options based on their long names. (#904) (@hitenkoku)
+- Added JSON input support (`-J, --JSON-input` option) for `logon-summary`, `metrics` and `pivot-keywords-list` commands. (#908) (@hitenkoku)
 
 **Bug Fixes:**
 
-- XXX
+- Fixed a bug when rules with 4 consecutive backslashes in their conditions would not be detected. (#897) (@fukusuket)
 
 **Vulnerability Fixes:**
 
 - Updated the git2 and gitlib2 crates to prevent a possible SSH MITM attack (CVE-2023-22742) when updating rules and config files. (#888) (@YamatoSecurity)
 
-## 2.1.0 [2023/01/10]
+## 2.1.0 [2023/01/10] "Happy Year of the Rabbit Release"
 
 **Enhancements:**
 
@@ -35,13 +43,13 @@
 - Successful login CSV results were not correctly being outputted when using the logon timeline function. (#849) (@hitenkoku)
 - Removed unnecessary line breaks that would occur when using the `-J, --jsonl` option. (#852) (@hitenkoku)
 
-## 2.0.0 [2022/12/24]
+## 2.0.0 [2022/12/24] "Merry Christmas Release"
 
 **New Features:**
 
 - Command usage and help menu are now done by subcommands. (#656) (@hitenkoku)
 
-## 1.9.0 [2022/12/24]
+## 1.9.0 [2022/12/24] "Merry Christmas Release"
 
 **New Features:**
 

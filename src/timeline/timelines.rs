@@ -8,6 +8,7 @@ use crate::detections::message::AlertMessage;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
+use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
 
@@ -81,7 +82,7 @@ impl Timeline {
                             Some(WriterBuilder::new().from_writer(target))
                         }
                         Err(err) => {
-                            AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                            AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
                             process::exit(1);
                         }
                     }
@@ -114,7 +115,7 @@ impl Timeline {
             self.tm_stats_set_msg(mapsorted, event_timeline_config, stored_static);
 
         for msgprint in sammsges.iter() {
-            println!("{}", msgprint);
+            println!("{msgprint}");
         }
         if wtr.is_some() {
             for msg in stats_msges.iter() {
@@ -144,7 +145,7 @@ impl Timeline {
             }
 
             for msgprint in sammsges.iter() {
-                println!("{}", msgprint);
+                println!("{msgprint}");
             }
 
             self.tm_loginstats_tb_set_msg(&logon_summary_option.output);
@@ -165,7 +166,7 @@ impl Timeline {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
 
-            let fmted_channel = channel.replace('\"', "");
+            let fmted_channel = CompactString::from(channel.replace('\"', ""));
 
             // イベント情報取得(eventtitleなど)
             let conf = event_timeline_config
@@ -211,7 +212,7 @@ impl Timeline {
             loginmsges.push("|     No logon events were detected.    |".to_string());
             loginmsges.push("-----------------------------------------\n".to_string());
             for msgprint in loginmsges.iter() {
-                println!("{}", msgprint);
+                println!("{msgprint}");
             }
         } else {
             println!(" Successful Logons:");
@@ -241,7 +242,7 @@ impl Timeline {
                     Some(WriterBuilder::new().from_writer(target))
                 }
                 Err(err) => {
-                    AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                    AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
                     process::exit(1);
                 }
             }
@@ -287,7 +288,7 @@ impl Timeline {
         }
         // rowデータがない場合は、検出なしのメッセージを表示する
         if logins_stats_tb.row_iter().len() == 0 {
-            println!(" No logon {} events were detected.", logon_res);
+            println!(" No logon {logon_res} events were detected.");
         } else {
             println!("{logins_stats_tb}");
         }

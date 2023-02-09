@@ -1,10 +1,11 @@
-use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH};
+use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER};
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
     AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, Level, Literal, MitreTactics,
     MitreTags, OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate,
-    RuleFile, RuleID, RuleModifiedDate, RuleTitle, Status, Timestamp,
+    RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN,
+    TgtCity, TgtCountry, Timestamp,
 };
 use crate::yaml;
 use compact_str::CompactString;
@@ -38,6 +39,12 @@ pub enum Profile {
     Provider(CompactString),
     Details(CompactString),
     RenderedMessage(CompactString),
+    SrcASN(CompactString),
+    SrcCountry(CompactString),
+    SrcCity(CompactString),
+    TgtASN(CompactString),
+    TgtCountry(CompactString),
+    TgtCity(CompactString),
     Literal(CompactString), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
@@ -48,7 +55,8 @@ impl Profile {
             | RuleTitle(v) | AllFieldInfo(v) | RuleFile(v) | EvtxFile(v) | MitreTactics(v)
             | MitreTags(v) | OtherTags(v) | RuleAuthor(v) | RuleCreationDate(v)
             | RuleModifiedDate(v) | Status(v) | RuleID(v) | Provider(v) | Details(v)
-            | RenderedMessage(v) | Literal(v) => v.to_string(),
+            | RenderedMessage(v) | SrcASN(v) | SrcCountry(v) | SrcCity(v) | TgtASN(v)
+            | TgtCountry(v) | TgtCity(v) | Literal(v) => v.to_string(),
         }
     }
 
@@ -73,6 +81,12 @@ impl Profile {
             RuleID(_) => RuleID(converted_string.to_owned()),
             Provider(_) => Provider(converted_string.to_owned()),
             RenderedMessage(_) => RenderedMessage(converted_string.to_owned()),
+            SrcASN(_) => SrcASN(converted_string.to_owned()),
+            SrcCountry(_) => SrcCountry(converted_string.to_owned()),
+            SrcCity(_) => SrcCity(converted_string.to_owned()),
+            TgtASN(_) => TgtASN(converted_string.to_owned()),
+            TgtCountry(_) => TgtCountry(converted_string.to_owned()),
+            TgtCity(_) => TgtCity(converted_string.to_owned()),
             p => p.to_owned(),
         }
     }
@@ -116,12 +130,11 @@ fn read_profile_data(
     if let Ok(loaded_profile) = yml.read_file(Path::new(profile_path).to_path_buf()) {
         match YamlLoader::load_from_str(&loaded_profile) {
             Ok(profile_yml) => Ok(profile_yml),
-            Err(e) => Err(format!("Parse error: {}. {}", profile_path, e)),
+            Err(e) => Err(format!("Parse error: {profile_path}. {e}")),
         }
     } else {
         Err(format!(
-            "The profile file({}) does not exist. Please check your default profile.",
-            profile_path
+            "The profile file({profile_path}) does not exist. Please check your default profile."
         ))
     }
 }
@@ -174,6 +187,7 @@ pub fn load_profile(
     }
     let profile_data = &profile_all[0];
     let mut ret: Vec<(CompactString, Profile)> = vec![];
+
     if let Some(profile_name) = profile {
         let target_data = &profile_data[profile_name.as_str()];
         if !target_data.is_badvalue() {
@@ -187,7 +201,6 @@ pub fn load_profile(
                         Profile::from(v.as_str().unwrap()),
                     ));
                 });
-            Some(ret)
         } else {
             AlertMessage::alert(&format!(
                 "Invalid profile specified: {}\nPlease specify one of the following profiles:\n {}",
@@ -200,7 +213,7 @@ pub fn load_profile(
                     .join(", ")
             ))
             .ok();
-            None
+            return None;
         }
     } else {
         profile_data
@@ -213,8 +226,35 @@ pub fn load_profile(
                     Profile::from(v.as_str().unwrap()),
                 ));
             });
-        Some(ret)
     }
+    // insert preserved keyword when get-ip option specified.
+    if GEOIP_DB_PARSER.read().unwrap().is_some() {
+        ret.push((
+            CompactString::from("SrcASN"),
+            SrcASN(CompactString::default()),
+        ));
+        ret.push((
+            CompactString::from("SrcCountry"),
+            SrcCountry(CompactString::default()),
+        ));
+        ret.push((
+            CompactString::from("SrcCity"),
+            SrcCity(CompactString::default()),
+        ));
+        ret.push((
+            CompactString::from("TgtASN"),
+            TgtASN(CompactString::default()),
+        ));
+        ret.push((
+            CompactString::from("TgtCountry"),
+            TgtCountry(CompactString::default()),
+        ));
+        ret.push((
+            CompactString::from("TgtCity"),
+            TgtCity(CompactString::default()),
+        ));
+    }
+    Some(ret)
 }
 
 /// デフォルトプロファイルを設定する関数
@@ -257,8 +297,7 @@ pub fn set_default_profile(
                 let result = match dump_result {
                     Ok(_) => match buf_wtr.write_all(out_str.as_bytes()) {
                         Err(e) => Err(format!(
-                            "Failed to set the default profile file({}). {}",
-                            profile_path, e
+                            "Failed to set the default profile file({profile_path}). {e}"
                         )),
                         _ => {
                             buf_wtr.flush().ok();
@@ -266,8 +305,7 @@ pub fn set_default_profile(
                         }
                     },
                     Err(e) => Err(format!(
-                        "Failed to set the default profile file({}). {}",
-                        profile_path, e
+                        "Failed to set the default profile file({profile_path}). {e}"
                     )),
                 };
                 result
@@ -284,8 +322,7 @@ pub fn set_default_profile(
             }
         } else {
             Err(format!(
-                "Failed to set the default profile file({}).",
-                profile_path
+                "Failed to set the default profile file({profile_path})."
             ))
         }
     } else {
@@ -332,6 +369,7 @@ mod tests {
 
     use crate::detections::configs::{
         Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic, UpdateOption,
+        GEOIP_DB_PARSER,
     };
     use crate::options::profile::{get_profile_list, load_profile, Profile};
     use compact_str::CompactString;
@@ -375,12 +413,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -397,6 +436,8 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             }));
         assert_eq!(
             Nested::<Vec<String>>::new(),
@@ -473,12 +514,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -495,7 +537,10 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             }));
+        *GEOIP_DB_PARSER.write().unwrap() = None;
         assert_eq!(
             Some(expect),
             load_profile(
@@ -520,12 +565,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: Some("minimal".to_string()),
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -542,6 +588,8 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             }));
 
         let expect: Vec<(CompactString, Profile)> = vec![
@@ -598,12 +646,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: Some("not_exist".to_string()),
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -620,6 +669,8 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             }));
         //両方のファイルが存在しない場合
         assert_eq!(

@@ -17,7 +17,13 @@ use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
-pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_errors_flag: bool) {
+pub fn count(
+    rule: &mut RuleNode,
+    record: &Value,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    json_input_flag: bool,
+) {
     let key = create_count_key(
         rule,
         record,
@@ -49,7 +55,7 @@ pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_erro
         rule,
         key,
         field_value,
-        message::get_event_time(record).unwrap_or(default_time),
+        message::get_event_time(record, json_input_flag).unwrap_or(default_time),
     );
 }
 
@@ -112,7 +118,7 @@ fn get_alias_value_in_record(
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             None
         }
@@ -222,7 +228,7 @@ impl TimeFrameInfo {
             ttype = "d";
             value.retain(|c| c != 'd');
         } else {
-            let errmsg = format!("Timeframe is invalid. Input value:{}", value);
+            let errmsg = format!("Timeframe is invalid. Input value:{value}");
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -230,7 +236,7 @@ impl TimeFrameInfo {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
         }
         TimeFrameInfo {
@@ -257,7 +263,7 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
             }
         }
         Err(err) => {
-            let errmsg = format!("Timeframe number is invalid. timeframe. {}", err);
+            let errmsg = format!("Timeframe number is invalid. timeframe. {err}");
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -265,7 +271,7 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             Option::None
         }
@@ -580,12 +586,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -602,6 +609,8 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             })),
             no_color: false,
             quiet: false,
@@ -914,6 +923,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
                     );
                 }
@@ -1688,6 +1698,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
                     );
                     assert_eq!(result, &true);

@@ -46,8 +46,8 @@ jobs:
       - name: json-timeline(-p super-verbose)
         run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out-s.json -p super-verbose -q
 
-      - name: json-timeline(-J)
-        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -J
+      - name: json-timeline(-L)
+        run: cd main && cargo run --release -- json-timeline -d ../hayabusa-sample-evtx -o out.jsonl -q -L
 
       - name: logon-summary
         run: cd main && cargo run --release -- logon-summary -d ../hayabusa-sample-evtx -q

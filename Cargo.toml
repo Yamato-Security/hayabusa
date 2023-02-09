@@ -31,7 +31,7 @@ hashbrown = "0.13.*"
 hex = "0.4.*"
 git2 = "0.*"
 termcolor = "*"
-krapslog = "*"
+krapslog = "0.5"
 terminal_size = "*"
 bytesize = "1.*"
 lock_api = "0.4.*"
@@ -46,6 +46,8 @@ nested="*"
 compact_str = "0.6.*"
 ureq = "*"
 mockall = "*"
+maxminddb = "0.*"
+cidr-utils = "0.*"
 
 [profile.dev]
 debug = 0

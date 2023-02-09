@@ -129,7 +129,7 @@ impl ConditionCompiler {
 
         let result = self.compile_condition_body(&replaced_condition, name_2_node);
         if let Result::Err(msg) = result {
-            Result::Err(format!("A condition parse error has occured. {}", msg))
+            Result::Err(format!("A condition parse error has occurred. {msg}"))
         } else {
             result
         }
@@ -413,7 +413,7 @@ impl ConditionCompiler {
                 let ref_node = RefSelectionNode::new(selection_node);
                 return Result::Ok(Box::new(ref_node));
             } else {
-                let err_msg = format!("{} is not defined.", selection_name);
+                let err_msg = format!("{selection_name} is not defined.");
                 return Result::Err(err_msg);
             }
         }
@@ -534,12 +534,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -556,6 +557,8 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             })),
             no_color: false,
             quiet: false,
@@ -583,6 +586,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
                     expect_select
@@ -1241,7 +1245,8 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "A condition parse error has occured. An unusable character was found.".to_string(),
+                "A condition parse error has occurred. An unusable character was found."
+                    .to_string(),
             ],
         );
     }
@@ -1264,7 +1269,7 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "A condition parse error has occured. ')' was expected but not found.".to_string(),
+                "A condition parse error has occurred. ')' was expected but not found.".to_string(),
             ],
         );
     }
@@ -1287,7 +1292,7 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "A condition parse error has occured. '(' was expected but not found.".to_string(),
+                "A condition parse error has occurred. '(' was expected but not found.".to_string(),
             ],
         );
     }
@@ -1310,7 +1315,7 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "A condition parse error has occured. ')' was expected but not found.".to_string(),
+                "A condition parse error has occurred. ')' was expected but not found.".to_string(),
             ],
         );
     }
@@ -1330,7 +1335,7 @@ mod tests {
         details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        check_rule_parse_error(rule_str,vec!["A condition parse error has occured. Unknown error. Maybe it is because there are multiple names of selection nodes.".to_string()]);
+        check_rule_parse_error(rule_str,vec!["A condition parse error has occurred. Unknown error. Maybe it is because there are multiple names of selection nodes.".to_string()]);
     }
 
     #[test]
@@ -1351,7 +1356,7 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "A condition parse error has occured. An illegal logical operator(and, or) was found."
+                "A condition parse error has occurred. An illegal logical operator(and, or) was found."
                     .to_string(),
             ],
         );
@@ -1375,7 +1380,7 @@ mod tests {
         check_rule_parse_error(
             rule_str,
             vec![
-                "A condition parse error has occured. An illegal logical operator(and, or) was found."
+                "A condition parse error has occurred. An illegal logical operator(and, or) was found."
                     .to_string(),
             ],
         );
@@ -1396,7 +1401,7 @@ mod tests {
         details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
         "#;
 
-        check_rule_parse_error(rule_str,vec!["A condition parse error has occured. The use of a logical operator(and, or) was wrong.".to_string()]);
+        check_rule_parse_error(rule_str,vec!["A condition parse error has occurred. The use of a logical operator(and, or) was wrong.".to_string()]);
     }
 
     #[test]
@@ -1416,7 +1421,7 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["A condition parse error has occured. An illegal not was found.".to_string()],
+            vec!["A condition parse error has occurred. An illegal not was found.".to_string()],
         );
     }
 
@@ -1437,7 +1442,7 @@ mod tests {
 
         check_rule_parse_error(
             rule_str,
-            vec!["A condition parse error has occured. Not is continuous.".to_string()],
+            vec!["A condition parse error has occurred. Not is continuous.".to_string()],
         );
     }
 }

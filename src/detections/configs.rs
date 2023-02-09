@@ -1,10 +1,11 @@
 use crate::detections::message::AlertMessage;
 use crate::detections::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::detections::utils;
+use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::profile::{load_profile, Profile};
 use chrono::{DateTime, Utc};
-use clap::{Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
+use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
@@ -13,14 +14,19 @@ use regex::Regex;
 use std::env::current_exe;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
+use std::{fs, process};
 use terminal_size::{terminal_size, Width};
+use yaml_rust::{Yaml, YamlLoader};
 
-use super::message::create_output_filter_config;
+use super::message::{create_output_filter_config, LEVEL_ABBR_MAP};
 use super::utils::check_setting_path;
 
 lazy_static! {
     pub static ref STORED_STATIC: RwLock<Option<StoredStatic>> = RwLock::new(None);
     pub static ref STORED_EKEY_ALIAS: RwLock<Option<EventKeyAliasConfig>> = RwLock::new(None);
+    pub static ref GEOIP_DB_PARSER: RwLock<Option<GeoIPSearch>> = RwLock::new(None);
+    pub static ref GEOIP_DB_YAML: RwLock<Option<HashMap<CompactString, Yaml>>> = RwLock::new(None);
+    pub static ref GEOIP_FILTER: RwLock<Option<Vec<Yaml>>> = RwLock::new(None);
     pub static ref CURRENT_EXE_PATH: PathBuf =
         current_exe().unwrap().parent().unwrap().to_path_buf();
     pub static ref IDS_REGEX: Regex =
@@ -43,19 +49,21 @@ pub struct StoredStatic {
     pub config: Config,
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
-    pub ch_config: HashMap<String, String>,
+    pub ch_config: HashMap<CompactString, CompactString>,
     pub quiet_errors_flag: bool,
     pub verbose_flag: bool,
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
-    pub default_details: HashMap<String, String>,
+    pub default_details: HashMap<CompactString, CompactString>,
     pub html_report_flag: bool,
     pub profiles: Option<Vec<(CompactString, Profile)>>,
     pub event_timeline_config: EventInfoConfig,
     pub target_eventids: TargetEventIds,
     pub thread_number: Option<usize>,
+    pub json_input_flag: bool,
+    pub output_path: Option<PathBuf>,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -85,6 +93,152 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.input_args.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.verbose,
             _ => false,
+        };
+        let json_input_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.json_input,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.json_input,
+            Some(Action::LogonSummary(opt)) => opt.input_args.json_input,
+            Some(Action::Metrics(opt)) => opt.input_args.json_input,
+            Some(Action::PivotKeywordsList(opt)) => opt.input_args.json_input,
+            _ => false,
+        };
+        let is_valid_min_level = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => LEVEL_ABBR_MAP
+                .keys()
+                .any(|level| &opt.output_options.min_level.to_lowercase() == level),
+            Some(Action::JsonTimeline(opt)) => LEVEL_ABBR_MAP
+                .keys()
+                .any(|level| &opt.output_options.min_level.to_lowercase() == level),
+            Some(Action::PivotKeywordsList(opt)) => LEVEL_ABBR_MAP
+                .keys()
+                .any(|level| &opt.min_level.to_lowercase() == level),
+            _ => true,
+        };
+        let is_valid_exact_level = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => {
+                opt.output_options.exact_level.is_none()
+                    || LEVEL_ABBR_MAP.keys().any(|level| {
+                        &opt.output_options
+                            .exact_level
+                            .as_ref()
+                            .unwrap()
+                            .to_lowercase()
+                            == level
+                    })
+            }
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.exact_level.is_none()
+                    || LEVEL_ABBR_MAP.keys().any(|level| {
+                        &opt.output_options
+                            .exact_level
+                            .as_ref()
+                            .unwrap()
+                            .to_lowercase()
+                            == level
+                    })
+            }
+            Some(Action::PivotKeywordsList(opt)) => {
+                opt.exact_level.is_none()
+                    || LEVEL_ABBR_MAP
+                        .keys()
+                        .any(|level| &opt.exact_level.as_ref().unwrap().to_lowercase() == level)
+            }
+            _ => true,
+        };
+        if !is_valid_min_level || !is_valid_exact_level {
+            AlertMessage::alert(" You specified an invalid level. Please specify informational, low, medium, high or critical.").ok();
+            process::exit(1);
+        }
+
+        let geo_ip_db_result = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+                &opt.geo_ip,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ),
+            Some(Action::JsonTimeline(opt)) => GeoIPSearch::check_exist_geo_ip_files(
+                &opt.geo_ip,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ),
+            _ => Ok(None),
+        };
+        if let Err(err_msg) = geo_ip_db_result {
+            AlertMessage::alert(&err_msg).ok();
+            process::exit(1);
+        }
+        if let Some(geo_ip_db_path) = geo_ip_db_result.unwrap() {
+            *GEOIP_DB_PARSER.write().unwrap() = Some(GeoIPSearch::new(
+                &geo_ip_db_path,
+                vec![
+                    "GeoLite2-ASN.mmdb",
+                    "GeoLite2-Country.mmdb",
+                    "GeoLite2-City.mmdb",
+                ],
+            ));
+            let geo_ip_file_path =
+                utils::check_setting_path(config_path, "geoip_field_mapping", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/geoip_field_mapping.yaml",
+                            true,
+                        )
+                        .unwrap()
+                    });
+            if !geo_ip_file_path.exists() {
+                AlertMessage::alert(
+                    "Could not find the geoip_field_mapping.yaml config file. Please run update-rules."
+                )
+                .ok();
+                process::exit(1);
+            }
+            let geo_ip_mapping = if let Ok(loaded_yaml) =
+                YamlLoader::load_from_str(&fs::read_to_string(geo_ip_file_path).unwrap())
+            {
+                loaded_yaml
+            } else {
+                AlertMessage::alert("Parse error in geoip_field_mapping.yaml.").ok();
+                YamlLoader::load_from_str("").unwrap()
+            };
+            let target_map = &geo_ip_mapping[0];
+            let empty_yaml_vec: Vec<Yaml> = vec![];
+            *GEOIP_FILTER.write().unwrap() = Some(
+                target_map["Filter"]
+                    .as_vec()
+                    .unwrap_or(&empty_yaml_vec)
+                    .to_owned(),
+            );
+            let mut static_geoip_conf = HashMap::new();
+            let check_target_map = vec!["SrcIP", "TgtIP"];
+            for check_key in check_target_map {
+                if !target_map[check_key].is_badvalue()
+                    && !target_map[check_key]
+                        .as_vec()
+                        .unwrap_or(&empty_yaml_vec)
+                        .is_empty()
+                {
+                    static_geoip_conf.insert(
+                        CompactString::from(check_key),
+                        target_map[check_key].clone(),
+                    );
+                }
+            }
+            *GEOIP_DB_YAML.write().unwrap() = Some(static_geoip_conf);
+        };
+        let output_path = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::JsonTimeline(opt)) => opt.output.as_ref(),
+            Some(Action::Metrics(opt)) => opt.output.as_ref(),
+            Some(Action::PivotKeywordsList(opt)) => opt.output.as_ref(),
+            Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
+            _ => None,
         };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -163,6 +317,8 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
             ),
+            json_input_flag,
+            output_path: output_path.cloned(),
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -186,7 +342,7 @@ impl StoredStatic {
         ret
     }
     /// detailsのdefault値をファイルから読み取る関数
-    pub fn get_default_details(filepath: &str) -> HashMap<String, String> {
+    pub fn get_default_details(filepath: &str) -> HashMap<CompactString, CompactString> {
         let read_result = utils::read_csv(filepath);
         match read_result {
             Err(_e) => {
@@ -194,7 +350,7 @@ impl StoredStatic {
                 HashMap::new()
             }
             Ok(lines) => {
-                let mut ret: HashMap<String, String> = HashMap::new();
+                let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
                 lines
                     .iter()
                     .try_for_each(|line| -> Result<(), String> {
@@ -229,7 +385,10 @@ impl StoredStatic {
                                 )
                             }
                         };
-                        ret.insert(format!("{}_{}", provider, eid), details.to_string());
+                        ret.insert(
+                            CompactString::from(format!("{provider}_{eid}")),
+                            CompactString::from(details),
+                        );
                         Ok(())
                     })
                     .ok();
@@ -257,7 +416,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
@@ -265,7 +425,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
@@ -273,7 +434,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
@@ -281,7 +443,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Print event ID metrics
     Metrics(MetricsOption),
@@ -289,7 +452,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
@@ -297,7 +461,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
@@ -306,7 +471,7 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        version
+        disable_help_flag = true
     )]
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
@@ -314,7 +479,8 @@ pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
-        term_width = 400
+        term_width = 400,
+        disable_help_flag = true
     )]
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
@@ -368,7 +534,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
     /// Specify output profile
-    #[arg(short = 'p', long = "profile")]
+    #[arg(short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 }
 
@@ -376,12 +542,13 @@ pub struct DefaultProfileOption {
 pub struct UpdateOption {
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"), 
+        help_heading = Some("Advanced"),
         short = 'r',
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "DIRECTORY/FILE"
+        value_name = "DIR/FILE",
+        display_order = 440
     )]
     pub rules: PathBuf,
 }
@@ -394,7 +561,8 @@ pub struct LevelTuningOption {
         long = "file",
         default_value = "./rules/config/level_tuning.txt",
         hide_default_value = true,
-        value_name = "FILE"
+        value_name = "FILE",
+        display_order = 320
     )]
     pub level_tuning: PathBuf,
 }
@@ -405,52 +573,64 @@ pub struct MetricsOption {
     pub input_args: InputOption,
 
     /// Save the Metrics in CSV format (ex: metrics.csv)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 }
 
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Save pivot words to separate files (ex: pivot-keywords.txt)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    /// Save pivot words to separate files (ex: PivotKeywords)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAMES-BASE", display_order = 410)]
     pub output: Option<PathBuf>,
 
-    /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules")]
+    /// Enable rules marked as deprecated (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',')]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
     #[arg(
-        help_heading = Some("Filtering"), 
+        help_heading = Some("Filtering"),
         short = 'm',
         long = "min-level",
         default_value = "informational",
         hide_default_value = true,
-        value_name = "LEVEL"
+        value_name = "LEVEL",
+        display_order = 390
     )]
     pub min_level: String,
 
-    /// Enable rules marked as noisy
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules")]
+    /// Scan for only specific levels (informational, low, medium, high, critical)
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'e',
+        long = "exact-level",
+        value_name = "LEVEL",
+        display_order = 311
+    )]
+    pub exact_level: Option<String>,
+
+    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
     pub end_timeline: Option<String>,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
+    /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 }
 
@@ -460,135 +640,153 @@ pub struct LogonSummaryOption {
     pub input_args: InputOption,
 
     /// Save the Logon summary in CSV format (ex: logon-summary.csv)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
 }
 
 /// Options can be set when outputting
 #[derive(Args, Clone, Debug)]
+#[clap(group(ArgGroup::new("level_rule_filtering").args(["min_level", "exact_level"]).multiple(false)))]
 pub struct OutputOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
     /// Specify output profile
-    #[arg(help_heading = Some("Output"), short = 'p', long = "profile")]
+    #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 
-    /// Save the timeline in format (csv-timeline ex: results.csv, json-timeline ex: results.json)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
-    pub output: Option<PathBuf>,
-
-    /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules")]
+    /// Enable rules marked as deprecated (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',')]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
     #[arg(
-        help_heading = Some("Filtering"), 
+        help_heading = Some("Filtering"),
         short = 'm',
         long = "min-level",
         default_value = "informational",
         hide_default_value = true,
-        value_name = "LEVEL"
+        value_name = "LEVEL",
+        display_order = 390,
     )]
     pub min_level: String,
 
-    /// Enable rules marked as noisy
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules")]
+    /// Scan for only specific levels (informational, low, medium, high, critical)
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'e',
+        long = "exact-level",
+        value_name = "LEVEL",
+        display_order = 311
+    )]
+    pub exact_level: Option<String>,
+
+    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
     pub end_timeline: Option<String>,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE")]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
-    /// Filter by Event IDs (config file: ./rules/config/target_event_IDs.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'e', long = "eid-filter")]
+    /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
-    #[arg(help_heading = Some("Time Format"), long = "European-time")]
+    #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
     pub european_time: bool,
 
     /// Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
-    #[arg(help_heading = Some("Time Format"), long = "ISO-8601")]
+    #[arg(help_heading = Some("Time Format"), long = "ISO-8601", display_order = 90)]
     pub iso_8601: bool,
 
     /// Output timestamp in RFC 2822 format (ex: Fri, 22 Feb 2022 22:00:00 -0600)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-2822")]
+    #[arg(help_heading = Some("Time Format"), long = "RFC-2822", display_order = 180)]
     pub rfc_2822: bool,
 
     /// Output timestamp in RFC 3339 format (ex: 2022-02-22 22:00:00.123456-06:00)
-    #[arg(help_heading = Some("Time Format"), long = "RFC-3339")]
+    #[arg(help_heading = Some("Time Format"), long = "RFC-3339", display_order = 180)]
     pub rfc_3339: bool,
 
     /// Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-military-time")]
+    #[arg(help_heading = Some("Time Format"), long = "US-military-time", display_order = 210)]
     pub us_military_time: bool,
 
     /// Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
-    #[arg(help_heading = Some("Time Format"), long = "US-time")]
+    #[arg(help_heading = Some("Time Format"), long = "US-time", display_order = 210)]
     pub us_time: bool,
 
     /// Output time in UTC format (default: local time)
-    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC")]
+    #[arg(help_heading = Some("Time Format"), short = 'U', long = "UTC", display_order = 210)]
     pub utc: bool,
 
-    /// Output event frequency timeline
-    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline")]
+    /// Output event frequency timeline (terminal needs to support unicode)
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 480)]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"), 
+        help_heading = Some("Advanced"),
         short = 'r',
         long,
         default_value = "./rules",
         hide_default_value = true,
-        value_name = "DIRECTORY/FILE"
+        value_name = "DIR/FILE",
+        display_order = 440
     )]
     pub rules: PathBuf,
 
-    /// Save detail Results Summary in html (ex: results.html)
-    #[arg(help_heading = Some("Output"), short = 'H', long="html-report", value_name = "FILE")]
+    /// Save Results Summary details to an HTML report (ex: results.html)
+    #[arg(help_heading = Some("Output"), short = 'H', long="HTML-report", value_name = "FILE", display_order = 80)]
     pub html_report: Option<PathBuf>,
 
-    /// Do not display result summary
-    #[arg(help_heading = Some("Display Settings"), long = "no-summary")]
+    /// Do not display Results Summary (slightly faster speed)
+    #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct InputOption {
     /// Directory of multiple .evtx files
-    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIRECTORY")]
+    #[arg(help_heading = Some("Input"), short = 'd', long, value_name = "DIR", display_order = 300)]
     pub directory: Option<PathBuf>,
 
     /// File path to one .evtx file
-    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE")]
+    #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
     pub filepath: Option<PathBuf>,
 
+    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+    #[arg(short = 'J', long = "JSON-input", display_order = 100)]
+    pub json_input: bool,
+
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
-    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis")]
+    #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", display_order = 380)]
     pub live_analysis: bool,
 
-    /// Specify additional target file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',')]
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
 
-    /// Thread number (default: optimal number for performance)
-    #[arg(short = 't', long = "thread-number", value_name = "NUMBER")]
+    /// Number of threads (default: optimal number for performance)
+    #[arg(
+        short = 't',
+        long = "threads",
+        value_name = "NUMBER",
+        display_order = 460
+    )]
     pub thread_number: Option<usize>,
 
     /// Quiet errors mode: do not save error logs
-    #[arg(short = 'Q', long = "quiet-errors")]
+    #[arg(short = 'Q', long = "quiet-errors", display_order = 430)]
     pub quiet_errors: bool,
 
     /// Specify custom rule config directory (default: ./rules/config)
@@ -597,17 +795,32 @@ pub struct InputOption {
         long = "rules-config",
         default_value = "./rules/config",
         hide_default_value = true,
-        value_name = "DIRECTORY"
+        value_name = "DIR",
+        display_order = 440
     )]
     pub config: PathBuf,
 
     /// Output verbose information
-    #[arg(short = 'v', long)]
+    #[arg(short = 'v', long, display_order = 480)]
     pub verbose: bool,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
+    // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
+    /// Add GeoIP (ASN, city, country) info to IP addresses
+    #[arg(
+        short = 'G',
+        long = "GeoIP",
+        value_name = "MAXMIND-DB-DIR",
+        display_order = 70
+    )]
+    pub geo_ip: Option<PathBuf>,
+
+    /// Save the timeline in CSV format (ex: results.csv)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
     #[clap(flatten)]
     pub output_options: OutputOption,
 }
@@ -617,9 +830,22 @@ pub struct JSONOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
-    /// Save the timeline in JSONL format (ex: -J -o results.jsonl)
-    #[arg(help_heading = Some("Output"), short = 'J', long = "jsonl", requires = "output")]
+    /// Save the timeline in JSON format (ex: results.json)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
+    /// Save the timeline in JSONL format (ex: -L -o results.jsonl)
+    #[arg(help_heading = Some("Output"), short = 'L', long = "JSONL-output", requires = "output", display_order = 100)]
     pub jsonl_timeline: bool,
+
+    /// Add GeoIP (ASN, city, country) info to IP addresses
+    #[arg(
+        short = 'G',
+        long = "GeoIP",
+        value_name = "MAXMIND-DB-DIR",
+        display_order = 70
+    )]
+    pub geo_ip: Option<PathBuf>,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -634,11 +860,11 @@ pub struct Config {
     pub action: Option<Action>,
 
     /// Disable color output
-    #[arg(long = "no-color", global = true)]
+    #[arg(long = "no-color", global = true, display_order = 400)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
-    #[arg(short, long, global = true)]
+    #[arg(short, long, global = true, display_order = 430)]
     pub quiet: bool,
 
     /// Print debug information (memory usage, etc...)
@@ -897,10 +1123,14 @@ pub fn load_pivot_keywords(path: &str) {
     });
 }
 
-/// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数
-pub fn get_target_extensions(arg: Option<&Vec<String>>) -> HashSet<String> {
+/// --target-file-extで追加された拡張子から、調査対象ファイルの拡張子セットを返す関数。--json-inputがtrueの場合はjsonのみを対象とする
+pub fn get_target_extensions(arg: Option<&Vec<String>>, json_input_flag: bool) -> HashSet<String> {
     let mut target_file_extensions: HashSet<String> = convert_option_vecs_to_hs(arg);
-    target_file_extensions.insert(String::from("evtx"));
+    if json_input_flag {
+        target_file_extensions.insert(String::from("json"));
+    } else {
+        target_file_extensions.insert(String::from("evtx"));
+    }
     target_file_extensions
 }
 
@@ -917,12 +1147,12 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         Action::JsonTimeline(option) => Some(option.output_options.clone()),
         Action::PivotKeywordsList(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: option.enable_deprecated_rules,
             enable_noisy_rules: option.enable_noisy_rules,
             profile: None,
             exclude_status: option.exclude_status.clone(),
             min_level: option.min_level.clone(),
+            exact_level: option.exact_level.clone(),
             end_timeline: option.end_timeline.clone(),
             start_timeline: option.start_timeline.clone(),
             eid_filter: option.eid_filter,
@@ -940,12 +1170,12 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
             exclude_status: None,
             min_level: String::default(),
+            exact_level: None,
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
@@ -963,12 +1193,12 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
-            output: option.output.clone(),
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
             exclude_status: None,
             min_level: String::default(),
+            exact_level: None,
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
@@ -994,13 +1224,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 quiet_errors: false,
                 config: Path::new("./rules/config").to_path_buf(),
                 verbose: false,
+                json_input: false,
             },
-            output: None,
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
             profile: None,
             exclude_status: None,
             min_level: String::default(),
+            exact_level: None,
             end_timeline: None,
             start_timeline: None,
             eid_filter: false,
@@ -1143,7 +1374,7 @@ mod tests {
     fn test_get_target_extensions() {
         let data = vec!["evtx_data".to_string(), "evtx_stars".to_string()];
         let arg = Some(&data);
-        let ret = configs::get_target_extensions(arg);
+        let ret = configs::get_target_extensions(arg, false);
         let expect: HashSet<&str> = HashSet::from(["evtx", "evtx_data", "evtx_stars"]);
         assert_eq!(ret.len(), expect.len());
         for contents in expect.iter() {
@@ -1153,7 +1384,7 @@ mod tests {
 
     #[test]
     fn no_target_extensions() {
-        let ret = configs::get_target_extensions(None);
+        let ret = configs::get_target_extensions(None, false);
         let expect: HashSet<&str> = HashSet::from(["evtx"]);
         assert_eq!(ret.len(), expect.len());
         for contents in expect.iter() {

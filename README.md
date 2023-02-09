@@ -605,7 +605,7 @@ This is based on provider name and event IDs.
 
 `./rules/config/eventkey_alias.txt`: This file has the mappings of short name aliases for fields and their original longer field names.
 
-Example: 
+Example:
 ```
 InstanceID,Event.UserData.UMDFHostDeviceArrivalBegin.InstanceId
 IntegrityLevel,Event.EventData.IntegrityLevel
@@ -770,7 +770,7 @@ Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 
 ## `pivot-keywords-list` command
 
-You can use the `pivot-keywords-list` command to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events. 
+You can use the `pivot-keywords-list` command to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 
 Important: by default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `pivot-keyword-list` command with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
 
@@ -852,7 +852,7 @@ You will normally just execute this: `hayabusa.exe update-rules`
 
 ## `level-tuning` command
 
-The `level-tuning` command will let you tune the alert levels for rules, either raising or decreasing the risk level according to your environment. 
+The `level-tuning` command will let you tune the alert levels for rules, either raising or decreasing the risk level according to your environment.
 
 
 ```
@@ -871,7 +871,7 @@ Normal usage: `hayabusa.exe level-tuning`
 Tune rule alert levels based on your custom config file: `hayabusa.exe level-tuning -f my_level_tuning.txt`
 
 ### `level-tuning` config file
- 
+
 Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
 However, the actual risk level will differ between environments.
 You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe level-tuning` which will update the `level` line in the rule file.
@@ -1308,7 +1308,7 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 # Contribution
 
-We would love any form of contribution. 
+We would love any form of contribution.
 Pull requests, rule creation and sample evtx logs are the best but feature requests, notifying us of bugs, etc... are also very welcome.
 
 At the least, if you like our tool then please give us a star on GitHub and show your support!

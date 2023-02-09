@@ -73,11 +73,18 @@ impl RuleNode {
         event_record: &EvtxRecordInfo,
         verbose_flag: bool,
         quiet_errors_flag: bool,
+        json_input_flag: bool,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
         let result = self.detection.select(event_record, eventkey_alias);
         if result && self.has_agg_condition() {
-            count::count(self, &event_record.record, verbose_flag, quiet_errors_flag);
+            count::count(
+                self,
+                &event_record.record,
+                verbose_flag,
+                quiet_errors_flag,
+                json_input_flag,
+            );
         }
         result
     }
@@ -382,12 +389,13 @@ mod tests {
                         quiet_errors: false,
                         config: Path::new("./rules/config").to_path_buf(),
                         verbose: false,
+                        json_input: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -404,6 +412,8 @@ mod tests {
                     html_report: None,
                     no_summary: false,
                 },
+                geo_ip: None,
+                output: None,
             })),
             no_color: false,
             quiet: false,
@@ -435,6 +445,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
                     expect_select
@@ -947,6 +958,7 @@ mod tests {
                     &recinfo,
                     dummy_stored_static.verbose_flag,
                     dummy_stored_static.quiet_errors_flag,
+                    dummy_stored_static.json_input_flag,
                     &dummy_stored_static.eventkey_alias,
                 );
                 assert!(rule_node.detection.aggregation_condition.is_some());

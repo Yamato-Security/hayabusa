@@ -56,13 +56,13 @@ impl RuleExclude {
         let f = File::open(filename);
         if f.is_err() {
             if stored_static.verbose_flag {
-                AlertMessage::warn(&format!("{} does not exist", filename)).ok();
+                AlertMessage::warn(&format!("{filename} does not exist")).ok();
             }
             if !stored_static.quiet_errors_flag {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("{} does not exist", filename));
+                    .push(format!("{filename} does not exist"));
             }
             return;
         }

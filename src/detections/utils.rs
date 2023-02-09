@@ -6,7 +6,7 @@ use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::options::htmlreport;
 
 use compact_str::CompactString;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use nested::Nested;
 use std::path::{Path, PathBuf};
@@ -18,15 +18,15 @@ use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
-use serde_json::Value;
+use serde_json::{json, Error, Value};
 use std::cmp::Ordering;
 use std::fs::File;
-use std::io;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
 use std::vec;
+use std::{fs, io};
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
 use super::configs::{Config, EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
@@ -87,7 +87,7 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
     };
     let f = File::open(filepath);
     if f.is_err() {
-        let errmsg = format!("Cannot open file. [file:{}]", filename);
+        let errmsg = format!("Cannot open file. [file:{filename}]");
         return Result::Err(errmsg);
     }
     let reader = BufReader::new(f.unwrap());
@@ -96,10 +96,78 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
     ))
 }
 
+/// convert json fmt string to serde_json Value.
+pub fn read_json_to_value(filename: &str) -> Result<Vec<Value>, String> {
+    let filepath = if filename.starts_with("./") {
+        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
+    } else {
+        filename.to_string()
+    };
+    let f = File::open(filepath.clone());
+    if f.is_err() {
+        let errmsg = format!("Cannot open file. [file:{filename}]");
+        return Result::Err(errmsg);
+    }
+    let reader = BufReader::new(f.unwrap());
+    let mut peekable_lines = reader.lines().peekable();
+    let first_line = peekable_lines.peek().unwrap();
+    let is_jsonl = match first_line {
+        Ok(s) => serde_json::from_str::<Value>(s).is_ok(),
+        Err(_) => false,
+    };
+    if is_jsonl {
+        let ret: Vec<Value> = peekable_lines
+            .into_iter()
+            .filter_map(|s| s.ok())
+            .filter(|s| !s.trim().is_empty())
+            .map(|line| {
+                let v: Value = serde_json::from_str(&line).unwrap();
+                json!({"Event":{"EventData": v}})
+            })
+            .collect();
+        return Result::Ok(ret);
+    }
+    let file_contents = fs::read_to_string(&filepath).unwrap();
+    let json_value: Result<Vec<Value>, Error> = serde_json::from_str(&file_contents);
+    match json_value {
+        Ok(records) => {
+            let ret = records
+                .into_iter()
+                .map(|record| json!({"Event":{"EventData": record}}))
+                .collect();
+            Result::Ok(ret)
+        }
+        Err(_) => {
+            let newline_replaced_contents = file_contents.replace(['\n', '\r'], "");
+            let json = format!(
+                "[{}]",
+                newline_replaced_contents
+                    .split("}{")
+                    .filter(|s| !s.trim().is_empty())
+                    .join("},{")
+            );
+            let all_record_json: Result<Value, Error> = serde_json::from_str(&json);
+            if let Err(err_msg) = all_record_json {
+                return Err(err_msg.to_string());
+            }
+            let records = all_record_json.unwrap().as_array().unwrap().clone();
+            let ret: Vec<Value> = records
+                .into_iter()
+                .map(|record| json!({"Event":{"EventData": record}}))
+                .collect();
+            Result::Ok(ret)
+        }
+    }
+}
+
 pub fn read_csv(filename: &str) -> Result<Nested<Vec<String>>, String> {
     let f = File::open(filename);
     if f.is_err() {
-        return Result::Err(format!("Cannot open file. [file:{}]", filename));
+        return Result::Err(format!("Cannot open file. [file:{filename}]"));
     }
     let mut contents: String = String::new();
     let mut ret = Nested::<Vec<String>>::new();
@@ -145,14 +213,19 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
-pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<String> {
+pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<CompactString> {
     if value.is_string() {
-        Option::Some(value.as_str().unwrap_or("").to_string())
+        let val_str = value.as_str().unwrap_or("");
+        if val_str.ends_with(',') {
+            Some(CompactString::from(val_str.strip_suffix(',').unwrap()))
+        } else {
+            Option::Some(CompactString::from(val_str))
+        }
     } else if value.is_object() || value.is_null() {
         // Object type is not specified record value.
         Option::None
     } else {
-        Option::Some(value.to_string())
+        Some(CompactString::from(value.to_string()))
     }
 }
 
@@ -263,9 +336,9 @@ pub fn write_color_buffer(
     let mut buf = wtr.buffer();
     buf.set_color(ColorSpec::new().set_fg(color)).ok();
     if newline_flag {
-        writeln!(buf, "{}", output_str).ok();
+        writeln!(buf, "{output_str}").ok();
     } else {
-        write!(buf, "{}", output_str).ok();
+        write!(buf, "{output_str}").ok();
     }
     wtr.print(&buf)
 }
@@ -283,11 +356,12 @@ pub fn get_writable_color(color: Option<Color>, config: &Config) -> Option<Color
  * CSVのrecord infoカラムに出力する文字列を作る
  */
 pub fn create_recordinfos(record: &Value) -> String {
-    let mut output = vec![];
+    let mut output = HashSet::new();
     _collect_recordinfo(&mut vec![], "", record, &mut output);
 
+    let mut output_vec: Vec<&(String, String)> = output.iter().collect();
     // 同じレコードなら毎回同じ出力になるようにソートしておく
-    output.sort_by(|(left, left_data), (right, right_data)| {
+    output_vec.sort_by(|(left, left_data), (right, right_data)| {
         let ord = left.cmp(right);
         if ord == Ordering::Equal {
             left_data.cmp(right_data)
@@ -296,9 +370,15 @@ pub fn create_recordinfos(record: &Value) -> String {
         }
     });
 
-    output
+    output_vec
         .iter()
-        .map(|(key, value)| format!("{}: {}", key, value))
+        .map(|(key, value)| {
+            if value.ends_with(',') {
+                format!("{}: {}", key, &value[..value.len() - 1])
+            } else {
+                format!("{key}: {value}")
+            }
+        })
         .join(" ¦ ")
 }
 
@@ -309,7 +389,7 @@ fn _collect_recordinfo<'a>(
     keys: &mut Vec<&'a str>,
     parent_key: &'a str,
     value: &'a Value,
-    output: &mut Vec<(String, String)>,
+    output: &mut HashSet<(String, String)>,
 ) {
     match value {
         Value::Array(ary) => {
@@ -351,7 +431,7 @@ fn _collect_recordinfo<'a>(
                     };
                     acc
                 });
-                output.push((parent_key.to_string(), strval));
+                output.insert((parent_key.to_string(), strval));
             }
         }
     }
@@ -507,7 +587,7 @@ pub fn output_and_data_stack_for_html(
 
     if html_report_flag {
         let mut output_data = Nested::<String>::new();
-        output_data.extend(vec![format!("- {}", output_str)]);
+        output_data.extend(vec![format!("- {output_str}")]);
         htmlreport::add_md_data(section_name, output_data);
     }
 }
@@ -517,6 +597,7 @@ mod tests {
     use std::path::Path;
 
     use crate::detections::utils::{self, check_setting_path, make_ascii_titlecase};
+    use compact_str::CompactString;
     use regex::Regex;
     use serde_json::Value;
 
@@ -625,8 +706,8 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
-            utils::get_serde_number_to_string(&event_record["Event"]["System"]["EventID"]).unwrap(),
-            "11111".to_owned()
+            utils::get_serde_number_to_string(&event_record["Event"]["System"]["EventID"]),
+            Some(CompactString::from("11111"))
         );
     }
 
@@ -711,6 +792,51 @@ mod tests {
                 .to_str()
                 .unwrap(),
             "fake"
+        );
+    }
+
+    #[test]
+    fn test_json_array_file_to_serde_json_value() {
+        let path = "test_files/evtx/test.json";
+        let records = utils::read_json_to_value(path).unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(
+            records[0]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:26.493Z"
+        );
+        assert_eq!(
+            records[1]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:30.540Z"
+        );
+    }
+
+    #[test]
+    fn test_jsonl_file_to_serde_json_value() {
+        let path = "test_files/evtx/test.jsonl";
+        let records = utils::read_json_to_value(path).unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(
+            records[0]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:26.493Z"
+        );
+        assert_eq!(
+            records[1]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:30.540Z"
+        );
+    }
+
+    #[test]
+    fn test_jq_c_file_to_serde_json_value() {
+        let path = "test_files/evtx/test-jq-output.json";
+        let records = utils::read_json_to_value(path).unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(
+            records[0]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:26.493Z"
+        );
+        assert_eq!(
+            records[1]["Event"]["EventData"]["@timestamp"],
+            "2020-05-02T02:55:30.540Z"
         );
     }
 }
