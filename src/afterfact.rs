@@ -1175,7 +1175,7 @@ fn output_json_str(
                 Profile::AllFieldInfo(_) | Profile::Details(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));
-                    let mut stocked_value:Vec<Vec<String>> = vec![];
+                    let mut stocked_value: Vec<Vec<String>> = vec![];
                     let mut key_index_stock = vec![];
                     for detail_contents in vec_data.iter() {
                         // 分解してキーとなりえる箇所を抽出する
@@ -1202,13 +1202,24 @@ fn output_json_str(
                             stocked_value.push(tmp_stock);
                         }
                     }
-                    if stocked_value.iter().counts_by(|x| x.len()).get(&0).unwrap_or(&0) != &key_index_stock.len() {
-                        if let Some((target_idx, _)) = key_index_stock.iter().enumerate().rfind(|(_, y)| "CmdLine" == *y) {
-                            let cmd_line_vec_idx_len = stocked_value[2*(target_idx+1) -1].len();
-                            stocked_value[2*(target_idx+1)-1][cmd_line_vec_idx_len -1].push_str(&format!(" {}:", key_index_stock[target_idx + 1]));
+                    if stocked_value
+                        .iter()
+                        .counts_by(|x| x.len())
+                        .get(&0)
+                        .unwrap_or(&0)
+                        != &key_index_stock.len()
+                    {
+                        if let Some((target_idx, _)) = key_index_stock
+                            .iter()
+                            .enumerate()
+                            .rfind(|(_, y)| "CmdLine" == *y)
+                        {
+                            let cmd_line_vec_idx_len =
+                                stocked_value[2 * (target_idx + 1) - 1].len();
+                            stocked_value[2 * (target_idx + 1) - 1][cmd_line_vec_idx_len - 1]
+                                .push_str(&format!(" {}:", key_index_stock[target_idx + 1]));
                             key_index_stock.remove(target_idx + 1);
                         }
-
                     }
                     let mut key_idx = 0;
                     let mut output_value_stock = String::default();
