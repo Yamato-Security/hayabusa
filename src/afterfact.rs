@@ -1175,16 +1175,25 @@ fn output_json_str(
                 Profile::AllFieldInfo(_) | Profile::Details(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));
-                    let mut stocked_value = vec![];
+                    let mut stocked_value:Vec<Vec<String>> = vec![];
                     let mut key_index_stock = vec![];
                     for detail_contents in vec_data.iter() {
                         // 分解してキーとなりえる箇所を抽出する
                         let mut tmp_stock = vec![];
-                        for sp in detail_contents.split(' ') {
+                        let mut space_split_contents = detail_contents.split(' ');
+                        while let Some(sp) = space_split_contents.next() {
                             if sp.ends_with(':') && sp.len() > 2 {
-                                stocked_value.push(tmp_stock);
-                                tmp_stock = vec![];
                                 key_index_stock.push(sp.replace(':', ""));
+                                if sp == "Payload:" {
+                                    stocked_value.push(vec![]);
+                                    stocked_value.push(
+                                        space_split_contents.map(|s| s.to_string()).collect(),
+                                    );
+                                    break;
+                                } else {
+                                    stocked_value.push(tmp_stock);
+                                    tmp_stock = vec![];
+                                }
                             } else {
                                 tmp_stock.push(sp.to_owned());
                             }
