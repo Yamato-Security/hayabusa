@@ -1198,7 +1198,17 @@ fn output_json_str(
                                 tmp_stock.push(sp.to_owned());
                             }
                         }
-                        stocked_value.push(tmp_stock);
+                        if !tmp_stock.is_empty() {
+                            stocked_value.push(tmp_stock);
+                        }
+                    }
+                    if stocked_value.iter().counts_by(|x| x.len()).get(&0).unwrap_or(&0) != &key_index_stock.len() {
+                        if let Some((target_idx, _)) = key_index_stock.iter().enumerate().rfind(|(_, y)| "CmdLine" == *y) {
+                            let cmd_line_vec_idx_len = stocked_value[2*(target_idx+1) -1].len();
+                            stocked_value[2*(target_idx+1)-1][cmd_line_vec_idx_len -1].push_str(&format!(" {}:", key_index_stock[target_idx + 1]));
+                            key_index_stock.remove(target_idx + 1);
+                        }
+
                     }
                     let mut key_idx = 0;
                     let mut output_value_stock = String::default();
