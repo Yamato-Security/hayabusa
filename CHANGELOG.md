@@ -21,6 +21,7 @@
 - Reduced memory usage by approximately 50% when reading JSON/L formatted logs. (#906) (@fukusuket)
 - Alphabetically sorted options based on their long names. (#904) (@hitenkoku)
 - Added JSON input support (`-J, --JSON-input` option) for `logon-summary`, `metrics` and `pivot-keywords-list` commands. (#908) (@hitenkoku)
+- Fixed misalignment of CmdLine and Payload fields in json output. (#895) (@hitenkoku)
 
 **Bug Fixes:**
 
