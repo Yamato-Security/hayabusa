@@ -891,8 +891,22 @@ impl App {
 
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
-            let meta = fs::metadata(file_path).ok();
-            total_file_size += ByteSize::b(meta.unwrap().len());
+            let file_size = match fs::metadata(file_path) {
+                Ok(res) => res.len(),
+                Err(err) => {
+                    if stored_static.verbose_flag {
+                        AlertMessage::warn(&err.to_string()).ok();
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {err}"));
+                    }
+                    0
+                }
+            };
+            total_file_size += ByteSize::b(file_size);
         }
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{total_size_output}");
