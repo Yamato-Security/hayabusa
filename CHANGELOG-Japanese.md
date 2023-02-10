@@ -21,11 +21,11 @@
 - JSON/L形式のログを読み込む際のメモリ使用量を約50%削減した。 (#906) (@fukusuket)
 - Longオプションを基にしたオプションの並べ替えを行った。 (#904) (@hitenkoku)
 - `-J, --JSON-input`オプションを`logon-summary`, `metrics`, `pivot-keywords-list`コマンドに対応させた。 (#908) (@hitenkoku)
-- JSON出力内のCmdLineとPayloadフィールドの出力が実際の情報と一致していない問題を修正した。 (#895) (@hitenkoku)
 
 **バグ修正:**
 
-- ルールの条件にバックスラッシュが4つある場合、ルールがマッチしない不具合を修正しました。 (#897) (@fukuseket)
+- ルールの条件にバックスラッシュが4つある場合、ルールがマッチしない不具合を修正した。 (#897) (@fukuseket)
+- JSON出力では、PowerShell EID 4103をパースする際に`Payload`フィールドが複数のフィールドに分離されるバグを修正した。(#895) (@hitenkoku)
 
 **脆弱性修正:**
 
