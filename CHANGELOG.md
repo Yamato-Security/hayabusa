@@ -25,7 +25,8 @@
 **Bug Fixes:**
 
 - Fixed a bug when rules with 4 consecutive backslashes in their conditions would not be detected. (#897) (@fukusuket)
-- Fixed avoid panic of getting file size. (#914) (@hitenkoku)
+- When parsing PowerShell EID 4103, the `Payload` field would be separated into multiple fields when outputting to JSON. (#895) (@hitenkoku)
+- Fixed a crash when looking up event log file size. (#914) (@hitenkoku)
 
 **Vulnerability Fixes:**
 

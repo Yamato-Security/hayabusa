@@ -1175,28 +1175,59 @@ fn output_json_str(
                 Profile::AllFieldInfo(_) | Profile::Details(_) => {
                     let mut output_stock: Vec<String> = vec![];
                     output_stock.push(format!("    \"{key}\": {{"));
-                    let mut stocked_value = vec![];
+                    let mut stocked_value: Vec<Vec<String>> = vec![];
                     let mut key_index_stock = vec![];
                     for detail_contents in vec_data.iter() {
                         // 分解してキーとなりえる箇所を抽出する
                         let mut tmp_stock = vec![];
-                        for sp in detail_contents.split(' ') {
+                        let mut space_split_contents = detail_contents.split(' ');
+                        while let Some(sp) = space_split_contents.next() {
                             if sp.ends_with(':') && sp.len() > 2 {
-                                stocked_value.push(tmp_stock);
-                                tmp_stock = vec![];
                                 key_index_stock.push(sp.replace(':', ""));
+                                if sp == "Payload:" {
+                                    stocked_value.push(vec![]);
+                                    stocked_value.push(
+                                        space_split_contents.map(|s| s.to_string()).collect(),
+                                    );
+                                    break;
+                                } else {
+                                    stocked_value.push(tmp_stock);
+                                    tmp_stock = vec![];
+                                }
                             } else {
                                 tmp_stock.push(sp.to_owned());
                             }
                         }
-                        stocked_value.push(tmp_stock);
+                        if !tmp_stock.is_empty() {
+                            stocked_value.push(tmp_stock);
+                        }
+                    }
+                    if stocked_value
+                        .iter()
+                        .counts_by(|x| x.len())
+                        .get(&0)
+                        .unwrap_or(&0)
+                        != &key_index_stock.len()
+                    {
+                        if let Some((target_idx, _)) = key_index_stock
+                            .iter()
+                            .enumerate()
+                            .rfind(|(_, y)| "CmdLine" == *y)
+                        {
+                            let cmd_line_vec_idx_len =
+                                stocked_value[2 * (target_idx + 1) - 1].len();
+                            stocked_value[2 * (target_idx + 1) - 1][cmd_line_vec_idx_len - 1]
+                                .push_str(&format!(" {}:", key_index_stock[target_idx + 1]));
+                            key_index_stock.remove(target_idx + 1);
+                        }
                     }
                     let mut key_idx = 0;
                     let mut output_value_stock = String::default();
                     for (value_idx, value) in stocked_value.iter().enumerate() {
-                        let mut tmp = if key_idx >= key_index_stock.len() {
-                            ""
-                        } else if value_idx == 0 && !value.is_empty() {
+                        if key_idx >= key_index_stock.len() {
+                            break;
+                        }
+                        let mut tmp = if value_idx == 0 && !value.is_empty() {
                             key.as_str()
                         } else {
                             key_index_stock[key_idx].as_str()
@@ -1206,21 +1237,12 @@ fn output_json_str(
                         }
                         output_value_stock.push_str(&value.join(" "));
                         //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                        let is_remain_split_stock = if key_idx == key_index_stock.len() - 2
+                        let is_remain_split_stock = key_idx == key_index_stock.len() - 2
                             && value_idx < stocked_value.len() - 1
                             && !output_value_stock.is_empty()
-                        {
-                            let mut ret = true;
-                            for remain_value in stocked_value[value_idx + 1..].iter() {
-                                if remain_value.is_empty() {
-                                    ret = false;
-                                    break;
-                                }
-                            }
-                            ret
-                        } else {
-                            false
-                        };
+                            && !stocked_value[value_idx + 1..]
+                                .iter()
+                                .any(|remain_value| remain_value.is_empty());
                         if (value_idx < stocked_value.len() - 1
                             && stocked_value[value_idx + 1].is_empty())
                             || is_remain_split_stock
@@ -1244,7 +1266,9 @@ fn output_json_str(
                             tmp = "";
                             key_idx += 1;
                         }
-                        if value_idx == stocked_value.len() - 1 {
+                        if value_idx == stocked_value.len() - 1
+                            && !(tmp.is_empty() && stocked_value.is_empty())
+                        {
                             let output_tmp = format!("{tmp}: {output_value_stock}");
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
