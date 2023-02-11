@@ -415,7 +415,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -424,7 +424,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -433,7 +433,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -442,7 +442,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -451,7 +451,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -460,7 +460,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -469,7 +469,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -478,7 +478,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -851,7 +851,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa 2.2.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}",
+    help_template = "\nHayabusa 2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}",
     term_width = 400,
     disable_help_flag = true
 )]
