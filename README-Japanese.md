@@ -862,7 +862,7 @@ Advanced:
 
 ## `level-tuning`コマンド
 
-The `level-tuning` command will let you tune the alert levels for rules, either raising or decreasing the risk level according to your environment.
+`level-tuning`コマンドを使用すると、環境に応じてリスク レベルを上げたり下げたりして、ルールのアラート レベルを調整できます。
 
 ```
 Usage: level-tuning [OPTIONS]
