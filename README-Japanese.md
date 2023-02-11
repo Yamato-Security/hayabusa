@@ -817,7 +817,7 @@ Filtering:
 
 ### `pivot-keywords-list`コマンドの使用例
 
-* Create a list of pivot keywords from critical alerts and save the results. (Results will be saved to `keywords-Ip Addresses.txt`, `keywords-Users.txt`, etc...):
+* 重要なアラートからピボットキーワードのリストを作成し、その結果を保存します。(結果は、`keywords-Ip Addresses.txt`、`keywords-Users.txt`等に保存されます):
 
 ```
 hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
@@ -825,8 +825,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
 
 ### `pivot-keywords-list`の設定ファイル
 
-You can customize what keywords you want to search for by editing `./config/pivot_keywords.txt`.
-This is the default setting:
+検索キーワードは、`./config/pivot_keywords.txt`を編集することでカスタマイズすることができます。
+デフォルト設定は以下の通りです:
 
 ```txt
 Users.SubjectUserName
@@ -839,11 +839,11 @@ Ip Addresses.IpAddress
 Processes.Image
 ```
 
-The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields.
+フォーマットは、`キーワード名.フィールド名`です。例えば、`Users`のリストを作成する場合、Hayabusaは、`SubjectUserName`、`TargetUserName`、`User`フィールドにあるすべての値をリストアップします。
 
 ## `update-rules`コマンド
 
-The `update-rules` command will sync the `rules` folder with the [Hayabusa rules github repository](https://github.com/Yamato-Security/hayabusa-rules), updating the rules and config files.
+`update-rules`コマンドは、`rules`フォルダを[HayabusaルールのGitHubリポジトリ](https://github.com/Yamato-Security/hayabusa-rules)と同期し、ルールと設定ファイルを更新します。
 
 ```
 Usage: update-rules [OPTIONS]
@@ -875,28 +875,28 @@ Options:
 
 ### `level-tuning`コマンドの使用例
 
-Normal usage: `hayabusa.exe level-tuning`
+* 通常使用: `hayabusa.exe level-tuning`
 
-Tune rule alert levels based on your custom config file: `hayabusa.exe level-tuning -f my_level_tuning.txt`
+* カスタム設定ファイルに基づくルールのアラートレベルの調整: `hayabusa.exe level-tuning -f my_level_tuning.txt`
 
 ### `level-tuning`の設定ファイル
 
-Hayabusa and Sigma rule authors will determine the risk level of the alert when writing their rules.
-However, the actual risk level will differ between environments.
-You can tune the risk level of the rules by adding them to `./rules/config/level_tuning.txt` and executing `hayabusa.exe level-tuning` which will update the `level` line in the rule file.
-Please note that the rule file will be updated directly.
+HayabubsaとSigmaのルール作成者は、アラートのリスクレベルを判定してルールを作成します。
+しかし、実際のリスクレベルは環境に応じて異なる場合があります。
+`./rules/config/level_tuning.txt`にルールを追加して `hayabusa.exe level-tuning`を実行すると、ルールファイル内の`level`行が更新され、リスクレベルを調整することができます。
+ルールファイルが直接更新されますので、ご注意ください。
 
-> Warning: Anytime you run `update-rules`, the original alert level will overwrite any settings you have changed, so you will need to run the `level-tuning` command after every time you run `update-rules` if you want to change the levels.
+> 注意: `update-rules`を実行するたびに、アラートレベルが元の設定に上書きされるので、レベルを変更したい場合は、`update-rules`を実行した後に、`level-tuning`コマンドも実行する必要があります。
 
-`./rules/config/level_tuning.txt` sample line:
+`./rules/config/level_tuning.txt`の一例:
 
 ```csv
 id,new_level
-00000000-0000-0000-0000-000000000000,informational # sample level tuning line
+00000000-0000-0000-0000-000000000000,informational # レベルチューニングのサンプル
 ```
 
-In this case, the risk level of the rule with an `id` of `00000000-0000-0000-0000-000000000000` in the rules directory will have its `level` rewritten to `informational`.
-The possible levels to set are `critical`, `high`, `medium`, `low` and `informational`.
+この場合、ルールディレクトリ内の`id`が`00000000-0000-0000000000`のルールのアラート`level`が、`informational`に書き換えられます。
+設定可能なレベルは、`critical`、`high`、`medium`、`low`、`informational`です。
 
 ## `set-default-profile`コマンド
 
@@ -923,40 +923,40 @@ Options:
 
 ### GeoIPのログエンリッチメント
 
-You can add GeoIP (ASN organization, city and country) information to SrcIP (source IP) fields and TgtIP (target IP) fields with the free GeoLite2 geolocation data.
+無償のGeoLite2のジオロケーションデータで、SrcIP（ソースIPアドレス）フィールドとTgtIP（ターゲットIPアドレス）フィールドにGeoIP（ASN組織、都市、国）情報を追加することができます。
 
-Steps:
-1. First sign up for a MaxMind account [here](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data).
-2. Download the three `.mmdb` files from the [download page](https://www.maxmind.com/en/accounts/current/geoip/downloads) and save them to a directory. The filenames should be called `GeoLite2-ASN.mmdb`,	`GeoLite2-City.mmdb` and `GeoLite2-Country.mmdb`.
-3. When running the `csv-timeline` or `json-timeline` commands, add the `-G` option followed by the directory with the MaxMind databases.
+手順:
+1. まずMaxMindのアカウントを[こちら](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)で登録してください。
+2. [ダウンロードページ](https://www.maxmind.com/en/accounts/current/geoip/downloads)から3つの`.mmdb`ファイルをダウンロードし、ディレクトリに保存してください。ファイル名は、`GeoLite2-ASN.mmdb`、`GeoLite2-City.mmdb`、`GeoLite2-Country.mmdb`であることをご確認ください。
+3. `csv-timeline`または`json-timeline`コマンドを実行する際には、`-G`オプションの後にMaxMindデータベースのあるディレクトリを追加してください。
 
-When `csv-timeline` is used, the following 6 columns will be additionally outputted: `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry`.
-When `json-timeline` is used, the same `SrcASN`, `SrcCity`, `SrcCountry`, `TgtASN`, `TgtCity`, `TgtCountry` fields will be added to the `Details` object, but only if they contain information.
+* `csv-timeline`を使用すると、次の6つのカラムが追加で出力されます: `SrcASN`、`SrcCity`、`SrcCountry`、`TgtASN`、`TgtCity`、`TgtCountry`
+* `json-timeline`を使用すると、同じ`SrcASN`、`SrcCity`、`SrcCountry`、`TgtASN`、`TgtCity`、`TgtCountry`フィールドが`Details`オブジェクトに追加されますが、情報を含む場合のみとなります。
 
-When `SrcIP` or `TgtIP` is localhost (`127.0.0.1`, `::1`, etc...), `SrcASN` or `TgtASN` will be outputted as `Local`.
-When `SrcIP` or `TgtIP` is a private IP address (`10.0.0.0/8`, `fe80::/10`, etc...), `SrcASN` or `TgtASN` will be outputted as `Private`.
+* `SrcIP`または`TgtIP`がlocalhost (`127.0.0.1`、`::1`等々)の場合、`SrcASN`または`TgtASN`は、`Local`として出力されます。
+* `SrcIP`または`TgtIP`がプライベートIPアドレス (`10.0.0.0/8`、`fe80::/10`等々)の場合、`SrcASN`または`TgtASN`は、`Private`として出力されます。
 
 #### GeoIPの設定ファイル
 
-The field names that contain source and target IP addresses that get looked up in the GeoIP databases are defined in `rules/config/geoip_field_mapping.yaml`.
-You can add to this list if necessary.
-There is also a filter section in this file that determines what events to extract IP address information from.
+GeoIPデータベースで検索される送信元と送信先のIPアドレスを含むフィールド名は、`rules/config/geoip_field_mapping.yaml`で定義されています。
+必要であれば、このリストに追加することができます。
+また、このファイルには、どのイベントからIPアドレス情報を抽出するかを決定するフィルタセクションもあります。
 
 #### GeoIPデータベースの自動アップデート
 
-MaxMind GeoIP databases are updated every 2 weeks.
-You can install the MaxMind `geoipupdate` tool [here](https://github.com/maxmind/geoipupdate) in order to automatically update these databases.
+MaxMind GeoIP データベースは、2 週間ごとに更新されます。
+これらのデータベースを自動的に更新するために、[こちら](https://github.com/maxmind/geoipupdate)からMaxMindの`geoipupdate`のツールをインストールすることができます。
 
-Steps on macOS:
+macOSでの手順:
 1. `brew install geoipupdate`
-2. Edit `/usr/local/etc/GeoIP.conf`: Put in your `AccountID` and `LicenseKey` you create after logging into the MaxMind website. Make sure the `EditionIDs` line says `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
-3. Run `geoipupdate`.
-4. add `-g /usr/local/var/GeoIP` when you want to add GeoIP information.
+2. `/usr/local/etc/GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
+3. `geoipupdate`を実行する。
+4. GeoIP情報を追加する場合は、`-G /usr/local/var/GeoIP`を追加する。
 
-Steps on Windows:
-1. Download the latest Windows binary (Ex: `geoipupdate_4.10.0_windows_amd64.zip`) from the [Releases](https://github.com/maxmind/geoipupdate/releases) page.
-2. Edit `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`: Put in your `AccountID` and `LicenseKey` you create after logging into the MaxMind website. Make sure the `EditionIDs` line says `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
-3. Run the `geoipupdate` executable.
+Windowsでの手順:
+1. [Releases](https://github.com/maxmind/geoipupdate/releases)ページからWindowsバイナリの最新版(例: `geoipupdate_4.10.0_windows_amd64.zip`)をダウンロードする。
+2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
+3. `geoipupdate`を実行する。
 
 # サンプルevtxファイルでHayabusaをテストする
 
@@ -1325,9 +1325,9 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 見つけたバグを[こちら](https://github.com/Yamato-Security/hayabusa/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5Bbug%5D)でご連絡ください。
 報告されたバグを喜んで修正します！
 
-If you find any issues (false positives, bugs, etc...) with Hayabusa rules, please report them to the hayabusa-rules github issues page [here](https://github.com/Yamato-Security/hayabusa-rules/issues/new).
+Hayabusaルールの問題点（誤検出、バグ等々）を発見された方は、hayabusa-rulesのGitHubの[Issues]((https://github.com/Yamato-Security/hayabusa-rules/issues/new)ページにご報告ください。
 
-If you find any issues (false positives, bugs, etc...) with Sigma rules, please report them to the upstream SigmaHQ github issues page [here](https://github.com/SigmaHQ/sigma/issues).
+Sigmaルールの問題点（誤検出、バグ等々）を発見された方は、上流のSigmaHQ GitHubの[Issues](https://github.com/SigmaHQ/sigma/issues)ページにご報告ください。
 
 # ライセンス
 
