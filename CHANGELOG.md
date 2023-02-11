@@ -1,6 +1,6 @@
 # Changes
 
-## 2.2.0 [2023/2/22] "Ninja Day Release"
+## 2.2.0 [2023/2/12] "SECCON Release"
 
 **New Features:**
 
