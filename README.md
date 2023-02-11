@@ -133,11 +133,15 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
 
 ### Threat Hunting and Enterprise-wide DFIR
 
-Hayabusa currently has over 3250 Sigma rules and around 150 Hayabusa built-in detection rules with more rules being added regularly. It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/). By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment. You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
+Hayabusa currently has over 3250 Sigma rules and around 150 Hayabusa built-in detection rules with more rules being added regularly.
+It can be used for enterprise-wide proactive threat hunting as well as DFIR (Digital Forensics and Incident Response) for free with [Velociraptor](https://docs.velociraptor.app/)'s [Hayabusa artifact](https://docs.velociraptor.app/exchange/artifacts/pages/windows.eventlogs.hayabusa/).
+By combining these two open-source tools, you can essentially retroactively reproduce a SIEM when there is no SIEM setup in the environment.
+You can learn about how to do this by watching [Eric Capuano](https://twitter.com/eric_capuano)'s Velociraptor walkthrough [here](https://www.youtube.com/watch?v=Q1IoGX--814).
 
 ### Fast Forensics Timeline Generation
 
-Windows event log analysis has traditionally been a very long and tedious process because Windows event logs are 1) in a data format that is hard to analyze and 2) the majority of data is noise and not useful for investigations. Hayabusa's goal is to extract out only useful data and present it in a concise as possible easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
+Windows event log analysis has traditionally been a very long and tedious process because Windows event logs are 1) in a data format that is hard to analyze and 2) the majority of data is noise and not useful for investigations.
+Hayabusa's goal is to extract out only useful data and present it in a concise as possible easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
 Hayabusa hopes to let analysts get 80% of their work done in 20% of the time when compared to traditional Windows event log analysis.
 
 # Screenshots
@@ -237,7 +241,7 @@ You can `git clone` the repository with the following command and compile binary
 git clone https://github.com/Yamato-Security/hayabusa.git --recursive
 ```
 
-Note: If you forget to use --recursive option, the `rules` folder, which is managed as a git submodule, will not be cloned.
+> **Note:** If you forget to use --recursive option, the `rules` folder, which is managed as a git submodule, will not be cloned.
 
 You can sync the `rules` folder and get latest Hayabusa rules with `git pull --recurse-submodules` or use the following command:
 
@@ -280,7 +284,7 @@ You can update to the latest Rust crates before compiling:
 cargo update
 ```
 
-Please let us know if anything breaks after you update.
+> Please let us know if anything breaks after you update.
 
 ## Cross-compiling 32-bit Windows Binaries
 
@@ -347,7 +351,9 @@ You may receive an alert from anti-virus or EDR products when trying to run haya
 These are false positives so will need to configure exclusions in your security products to allow hayabusa to run.
 If you are worried about malware or supply chain attacks, please check the hayabusa source code and compile the binaries yourself.
 
-You may experience slow runtime especially on the first run after a reboot due to the real-time protection of Windows Defender. You can avoid this by temporarily turning real-time protection off or adding an exclusion to the hayabusa runtime directory. (Please take into consideration the security risks before doing these.)
+You may experience slow runtime especially on the first run after a reboot due to the real-time protection of Windows Defender.
+You can avoid this by temporarily turning real-time protection off or adding an exclusion to the hayabusa runtime directory.
+(Please take into consideration the security risks before doing these.)
 
 ## Windows
 
@@ -410,6 +416,7 @@ You should now be able to run hayabusa.
 * `pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
 * `update-rules`: Sync the rules to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) GitHub repository.
 * `level-tuning`: Custom tune the alerts' `level`.
+* `list-profiles`: List the available output profiles.
 * `set-default-profile`: Change the default profile.
 
 # Usage
@@ -624,15 +631,14 @@ These rules are usually noisy by nature or due to false positives.
 
 `./rules/config/target_event_IDs.txt`: Only the event IDs specified in this file will be scanned if the EID filter is enabled.
 By default, Hayabusa will scan all events, but if you want to improve performance, please use the `-E, --EID-filter` option.
-This usually results in a 10~15% speed improvement.
+This usually results in a 10~25% speed improvement.
 
 ## `json-timeline` command
 
 The `json-timeline` command will create a forensics timeline of events in JSON or JSONL format.
-Outputting to JSONL will be faster and smaller file size than JSON so is good if you are going to just import the results into another tool.
+Outputting to JSONL will be faster and smaller file size than JSON so is good if you are going to just import the results into another tool like Elastic Stack.
 JSON is better if you are going to manually analyze the results with a text editor.
 CSV output is good for importing smaller timelines (usually less than 2GB) into tools like Excel or Timeline Explorer.
-JSONL is best for importing into tools like Elastic Stack.
 JSON is best for more detailed analysis of data (including large results files) with tools like `jq` as the `Details` fields are separated for easier analysis.
 (In the CSV output, all of the event log fields are in one big `Details` column making sorting of data, etc... more difficult.)
 
@@ -647,6 +653,12 @@ Options:
   -t, --threads <NUMBER>        Number of threads (default: optimal number for performance)
   -v, --verbose                 Output verbose information
 
+Output:
+  -H, --HTML-report <FILE>  Save Results Summary details to an HTML report (ex: results.html)
+  -L, --JSONL-output        Save the timeline in JSONL format (ex: -L -o results.jsonl)  
+  -o, --output <FILE>       Save the timeline in CSV format (ex: results.json)
+  -p, --profile <PROFILE>   Specify output profile
+
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
@@ -655,12 +667,6 @@ Input:
 Advanced:
   -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
       --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-
-Output:
-  -H, --HTML-report <FILE>  Save Results Summary details to an HTML report (ex: results.html)
-  -L, --JSONL-output        Save the timeline in JSONL format (ex: -L -o results.jsonl)
-  -o, --output <FILE>       Save the timeline in JSON format (ex: results.json)
-  -p, --profile <PROFILE>   Specify output profile
 
 Filtering:
   -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -756,7 +762,6 @@ Output:
 
 * Save results to a CSV file: `hayabusa.exe metrics -f metrics.csv`
 
-
 ### `metrics` command config file
 
 The channel, event IDs and titles of the events are defined in `rules/config/channel_eid_info.txt`.
@@ -774,7 +779,9 @@ Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 
 You can use the `pivot-keywords-list` command to create a list of unique pivot keywords to quickly identify abnormal users, hostnames, processes, etc... as well as correlate events.
 
-Important: by default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `pivot-keywords-list` command with the `-m` or `--min-level` option. For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc... There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
+Important: by default, hayabusa will return results from all events (informational and higher) so we highly recommend combining the `pivot-keywords-list` command with the `-m, --min-level` option.
+For example, start off with only creating keywords from `critical` alerts with `-m critical` and then continue with `-m high`, `-m medium`, etc...
+There will most likely be common keywords in your results that will match on many normal events, so after manually checking the results and creating a list of unique keywords in a single file, you can then create a narrowed down timeline of suspicious activity with a command like `grep -f keywords.txt timeline.csv`.
 
 ```
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
@@ -881,7 +888,6 @@ Please note that the rule file will be updated directly.
 
 > Warning: Anytime you run `update-rules`, the original alert level will overwrite any settings you have changed, so you will need to run the `level-tuning` command after every time you run `update-rules` if you want to change the levels.
 
-
 `./rules/config/level_tuning.txt` sample line:
 
 ```csv
@@ -891,7 +897,6 @@ id,new_level
 
 In this case, the risk level of the rule with an `id` of `00000000-0000-0000-0000-000000000000` in the rules directory will have its `level` rewritten to `informational`.
 The possible levels to set are `critical`, `high`, `medium`, `low` and `informational`.
-
 
 ## `set-default-profile` command
 
@@ -946,7 +951,7 @@ Steps on macOS:
 1. `brew install geoipupdate`
 2. Edit `/usr/local/etc/GeoIP.conf`: Put in your `AccountID` and `LicenseKey` you create after logging into the MaxMind website. Make sure the `EditionIDs` line says `EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`.
 3. Run `geoipupdate`.
-4. add `-g /usr/local/var/GeoIP` when you want to add GeoIP information.
+4. Add `-g /usr/local/var/GeoIP` when you want to add GeoIP information.
 
 Steps on Windows:
 1. Download the latest Windows binary (Ex: `geoipupdate_4.10.0_windows_amd64.zip`) from the [Releases](https://github.com/maxmind/geoipupdate/releases) page.
@@ -1008,7 +1013,8 @@ Instead of outputting the minimal `details` information, all field information i
 
 ### 6. `super-verbose` profile output
 
-`verbose` profile plus all field information (`%AllFieldInfo%`). **(Warning: this will usually double the output file size!)**
+`verbose` profile plus all field information (`%AllFieldInfo%`).
+**(Warning: this will usually double the output file size!)**
 
 `%Timestamp%`, `%Computer%`, `%Channel%`, `%Provider%`, `%EventID%`, `%Level%`, `%MitreTactics`, `%MitreTags%`, `%OtherTags%`, `%RecordID%`, `%RuleTitle%`, `%RuleAuthor%`, `%RuleCreationDate%`, `%RuleModifiedDate%`, `%Status%`, `%Details%`, `%RuleFile%`, `%EvtxFile%`, `%AllFieldInfo%`
 
@@ -1242,7 +1248,6 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 
 1. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification/blob/main/Sigma_specification.md).
 2. Rules that use `|near` or `|base64offset|contains`.
-
 
 # Other Windows Event Log Analyzers and Related Resources
 
