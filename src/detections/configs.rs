@@ -64,6 +64,7 @@ pub struct StoredStatic {
     pub thread_number: Option<usize>,
     pub json_input_flag: bool,
     pub output_path: Option<PathBuf>,
+    pub common_options: CommonOptions,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -76,6 +77,21 @@ impl StoredStatic {
             Some(Action::Metrics(opt)) => opt.input_args.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.input_args.quiet_errors,
             _ => false,
+        };
+        let common_options = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.common_options,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
+            Some(Action::LevelTuning(opt)) => opt.common_options,
+            Some(Action::LogonSummary(opt)) => opt.common_options,
+            Some(Action::Metrics(opt)) => opt.common_options,
+            Some(Action::PivotKeywordsList(opt)) => opt.common_options,
+            Some(Action::SetDefaultProfile(opt)) => opt.common_options,
+            Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
+            Some(Action::UpdateRules(opt)) => opt.common_options,
+            None => CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
         };
         let binding = Path::new("./rules/config").to_path_buf();
         let config_path = match &input_config.as_ref().unwrap().action {
@@ -319,6 +335,7 @@ impl StoredStatic {
             ),
             json_input_flag,
             output_path: output_path.cloned(),
+            common_options,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -486,10 +503,10 @@ pub enum Action {
     SetDefaultProfile(DefaultProfileOption),
 
     /// Print the list of contributors
-    ListContributors,
+    ListContributors(CommonOptions),
 
     /// List the output profiles
-    ListProfiles,
+    ListProfiles(CommonOptions),
 }
 
 impl Action {
@@ -504,8 +521,8 @@ impl Action {
                 Action::UpdateRules(_) => 5,
                 Action::LevelTuning(_) => 6,
                 Action::SetDefaultProfile(_) => 7,
-                Action::ListContributors => 8,
-                Action::ListProfiles => 9,
+                Action::ListContributors(_) => 8,
+                Action::ListProfiles(_) => 9,
             }
         } else {
             100
@@ -522,8 +539,8 @@ impl Action {
                 Action::UpdateRules(_) => "update-rules",
                 Action::LevelTuning(_) => "level-tuning",
                 Action::SetDefaultProfile(_) => "set-default-profile",
-                Action::ListContributors => "list-contributors",
-                Action::ListProfiles => "list-profiles",
+                Action::ListContributors(_) => "list-contributors",
+                Action::ListProfiles(_) => "list-profiles",
             }
         } else {
             ""
@@ -536,6 +553,9 @@ pub struct DefaultProfileOption {
     /// Specify output profile
     #[arg(short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -551,6 +571,9 @@ pub struct UpdateOption {
         display_order = 440
     )]
     pub rules: PathBuf,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -565,6 +588,9 @@ pub struct LevelTuningOption {
         display_order = 320
     )]
     pub level_tuning: PathBuf,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -575,6 +601,9 @@ pub struct MetricsOption {
     /// Save the Metrics in CSV format (ex: metrics.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -632,6 +661,9 @@ pub struct PivotKeywordOption {
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -642,6 +674,9 @@ pub struct LogonSummaryOption {
     /// Save the Logon summary in CSV format (ex: logon-summary.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 }
 
 /// Options can be set when outputting
@@ -752,6 +787,20 @@ pub struct OutputOption {
     /// Do not display Results Summary (slightly faster speed)
     #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+}
+
+#[derive(Copy, Args, Clone, Debug)]
+pub struct CommonOptions {
+    /// Disable color output
+    #[arg(long = "no-color", global = true, display_order = 400)]
+    pub no_color: bool,
+
+    /// Quiet mode: do not display the launch banner
+    #[arg(short, long, global = true, display_order = 430)]
+    pub quiet: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -858,14 +907,6 @@ pub struct JSONOutputOption {
 pub struct Config {
     #[command(subcommand)]
     pub action: Option<Action>,
-
-    /// Disable color output
-    #[arg(long = "no-color", global = true, display_order = 400)]
-    pub no_color: bool,
-
-    /// Quiet mode: do not display the launch banner
-    #[arg(short, long, global = true, display_order = 430)]
-    pub quiet: bool,
 
     /// Print debug information (memory usage, etc...)
     #[clap(long = "debug", global = true, hide = true)]
@@ -1167,6 +1208,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1190,6 +1232,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1213,8 +1256,9 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
         }),
-        Action::SetDefaultProfile(_) => Some(OutputOption {
+        Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
                 directory: None,
                 filepath: None,
@@ -1246,6 +1290,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
         }),
         _ => None,
     }

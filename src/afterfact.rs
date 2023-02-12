@@ -323,7 +323,7 @@ fn emit_csv<W: std::io::Write>(
                 if plus_header {
                     write_color_buffer(
                         &disp_wtr,
-                        get_writable_color(None, &stored_static.config),
+                        get_writable_color(None, stored_static.common_options.no_color),
                         &_get_serialized_disp_output(profile, true),
                         false,
                     )
@@ -337,7 +337,7 @@ fn emit_csv<W: std::io::Write>(
                             &color_map,
                             LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
                         ),
-                        &stored_static.config,
+                        stored_static.common_options.no_color,
                     ),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
@@ -447,14 +447,17 @@ fn emit_csv<W: std::io::Write>(
         if !rule_author_counter.is_empty() {
             write_color_buffer(
                 &disp_wtr,
-                get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
                 "Rule Authors:",
                 false,
             )
             .ok();
             write_color_buffer(
                 &disp_wtr,
-                get_writable_color(None, &stored_static.config),
+                get_writable_color(None, stored_static.common_options.no_color),
                 " ",
                 true,
             )
@@ -467,7 +470,10 @@ fn emit_csv<W: std::io::Write>(
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             "Results Summary:",
             true,
         )
@@ -491,28 +497,34 @@ fn emit_csv<W: std::io::Write>(
         };
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(255, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             "Events with hits",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 255)),
+                stored_static.common_options.no_color,
+            ),
             "Total events",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             ": ",
             false,
         )
@@ -521,14 +533,17 @@ fn emit_csv<W: std::io::Write>(
             (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(255, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             &saved_alerts_output,
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
@@ -537,14 +552,17 @@ fn emit_csv<W: std::io::Write>(
         let all_record_output = all_record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 255)),
+                stored_static.common_options.no_color,
+            ),
             &all_record_output,
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " (",
             false,
         )
@@ -556,7 +574,10 @@ fn emit_csv<W: std::io::Write>(
         );
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             &reduction_output,
             false,
         )
@@ -564,7 +585,7 @@ fn emit_csv<W: std::io::Write>(
 
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             ")",
             false,
         )

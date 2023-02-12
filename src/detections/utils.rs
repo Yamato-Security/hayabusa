@@ -29,7 +29,7 @@ use std::vec;
 use std::{fs, io};
 use termcolor::{BufferWriter, ColorSpec, WriteColor};
 
-use super::configs::{Config, EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
+use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
@@ -344,8 +344,8 @@ pub fn write_color_buffer(
 }
 
 /// no-colorのオプションの指定があるかを確認し、指定されている場合はNoneをかえし、指定されていない場合は引数で指定されたColorをSomeでラップして返す関数
-pub fn get_writable_color(color: Option<Color>, config: &Config) -> Option<Color> {
-    if config.no_color {
+pub fn get_writable_color(color: Option<Color>, no_color: bool) -> Option<Color> {
+    if no_color {
         None
     } else {
         color
