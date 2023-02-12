@@ -551,7 +551,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
     /// Specify output profile
-    #[arg(short = 'p', long = "profile", display_order = 420)]
+    #[arg(help_heading = Some("General Options"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 
     #[clap(flatten)]
@@ -580,6 +580,7 @@ pub struct UpdateOption {
 pub struct LevelTuningOption {
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[arg(
+        help_heading = Some("General Options"),
         short = 'f',
         long = "file",
         default_value = "./rules/config/level_tuning.txt",
@@ -795,11 +796,11 @@ pub struct OutputOption {
 #[derive(Copy, Args, Clone, Debug)]
 pub struct CommonOptions {
     /// Disable color output
-    #[arg(long = "no-color", global = true, display_order = 400)]
+    #[arg(help_heading = Some("General Options"), long = "no-color", global = true, display_order = 400)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
-    #[arg(short, long, global = true, display_order = 430)]
+    #[arg(help_heading = Some("General Options"), short, long, global = true, display_order = 430)]
     pub quiet: bool,
 }
 
@@ -814,7 +815,7 @@ pub struct InputOption {
     pub filepath: Option<PathBuf>,
 
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(short = 'J', long = "JSON-input", display_order = 100)]
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", display_order = 100)]
     pub json_input: bool,
 
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
@@ -827,6 +828,7 @@ pub struct InputOption {
 
     /// Number of threads (default: optimal number for performance)
     #[arg(
+        help_heading = Some("General Options"),
         short = 't',
         long = "threads",
         value_name = "NUMBER",
@@ -835,11 +837,12 @@ pub struct InputOption {
     pub thread_number: Option<usize>,
 
     /// Quiet errors mode: do not save error logs
-    #[arg(short = 'Q', long = "quiet-errors", display_order = 430)]
+    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
     pub quiet_errors: bool,
 
     /// Specify custom rule config directory (default: ./rules/config)
     #[arg(
+        help_heading = Some("General Options"),
         short = 'c',
         long = "rules-config",
         default_value = "./rules/config",
@@ -850,7 +853,7 @@ pub struct InputOption {
     pub config: PathBuf,
 
     /// Output verbose information
-    #[arg(short = 'v', long, display_order = 480)]
+    #[arg(help_heading = Some("General Options"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 }
 
@@ -859,6 +862,7 @@ pub struct CsvOutputOption {
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
+        help_heading = Some("General Options"),
         short = 'G',
         long = "GeoIP",
         value_name = "MAXMIND-DB-DIR",
@@ -889,6 +893,7 @@ pub struct JSONOutputOption {
 
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
+        help_heading = Some("General Options"),
         short = 'G',
         long = "GeoIP",
         value_name = "MAXMIND-DB-DIR",
