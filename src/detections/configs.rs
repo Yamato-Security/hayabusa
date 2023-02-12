@@ -562,7 +562,7 @@ pub struct DefaultProfileOption {
 pub struct UpdateOption {
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"),
+        help_heading = Some("General Options"),
         short = 'r',
         long,
         default_value = "./rules",
@@ -770,7 +770,7 @@ pub struct OutputOption {
 
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"),
+        help_heading = Some("General Options"),
         short = 'r',
         long,
         default_value = "./rules",
@@ -822,7 +822,7 @@ pub struct InputOption {
     pub live_analysis: bool,
 
     /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
