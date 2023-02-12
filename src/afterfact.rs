@@ -1493,6 +1493,7 @@ mod tests {
     use crate::afterfact::format_time;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
+    use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
     use crate::detections::configs::InputOption;
@@ -1567,14 +1568,16 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
-            no_color: false,
-            quiet: false,
             debug: false,
         });
         let stored_static = StoredStatic::create_static_data(dummy_config);
@@ -1634,6 +1637,10 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             };
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
@@ -1888,6 +1895,10 @@ mod tests {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (

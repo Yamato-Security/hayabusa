@@ -146,8 +146,8 @@ mod tests {
 
     use crate::{
         detections::configs::{
-            Action, Config, CsvOutputOption, InputOption, JSONOutputOption, OutputOption,
-            StoredStatic,
+            Action, CommonOptions, Config, CsvOutputOption, InputOption, JSONOutputOption,
+            OutputOption, StoredStatic,
         },
         options::htmlreport::{self, HtmlReporter},
     };
@@ -157,8 +157,6 @@ mod tests {
     fn create_dummy_stored_static(action: Option<Action>) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
             action,
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
@@ -241,6 +239,10 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: Some(Path::new("./dummy").to_path_buf()),
                 no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             },
             geo_ip: None,
             output: None,
@@ -281,6 +283,10 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             },
             geo_ip: None,
             output: None,
@@ -324,6 +330,10 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: Some(Path::new("./dummy").to_path_buf()),
                 no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             },
             jsonl_timeline: false,
             geo_ip: None,
@@ -365,6 +375,10 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             },
             jsonl_timeline: false,
             geo_ip: None,

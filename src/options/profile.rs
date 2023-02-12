@@ -368,8 +368,8 @@ mod tests {
     use std::path::Path;
 
     use crate::detections::configs::{
-        Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic, UpdateOption,
-        GEOIP_DB_PARSER,
+        Action, CommonOptions, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic,
+        UpdateOption, GEOIP_DB_PARSER,
     };
     use crate::options::profile::{get_profile_list, load_profile, Profile};
     use compact_str::CompactString;
@@ -378,8 +378,6 @@ mod tests {
     fn create_dummy_stored_static(action: Action) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
             action: Some(action),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
@@ -435,6 +433,10 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
                 },
                 geo_ip: None,
                 output: None,
@@ -536,6 +538,10 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
                 },
                 geo_ip: None,
                 output: None,
@@ -587,6 +593,10 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
                 },
                 geo_ip: None,
                 output: None,
@@ -668,6 +678,10 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
                 },
                 geo_ip: None,
                 output: None,
@@ -720,6 +734,10 @@ mod tests {
                 "test_files/config/profiles.yaml",
                 &create_dummy_stored_static(Action::UpdateRules(UpdateOption {
                     rules: Path::new("./rules").to_path_buf(),
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
                 }))
             )
         );

@@ -279,7 +279,7 @@ impl Update {
 #[cfg(test)]
 mod tests {
     use crate::{
-        detections::configs::{Action, Config, StoredStatic, UpdateOption},
+        detections::configs::{Action, CommonOptions, Config, StoredStatic, UpdateOption},
         options::update::Update,
     };
     use std::{path::Path, time::SystemTime};
@@ -290,9 +290,11 @@ mod tests {
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }));
         let prev_modified_rules = Update::get_updated_rules(
@@ -317,9 +319,11 @@ mod tests {
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }));
         let prev_modified_rules = Update::get_updated_rules(
@@ -344,9 +348,11 @@ mod tests {
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }));
         let prev_modified_rules = Update::get_updated_rules(

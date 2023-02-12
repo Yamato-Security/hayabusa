@@ -1428,8 +1428,9 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, Config, ConfigReader, CsvOutputOption, InputOption, OutputOption,
-                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
+                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, InputOption,
+                OutputOption, StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS,
+                STORED_STATIC,
             },
             detection,
             message::MESSAGES,
@@ -1476,12 +1477,14 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
                 },
                 geo_ip: None,
                 output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }

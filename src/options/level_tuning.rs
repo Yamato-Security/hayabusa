@@ -129,15 +129,17 @@ mod tests {
     use std::path::Path;
 
     use super::*;
-    use crate::detections::configs::{Action, Config, LevelTuningOption};
+    use crate::detections::configs::{Action, CommonOptions, Config, LevelTuningOption};
 
     fn create_dummy_stored_static(level_tuning_path: &str) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
             action: Some(Action::LevelTuning(LevelTuningOption {
                 level_tuning: Path::new(level_tuning_path).to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
