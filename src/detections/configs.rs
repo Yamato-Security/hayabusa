@@ -663,6 +663,12 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAMES-BASE", display_order = 410)]
     pub output: Option<PathBuf>,
 
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
+
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
@@ -708,12 +714,6 @@ pub struct PivotKeywordOption {
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
-
-    #[clap(flatten)]
-    pub common_options: CommonOptions,
-
-    #[clap(flatten)]
-    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Args, Clone, Debug)]
