@@ -905,7 +905,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa 2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}",
+    help_template = "\nHayabusa 2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
