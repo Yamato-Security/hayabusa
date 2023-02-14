@@ -743,6 +743,12 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
+
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
@@ -840,12 +846,6 @@ pub struct OutputOption {
     /// Do not display Results Summary (slightly faster speed)
     #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
-
-    #[clap(flatten)]
-    pub common_options: CommonOptions,
-
-    #[clap(flatten)]
-    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
