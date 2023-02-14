@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Reorganized option grouping. (#918) (@hitenkoku)
 
 **Bug Fixes:**
 
