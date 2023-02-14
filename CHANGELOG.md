@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
 
 **Bug Fixes:**
 
