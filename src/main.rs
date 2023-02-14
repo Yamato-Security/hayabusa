@@ -1428,9 +1428,9 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, InputOption,
-                OutputOption, StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS,
-                STORED_STATIC,
+                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
+                InputOption, OutputOption, StoredStatic, TargetEventIds, TargetEventTime,
+                STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::MESSAGES,
@@ -1450,12 +1450,6 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: true,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1480,6 +1474,14 @@ mod tests {
                     common_options: CommonOptions {
                         no_color: false,
                         quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: true,
                     },
                 },
                 geo_ip: None,
