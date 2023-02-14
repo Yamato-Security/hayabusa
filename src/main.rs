@@ -1133,13 +1133,33 @@ impl App {
     ) -> (detection::Detection, usize, Timeline) {
         let path = filepath.display();
         let mut record_cnt = 0;
-        // json形式はレコードごとに改行が入っている
-        let json_f = utils::read_json_to_value(filepath.to_str().unwrap_or_default()); // ファイルが存在しなければエラーとする
-        if let Err(e) = json_f {
-            AlertMessage::alert(&e).ok();
-            return (detection, record_cnt, tl);
-        }
-        let mut records = json_f.unwrap().into_iter();
+        let filename = filepath.to_str().unwrap_or_default();
+        let filepath = if filename.starts_with("./") {
+            check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string()
+        } else {
+            filename.to_string()
+        };
+        let jsonl_value_iter = utils::read_jsonl_to_value(&filepath);
+        let mut records = match jsonl_value_iter {
+            // JSONL形式の場合
+            Ok(values) => values,
+            // JSONL形式以外(JSON(Array or jq)形式)の場合
+            Err(_) => {
+                let json_value_iter = utils::read_json_to_value(&filepath);
+                match json_value_iter {
+                    Ok(values) => values,
+                    Err(e) => {
+                        AlertMessage::alert(&e).ok();
+                        return (detection, record_cnt, tl);
+                    }
+                }
+            }
+        };
+
         loop {
             let mut records_per_detect = vec![];
             while records_per_detect.len() < MAX_DETECT_RECORDS {

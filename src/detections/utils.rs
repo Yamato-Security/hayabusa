@@ -96,21 +96,11 @@ pub fn read_txt(filename: &str) -> Result<Nested<String>, String> {
     ))
 }
 
-/// convert json fmt string to serde_json Value.
-pub fn read_json_to_value(filename: &str) -> Result<Vec<Value>, String> {
-    let filepath = if filename.starts_with("./") {
-        check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string()
-    } else {
-        filename.to_string()
-    };
-    let f = File::open(filepath.clone());
+/// convert jsonl fmt string to serde_json Value iterator
+pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
+    let f = File::open(path);
     if f.is_err() {
-        let errmsg = format!("Cannot open file. [file:{filename}]");
-        return Result::Err(errmsg);
+        return Err("Cannot open file. [file:{path}]".to_string());
     }
     let reader = BufReader::new(f.unwrap());
     let mut peekable_lines = reader.lines().peekable();
@@ -120,29 +110,37 @@ pub fn read_json_to_value(filename: &str) -> Result<Vec<Value>, String> {
         Err(_) => false,
     };
     if is_jsonl {
-        let ret: Vec<Value> = peekable_lines
+        let ret = peekable_lines
             .into_iter()
             .filter_map(|s| s.ok())
             .filter(|s| !s.trim().is_empty())
             .map(|line| {
                 let v: Value = serde_json::from_str(&line).unwrap();
                 json!({"Event":{"EventData": v}})
-            })
-            .collect();
-        return Result::Ok(ret);
+            });
+        return Ok(Box::new(ret));
     }
-    let file_contents = fs::read_to_string(&filepath).unwrap();
-    let json_value: Result<Vec<Value>, Error> = serde_json::from_str(&file_contents);
-    match json_value {
-        Ok(records) => {
-            let ret = records
-                .into_iter()
-                .map(|record| json!({"Event":{"EventData": record}}))
-                .collect();
-            Result::Ok(ret)
+    Err("Conversion failed because it is not in JSONL format.".to_string())
+}
+
+/// convert json fmt string to serde_json Value iterator
+pub fn read_json_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>, String> {
+    let f = fs::read_to_string(path);
+    if f.is_err() {
+        return Err("Cannot open file. [file:{path}]".to_string());
+    }
+    let contents = f.unwrap();
+    let json_values: Result<Vec<Value>, Error> = serde_json::from_str(&contents);
+    let value_converter = |record: Value| json!({"Event":{"EventData": record}});
+    match json_values {
+        Ok(values) => {
+            // JSON(Array)形式の場合
+            let ret = values.into_iter().map(value_converter);
+            Ok(Box::new(ret))
         }
         Err(_) => {
-            let newline_replaced_contents = file_contents.replace(['\n', '\r'], "");
+            // jq形式の場合
+            let newline_replaced_contents = contents.replace(['\n', '\r'], "");
             let json = format!(
                 "[{}]",
                 newline_replaced_contents
@@ -150,16 +148,13 @@ pub fn read_json_to_value(filename: &str) -> Result<Vec<Value>, String> {
                     .filter(|s| !s.trim().is_empty())
                     .join("},{")
             );
-            let all_record_json: Result<Value, Error> = serde_json::from_str(&json);
-            if let Err(err_msg) = all_record_json {
+            let all_values_res: Result<Value, Error> = serde_json::from_str(&json);
+            if let Err(err_msg) = all_values_res {
                 return Err(err_msg.to_string());
             }
-            let records = all_record_json.unwrap().as_array().unwrap().clone();
-            let ret: Vec<Value> = records
-                .into_iter()
-                .map(|record| json!({"Event":{"EventData": record}}))
-                .collect();
-            Result::Ok(ret)
+            let values = all_values_res.unwrap().as_array().unwrap().clone();
+            let ret = values.into_iter().map(value_converter);
+            Ok(Box::new(ret))
         }
     }
 }
@@ -797,8 +792,14 @@ mod tests {
 
     #[test]
     fn test_json_array_file_to_serde_json_value() {
+        // 存在しないパスはErr
+        let r = utils::read_json_to_value("invalid path");
+        assert!(r.is_err());
+
+        // JSON(Array)形式を変換できること
         let path = "test_files/evtx/test.json";
         let records = utils::read_json_to_value(path).unwrap();
+        let records: Vec<Value> = records.into_iter().collect();
         assert_eq!(records.len(), 2);
         assert_eq!(
             records[0]["Event"]["EventData"]["@timestamp"],
@@ -812,8 +813,17 @@ mod tests {
 
     #[test]
     fn test_jsonl_file_to_serde_json_value() {
+        // 存在しないパスはErr
+        let r = utils::read_jsonl_to_value("invalid path");
+        assert!(r.is_err());
+        // 改行でフォーマットされたJSON(Array)形式もErr
+        let r = utils::read_jsonl_to_value("test_files/evtx/test.json");
+        assert!(r.is_err());
+
+        // JSONL形式を変換できること
         let path = "test_files/evtx/test.jsonl";
-        let records = utils::read_json_to_value(path).unwrap();
+        let records = utils::read_jsonl_to_value(path).unwrap();
+        let records: Vec<Value> = records.into_iter().collect();
         assert_eq!(records.len(), 2);
         assert_eq!(
             records[0]["Event"]["EventData"]["@timestamp"],
@@ -827,8 +837,14 @@ mod tests {
 
     #[test]
     fn test_jq_c_file_to_serde_json_value() {
+        // 存在しないパスはErr
+        let r = utils::read_json_to_value("invalid path");
+        assert!(r.is_err());
+
+        // jqコマンド出力結果のJSON形式を変換できること
         let path = "test_files/evtx/test-jq-output.json";
         let records = utils::read_json_to_value(path).unwrap();
+        let records: Vec<Value> = records.into_iter().collect();
         assert_eq!(records.len(), 2);
         assert_eq!(
             records[0]["Event"]["EventData"]["@timestamp"],

@@ -8,7 +8,8 @@
 
 **Enhancements:**
 
-- Reorganized option grouping. (#918) (@hitenkoku)
+- Reorganized the grouping of command line options. (#918) (@hitenkoku)
+- Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
 
 **Bug Fixes:**
 
