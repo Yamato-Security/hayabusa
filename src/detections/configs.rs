@@ -71,11 +71,13 @@ impl StoredStatic {
     pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
         let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
         let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.quiet_errors,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.quiet_errors,
-            Some(Action::LogonSummary(opt)) => opt.input_args.quiet_errors,
-            Some(Action::Metrics(opt)) => opt.input_args.quiet_errors,
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.quiet_errors,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.quiet_errors,
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.detect_common_options.quiet_errors
+            }
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             _ => false,
         };
         let common_options = match &input_config.as_ref().unwrap().action {
@@ -95,27 +97,27 @@ impl StoredStatic {
         };
         let binding = Path::new("./rules/config").to_path_buf();
         let config_path = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => &opt.output_options.input_args.config,
-            Some(Action::JsonTimeline(opt)) => &opt.output_options.input_args.config,
-            Some(Action::LogonSummary(opt)) => &opt.input_args.config,
-            Some(Action::Metrics(opt)) => &opt.input_args.config,
-            Some(Action::PivotKeywordsList(opt)) => &opt.input_args.config,
+            Some(Action::CsvTimeline(opt)) => &opt.output_options.detect_common_options.config,
+            Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
+            Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
+            Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
+            Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.verbose,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.verbose,
-            Some(Action::LogonSummary(opt)) => opt.input_args.verbose,
-            Some(Action::Metrics(opt)) => opt.input_args.verbose,
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.verbose,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.verbose,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
+            Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.json_input,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.json_input,
-            Some(Action::LogonSummary(opt)) => opt.input_args.json_input,
-            Some(Action::Metrics(opt)) => opt.input_args.json_input,
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.json_input,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.json_input,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
+            Some(Action::Metrics(opt)) => opt.detect_common_options.json_input,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.json_input,
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
@@ -418,11 +420,11 @@ impl StoredStatic {
 /// config情報からthred_numberの情報を抽出する関数
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
-        Action::CsvTimeline(opt) => opt.output_options.input_args.thread_number,
-        Action::JsonTimeline(opt) => opt.output_options.input_args.thread_number,
-        Action::LogonSummary(opt) => opt.input_args.thread_number,
-        Action::Metrics(opt) => opt.input_args.thread_number,
-        Action::PivotKeywordsList(opt) => opt.input_args.thread_number,
+        Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
+        Action::JsonTimeline(opt) => opt.output_options.detect_common_options.thread_number,
+        Action::LogonSummary(opt) => opt.detect_common_options.thread_number,
+        Action::Metrics(opt) => opt.detect_common_options.thread_number,
+        Action::PivotKeywordsList(opt) => opt.detect_common_options.thread_number,
         _ => None,
     }
 }
@@ -549,6 +551,47 @@ impl Action {
 }
 
 #[derive(Args, Clone, Debug)]
+pub struct DetectCommonOption {
+    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", display_order = 100)]
+    pub json_input: bool,
+
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Number of threads (default: optimal number for performance)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 't',
+        long = "threads",
+        value_name = "NUMBER",
+        display_order = 460
+    )]
+    pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
+    pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 'c',
+        long = "rules-config",
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "DIR",
+        display_order = 440
+    )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(help_heading = Some("General Options"), short = 'v', long, display_order = 480)]
+    pub verbose: bool,
+}
+
+#[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
     /// Specify output profile
     #[arg(help_heading = Some("General Options"), short = 'p', long = "profile", display_order = 420)]
@@ -605,6 +648,9 @@ pub struct MetricsOption {
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -665,6 +711,9 @@ pub struct PivotKeywordOption {
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -678,6 +727,9 @@ pub struct LogonSummaryOption {
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 /// Options can be set when outputting
@@ -791,6 +843,9 @@ pub struct OutputOption {
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
@@ -814,51 +869,16 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
     pub filepath: Option<PathBuf>,
 
-    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", display_order = 100)]
-    pub json_input: bool,
-
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", display_order = 380)]
     pub live_analysis: bool,
-
-    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
-    pub evtx_file_ext: Option<Vec<String>>,
-
-    /// Number of threads (default: optimal number for performance)
-    #[arg(
-        help_heading = Some("General Options"),
-        short = 't',
-        long = "threads",
-        value_name = "NUMBER",
-        display_order = 460
-    )]
-    pub thread_number: Option<usize>,
-
-    /// Quiet errors mode: do not save error logs
-    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
-    pub quiet_errors: bool,
-
-    /// Specify custom rule config directory (default: ./rules/config)
-    #[arg(
-        help_heading = Some("General Options"),
-        short = 'c',
-        long = "rules-config",
-        default_value = "./rules/config",
-        hide_default_value = true,
-        value_name = "DIR",
-        display_order = 440
-    )]
-    pub config: PathBuf,
-
-    /// Output verbose information
-    #[arg(help_heading = Some("General Options"), short = 'v', long, display_order = 480)]
-    pub verbose: bool,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
+    #[clap(flatten)]
+    pub output_options: OutputOption,
+
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
@@ -873,9 +893,6 @@ pub struct CsvOutputOption {
     /// Save the timeline in CSV format (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
-
-    #[clap(flatten)]
-    pub output_options: OutputOption,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1214,6 +1231,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
+            detect_common_options: option.detect_common_options.clone(),
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1238,6 +1256,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
+            detect_common_options: option.detect_common_options.clone(),
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1262,18 +1281,13 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
+            detect_common_options: option.detect_common_options.clone(),
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
             },
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -1296,6 +1310,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: false,
+            },
         }),
         _ => None,
     }

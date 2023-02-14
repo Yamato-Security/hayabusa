@@ -211,7 +211,7 @@ impl App {
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .input_args
+                    .detect_common_options
                     .evtx_file_ext
                     .as_ref(),
                 stored_static.json_input_flag,
