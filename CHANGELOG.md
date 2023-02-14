@@ -1,5 +1,23 @@
 # Changes
 
+## 2.2.2 [2023/2/XX] "XXX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
+**Vulnerability Fixes:**
+
+- XXX
+
 ## 2.2.0 [2023/2/12] "SECCON Release"
 
 **New Features:**
