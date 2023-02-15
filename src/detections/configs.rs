@@ -553,7 +553,7 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("General Options"), short = 'J', long = "JSON-input", display_order = 100)]
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 100)]
     pub json_input: bool,
 
     /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -851,11 +851,11 @@ pub struct OutputOption {
 #[derive(Copy, Args, Clone, Debug)]
 pub struct CommonOptions {
     /// Disable color output
-    #[arg(help_heading = Some("General Options"), long = "no-color", global = true, display_order = 400)]
+    #[arg(help_heading = Some("Display Settings"), long = "no-color", global = true, display_order = 400)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
-    #[arg(help_heading = Some("General Options"), short, long, global = true, display_order = 430)]
+    #[arg(help_heading = Some("Display Settings"), short, long, global = true, display_order = 430)]
     pub quiet: bool,
 }
 
@@ -882,7 +882,7 @@ pub struct CsvOutputOption {
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
-        help_heading = Some("General Options"),
+        help_heading = Some("Output"),
         short = 'G',
         long = "GeoIP",
         value_name = "MAXMIND-DB-DIR",
