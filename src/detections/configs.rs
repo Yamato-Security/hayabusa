@@ -553,11 +553,11 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 100)]
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 390)]
     pub json_input: bool,
 
     /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
     pub evtx_file_ext: Option<Vec<String>>,
 
     /// Number of threads (default: optimal number for performance)
@@ -582,12 +582,12 @@ pub struct DetectCommonOption {
         default_value = "./rules/config",
         hide_default_value = true,
         value_name = "DIR",
-        display_order = 440
+        display_order = 441
     )]
     pub config: PathBuf,
 
     /// Output verbose information
-    #[arg(help_heading = Some("Display settings"), short = 'v', long, display_order = 480)]
+    #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
 }
 
@@ -824,7 +824,7 @@ pub struct OutputOption {
     pub utc: bool,
 
     /// Output event frequency timeline (terminal needs to support unicode)
-    #[arg(help_heading = Some("Display settings"), short = 'T', long = "visualize-timeline", display_order = 480)]
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490)]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)
@@ -844,18 +844,18 @@ pub struct OutputOption {
     pub html_report: Option<PathBuf>,
 
     /// Do not display Results Summary (slightly faster speed)
-    #[arg(help_heading = Some("Display settings"), long = "no-summary", display_order = 400)]
+    #[arg(help_heading = Some("Display Settings"), long = "no-summary", display_order = 400)]
     pub no_summary: bool,
 }
 
 #[derive(Copy, Args, Clone, Debug)]
 pub struct CommonOptions {
     /// Disable color output
-    #[arg(help_heading = Some("Display settings"), long = "no-color", global = true, display_order = 400)]
+    #[arg(help_heading = Some("Display Settings"), long = "no-color", global = true, display_order = 400)]
     pub no_color: bool,
 
     /// Quiet mode: do not display the launch banner
-    #[arg(help_heading = Some("Display settings"), short, long, global = true, display_order = 430)]
+    #[arg(help_heading = Some("Display Settings"), short, long, global = true, display_order = 430)]
     pub quiet: bool,
 }
 
@@ -910,7 +910,7 @@ pub struct JSONOutputOption {
 
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
-        help_heading = Some("General Options"),
+        help_heading = Some("Output"),
         short = 'G',
         long = "GeoIP",
         value_name = "MAXMIND-DB-DIR",
