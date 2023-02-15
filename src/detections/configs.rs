@@ -593,16 +593,19 @@ pub struct DetectCommonOption {
 
 #[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
-    /// Specify output profile
-    #[arg(help_heading = Some("General Options"), short = 'p', long = "profile", display_order = 420)]
-    pub profile: Option<String>,
-
     #[clap(flatten)]
     pub common_options: CommonOptions,
+    /// Specify output profile
+
+    #[arg(help_heading = Some("General Options"), short = 'p', long = "profile", display_order = 420)]
+    pub profile: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct UpdateOption {
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
         help_heading = Some("General Options"),
@@ -614,27 +617,24 @@ pub struct UpdateOption {
         display_order = 440
     )]
     pub rules: PathBuf,
-
-    #[clap(flatten)]
-    pub common_options: CommonOptions,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct LevelTuningOption {
-    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
-    #[arg(
-        help_heading = Some("General Options"),
-        short = 'f',
-        long = "file",
-        default_value = "./rules/config/level_tuning.txt",
-        hide_default_value = true,
-        value_name = "FILE",
-        display_order = 320
-    )]
-    pub level_tuning: PathBuf,
-
     #[clap(flatten)]
     pub common_options: CommonOptions,
+
+    /// Tune alert levels (default: ./rules/config/level_tuning.txt)
+    #[arg(
+            help_heading = Some("General Options"),
+            short = 'f',
+            long = "file",
+            default_value = "./rules/config/level_tuning.txt",
+            hide_default_value = true,
+            value_name = "FILE",
+            display_order = 320
+        )]
+    pub level_tuning: PathBuf,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -665,9 +665,6 @@ pub struct PivotKeywordOption {
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
-
-    #[clap(flatten)]
-    pub detect_common_options: DetectCommonOption,
 
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
@@ -714,6 +711,9 @@ pub struct PivotKeywordOption {
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -745,9 +745,6 @@ pub struct OutputOption {
 
     #[clap(flatten)]
     pub common_options: CommonOptions,
-
-    #[clap(flatten)]
-    pub detect_common_options: DetectCommonOption,
 
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
@@ -794,6 +791,9 @@ pub struct OutputOption {
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
     #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
