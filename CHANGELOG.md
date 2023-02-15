@@ -1,6 +1,6 @@
 # Changes
 
-## 2.2.2 [2023/2/XX] "XXX Release"
+## 2.2.2 [2023/2/22] "Ninja Day Release"
 
 **New Features:**
 
@@ -8,6 +8,7 @@
 
 **Enhancements:**
 
+- Reorganized the grouping of command line options. (#918) (@hitenkoku)
 - Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
 
 **Bug Fixes:**

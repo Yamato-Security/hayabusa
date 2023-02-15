@@ -323,7 +323,7 @@ fn emit_csv<W: std::io::Write>(
                 if plus_header {
                     write_color_buffer(
                         &disp_wtr,
-                        get_writable_color(None, &stored_static.config),
+                        get_writable_color(None, stored_static.common_options.no_color),
                         &_get_serialized_disp_output(profile, true),
                         false,
                     )
@@ -337,7 +337,7 @@ fn emit_csv<W: std::io::Write>(
                             &color_map,
                             LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
                         ),
-                        &stored_static.config,
+                        stored_static.common_options.no_color,
                     ),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
@@ -447,14 +447,17 @@ fn emit_csv<W: std::io::Write>(
         if !rule_author_counter.is_empty() {
             write_color_buffer(
                 &disp_wtr,
-                get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
                 "Rule Authors:",
                 false,
             )
             .ok();
             write_color_buffer(
                 &disp_wtr,
-                get_writable_color(None, &stored_static.config),
+                get_writable_color(None, stored_static.common_options.no_color),
                 " ",
                 true,
             )
@@ -467,7 +470,10 @@ fn emit_csv<W: std::io::Write>(
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             "Results Summary:",
             true,
         )
@@ -491,28 +497,34 @@ fn emit_csv<W: std::io::Write>(
         };
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(255, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             "Events with hits",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 255)),
+                stored_static.common_options.no_color,
+            ),
             "Total events",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             ": ",
             false,
         )
@@ -521,14 +533,17 @@ fn emit_csv<W: std::io::Write>(
             (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(255, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             &saved_alerts_output,
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
@@ -537,14 +552,17 @@ fn emit_csv<W: std::io::Write>(
         let all_record_output = all_record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 255)),
+                stored_static.common_options.no_color,
+            ),
             &all_record_output,
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " (",
             false,
         )
@@ -556,7 +574,10 @@ fn emit_csv<W: std::io::Write>(
         );
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             &reduction_output,
             false,
         )
@@ -564,7 +585,7 @@ fn emit_csv<W: std::io::Write>(
 
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             ")",
             false,
         )
@@ -1472,8 +1493,10 @@ mod tests {
     use crate::afterfact::format_time;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
+    use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DetectCommonOption;
     use crate::detections::configs::InputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
@@ -1519,12 +1542,6 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
-                    json_input: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1546,14 +1563,24 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
-            no_color: false,
-            quiet: false,
             debug: false,
         });
         let stored_static = StoredStatic::create_static_data(dummy_config);
@@ -1586,12 +1613,6 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
-                    json_input: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1613,6 +1634,18 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
             };
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
@@ -1840,12 +1873,6 @@ mod tests {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
             },
             profile: None,
             enable_deprecated_rules: false,
@@ -1867,6 +1894,18 @@ mod tests {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: false,
+            },
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (

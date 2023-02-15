@@ -64,42 +64,60 @@ pub struct StoredStatic {
     pub thread_number: Option<usize>,
     pub json_input_flag: bool,
     pub output_path: Option<PathBuf>,
+    pub common_options: CommonOptions,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
     pub fn create_static_data(input_config: Option<Config>) -> StoredStatic {
         let action_id = Action::to_usize(input_config.as_ref().unwrap().action.as_ref());
         let quiet_errors_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.quiet_errors,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.quiet_errors,
-            Some(Action::LogonSummary(opt)) => opt.input_args.quiet_errors,
-            Some(Action::Metrics(opt)) => opt.input_args.quiet_errors,
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.quiet_errors,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.quiet_errors,
+            Some(Action::JsonTimeline(opt)) => {
+                opt.output_options.detect_common_options.quiet_errors
+            }
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
             _ => false,
+        };
+        let common_options = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.output_options.common_options,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.common_options,
+            Some(Action::LevelTuning(opt)) => opt.common_options,
+            Some(Action::LogonSummary(opt)) => opt.common_options,
+            Some(Action::Metrics(opt)) => opt.common_options,
+            Some(Action::PivotKeywordsList(opt)) => opt.common_options,
+            Some(Action::SetDefaultProfile(opt)) => opt.common_options,
+            Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
+            Some(Action::UpdateRules(opt)) => opt.common_options,
+            None => CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
         };
         let binding = Path::new("./rules/config").to_path_buf();
         let config_path = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => &opt.output_options.input_args.config,
-            Some(Action::JsonTimeline(opt)) => &opt.output_options.input_args.config,
-            Some(Action::LogonSummary(opt)) => &opt.input_args.config,
-            Some(Action::Metrics(opt)) => &opt.input_args.config,
-            Some(Action::PivotKeywordsList(opt)) => &opt.input_args.config,
+            Some(Action::CsvTimeline(opt)) => &opt.output_options.detect_common_options.config,
+            Some(Action::JsonTimeline(opt)) => &opt.output_options.detect_common_options.config,
+            Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
+            Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
+            Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.verbose,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.verbose,
-            Some(Action::LogonSummary(opt)) => opt.input_args.verbose,
-            Some(Action::Metrics(opt)) => opt.input_args.verbose,
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.verbose,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.verbose,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.verbose,
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
+            Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
-            Some(Action::CsvTimeline(opt)) => opt.output_options.input_args.json_input,
-            Some(Action::JsonTimeline(opt)) => opt.output_options.input_args.json_input,
-            Some(Action::LogonSummary(opt)) => opt.input_args.json_input,
-            Some(Action::Metrics(opt)) => opt.input_args.json_input,
-            Some(Action::PivotKeywordsList(opt)) => opt.input_args.json_input,
+            Some(Action::CsvTimeline(opt)) => opt.output_options.detect_common_options.json_input,
+            Some(Action::JsonTimeline(opt)) => opt.output_options.detect_common_options.json_input,
+            Some(Action::LogonSummary(opt)) => opt.detect_common_options.json_input,
+            Some(Action::Metrics(opt)) => opt.detect_common_options.json_input,
+            Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.json_input,
             _ => false,
         };
         let is_valid_min_level = match &input_config.as_ref().unwrap().action {
@@ -319,6 +337,7 @@ impl StoredStatic {
             ),
             json_input_flag,
             output_path: output_path.cloned(),
+            common_options,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -401,11 +420,11 @@ impl StoredStatic {
 /// config情報からthred_numberの情報を抽出する関数
 fn check_thread_number(config: &Config) -> Option<usize> {
     match config.action.as_ref()? {
-        Action::CsvTimeline(opt) => opt.output_options.input_args.thread_number,
-        Action::JsonTimeline(opt) => opt.output_options.input_args.thread_number,
-        Action::LogonSummary(opt) => opt.input_args.thread_number,
-        Action::Metrics(opt) => opt.input_args.thread_number,
-        Action::PivotKeywordsList(opt) => opt.input_args.thread_number,
+        Action::CsvTimeline(opt) => opt.output_options.detect_common_options.thread_number,
+        Action::JsonTimeline(opt) => opt.output_options.detect_common_options.thread_number,
+        Action::LogonSummary(opt) => opt.detect_common_options.thread_number,
+        Action::Metrics(opt) => opt.detect_common_options.thread_number,
+        Action::PivotKeywordsList(opt) => opt.detect_common_options.thread_number,
         _ => None,
     }
 }
@@ -415,7 +434,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -424,7 +443,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -433,7 +452,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -442,7 +461,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -451,7 +470,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -460,7 +479,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -469,7 +488,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -478,7 +497,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.2.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -486,10 +505,10 @@ pub enum Action {
     SetDefaultProfile(DefaultProfileOption),
 
     /// Print the list of contributors
-    ListContributors,
+    ListContributors(CommonOptions),
 
     /// List the output profiles
-    ListProfiles,
+    ListProfiles(CommonOptions),
 }
 
 impl Action {
@@ -504,8 +523,8 @@ impl Action {
                 Action::UpdateRules(_) => 5,
                 Action::LevelTuning(_) => 6,
                 Action::SetDefaultProfile(_) => 7,
-                Action::ListContributors => 8,
-                Action::ListProfiles => 9,
+                Action::ListContributors(_) => 8,
+                Action::ListProfiles(_) => 9,
             }
         } else {
             100
@@ -522,8 +541,8 @@ impl Action {
                 Action::UpdateRules(_) => "update-rules",
                 Action::LevelTuning(_) => "level-tuning",
                 Action::SetDefaultProfile(_) => "set-default-profile",
-                Action::ListContributors => "list-contributors",
-                Action::ListProfiles => "list-profiles",
+                Action::ListContributors(_) => "list-contributors",
+                Action::ListProfiles(_) => "list-profiles",
             }
         } else {
             ""
@@ -532,17 +551,64 @@ impl Action {
 }
 
 #[derive(Args, Clone, Debug)]
+pub struct DetectCommonOption {
+    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 390)]
+    pub json_input: bool,
+
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Number of threads (default: optimal number for performance)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 't',
+        long = "threads",
+        value_name = "NUMBER",
+        display_order = 460
+    )]
+    pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
+    pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+        help_heading = Some("General Options"),
+        short = 'c',
+        long = "rules-config",
+        default_value = "./rules/config",
+        hide_default_value = true,
+        value_name = "DIR",
+        display_order = 441
+    )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
+    pub verbose: bool,
+}
+
+#[derive(Args, Clone, Debug)]
 pub struct DefaultProfileOption {
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
     /// Specify output profile
-    #[arg(short = 'p', long = "profile", display_order = 420)]
+
+    #[arg(help_heading = Some("General Options"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct UpdateOption {
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"),
+        help_heading = Some("General Options"),
         short = 'r',
         long,
         default_value = "./rules",
@@ -555,15 +621,19 @@ pub struct UpdateOption {
 
 #[derive(Args, Clone, Debug)]
 pub struct LevelTuningOption {
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     #[arg(
-        short = 'f',
-        long = "file",
-        default_value = "./rules/config/level_tuning.txt",
-        hide_default_value = true,
-        value_name = "FILE",
-        display_order = 320
-    )]
+            help_heading = Some("General Options"),
+            short = 'f',
+            long = "file",
+            default_value = "./rules/config/level_tuning.txt",
+            hide_default_value = true,
+            value_name = "FILE",
+            display_order = 320
+        )]
     pub level_tuning: PathBuf,
 }
 
@@ -575,6 +645,12 @@ pub struct MetricsOption {
     /// Save the Metrics in CSV format (ex: metrics.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -586,6 +662,9 @@ pub struct PivotKeywordOption {
     /// Save pivot words to separate files (ex: PivotKeywords)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILENAMES-BASE", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
@@ -632,6 +711,9 @@ pub struct PivotKeywordOption {
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -642,6 +724,12 @@ pub struct LogonSummaryOption {
     /// Save the Logon summary in CSV format (ex: logon-summary.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
 }
 
 /// Options can be set when outputting
@@ -654,6 +742,9 @@ pub struct OutputOption {
     /// Specify output profile
     #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
 
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
@@ -701,6 +792,9 @@ pub struct OutputOption {
     #[arg(help_heading = Some("Filtering"), short = 'E', long = "EID-filter", display_order = 50)]
     pub eid_filter: bool,
 
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
+
     /// Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
     #[arg(help_heading = Some("Time Format"), long = "European-time", display_order = 50)]
     pub european_time: bool,
@@ -730,12 +824,12 @@ pub struct OutputOption {
     pub utc: bool,
 
     /// Output event frequency timeline (terminal needs to support unicode)
-    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 480)]
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 490)]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)
     #[arg(
-        help_heading = Some("Advanced"),
+        help_heading = Some("General Options"),
         short = 'r',
         long,
         default_value = "./rules",
@@ -754,6 +848,17 @@ pub struct OutputOption {
     pub no_summary: bool,
 }
 
+#[derive(Copy, Args, Clone, Debug)]
+pub struct CommonOptions {
+    /// Disable color output
+    #[arg(help_heading = Some("Display Settings"), long = "no-color", global = true, display_order = 400)]
+    pub no_color: bool,
+
+    /// Quiet mode: do not display the launch banner
+    #[arg(help_heading = Some("Display Settings"), short, long, global = true, display_order = 430)]
+    pub quiet: bool,
+}
+
 #[derive(Args, Clone, Debug)]
 pub struct InputOption {
     /// Directory of multiple .evtx files
@@ -764,52 +869,20 @@ pub struct InputOption {
     #[arg(help_heading = Some("Input"), short = 'f', long = "file", value_name = "FILE", display_order = 320)]
     pub filepath: Option<PathBuf>,
 
-    /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(short = 'J', long = "JSON-input", display_order = 100)]
-    pub json_input: bool,
-
     /// Analyze the local C:\Windows\System32\winevt\Logs folder
     #[arg(help_heading = Some("Input"), short = 'l', long = "live-analysis", display_order = 380)]
     pub live_analysis: bool,
-
-    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
-    #[arg(help_heading = Some("Advanced"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 460)]
-    pub evtx_file_ext: Option<Vec<String>>,
-
-    /// Number of threads (default: optimal number for performance)
-    #[arg(
-        short = 't',
-        long = "threads",
-        value_name = "NUMBER",
-        display_order = 460
-    )]
-    pub thread_number: Option<usize>,
-
-    /// Quiet errors mode: do not save error logs
-    #[arg(short = 'Q', long = "quiet-errors", display_order = 430)]
-    pub quiet_errors: bool,
-
-    /// Specify custom rule config directory (default: ./rules/config)
-    #[arg(
-        short = 'c',
-        long = "rules-config",
-        default_value = "./rules/config",
-        hide_default_value = true,
-        value_name = "DIR",
-        display_order = 440
-    )]
-    pub config: PathBuf,
-
-    /// Output verbose information
-    #[arg(short = 'v', long, display_order = 480)]
-    pub verbose: bool,
 }
 
 #[derive(Args, Clone, Debug)]
 pub struct CsvOutputOption {
+    #[clap(flatten)]
+    pub output_options: OutputOption,
+
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
+        help_heading = Some("Output"),
         short = 'G',
         long = "GeoIP",
         value_name = "MAXMIND-DB-DIR",
@@ -820,9 +893,6 @@ pub struct CsvOutputOption {
     /// Save the timeline in CSV format (ex: results.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
     pub output: Option<PathBuf>,
-
-    #[clap(flatten)]
-    pub output_options: OutputOption,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -840,6 +910,7 @@ pub struct JSONOutputOption {
 
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
+        help_heading = Some("Output"),
         short = 'G',
         long = "GeoIP",
         value_name = "MAXMIND-DB-DIR",
@@ -851,21 +922,13 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa 2.2.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}",
+    help_template = "\nHayabusa 2.2.2-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
 pub struct Config {
     #[command(subcommand)]
     pub action: Option<Action>,
-
-    /// Disable color output
-    #[arg(long = "no-color", global = true, display_order = 400)]
-    pub no_color: bool,
-
-    /// Quiet mode: do not display the launch banner
-    #[arg(short, long, global = true, display_order = 430)]
-    pub quiet: bool,
 
     /// Print debug information (memory usage, etc...)
     #[clap(long = "debug", global = true, hide = true)]
@@ -1167,6 +1230,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: option.detect_common_options.clone(),
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1190,6 +1255,8 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: option.detect_common_options.clone(),
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1213,18 +1280,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: option.detect_common_options.clone(),
         }),
-        Action::SetDefaultProfile(_) => Some(OutputOption {
+        Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
-                json_input: false,
             },
             enable_deprecated_rules: false,
             enable_noisy_rules: false,
@@ -1246,6 +1309,15 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: false,
+            },
         }),
         _ => None,
     }
