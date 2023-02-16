@@ -875,11 +875,13 @@ mod tests {
             assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
 
-            assert!(matcher.case_ignore_fast_match.is_some());
-            let fast_match = matcher.case_ignore_fast_match.as_ref().unwrap();
+            assert!(matcher.fast_match.is_some());
+            let fast_match = matcher.fast_match.as_ref().unwrap();
             assert_eq!(
                 *fast_match,
-                FastMatch::Exact("Microsoft-Windows-PowerShell/Operational".to_string())
+                vec![FastMatch::Exact(
+                    "Microsoft-Windows-PowerShell/Operational".to_string()
+                )]
             );
         }
 
@@ -898,7 +900,7 @@ mod tests {
             let matcher = child_node.matcher.as_ref().unwrap();
             assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(matcher.case_ignore_fast_match.is_none());
+            assert!(matcher.fast_match.is_none());
         }
 
         // ContextInfo
@@ -921,11 +923,11 @@ mod tests {
             let hostapp_en_matcher = hostapp_en_matcher.as_ref().unwrap();
             assert!(hostapp_en_matcher.is::<DefaultMatcher>());
             let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(hostapp_en_matcher.case_ignore_fast_match.is_some());
-            let fast_match = hostapp_en_matcher.case_ignore_fast_match.as_ref().unwrap();
+            assert!(hostapp_en_matcher.fast_match.is_some());
+            let fast_match = hostapp_en_matcher.fast_match.as_ref().unwrap();
             assert_eq!(
                 *fast_match,
-                FastMatch::Exact("Host Application".to_string())
+                vec![FastMatch::Exact("Host Application".to_string())]
             );
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
@@ -938,11 +940,11 @@ mod tests {
             let hostapp_jp_matcher = hostapp_jp_matcher.as_ref().unwrap();
             assert!(hostapp_jp_matcher.is::<DefaultMatcher>());
             let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(hostapp_jp_matcher.case_ignore_fast_match.is_some());
-            let fast_match = hostapp_jp_matcher.case_ignore_fast_match.as_ref().unwrap();
+            assert!(hostapp_jp_matcher.fast_match.is_some());
+            let fast_match = hostapp_jp_matcher.fast_match.as_ref().unwrap();
             assert_eq!(
                 *fast_match,
-                FastMatch::Exact("ホスト アプリケーション".to_string())
+                vec![FastMatch::Exact("ホスト アプリケーション".to_string())]
             );
         }
 
@@ -2298,39 +2300,39 @@ mod tests {
     }
     #[test]
     fn test_convert_to_fast_match() {
-        assert_eq!(DefaultMatcher::convert_to_fast_match("ab?"), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match("a*c"), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b"), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b*"), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\*"), None);
-        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*"), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("ab?", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("a*c", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b*", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\*", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*", true), None);
         assert_eq!(
-            DefaultMatcher::convert_to_fast_match("abc*").unwrap(),
-            FastMatch::StartsWith("abc".to_string())
+            DefaultMatcher::convert_to_fast_match("abc*", true).unwrap(),
+            vec![FastMatch::StartsWith("abc".to_string())]
         );
         assert_eq!(
-            DefaultMatcher::convert_to_fast_match(r"abc\\*").unwrap(),
-            FastMatch::StartsWith(r"abc\".to_string())
+            DefaultMatcher::convert_to_fast_match(r"abc\\*", true).unwrap(),
+            vec![FastMatch::StartsWith(r"abc\".to_string())]
         );
         assert_eq!(
-            DefaultMatcher::convert_to_fast_match("*abc").unwrap(),
-            FastMatch::EndsWith("abc".to_string())
+            DefaultMatcher::convert_to_fast_match("*abc", true).unwrap(),
+            vec![FastMatch::EndsWith("abc".to_string())]
         );
         assert_eq!(
-            DefaultMatcher::convert_to_fast_match("*abc*").unwrap(),
-            FastMatch::Contains("abc".to_string())
+            DefaultMatcher::convert_to_fast_match("*abc*", true).unwrap(),
+            vec![FastMatch::Contains("abc".to_string())]
         );
         assert_eq!(
-            DefaultMatcher::convert_to_fast_match("abc").unwrap(),
-            FastMatch::Exact("abc".to_string())
+            DefaultMatcher::convert_to_fast_match("abc", true).unwrap(),
+            vec![FastMatch::Exact("abc".to_string())]
         );
         assert_eq!(
-            DefaultMatcher::convert_to_fast_match("あいう").unwrap(),
-            FastMatch::Exact("あいう".to_string())
+            DefaultMatcher::convert_to_fast_match("あいう", true).unwrap(),
+            vec![FastMatch::Exact("あいう".to_string())]
         );
         assert_eq!(
-            DefaultMatcher::convert_to_fast_match(r"\\\\127.0.0.1\\").unwrap(),
-            FastMatch::Exact(r"\\127.0.0.1\".to_string())
+            DefaultMatcher::convert_to_fast_match(r"\\\\127.0.0.1\\", true).unwrap(),
+            vec![FastMatch::Exact(r"\\127.0.0.1\".to_string())]
         );
     }
 }
