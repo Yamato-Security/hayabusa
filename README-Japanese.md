@@ -453,27 +453,24 @@ Options:
 ```
 Usage: csv-timeline <INPUT> [OPTIONS]
 
-Options:
-  -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
-  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>        ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>          スレッド数 (デフォルト: パフォーマンスに最適な数値)
-  -v, --verbose                   詳細な情報を出力する
-
-Output:
-  -H, --HTML-report <FILE>  HTML形式で詳細な結果を出力する (例: results.html)
-  -o, --output <FILE>       タイムラインを保存する (例: results.csv)
-  -p, --profile <PROFILE>   利用する出力プロファイル名を指定する
-
 Input:
   -d, --directory <DIR>    .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>        1つの.evtxファイルに対して解析を行う
   -l, --live-analysis      ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -J, --JSON-input         .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
 
-Advanced:
-  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
+  -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
+  -o, --output <FILE>             タイムラインを保存する (例: results.csv)
+  -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
+
+Display Settings:
+      --no-color            カラーで出力しない
+      --no-summary          結果概要を出力しない (多少速くなる)
+  -q, --quiet               Quietモード: 起動バナーを表示しない
+  -v, --verbose             詳細な情報を出力する
+  -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
   -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -485,6 +482,13 @@ Filtering:
       --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
       --ISO-8601          ISO-8601形式で日付と時刻を出力する (ex: 2022-02-22T10:10:10.1234567Z) (いつもUTC)
@@ -493,10 +497,6 @@ Time Format:
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
       --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
   -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
-
-Display Settings:
-      --no-summary          結果概要を出力しない (多少速くなる)
-  -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 ```
 
 ### `csv-timeline`コマンドの使用例
@@ -645,28 +645,25 @@ JSONは、`jq`等のツールでデータ(大きな結果ファイルを含む)�
 ```
 Usage: json-timeline <INPUT> [OPTIONS]
 
-Options:
-  -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
-  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>        ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>          スレッド数 (デフォルト: パフォーマンスに最適な数値)
-  -v, --verbose                   詳細な情報を出力する
-
-Output:
-  -H, --HTML-report <FILE>  HTML形式で詳細な結果を出力する (例: results.html)
-  -L, --JSONL-output        タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
-  -o, --output <FILE>       タイムラインを保存する (例: results.json)
-  -p, --profile <PROFILE>   利用する出力プロファイル名を指定する
-
 Input:
   -d, --directory <DIR>    .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>        1つの.evtxファイルに対して解析を行う
   -l, --live-analysis      ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -J, --JSON-input         .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
 
-Advanced:
-  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
+  -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
+  -L, --JSONL-output              タイムラインをJSONL形式で保存する (例: -L -o results.jsonl)
+  -o, --output <FILE>             タイムラインを保存する (例: results.csv)
+  -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
+
+Display Settings:
+      --no-color            カラーで出力しない
+      --no-summary          結果概要を出力しない (多少速くなる)
+  -q, --quiet               Quietモード: 起動バナーを表示しない
+  -v, --verbose             詳細な情報を出力する
+  -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
   -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -678,6 +675,13 @@ Filtering:
       --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -r, --rules <DIR/FILE>                 ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+
 Time Format:
       --European-time     ヨーロッパ形式で日付と時刻を出力する (例: 22-02-2022 22:00:00.123 +02:00)
       --ISO-8601          ISO-8601形式で日付と時刻を出力する (ex: 2022-02-22T10:10:10.1234567Z) (いつもUTC)
@@ -686,10 +690,6 @@ Time Format:
       --US-military-time  24時間制(ミリタリータイム)のアメリカ形式で日付と時刻を出力する (例: 02-22-2022 22:00:00.123 -06:00)
       --US-time           アメリカ形式で日付と時刻を出力する (例: 02-22-2022 10:00:00.123 PM -06:00)
   -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
-
-Display Settings:
-      --no-summary          結果概要を出力しない (多少速くなる)
-  -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 ```
 
 ### `json-timeline`コマンドの使用例と設定ファイル
@@ -704,23 +704,25 @@ Display Settings:
 ```
 Usage: logon-summary <INPUT> [OPTIONS]
 
-Options:
-  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>        ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>          スレッド数 (デフォルト: パフォーマンスに最適な数値)
-  -v, --verbose                   詳細な情報を出力する
-
 Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-
-Advanced:
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２：evtx1,evtx2)
+  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
 
 Output:
   -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: logon-summary.csv)
+
+Display Settings:
+      --no-color            カラーで出力しない
+  -q, --quiet               Quietモード: 起動バナーを表示しない
+  -v, --verbose             詳細な情報を出力する
+
+General Options:
+  -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>        ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+  -t, --threads <NUMBER>          スレッド数 (デフォルト: パフォーマンスに最適な数値)
 ```
 
 ### `logon-summary`コマンドの使用例
@@ -735,23 +737,25 @@ Output:
 ```
 Usage: metrics <INPUT> [OPTIONS]
 
-Options:
-  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>        ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>          スレッド数 (デフォルト: パフォーマンスに最適な数値)
-  -v, --verbose                   詳細な情報を出力する
-
 Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-
-Advanced:
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
 
 Output:
   -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: metrics.csv)
+
+Display Settings:
+      --no-color       カラーで出力しない
+  -q, --quiet          Quietモード: 起動バナーを表示しない
+  -v, --verbose        詳細な情報を出力する
+
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
 ```
 
 ### `metrics`コマンドの使用例
@@ -786,23 +790,19 @@ Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
 ```
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
 
-Options:
-  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-  -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>        ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>          スレッド数 (デフォルト: パフォーマンスに最適な数値)
-  -v, --verbose                   詳細な情報を出力する
-
 Input:
   -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
   -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
   -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-
-Advanced:
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２：evtx1,evtx2)
+  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
 
 Output:
   -o, --output <FILE>       ピボットキーワードの一覧を複数ファイルに出力する (例: pivot-keywords.txt)
+
+Display Settings:
+      --no-color       カラーで出力しない
+  -q, --quiet          Quietモード: 起動バナーを表示しない
+  -v, --verbose        詳細な情報を出力する
 
 Filtering:
   -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -813,6 +813,12 @@ Filtering:
   -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
       --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
 ```
 
 ### `pivot-keywords-list`コマンドの使用例
@@ -848,11 +854,11 @@ Processes.Image
 ```
 Usage: update-rules [OPTIONS]
 
-Options:
+Display Settings:
       --no-color  カラーで出力しない
   -q, --quiet     Quietモード: 起動バナーを表示しない
 
-Advanced:
+General Options:
   -r, --rules <DIR/FILE>  ルールファイルまたはルールファイルを持つディレクトリ (デフォルト: ./rules)
 ```
 
@@ -867,10 +873,12 @@ Advanced:
 ```
 Usage: level-tuning [OPTIONS]
 
-Options:
-  -f, --file <FILE>   ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
+Display Settings:
       --no-color      カラーで出力しない
   -q, --quiet         Quietモード: 起動バナーを表示しない
+
+General Options:
+  -f, --file <FILE>   ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
 ```
 
 ### `level-tuning`コマンドの使用例
@@ -903,10 +911,12 @@ id,new_level
 ```
 Usage: set-default-profile [OPTIONS]
 
-Options:
-  -p, --profile <PROFILE>  利用する出力プロファイル名を指定する
+Display Settings:
       --no-color           カラーで出力しない
   -q, --quiet              Quietモード: 起動バナーを表示しない
+
+General Options:
+  -p, --profile <PROFILE>  利用する出力プロファイル名を指定する
 ```
 
 ## `list-profiles`コマンド
@@ -914,7 +924,7 @@ Options:
 ```
 Usage: list-profiles [OPTIONS]
 
-Options:
+Display Settings:
       --no-color   カラーで出力しない
   -q, --quiet      Quietモード: 起動バナーを表示しない
 ```

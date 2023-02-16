@@ -453,27 +453,24 @@ The `csv-timeline` command will create a forensics timeline of events in CSV for
 ```
 Usage: csv-timeline <INPUT> [OPTIONS]
 
-Options:
-  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
-  -J, --JSON-input              Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors            Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>      Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>        Number of threads (default: optimal number for performance)
-  -v, --verbose                 Output verbose information
-
-Output:
-  -H, --HTML-report <FILE>  Save Results Summary details to an HTML report (ex: results.html)
-  -o, --output <FILE>       Save the timeline in CSV format (ex: results.csv)
-  -p, --profile <PROFILE>   Specify output profile
-
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
-Advanced:
-  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
+  -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
+  -p, --profile <PROFILE>       Specify output profile
+
+Display Settings:
+      --no-color            Disable color output
+      --no-summary          Do not display Results Summary (slightly faster speed)
+  -q, --quiet               Quiet mode: do not display the launch banner
+  -v, --verbose             Output verbose information
+  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
   -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -485,6 +482,13 @@ Filtering:
       --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
+General Options:
+  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
+  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
       --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
@@ -493,10 +497,6 @@ Time Format:
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
   -U, --UTC               Output time in UTC format (default: local time)
-
-Display Settings:
-      --no-summary          Do not display Results Summary (slightly faster speed)
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 ```
 
 ### `csv-timeline` command examples
@@ -645,28 +645,25 @@ JSON is best for more detailed analysis of data (including large results files) 
 ```
 Usage: json-timeline <INPUT> [OPTIONS]
 
-Options:
-  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
-  -J, --JSON-input              Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors            Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>      Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>        Number of threads (default: optimal number for performance)
-  -v, --verbose                 Output verbose information
-
-Output:
-  -H, --HTML-report <FILE>  Save Results Summary details to an HTML report (ex: results.html)
-  -L, --JSONL-output        Save the timeline in JSONL format (ex: -L -o results.jsonl)  
-  -o, --output <FILE>       Save the timeline in CSV format (ex: results.json)
-  -p, --profile <PROFILE>   Specify output profile
-
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
-Advanced:
-  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+Output:
+  -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
+  -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
+  -L, --JSONL-output            Save the timeline in JSONL format (ex: -L -o results.jsonl)
+  -o, --output <FILE>           Save the timeline in JSON format (ex: results.json)
+  -p, --profile <PROFILE>       Specify output profile
+
+Display Settings:
+      --no-color            Disable color output
+      --no-summary          Do not display Results Summary (slightly faster speed)
+  -q, --quiet               Quiet mode: do not display the launch banner
+  -v, --verbose             Output verbose information
+  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
   -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -678,6 +675,13 @@ Filtering:
       --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
+General Options:
+  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
+  -r, --rules <DIR/FILE>                 Specify a custom rule directory or file (default: ./rules)
+  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+
 Time Format:
       --European-time     Output timestamp in European time format (ex: 22-02-2022 22:00:00.123 +02:00)
       --ISO-8601          Output timestamp in ISO-8601 format (ex: 2022-02-22T10:10:10.1234567Z) (Always UTC)
@@ -686,10 +690,6 @@ Time Format:
       --US-military-time  Output timestamp in US military time format (ex: 02-22-2022 22:00:00.123 -06:00)
       --US-time           Output timestamp in US time format (ex: 02-22-2022 10:00:00.123 PM -06:00)
   -U, --UTC               Output time in UTC format (default: local time)
-
-Display Settings:
-      --no-summary          Do not display Results Summary (slightly faster speed)
-  -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 ```
 
 ### `json-timeline` command examples and config files
@@ -704,23 +704,25 @@ You can display the logon information for one evtx file with `-f` or multiple ev
 ```
 Usage: logon-summary <INPUT> [OPTIONS]
 
-Options:
-  -J, --JSON-input          Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors        Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>  Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>    Number of threads (default: optimal number for performance)
-  -v, --verbose             Output verbose information
-
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-
-Advanced:
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
   -o, --output <FILE>  Save the Logon summary in CSV format (ex: logon-summary.csv)
+
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
+
+General Options:
+  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
 ```
 
 ### `logon-summary` command example
@@ -735,23 +737,25 @@ You can use the `metrics` command to print out the total number and percentage o
 ```
 Usage: metrics <INPUT> [OPTIONS]
 
-Options:
-  -J, --JSON-input          Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors        Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>  Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>    Number of threads (default: optimal number for performance)
-  -v, --verbose             Output verbose information
-
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-
-Advanced:
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
   -o, --output <FILE>  Save the Metrics in CSV format (ex: metrics.csv)
+
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
+
+General Options:
+  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
 ```
 
 ### `metrics` command examples
@@ -786,23 +790,19 @@ There will most likely be common keywords in your results that will match on man
 ```
 Usage: pivot-keywords-list <INPUT> [OPTIONS]
 
-Options:
-  -J, --JSON-input          Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-  -Q, --quiet-errors        Quiet errors mode: do not save error logs
-  -c, --rules-config <DIR>  Specify custom rule config directory (default: ./rules/config)
-  -t, --threads <NUMBER>    Number of threads (default: optimal number for performance)
-  -v, --verbose             Output verbose information
-
 Input:
   -d, --directory <DIR>  Directory of multiple .evtx files
   -f, --file <FILE>      File path to one .evtx file
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
-
-Advanced:
-      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -J, --JSON-input       Scan JSON formatted logs instead of .evtx (.json or .jsonl)
 
 Output:
   -o, --output <FILENAMES-BASE>  Save pivot words to separate files (ex: PivotKeywords)
+
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
 
 Filtering:
   -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -813,6 +813,12 @@ Filtering:
   -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
       --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
       --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+
+General Options:
+  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
 ```
 
 ### `pivot-keywords-list` command example
@@ -848,11 +854,11 @@ The `update-rules` command will sync the `rules` folder with the [Hayabusa rules
 ```
 Usage: update-rules [OPTIONS]
 
-Options:
+Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
 
-Advanced:
+General Options:
   -r, --rules <DIR/FILE>  Specify a custom rule directory or file (default: ./rules)
 ```
 
@@ -867,10 +873,12 @@ The `level-tuning` command will let you tune the alert levels for rules, either 
 ```
 Usage: level-tuning [OPTIONS]
 
-Options:
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+
+General Options:
   -f, --file <FILE>  Tune alert levels (default: ./rules/config/level_tuning.txt)
-      --no-color     Disable color output
-  -q, --quiet        Quiet mode: do not display the launch banner
 ```
 
 ### `level-tuning` command examples
@@ -903,10 +911,12 @@ The possible levels to set are `critical`, `high`, `medium`, `low` and `informat
 ```
 Usage: set-default-profile [OPTIONS]
 
-Options:
-      --no-color           Disable color output
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+
+General Options:
   -p, --profile <PROFILE>  Specify output profile
-  -q, --quiet              Quiet mode: do not display the launch banner
 ```
 
 ## `list-profiles` command
@@ -914,7 +924,7 @@ Options:
 ```
 Usage: list-profiles [OPTIONS]
 
-Options:
+Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
 ```
