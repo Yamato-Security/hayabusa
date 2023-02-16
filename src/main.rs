@@ -108,7 +108,7 @@ impl App {
         if stored_static.config.action.is_some()
             && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
         {
-            if !stored_static.config.quiet {
+            if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
                 println!();
             }
@@ -123,7 +123,7 @@ impl App {
 
         // Show usage when no arguments.
         if stored_static.config.action.is_none() {
-            if !stored_static.config.quiet {
+            if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
                 println!();
             }
@@ -131,7 +131,7 @@ impl App {
             println!();
             return;
         }
-        if !stored_static.config.quiet {
+        if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
             println!();
             self.output_eggs(&format!(
@@ -211,7 +211,7 @@ impl App {
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .input_args
+                    .detect_common_options
                     .evtx_file_ext
                     .as_ref(),
                 stored_static.json_input_flag,
@@ -293,7 +293,7 @@ impl App {
                     )
                 }
             }
-            Action::ListContributors => {
+            Action::ListContributors(_) => {
                 self.print_contributors();
                 return;
             }
@@ -578,7 +578,7 @@ impl App {
                 }
                 return;
             }
-            Action::ListProfiles => {
+            Action::ListProfiles(_) => {
                 let profile_list =
                     options::profile::get_profile_list("config/profiles.yaml", stored_static);
                 write_color_buffer(
@@ -1007,7 +1007,7 @@ impl App {
             after_fact(
                 total_records,
                 &stored_static.output_path,
-                stored_static.config.no_color,
+                stored_static.common_options.no_color,
                 stored_static,
             );
         }
@@ -1364,7 +1364,7 @@ impl App {
         let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
             .unwrap();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        let output_color = if stored_static.config.no_color {
+        let output_color = if stored_static.common_options.no_color {
             None
         } else {
             Some(Color::Green)
@@ -1448,8 +1448,9 @@ mod tests {
     use hayabusa::{
         detections::{
             configs::{
-                Action, Config, ConfigReader, CsvOutputOption, InputOption, OutputOption,
-                StoredStatic, TargetEventIds, TargetEventTime, STORED_EKEY_ALIAS, STORED_STATIC,
+                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
+                InputOption, OutputOption, StoredStatic, TargetEventIds, TargetEventTime,
+                STORED_EKEY_ALIAS, STORED_STATIC,
             },
             detection,
             message::MESSAGES,
@@ -1469,12 +1470,6 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: true,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1496,12 +1491,22 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: true,
+                    },
                 },
                 geo_ip: None,
                 output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }

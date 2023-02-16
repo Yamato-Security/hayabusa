@@ -497,7 +497,8 @@ mod tests {
     use std::path::Path;
 
     use crate::detections::configs::{
-        Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS,
+        Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+        OutputOption, StoredStatic, STORED_EKEY_ALIAS,
     };
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
@@ -529,12 +530,6 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -556,12 +551,22 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                    },
                 },
                 geo_ip: None,
                 output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }

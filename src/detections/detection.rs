@@ -1047,8 +1047,10 @@ mod tests {
     use crate::detections;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
+    use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DetectCommonOption;
     use crate::detections::configs::InputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
@@ -1078,12 +1080,6 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
-                        json_input: false,
                     },
                     profile: None,
                     enable_deprecated_rules: false,
@@ -1105,12 +1101,22 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                    },
                 },
                 geo_ip: None,
                 output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
@@ -1317,12 +1323,6 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
-                    json_input: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1344,14 +1344,24 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
-            no_color: false,
-            quiet: false,
             debug: false,
         });
         let stored_static = StoredStatic::create_static_data(dummy_config);
@@ -1429,12 +1439,6 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
-                    json_input: false,
                 },
                 profile: None,
                 enable_deprecated_rules: false,
@@ -1456,14 +1460,24 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
-            no_color: false,
-            quiet: false,
             debug: false,
         });
         let stored_static = StoredStatic::create_static_data(dummy_config);
