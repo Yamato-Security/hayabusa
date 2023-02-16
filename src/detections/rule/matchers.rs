@@ -377,21 +377,81 @@ impl LeafMatcher for DefaultMatcher {
         } else if n == 1 {
             // パイプがあるケース
             if let Some(val) = select_value.as_str() {
-                self.case_ignore_fast_match = match &self.pipes[0] {
+                self.fast_match = match &self.pipes[0] {
                     PipeElement::Startswith => {
-                        Self::convert_to_fast_match(format!("{}{}", val, '*').as_str())
+                        Self::convert_to_fast_match(format!("{}{}", val, '*').as_str(), true)
                     }
                     PipeElement::Endswith => {
-                        Self::convert_to_fast_match(format!("{}{}", '*', val).as_str())
+                        Self::convert_to_fast_match(format!("{}{}", '*', val).as_str(), true)
                     }
                     PipeElement::Contains => {
-                        Self::convert_to_fast_match(format!("{}{}{}", '*', val, '*').as_str())
+                        Self::convert_to_fast_match(format!("{}{}{}", '*', val, '*').as_str(), true)
                     }
                     _ => None,
                 };
             }
-        } else if n >= 2 {
-            // 現状では複数のパイプは対応していない
+        } else if n == 2
+            && (self.pipes[0] == PipeElement::Base64offset
+                && self.pipes[1] == PipeElement::Contains)
+        {
+            // 現状では複数のパイプへの対応は|base64offset|containsの場合のみ
+            if let Some(val) = select_value.as_str() {
+                let val_byte = val.as_bytes();
+                let mut fastmatches = vec![];
+                for i in 0..3 {
+                    let mut b64_result = vec![];
+                    let mut target_byte = vec![];
+                    target_byte.resize_with(i, || 0b0);
+                    target_byte.extend_from_slice(val_byte);
+                    b64_result.resize_with(target_byte.len() * 4 / 3 + 3, || 0b0);
+                    base64::encode_config_slice(target_byte, base64::STANDARD, &mut b64_result);
+                    let convstr_b64 = String::from_utf8(b64_result);
+                    if let Ok(b64_str) = convstr_b64 {
+                        // ここでContainsのfastmatch対応を行う
+                        let filtered_null_chr = b64_str.replace('\0', "");
+                        let b64_offset_contents = match b64_str.find('=').unwrap_or_default() % 4 {
+                            2 => {
+                                if i == 0 {
+                                    filtered_null_chr[..filtered_null_chr.len() - 3].to_string()
+                                } else {
+                                    filtered_null_chr[(i + 1)..filtered_null_chr.len() - 3]
+                                        .to_string()
+                                }
+                            }
+                            3 => {
+                                if i == 0 {
+                                    filtered_null_chr[..filtered_null_chr.len() - 2].to_string()
+                                } else {
+                                    filtered_null_chr.replace('\0', "")
+                                        [(i + 1)..filtered_null_chr.len() - 2]
+                                        .to_string()
+                                }
+                            }
+                            _ => {
+                                if i == 0 {
+                                    filtered_null_chr
+                                } else {
+                                    filtered_null_chr[(i + 1)..].to_string()
+                                }
+                            }
+                        };
+                        if let Some(fm) =
+                            Self::convert_to_fast_match(&format!("*{b64_offset_contents}*"), false)
+                        {
+                            fastmatches.extend(fm);
+                        }
+                    } else {
+                        err_msges.push(format!(
+                            "Failed base64 encoding: {}",
+                            convstr_b64.unwrap_err()
+                        ));
+                    }
+                }
+                if !fastmatches.is_empty() {
+                    self.fast_match = Some(fastmatches);
+                }
+            }
+        } else {
             let errmsg = format!(
                 "Multiple pipe elements cannot be used. key:{}",
                 utils::concat_selection_key(key_list)
@@ -488,6 +548,7 @@ impl LeafMatcher for DefaultMatcher {
 
 /// パイプ(|)で指定される要素を表すクラス。
 /// 要リファクタリング
+#[derive(PartialEq)]
 enum PipeElement {
     Startswith,
     Endswith,
@@ -496,6 +557,7 @@ enum PipeElement {
     Wildcard,
     EqualsField(String),
     Endswithfield(String),
+    Base64offset,
 }
 
 impl PipeElement {
@@ -507,6 +569,7 @@ impl PipeElement {
             "re" => Option::Some(PipeElement::Re),
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
+            "base64offset" => Option::Some(PipeElement::Base64offset),
             _ => Option::None,
         };
 
