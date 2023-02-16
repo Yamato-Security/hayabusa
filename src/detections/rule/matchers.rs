@@ -2335,4 +2335,44 @@ mod tests {
             vec![FastMatch::Exact(r"\\127.0.0.1\".to_string())]
         );
     }
+
+    #[test]
+    fn test_base64offset_contains() {
+        // base64offset|containsのマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|base64offset|contains:
+                    - "http://"
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovL"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_base64offset_contains_not_match() {
+        // base64offset|containsのマッチしないパターン
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|base64offset|contains:
+                    - "a"
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovL"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
 }
