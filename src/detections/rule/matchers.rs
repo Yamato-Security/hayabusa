@@ -1,3 +1,4 @@
+use base64;
 use nested::Nested;
 use regex::Regex;
 use std::cmp::Ordering;
@@ -193,7 +194,7 @@ enum FastMatch {
 /// ワイルドカードの処理やパイプ
 pub struct DefaultMatcher {
     re: Option<Regex>,
-    case_ignore_fast_match: Option<FastMatch>,
+    fast_match: Option<Vec<FastMatch>>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
 }
@@ -202,7 +203,7 @@ impl DefaultMatcher {
     pub fn new() -> DefaultMatcher {
         DefaultMatcher {
             re: Option::None,
-            case_ignore_fast_match: Option::None,
+            fast_match: Option::None,
             pipes: Vec::new(),
             key_list: Nested::<String>::new(),
         }
@@ -266,7 +267,7 @@ impl DefaultMatcher {
     }
 
     // ワイルドカードマッチを高速なstd::stringのlen/starts_with/ends_withに変換するための関数
-    fn convert_to_fast_match(s: &str) -> Option<FastMatch> {
+    fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
         let wildcard_count = s.chars().filter(|c| *c == '*').count();
         let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
         if s.contains('?') || s.ends_with(r"\\\*") || (!s.is_ascii() && s.contains('*')) {
@@ -278,23 +279,30 @@ impl DefaultMatcher {
             && !is_literal_asterisk(s)
         {
             // *が先頭と末尾だけは、containsに変換
-            return Some(FastMatch::Contains(
-                s.to_lowercase().replacen('*', "", 2).replace(r"\\", r"\"),
-            ));
+            if ignore_case {
+                return Some(vec![FastMatch::Contains(
+                    s.to_lowercase().replacen('*', "", 2).replace(r"\\", r"\"),
+                )]);
+            }
+            return Some(vec![FastMatch::Contains(
+                s.replacen('*', "", 2).replace(r"\\", r"\"),
+            )]);
         } else if s.starts_with('*') && wildcard_count == 1 {
             // *が先頭は、ends_withに変換
-            return Some(FastMatch::EndsWith(s.replace('*', "").replace(r"\\", r"\")));
+            return Some(vec![FastMatch::EndsWith(
+                s.replace('*', "").replace(r"\\", r"\"),
+            )]);
         } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
             // *が末尾は、starts_withに変換
-            return Some(FastMatch::StartsWith(
+            return Some(vec![FastMatch::StartsWith(
                 s.replace('*', "").replace(r"\\", r"\"),
-            ));
+            )]);
         } else if s.contains('*') {
             // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
             return None;
         }
         // *を含まない場合は、文字列長マッチに変換
-        Some(FastMatch::Exact(s.replace(r"\\", r"\")))
+        Some(vec![FastMatch::Exact(s.replace(r"\\", r"\"))])
     }
 }
 
@@ -354,12 +362,14 @@ impl LeafMatcher for DefaultMatcher {
         if n == 0 {
             // パイプがないケース
             if let Some(val) = select_value.as_str() {
-                self.case_ignore_fast_match = Self::convert_to_fast_match(val);
+                self.fast_match = Self::convert_to_fast_match(val, true);
             };
-            if matches!(
-                &self.case_ignore_fast_match,
-                Some(FastMatch::Exact(_)) | Some(FastMatch::Contains(_))
-            ) && !self.key_list.is_empty()
+            if self.fast_match.is_some()
+                && matches!(
+                    &self.fast_match.as_ref().unwrap()[0],
+                    FastMatch::Exact(_) | FastMatch::Contains(_)
+                )
+                && !self.key_list.is_empty()
             {
                 // FastMatch::Exact検索に置き換えられたときは正規表現は不要
                 return Result::Ok(());
@@ -430,12 +440,12 @@ impl LeafMatcher for DefaultMatcher {
 
         // yamlにnullが設定されていた場合
         // keylistが空(==JSONのgrep検索)の場合、無視する。
-        if self.key_list.is_empty() && self.re.is_none() && self.case_ignore_fast_match.is_none() {
+        if self.key_list.is_empty() && self.re.is_none() && self.fast_match.is_none() {
             return false;
         }
 
         // yamlにnullが設定されていた場合
-        if self.re.is_none() && self.case_ignore_fast_match.is_none() {
+        if self.re.is_none() && self.fast_match.is_none() {
             // レコード内に対象のフィールドが存在しなければ検知したものとして扱う
             for v in self.key_list.iter() {
                 if recinfo.get_value(v).is_none() {
@@ -453,12 +463,19 @@ impl LeafMatcher for DefaultMatcher {
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
             return self.re.as_ref().unwrap().is_match(event_value_str);
-        } else if let Some(fast_matcher) = &self.case_ignore_fast_match {
-            let fast_match_result = match fast_matcher {
-                FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
-                FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
-                FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
+        } else if let Some(fast_matcher) = &self.fast_match {
+            let fast_match_result = if fast_matcher.len() == 1 {
+                match &fast_matcher[0] {
+                    FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
+                    FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
+                    FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                    FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
+                }
+            } else {
+                Some(fast_matcher.iter().any(|fm| match fm {
+                    FastMatch::Contains(s) => event_value_str.contains(s),
+                    _ => false,
+                }))
             };
             if let Some(is_match) = fast_match_result {
                 return is_match;
