@@ -616,7 +616,7 @@ mod tests {
     #[test]
     /// test of loading output filter config by mitre_tactics.txt
     fn test_load_mitre_tactics_log() {
-        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt");
+        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt", true);
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
             ("attack.impact".into(), "Impact".into()),
             ("xxx".into(), "yyy".into()),
@@ -627,8 +627,10 @@ mod tests {
     #[test]
     /// loading test to channel_abbrevations.txt
     fn test_load_abbrevations() {
-        let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
-        let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
+        let actual =
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
+        let actual2 =
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
             ("security".into(), "Sec".into()),
             ("xxx".into(), "yyy".into()),
