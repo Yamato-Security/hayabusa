@@ -10,7 +10,7 @@
 
 - オプションのグループ分けを再修正した。(#918)(@hitenkoku)
 - JSONL形式のログを読み込む際のメモリ使用量を約75%削減した。 (#921) (@fukusuket)
-- チャンネル名の一般的な単語名を省略する機能をmetrics、json-timeline、csv-timelineに追加した。 (#923) (@hitenkoku)
+- `rules/config/channel_abbreviations_generic.txt`によってチャンネル名の一般的な単語名を省略する機能をmetrics、json-timeline、csv-timelineに追加した。 (#923) (@hitenkoku)
 
 **バグ修正:**
 
