@@ -10,6 +10,7 @@
 
 - Reorganized the grouping of command line options. (#918) (@hitenkoku)
 - Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
+- added support for `|base64offset|contains` pipe keyword. (#705) (@hitenkoku)
 
 **Bug Fixes:**
 
