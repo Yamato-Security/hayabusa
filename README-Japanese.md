@@ -1257,7 +1257,7 @@ Hayabusaルールは、Windowsのイベントログ解析専用に設計され�
 **制限事項**: 私たちの知る限り、Hayabusa はオープンソースの Windows イベントログ解析ツールの中でSigmaルールを最も多くサポートしていますが、まだサポートされていないルールもあります。
 
 1. [Sigmaルール仕様](https://github.com/SigmaHQ/sigma-specification)の`count`以外の集計式。
-2. `|near`、`|base64offset|contains`を使用するルール。
+2. `|near`を使用するルール。
 
 # その他のWindowsイベントログ解析ツールおよび関連リソース
 

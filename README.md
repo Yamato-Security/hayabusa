@@ -1257,7 +1257,7 @@ Hayabusa rules are designed solely for Windows event log analysis and have the f
 **Limitations**: To our knowledge, hayabusa provides the greatest support for sigma rules out of any open source Windows event log analysis tool, however, there are still rules that are not supported:
 
 1. Aggregation expressions besides `count` in the [sigma rule specification](https://github.com/SigmaHQ/sigma-specification/blob/main/Sigma_specification.md).
-2. Rules that use `|near` or `|base64offset|contains`.
+2. Rules that use `|near`.
 
 # Other Windows Event Log Analyzers and Related Resources
 
