@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use nested::Nested;
 use regex::Regex;
 use std::cmp::Ordering;
@@ -404,7 +404,9 @@ impl LeafMatcher for DefaultMatcher {
                     target_byte.resize_with(i, || 0b0);
                     target_byte.extend_from_slice(val_byte);
                     b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
-                    general_purpose::STANDARD.encode_slice(target_byte, &mut b64_result).ok();
+                    general_purpose::STANDARD
+                        .encode_slice(target_byte, &mut b64_result)
+                        .ok();
                     let convstr_b64 = String::from_utf8(b64_result);
                     if let Ok(b64_str) = convstr_b64 {
                         // ここでContainsのfastmatch対応を行う
