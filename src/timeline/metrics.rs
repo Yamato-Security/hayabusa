@@ -1,4 +1,8 @@
-use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
+use crate::detections::{
+    configs::{EventKeyAliasConfig, StoredStatic},
+    detection::EvtxRecordInfo,
+    utils,
+};
 use compact_str::CompactString;
 use hashbrown::HashMap;
 
@@ -51,22 +55,17 @@ impl EventMetrics {
         }
     }
 
-    pub fn evt_stats_start(
-        &mut self,
-        records: &[EvtxRecordInfo],
-        metrics_flag: bool,
-        eventkey_alias: &EventKeyAliasConfig,
-    ) {
+    pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
-        if !metrics_flag {
+        if !stored_static.metrics_flag {
             return;
         }
 
         // _recordsから、EventIDを取り出す。
-        self.stats_time_cnt(records, eventkey_alias);
+        self.stats_time_cnt(records, &stored_static.eventkey_alias);
 
         // EventIDで集計
-        self.stats_eventid(records, eventkey_alias);
+        self.stats_eventid(records, stored_static);
     }
 
     pub fn logon_stats_start(
@@ -111,18 +110,28 @@ impl EventMetrics {
         self.total += records.len();
     }
 
-    /// EventID`で集計
-    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
-        //        let mut evtstat_map = HashMap::new();
+    /// EventIDで集計
+    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         for record in records.iter() {
             let channel = if let Some(ch) =
-                utils::get_event_value("Channel", &record.record, eventkey_alias)
+                utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
-                ch.to_string()
+                stored_static.ch_disp_abbr_generic.replace_all(
+                    stored_static
+                        .ch_config
+                        .get(&CompactString::from(
+                            ch.to_string().replace('\"', "").to_ascii_lowercase(),
+                        ))
+                        .unwrap_or(&CompactString::from(ch.to_string().replace('\"', "")))
+                        .as_str(),
+                    &stored_static.ch_disp_abbr_gen_rep_values,
+                )
             } else {
                 "-".to_string()
             };
-            if let Some(idnum) = utils::get_event_value("EventID", &record.record, eventkey_alias) {
+            if let Some(idnum) =
+                utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
+            {
                 let count: &mut usize = self
                     .stats_list
                     .entry((idnum.to_string().replace('\"', ""), channel))

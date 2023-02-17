@@ -283,13 +283,18 @@ impl Detection {
                     profile_converter.insert(
                         key.as_str(),
                         Channel(
-                            stored_static.ch_disp_abbr_generic.replace_all(
-                                stored_static
-                                .ch_config
-                                .get(&CompactString::from(ch_str.to_ascii_lowercase()))
-                                .unwrap_or(ch_str).as_str()
-                                , &stored_static.ch_disp_abbr_gen_rep_values).into()
-                            ),
+                            stored_static
+                                .ch_disp_abbr_generic
+                                .replace_all(
+                                    stored_static
+                                        .ch_config
+                                        .get(&CompactString::from(ch_str.to_ascii_lowercase()))
+                                        .unwrap_or(ch_str)
+                                        .as_str(),
+                                    &stored_static.ch_disp_abbr_gen_rep_values,
+                                )
+                                .into(),
+                        ),
                     );
                 }
                 Level(_) => {

@@ -48,6 +48,7 @@ lazy_static! {
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
             .unwrap(),
+        true
     );
     pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
         ("critical", "crit"),
@@ -68,7 +69,10 @@ lazy_static! {
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
 /// ex. attack.impact,Impact
-pub fn create_output_filter_config(path: &str) -> HashMap<CompactString, CompactString> {
+pub fn create_output_filter_config(
+    path: &str,
+    is_lower_case: bool,
+) -> HashMap<CompactString, CompactString> {
     let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
@@ -80,8 +84,13 @@ pub fn create_output_filter_config(path: &str) -> HashMap<CompactString, Compact
             return;
         }
 
+        let key = if is_lower_case {
+            line[0].trim().to_ascii_lowercase()
+        } else {
+            line[0].trim().to_string()
+        };
         ret.insert(
-            CompactString::from(line[0].trim().to_ascii_lowercase()),
+            CompactString::from(key),
             CompactString::from(line[1].trim()),
         );
     });

@@ -4,6 +4,7 @@ use crate::detections::utils;
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
 use crate::options::profile::{load_profile, Profile};
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Utc};
 use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
@@ -18,7 +19,6 @@ use std::sync::RwLock;
 use std::{fs, process};
 use terminal_size::{terminal_size, Width};
 use yaml_rust::{Yaml, YamlLoader};
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 
 use super::message::{create_output_filter_config, LEVEL_ABBR_MAP};
 use super::utils::check_setting_path;
@@ -262,7 +262,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
             _ => None,
         };
-        let general_ch_abbr =  create_output_filter_config(
+        let general_ch_abbr = create_output_filter_config(
             utils::check_setting_path(config_path, "channel_abbreviations_generic.txt", false)
                 .unwrap_or_else(|| {
                     utils::check_setting_path(
@@ -274,6 +274,7 @@ impl StoredStatic {
                 })
                 .to_str()
                 .unwrap(),
+            false,
         );
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
@@ -290,9 +291,15 @@ impl StoredStatic {
                     })
                     .to_str()
                     .unwrap(),
+                true,
             ),
-            ch_disp_abbr_generic: AhoCorasickBuilder::new().match_kind(MatchKind::LeftmostLongest).build(general_ch_abbr.keys().map(|x| x.as_str())),
-            ch_disp_abbr_gen_rep_values: general_ch_abbr.values().map(|x| CompactString::from(x.as_str())).collect_vec(),
+            ch_disp_abbr_generic: AhoCorasickBuilder::new()
+                .match_kind(MatchKind::LeftmostLongest)
+                .build(general_ch_abbr.keys().map(|x| x.as_str())),
+            ch_disp_abbr_gen_rep_values: general_ch_abbr
+                .values()
+                .map(|x| x.to_owned())
+                .collect_vec(),
             default_details: Self::get_default_details(
                 utils::check_setting_path(config_path, "default_details.txt", false)
                     .unwrap_or_else(|| {
