@@ -8,6 +8,7 @@ use chrono::{DateTime, Utc};
 use clap::{ArgGroup, Args, ColorChoice, Command, CommandFactory, Parser, Subcommand};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use nested::Nested;
 use regex::Regex;
@@ -17,6 +18,7 @@ use std::sync::RwLock;
 use std::{fs, process};
 use terminal_size::{terminal_size, Width};
 use yaml_rust::{Yaml, YamlLoader};
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 
 use super::message::{create_output_filter_config, LEVEL_ABBR_MAP};
 use super::utils::check_setting_path;
@@ -50,6 +52,8 @@ pub struct StoredStatic {
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
     pub ch_config: HashMap<CompactString, CompactString>,
+    pub ch_disp_abbr_generic: AhoCorasick,
+    pub ch_disp_abbr_gen_rep_values: Vec<CompactString>,
     pub quiet_errors_flag: bool,
     pub verbose_flag: bool,
     pub metrics_flag: bool,
@@ -258,6 +262,19 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.output.as_ref(),
             _ => None,
         };
+        let general_ch_abbr =  create_output_filter_config(
+            utils::check_setting_path(config_path, "channel_abbreviations_generic.txt", false)
+                .unwrap_or_else(|| {
+                    utils::check_setting_path(
+                        &CURRENT_EXE_PATH.to_path_buf(),
+                        "rules/config/channel_abbreviations_generic.txt",
+                        true,
+                    )
+                    .unwrap()
+                })
+                .to_str()
+                .unwrap(),
+        );
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -274,6 +291,8 @@ impl StoredStatic {
                     .to_str()
                     .unwrap(),
             ),
+            ch_disp_abbr_generic: AhoCorasickBuilder::new().match_kind(MatchKind::LeftmostLongest).build(general_ch_abbr.keys().map(|x| x.as_str())),
+            ch_disp_abbr_gen_rep_values: general_ch_abbr.values().map(|x| CompactString::from(x.as_str())).collect_vec(),
             default_details: Self::get_default_details(
                 utils::check_setting_path(config_path, "default_details.txt", false)
                     .unwrap_or_else(|| {
