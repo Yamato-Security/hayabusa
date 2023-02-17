@@ -1,4 +1,4 @@
-use base64;
+use base64::{Engine as _, engine::general_purpose};
 use nested::Nested;
 use regex::Regex;
 use std::cmp::Ordering;
@@ -403,8 +403,8 @@ impl LeafMatcher for DefaultMatcher {
                     let mut target_byte = vec![];
                     target_byte.resize_with(i, || 0b0);
                     target_byte.extend_from_slice(val_byte);
-                    b64_result.resize_with(target_byte.len() * 4 / 3 + 3, || 0b0);
-                    base64::encode_config_slice(target_byte, base64::STANDARD, &mut b64_result);
+                    b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
+                    general_purpose::STANDARD.encode_slice(target_byte, &mut b64_result).ok();
                     let convstr_b64 = String::from_utf8(b64_result);
                     if let Ok(b64_str) = convstr_b64 {
                         // ここでContainsのfastmatch対応を行う
@@ -2369,7 +2369,7 @@ mod tests {
         detection:
             selection:
                 Payload|base64offset|contains:
-                    - "a"
+                    - "test"
         details: 'command=%CommandLine%'
         "#;
 
