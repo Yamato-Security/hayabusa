@@ -805,6 +805,7 @@ dependencies = [
 name = "hayabusa"
 version = "2.2.2-dev"
 dependencies = [
+ "aho-corasick",
  "base64 0.21.0",
  "bytesize",
  "chrono",

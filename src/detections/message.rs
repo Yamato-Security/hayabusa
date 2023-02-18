@@ -48,6 +48,7 @@ lazy_static! {
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
             .unwrap(),
+        true
     );
     pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
         ("critical", "crit"),
@@ -68,7 +69,10 @@ lazy_static! {
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
 /// ex. attack.impact,Impact
-pub fn create_output_filter_config(path: &str) -> HashMap<CompactString, CompactString> {
+pub fn create_output_filter_config(
+    path: &str,
+    is_lower_case: bool,
+) -> HashMap<CompactString, CompactString> {
     let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
@@ -80,8 +84,13 @@ pub fn create_output_filter_config(path: &str) -> HashMap<CompactString, Compact
             return;
         }
 
+        let key = if is_lower_case {
+            line[0].trim().to_ascii_lowercase()
+        } else {
+            line[0].trim().to_string()
+        };
         ret.insert(
-            CompactString::from(line[0].trim().to_ascii_lowercase()),
+            CompactString::from(key),
             CompactString::from(line[1].trim()),
         );
     });
@@ -607,7 +616,7 @@ mod tests {
     #[test]
     /// test of loading output filter config by mitre_tactics.txt
     fn test_load_mitre_tactics_log() {
-        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt");
+        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt", true);
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
             ("attack.impact".into(), "Impact".into()),
             ("xxx".into(), "yyy".into()),
@@ -618,8 +627,10 @@ mod tests {
     #[test]
     /// loading test to channel_abbrevations.txt
     fn test_load_abbrevations() {
-        let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
-        let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
+        let actual =
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
+        let actual2 =
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
         let expected: HashMap<CompactString, CompactString> = HashMap::from([
             ("security".into(), "Sec".into()),
             ("xxx".into(), "yyy".into()),

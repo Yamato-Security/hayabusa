@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
 
-use crate::detections::configs::{Action, EventInfoConfig, EventKeyAliasConfig, StoredStatic};
+use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -40,17 +40,13 @@ impl Timeline {
         Timeline { stats: statistic }
     }
 
-    pub fn start(
-        &mut self,
-        records: &[EvtxRecordInfo],
-        metrics_flag: bool,
-        logon_summary_flag: bool,
-        eventkey_alias: &EventKeyAliasConfig,
-    ) {
-        self.stats
-            .evt_stats_start(records, metrics_flag, eventkey_alias);
-        self.stats
-            .logon_stats_start(records, logon_summary_flag, eventkey_alias);
+    pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+        self.stats.evt_stats_start(records, stored_static);
+        self.stats.logon_stats_start(
+            records,
+            stored_static.logon_summary_flag,
+            &stored_static.eventkey_alias,
+        );
     }
 
     pub fn tm_stats_dsp_msg(
@@ -174,7 +170,16 @@ impl Timeline {
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
-            let ch = channel_config
+            let ch = stored_static.ch_disp_abbr_generic.replace_all(
+                stored_static
+                    .ch_config
+                    .get(fmted_channel.to_lowercase().as_str())
+                    .unwrap_or(&fmted_channel)
+                    .as_str(),
+                &stored_static.ch_disp_abbr_gen_rep_values,
+            );
+
+            channel_config
                 .get(fmted_channel.to_lowercase().as_str())
                 .unwrap_or(&fmted_channel)
                 .to_string();

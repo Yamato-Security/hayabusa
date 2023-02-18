@@ -48,6 +48,7 @@ ureq = "*"
 mockall = "*"
 maxminddb = "0.*"
 cidr-utils = "0.*"
+aho-corasick = "*"
 
 [profile.dev]
 debug = 0

@@ -10,6 +10,7 @@
 
 - Reorganized the grouping of command line options. (#918) (@hitenkoku)
 - Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
+- Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/channel_abbreviations_generic.txt`. (#923) (@hitenkoku)
 
 **Bug Fixes:**
 
