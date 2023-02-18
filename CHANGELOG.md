@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed no output problem of the first and last timestamp in the logon-summary and metrics commands. (#920) (@hitenkoku)
 
 **Vulnerability Fixes:**
 
