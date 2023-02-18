@@ -65,8 +65,14 @@ impl Timeline {
                 if option.input_args.filepath.is_some() {
                     sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
                     sammsges.push(total_event_record);
-                    sammsges.push(format!("First Timestamp: {}", self.stats.start_time));
-                    sammsges.push(format!("Last Timestamp: {}\n", self.stats.end_time));
+                    sammsges.push(format!(
+                        "First Timestamp: {}",
+                        self.stats.start_time.replace('"', "")
+                    ));
+                    sammsges.push(format!(
+                        "Last Timestamp: {}\n",
+                        self.stats.end_time.replace('"', "")
+                    ));
                 } else {
                     sammsges.push(total_event_record);
                 }
