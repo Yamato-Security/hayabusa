@@ -11,14 +11,11 @@
 - オプションのグループ分けを再修正した。(#918)(@hitenkoku)
 - JSONL形式のログを読み込む際のメモリ使用量を約75%削減した。 (#921) (@fukusuket)
 - `rules/config/channel_abbreviations_generic.txt`によってチャンネル名の一般的な単語名を省略する機能をmetrics、json-timeline、csv-timelineに追加した。 (#923) (@hitenkoku)
+- evtxクレートを更新することにより、パースエラーを減少させた。 (@YamatoSecurity)
 
 **バグ修正:**
 
 - `logon-summary`と`metrics`コマンドで、最初と最後のタイムスタンプが出力されない不具合を修正した。 (#920) (@hitenkoku)
-
-**脆弱性修正:**
-
-- XXX
 
 ## 2.2.0 [2022/2/12] "SECCON Release"
 
