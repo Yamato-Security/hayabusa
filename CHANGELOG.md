@@ -11,14 +11,11 @@
 - Reorganized the grouping of command line options. (#918) (@hitenkoku)
 - Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
 - Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/channel_abbreviations_generic.txt`. (#923) (@hitenkoku)
+- Reduced parsing errors by updating the evtx crate. (@YamatoSecurity)
 
 **Bug Fixes:**
 
 - The first and last timestamps in the `logon-summary` and `metrics` commands were blank. (#920) (@hitenkoku)
-
-**Vulnerability Fixes:**
-
-- XXX
 
 ## 2.2.0 [2023/2/12] "SECCON Release"
 
