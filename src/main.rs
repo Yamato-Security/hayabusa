@@ -884,7 +884,7 @@ impl App {
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &format!("Analyzing event files: {:?}", evtx_files.len()),
+            &format!("Total event log files: {:?}", evtx_files.len()),
             true,
         )
         .ok();
@@ -996,7 +996,7 @@ impl App {
         if stored_static.output_path.is_some() {
             println!();
             println!();
-            println!("Analysis finished. Please wait while the results are being saved.");
+            println!("Scanning finished. Please wait while the results are being saved.");
         }
         println!();
         detection.add_aggcondition_msges(&self.rt, stored_static);

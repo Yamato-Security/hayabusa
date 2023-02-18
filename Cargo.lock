@@ -803,7 +803,7 @@ dependencies = [
 
 [[package]]
 name = "hayabusa"
-version = "2.2.2-dev"
+version = "2.2.2"
 dependencies = [
  "aho-corasick",
  "base64 0.21.0",
