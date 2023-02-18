@@ -4,7 +4,7 @@
 
 **New Features:**
 
-- XXX
+- Added support for the `|base64offset|contains` pipe keyword. (#705) (@hitenkoku)
 
 **Enhancements:**
 

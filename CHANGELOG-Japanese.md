@@ -4,7 +4,7 @@
 
 **新機能:**
 
-- XXX
+- 新たなパイプキーワード(`|base64offset|contains`)に対応した。 (#705) (@hitenkoku)
 
 **改善:**
 
