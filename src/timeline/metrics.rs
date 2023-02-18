@@ -105,6 +105,16 @@ impl EventMetrics {
                 if self.end_time.is_empty() || evttime > self.end_time {
                     self.end_time = evttime;
                 }
+            } else if let Some(evttime) =
+                utils::get_event_value("Event.System.@timestamp", &record.record, eventkey_alias)
+                    .map(|evt_value| evt_value.to_string())
+            {
+                if self.start_time.is_empty() || evttime < self.start_time {
+                    self.start_time = evttime.to_string();
+                }
+                if self.end_time.is_empty() || evttime > self.end_time {
+                    self.end_time = evttime;
+                }
             };
         }
         self.total += records.len();
