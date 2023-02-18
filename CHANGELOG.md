@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- The first and last timestamps in the `logon-summary` and `metrics` commands were blank. (#920) (@hitenkoku)
 
 **Vulnerability Fixes:**
 
