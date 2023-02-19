@@ -13,6 +13,7 @@
 - `rules/config/generic_abbreviations.txt`によってチャンネル名の一般的な単語名を省略する機能をmetrics、json-timeline、csv-timelineに追加した。 (#923) (@hitenkoku)
 - evtxクレートを更新することにより、パースエラーを減少させた。 (@YamatoSecurity)
 - Provider名(`%Provider%`)のフィールドに対する出力文字の省略機能を追加した。 (#932) (@hitenkoku)
+- Print first and last timestamp in metrics command with directory option. (#935) (@hitenkoku)
 
 **バグ修正:**
 

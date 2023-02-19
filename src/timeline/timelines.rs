@@ -64,18 +64,16 @@ impl Timeline {
             Action::Metrics(option) => {
                 if option.input_args.filepath.is_some() {
                     sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-                    sammsges.push(total_event_record);
-                    sammsges.push(format!(
-                        "First Timestamp: {}",
-                        self.stats.start_time.replace('"', "")
-                    ));
-                    sammsges.push(format!(
-                        "Last Timestamp: {}\n",
-                        self.stats.end_time.replace('"', "")
-                    ));
-                } else {
-                    sammsges.push(total_event_record);
                 }
+                sammsges.push(total_event_record);
+                sammsges.push(format!(
+                    "First Timestamp: {}",
+                    self.stats.start_time.replace('"', "")
+                ));
+                sammsges.push(format!(
+                    "Last Timestamp: {}\n",
+                    self.stats.end_time.replace('"', "")
+                ));
                 wtr = if let Some(csv_path) = option.output.as_ref() {
                     // output to file
                     match File::create(csv_path) {

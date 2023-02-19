@@ -13,6 +13,7 @@
 - Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/generic_abbreviations.txt`. (#923) (@hitenkoku)
 - Reduced parsing errors by updating the evtx crate. (@YamatoSecurity)
 - Provider names (`%Provider%` field) are now abbreviated like channel names according to `rules/config/provider_abbreviations.txt` and `rules/config/generic_abbreviations.txt`. (#932) (@hitenkoku)
+- Print the first and last timestamps in the metrics command when the `-d` directory option is used. (#935) (@hitenkoku)
 
 **Bug Fixes:**
 
