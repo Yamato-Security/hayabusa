@@ -16,7 +16,7 @@
 **Bug Fixes:**
 
 - The first and last timestamps in the `logon-summary` and `metrics` commands were blank. (#920) (@hitenkoku)
-- Fixed all event titles are not shown in `metrics` command. (#933) (@hitenkoku)
+- Event titles stopped being shown in the `metrics` command during development of 2.2.2. (#933) (@hitenkoku)
 
 ## 2.2.0 [2023/2/12] "SECCON Release"
 
