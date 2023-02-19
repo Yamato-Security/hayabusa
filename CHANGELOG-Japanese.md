@@ -11,7 +11,8 @@
 - オプションのグループ分けを再修正した。(#918)(@hitenkoku)
 - JSONL形式のログを読み込む際のメモリ使用量を約75%削減した。 (#921) (@fukusuket)
 - `rules/config/channel_abbreviations_generic.txt`によってチャンネル名の一般的な単語名を省略する機能をmetrics、json-timeline、csv-timelineに追加した。 (#923) (@hitenkoku)
-- evtxクレートを更新することにより、パースエラーを減少させた。 (@YamatoSecurity)
+- evtxクレートを更新することにより、パースエラーを減少させた。 (#930) (@YamatoSecurity)
+- Print first and last timestamp in metrics command with directory option. (#935) (@hitenkoku)
 
 **バグ修正:**
 

@@ -11,7 +11,8 @@
 - Reorganized the grouping of command line options. (#918) (@hitenkoku)
 - Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
 - Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/channel_abbreviations_generic.txt`. (#923) (@hitenkoku)
-- Reduced parsing errors by updating the evtx crate. (@YamatoSecurity)
+- Reduced parsing errors by updating the evtx crate. (#930) (@YamatoSecurity)
+- Print the first and last timestamps in the metrics command when the `-d` directory option is used. (#935) (@hitenkoku)
 
 **Bug Fixes:**
 
