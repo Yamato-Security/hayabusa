@@ -10,9 +10,9 @@
 
 - Reorganized the grouping of command line options. (#918) (@hitenkoku)
 - Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
-- Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/channel_abbreviations_generic.txt`. (#923) (@hitenkoku)
+- Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/generic_abbreviations.txt`. (#923) (@hitenkoku)
 - Reduced parsing errors by updating the evtx crate. (@YamatoSecurity)
-- Added general abbreviation to Provider Name (`%Provider%`) fields (#932) (@hitenkoku)
+- Provider names (`%Provider%` field) are now abbreviated like channel names according to `rules/config/provider_abbreviations.txt` and `rules/config/generic_abbreviations.txt`. (#932) (@hitenkoku)
 
 **Bug Fixes:**
 
