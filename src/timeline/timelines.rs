@@ -182,13 +182,13 @@ impl Timeline {
                 .is_some();
             // event_id_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
-            let ch = stored_static.ch_disp_abbr_generic.replace_all(
+            let ch = stored_static.disp_abbr_generic.replace_all(
                 stored_static
                     .ch_config
                     .get(fmted_channel.to_lowercase().as_str())
                     .unwrap_or(&fmted_channel)
                     .as_str(),
-                &stored_static.ch_disp_abbr_gen_rep_values,
+                &stored_static.disp_abbr_general_values,
             );
 
             channel_config

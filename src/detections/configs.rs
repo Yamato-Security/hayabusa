@@ -52,8 +52,9 @@ pub struct StoredStatic {
     pub config_path: PathBuf,
     pub eventkey_alias: EventKeyAliasConfig,
     pub ch_config: HashMap<CompactString, CompactString>,
-    pub ch_disp_abbr_generic: AhoCorasick,
-    pub ch_disp_abbr_gen_rep_values: Vec<CompactString>,
+    pub disp_abbr_generic: AhoCorasick,
+    pub disp_abbr_general_values: Vec<CompactString>,
+    pub provider_abbr_config: HashMap<CompactString, CompactString>,
     pub quiet_errors_flag: bool,
     pub verbose_flag: bool,
     pub metrics_flag: bool,
@@ -263,11 +264,11 @@ impl StoredStatic {
             _ => None,
         };
         let general_ch_abbr = create_output_filter_config(
-            utils::check_setting_path(config_path, "channel_abbreviations_generic.txt", false)
+            utils::check_setting_path(config_path, "generic_abbreviations.txt", false)
                 .unwrap_or_else(|| {
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
-                        "rules/config/channel_abbreviations_generic.txt",
+                        "rules/config/generic_abbreviations.txt",
                         true,
                     )
                     .unwrap()
@@ -293,13 +294,24 @@ impl StoredStatic {
                     .unwrap(),
                 true,
             ),
-            ch_disp_abbr_generic: AhoCorasickBuilder::new()
+            disp_abbr_generic: AhoCorasickBuilder::new()
                 .match_kind(MatchKind::LeftmostLongest)
                 .build(general_ch_abbr.keys().map(|x| x.as_str())),
-            ch_disp_abbr_gen_rep_values: general_ch_abbr
-                .values()
-                .map(|x| x.to_owned())
-                .collect_vec(),
+            disp_abbr_general_values: general_ch_abbr.values().map(|x| x.to_owned()).collect_vec(),
+            provider_abbr_config: create_output_filter_config(
+                utils::check_setting_path(config_path, "provider_abbreviations.txt", false)
+                    .unwrap_or_else(|| {
+                        utils::check_setting_path(
+                            &CURRENT_EXE_PATH.to_path_buf(),
+                            "rules/config/provider_abbreviations.txt",
+                            true,
+                        )
+                        .unwrap()
+                    })
+                    .to_str()
+                    .unwrap(),
+                false,
+            ),
             default_details: Self::get_default_details(
                 utils::check_setting_path(config_path, "default_details.txt", false)
                     .unwrap_or_else(|| {
