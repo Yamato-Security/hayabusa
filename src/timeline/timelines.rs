@@ -173,8 +173,7 @@ impl Timeline {
         for ((event_id, channel), event_cnt) in mapsorted.iter() {
             // 件数の割合を算出
             let rate: f32 = **event_cnt as f32 / self.stats.total as f32;
-
-            let fmted_channel = CompactString::from(channel.replace('\"', ""));
+            let fmted_channel = CompactString::from(channel);
 
             // イベント情報取得(eventtitleなど)
             let conf = event_timeline_config

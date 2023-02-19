@@ -126,16 +126,7 @@ impl EventMetrics {
             let channel = if let Some(ch) =
                 utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
-                stored_static.disp_abbr_generic.replace_all(
-                    stored_static
-                        .ch_config
-                        .get(&CompactString::from(
-                            ch.to_string().replace('\"', "").to_ascii_lowercase(),
-                        ))
-                        .unwrap_or(&CompactString::from(ch.to_string().replace('\"', "")))
-                        .as_str(),
-                    &stored_static.disp_abbr_general_values,
-                )
+                ch.to_string().replace('\"', "")
             } else {
                 "-".to_string()
             };
