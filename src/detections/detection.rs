@@ -284,14 +284,14 @@ impl Detection {
                         key.as_str(),
                         Channel(
                             stored_static
-                                .ch_disp_abbr_generic
+                                .disp_abbr_generic
                                 .replace_all(
                                     stored_static
                                         .ch_config
                                         .get(&CompactString::from(ch_str.to_ascii_lowercase()))
                                         .unwrap_or(ch_str)
                                         .as_str(),
-                                    &stored_static.ch_disp_abbr_gen_rep_values,
+                                    &stored_static.disp_abbr_general_values,
                                 )
                                 .into(),
                         ),
@@ -422,12 +422,21 @@ impl Detection {
                     );
                 }
                 Provider(_) => {
+                    let provider_value = CompactString::from(
+                        record_info.record["Event"]["System"]["Provider_attributes"]["Name"]
+                            .to_string()
+                            .replace('\"', ""),
+                    );
                     profile_converter.insert(
                         key.as_str(),
                         Provider(CompactString::from(
-                            record_info.record["Event"]["System"]["Provider_attributes"]["Name"]
-                                .to_string()
-                                .replace('\"', ""),
+                            stored_static.disp_abbr_generic.replace_all(
+                                stored_static
+                                    .provider_abbr_config
+                                    .get(&provider_value)
+                                    .unwrap_or(&provider_value),
+                                &stored_static.disp_abbr_general_values,
+                            ),
                         )),
                     );
                 }
