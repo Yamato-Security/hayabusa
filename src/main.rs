@@ -1009,6 +1009,7 @@ impl App {
                 &stored_static.output_path,
                 stored_static.common_options.no_color,
                 stored_static,
+                tl,
             );
         }
         CHECKPOINT

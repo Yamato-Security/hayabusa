@@ -5,6 +5,7 @@ use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
 use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
+use crate::timeline::timelines::Timeline;
 use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -166,6 +167,7 @@ pub fn after_fact(
     output_option: &Option<PathBuf>,
     no_color_flag: bool,
     stored_static: &StoredStatic,
+    tl: Timeline,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
@@ -195,6 +197,7 @@ pub fn after_fact(
         all_record_cnt as u128,
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
+        (&tl.stats.start_time, &tl.stats.end_time),
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -207,6 +210,7 @@ fn emit_csv<W: std::io::Write>(
     all_record_cnt: u128,
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
+    tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
@@ -485,6 +489,40 @@ fn emit_csv<W: std::io::Write>(
         };
         println!();
 
+        if tl_start_end_time.0.is_some() {
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(None, stored_static.common_options.no_color),
+                &format!(
+                    "First Timeline: {}",
+                    utils::format_time(
+                        &tl_start_end_time.0.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ),
+                true,
+            )
+            .ok();
+        }
+        if tl_start_end_time.1.is_some() {
+            write_color_buffer(
+                &disp_wtr,
+                get_writable_color(None, stored_static.common_options.no_color),
+                &format!(
+                    "Last Timeline: {}",
+                    utils::format_time(
+                        &tl_start_end_time.1.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ),
+                true,
+            )
+            .ok();
+        }
+
+        println!();
         if output_option.visualize_timeline {
             _print_timeline_hist(timestamps, terminal_width, 3);
             println!();

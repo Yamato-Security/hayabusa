@@ -1,18 +1,20 @@
 use crate::detections::{
     configs::{EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
+    message::AlertMessage,
     utils,
 };
+use chrono::{DateTime, NaiveDateTime, Utc};
 use compact_str::CompactString;
 use hashbrown::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct EventMetrics {
     pub total: usize,
-    pub filepath: String,
-    pub start_time: String,
-    pub end_time: String,
-    pub stats_list: HashMap<(String, String), usize>,
+    pub filepath: CompactString,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
+    pub stats_list: HashMap<(CompactString, CompactString), usize>,
     pub stats_login_list: HashMap<
         (
             CompactString,
@@ -30,10 +32,10 @@ pub struct EventMetrics {
 impl EventMetrics {
     pub fn new(
         total: usize,
-        filepath: String,
-        start_time: String,
-        end_time: String,
-        stats_list: HashMap<(String, String), usize>,
+        filepath: CompactString,
+        start_time: Option<DateTime<Utc>>,
+        end_time: Option<DateTime<Utc>>,
+        stats_list: HashMap<(CompactString, CompactString), usize>,
         stats_login_list: HashMap<
             (
                 CompactString,
@@ -56,13 +58,13 @@ impl EventMetrics {
     }
 
     pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+        // _recordsから、EventIDを取り出す。
+        self.stats_time_cnt(records, &stored_static.eventkey_alias);
+
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
         if !stored_static.metrics_flag {
             return;
         }
-
-        // _recordsから、EventIDを取り出す。
-        self.stats_time_cnt(records, &stored_static.eventkey_alias);
 
         // EventIDで集計
         self.stats_eventid(records, stored_static);
@@ -88,7 +90,29 @@ impl EventMetrics {
         if records.is_empty() {
             return;
         }
-        self.filepath = records[0].evtx_filepath.to_owned();
+        self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
+
+        let mut check_start_end_time = |evttime: &str| {
+            let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3fZ") {
+                Ok(without_timezone_datetime) => {
+                    Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
+                }
+                Err(e) => {
+                    AlertMessage::alert(&format!("timestamp parse error. input: {evttime} {e}"))
+                        .ok();
+                    None
+                }
+            };
+            if timestamp.is_none() {
+                return;
+            }
+            if self.start_time.is_none() || timestamp < self.start_time {
+                self.start_time = timestamp;
+            }
+            if self.end_time.is_none() || timestamp > self.end_time {
+                self.end_time = timestamp;
+            }
+        };
         // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
         // sortしないことにより計算量が改善されています。
         for record in records.iter() {
@@ -97,24 +121,14 @@ impl EventMetrics {
                 &record.record,
                 eventkey_alias,
             )
-            .map(|evt_value| evt_value.to_string())
+            .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
             {
-                if self.start_time.is_empty() || evttime < self.start_time {
-                    self.start_time = evttime.to_string();
-                }
-                if self.end_time.is_empty() || evttime > self.end_time {
-                    self.end_time = evttime;
-                }
+                check_start_end_time(&evttime);
             } else if let Some(evttime) =
                 utils::get_event_value("Event.System.@timestamp", &record.record, eventkey_alias)
-                    .map(|evt_value| evt_value.to_string())
+                    .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
             {
-                if self.start_time.is_empty() || evttime < self.start_time {
-                    self.start_time = evttime.to_string();
-                }
-                if self.end_time.is_empty() || evttime > self.end_time {
-                    self.end_time = evttime;
-                }
+                check_start_end_time(&evttime);
             };
         }
         self.total += records.len();
@@ -135,7 +149,7 @@ impl EventMetrics {
             {
                 let count: &mut usize = self
                     .stats_list
-                    .entry((idnum.to_string().replace('\"', ""), channel))
+                    .entry((idnum.to_string().replace('\"', "").into(), channel.into()))
                     .or_insert(0);
                 *count += 1;
             };

@@ -262,11 +262,11 @@ impl Detection {
                 Timestamp(_) => {
                     profile_converter.insert(
                         key.as_str(),
-                        Timestamp(CompactString::from(format_time(
+                        Timestamp(format_time(
                             &time,
                             false,
                             stored_static.output_option.as_ref().unwrap(),
-                        ))),
+                        )),
                     );
                 }
                 Computer(_) => {
@@ -656,11 +656,11 @@ impl Detection {
                 Timestamp(_) => {
                     profile_converter.insert(
                         key.as_str(),
-                        Timestamp(CompactString::from(format_time(
+                        Timestamp(format_time(
                             &agg_result.start_timedate,
                             false,
                             stored_static.output_option.as_ref().unwrap(),
-                        ))),
+                        )),
                     );
                 }
                 Computer(_) => {
