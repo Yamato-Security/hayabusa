@@ -2,7 +2,9 @@ use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
-use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
+use crate::detections::utils::{
+    self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
+};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
 use crate::timeline::timelines::Timeline;
@@ -495,9 +497,7 @@ fn emit_csv<W: std::io::Write>(
         }
 
         if tl_start_end_time.0.is_some() {
-            write_color_buffer(
-                &disp_wtr,
-                get_writable_color(None, stored_static.common_options.no_color),
+            output_and_data_stack_for_html(
                 &format!(
                     "First Timestamp: {}",
                     utils::format_time(
@@ -506,14 +506,12 @@ fn emit_csv<W: std::io::Write>(
                         stored_static.output_option.as_ref().unwrap()
                     )
                 ),
-                true,
-            )
-            .ok();
+                "General Overview {#general_overview}",
+                stored_static.html_report_flag,
+            );
         }
         if tl_start_end_time.1.is_some() {
-            write_color_buffer(
-                &disp_wtr,
-                get_writable_color(None, stored_static.common_options.no_color),
+            output_and_data_stack_for_html(
                 &format!(
                     "Last Timestamp: {}",
                     utils::format_time(
@@ -522,9 +520,9 @@ fn emit_csv<W: std::io::Write>(
                         stored_static.output_option.as_ref().unwrap()
                     )
                 ),
-                true,
-            )
-            .ok();
+                "General Overview {#general_overview}",
+                stored_static.html_report_flag,
+            );
         }
 
         let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
