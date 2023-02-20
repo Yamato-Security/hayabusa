@@ -14,6 +14,8 @@
 - Reduced parsing errors by updating the evtx crate. (@YamatoSecurity)
 - Provider names (`%Provider%` field) are now abbreviated like channel names according to `rules/config/provider_abbreviations.txt` and `rules/config/generic_abbreviations.txt`. (#932) (@hitenkoku)
 - Print the first and last timestamps in the metrics command when the `-d` directory option is used. (#935) (@hitenkoku)
+- Added first and last timestamp to Results Summary. (#938) (@hitenkoku)
+- Added Time Format options for `logon-summary`, `metrics` and commands. (#938) (@hitenkoku)
 
 **Bug Fixes:**
 
