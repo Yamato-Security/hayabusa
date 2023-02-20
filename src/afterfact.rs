@@ -1575,7 +1575,7 @@ mod tests {
         let expect_time = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_tz = expect_time.with_timezone(&Local);
+        let expect_tz = expect_time.with_timezone(&Utc);
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1690,11 +1690,7 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(CompactString::from(format_time(
-                        &expect_time,
-                        false,
-                        &output_option,
-                    ))),
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option)),
                 ),
                 (
                     "Computer",
@@ -1797,9 +1793,7 @@ mod tests {
         let expect =
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
-                + &expect_tz
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
                 + ","
                 + test_computername
                 + ","
@@ -1825,9 +1819,8 @@ mod tests {
                 + ","
                 + test_attack
                 + "\n"
-                + &expect_tz
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
                 + ","
                 + test_computername2
                 + ","
@@ -1861,7 +1854,8 @@ mod tests {
             HashMap::new(),
             1,
             &output_profile,
-            &stored_static
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
         )
         .is_ok());
         match read_to_string("./test_emit_csv.csv") {
