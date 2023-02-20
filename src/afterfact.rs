@@ -487,7 +487,12 @@ fn emit_csv<W: std::io::Write>(
             Some((Width(w), _)) => w as usize,
             None => 100,
         };
+
         println!();
+        if output_option.visualize_timeline {
+            _print_timeline_hist(timestamps, terminal_width, 3);
+            println!();
+        }
 
         if tl_start_end_time.0.is_some() {
             write_color_buffer(
@@ -522,11 +527,6 @@ fn emit_csv<W: std::io::Write>(
             .ok();
         }
 
-        println!();
-        if output_option.visualize_timeline {
-            _print_timeline_hist(timestamps, terminal_width, 3);
-            println!();
-        }
         let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
         let reducted_percent = if all_record_cnt == 0 {
             0 as f64
