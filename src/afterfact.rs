@@ -513,7 +513,7 @@ fn emit_csv<W: std::io::Write>(
         if tl_start_end_time.1.is_some() {
             output_and_data_stack_for_html(
                 &format!(
-                    "Last Timestamp: {}",
+                    "Last Timestamp: {}\n",
                     utils::format_time(
                         &tl_start_end_time.1.unwrap(),
                         false,
