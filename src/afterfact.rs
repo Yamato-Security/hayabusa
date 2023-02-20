@@ -494,7 +494,7 @@ fn emit_csv<W: std::io::Write>(
                 &disp_wtr,
                 get_writable_color(None, stored_static.common_options.no_color),
                 &format!(
-                    "First Timeline: {}",
+                    "First Timestamp: {}",
                     utils::format_time(
                         &tl_start_end_time.0.unwrap(),
                         false,
@@ -510,7 +510,7 @@ fn emit_csv<W: std::io::Write>(
                 &disp_wtr,
                 get_writable_color(None, stored_static.common_options.no_color),
                 &format!(
-                    "Last Timeline: {}",
+                    "Last Timestamp: {}",
                     utils::format_time(
                         &tl_start_end_time.1.unwrap(),
                         false,
