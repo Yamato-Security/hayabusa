@@ -506,23 +506,24 @@ fn emit_csv<W: std::io::Write>(
                         stored_static.output_option.as_ref().unwrap()
                     )
                 ),
-                "General Overview {#general_overview}",
+                "Results Summary {#results_summary}",
                 stored_static.html_report_flag,
             );
         }
         if tl_start_end_time.1.is_some() {
             output_and_data_stack_for_html(
                 &format!(
-                    "Last Timestamp: {}\n",
+                    "Last Timestamp: {}",
                     utils::format_time(
                         &tl_start_end_time.1.unwrap(),
                         false,
                         stored_static.output_option.as_ref().unwrap()
                     )
                 ),
-                "General Overview {#general_overview}",
+                "Results Summary {#results_summary}",
                 stored_static.html_report_flag,
             );
+            println!();
         }
 
         let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
