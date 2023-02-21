@@ -148,29 +148,28 @@ impl Timeline {
         {
             if logon_summary_option.input_args.filepath.is_some() {
                 sammsges.push(format!("Evtx File Path: {}", self.stats.filepath));
-                sammsges.push(total_event_record);
-                if self.stats.start_time.is_some() {
-                    sammsges.push(format!(
-                        "First Timestamp: {}",
-                        utils::format_time(
-                            &self.stats.start_time.unwrap(),
-                            false,
-                            stored_static.output_option.as_ref().unwrap()
-                        )
-                    ));
-                }
-                if self.stats.end_time.is_some() {
-                    sammsges.push(format!(
-                        "Last Timestamp: {}\n",
-                        utils::format_time(
-                            &self.stats.end_time.unwrap(),
-                            false,
-                            stored_static.output_option.as_ref().unwrap()
-                        )
-                    ));
-                }
-            } else {
-                sammsges.push(total_event_record);
+            }
+            sammsges.push(total_event_record);
+
+            if self.stats.start_time.is_some() {
+                sammsges.push(format!(
+                    "First Timestamp: {}",
+                    utils::format_time(
+                        &self.stats.start_time.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ));
+            }
+            if self.stats.end_time.is_some() {
+                sammsges.push(format!(
+                    "Last Timestamp: {}\n",
+                    utils::format_time(
+                        &self.stats.end_time.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ));
             }
 
             for msgprint in sammsges.iter() {
@@ -239,7 +238,7 @@ impl Timeline {
 
     /// ユーザ毎のログイン統計情報出力メッセージ生成
     fn tm_loginstats_tb_set_msg(&self, output: &Option<PathBuf>) {
-        println!(" Logon Summary:\n");
+        println!("Logon Summary:\n");
         if self.stats.stats_login_list.is_empty() {
             let mut loginmsges: Vec<String> = Vec::new();
             loginmsges.push("-----------------------------------------".to_string());
@@ -249,9 +248,9 @@ impl Timeline {
                 println!("{msgprint}");
             }
         } else {
-            println!(" Successful Logons:");
+            println!("Successful Logons:");
             self.tm_loginstats_tb_dsp_msg("Successful", output);
-            println!("\n\n Failed Logons:");
+            println!("\n\nFailed Logons:");
             self.tm_loginstats_tb_dsp_msg("Failed", output);
         }
     }
