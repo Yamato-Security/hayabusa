@@ -5,7 +5,7 @@ extern crate regex;
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::options::htmlreport;
 
-use compact_str::CompactString;
+use compact_str::{CompactString, ToCompactString};
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use nested::Nested;
@@ -498,11 +498,15 @@ pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
 }
 
 ///タイムゾーンに合わせた情報を情報を取得する関数
-pub fn format_time(time: &DateTime<Utc>, date_only: bool, output_option: &OutputOption) -> String {
-    if output_option.utc || output_option.iso_8601 {
-        format_rfc(time, date_only, output_option)
-    } else {
+pub fn format_time(
+    time: &DateTime<Utc>,
+    date_only: bool,
+    output_option: &OutputOption,
+) -> CompactString {
+    if !(output_option.utc || output_option.iso_8601) {
         format_rfc(&time.with_timezone(&Local), date_only, output_option)
+    } else {
+        format_rfc(time, date_only, output_option)
     }
 }
 
@@ -511,50 +515,51 @@ fn format_rfc<Tz: TimeZone>(
     time: &DateTime<Tz>,
     date_only: bool,
     time_args: &OutputOption,
-) -> String
+) -> CompactString
 where
     Tz::Offset: std::fmt::Display,
 {
     if time_args.rfc_2822 {
         if date_only {
-            time.format("%a, %e %b %Y").to_string()
+            time.format("%a, %e %b %Y").to_compact_string()
         } else {
-            time.format("%a, %e %b %Y %H:%M:%S %:z").to_string()
+            time.format("%a, %e %b %Y %H:%M:%S %:z").to_compact_string()
         }
     } else if time_args.rfc_3339 {
         if date_only {
-            time.format("%Y-%m-%d").to_string()
+            time.format("%Y-%m-%d").to_compact_string()
         } else {
-            time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_string()
+            time.format("%Y-%m-%d %H:%M:%S%.6f%:z").to_compact_string()
         }
     } else if time_args.us_time {
         if date_only {
-            time.format("%m-%d-%Y").to_string()
+            time.format("%m-%d-%Y").to_compact_string()
         } else {
-            time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z").to_string()
+            time.format("%m-%d-%Y %I:%M:%S%.3f %p %:z")
+                .to_compact_string()
         }
     } else if time_args.us_military_time {
         if date_only {
-            time.format("%m-%d-%Y").to_string()
+            time.format("%m-%d-%Y").to_compact_string()
         } else {
-            time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_string()
+            time.format("%m-%d-%Y %H:%M:%S%.3f %:z").to_compact_string()
         }
     } else if time_args.european_time {
         if date_only {
-            time.format("%d-%m-%Y").to_string()
+            time.format("%d-%m-%Y").to_compact_string()
         } else {
-            time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_string()
+            time.format("%d-%m-%Y %H:%M:%S%.3f %:z").to_compact_string()
         }
     } else if time_args.iso_8601 {
         if date_only {
-            time.format("%Y-%m-%d").to_string()
+            time.format("%Y-%m-%d").to_compact_string()
         } else {
-            time.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string()
+            time.format("%Y-%m-%dT%H:%M:%S%.fZ").to_compact_string()
         }
     } else if date_only {
-        time.format("%Y-%m-%d").to_string()
+        time.format("%Y-%m-%d").to_compact_string()
     } else {
-        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
+        time.format("%Y-%m-%d %H:%M:%S%.3f %:z").to_compact_string()
     }
 }
 

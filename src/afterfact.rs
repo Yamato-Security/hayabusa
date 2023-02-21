@@ -2,9 +2,12 @@ use crate::detections::configs::{
     Action, OutputOption, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
 };
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
-use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
+use crate::detections::utils::{
+    self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
+};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
+use crate::timeline::timelines::Timeline;
 use crate::yaml::ParseYaml;
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
@@ -166,6 +169,7 @@ pub fn after_fact(
     output_option: &Option<PathBuf>,
     no_color_flag: bool,
     stored_static: &StoredStatic,
+    tl: Timeline,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
         AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
@@ -195,6 +199,7 @@ pub fn after_fact(
         all_record_cnt as u128,
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
+        (&tl.stats.start_time, &tl.stats.end_time),
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -207,6 +212,7 @@ fn emit_csv<W: std::io::Write>(
     all_record_cnt: u128,
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
+    tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
@@ -483,12 +489,43 @@ fn emit_csv<W: std::io::Write>(
             Some((Width(w), _)) => w as usize,
             None => 100,
         };
-        println!();
 
+        println!();
         if output_option.visualize_timeline {
             _print_timeline_hist(timestamps, terminal_width, 3);
             println!();
         }
+
+        if tl_start_end_time.0.is_some() {
+            output_and_data_stack_for_html(
+                &format!(
+                    "First Timestamp: {}",
+                    utils::format_time(
+                        &tl_start_end_time.0.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ),
+                "Results Summary {#results_summary}",
+                stored_static.html_report_flag,
+            );
+        }
+        if tl_start_end_time.1.is_some() {
+            output_and_data_stack_for_html(
+                &format!(
+                    "Last Timestamp: {}",
+                    utils::format_time(
+                        &tl_start_end_time.1.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ),
+                "Results Summary {#results_summary}",
+                stored_static.html_report_flag,
+            );
+            println!();
+        }
+
         let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
         let reducted_percent = if all_record_cnt == 0 {
             0 as f64
@@ -1537,7 +1574,7 @@ mod tests {
         let expect_time = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_tz = expect_time.with_timezone(&Local);
+        let expect_tz = expect_time.with_timezone(&Utc);
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
@@ -1652,11 +1689,7 @@ mod tests {
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(CompactString::from(format_time(
-                        &expect_time,
-                        false,
-                        &output_option,
-                    ))),
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option)),
                 ),
                 (
                     "Computer",
@@ -1759,9 +1792,7 @@ mod tests {
         let expect =
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
-                + &expect_tz
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
                 + ","
                 + test_computername
                 + ","
@@ -1787,9 +1818,8 @@ mod tests {
                 + ","
                 + test_attack
                 + "\n"
-                + &expect_tz
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
                 + ","
                 + test_computername2
                 + ","
@@ -1823,7 +1853,8 @@ mod tests {
             HashMap::new(),
             1,
             &output_profile,
-            &stored_static
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
         )
         .is_ok());
         match read_to_string("./test_emit_csv.csv") {
