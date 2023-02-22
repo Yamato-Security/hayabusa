@@ -374,12 +374,16 @@ fn emit_csv<W: std::io::Write>(
                     wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim().to_string()))?;
                     plus_header = false;
                 }
-                wtr.write_record(
-                    detect_info
-                        .ext_field
-                        .iter()
-                        .map(|x| x.1.to_value().trim().to_string()),
-                )?;
+                wtr.write_record(detect_info.ext_field.iter().map(|x| {
+                    x.1.to_value()
+                        .replace("🛂r", "\r")
+                        .replace("🛂n", "\n")
+                        .replace("🛂t", "\t")
+                        .replace(['\n', '\r', '\t'], " ")
+                        .replace(['\n', '\r', '\t'], " ")
+                        .split_whitespace()
+                        .join(" ")
+                }))?;
             }
             // 各種集計作業
             if !output_option.no_summary {
@@ -736,11 +740,47 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
     } else {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d.1.to_value(), ColPos::First).replace('|', "🦅"))
+                ret.push(
+                    _format_cellpos(
+                        &d.1.to_value()
+                            .replace("🛂r", "\r")
+                            .replace("🛂n", "\n")
+                            .replace("🛂t", "\t")
+                            .replace(['\n', '\r', '\t'], " ")
+                            .split_whitespace()
+                            .join(" "),
+                        ColPos::First,
+                    )
+                    .replace('|', "🦅"),
+                )
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Last).replace('|', "🦅"))
+                ret.push(
+                    _format_cellpos(
+                        &d.1.to_value()
+                            .replace("🛂r", "\r")
+                            .replace("🛂n", "\n")
+                            .replace("🛂t", "\t")
+                            .replace(['\n', '\r', '\t'], " ")
+                            .split_whitespace()
+                            .join(" "),
+                        ColPos::Last,
+                    )
+                    .replace('|', "🦅"),
+                )
             } else {
-                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Other).replace('|', "🦅"))
+                ret.push(
+                    _format_cellpos(
+                        &d.1.to_value()
+                            .replace("🛂r", "\r")
+                            .replace("🛂n", "\n")
+                            .replace("🛂t", "\t")
+                            .replace(['\n', '\r', '\t'], " ")
+                            .split_whitespace()
+                            .join(" "),
+                        ColPos::Other,
+                    )
+                    .replace('|', "🦅"),
+                )
             }
         }
     }
@@ -1174,12 +1214,18 @@ fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
         };
         [
             addition_header,
-            con_cal.replace('\\', "\\\\").replace('\"', "\\\"").trim(),
+            &con_cal
+                .replace('🛂', "\\")
+                .replace('\\', "\\\\")
+                .replace('\"', "\\\""),
             addition_quote,
         ]
         .join("")
     } else {
-        con_cal.trim().replace('\\', "\\\\").replace('\"', "\\\"")
+        con_cal
+            .replace('🛂', "\\")
+            .replace('\\', "\\\\")
+            .replace('\"', "\\\"")
     }
 }
 

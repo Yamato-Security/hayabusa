@@ -116,7 +116,17 @@ pub fn insert(
     eventkey_alias: &EventKeyAliasConfig,
 ) {
     if !is_agg {
-        let parsed_detail = parse_message(event_record, output, eventkey_alias)
+        let mut prev = 'a';
+        let mut removed_sp_parsed_detail = parse_message(event_record, output, eventkey_alias)
+            .replace('\n', "🛂n")
+            .replace('\r', "🛂r")
+            .replace('\t', "🛂t");
+        removed_sp_parsed_detail.retain(|ch| {
+            let continuous_space = prev == ' ' && ch == ' ';
+            prev = ch;
+            !continuous_space
+        });
+        let parsed_detail = removed_sp_parsed_detail
             .chars()
             .filter(|&c| !c.is_control())
             .collect::<CompactString>();
@@ -217,11 +227,7 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                // UnicodeのWhitespace characterをそのままCSVに出力すると見難いので、スペースに変換する。なお、先頭と最後のWhitespace characterは単に削除される。
-                hash_map.insert(
-                    full_target_str.to_string(),
-                    hash_value.split_whitespace().join(" "),
-                );
+                hash_map.insert(full_target_str.to_string(), hash_value.to_string());
             }
         } else {
             hash_map.insert(full_target_str.to_string(), "n/a".to_string());
