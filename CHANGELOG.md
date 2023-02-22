@@ -16,7 +16,7 @@
 - Print the first and last timestamps in the metrics command when the `-d` directory option is used. (#935) (@hitenkoku)
 - Added first and last timestamp to Results Summary. (#938) (@hitenkoku)
 - Added Time Format options for `logon-summary`, `metrics` commands. (#938) (@hitenkoku)
-- Added outputting `\r`, `\n`, and `\t` in the result output by `--output` command in `json-output` command. (#940) (@hitenkoku)
+- `\r`, `\n`, and `\t` characters are preserved (not converted to spaces) when saving results with the `json-output` command. (#940) (@hitenkoku)
 
 **Bug Fixes:**
 
