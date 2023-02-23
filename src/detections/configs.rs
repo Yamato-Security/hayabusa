@@ -1466,7 +1466,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
         return config;
     }
 
-    // event_id_info.txtが読み込めなかったらエラーで終了とする。
+    // channel_eid_info.txtが読み込めなかったらエラーで終了とする。
     read_result.unwrap().iter().for_each(|line| {
         if line.len() != 3 {
             return;

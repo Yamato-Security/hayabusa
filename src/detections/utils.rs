@@ -478,7 +478,7 @@ pub fn check_rule_config(config_path: &PathBuf) -> Result<(), String> {
         "target_event_IDs.txt",
         "default_details.txt",
         "level_tuning.txt",
-        "event_id_info.txt",
+        "channel_eid_info.txt",
         "eventkey_alias.txt",
     ];
     let mut not_exist_file = vec![];
