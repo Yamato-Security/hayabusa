@@ -1,6 +1,6 @@
 [package]
 name = "hayabusa"
-version = "2.2.2"
+version = "2.3.0-dev"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 rust-version = "1.66.0"
@@ -65,3 +65,4 @@ openssl = { version = "*", features = ["vendored"] }  #vendored is needed to com
 [profile.release]
 lto = true
 strip = "symbols"
+codegen-units = 1
