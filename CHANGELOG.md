@@ -1,5 +1,19 @@
 # Changes
 
+## 2.X.X [2023/XX/XX] "XXX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- XXX
+
+**Bug Fixes:**
+
+- XXX
+
 ## 2.2.2 [2023/2/22] "Ninja Day Release"
 
 **New Features:**

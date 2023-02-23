@@ -1,6 +1,20 @@
 # 変更点
 
-## 2.2.2 [2022/2/22] "Ninja Day Release"
+## 2.X.X [2023/XX/XX] "XXX Release"
+
+**新機能:**
+
+- XXX
+
+**改善:**
+
+- XXX
+
+**バグ修正:**
+
+- XXX
+
+## 2.2.2 [2023/2/22] "Ninja Day Release"
 
 **新機能:**
 
