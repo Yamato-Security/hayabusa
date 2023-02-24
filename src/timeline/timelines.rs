@@ -195,7 +195,7 @@ impl Timeline {
             let fmted_channel = channel;
 
             // イベント情報取得(eventtitleなど)
-            // event_id_info.txtに登録あるものは情報設定
+            // channel_eid_info.txtに登録あるものは情報設定
             // 出力メッセージ1行作成
             let ch = stored_static.disp_abbr_generic.replace_all(
                 stored_static
