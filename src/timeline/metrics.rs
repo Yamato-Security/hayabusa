@@ -149,7 +149,10 @@ impl EventMetrics {
             {
                 let count: &mut usize = self
                     .stats_list
-                    .entry((idnum.to_string().replace('\"', "").to_lowercase().into(), channel.into()))
+                    .entry((
+                        idnum.to_string().replace('\"', "").to_lowercase().into(),
+                        channel.into(),
+                    ))
                     .or_insert(0);
                 *count += 1;
             };
