@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed display unknown when some events channel name is not case match in `metrics` command. (#943) (@hitenkoku)
 
 ## 2.2.2 [2023/2/22] "Ninja Day Release"
 
