@@ -6,7 +6,6 @@ use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
 use crate::filter::RuleExclude;
-use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;

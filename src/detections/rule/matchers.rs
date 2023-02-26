@@ -278,24 +278,19 @@ impl DefaultMatcher {
             && wildcard_count == 2
             && !is_literal_asterisk(s)
         {
+            let removed_asterisk = s[1..(s.len() - 1)].replace(r"\\", r"\");
             // *が先頭と末尾だけは、containsに変換
             if ignore_case {
-                return Some(vec![FastMatch::Contains(
-                    s.to_lowercase()[1..s.len()-2].replace(r"\\", r"\"),
-                )]);
+                return Some(vec![FastMatch::Contains(removed_asterisk.to_lowercase())]);
             }
-            return Some(vec![FastMatch::Contains(
-                s[1..s.len()-2].replace(r"\\", r"\"),
-            )]);
-        } else if s.starts_with('*') && wildcard_count == 1 {
+            return Some(vec![FastMatch::Contains(removed_asterisk)]);
+        } else if s.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
             // *が先頭は、ends_withに変換
-            return Some(vec![FastMatch::EndsWith(
-                s[1..].replace(r"\\", r"\"),
-            )]);
+            return Some(vec![FastMatch::EndsWith(s[1..].replace(r"\\", r"\"))]);
         } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
             // *が末尾は、starts_withに変換
             return Some(vec![FastMatch::StartsWith(
-                s[..s.len()-2].replace(r"\\", r"\"),
+                s[..(s.len() - 1)].replace(r"\\", r"\"),
             )]);
         } else if utils::contains_str(s, "*") {
             // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
