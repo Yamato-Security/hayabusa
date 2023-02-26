@@ -7,7 +7,7 @@
 - [この文書について](#この文書について)
 - [メモリ使用量の削減](#メモリ使用量の削減)
   - [メモリアロケーターを変更する](#メモリアロケーターを変更する)
-  - [不要なclone()、to\_string()の使用を避ける](#不要なcloneto_stringの使用を避ける)
+  - [不要なclone()、to\_string()、to\_owned()の使用を避ける](#不要なcloneto_stringto_ownedの使用を避ける)
   - [Vecの代わりにIteratorを使う](#vecの代わりにiteratorを使う)
   - [短い文字列に、compact\_strクレートを使う](#短い文字列にcompact_strクレートを使う)
   - [寿命の長い構造体の不要なフィールドを削除する](#寿命の長い構造体の不要なフィールドを削除する)
@@ -30,14 +30,20 @@
 
 # メモリ使用量の削減
 ## メモリアロケーターを変更する
-メモリ割り当ての多いRustプログラムでは、規定のメモリアロケーターを変更するだけで、大幅な速度改善、メモリ使用量削減をできるケースがあります。
+規定のメモリアロケーターを変更するだけで、大幅に速度改善をできる場合があります。
+たとえば[こちらのベンチマーク](https://github.com/rust-lang/rust-analyzer/issues/1441)によると、以下2つのメモリアロケーターは、
+
+- [mimalloc](https://microsoft.github.io/mimalloc/)
+- [jemalloc](https://jemalloc.net/)
+
+規定のメモリアロケーターより、高速という結果です。[Hayabusa](https://github.com/Yamato-Security/hayabusa)でも[mimalloc](https://microsoft.github.io/mimalloc/)を採用することで、大幅な速度改善が確認され、バージョン1.8.0から[mimalloc](https://microsoft.github.io/mimalloc/)を利用しています。
 
 ### 変更前  <!-- omit in toc -->
 ```
 # とくになし（規定でメモリアロケータ宣言は不要）
 ```
 ### 変更後  <!-- omit in toc -->
-Rustの[メモリアロケーター](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html)の変更は、以下の2ステップのみです。
+Rustの[メモリアロケーター](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html)の変更手順は、以下の2ステップのみです。
 
 1. [mimallocクレート](https://crates.io/crates/mimalloc)を`Cargo.toml`の[dependenciesセクション](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency)で指定する
 ```Toml
@@ -54,12 +60,12 @@ static GLOBAL: MiMalloc = MiMalloc;
 以上で、[mimalloc](https://github.com/microsoft/mimalloc)をメモリアロケーターとして動作させることができます。
 
 ### 効果（Pull Reuest事例）  <!-- omit in toc -->
-効果はプログラムの特性に依ると思われますが、以下PRの事例では、
+改善効果はプログラムの特性に依りますが、以下PRの事例では、
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 上記手順でメモリアロケーターを[mimalloc](https://github.com/microsoft/mimalloc)に変更することで、Intel系OSで20-30%速度を改善しています。
 
-## 不要なclone()、to_string()の使用を避ける
+## 不要なclone()、to_string()、to_owned()の使用を避ける
 ひとこと
 ### 変更前  <!-- omit in toc -->
 ```Rust
@@ -101,11 +107,11 @@ static GLOBAL: MiMalloc = MiMalloc;
 〇〇できました。
 
 ## 寿命の長い構造体の不要なフィールドを削除する
-一部の構造体には、プロセス起動中メモリ上保持され続けるものもあります。[Hayabusa](https://github.com/Yamato-Security/hayabusa)では、とくに以下の構造体（バージョン2.2.2時点）は保持数が多いため、
+プロセス起動中、メモリ上に保持し続ける必要がある構造体は、全体のメモリ使用量に影響を及ぼしている可能性があります。[Hayabusa](https://github.com/Yamato-Security/hayabusa)では、とくに以下の構造体（バージョン2.2.2時点）は保持数が多いため、
 - [DetectInfo](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/message.rs#L27-L36)
 - [LeafSelectNode](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/detections/rule/selectionnodes.rs#L234-L239)
 
-上記構造体に関連するフィールドの削除は、全体のメモリ使用量削減に一定の効果が見込めます。
+上記構造体に関連するフィールドの削除は、全体のメモリ使用量削減に一定の効果がありました。
 
 ### 変更前  <!-- omit in toc -->
 ```Rust
@@ -132,10 +138,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 ```Rust
 ```
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、
+以下PRの事例では、検知結果1件ずつを処理するループ中でのIO処理をループ外にだすことで、
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
-〇〇できました。
+20%ほどの速度改善を実現しました。
 
 ## ループの中で、正規表現コンパイルを避ける
 正規表現マッチングは一定の速度がでる一方で、正規表現コンパイルは非常に低速です。そのため、とくにループ中での正規表現コンパイルは極力避けることが望ましいです。
@@ -288,7 +294,7 @@ fn main() {
 以下PRの事例では、
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
-〇〇できました。
+大幅な速度改善を実現しました。
 
 # ベンチマークの取得
 ## メモリアロケーターの統計機能の利用（mimalloc）
@@ -366,4 +372,4 @@ Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processo
 
 # 貢献
 
-この文書は、Hayabusaの実際の改善事例から得た知見をもとに作成していますが、誤りやよりパフォーマンスを出せるテクニックがありましたら、issueやプルリクエストを頂けると幸いです！
+この文書は、[Hayabusa](https://github.com/Yamato-Security/hayabusa)の実際の改善事例から得た知見をもとに作成していますが、誤りやよりパフォーマンスを出せるテクニックがありましたら、issueやプルリクエストを頂けると幸いです！
