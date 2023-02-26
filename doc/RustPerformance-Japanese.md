@@ -111,6 +111,7 @@ fn return_lines() -> impl Iterator<Item=String> {
     let buf = BufReader::new(file);
     buf.lines()
         .map(|l| l.expect("Could not parse line"))
+        // ここでcollect()せずに、Iteratorを戻り値として返す
 }
 
 fn main() {
