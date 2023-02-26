@@ -185,7 +185,7 @@ fn main() {
 以下PRの事例では、
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
-〇〇できました。
+大幅な速度改善を実現しました。
 
 
 ## 文字列長比較により、フィルターする
