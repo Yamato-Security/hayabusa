@@ -80,11 +80,48 @@ static GLOBAL: MiMalloc = MiMalloc;
 [Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリで保持するため、要素数が多いケースでは大量のメモリを使用します。一要素ずつの処理で事足りるケースでは、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
 
 ### 変更前  <!-- omit in toc -->
+たとえば、1GBほどのファイルを読み出し、`Vec`を返す関数は、
 ```Rust
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+
+fn return_lines() -> Vec<String> {
+    let file = File::open("test.txt").unwrap();
+    let buf = BufReader::new(file);
+    buf.lines()
+        .map(|l| l.expect("Could not parse line"))
+        .collect()
+}
+
+fn main() {
+    let lines = return_lines();
+    for line in lines {
+        println!("{}", line)
+    }
+}
 ```
 ### 変更後  <!-- omit in toc -->
+以下のように、Iteratorトレイを返すようにすることで、
 ```Rust
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+
+fn return_lines() -> impl Iterator<Item=String> {
+    let file = File::open("test.txt").unwrap();
+    let buf = BufReader::new(file);
+    buf.lines()
+        .map(|l| l.expect("Could not parse line"))
+}
+
+fn main() {
+    let lines = return_lines();
+    for line in lines {
+        println!("{}", line)
+    }
+}
 ```
+上記の例では、変更前のメモリ使用量は1GBほどでしたが、3MB程度の使用量に削減できます。
+
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
