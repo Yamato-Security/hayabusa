@@ -25,7 +25,7 @@
 - [貢献](#貢献)
 
 # この文書について
-[Hayabusa](https://github.com/Yamato-Security/hayabusa)は、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループにより開発されたファストフォレンジックツールです。[隼](https://ja.wikipedia.org/wiki/%E3%83%8F%E3%83%A4%E3%83%96%E3%82%B5)のように高速で脅威ハンティングできることを目指し、[Rust](https://www.rust-lang.org/) で開発されています。[Rust](https://www.rust-lang.org/) はそれ自体が高速な言語ですが、その特徴を十分に活かすためのポイントがあります。この文書では、[Hayabusa開発史](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md)の中の改善事例をもとに、ハイパフォーマンスな[Rust](https://www.rust-lang.org/) プログラムを開発するためのテクニックを紹介し、今後の開発に役立てることを目的としています。
+[Hayabusa](https://github.com/Yamato-Security/hayabusa)は、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループにより開発されたファストフォレンジックツールです。[隼](https://ja.wikipedia.org/wiki/%E3%83%8F%E3%83%A4%E3%83%96%E3%82%B5)のように高速で脅威ハンティングできることを目指し、[Rust](https://www.rust-lang.org/) で開発されています。[Rust](https://www.rust-lang.org/) はそれ自体が高速な言語ですが、その特徴を十分に活かすためのポイントがあります。この文書は、[Hayabusa開発史](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md)の中の改善事例をもとに、ハイパフォーマンスな[Rust](https://www.rust-lang.org/) プログラムを開発するためのテクニックを紹介し、今後の開発に役立てることを目的としています。
 
 
 # メモリ使用量の削減
@@ -36,7 +36,7 @@
 - [mimalloc](https://microsoft.github.io/mimalloc/)
 - [jemalloc](https://jemalloc.net/)
 
-規定のメモリアロケーターより、高速という結果です。[Hayabusa](https://github.com/Yamato-Security/hayabusa)でも[mimalloc](https://microsoft.github.io/mimalloc/)を採用することで、大幅な速度改善が確認され、バージョン1.8.0から[mimalloc](https://microsoft.github.io/mimalloc/)を利用しています。
+規定のメモリアロケーターより、高速という結果です。[Hayabusa](https://github.com/Yamato-Security/hayabusa)でも[mimalloc](https://microsoft.github.io/mimalloc/)を採用することで、大幅な速度改善が確認されたため、バージョン1.8.0から[mimalloc](https://microsoft.github.io/mimalloc/)を利用しています。
 
 ### 変更前  <!-- omit in toc -->
 ```
@@ -63,7 +63,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 改善効果はプログラムの特性に依りますが、以下PRの事例では、
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
-上記手順でメモリアロケーターを[mimalloc](https://github.com/microsoft/mimalloc)に変更することで、Intel系OSで20-30%速度を改善しています。
+上記手順でメモリアロケーターを[mimalloc](https://github.com/microsoft/mimalloc)に変更することで、Intel系OSで20-30%速度を改善しました。
 
 ## 不要なclone()、to_string()、to_owned()の使用を避ける
 ひとこと
@@ -237,7 +237,7 @@ fn main() {
 15%ほどの速度改善を実現しました。
 
 ## 正規表現の代わりにString標準メソッドを使う
-正規表現は複雑なマッチングパターンを網羅できる一方、String標準のメソッドと比較すると低速です。そのため、以下のような単純な文字列マッチングには、String標準メソッドを使ったほうが高速です。
+正規表現は複雑なマッチングパターンを網羅できる一方、[String標準のメソッド](https://doc.rust-lang.org/std/string/struct.String.html)と比較すると低速です。そのため、以下のような単純な文字列マッチングには、[String標準のメソッド](https://doc.rust-lang.org/std/string/struct.String.html)を使ったほうが高速です。
 
 - 前方一致（正規表現では、`foo.*`）-> [String::starts_with()](https://doc.rust-lang.org/std/string/struct.String.html#method.starts_with)
 - 後方一致（正規表現では、`.*foo`）-> [String::ends_with()](https://doc.rust-lang.org/std/string/struct.String.html#method.ends_with)
