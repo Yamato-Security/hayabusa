@@ -152,7 +152,7 @@ fn main() {
 上記構造体に関連するフィールドの削除は、全体のメモリ使用量削減に一定の効果がありました。
 
 ### 変更前  <!-- omit in toc -->
-たとえば、`DetectInfo`のフィールドは以下でしたが、
+たとえば、`DetectInfo`のフィールドはバージョン1.8.1までは、以下でしたが、
 ```Rust
 #[derive(Debug, Clone)]
 pub struct DetectInfo {
