@@ -32,6 +32,7 @@
 ## メモリアロケーターを変更する
 メモリ割り当ての多いRustプログラムでは、規定のメモリアロケーターを変更するだけで、大幅な速度改善、メモリ使用量削減をできるケースがあります。
 
+
 ### 変更前  <!-- omit in toc -->
 ```
 # とくになし（規定でメモリアロケータ宣言は不要）
@@ -51,7 +52,7 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 ```
-以上で、[mimalloc](https://github.com/microsoft/mimalloc)がグローバルメモリアロケーターとして動作します。
+以上で、[mimalloc](https://github.com/microsoft/mimalloc)をメモリアロケーターとして動作させることができます。
 
 ### 効果（Pull Reuest事例）  <!-- omit in toc -->
 効果はプログラムの特性に依ると思われますが、以下PRの事例では、
@@ -71,7 +72,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 ## Vecの代わりにIteratorを使う
-[Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリにロードするため、要素数が多いケースでは大量のメモリを使用します。一要素ずつの処理で十分なケースでは、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
+[Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリで保持するため、要素数が多いケースでは大量のメモリを使用します。一要素ずつの処理で事足りるケースでは、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
 
 ### 変更前  <!-- omit in toc -->
 ```
@@ -141,11 +142,40 @@ static GLOBAL: MiMalloc = MiMalloc;
 正規表現マッチングは一定の速度がでる一方で、正規表現コンパイルは非常に低速です。そのため、とくにループ中での正規表現コンパイルは極力避けることが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
+たとえば、10万回正規表現マッチを試行させる以下の処理は、
 ```
+extern crate regex;
+use regex::Regex;
+
+fn main() {
+    let text = "1234567890";
+    let match_str = "abc";
+    for _ in 0..100000 {
+        if Regex::new(match_str).unwrap().is_match(text){ // ループの中で正規表現コンパイル
+            println!("matched!");
+        }
+    }
+}
 ```
 ### 変更後  <!-- omit in toc -->
+以下のように、ループの外で正規表現コンパイルをすることで、
 ```
+extern crate regex;
+use regex::Regex;
+
+fn main() {
+    let text = "1234567890";
+    let match_str = "abc";
+    let r = Regex::new(match_str).unwrap(); // ループの中で正規表現コンパイル
+    for _ in 0..100000 {
+        if r.is_match(text) {
+            println!("matched!");
+        }
+    }
+}
 ```
+上記の例では、変更前と比較して100倍ほど速くなります。
+
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
@@ -158,7 +188,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 たとえば、文字列長が非固定長かつ不一致の文字列を比較することが多い場合、文字列長を1次フィルターに使うことで処理を高速化できます。
 
 ### 変更前  <!-- omit in toc -->
-100万回正規表現マッチを試行する以下の処理は、
+たとえば、100万回正規表現マッチを試行する以下の処理は、
 ```
 extern crate regex;
 use regex::Regex;
@@ -209,7 +239,7 @@ fn main() {
 - 部分一致（正規表現では、`.*foo.*`）-> [String::contains()](https://doc.rust-lang.org/std/string/struct.String.html#method.contains)
 
 ### 変更前  <!-- omit in toc -->
-100万回正規表現で後方一致マッチを試行する以下の処理は、
+たとえば、100万回正規表現で後方一致マッチを試行する以下の処理は、
 ```
 extern crate regex;
 use regex::Regex;
