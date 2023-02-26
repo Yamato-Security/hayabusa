@@ -80,7 +80,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 [Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリで保持するため、要素数が多いケースでは大量のメモリを使用します。一要素ずつの処理で事足りるケースでは、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
 
 ### 変更前  <!-- omit in toc -->
-たとえば、1GBほどのファイルを読み出し、`Vec`を返す関数は、
+たとえば、1GBほどのファイルを読み出し、`Vec`を返す以下の`return_lines()`関数は、
 ```Rust
 use std::fs::File;
 use std::io::{BufRead, BufReader};
