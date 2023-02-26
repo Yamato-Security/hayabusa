@@ -25,7 +25,7 @@
 - [貢献](#貢献)
 
 # この文書について
-[Hayabusa](https://github.com/Yamato-Security/hayabusa)は、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループにより開発されたファストフォレンジックツールです。[隼](https://ja.wikipedia.org/wiki/%E3%83%8F%E3%83%A4%E3%83%96%E3%82%B5)のように高速ハンティングできることを目指し、[Rust](https://www.rust-lang.org/) で開発されています。[Rust](https://www.rust-lang.org/) はそれ自体が高速な言語ですが、その特徴を十分に活かすためのポイントがあります。この文書では、[Hayabusa開発史](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md)の中の改善事例をもとに、ハイパフォーマンスな[Rust](https://www.rust-lang.org/) プログラムを開発するためのテクニックを紹介し、今後の開発に役立てることを目的としています。
+[Hayabusa](https://github.com/Yamato-Security/hayabusa)は、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループにより開発されたファストフォレンジックツールです。[隼](https://ja.wikipedia.org/wiki/%E3%83%8F%E3%83%A4%E3%83%96%E3%82%B5)のように高速で脅威ハンティングできることを目指し、[Rust](https://www.rust-lang.org/) で開発されています。[Rust](https://www.rust-lang.org/) はそれ自体が高速な言語ですが、その特徴を十分に活かすためのポイントがあります。この文書では、[Hayabusa開発史](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md)の中の改善事例をもとに、ハイパフォーマンスな[Rust](https://www.rust-lang.org/) プログラムを開発するためのテクニックを紹介し、今後の開発に役立てることを目的としています。
 
 
 # メモリ使用量の削減
