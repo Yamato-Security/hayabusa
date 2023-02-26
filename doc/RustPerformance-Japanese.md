@@ -339,7 +339,7 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 前提：以下はWindowsで`PowerShell7`がインストール済みの環境でのみ有効な手順です。
 
 1. OSを再起動する
-2. `PowerShell7`の[Get-Counterコマンド](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-counter?view=powershell-7.3#example-3-get-continuous-samples-of-a-counter)を実行し、パフォーマンスカウンター（以下の例ではCPU/Memory使用率を取得）を1秒間隔で取得する
+2. `PowerShell7`の[Get-Counterコマンド](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-counter?view=powershell-7.3#example-3-get-continuous-samples-of-a-counter)を実行し、パフォーマンスカウンター（以下の例ではCPU/Memory使用率を取得）を1秒間隔で取得する(下記以外のリソースを計測したい場合は、[こちらの記事](https://jpwinsup.github.io/blog/2021/06/07/Performance/SystemResource/PerformanceLogging/)が参考になります)
 ```PowerShell
 Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processor Time" -Continuous | ForEach {
      $_.CounterSamples | ForEach {
