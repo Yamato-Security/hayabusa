@@ -831,6 +831,7 @@ dependencies = [
  "libmimalloc-sys",
  "lock_api",
  "maxminddb",
+ "memchr",
  "mimalloc",
  "mockall",
  "nested",

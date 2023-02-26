@@ -33,6 +33,8 @@ use super::configs::{EventKeyAliasConfig, OutputOption, STORED_EKEY_ALIAS};
 use super::detection::EvtxRecordInfo;
 use super::message::AlertMessage;
 
+use memchr::memmem;
+
 pub fn concat_selection_key(key_list: &Nested<String>) -> String {
     return key_list
         .iter()
@@ -590,6 +592,10 @@ pub fn output_and_data_stack_for_html(
         output_data.extend(vec![format!("- {output_str}")]);
         htmlreport::add_md_data(section_name, output_data);
     }
+}
+
+pub fn contains_str(input: &str, check: &str)  -> bool{
+    memmem::find(input.as_bytes(), check.as_bytes()).is_some()
 }
 
 #[cfg(test)]
