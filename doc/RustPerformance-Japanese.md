@@ -132,11 +132,31 @@ static GLOBAL: MiMalloc = MiMalloc;
 ディスクIO処理はメモリ上で完結する処理と比較して、非常に低速です。そのため、とくにループ中でのIO処理は極力避けることが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
+たとえば、100万回ファイルオープンが発生する以下の処理は、
 ```Rust
+use std::fs;
+
+fn main() {
+    for _ in 0..1000000 {
+        let f = fs::read_to_string("Cargo.toml").unwrap();
+        f.len();
+    }
+}
 ```
 ### 変更後  <!-- omit in toc -->
+以下のように、ループの外でファイルオープンさせることで、
 ```Rust
+use std::fs;
+
+fn main() {
+    let f = fs::read_to_string("Cargo.toml").unwrap();
+    for _ in 0..1000000 {
+        f.len();
+    }
+}
 ```
+上記の例では、変更前と比較して1000倍ほど速くなります。
+
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、検知結果1件ずつを処理するループ中でのIO処理をループ外にだすことで、
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
