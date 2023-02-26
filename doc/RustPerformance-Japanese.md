@@ -40,12 +40,12 @@
 Rustの[メモリアロケーター](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html)の変更は、以下の2ステップのみです。
 
 1. [mimallocクレート](https://crates.io/crates/mimalloc)を`Cargo.toml`の[dependenciesセクション](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency)で指定する
-```Cargo.toml
+```Toml
 [dependencies]
 mimalloc = { version = "*", default-features = false }
 ```
 2. [#[global_allocator]](https://doc.rust-lang.org/std/alloc/index.html#the-global_allocator-attribute)で[mimalloc](https://github.com/microsoft/mimalloc)利用を明示する
-```main.rs
+```Rust
 use mimalloc::MiMalloc;
 
 #[global_allocator]
@@ -62,10 +62,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 ## 不要なclone()、to_string()の使用を避ける
 ひとこと
 ### 変更前  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 変更後  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
@@ -74,10 +74,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 [Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリで保持するため、要素数が多いケースでは大量のメモリを使用します。一要素ずつの処理で事足りるケースでは、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
 
 ### 変更前  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 変更後  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
@@ -89,10 +89,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 短い文字列を
 
 ### 変更前  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 変更後  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
@@ -108,10 +108,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 上記構造体に関連するフィールドの削除は、全体のメモリ使用量削減に一定の効果が見込めます。
 
 ### 変更前  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 変更後  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
@@ -126,10 +126,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 ディスクIO処理はメモリ上で完結する処理と比較して、非常に低速です。そのため、とくにループ中でのIO処理は極力避けることが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 変更後  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
@@ -142,7 +142,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 ### 変更前  <!-- omit in toc -->
 たとえば、10万回正規表現マッチを試行させる以下の処理は、
-```
+```Rust
 extern crate regex;
 use regex::Regex;
 
@@ -158,7 +158,7 @@ fn main() {
 ```
 ### 変更後  <!-- omit in toc -->
 以下のように、ループの外で正規表現コンパイルをすることで、
-```
+```Rust
 extern crate regex;
 use regex::Regex;
 
@@ -188,7 +188,7 @@ fn main() {
 
 ### 変更前  <!-- omit in toc -->
 たとえば、100万回正規表現マッチを試行する以下の処理は、
-```
+```Rust
 extern crate regex;
 use regex::Regex;
 
@@ -205,7 +205,7 @@ fn main() {
 ```
 ### 変更後  <!-- omit in toc -->
 以下のように、[String::len()](https://doc.rust-lang.org/std/string/struct.String.html#method.len)を一次フィルターに使うことで、
-```
+```Rust
 extern crate regex;
 use regex::Regex;
 
@@ -239,7 +239,7 @@ fn main() {
 
 ### 変更前  <!-- omit in toc -->
 たとえば、100万回正規表現で後方一致マッチを試行する以下の処理は、
-```
+```Rust
 extern crate regex;
 use regex::Regex;
 
@@ -256,7 +256,7 @@ fn main() {
 ```
 ### 変更後  <!-- omit in toc -->
 以下のように、[String::ends_with()](https://doc.rust-lang.org/std/string/struct.String.html#method.ends_with)を使うことで、
-```
+```Rust
 fn main() {
     let text = "1234567890";
     let match_str = "abc";
@@ -279,10 +279,10 @@ fn main() {
 ## バッファーIOを使う
 ひとこと
 ### 変更前  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 変更後  <!-- omit in toc -->
-```
+```Rust
 ```
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
@@ -298,12 +298,12 @@ fn main() {
 前提： [メモリアロケーターを変更する](#メモリアロケーターを変更する)で[mimalloc](https://github.com/microsoft/mimalloc)を設定している場合の手順です。
 
 1.  `Cargo.toml`の[dependenciesセクション](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency)で[libmimalloc-sysクレート](https://crates.io/crates/libmimalloc-sys)指定する
-```Cargo.toml
+```Toml
 [dependencies]
 libmimalloc-sys = { version = "*",  features = ["extended"] }
 ```
 2. メモリ使用量を測定したい箇所で、以下コードを書きます。
-```main.rs
+```Rust
 use libmimalloc_sys::mi_stats_print_out;
 use std::ptr::null_mut;
 
@@ -334,7 +334,7 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 
 1. OSを再起動する
 2. `PowerShell7`の[Get-Counterコマンド](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-counter?view=powershell-7.3#example-3-get-continuous-samples-of-a-counter)を実行し、パフォーマンスカウンター（以下の例ではCPU/Memory使用率を取得）を1秒間隔で取得する
-```
+```PowerShell
 Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processor Time" -Continuous | ForEach {
      $_.CounterSamples | ForEach {
          [pscustomobject]@{
