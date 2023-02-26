@@ -124,7 +124,7 @@ fn main() {
 上記の例では、変更前のメモリ使用量は1GBほどでしたが、3MB程度のメモリ使用量に削減できます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、
+以下PRの事例では上記手法により、
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 1.7GBのJSONファイルの処理時のメモリ使用量を75%削減しています。
@@ -152,17 +152,45 @@ fn main() {
 上記構造体に関連するフィールドの削除は、全体のメモリ使用量削減に一定の効果がありました。
 
 ### 変更前  <!-- omit in toc -->
+たとえば、`DetectInfo`のフィールドは以下でしたが、
 ```Rust
+#[derive(Debug, Clone)]
+pub struct DetectInfo {
+    pub rulepath: CompactString,
+    pub ruletitle: CompactString,
+    pub level: CompactString,
+    pub computername: CompactString,
+    pub eventid: CompactString,
+    pub detail: CompactString,
+    pub record_information: CompactString,
+    pub ext_field: Vec<(CompactString, Profile)>,
+    pub is_condition: bool,
+}
 ```
 ### 変更後  <!-- omit in toc -->
+以下のように、`record_information`フィールドを削除することで、
 ```Rust
+#[derive(Debug, Clone)]
+pub struct DetectInfo {
+    pub rulepath: CompactString,
+    pub ruletitle: CompactString,
+    pub level: CompactString,
+    pub computername: CompactString,
+    pub eventid: CompactString,
+    pub detail: CompactString,
+    // remove record_information filed
+    pub ext_field: Vec<(CompactString, Profile)>,
+    pub is_condition: bool,
+}
 ```
+1検知結果あたり、11バイトのメモリ使用量削減ができる
+
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、
+以下PRの事例では、検知結果レコード件数が、150万件ほどのデータに対して、
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
-〇〇できました。
+それぞれどちらも、300MB程度メモリ使用量を削減しています。
 
 # 速度の改善
 
