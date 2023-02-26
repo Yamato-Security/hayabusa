@@ -9,6 +9,7 @@ use crate::options::htmlreport;
 use crate::options::profile::Profile;
 use crate::timeline::timelines::Timeline;
 use crate::yaml::ParseYaml;
+use aho_corasick::{AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -214,6 +215,23 @@ fn emit_csv<W: std::io::Write>(
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
+    let output_replaced_maps:HashMap<&str, &str> = HashMap::from_iter(vec![
+        ("🛂r", "\r"),
+        ("🛂n", "\n"),
+        ("🛂t", "\t")
+    ]);
+    let removed_replaced_maps:HashMap<&str, &str> = HashMap::from_iter(vec![
+        ("\n", ""),
+        ("\r", ""),
+        ("\t", "")
+    ]);
+    let output_replacer = AhoCorasickBuilder::new()
+    .match_kind(MatchKind::LeftmostLongest)
+    .build(output_replaced_maps.keys());
+    let output_remover = AhoCorasickBuilder::new()
+    .match_kind(MatchKind::LeftmostLongest)
+    .build(removed_replaced_maps.keys());
+
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
     let output_option = stored_static.output_option.as_ref().unwrap();
@@ -371,17 +389,15 @@ fn emit_csv<W: std::io::Write>(
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim().to_string()))?;
+                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
                     plus_header = false;
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    x.1.to_value()
-                        .replace("🛂r", "\r")
-                        .replace("🛂n", "\n")
-                        .replace("🛂t", "\t")
-                        .replace(['\n', '\r', '\t'], " ")
-                        .replace(['\n', '\r', '\t'], " ")
-                        .split_whitespace()
+                    output_remover.replace_all(
+                        &output_replacer.replace_all(
+                            &x.1.to_value(),
+                            &output_replaced_maps.values().collect_vec()
+                        ) , &removed_replaced_maps.values().collect_vec()).split_whitespace()
                         .join(" ")
                 }))?;
             }
