@@ -18,7 +18,7 @@
   - [正規表現の代わりにString標準メソッドを使う](#正規表現の代わりにstring標準メソッドを使う)
   - [バッファーIOを使う](#バッファーioを使う)
 - [ベンチマークの取得](#ベンチマークの取得)
-  - [グローバルメモリアロケーターの統計機能の利用（mimalloc）](#グローバルメモリアロケーターの統計機能の利用mimalloc)
+  - [メモリアロケーターの統計機能の利用（mimalloc）](#メモリアロケーターの統計機能の利用mimalloc)
   - [Windowsパフォーマンスカウンターの利用](#windowsパフォーマンスカウンターの利用)
   - [heaptrackによるメモリ使用量の取得](#heaptrackによるメモリ使用量の取得)
 - [参考リンク](#参考リンク)
@@ -31,7 +31,6 @@
 # メモリ使用量の削減
 ## メモリアロケーターを変更する
 メモリ割り当ての多いRustプログラムでは、規定のメモリアロケーターを変更するだけで、大幅な速度改善、メモリ使用量削減をできるケースがあります。
-
 
 ### 変更前  <!-- omit in toc -->
 ```
@@ -58,7 +57,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 効果はプログラムの特性に依ると思われますが、以下PRの事例では、
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
-上記手順でグローバルメモリアロケーターを[mimalloc](https://github.com/microsoft/mimalloc)に変更することで、Intel系OSで20-30%速度を改善しています。
+上記手順でメモリアロケーターを[mimalloc](https://github.com/microsoft/mimalloc)に変更することで、Intel系OSで20-30%速度を改善しています。
 
 ## 不要なclone()、to_string()の使用を避ける
 ひとこと
@@ -260,7 +259,7 @@ fn main() {
 ```
 fn main() {
     let text = "1234567890";
-    let match_str = ".*abc";
+    let match_str = "abc";
     for _ in 0..1000000 {
         if text.ends_with(match_str) {
             println!("matched!");
@@ -292,7 +291,7 @@ fn main() {
 〇〇できました。
 
 # ベンチマークの取得
-## グローバルメモリアロケーターの統計機能の利用（mimalloc）
+## メモリアロケーターの統計機能の利用（mimalloc）
 メモリアロケーターの中には、自身のメモリ使用統計情報を保持するものがあります。[mimalloc](https://github.com/microsoft/mimalloc)では、[mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)関数を呼び出すことで、メモリ統計情報が取得できます。
 
 ### 取得方法  <!-- omit in toc -->
@@ -328,14 +327,13 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 - アンチウイルスソフトの影響
   - Hayabusaでは初回実行のみスキャン影響を受けて、遅くなるため、ビルド後2回目以降の結果が比較に適します。
 - ファイルキャッシュの影響
-  - OS起動後、2回目以降の測定結果は、ファイルIOがメモリ上のファイルキャッシュから読み出される分、1回目より早くなり不正確な比較になりがちです。
+  - OS起動後、2回目以降の測定結果は、ファイルIOがメモリ上のファイルキャッシュから読み出される分、1回目より速くなり不正確な比較になりがちです。
 
 ### 取得方法  <!-- omit in toc -->
-前提：以下はWindowsでのみ有効な手順です。
+前提：以下はWindowsで`PowerShell7`がインストール済みの環境でのみ有効な手順です。
 
-1. PowerShell7をインストールする
-2. OSを再起動する
-3. PowerShellの[Get-Counterコマンド](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-counter?view=powershell-7.3#example-3-get-continuous-samples-of-a-counter)を実行し、パフォーマンスカウンター（以下の例ではCPU/Memory使用率を取得）を1秒間隔で取得する
+1. OSを再起動する
+2. `PowerShell7`の[Get-Counterコマンド](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-counter?view=powershell-7.3#example-3-get-continuous-samples-of-a-counter)を実行し、パフォーマンスカウンター（以下の例ではCPU/Memory使用率を取得）を1秒間隔で取得する
 ```
 Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processor Time" -Continuous | ForEach {
      $_.CounterSamples | ForEach {
@@ -347,7 +345,7 @@ Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processo
      }
  } | Export-Csv -Path PerfMonCounters.csv -NoTypeInformation
 ```
-4. 計測したい処理を実行する
+3. 計測したい処理を実行する
 
 ### 事例  <!-- omit in toc -->
 以下は、[Hayabusa](https://github.com/Yamato-Security/hayabusa)で、パフォーマンスを計測する際の手順例です。
