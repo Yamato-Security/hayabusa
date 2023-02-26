@@ -18,8 +18,8 @@
   - [正規表現の代わりにString標準メソッドを使う](#正規表現の代わりにstring標準メソッドを使う)
   - [バッファーIOを使う](#バッファーioを使う)
 - [ベンチマークの取得](#ベンチマークの取得)
-  - [メモリアロケーターの統計機能の利用（mimalloc）](#メモリアロケーターの統計機能の利用mimalloc)
-  - [Windowsパフォーマンスカウンターの利用](#windowsパフォーマンスカウンターの利用)
+  - [メモリアロケーターの統計機能を利用する（mimalloc）](#メモリアロケーターの統計機能を利用するmimalloc)
+  - [Windowsパフォーマンスカウンターを利用する](#windowsパフォーマンスカウンターを利用する)
   - [heaptrackによるメモリ使用量の取得](#heaptrackによるメモリ使用量の取得)
 - [参考リンク](#参考リンク)
 - [貢献](#貢献)
@@ -297,7 +297,7 @@ fn main() {
 大幅な速度改善を実現しました。
 
 # ベンチマークの取得
-## メモリアロケーターの統計機能の利用（mimalloc）
+## メモリアロケーターの統計機能を利用する（mimalloc）
 メモリアロケーターの中には、自身のメモリ使用統計情報を保持するものがあります。[mimalloc](https://github.com/microsoft/mimalloc)では、[mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)関数を呼び出すことで、メモリ統計情報が取得できます。
 
 ### 取得方法  <!-- omit in toc -->
@@ -308,7 +308,7 @@ fn main() {
 [dependencies]
 libmimalloc-sys = { version = "*",  features = ["extended"] }
 ```
-2. メモリ使用量を測定したい箇所で、以下コードを書きます。
+2. メモリ使用量を測定したい箇所で、以下コードを書き、`unsafe`ブロックで[mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)を呼び出すと標準出力にメモリ使用統計情報が出力されます
 ```Rust
 use libmimalloc_sys::mi_stats_print_out;
 use std::ptr::null_mut;
@@ -327,7 +327,7 @@ fn main() {
 
 [Hayabusa](https://github.com/Yamato-Security/hayabusa)では、`--debug`オプションつきで実行した場合、メモリ使用量を確認できるようにしています。
 
-## Windowsパフォーマンスカウンターの利用
+## Windowsパフォーマンスカウンターを利用する
 OS側で取得できる統計情報から各種リソース使用状況を確認できます。この場合は、以下の点に注意が必要です。
 
 - アンチウイルスソフトの影響
