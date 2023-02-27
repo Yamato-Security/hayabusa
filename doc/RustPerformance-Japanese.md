@@ -29,13 +29,13 @@
 
 # 速度の改善
 ## メモリアロケーターを変更する
-規定のメモリアロケーターを変更するだけで、大幅に速度改善をできる場合があります。
+既定のメモリアロケーターを変更するだけで、大幅に速度改善をできる場合があります。
 たとえば[こちらのベンチマーク](https://github.com/rust-lang/rust-analyzer/issues/1441)によると、以下2つのメモリアロケーターは、
 
 - [mimalloc](https://microsoft.github.io/mimalloc/)
 - [jemalloc](https://jemalloc.net/)
 
-規定のメモリアロケーターより、高速という結果です。[Hayabusa](https://github.com/Yamato-Security/hayabusa)でも[mimalloc](https://microsoft.github.io/mimalloc/)を採用することで、大幅な速度改善が確認されたため、バージョン1.8.0から[mimalloc](https://microsoft.github.io/mimalloc/)を利用しています。
+既定のメモリアロケーターより、高速という結果です。[Hayabusa](https://github.com/Yamato-Security/hayabusa)でも[mimalloc](https://microsoft.github.io/mimalloc/)を採用することで、大幅な速度改善が確認されたため、バージョン1.8.0から[mimalloc](https://microsoft.github.io/mimalloc/)を利用しています。
 
 ### 変更前  <!-- omit in toc -->
 ```
