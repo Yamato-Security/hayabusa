@@ -307,7 +307,7 @@ impl LeafMatcher for DefaultMatcher {
             return true;
         }
 
-        return key_list.get(1).unwrap_or("") == "value";
+        return key_list.get(1).unwrap() == "value";
     }
 
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -656,7 +656,7 @@ impl PipeElement {
     /// PipeElement::Wildcardのパイプ処理です。
     /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
     fn pipe_pattern_wildcard(pattern: String) -> String {
-        let wildcards = vec!["*".to_string(), "?".to_string()];
+        let wildcards = vec!["*", "?"];
 
         // patternをwildcardでsplitした結果をpattern_splitsに入れる
         // 以下のアルゴリズムの場合、pattern_splitsの偶数indexの要素はwildcardじゃない文字列となり、奇数indexの要素はwildcardが入る。

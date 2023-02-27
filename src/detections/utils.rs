@@ -21,7 +21,7 @@ use regex::Regex;
 use serde_json::{json, Error, Value};
 use std::cmp::Ordering;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{prelude::*};
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;

@@ -248,7 +248,7 @@ impl ParseYaml {
                     .no_use_rule
                     .get(&rule_id.unwrap_or(&String::default()).to_string())
                 {
-                    let entry_key = if v.contains("exclude_rule") {
+                    let entry_key = if utils::contains_str(v, "exclude_rule") {
                         "excluded"
                     } else {
                         "noisy"
