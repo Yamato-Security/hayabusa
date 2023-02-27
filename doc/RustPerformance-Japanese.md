@@ -205,7 +205,7 @@ fn main() {
 
 ## 文字列長比較により、フィルターする
 扱う文字列の特性に依っては、簡単なフィルターを加えることで、文字列マッチング試行回数を減らし、高速化できる場合があります。
-たとえば、文字列長が非固定長かつ不一致の文字列を比較することが多い場合、文字列長を1次フィルターに使うことで処理を高速化できます。
+たとえば、文字列長が非固定長かつ不一致の文字列を比較することが多い場合、文字列長を一次フィルターに使うことで処理を高速化できます。
 
 ### 変更前  <!-- omit in toc -->
 たとえば、100万回正規表現マッチを試行する以下の処理は、
@@ -374,7 +374,7 @@ pub struct DetectInfo {
 検知結果レコード1件あたり、数バイトのメモリ使用量削減が見込めます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、検知結果レコード件数が、150万件ほどのデータに対して、
+以下PRの事例では、検知結果レコード件数が150万件ほどのデータに対して、
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
