@@ -68,7 +68,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 ディスクIO処理はメモリ上で完結する処理と比較して、非常に低速です。そのため、とくにループの中でのIO処理は極力避けることが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
-たとえば、100万回ファイルオープンが発生する以下の処理は、
+たとえば、ループの中でファイルオープンが100万回発生する以下の処理は、
 ```Rust
 use std::fs;
 
@@ -103,7 +103,7 @@ fn main() {
 正規表現マッチングは一定の速度がでる一方で、正規表現コンパイルは非常に低速です。そのため、とくにループ中での正規表現コンパイルは極力避けることが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
-たとえば、10万回正規表現マッチを試行させる以下の処理は、
+たとえば、ループの中で正規表現マッチを10万回試行する以下の処理は、
 ```Rust
 extern crate regex;
 use regex::Regex;
@@ -268,7 +268,7 @@ fn main() {
 [Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリ上に保持するため、要素数に比例して多くのメモリを使います。一要素ずつの処理で事足りる場合は、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
 
 ### 変更前  <!-- omit in toc -->
-たとえば、1GBほどのファイルを読み出し、`Vec`を返す以下の`return_lines()`関数は、
+たとえば、1GBほどのファイルを読み出し、[Vec](https://doc.rust-lang.org/std/vec/)を返す以下の`return_lines()`関数は、
 ```Rust
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -289,7 +289,7 @@ fn main() {
 }
 ```
 ### 変更後  <!-- omit in toc -->
-以下のように、Iteratorトレイを返すようにすることで、
+以下のように、[Iteratorトレイト](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を返すことで、
 ```Rust
 use std::fs::File;
 use std::io::{BufRead, BufReader};
