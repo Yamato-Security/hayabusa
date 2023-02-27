@@ -265,7 +265,7 @@ fn main() {
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 ## Vecの代わりにIteratorを使う
-[Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリで保持するため、要素数が多い場合は大量のメモリを使用します。一要素ずつの処理で事足りる場合は、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
+[Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリ上に保持するため、要素数に比例して多くのメモリを使います。一要素ずつの処理で事足りる場合は、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
 
 ### 変更前  <!-- omit in toc -->
 たとえば、1GBほどのファイルを読み出し、`Vec`を返す以下の`return_lines()`関数は、
@@ -371,7 +371,7 @@ pub struct DetectInfo {
     pub is_condition: bool,
 }
 ```
-1検知結果あたり、数バイトのメモリ使用量削減が見込めます。
+検知結果レコード1件あたり、数バイトのメモリ使用量削減が見込めます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、検知結果レコード件数が、150万件ほどのデータに対して、
