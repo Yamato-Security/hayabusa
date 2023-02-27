@@ -215,16 +215,16 @@ impl TimeFrameInfo {
     /// timeframeの文字列をパースし、構造体を返す関数
     pub fn parse_tframe(mut value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
         let mut ttype = "";
-        if value.contains('s') {
+        if utils::contains_str(&value, "s") {
             ttype = "s";
             value.retain(|c| c != 's');
-        } else if value.contains('m') {
+        } else if utils::contains_str(&value, "m") {
             ttype = "m";
             value.retain(|c| c != 'm')
-        } else if value.contains('h') {
+        } else if utils::contains_str(&value, "h") {
             ttype = "h";
             value.retain(|c| c != 'h');
-        } else if value.contains('d') {
+        } else if utils::contains_str(&value, "d") {
             ttype = "d";
             value.retain(|c| c != 'd');
         } else {
