@@ -541,7 +541,7 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 4. `cargo build --release` でリリースビルドをする
 5. `heaptrack hayabusa csv-timeline -d sample -o out.csv` を実行する
 
-以上で、[Hayabusa](https://github.com/Yamato-Security/hayabusa)の実行が完了すると、自動でheaptrack解析結果のGUIが立ち上がります。
+以上で、[Hayabusa](https://github.com/Yamato-Security/hayabusa)の実行が完了すると、自動で[heaptrack](https://github.com/KDE/heaptrack)解析結果のGUIが立ち上がります。
 
 ### 事例  <!-- omit in toc -->
 [heaptrack](https://github.com/KDE/heaptrack)解析結果の例は以下です。`Flame Grapth`タブや`Top-Down`タブで視覚的にメモリ使用量の多い処理を確認することができます。
