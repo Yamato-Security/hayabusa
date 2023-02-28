@@ -551,6 +551,7 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 # 参考リンク
 
 - [The Rust Performance Book](https://nnethercote.github.io/perf-book/title-page.html)
+- [Memory Leak (and Growth) Flame Graphs](https://www.brendangregg.com/FlameGraphs/memoryflamegraphs.html)
 
 # 貢献
 
