@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
 
 **Bug Fixes:**
 
