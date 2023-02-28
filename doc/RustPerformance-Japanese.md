@@ -138,7 +138,7 @@ fn main() {
 上記の例では、変更前と比較して100倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、
+以下PRの事例では、正規表現コンパイルをループ外で実施、キャッシュすることで
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 大幅な速度改善を実現しました。
