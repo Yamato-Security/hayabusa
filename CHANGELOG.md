@@ -12,7 +12,7 @@
 
 **Bug Fixes:**
 
-- Fixed display unknown when some events channel name is not case match in `metrics` command. (#943) (@hitenkoku)
+- Some event titles would be displayed as `Unknown` in the `metrics` command even if they were defined. (#943) (@hitenkoku)
 
 ## 2.2.2 [2023/2/22] "Ninja Day Release"
 
