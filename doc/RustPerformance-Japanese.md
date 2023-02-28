@@ -521,10 +521,10 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 前提： 以下はUbuntu 22.04の場合の手順です。[heaptrack](https://github.com/KDE/heaptrack)はWindowsでは使えません。
 
 1. [heaptrack](https://github.com/KDE/heaptrack)のインストールは以下の2コマンドで完了
-  ```
-  sudo apt install heaptrack
-  sudo apt install heaptrack-gui
-  ```
+      ```
+      sudo apt install heaptrack
+      sudo apt install heaptrack-gui
+      ```
 2. [Hayabusa](https://github.com/Yamato-Security/hayabusa)のコードから、[mimalloc](https://github.com/microsoft/mimalloc)関連の以下箇所のコードを削除する（mimallocではheaptrackによるメモリプロファイルが取得できないため）
    - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L32-L33
    - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L59-L60
