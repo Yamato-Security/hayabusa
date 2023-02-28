@@ -474,7 +474,7 @@ fn main() {
   }
 }
 ```
-3. [mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)の出力結果が以下の通り得られます。`peak/reserved`の値がメモリ使用量の最大値です。
+3. [mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)の出力結果が以下の通り得られます。左上の`peak/reserved`の値がメモリ使用量の最大値です。
 
 ![mimalloc_stats_print_out](01_mi_stats_print_out.png)
 
