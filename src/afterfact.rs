@@ -218,7 +218,7 @@ fn emit_csv<W: std::io::Write>(
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
     let removed_replaced_maps: HashMap<&str, &str> =
-        HashMap::from_iter(vec![("\n", ""), ("\r", ""), ("\t", "")]);
+        HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
     let output_replacer = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
         .build(output_replaced_maps.keys());
