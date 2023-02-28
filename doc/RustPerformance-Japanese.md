@@ -525,7 +525,7 @@ Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processo
   sudo apt install heaptrack
   sudo apt install heaptrack-gui
   ```
-2. [Hayabusa](https://github.com/Yamato-Security/hayabusa)のコードから、[mimalloc](https://github.com/microsoft/mimalloc)関連のコードを削除する（mimallocではheaptrackによるメモリプロファイルが取得できないため）
+2. [Hayabusa](https://github.com/Yamato-Security/hayabusa)のコードから、[mimalloc](https://github.com/microsoft/mimalloc)関連の以下箇所のコードを削除する（mimallocではheaptrackによるメモリプロファイルが取得できないため）
    - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L32-L33
    - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L59-L60
    - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L632-L634
