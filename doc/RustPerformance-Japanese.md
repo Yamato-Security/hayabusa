@@ -94,7 +94,7 @@ fn main() {
 上記の例では、変更前と比較して1000倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、検知結果1件ずつを処理するループ中でのIO処理をループ外にだすことで、
+以下PRの事例では、検知結果を1件ずつ扱うループ中のIO処理をループ外にだすことで、
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 20%ほどの速度改善を実現しました。
