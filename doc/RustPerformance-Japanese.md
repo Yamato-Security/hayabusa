@@ -343,14 +343,28 @@ fn main() {
 1.7GBのJSONファイルの処理時のメモリ使用量を75%削減しています。
 
 ## 短い文字列に、compact_strクレートを使う
-短い文字列を
+24byte未満の短い文字列を大量に扱う場合は、[compact_strクレート](https://docs.rs/crate/compact_str/latest)を利用することで、メモリ使用量削減効果があります。
 
 ### 変更前  <!-- omit in toc -->
+たとえば、1000万個のStringを持つ以下のVecは、
 ```Rust
+fn main() {
+    let v: Vec<String> = vec![String::from("ABCDEFGHIJKLMNOPQRSTUV"); 10000000];
+    // なにか処理
+}
 ```
 ### 変更後  <!-- omit in toc -->
+以下のように、[CompactString](https://docs.rs/compact_str/latest/compact_str/)に置き換えることで、
 ```Rust
+use compact_str::CompactString;
+
+fn main() {
+    let v: Vec<CompactString> = vec![CompactString::from("ABCDEFGHIJKLMNOPQRSTUV"); 10000000];
+    // なにか処理
+}
 ```
+上記の例では、変更前と比較してメモリ使用量が50%ほど削減されます。
+
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
