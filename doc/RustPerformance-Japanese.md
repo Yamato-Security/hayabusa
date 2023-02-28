@@ -546,9 +546,9 @@ Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processo
 ### 事例  <!-- omit in toc -->
 heaptrackの結果の例は以下です。`Flame Grapth`タブや`Top-Down`タブで視覚的にメモリ使用量の多い処理を確認することができます。
 
-![heaptrack01](02_heaptrack.png)
+![heaptrack01](02-heaptrack.png)
 
-![heaptrack02](03_heaptrack.png)
+![heaptrack02](03-heaptrack.png)
 
 # 参考リンク
 
