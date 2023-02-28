@@ -434,7 +434,7 @@ pub struct DetectInfo {
     pub computername: CompactString,
     pub eventid: CompactString,
     pub detail: CompactString,
-    // remove record_information failed
+    // remove record_information field
     pub ext_field: Vec<(CompactString, Profile)>,
     pub is_condition: bool,
 }
