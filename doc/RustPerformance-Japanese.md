@@ -44,7 +44,7 @@
 ### 変更後  <!-- omit in toc -->
 [メモリアロケーター](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html)の変更手順は、以下の2ステップのみです。
 
-1. [mimallocクレート](https://crates.io/crates/mimalloc)を`Cargo.toml`の[dependenciesセクション](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency)で指定する
+1. [mimallocクレート](https://crates.io/crates/mimalloc)を`Cargo.toml`の[[dependencies]セクション](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency)で指定する
 ```Toml
 [dependencies]
 mimalloc = { version = "*", default-features = false }
@@ -297,7 +297,7 @@ fn main() {
 }
 ```
 ### 変更後  <!-- omit in toc -->
-以下のように、借用を利用することで[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)による不要なコピーをなくすことができます。
+以下のように、[借用](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)を利用することで[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)による不要なコピーをなくすことができます。
 ```Rust
 fn main() {
     let lst = vec![1, 2, 3];
