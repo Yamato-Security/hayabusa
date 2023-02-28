@@ -532,11 +532,11 @@ Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processo
 
 3. [Hayabusa](https://github.com/Yamato-Security/hayabusa)の`Cargo.toml`のコンパイルオプションを以下の通り変更する
 以下を削除し、
-- https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/Cargo.toml#L65-L66
-末尾に以下を追記する
-  ```
-  debug = true
-  ```
+   - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/Cargo.toml#L65-L66
+   末尾に以下を追記する
+     ```
+     debug = true
+     ```
 
 4. `cargo build --release`
 5. `heaptrack hayabusa csv-timeline -d sample -o out.csv`
