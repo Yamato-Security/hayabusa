@@ -390,67 +390,79 @@ impl LeafMatcher for DefaultMatcher {
                     _ => None,
                 };
             }
-        } else if n == 2
-            && (self.pipes[0] == PipeElement::Base64offset
-                && self.pipes[1] == PipeElement::Contains)
-        {
-            // 現状では複数のパイプへの対応は|base64offset|containsの場合のみ
-            if let Some(val) = select_value.as_str() {
-                let val_byte = val.as_bytes();
-                let mut fastmatches = vec![];
-                for i in 0..3 {
-                    let mut b64_result = vec![];
-                    let mut target_byte = vec![];
-                    target_byte.resize_with(i, || 0b0);
-                    target_byte.extend_from_slice(val_byte);
-                    b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
-                    general_purpose::STANDARD
-                        .encode_slice(target_byte, &mut b64_result)
-                        .ok();
-                    let convstr_b64 = String::from_utf8(b64_result);
-                    if let Ok(b64_str) = convstr_b64 {
-                        // ここでContainsのfastmatch対応を行う
-                        let filtered_null_chr = b64_str.replace('\0', "");
-                        let b64_offset_contents = match b64_str.find('=').unwrap_or_default() % 4 {
-                            2 => {
-                                if i == 0 {
-                                    filtered_null_chr[..filtered_null_chr.len() - 3].to_string()
-                                } else {
-                                    filtered_null_chr[(i + 1)..filtered_null_chr.len() - 3]
-                                        .to_string()
+        } else if n == 2 {
+            if self.pipes[0] == PipeElement::Base64offset && self.pipes[1] == PipeElement::Contains
+            {
+                // |base64offset|containsの場合
+                if let Some(val) = select_value.as_str() {
+                    let val_byte = val.as_bytes();
+                    let mut fastmatches = vec![];
+                    for i in 0..3 {
+                        let mut b64_result = vec![];
+                        let mut target_byte = vec![];
+                        target_byte.resize_with(i, || 0b0);
+                        target_byte.extend_from_slice(val_byte);
+                        b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
+                        general_purpose::STANDARD
+                            .encode_slice(target_byte, &mut b64_result)
+                            .ok();
+                        let convstr_b64 = String::from_utf8(b64_result);
+                        if let Ok(b64_str) = convstr_b64 {
+                            // ここでContainsのfastmatch対応を行う
+                            let filtered_null_chr = b64_str.replace('\0', "");
+                            let b64_offset_contents = match b64_str.find('=').unwrap_or_default()
+                                % 4
+                            {
+                                2 => {
+                                    if i == 0 {
+                                        filtered_null_chr[..filtered_null_chr.len() - 3].to_string()
+                                    } else {
+                                        filtered_null_chr[(i + 1)..filtered_null_chr.len() - 3]
+                                            .to_string()
+                                    }
                                 }
-                            }
-                            3 => {
-                                if i == 0 {
-                                    filtered_null_chr[..filtered_null_chr.len() - 2].to_string()
-                                } else {
-                                    filtered_null_chr.replace('\0', "")
-                                        [(i + 1)..filtered_null_chr.len() - 2]
-                                        .to_string()
+                                3 => {
+                                    if i == 0 {
+                                        filtered_null_chr[..filtered_null_chr.len() - 2].to_string()
+                                    } else {
+                                        filtered_null_chr.replace('\0', "")
+                                            [(i + 1)..filtered_null_chr.len() - 2]
+                                            .to_string()
+                                    }
                                 }
-                            }
-                            _ => {
-                                if i == 0 {
-                                    filtered_null_chr
-                                } else {
-                                    filtered_null_chr[(i + 1)..].to_string()
+                                _ => {
+                                    if i == 0 {
+                                        filtered_null_chr
+                                    } else {
+                                        filtered_null_chr[(i + 1)..].to_string()
+                                    }
                                 }
+                            };
+                            if let Some(fm) = Self::convert_to_fast_match(
+                                &format!("*{b64_offset_contents}*"),
+                                false,
+                            ) {
+                                fastmatches.extend(fm);
                             }
-                        };
-                        if let Some(fm) =
-                            Self::convert_to_fast_match(&format!("*{b64_offset_contents}*"), false)
-                        {
-                            fastmatches.extend(fm);
+                        } else {
+                            err_msges.push(format!(
+                                "Failed base64 encoding: {}",
+                                convstr_b64.unwrap_err()
+                            ));
                         }
-                    } else {
-                        err_msges.push(format!(
-                            "Failed base64 encoding: {}",
-                            convstr_b64.unwrap_err()
-                        ));
+                    }
+                    if !fastmatches.is_empty() {
+                        self.fast_match = Some(fastmatches);
                     }
                 }
-                if !fastmatches.is_empty() {
-                    self.fast_match = Some(fastmatches);
+            } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
+            // |contains|allの場合、事前の分岐でAndNodeとしているのでここではcontainsのみとして取り扱う
+            {
+                if let Some(val) = select_value.as_str() {
+                    self.fast_match = Self::convert_to_fast_match(
+                        format!("{}{}{}", '*', val, '*').as_str(),
+                        true,
+                    );
                 }
             }
         } else {
@@ -560,6 +572,7 @@ enum PipeElement {
     EqualsField(String),
     Endswithfield(String),
     Base64offset,
+    All,
 }
 
 impl PipeElement {
@@ -572,6 +585,7 @@ impl PipeElement {
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
+            "all" => Option::Some(PipeElement::All),
             _ => Option::None,
         };
 

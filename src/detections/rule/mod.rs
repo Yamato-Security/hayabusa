@@ -308,6 +308,14 @@ impl DetectionNode {
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
+        } else if yaml.as_vec().is_some() && !key_list.is_empty() && key_list[0].ends_with("|all") {
+            //key_listにallが入っていた場合は子要素の配列はAND条件と解釈する。
+            let mut and_node = selectionnodes::AndSelectionNode::new();
+            yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
+                let child_node = Self::parse_selection_recursively(key_list.clone(), child_yaml);
+                and_node.child_nodes.push(child_node);
+            });
+            Box::new(and_node)
         } else if yaml.as_vec().is_some() {
             // 配列はOR条件と解釈する。
             let mut or_node = selectionnodes::OrSelectionNode::new();
@@ -315,7 +323,6 @@ impl DetectionNode {
                 let child_node = Self::parse_selection_recursively(key_list.clone(), child_yaml);
                 or_node.child_nodes.push(child_node);
             });
-
             Box::new(or_node)
         } else {
             // 連想配列と配列以外は末端ノード
