@@ -521,25 +521,24 @@ Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processo
 前提： 以下はUbuntu 22.04の場合の手順です。[heaptrack](https://github.com/KDE/heaptrack)はWindowsでは使えません。
 
 1. [heaptrack](https://github.com/KDE/heaptrack)のインストールは以下の2コマンドで完了
-```
-sudo apt install heaptrack
-sudo apt install heaptrack-gui
-```
+  ```
+  sudo apt install heaptrack
+  sudo apt install heaptrack-gui
+  ```
 2. [Hayabusa](https://github.com/Yamato-Security/hayabusa)のコードから、[mimalloc](https://github.com/microsoft/mimalloc)関連のコードを削除する（mimallocではheaptrackによるメモリプロファイルが取得できないため）
-https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L32-L33
-https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L59-L60
-https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L632-L634
+   - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L32-L33
+   - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L59-L60
+   - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L632-L634
 
 3. [Hayabusa](https://github.com/Yamato-Security/hayabusa)の`Cargo.toml`のコンパイルオプションを以下の通り変更する
 以下を削除し、
-https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/Cargo.toml#L65-L66
-末尾に以下を追記
-```
-debug = true
-```
+- https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/Cargo.toml#L65-L66
+末尾に以下を追記する
+  ```
+  debug = true
+  ```
 
 4. `cargo build --release`
-
 5. `heaptrack hayabusa csv-timeline -d sample -o out.csv`
 
 以上で、[Hayabusa](https://github.com/Yamato-Security/hayabusa)の実行が完了すると、自動でheaptrack解析結果のGUIが立ち上がります。
