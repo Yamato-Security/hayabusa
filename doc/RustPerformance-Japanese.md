@@ -144,18 +144,41 @@ fn main() {
 大幅な速度改善を実現しました。
 
 ## バッファーIOを使う
-ひとこと
+たとえば、[write](https://doc.rust-lang.org/std/io/trait.Write.html#tymethod.write)が100万回発生する以下の処理は、
 ### 変更前  <!-- omit in toc -->
 ```Rust
+use std::fs::File;
+use std::io::{BufWriter, Write};
+
+fn main() {
+    let mut f = File::create("sample.txt").unwrap();
+    for _ in 0..1000000 {
+        f.write(b"hello world!");
+    }
+}
 ```
 ### 変更後  <!-- omit in toc -->
+以下のように、[BufWriter](https://doc.rust-lang.org/std/io/struct.BufWriter.html)を使うことで、
 ```Rust
+use std::fs::File;
+use std::io::{BufWriter, Write};
+
+fn main() {
+    let mut f = File::create("sample.txt").unwrap();
+    let mut writer = BufWriter::new(f);
+    for _ in 0..1000000 {
+        writer.write(b"some text");
+    }
+    writer.flush().unwrap();
+}
 ```
+上記の例では、変更前と比較して50倍ほど速くなります。
+
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、
+以下PRの事例では、上記手法により、
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
-大幅な速度改善を実現しました。
+出力処理の大幅な速度改善を実現しました。
 
 ## 正規表現の代わりにString標準メソッドを使う
 正規表現は複雑なマッチングパターンを網羅できる一方、[String標準のメソッド](https://doc.rust-lang.org/std/string/struct.String.html)と比較すると低速です。そのため、以下のような単純な文字列マッチングには、[String標準のメソッド](https://doc.rust-lang.org/std/string/struct.String.html)を使ったほうが高速です。
