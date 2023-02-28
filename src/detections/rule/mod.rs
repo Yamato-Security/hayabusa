@@ -985,7 +985,26 @@ mod tests {
           }
         }"#;
 
+        // case of
+        let record_json_str2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auts"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
         check_select(rule_str, record_json_str, true);
+        check_select(rule_str, record_json_str2, false);
     }
 
     /// countで対象の数値確認を行うためのテスト用関数
