@@ -281,11 +281,11 @@ fn main() {
 ## 不要なclone()、to_string()、to_owned()の使用を避ける
 ひとこと
 ### 変更前  <!-- omit in toc -->
-たとえば、同一の`Vec`を複数回イテレーションしたい場合、`clone()`を書くことでコンパイルエラーを解消することもできますが
+たとえば、同一の`Vec`を複数回イテレーションしたい場合、[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)でコンパイルエラーを解消することもできますが
 ```Rust
 fn main() {
     let lst = vec![1, 2, 3];
-    for x in lst.clone() {
+    for x in lst.clone() { // コンパイルエラー解消のために
         println!("{x}");
     }
 
@@ -295,7 +295,7 @@ fn main() {
 }
 ```
 ### 変更後  <!-- omit in toc -->
-以下のように、借用することで、`clone()`による不要なコピーをなくすことができます。
+以下のように、借用を利用することで[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)による不要なコピーをなくすことができます。
 ```Rust
 fn main() {
     let lst = vec![1, 2, 3];
@@ -313,7 +313,7 @@ fn main() {
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、不要な[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)、[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)を置き換えることで、
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
-- 
+
 大幅なメモリ使用量削減を実現しました。
 
 ## Vecの代わりにIteratorを使う
