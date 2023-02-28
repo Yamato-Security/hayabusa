@@ -281,13 +281,40 @@ fn main() {
 ## 不要なclone()、to_string()、to_owned()の使用を避ける
 ひとこと
 ### 変更前  <!-- omit in toc -->
+たとえば、同一の`Vec`を複数回イテレーションしたい場合、`clone()`を書くことでコンパイルエラーを解消することもできますが
 ```Rust
+fn main() {
+    let lst = vec![1, 2, 3];
+    for x in lst.clone() {
+        println!("{x}");
+    }
+
+    for x in lst {
+        println!("{x}");
+    }
+}
 ```
 ### 変更後  <!-- omit in toc -->
+以下のように、借用することで、`clone()`による不要なコピーをなくすことができます。
 ```Rust
+fn main() {
+    let lst = vec![1, 2, 3];
+    for x in &lst {
+        println!("{x}");
+    }
+
+    for x in lst {
+        println!("{x}");
+    }
+}
 ```
+上記の例では、変更前と比較してメモリ使用量が50%ほど削減されます。
+
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
+以下PRの事例では、不要な[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)、[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)を置き換えることで、
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
+- 
+大幅なメモリ使用量削減を実現しました。
 
 ## Vecの代わりにIteratorを使う
 [Vec](https://doc.rust-lang.org/std/vec/)は全要素をメモリ上に保持するため、要素数に比例して多くのメモリを使います。一要素ずつの処理で事足りる場合は、代わりに[Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を使用することで、メモリ使用量を大幅に削減できます。
@@ -343,7 +370,7 @@ fn main() {
 1.7GBのJSONファイルの処理時のメモリ使用量を75%削減しています。
 
 ## 短い文字列に、compact_strクレートを使う
-24byte未満の短い文字列を大量に扱う場合は、[compact_strクレート](https://docs.rs/crate/compact_str/latest)を利用することで、メモリ使用量削減効果があります。
+24byte未満の短い文字列を大量に扱う場合は、[compact_strクレート](https://docs.rs/crate/compact_str/latest)を利用することで、メモリ使用量の削減効果があります。
 
 ### 変更前  <!-- omit in toc -->
 たとえば、1000万個のStringを持つ以下のVecは、
