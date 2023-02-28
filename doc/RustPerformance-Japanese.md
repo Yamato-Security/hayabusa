@@ -310,7 +310,7 @@ fn main() {
     }
 }
 ```
-上記の例では、変更前と比較してメモリ使用量が50%ほど削減されます。
+上記の例では、変更前と比較して最大メモリ使用量が50%ほど削減されます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下PRの事例では、不要な[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)、[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)を置き換えることで、
@@ -474,7 +474,7 @@ pub struct DetectInfo {
       }
     }
     ```
-3. [mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)の出力結果が以下の通り得られます。左上の`peak/reserved`の値がメモリ使用量の最大値です。
+3. [mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)の出力結果が以下の通り得られます。左上の`peak/reserved`の値が最大メモリ使用量です。
 
     ![mimalloc_stats_print_out](01_mi_stats_print_out.png)
 
