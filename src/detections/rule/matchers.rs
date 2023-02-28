@@ -270,7 +270,10 @@ impl DefaultMatcher {
     fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
         let wildcard_count = s.chars().filter(|c| *c == '*').count();
         let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
-        if utils::contains_str(s, "?") || s.ends_with(r"\\\*") || (!s.is_ascii() && utils::contains_str(s, "*")) {
+        if utils::contains_str(s, "?")
+            || s.ends_with(r"\\\*")
+            || (!s.is_ascii() && utils::contains_str(s, "*"))
+        {
             // 高速なマッチに変換できないパターンは、正規表現マッチのみ
             return None;
         } else if s.starts_with('*')
@@ -526,7 +529,9 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                    FastMatch::Contains(s) => Some(utils::contains_str(&event_value_str.to_lowercase(), s)),
+                    FastMatch::Contains(s) => {
+                        Some(utils::contains_str(&event_value_str.to_lowercase(), s))
+                    }
                 }
             } else {
                 Some(fast_matcher.iter().any(|fm| match fm {

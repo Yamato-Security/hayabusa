@@ -21,7 +21,7 @@ use regex::Regex;
 use serde_json::{json, Error, Value};
 use std::cmp::Ordering;
 use std::fs::File;
-use std::io::{prelude::*};
+use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use std::str;
 use std::string::String;
@@ -254,7 +254,7 @@ pub fn get_event_value<'a>(
 
         Option::Some(ret)
     } else {
-        let event_key = if !key.contains('.') {
+        let event_key = if !contains_str(key, ".") {
             "Event.EventData.".to_string() + key
         } else {
             key.to_string()
@@ -594,7 +594,7 @@ pub fn output_and_data_stack_for_html(
     }
 }
 
-pub fn contains_str(input: &str, check: &str)  -> bool{
+pub fn contains_str(input: &str, check: &str) -> bool {
     memmem::find(input.as_bytes(), check.as_bytes()).is_some()
 }
 

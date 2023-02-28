@@ -449,7 +449,7 @@ impl Detection {
                                 .replace('\t', "\\t")
                                 .split("\r\n")
                                 .map(|x| x.trim())
-                                .join("\\r\\n")
+                                .join("\\r\\n"),
                         )
                     } else {
                         CompactString::from("n/a")
