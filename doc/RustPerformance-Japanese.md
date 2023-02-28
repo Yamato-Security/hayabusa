@@ -544,8 +544,11 @@ Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processo
 以上で、[Hayabusa](https://github.com/Yamato-Security/hayabusa)の実行が完了すると、自動でheaptrack解析結果のGUIが立ち上がります。
 
 ### 事例  <!-- omit in toc -->
-- TODO
-- TODO
+heaptrackの結果の例は以下です。`Flame Grapth`タブや`Top-Down`タブで視覚的にメモリ使用量の多い処理を確認することができます。
+
+![heaptrack01](02_heaptrack.png)
+
+![heaptrack02](03_heaptrack.png)
 
 # 参考リンク
 
