@@ -279,8 +279,8 @@ fn main() {
 # メモリ使用量の削減
 
 ## 不要なclone()、to_string()、to_owned()の使用を避ける
-所有権に関連するコンパイルエラーの解消手段として、[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)や[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)を安易に使うと、保持するデータ量や頻度に依り、ボトルネックになる可能性があります。
-低コストで動作する借用で代替できるかを先に検討することが望ましいです。
+[所有権](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html)に関連するコンパイルエラーの解消手段として、[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)や[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)を安易に使うと、保持するデータ量や頻度に依り、ボトルネックになる可能性があります。
+低コストで動作する[借用](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)で代替できるかを先に検討することが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
 たとえば、同一の`Vec`を複数回イテレーションしたい場合、[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)でコンパイルエラーを解消することもできますが
