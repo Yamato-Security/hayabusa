@@ -144,8 +144,10 @@ fn main() {
 大幅な速度改善を実現しました。
 
 ## バッファーIOを使う
-たとえば、[write](https://doc.rust-lang.org/std/io/trait.Write.html#tymethod.write)が100万回発生する以下の処理は、
+バッファーIOを使わない場合のファイルIOは、低速です。バッファーIOを使うとメモリ上のバッファーを介して、IO処理が行われ、システムコール回数を削減でき、速度を改善できます。
+
 ### 変更前  <!-- omit in toc -->
+たとえば、[write](https://doc.rust-lang.org/std/io/trait.Write.html#tymethod.write)が100万回発生する以下の処理は、
 ```Rust
 use std::fs::File;
 use std::io::{BufWriter, Write};
