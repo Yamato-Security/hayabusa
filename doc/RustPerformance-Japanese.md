@@ -366,10 +366,10 @@ fn main() {
 上記の例では、変更前と比較してメモリ使用量が50%ほど削減されます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、
+以下PRの事例では、短い文字列に対して、[CompactString](https://docs.rs/compact_str/latest/compact_str/)を利用することで、
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
-〇〇できました。
+20%ほどのメモリ使用量削減を実現しました。
 
 ## 寿命の長い構造体の不要なフィールドを削除する
 プロセス起動中、メモリ上に保持し続ける構造体は、全体のメモリ使用量に影響を及ぼしている可能性があります。[Hayabusa](https://github.com/Yamato-Security/hayabusa)では、とくに以下の構造体（バージョン2.2.2時点）は保持数が多いため、
