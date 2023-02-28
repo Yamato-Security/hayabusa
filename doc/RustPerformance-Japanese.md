@@ -530,11 +530,9 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
    - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L59-L60
    - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/src/main.rs#L632-L634
 
-3. [Hayabusa](https://github.com/Yamato-Security/hayabusa)の`Cargo.toml`のコンパイルオプションを以下の通り変更する
-以下を削除し、
-   - https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/Cargo.toml#L65-L66
-   末尾に以下を追記する
+3. [Hayabusa](https://github.com/Yamato-Security/hayabusa)の`Cargo.toml`の[[profile.release]セクション](https://github.com/Yamato-Security/hayabusa/blob/v2.2.2/Cargo.toml#L65-L67)を削除し、以下に変更する
      ```
+     [profile.release]
      debug = true
      ```
 
