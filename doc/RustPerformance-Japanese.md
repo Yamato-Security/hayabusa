@@ -301,7 +301,7 @@ fn main() {
 ```Rust
 fn main() {
     let lst = vec![1, 2, 3];
-    for x in &lst {
+    for x in &lst { // 借用でコンパイルエラー解消
         println!("{x}");
     }
 
