@@ -952,6 +952,42 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_use_allfeature_() {
+        // allがパイプで入っていた場合は以下の配下の者をAnd条件で扱うようにすできるかのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7040
+                param1: 'Windows Event Log'
+                param2|contains|all:
+                    - "star"
+                    - "aut"
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
     /// countで対象の数値確認を行うためのテスト用関数
     fn _check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
