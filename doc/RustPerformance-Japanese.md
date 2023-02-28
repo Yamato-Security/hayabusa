@@ -457,26 +457,26 @@ pub struct DetectInfo {
 前提： [メモリアロケーターを変更する](#メモリアロケーターを変更する)で[mimalloc](https://github.com/microsoft/mimalloc)を設定している場合の手順です。
 
 1.  `Cargo.toml`の[dependenciesセクション](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency)で[libmimalloc-sysクレート](https://crates.io/crates/libmimalloc-sys)指定する
-```Toml
-[dependencies]
-libmimalloc-sys = { version = "*",  features = ["extended"] }
-```
+    ```Toml
+    [dependencies]
+    libmimalloc-sys = { version = "*",  features = ["extended"] }
+    ```
 2. メモリ使用量を測定したい箇所で、以下コードを書き、`unsafe`ブロックで[mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)を呼び出すと標準出力にメモリ使用統計情報が出力されます
-```Rust
-use libmimalloc_sys::mi_stats_print_out;
-use std::ptr::null_mut;
-
-fn main() {
-  
-  // Write the following code where you want to measure memory usage
-  unsafe {
-        mi_stats_print_out(None, null_mut());
-  }
-}
-```
+    ```Rust
+    use libmimalloc_sys::mi_stats_print_out;
+    use std::ptr::null_mut;
+    
+    fn main() {
+      
+      // Write the following code where you want to measure memory usage
+      unsafe {
+            mi_stats_print_out(None, null_mut());
+      }
+    }
+    ```
 3. [mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)の出力結果が以下の通り得られます。左上の`peak/reserved`の値がメモリ使用量の最大値です。
 
-![mimalloc_stats_print_out](01_mi_stats_print_out.png)
+    ![mimalloc_stats_print_out](01_mi_stats_print_out.png)
 
 ### 事例   <!-- omit in toc -->
 以下PRで上記実装を適用し、
@@ -497,17 +497,17 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 
 1. OSを再起動する
 2. `PowerShell7`の[Get-Counterコマンド](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-counter?view=powershell-7.3#example-3-get-continuous-samples-of-a-counter)を実行し、パフォーマンスカウンター(下記以外のリソースを計測したい場合は、[こちらの記事](https://jpwinsup.github.io/blog/2021/06/07/Performance/SystemResource/PerformanceLogging/)が参考になります)を1秒間隔で取得し続け、CSVに記録します
-```PowerShell
-Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processor Time" -Continuous | ForEach {
-     $_.CounterSamples | ForEach {
-         [pscustomobject]@{
-             TimeStamp = $_.TimeStamp
-             Path = $_.Path
-             Value = $_.CookedValue
+    ```PowerShell
+    Get-Counter -Counter "\Memory\Available MBytes",  "\Processor(_Total)\% Processor Time" -Continuous | ForEach {
+         $_.CounterSamples | ForEach {
+             [pscustomobject]@{
+                 TimeStamp = $_.TimeStamp
+                 Path = $_.Path
+                 Value = $_.CookedValue
+             }
          }
-     }
- } | Export-Csv -Path PerfMonCounters.csv -NoTypeInformation
-```
+     } | Export-Csv -Path PerfMonCounters.csv -NoTypeInformation
+    ```
 3. 計測したい処理を実行する
 
 ### 事例  <!-- omit in toc -->
