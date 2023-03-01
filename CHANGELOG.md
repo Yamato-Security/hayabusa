@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- Approximately 2% speed increase by improving string contains check. (#947) (@hitenkoku)
+- Approximately 2% speed increase and memory usage reduction by improving string contains check. (#947) (@hitenkoku)
 
 **Bug Fixes:**
 
