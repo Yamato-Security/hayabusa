@@ -181,7 +181,7 @@ impl DetectionNode {
         // conditionに指定されている式を取得
         let condition = &detection_yaml["condition"].as_str();
         let condition_str = if let Some(cond_str) = condition {
-            cond_str.to_string()
+            *cond_str
         } else {
             // conditionが指定されていない場合、selectionが一つだけならそのselectionを採用することにする。
             let mut keys = self.name_to_selection.keys();
@@ -191,13 +191,13 @@ impl DetectionNode {
                 ]);
             }
 
-            keys.next().unwrap().to_string()
+            keys.next().unwrap()
         };
 
         // conditionをパースして、SelectionNodeに変換する
         let mut err_msgs = vec![];
         let compiler = condition_parser::ConditionCompiler::new();
-        let compile_result = compiler.compile_condition(&condition_str, &self.name_to_selection);
+        let compile_result = compiler.compile_condition(condition_str, &self.name_to_selection);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.extend(vec![err_msg]);
         } else {
@@ -206,7 +206,7 @@ impl DetectionNode {
 
         // aggregation condition(conditionのパイプ以降の部分)をパース
         let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
-        let compile_result = agg_compiler.compile(&condition_str);
+        let compile_result = agg_compiler.compile(condition_str);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.push(err_msg);
         } else if let Result::Ok(info) = compile_result {

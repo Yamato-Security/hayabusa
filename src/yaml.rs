@@ -4,6 +4,7 @@ extern crate yaml_rust;
 use crate::detections::configs::{self, StoredStatic};
 use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
+use crate::detections::utils;
 use crate::filter::RuleExclude;
 use hashbrown::{HashMap, HashSet};
 use std::ffi::OsStr;
@@ -173,22 +174,17 @@ impl ParseYaml {
                     return io::Result::Ok(ret);
                 }
 
+                let path_str = path.to_str().unwrap();
                 // ignore if yml file in .git folder.
-                if path.to_str().unwrap().contains("/.git/")
-                    || path.to_str().unwrap().contains("\\.git\\")
+                if utils::contains_str(path_str, "/.git/")
+                    || utils::contains_str(path_str, "\\.git\\")
                 {
                     return io::Result::Ok(ret);
                 }
 
                 // ignore if tool test yml file in hayabusa-rules.
-                if path
-                    .to_str()
-                    .unwrap()
-                    .contains("rules/tools/sigmac/test_files")
-                    || path
-                        .to_str()
-                        .unwrap()
-                        .contains("rules\\tools\\sigmac\\test_files")
+                if utils::contains_str(path_str, "rules/tools/sigmac/test_files")
+                    || utils::contains_str(path_str, "rules\\tools\\sigmac\\test_files")
                 {
                     return io::Result::Ok(ret);
                 }
@@ -252,7 +248,7 @@ impl ParseYaml {
                     .no_use_rule
                     .get(&rule_id.unwrap_or(&String::default()).to_string())
                 {
-                    let entry_key = if v.contains("exclude_rule") {
+                    let entry_key = if utils::contains_str(v, "exclude_rule") {
                         "excluded"
                     } else {
                         "noisy"

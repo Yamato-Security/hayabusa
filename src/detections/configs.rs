@@ -1480,7 +1480,7 @@ fn load_eventcode_info(path: &str) -> EventInfoConfig {
             evttitle: event_title.to_string(),
         };
         config.eventinfo.insert(
-            (channel.to_owned(), eventcode.to_owned()),
+            (channel.to_lowercase(), eventcode.to_owned()),
             infodata.to_owned(),
         );
     });

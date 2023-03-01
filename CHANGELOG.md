@@ -8,11 +8,12 @@
 
 **Enhancements:**
 
+- Approximately 2% speed increase and memory usage reduction by improving string contains check. (#947) (@hitenkoku)
 - Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
 
 **Bug Fixes:**
 
-- XXX
+- Some event titles would be displayed as `Unknown` in the `metrics` command even if they were defined. (#943) (@hitenkoku)
 
 ## 2.2.2 [2023/2/22] "Ninja Day Release"
 

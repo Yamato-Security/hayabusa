@@ -140,16 +140,19 @@ impl EventMetrics {
             let channel = if let Some(ch) =
                 utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
-                ch.to_string().replace('\"', "")
+                ch.as_str().unwrap()
             } else {
-                "-".to_string()
+                "-"
             };
             if let Some(idnum) =
                 utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
             {
                 let count: &mut usize = self
                     .stats_list
-                    .entry((idnum.to_string().replace('\"', "").into(), channel.into()))
+                    .entry((
+                        idnum.to_string().replace('\"', "").to_lowercase().into(),
+                        channel.to_lowercase().into(),
+                    ))
                     .or_insert(0);
                 *count += 1;
             };
