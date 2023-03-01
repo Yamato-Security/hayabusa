@@ -200,7 +200,7 @@ impl Timeline {
             let ch = stored_static.disp_abbr_generic.replace_all(
                 stored_static
                     .ch_config
-                    .get(fmted_channel.to_lowercase().as_str())
+                    .get(fmted_channel.as_str())
                     .unwrap_or(fmted_channel)
                     .as_str(),
                 &stored_static.disp_abbr_general_values,
