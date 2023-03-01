@@ -213,20 +213,17 @@ pub struct TimeFrameInfo {
 
 impl TimeFrameInfo {
     /// timeframeの文字列をパースし、構造体を返す関数
-    pub fn parse_tframe(mut value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
+    pub fn parse_tframe(value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
         let mut ttype = "";
-        if value.contains('s') {
+        let mut target_val = value.as_str();
+        if target_val.ends_with('s') {
             ttype = "s";
-            value.retain(|c| c != 's');
-        } else if value.contains('m') {
+        } else if target_val.ends_with('m') {
             ttype = "m";
-            value.retain(|c| c != 'm')
-        } else if value.contains('h') {
+        } else if target_val.ends_with('h') {
             ttype = "h";
-            value.retain(|c| c != 'h');
-        } else if value.contains('d') {
+        } else if target_val.ends_with('d') {
             ttype = "d";
-            value.retain(|c| c != 'd');
         } else {
             let errmsg = format!("Timeframe is invalid. Input value:{value}");
             if stored_static.verbose_flag {
@@ -239,9 +236,12 @@ impl TimeFrameInfo {
                     .push(format!("[ERROR] {errmsg}"));
             }
         }
+        if !ttype.is_empty() {
+            target_val = &value[..value.len() - 1];
+        }
         TimeFrameInfo {
             timetype: ttype.to_string(),
-            timenum: value.parse::<i64>(),
+            timenum: target_val.parse::<i64>(),
         }
     }
 }

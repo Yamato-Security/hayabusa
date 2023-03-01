@@ -43,12 +43,13 @@ horrorshow = "0.8.*"
 mimalloc = { version = "*", default-features = false }
 libmimalloc-sys = { version = "*",  features = ["extended"] }
 nested="*"
-compact_str = "0.6.*"
+compact_str = "0.7.*"
 ureq = "*"
 mockall = "*"
 maxminddb = "0.*"
 cidr-utils = "0.*"
 aho-corasick = "*"
+memchr = "2.*"
 
 [profile.dev]
 debug = 0

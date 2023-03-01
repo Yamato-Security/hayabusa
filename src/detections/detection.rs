@@ -301,7 +301,7 @@ impl Detection {
                     profile_converter.insert(
                         key.as_str(),
                         Level(CompactString::from(
-                            LEVEL_ABBR_MAP.get(level).unwrap_or(&level).to_string(),
+                            *LEVEL_ABBR_MAP.get(level).unwrap_or(&level),
                         )),
                     );
                 }
@@ -449,9 +449,7 @@ impl Detection {
                                 .replace('\t', "\\t")
                                 .split("\r\n")
                                 .map(|x| x.trim())
-                                .join("\r\n")
-                                .replace('\n', "\\n")
-                                .replace('\r', "\\r"),
+                                .join("\\r\\n"),
                         )
                     } else {
                         CompactString::from("n/a")

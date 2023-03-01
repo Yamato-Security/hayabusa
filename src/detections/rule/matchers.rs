@@ -270,7 +270,10 @@ impl DefaultMatcher {
     fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
         let wildcard_count = s.chars().filter(|c| *c == '*').count();
         let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
-        if s.contains('?') || s.ends_with(r"\\\*") || (!s.is_ascii() && s.contains('*')) {
+        if utils::contains_str(s, "?")
+            || s.ends_with(r"\\\*")
+            || (!s.is_ascii() && utils::contains_str(s, "*"))
+        {
             // 高速なマッチに変換できないパターンは、正規表現マッチのみ
             return None;
         } else if s.starts_with('*')
@@ -278,26 +281,21 @@ impl DefaultMatcher {
             && wildcard_count == 2
             && !is_literal_asterisk(s)
         {
+            let removed_asterisk = s[1..(s.len() - 1)].replace(r"\\", r"\");
             // *が先頭と末尾だけは、containsに変換
             if ignore_case {
-                return Some(vec![FastMatch::Contains(
-                    s.to_lowercase().replacen('*', "", 2).replace(r"\\", r"\"),
-                )]);
+                return Some(vec![FastMatch::Contains(removed_asterisk.to_lowercase())]);
             }
-            return Some(vec![FastMatch::Contains(
-                s.replacen('*', "", 2).replace(r"\\", r"\"),
-            )]);
-        } else if s.starts_with('*') && wildcard_count == 1 {
+            return Some(vec![FastMatch::Contains(removed_asterisk)]);
+        } else if s.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
             // *が先頭は、ends_withに変換
-            return Some(vec![FastMatch::EndsWith(
-                s.replace('*', "").replace(r"\\", r"\"),
-            )]);
+            return Some(vec![FastMatch::EndsWith(s[1..].replace(r"\\", r"\"))]);
         } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
             // *が末尾は、starts_withに変換
             return Some(vec![FastMatch::StartsWith(
-                s.replace('*', "").replace(r"\\", r"\"),
+                s[..(s.len() - 1)].replace(r"\\", r"\"),
             )]);
-        } else if s.contains('*') {
+        } else if utils::contains_str(s, "*") {
             // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
             return None;
         }
@@ -312,7 +310,7 @@ impl LeafMatcher for DefaultMatcher {
             return true;
         }
 
-        return key_list.get(1).unwrap_or("") == "value";
+        return key_list.get(1).unwrap() == "value";
     }
 
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -379,13 +377,13 @@ impl LeafMatcher for DefaultMatcher {
             if let Some(val) = select_value.as_str() {
                 self.fast_match = match &self.pipes[0] {
                     PipeElement::Startswith => {
-                        Self::convert_to_fast_match(format!("{}{}", val, '*').as_str(), true)
+                        Self::convert_to_fast_match(format!("{val}*").as_str(), true)
                     }
                     PipeElement::Endswith => {
-                        Self::convert_to_fast_match(format!("{}{}", '*', val).as_str(), true)
+                        Self::convert_to_fast_match(format!("*{val}").as_str(), true)
                     }
                     PipeElement::Contains => {
-                        Self::convert_to_fast_match(format!("{}{}{}", '*', val, '*').as_str(), true)
+                        Self::convert_to_fast_match(format!("*{val}*").as_str(), true)
                     }
                     _ => None,
                 };
@@ -531,11 +529,13 @@ impl LeafMatcher for DefaultMatcher {
                     FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
                     FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
                     FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
-                    FastMatch::Contains(s) => Some(event_value_str.to_lowercase().contains(s)),
+                    FastMatch::Contains(s) => {
+                        Some(utils::contains_str(&event_value_str.to_lowercase(), s))
+                    }
                 }
             } else {
                 Some(fast_matcher.iter().any(|fm| match fm {
-                    FastMatch::Contains(s) => event_value_str.contains(s),
+                    FastMatch::Contains(s) => utils::contains_str(event_value_str, s),
                     _ => false,
                 }))
             };
@@ -661,7 +661,7 @@ impl PipeElement {
     /// PipeElement::Wildcardのパイプ処理です。
     /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
     fn pipe_pattern_wildcard(pattern: String) -> String {
-        let wildcards = vec!["*".to_string(), "?".to_string()];
+        let wildcards = vec!["*", "?"];
 
         // patternをwildcardでsplitした結果をpattern_splitsに入れる
         // 以下のアルゴリズムの場合、pattern_splitsの偶数indexの要素はwildcardじゃない文字列となり、奇数indexの要素はwildcardが入る。
