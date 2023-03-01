@@ -285,14 +285,14 @@ impl DetectionNode {
     /// selectionをパースします。
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
         Option::Some(Self::parse_selection_recursively(
-            Nested::<String>::new(),
+            &Nested::<String>::new(),
             selection_yaml,
         ))
     }
 
     /// selectionをパースします。
     fn parse_selection_recursively(
-        key_list: Nested<String>,
+        key_list: &Nested<String>,
         yaml: &Yaml,
     ) -> Box<dyn SelectionNode> {
         if yaml.as_hash().is_some() {
@@ -304,7 +304,7 @@ impl DetectionNode {
                 let child_yaml = yaml_hash.get(hash_key).unwrap();
                 let mut child_key_list = key_list.clone();
                 child_key_list.push(hash_key.as_str().unwrap());
-                let child_node = Self::parse_selection_recursively(child_key_list, child_yaml);
+                let child_node = Self::parse_selection_recursively(&child_key_list, child_yaml);
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
@@ -312,7 +312,7 @@ impl DetectionNode {
             //key_listにallが入っていた場合は子要素の配列はAND条件と解釈する。
             let mut and_node = selectionnodes::AndSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
-                let child_node = Self::parse_selection_recursively(key_list.clone(), child_yaml);
+                let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
@@ -320,14 +320,14 @@ impl DetectionNode {
             // 配列はOR条件と解釈する。
             let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
-                let child_node = Self::parse_selection_recursively(key_list.clone(), child_yaml);
+                let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 or_node.child_nodes.push(child_node);
             });
             Box::new(or_node)
         } else {
             // 連想配列と配列以外は末端ノード
             Box::new(selectionnodes::LeafSelectionNode::new(
-                key_list,
+                key_list.clone(),
                 yaml.to_owned(),
             ))
         }
