@@ -9,6 +9,7 @@
 **Enhancements:**
 
 - Approximately 2% speed increase and memory usage reduction by improving string contains check. (#947) (@hitenkoku)
+- Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
 
 **Bug Fixes:**
 

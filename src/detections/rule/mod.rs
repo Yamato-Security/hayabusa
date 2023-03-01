@@ -285,14 +285,14 @@ impl DetectionNode {
     /// selectionをパースします。
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
         Option::Some(Self::parse_selection_recursively(
-            Nested::<String>::new(),
+            &Nested::<String>::new(),
             selection_yaml,
         ))
     }
 
     /// selectionをパースします。
     fn parse_selection_recursively(
-        key_list: Nested<String>,
+        key_list: &Nested<String>,
         yaml: &Yaml,
     ) -> Box<dyn SelectionNode> {
         if yaml.as_hash().is_some() {
@@ -304,7 +304,15 @@ impl DetectionNode {
                 let child_yaml = yaml_hash.get(hash_key).unwrap();
                 let mut child_key_list = key_list.clone();
                 child_key_list.push(hash_key.as_str().unwrap());
-                let child_node = Self::parse_selection_recursively(child_key_list, child_yaml);
+                let child_node = Self::parse_selection_recursively(&child_key_list, child_yaml);
+                and_node.child_nodes.push(child_node);
+            });
+            Box::new(and_node)
+        } else if yaml.as_vec().is_some() && !key_list.is_empty() && key_list[0].ends_with("|all") {
+            //key_listにallが入っていた場合は子要素の配列はAND条件と解釈する。
+            let mut and_node = selectionnodes::AndSelectionNode::new();
+            yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
+                let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
@@ -312,15 +320,14 @@ impl DetectionNode {
             // 配列はOR条件と解釈する。
             let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
-                let child_node = Self::parse_selection_recursively(key_list.clone(), child_yaml);
+                let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 or_node.child_nodes.push(child_node);
             });
-
             Box::new(or_node)
         } else {
             // 連想配列と配列以外は末端ノード
             Box::new(selectionnodes::LeafSelectionNode::new(
-                key_list,
+                key_list.clone(),
                 yaml.to_owned(),
             ))
         }
@@ -943,6 +950,61 @@ mod tests {
             rule_node.init(&create_dummy_stored_static()),
             Err(vec!["Detection node was not found.".to_string()])
         );
+    }
+
+    #[test]
+    fn test_use_allfeature_() {
+        // allがパイプで入っていた場合は以下の配下の者をAnd条件で扱うようにすできるかのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7040
+                param1: 'Windows Event Log'
+                param2|contains|all:
+                    - "star"
+                    - "aut"
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        // case of
+        let record_json_str2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auts"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+        check_select(rule_str, record_json_str2, false);
     }
 
     /// countで対象の数値確認を行うためのテスト用関数
