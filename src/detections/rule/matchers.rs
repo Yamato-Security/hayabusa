@@ -459,10 +459,8 @@ impl LeafMatcher for DefaultMatcher {
             // |contains|allの場合、事前の分岐でAndNodeとしているのでここではcontainsのみとして取り扱う
             {
                 if let Some(val) = select_value.as_str() {
-                    self.fast_match = Self::convert_to_fast_match(
-                        format!("*{val}*").as_str(),
-                        true,
-                    );
+                    self.fast_match =
+                        Self::convert_to_fast_match(format!("*{val}*").as_str(), true);
                 }
             }
         } else {
