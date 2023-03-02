@@ -940,7 +940,7 @@ impl App {
 
         if rule_files.is_empty() {
             AlertMessage::alert(
-                "No rules were loaded. Please download the latest rules with the --update-rules option.\r\n",
+                "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
             )
             .ok();
             return;
