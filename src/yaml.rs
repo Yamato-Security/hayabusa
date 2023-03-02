@@ -616,6 +616,20 @@ mod tests {
     }
 
     #[test]
+    fn test_exclude_unsupported_rules_file() {
+        let path = Path::new("test_files/rules/unsupported");
+        let dummy_stored_static = create_dummy_stored_static();
+        let mut yaml = yaml::ParseYaml::new(&dummy_stored_static);
+        let exclude_ids = RuleExclude::new();
+        yaml.read_dir(path, "", "", &exclude_ids, &dummy_stored_static)
+            .unwrap();
+        assert_eq!(
+            yaml.rule_status_cnt.get("unsupported").unwrap().to_owned(),
+            1
+        );
+    }
+
+    #[test]
     fn test_info_exact_level_read_yaml() {
         let dummy_stored_static = create_dummy_stored_static();
         let path = Path::new("test_files/rules/level_yaml");
