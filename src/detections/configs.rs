@@ -736,6 +736,10 @@ pub struct PivotKeywordOption {
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
+    /// Enable rules marked as unsupported (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 310)]
+    pub enable_unsupported_rules: bool,
+
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
     #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
@@ -843,6 +847,10 @@ pub struct OutputOption {
     /// Enable rules marked as deprecated (no longer included by default)
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
+
+    /// Enable rules marked as unsupported (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 310)]
+    pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
     #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
@@ -1326,6 +1334,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: option.enable_unsupported_rules,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1351,6 +1360,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1376,6 +1386,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
@@ -1412,6 +1423,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 verbose: false,
                 json_input: false,
             },
+            enable_unsupported_rules: false,
         }),
         _ => None,
     }

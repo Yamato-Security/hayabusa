@@ -975,12 +975,18 @@ impl Detection {
         sorted_st_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
                 let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
-                let deprecated_flag = if key == "deprecated"
+                let disabled_flag = if (key == "deprecated"
                     && !stored_static
                         .output_option
                         .as_ref()
                         .unwrap()
-                        .enable_deprecated_rules
+                        .enable_deprecated_rules)
+                    || (key == "unsupported"
+                        && !stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .enable_unsupported_rules)
                 {
                     " (Disabled)"
                 } else {
@@ -991,7 +997,7 @@ impl Detection {
                     make_ascii_titlecase(key),
                     value,
                     rate,
-                    deprecated_flag
+                    disabled_flag
                 );
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 write_color_buffer(

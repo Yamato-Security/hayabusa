@@ -38,7 +38,10 @@ impl ParseYaml {
                 ("excluded".to_string(), 0_u128),
                 ("noisy".to_string(), 0_u128),
             ]),
-            rule_status_cnt: HashMap::from([("deprecated".to_string(), 0_u128)]),
+            rule_status_cnt: HashMap::from([
+                ("deprecated".to_string(), 0_u128),
+                ("unsupported".to_string(), 0_u128),
+            ]),
             errorrule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(exclude_status_vec.as_ref()),
             level_map: HashMap::from([
@@ -270,14 +273,37 @@ impl ParseYaml {
                 }
             }
 
-            let status = &yaml_doc["status"].as_str();
-            if let Some(s) = status {
+            let mut up_rule_status_cnt = |status: &str| {
+                let status_cnt = self.rule_status_cnt.entry(status.to_string()).or_insert(0);
+                *status_cnt += 1;
+            };
+
+            let status = yaml_doc["status"].as_str();
+            if let Some(s) = yaml_doc["status"].as_str() {
+                // excluded status optionで指定されたstatusを除外する
                 if self.exclude_status.contains(&s.to_string()) {
                     let entry = self
                         .rule_load_cnt
                         .entry("excluded".to_string())
                         .or_insert(0);
                     *entry += 1;
+                    return Option::None;
+                }
+                if (s == "deprecated"
+                    && !stored_static
+                        .output_option
+                        .as_ref()
+                        .unwrap()
+                        .enable_deprecated_rules)
+                    || (s == "unsupported"
+                        && !stored_static
+                            .output_option
+                            .as_ref()
+                            .unwrap()
+                            .enable_unsupported_rules)
+                {
+                    // deprecated or unsupported statusで対応するenable-xxx-rules optionが指定されていない場合はステータスのカウントのみ行ったうえで除外する
+                    up_rule_status_cnt(s);
                     return Option::None;
                 }
             }
@@ -290,16 +316,7 @@ impl ParseYaml {
                     + 1,
             );
 
-            let status_cnt = self
-                .rule_status_cnt
-                .entry(
-                    yaml_doc["status"]
-                        .as_str()
-                        .unwrap_or("undefined")
-                        .to_string(),
-                )
-                .or_insert(0);
-            *status_cnt += 1;
+            up_rule_status_cnt(status.unwrap_or("undefined"));
 
             if stored_static.verbose_flag {
                 println!("Loaded yml file path: {filepath}");
