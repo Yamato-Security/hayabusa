@@ -1,8 +1,9 @@
 extern crate lazy_static;
 use crate::detections::configs::CURRENT_EXE_PATH;
 use crate::detections::utils::{self, get_serde_number_to_string, write_color_buffer};
-use crate::options::profile::Profile;
-use crate::options::profile::Profile::{AllFieldInfo, Details, Literal};
+use crate::options::profile::Profile::{
+    self, AllFieldInfo, Details, Literal, SrcASN, SrcCity, SrcCountry, TgtASN, TgtCity, TgtCountry,
+};
 use chrono::{DateTime, Local, Utc};
 use compact_str::CompactString;
 use dashmap::DashMap;
@@ -43,10 +44,11 @@ lazy_static! {
     pub static ref ALIASREGEX: Regex = Regex::new(r"%[a-zA-Z0-9-_\[\]]+%").unwrap();
     pub static ref SUFFIXREGEX: Regex = Regex::new(r"\[([0-9]+)\]").unwrap();
     pub static ref ERROR_LOG_STACK: Mutex<Nested<String>> = Mutex::new(Nested::<String>::new());
-    pub static ref TAGS_CONFIG: HashMap<String, String> = create_output_filter_config(
+    pub static ref TAGS_CONFIG: HashMap<CompactString, CompactString> = create_output_filter_config(
         utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "config/mitre_tactics.txt", true)
             .unwrap().to_str()
             .unwrap(),
+        true
     );
     pub static ref LEVEL_ABBR_MAP:HashMap<&'static str, &'static str> = HashMap::from_iter(vec![
         ("critical", "crit"),
@@ -67,8 +69,11 @@ lazy_static! {
 
 /// ファイルパスで記載されたtagでのフル名、表示の際に置き換えられる文字列のHashMapを作成する関数。
 /// ex. attack.impact,Impact
-pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
-    let mut ret: HashMap<String, String> = HashMap::new();
+pub fn create_output_filter_config(
+    path: &str,
+    is_lower_case: bool,
+) -> HashMap<CompactString, CompactString> {
+    let mut ret: HashMap<CompactString, CompactString> = HashMap::new();
     let read_result = utils::read_csv(path);
     if read_result.is_err() {
         AlertMessage::alert(read_result.as_ref().unwrap_err()).ok();
@@ -79,10 +84,15 @@ pub fn create_output_filter_config(path: &str) -> HashMap<String, String> {
             return;
         }
 
-        let tag_full_str = line[0].trim().to_ascii_lowercase();
-        let tag_replace_str = line[1].trim();
-
-        ret.insert(tag_full_str, tag_replace_str.to_owned());
+        let key = if is_lower_case {
+            line[0].trim().to_ascii_lowercase()
+        } else {
+            line[0].trim().to_string()
+        };
+        ret.insert(
+            CompactString::from(key),
+            CompactString::from(line[1].trim()),
+        );
     });
     ret
 }
@@ -106,7 +116,17 @@ pub fn insert(
     eventkey_alias: &EventKeyAliasConfig,
 ) {
     if !is_agg {
-        let parsed_detail = parse_message(event_record, output, eventkey_alias)
+        let mut prev = 'a';
+        let mut removed_sp_parsed_detail = parse_message(event_record, output, eventkey_alias)
+            .replace('\n', "🛂n")
+            .replace('\r', "🛂r")
+            .replace('\t', "🛂t");
+        removed_sp_parsed_detail.retain(|ch| {
+            let continuous_space = prev == ' ' && ch == ' ';
+            prev = ch;
+            !continuous_space
+        });
+        let parsed_detail = removed_sp_parsed_detail
             .chars()
             .filter(|&c| !c.is_control())
             .collect::<CompactString>();
@@ -139,6 +159,12 @@ pub fn insert(
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),
+            SrcASN(_) | SrcCountry(_) | SrcCity(_) | TgtASN(_) | TgtCountry(_) | TgtCity(_) => {
+                replaced_profiles.push((
+                    key.to_owned(),
+                    profile_converter.get(key.as_str()).unwrap().to_owned(),
+                ))
+            }
             _ => {
                 if let Some(p) = profile_converter.get(key.to_string().as_str()) {
                     replaced_profiles.push((
@@ -158,7 +184,7 @@ pub fn insert(
 }
 
 /// メッセージ内の%で囲まれた箇所をエイリアスとしてをレコード情報を参照して置き換える関数
-fn parse_message(
+pub fn parse_message(
     event_record: &Value,
     output: CompactString,
     eventkey_alias: &EventKeyAliasConfig,
@@ -177,7 +203,7 @@ fn parse_message(
         let array_str = if let Some(_array_str) = eventkey_alias.get_event_key(&target_str) {
             _array_str.to_string()
         } else {
-            format!("Event.EventData.{}", target_str)
+            format!("Event.EventData.{target_str}")
         };
 
         let mut tmp_event_record: &Value = event_record;
@@ -201,11 +227,7 @@ fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                // UnicodeのWhitespace characterをそのままCSVに出力すると見難いので、スペースに変換する。なお、先頭と最後のWhitespace characterは単に削除される。
-                hash_map.insert(
-                    full_target_str.to_string(),
-                    hash_value.split_whitespace().join(" "),
-                );
+                hash_map.insert(full_target_str.to_string(), hash_value.to_string());
             }
         } else {
             hash_map.insert(full_target_str.to_string(), "n/a".to_string());
@@ -226,8 +248,12 @@ pub fn get(time: DateTime<Utc>) -> Vec<DetectInfo> {
     }
 }
 
-pub fn get_event_time(event_record: &Value) -> Option<DateTime<Utc>> {
-    let system_time = &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"];
+pub fn get_event_time(event_record: &Value, json_input_flag: bool) -> Option<DateTime<Utc>> {
+    let system_time = if json_input_flag {
+        &event_record["Event"]["System"]["@timestamp"]
+    } else {
+        &event_record["Event"]["System"]["TimeCreated_attributes"]["SystemTime"]
+    };
     return utils::str_time_to_datetime(system_time.as_str().unwrap_or(""));
 }
 
@@ -260,12 +286,9 @@ impl AlertMessage {
             .ok();
         let error_logs = ERROR_LOG_STACK.lock().unwrap();
         error_logs.iter().for_each(|error_log| {
-            writeln!(error_log_writer, "{}", error_log).ok();
+            writeln!(error_log_writer, "{error_log}").ok();
         });
-        println!(
-            "Errors were generated. Please check {} for details.",
-            file_path
-        );
+        println!("Errors were generated. Please check {file_path} for details.");
         println!();
     }
 
@@ -274,7 +297,7 @@ impl AlertMessage {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
             None,
-            &format!("[ERROR] {}", contents),
+            &format!("[ERROR] {contents}"),
             true,
         )
     }
@@ -284,7 +307,7 @@ impl AlertMessage {
         write_color_buffer(
             &BufferWriter::stderr(ColorChoice::Always),
             None,
-            &format!("[WARN] {}", contents),
+            &format!("[WARN] {contents}"),
             true,
         )
     }
@@ -477,8 +500,8 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
-                        "data2", 
+                        "data1",
+                        "data2",
                         "data3"
                     ]
                 },
@@ -520,8 +543,8 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
-                        "data2", 
+                        "data1",
+                        "data2",
                         "data3"
                     ]
                 },
@@ -563,7 +586,7 @@ mod tests {
                 "EventData": {
                     "CommandLine": "parsetest3",
                     "Data": [
-                        "data1", 
+                        "data1",
                         "data2",
                         "data3"
                     ]
@@ -599,10 +622,10 @@ mod tests {
     #[test]
     /// test of loading output filter config by mitre_tactics.txt
     fn test_load_mitre_tactics_log() {
-        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt");
-        let expected: HashMap<String, String> = HashMap::from([
-            ("attack.impact".to_string(), "Impact".to_string()),
-            ("xxx".to_string(), "yyy".to_string()),
+        let actual = create_output_filter_config("test_files/config/mitre_tactics.txt", true);
+        let expected: HashMap<CompactString, CompactString> = HashMap::from([
+            ("attack.impact".into(), "Impact".into()),
+            ("xxx".into(), "yyy".into()),
         ]);
         _check_hashmap_element(&expected, actual);
     }
@@ -610,11 +633,13 @@ mod tests {
     #[test]
     /// loading test to channel_abbrevations.txt
     fn test_load_abbrevations() {
-        let actual = create_output_filter_config("test_files/config/channel_abbreviations.txt");
-        let actual2 = create_output_filter_config("test_files/config/channel_abbreviations.txt");
-        let expected: HashMap<String, String> = HashMap::from([
-            ("Security".to_ascii_lowercase(), "Sec".to_string()),
-            ("xxx".to_string(), "yyy".to_string()),
+        let actual =
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
+        let actual2 =
+            create_output_filter_config("test_files/config/channel_abbreviations.txt", true);
+        let expected: HashMap<CompactString, CompactString> = HashMap::from([
+            ("security".into(), "Sec".into()),
+            ("xxx".into(), "yyy".into()),
         ]);
         _check_hashmap_element(&expected, actual);
         _check_hashmap_element(&expected, actual2);
@@ -622,20 +647,23 @@ mod tests {
 
     #[test]
     fn _get_default_defails() {
-        let expected: HashMap<String, String> = HashMap::from([
-            ("Microsoft-Windows-PowerShell_4104".to_string(),"%ScriptBlockText%".to_string()),("Microsoft-Windows-Security-Auditing_4624".to_string(), "User: %TargetUserName% | Comp: %WorkstationName% | IP Addr: %IpAddress% | LID: %TargetLogonId% | Process: %ProcessName%".to_string()),
-            ("Microsoft-Windows-Sysmon_1".to_string(), "Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%".to_string()),
-            ("Service Control Manager_7031".to_string(), "Svc: %param1% | Crash Count: %param2% | Action: %param5%".to_string()),
+        let expected: HashMap<CompactString, CompactString> = HashMap::from([
+            ("Microsoft-Windows-PowerShell_4104".into(),"%ScriptBlockText%".into()),("Microsoft-Windows-Security-Auditing_4624".into(), "User: %TargetUserName% | Comp: %WorkstationName% | IP Addr: %IpAddress% | LID: %TargetLogonId% | Process: %ProcessName%".into()),
+            ("Microsoft-Windows-Sysmon_1".into(), "Cmd: %CommandLine% | Process: %Image% | User: %User% | Parent Cmd: %ParentCommandLine% | LID: %LogonId% | PID: %ProcessId% | PGUID: %ProcessGuid%".into()),
+            ("Service Control Manager_7031".into(), "Svc: %param1% | Crash Count: %param2% | Action: %param5%".into()),
         ]);
         let actual = StoredStatic::get_default_details("test_files/config/default_details.txt");
         _check_hashmap_element(&expected, actual);
     }
 
     /// check two HashMap element length and value
-    fn _check_hashmap_element(expected: &HashMap<String, String>, actual: HashMap<String, String>) {
+    fn _check_hashmap_element(
+        expected: &HashMap<CompactString, CompactString>,
+        actual: HashMap<CompactString, CompactString>,
+    ) {
         assert_eq!(expected.len(), actual.len());
         for (k, v) in expected.iter() {
-            assert!(actual.get(k).unwrap_or(&String::default()) == v);
+            assert!(actual.get(k).unwrap_or(&CompactString::default()) == v);
         }
     }
 

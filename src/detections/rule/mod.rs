@@ -73,11 +73,18 @@ impl RuleNode {
         event_record: &EvtxRecordInfo,
         verbose_flag: bool,
         quiet_errors_flag: bool,
+        json_input_flag: bool,
         eventkey_alias: &EventKeyAliasConfig,
     ) -> bool {
         let result = self.detection.select(event_record, eventkey_alias);
         if result && self.has_agg_condition() {
-            count::count(self, &event_record.record, verbose_flag, quiet_errors_flag);
+            count::count(
+                self,
+                &event_record.record,
+                verbose_flag,
+                quiet_errors_flag,
+                json_input_flag,
+            );
         }
         result
     }
@@ -174,7 +181,7 @@ impl DetectionNode {
         // conditionに指定されている式を取得
         let condition = &detection_yaml["condition"].as_str();
         let condition_str = if let Some(cond_str) = condition {
-            cond_str.to_string()
+            *cond_str
         } else {
             // conditionが指定されていない場合、selectionが一つだけならそのselectionを採用することにする。
             let mut keys = self.name_to_selection.keys();
@@ -184,13 +191,13 @@ impl DetectionNode {
                 ]);
             }
 
-            keys.next().unwrap().to_string()
+            keys.next().unwrap()
         };
 
         // conditionをパースして、SelectionNodeに変換する
         let mut err_msgs = vec![];
         let compiler = condition_parser::ConditionCompiler::new();
-        let compile_result = compiler.compile_condition(&condition_str, &self.name_to_selection);
+        let compile_result = compiler.compile_condition(condition_str, &self.name_to_selection);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.extend(vec![err_msg]);
         } else {
@@ -199,7 +206,7 @@ impl DetectionNode {
 
         // aggregation condition(conditionのパイプ以降の部分)をパース
         let agg_compiler = aggregation_parser::AggegationConditionCompiler::new();
-        let compile_result = agg_compiler.compile(&condition_str);
+        let compile_result = agg_compiler.compile(condition_str);
         if let Result::Err(err_msg) = compile_result {
             err_msgs.push(err_msg);
         } else if let Result::Ok(info) = compile_result {
@@ -278,14 +285,14 @@ impl DetectionNode {
     /// selectionをパースします。
     fn parse_selection(&self, selection_yaml: &Yaml) -> Option<Box<dyn SelectionNode>> {
         Option::Some(Self::parse_selection_recursively(
-            Nested::<String>::new(),
+            &Nested::<String>::new(),
             selection_yaml,
         ))
     }
 
     /// selectionをパースします。
     fn parse_selection_recursively(
-        key_list: Nested<String>,
+        key_list: &Nested<String>,
         yaml: &Yaml,
     ) -> Box<dyn SelectionNode> {
         if yaml.as_hash().is_some() {
@@ -297,7 +304,15 @@ impl DetectionNode {
                 let child_yaml = yaml_hash.get(hash_key).unwrap();
                 let mut child_key_list = key_list.clone();
                 child_key_list.push(hash_key.as_str().unwrap());
-                let child_node = Self::parse_selection_recursively(child_key_list, child_yaml);
+                let child_node = Self::parse_selection_recursively(&child_key_list, child_yaml);
+                and_node.child_nodes.push(child_node);
+            });
+            Box::new(and_node)
+        } else if yaml.as_vec().is_some() && !key_list.is_empty() && key_list[0].ends_with("|all") {
+            //key_listにallが入っていた場合は子要素の配列はAND条件と解釈する。
+            let mut and_node = selectionnodes::AndSelectionNode::new();
+            yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
+                let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 and_node.child_nodes.push(child_node);
             });
             Box::new(and_node)
@@ -305,15 +320,14 @@ impl DetectionNode {
             // 配列はOR条件と解釈する。
             let mut or_node = selectionnodes::OrSelectionNode::new();
             yaml.as_vec().unwrap().iter().for_each(|child_yaml| {
-                let child_node = Self::parse_selection_recursively(key_list.clone(), child_yaml);
+                let child_node = Self::parse_selection_recursively(key_list, child_yaml);
                 or_node.child_nodes.push(child_node);
             });
-
             Box::new(or_node)
         } else {
             // 連想配列と配列以外は末端ノード
             Box::new(selectionnodes::LeafSelectionNode::new(
-                key_list,
+                key_list.clone(),
                 yaml.to_owned(),
             ))
         }
@@ -361,8 +375,8 @@ mod tests {
     use crate::detections::{
         self,
         configs::{
-            Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic,
-            STORED_EKEY_ALIAS,
+            Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+            OutputOption, StoredStatic, STORED_EKEY_ALIAS,
         },
         rule::create_rule,
         utils,
@@ -377,17 +391,12 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -403,10 +412,22 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                    },
                 },
+                geo_ip: None,
+                output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
@@ -435,6 +456,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
                     expect_select
@@ -930,6 +952,61 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_use_allfeature_() {
+        // allがパイプで入っていた場合は以下の配下の者をAnd条件で扱うようにすできるかのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7040
+                param1: 'Windows Event Log'
+                param2|contains|all:
+                    - "star"
+                    - "aut"
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auto start"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        // case of
+        let record_json_str2 = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7040,
+              "Channel": "System"
+            },
+            "EventData": {
+              "param1": "Windows Event Log",
+              "param2": "auts"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+        check_select(rule_str, record_json_str2, false);
+    }
+
     /// countで対象の数値確認を行うためのテスト用関数
     fn _check_count(rule_str: &str, record_str: &str, key: &str, expect_count: i32) {
         let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
@@ -947,6 +1024,7 @@ mod tests {
                     &recinfo,
                     dummy_stored_static.verbose_flag,
                     dummy_stored_static.quiet_errors_flag,
+                    dummy_stored_static.json_input_flag,
                     &dummy_stored_static.eventkey_alias,
                 );
                 assert!(rule_node.detection.aggregation_condition.is_some());

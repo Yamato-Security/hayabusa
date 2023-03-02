@@ -24,15 +24,12 @@ impl LevelTuning {
         // Read Tuning files
         let mut tuning_map: HashMap<String, String> = HashMap::new();
         read_result.unwrap().iter().try_for_each(|line| -> Result<(), String> {
-            let id = match line.get(0) {
-                Some(_id) => {
-                    if !configs::IDS_REGEX.is_match(_id) {
-                        return Result::Err(format!("Failed to read level tuning file. {} is not correct id format, fix it.", _id));
-                    }
-                    _id
-                }
-                _ => return Result::Err("Failed to read id...".to_string())
-            };
+            // 1つ目の要素も存在しない場合はread_csvの段階で読み飛ばされるためget(0)がNoneにはならない
+            let id = line.get(0).unwrap();
+            if !configs::IDS_REGEX.is_match(id) {
+                return Result::Err(format!("Failed to read level tuning file. {id} is not correct id format, fix it."));
+            }
+
             let level = match line.get(1) {
                 Some(_level) => {
                     if _level.starts_with("informational")
@@ -48,6 +45,7 @@ impl LevelTuning {
                             return Result::Err("level tuning file's level must in informational, low, medium, high, critical".to_string())
                         }
                     }
+                // headerに2つ以上の列が存在していない場合このエラーが発生する
                 _ => return Result::Err("Failed to read level...".to_string())
             };
             tuning_map.insert(id.to_string(), level);
@@ -60,6 +58,7 @@ impl LevelTuning {
         let result_readdir = rulefile_loader.read_dir(
             rules_path,
             "informational",
+            "",
             &RuleExclude::new(),
             stored_static,
         );
@@ -73,7 +72,7 @@ impl LevelTuning {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     None,
-                    &format!("path: {}", path),
+                    &format!("path: {path}"),
                     true,
                 )
                 .ok();
@@ -130,41 +129,41 @@ mod tests {
     use std::path::Path;
 
     use super::*;
-    use crate::detections::configs::{Action, Config, LevelTuningOption};
+    use crate::detections::configs::{Action, CommonOptions, Config, LevelTuningOption};
 
     fn create_dummy_stored_static(level_tuning_path: &str) -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
             action: Some(Action::LevelTuning(LevelTuningOption {
                 level_tuning: Path::new(level_tuning_path).to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
 
     #[test]
-    fn rule_level_failed_to_open_file() -> Result<(), String> {
+    fn rule_level_failed_to_open_file() {
         let level_tuning_config_path = "./none.txt";
         let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
         let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
         let expected = Result::Err("Cannot open file. [file:./none.txt]".to_string());
         assert_eq!(res, expected);
-        Ok(())
     }
 
     #[test]
-    fn rule_level_id_error_file() -> Result<(), String> {
+    fn rule_level_id_error_file() {
         let level_tuning_config_path = "./test_files/config/level_tuning_error1.txt";
         let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
         let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
         let expected = Result::Err("Failed to read level tuning file. 12345678-1234-1234-1234-12 is not correct id format, fix it.".to_string());
         assert_eq!(res, expected);
-        Ok(())
     }
 
     #[test]
-    fn rule_level_level_error_file() -> Result<(), String> {
+    fn rule_level_level_error_file() {
         let level_tuning_config_path = "./test_files/config/level_tuning_error2.txt";
         let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
         let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
@@ -173,7 +172,15 @@ mod tests {
                 .to_string(),
         );
         assert_eq!(res, expected);
-        Ok(())
+    }
+
+    #[test]
+    fn rule_level_level_error_empty_line() {
+        let level_tuning_config_path = "./test_files/config/level_tuning_error3.txt";
+        let dummy_stored_static = create_dummy_stored_static(level_tuning_config_path);
+        let res = LevelTuning::run(level_tuning_config_path, "", &dummy_stored_static);
+        let expected = Result::Err("Failed to read level...".to_string());
+        assert_eq!(res, expected);
     }
 
     #[test]

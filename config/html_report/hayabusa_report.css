@@ -2,29 +2,29 @@ body {
   margin: 0;
   width: 100vw;
   height: 100vh;
-  background-image:url(./background_image.jpg);
+  background-image: url(./background_image.jpg);
 }
 
 section {
   background-image: none;
-  background-color:white;
+  background-color: white;
   margin: 0 auto;
-  max-width:860px;
-	box-shadow: 10px 10px 25px 10px rgba(0, 0, 0, .5);
+  max-width: 860px;
+  box-shadow: 10px 10px 25px 10px rgba(0, 0, 0, .5);
 }
 
 h2 {
-  padding:0.25em 0.5em;
-  color:#494949;
-  background:#f4faff;
-  border-left : solid 5px  #000000;
-	margin: 16px;
+  padding: 0.25em 0.5em;
+  color: #494949;
+  background: #f4faff;
+  border-left: solid 5px #000000;
+  margin: 16px;
 }
 
 h3 {
   background-color: rgb(0, 0, 0);
-  padding:3px;
-	margin: 16px;
+  padding: 3px;
+  margin: 16px;
 }
 
 #computers_with_most_unique_critical_detections {
@@ -80,17 +80,18 @@ h3 {
 
 li {
   padding: 5px;
-	margin-top: 16px;
   margin-right: 16px;
 }
-ul ul li{
+
+ul ul li {
   margin-right: -6px;
 }
 
-li:nth-child(odd){
+li:nth-child(odd) {
   background-color: #f4faff
 }
-li:nth-child(even){
+
+li:nth-child(even) {
   background-color: #ffffff
 }
 

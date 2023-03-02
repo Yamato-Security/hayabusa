@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine as _};
 use nested::Nested;
 use regex::Regex;
 use std::cmp::Ordering;
@@ -180,10 +181,20 @@ impl LeafMatcher for AllowlistFileMatcher {
     }
 }
 
+// 正規表現マッチは遅いため、できるだけ高速なstd::stringのlen/starts_with/ends_with/containsでマッチ判定するためのenum
+#[derive(PartialEq, Debug)]
+enum FastMatch {
+    Exact(String),
+    StartsWith(String),
+    EndsWith(String),
+    Contains(String),
+}
+
 /// デフォルトのマッチクラス
 /// ワイルドカードの処理やパイプ
 pub struct DefaultMatcher {
     re: Option<Regex>,
+    fast_match: Option<Vec<FastMatch>>,
     pipes: Vec<PipeElement>,
     key_list: Nested<String>,
 }
@@ -192,6 +203,7 @@ impl DefaultMatcher {
     pub fn new() -> DefaultMatcher {
         DefaultMatcher {
             re: Option::None,
+            fast_match: Option::None,
             pipes: Vec::new(),
             key_list: Nested::<String>::new(),
         }
@@ -219,6 +231,77 @@ impl DefaultMatcher {
             .iter()
             .fold(pattern, |acc, pipe| pipe.pipe_pattern(acc))
     }
+
+    fn eq_ignore_case(event_value_str: &str, match_str: &str) -> bool {
+        if match_str.len() == event_value_str.len() {
+            return match_str.eq_ignore_ascii_case(event_value_str);
+        }
+        false
+    }
+
+    fn starts_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<bool> {
+        let len = match_str.len();
+        if len > event_value_str.len() {
+            return Some(false);
+        }
+        // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+        if event_value_str.is_ascii() {
+            let match_result = match_str.eq_ignore_ascii_case(&event_value_str[0..len]);
+            return Some(match_result);
+        }
+        None
+    }
+
+    fn ends_with_ignore_case(event_value_str: &str, match_str: &str) -> Option<bool> {
+        let len1 = match_str.len();
+        let len2 = event_value_str.len();
+        if len1 > len2 {
+            return Some(false);
+        }
+        // マルチバイト文字を含む場合は、index out of boundsになるため、asciiのみ
+        if event_value_str.is_ascii() {
+            let match_result = match_str.eq_ignore_ascii_case(&event_value_str[len2 - len1..]);
+            return Some(match_result);
+        }
+        None
+    }
+
+    // ワイルドカードマッチを高速なstd::stringのlen/starts_with/ends_withに変換するための関数
+    fn convert_to_fast_match(s: &str, ignore_case: bool) -> Option<Vec<FastMatch>> {
+        let wildcard_count = s.chars().filter(|c| *c == '*').count();
+        let is_literal_asterisk = |s: &str| s.ends_with(r"\*") && !s.ends_with(r"\\*");
+        if utils::contains_str(s, "?")
+            || s.ends_with(r"\\\*")
+            || (!s.is_ascii() && utils::contains_str(s, "*"))
+        {
+            // 高速なマッチに変換できないパターンは、正規表現マッチのみ
+            return None;
+        } else if s.starts_with('*')
+            && s.ends_with('*')
+            && wildcard_count == 2
+            && !is_literal_asterisk(s)
+        {
+            let removed_asterisk = s[1..(s.len() - 1)].replace(r"\\", r"\");
+            // *が先頭と末尾だけは、containsに変換
+            if ignore_case {
+                return Some(vec![FastMatch::Contains(removed_asterisk.to_lowercase())]);
+            }
+            return Some(vec![FastMatch::Contains(removed_asterisk)]);
+        } else if s.starts_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
+            // *が先頭は、ends_withに変換
+            return Some(vec![FastMatch::EndsWith(s[1..].replace(r"\\", r"\"))]);
+        } else if s.ends_with('*') && wildcard_count == 1 && !is_literal_asterisk(s) {
+            // *が末尾は、starts_withに変換
+            return Some(vec![FastMatch::StartsWith(
+                s[..(s.len() - 1)].replace(r"\\", r"\"),
+            )]);
+        } else if utils::contains_str(s, "*") {
+            // *が先頭・末尾以外にあるパターンは、starts_with/ends_withに変換できないため、正規表現マッチのみ
+            return None;
+        }
+        // *を含まない場合は、文字列長マッチに変換
+        Some(vec![FastMatch::Exact(s.replace(r"\\", r"\"))])
+    }
 }
 
 impl LeafMatcher for DefaultMatcher {
@@ -227,7 +310,7 @@ impl LeafMatcher for DefaultMatcher {
             return true;
         }
 
-        return key_list.get(1).unwrap_or("") == "value";
+        return key_list.get(1).unwrap() == "value";
     }
 
     fn init(&mut self, key_list: &Nested<String>, select_value: &Yaml) -> Result<(), Vec<String>> {
@@ -254,7 +337,6 @@ impl LeafMatcher for DefaultMatcher {
             return Result::Err(vec![errmsg]);
         }
         let pattern = yaml_value.unwrap();
-
         // Pipeが指定されていればパースする
         let emp = String::default();
         // 一つ目はただのキーで、2つめ以降がpipe
@@ -274,8 +356,112 @@ impl LeafMatcher for DefaultMatcher {
         if !err_msges.is_empty() {
             return Err(err_msges);
         }
-        if self.pipes.len() >= 2 {
-            // 現状では複数のパイプは対応していない
+        let n = self.pipes.len();
+        if n == 0 {
+            // パイプがないケース
+            if let Some(val) = select_value.as_str() {
+                self.fast_match = Self::convert_to_fast_match(val, true);
+            };
+            if self.fast_match.is_some()
+                && matches!(
+                    &self.fast_match.as_ref().unwrap()[0],
+                    FastMatch::Exact(_) | FastMatch::Contains(_)
+                )
+                && !self.key_list.is_empty()
+            {
+                // FastMatch::Exact検索に置き換えられたときは正規表現は不要
+                return Result::Ok(());
+            }
+        } else if n == 1 {
+            // パイプがあるケース
+            if let Some(val) = select_value.as_str() {
+                self.fast_match = match &self.pipes[0] {
+                    PipeElement::Startswith => {
+                        Self::convert_to_fast_match(format!("{val}*").as_str(), true)
+                    }
+                    PipeElement::Endswith => {
+                        Self::convert_to_fast_match(format!("*{val}").as_str(), true)
+                    }
+                    PipeElement::Contains => {
+                        Self::convert_to_fast_match(format!("*{val}*").as_str(), true)
+                    }
+                    _ => None,
+                };
+            }
+        } else if n == 2 {
+            if self.pipes[0] == PipeElement::Base64offset && self.pipes[1] == PipeElement::Contains
+            {
+                // |base64offset|containsの場合
+                if let Some(val) = select_value.as_str() {
+                    let val_byte = val.as_bytes();
+                    let mut fastmatches = vec![];
+                    for i in 0..3 {
+                        let mut b64_result = vec![];
+                        let mut target_byte = vec![];
+                        target_byte.resize_with(i, || 0b0);
+                        target_byte.extend_from_slice(val_byte);
+                        b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
+                        general_purpose::STANDARD
+                            .encode_slice(target_byte, &mut b64_result)
+                            .ok();
+                        let convstr_b64 = String::from_utf8(b64_result);
+                        if let Ok(b64_str) = convstr_b64 {
+                            // ここでContainsのfastmatch対応を行う
+                            let filtered_null_chr = b64_str.replace('\0', "");
+                            let b64_offset_contents = match b64_str.find('=').unwrap_or_default()
+                                % 4
+                            {
+                                2 => {
+                                    if i == 0 {
+                                        filtered_null_chr[..filtered_null_chr.len() - 3].to_string()
+                                    } else {
+                                        filtered_null_chr[(i + 1)..filtered_null_chr.len() - 3]
+                                            .to_string()
+                                    }
+                                }
+                                3 => {
+                                    if i == 0 {
+                                        filtered_null_chr[..filtered_null_chr.len() - 2].to_string()
+                                    } else {
+                                        filtered_null_chr.replace('\0', "")
+                                            [(i + 1)..filtered_null_chr.len() - 2]
+                                            .to_string()
+                                    }
+                                }
+                                _ => {
+                                    if i == 0 {
+                                        filtered_null_chr
+                                    } else {
+                                        filtered_null_chr[(i + 1)..].to_string()
+                                    }
+                                }
+                            };
+                            if let Some(fm) = Self::convert_to_fast_match(
+                                &format!("*{b64_offset_contents}*"),
+                                false,
+                            ) {
+                                fastmatches.extend(fm);
+                            }
+                        } else {
+                            err_msges.push(format!(
+                                "Failed base64 encoding: {}",
+                                convstr_b64.unwrap_err()
+                            ));
+                        }
+                    }
+                    if !fastmatches.is_empty() {
+                        self.fast_match = Some(fastmatches);
+                    }
+                }
+            } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
+            // |contains|allの場合、事前の分岐でAndNodeとしているのでここではcontainsのみとして取り扱う
+            {
+                if let Some(val) = select_value.as_str() {
+                    self.fast_match =
+                        Self::convert_to_fast_match(format!("*{val}*").as_str(), true);
+                }
+            }
+        } else {
             let errmsg = format!(
                 "Multiple pipe elements cannot be used. key:{}",
                 utils::concat_selection_key(key_list)
@@ -324,12 +510,12 @@ impl LeafMatcher for DefaultMatcher {
 
         // yamlにnullが設定されていた場合
         // keylistが空(==JSONのgrep検索)の場合、無視する。
-        if self.key_list.is_empty() && self.re.is_none() {
+        if self.key_list.is_empty() && self.re.is_none() && self.fast_match.is_none() {
             return false;
         }
 
         // yamlにnullが設定されていた場合
-        if self.re.is_none() {
+        if self.re.is_none() && self.fast_match.is_none() {
             // レコード内に対象のフィールドが存在しなければ検知したものとして扱う
             for v in self.key_list.iter() {
                 if recinfo.get_value(v).is_none() {
@@ -346,16 +532,35 @@ impl LeafMatcher for DefaultMatcher {
         let event_value_str = event_value.unwrap();
         if self.key_list.is_empty() {
             // この場合ただのgrep検索なので、ただ正規表現に一致するかどうか調べればよいだけ
-            self.re.as_ref().unwrap().is_match(event_value_str)
-        } else {
-            // 通常の検索はこっち
-            self.is_regex_fullmatch(event_value_str)
+            return self.re.as_ref().unwrap().is_match(event_value_str);
+        } else if let Some(fast_matcher) = &self.fast_match {
+            let fast_match_result = if fast_matcher.len() == 1 {
+                match &fast_matcher[0] {
+                    FastMatch::Exact(s) => Some(Self::eq_ignore_case(event_value_str, s)),
+                    FastMatch::StartsWith(s) => Self::starts_with_ignore_case(event_value_str, s),
+                    FastMatch::EndsWith(s) => Self::ends_with_ignore_case(event_value_str, s),
+                    FastMatch::Contains(s) => {
+                        Some(utils::contains_str(&event_value_str.to_lowercase(), s))
+                    }
+                }
+            } else {
+                Some(fast_matcher.iter().any(|fm| match fm {
+                    FastMatch::Contains(s) => utils::contains_str(event_value_str, s),
+                    _ => false,
+                }))
+            };
+            if let Some(is_match) = fast_match_result {
+                return is_match;
+            }
         }
+        // 文字数/starts_with/ends_with検索に変換できなかった場合は、正規表現マッチで比較
+        self.is_regex_fullmatch(event_value_str)
     }
 }
 
 /// パイプ(|)で指定される要素を表すクラス。
 /// 要リファクタリング
+#[derive(PartialEq)]
 enum PipeElement {
     Startswith,
     Endswith,
@@ -364,6 +569,8 @@ enum PipeElement {
     Wildcard,
     EqualsField(String),
     Endswithfield(String),
+    Base64offset,
+    All,
 }
 
 impl PipeElement {
@@ -375,6 +582,8 @@ impl PipeElement {
             "re" => Option::Some(PipeElement::Re),
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
+            "base64offset" => Option::Some(PipeElement::Base64offset),
+            "all" => Option::Some(PipeElement::All),
             _ => Option::None,
         };
 
@@ -464,7 +673,7 @@ impl PipeElement {
     /// PipeElement::Wildcardのパイプ処理です。
     /// pipe_pattern()に含めて良い処理ですが、複雑な処理になってしまったので別関数にしました。
     fn pipe_pattern_wildcard(pattern: String) -> String {
-        let wildcards = vec!["*".to_string(), "?".to_string()];
+        let wildcards = vec!["*", "?"];
 
         // patternをwildcardでsplitした結果をpattern_splitsに入れる
         // 以下のアルゴリズムの場合、pattern_splitsの偶数indexの要素はwildcardじゃない文字列となり、奇数indexの要素はwildcardが入る。
@@ -475,7 +684,7 @@ impl PipeElement {
             let prev_idx = idx;
             for wildcard in &wildcards {
                 let cur_pattern: String = pattern.chars().skip(idx).collect::<String>();
-                if cur_pattern.starts_with(&format!(r"\\{}", wildcard)) {
+                if cur_pattern.starts_with(&format!(r"\\{wildcard}")) {
                     // wildcardの前にエスケープ文字が2つある場合
                     cur_str = format!("{}{}", cur_str, r"\");
                     pattern_splits.push(cur_str);
@@ -484,9 +693,9 @@ impl PipeElement {
                     cur_str = String::default();
                     idx += 3;
                     break;
-                } else if cur_pattern.starts_with(&format!(r"\{}", wildcard)) {
+                } else if cur_pattern.starts_with(&format!(r"\{wildcard}")) {
                     // wildcardの前にエスケープ文字が1つある場合
-                    cur_str = format!("{}{}", cur_str, wildcard);
+                    cur_str = format!("{cur_str}{wildcard}");
                     idx += 2;
                     break;
                 } else if cur_pattern.starts_with(wildcard) {
@@ -533,7 +742,7 @@ impl PipeElement {
                     wildcard_regex_value.to_string()
                 };
 
-                format!("{}{}", acc, regex_value)
+                format!("{acc}{regex_value}")
             },
         );
 
@@ -550,12 +759,15 @@ mod tests {
     use super::super::matchers::{
         AllowlistFileMatcher, DefaultMatcher, MinlengthMatcher, PipeElement, RegexesFileMatcher,
     };
+
     use super::super::selectionnodes::{
         AndSelectionNode, LeafSelectionNode, OrSelectionNode, SelectionNode,
     };
     use crate::detections::configs::{
-        Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic, STORED_EKEY_ALIAS,
+        Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+        OutputOption, StoredStatic, STORED_EKEY_ALIAS,
     };
+    use crate::detections::rule::matchers::FastMatch;
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
 
@@ -568,17 +780,12 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -594,10 +801,22 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                    },
                 },
+                geo_ip: None,
+                output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }));
 
@@ -612,7 +831,8 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
-                        &dummy_stored_static.eventkey_alias
+                        dummy_stored_static.json_input_flag,
+                        &dummy_stored_static.eventkey_alias,
                     ),
                     expect_select
                 );
@@ -674,11 +894,13 @@ mod tests {
             assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
 
-            assert!(matcher.re.is_some());
-            let re = matcher.re.as_ref();
+            assert!(matcher.fast_match.is_some());
+            let fast_match = matcher.fast_match.as_ref().unwrap();
             assert_eq!(
-                re.unwrap().as_str(),
-                r"(?i)Microsoft\-Windows\-PowerShell/Operational"
+                *fast_match,
+                vec![FastMatch::Exact(
+                    "Microsoft-Windows-PowerShell/Operational".to_string()
+                )]
             );
         }
 
@@ -697,10 +919,7 @@ mod tests {
             let matcher = child_node.matcher.as_ref().unwrap();
             assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
-
-            assert!(matcher.re.is_some());
-            let re = matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "(?i)4103");
+            assert!(matcher.fast_match.is_none());
         }
 
         // ContextInfo
@@ -723,9 +942,12 @@ mod tests {
             let hostapp_en_matcher = hostapp_en_matcher.as_ref().unwrap();
             assert!(hostapp_en_matcher.is::<DefaultMatcher>());
             let hostapp_en_matcher = hostapp_en_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(hostapp_en_matcher.re.is_some());
-            let re = hostapp_en_matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "(?i)Host Application");
+            assert!(hostapp_en_matcher.fast_match.is_some());
+            let fast_match = hostapp_en_matcher.fast_match.as_ref().unwrap();
+            assert_eq!(
+                *fast_match,
+                vec![FastMatch::Exact("Host Application".to_string())]
+            );
 
             // LeafSelectionNodeである、ホスト アプリケーションノードが正しいことを確認
             let hostapp_jp_node = ancestors[1] as &dyn SelectionNode;
@@ -737,9 +959,12 @@ mod tests {
             let hostapp_jp_matcher = hostapp_jp_matcher.as_ref().unwrap();
             assert!(hostapp_jp_matcher.is::<DefaultMatcher>());
             let hostapp_jp_matcher = hostapp_jp_matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(hostapp_jp_matcher.re.is_some());
-            let re = hostapp_jp_matcher.re.as_ref();
-            assert_eq!(re.unwrap().as_str(), "(?i)ホスト アプリケーション");
+            assert!(hostapp_jp_matcher.fast_match.is_some());
+            let fast_match = hostapp_jp_matcher.fast_match.as_ref().unwrap();
+            assert_eq!(
+                *fast_match,
+                vec![FastMatch::Exact("ホスト アプリケーション".to_string())]
+            );
         }
 
         // ImagePath
@@ -1616,7 +1841,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     value: Security
         details: 'command=%CommandLine%'
         "#;
@@ -1638,7 +1863,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     value: Securiteen
         details: 'command=%CommandLine%'
         "#;
@@ -1845,9 +2070,9 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     value: Security
-                Takoyaki: 
+                Takoyaki:
                     value: null
         details: 'command=%CommandLine%'
         "#;
@@ -1873,6 +2098,297 @@ mod tests {
 
         let record_json_str = r#"{
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Powershell"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_wildcard_converted_starts_with() {
+        // ワイルドカード1文字を末尾に含む場合、stars_with相当のマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: A-*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_starts_with_notdetect() {
+        // ワイルドカード1文字を末尾に含む場合、stars_with相当のマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: AA-*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_wildcard_converted_starts_with_exact_val() {
+        // ワイルドカード1文字を末尾に含みかつ、＊を除く比較対象文字がちょうど一致する場合
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: A-HOST*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_starts_with_shorter_val_notdetect() {
+        // ワイルドカード1文字を末尾に含みかつ、比較対象文字のほうが文字数が少ない場合はマッチしない
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: A-HOST-*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_wildcard_converted_starts_with_multibytes() {
+        //ワイルドカードを含むかつascii以外のパターンは正規表現マッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: 社員端末*
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "社員端末A"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_ends_with() {
+        // ワイルドカード1文字を先頭に含む場合、ends_with相当のマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*-HOST'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_ends_with_starts_with_exact_val() {
+        // ワイルドカード1文字を先頭に含みかつ、＊を除く比較対象文字がちょうど一致する場合
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*A-HOST'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_wildcard_converted_ends_with_shorter_val_notdetect() {
+        // ワイルドカード1文字を先頭に含みかつ、比較対象文字のほうが文字数が少ない場合はマッチしない
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*-HOSTA'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_only_wildcard() {
+        // ワイルドカードだけの場合、ends_with相当のマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_two_wildcards() {
+        // ワイルドカード2文字以上を含む場合、正規表現マッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Computer: '*-HOST-*'
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "A-HOST-1"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_eq_ignore_case() {
+        assert!(DefaultMatcher::eq_ignore_case("abc", "abc"));
+        assert!(DefaultMatcher::eq_ignore_case("AbC", "abc"));
+        assert!(!DefaultMatcher::eq_ignore_case("abc", "ab"));
+        assert!(!DefaultMatcher::eq_ignore_case("ab", "abc"));
+    }
+
+    #[test]
+    fn test_starts_with_ignore_case() {
+        assert!(DefaultMatcher::starts_with_ignore_case("abc", "ab").unwrap(),);
+        assert!(DefaultMatcher::starts_with_ignore_case("AbC", "ab").unwrap(),);
+        assert!(!DefaultMatcher::starts_with_ignore_case("abc", "abcd").unwrap(),);
+        assert!(!DefaultMatcher::starts_with_ignore_case("aab", "ab").unwrap(),);
+    }
+
+    #[test]
+    fn test_ends_with_ignore_case() {
+        assert!(DefaultMatcher::ends_with_ignore_case("abc", "bc").unwrap());
+        assert!(DefaultMatcher::ends_with_ignore_case("AbC", "bc").unwrap());
+        assert!(!DefaultMatcher::ends_with_ignore_case("bc", "bcd").unwrap());
+        assert!(!DefaultMatcher::ends_with_ignore_case("bcd", "abc").unwrap());
+    }
+    #[test]
+    fn test_convert_to_fast_match() {
+        assert_eq!(DefaultMatcher::convert_to_fast_match("ab?", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("a*c", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match("*a*b*", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\*", true), None);
+        assert_eq!(DefaultMatcher::convert_to_fast_match(r"a\\\*", true), None);
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("abc*", true).unwrap(),
+            vec![FastMatch::StartsWith("abc".to_string())]
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match(r"abc\\*", true).unwrap(),
+            vec![FastMatch::StartsWith(r"abc\".to_string())]
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("*abc", true).unwrap(),
+            vec![FastMatch::EndsWith("abc".to_string())]
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("*abc*", true).unwrap(),
+            vec![FastMatch::Contains("abc".to_string())]
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("abc", true).unwrap(),
+            vec![FastMatch::Exact("abc".to_string())]
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match("あいう", true).unwrap(),
+            vec![FastMatch::Exact("あいう".to_string())]
+        );
+        assert_eq!(
+            DefaultMatcher::convert_to_fast_match(r"\\\\127.0.0.1\\", true).unwrap(),
+            vec![FastMatch::Exact(r"\\127.0.0.1\".to_string())]
+        );
+    }
+
+    #[test]
+    fn test_base64offset_contains() {
+        // base64offset|containsのマッチ
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|base64offset|contains:
+                    - "http://"
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovL"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_base64offset_contains_not_match() {
+        // base64offset|containsのマッチしないパターン
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Payload|base64offset|contains:
+                    - "test"
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovL"}},
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 

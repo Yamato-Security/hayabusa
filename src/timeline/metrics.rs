@@ -1,14 +1,20 @@
-use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
+use crate::detections::{
+    configs::{EventKeyAliasConfig, StoredStatic},
+    detection::EvtxRecordInfo,
+    message::AlertMessage,
+    utils,
+};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct EventMetrics {
     pub total: usize,
-    pub filepath: String,
-    pub start_time: String,
-    pub end_time: String,
-    pub stats_list: HashMap<(String, String), usize>,
+    pub filepath: CompactString,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
+    pub stats_list: HashMap<(CompactString, CompactString), usize>,
     pub stats_login_list: HashMap<
         (
             CompactString,
@@ -33,10 +39,10 @@ pub struct EventMetrics {
 impl EventMetrics {
     pub fn new(
         total: usize,
-        filepath: String,
-        start_time: String,
-        end_time: String,
-        stats_list: HashMap<(String, String), usize>,
+        filepath: CompactString,
+        start_time: Option<DateTime<Utc>>,
+        end_time: Option<DateTime<Utc>>,
+        stats_list: HashMap<(CompactString, CompactString), usize>,
         stats_login_list: HashMap<
             (
                 CompactString,
@@ -66,22 +72,17 @@ impl EventMetrics {
         }
     }
 
-    pub fn evt_stats_start(
-        &mut self,
-        records: &[EvtxRecordInfo],
-        metrics_flag: bool,
-        eventkey_alias: &EventKeyAliasConfig,
-    ) {
+    pub fn evt_stats_start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+        // _recordsから、EventIDを取り出す。
+        self.stats_time_cnt(records, &stored_static.eventkey_alias);
+
         // 引数でmetricsオプションが指定されている時だけ、統計情報を出力する。
-        if !metrics_flag {
+        if !stored_static.metrics_flag {
             return;
         }
 
-        // _recordsから、EventIDを取り出す。
-        self.stats_time_cnt(records, eventkey_alias);
-
         // EventIDで集計
-        self.stats_eventid(records, eventkey_alias);
+        self.stats_eventid(records, stored_static);
     }
 
     pub fn logon_stats_start(
@@ -125,7 +126,29 @@ impl EventMetrics {
         if records.is_empty() {
             return;
         }
-        self.filepath = records[0].evtx_filepath.to_owned();
+        self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
+
+        let mut check_start_end_time = |evttime: &str| {
+            let timestamp = match NaiveDateTime::parse_from_str(evttime, "%Y-%m-%dT%H:%M:%S%.3fZ") {
+                Ok(without_timezone_datetime) => {
+                    Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
+                }
+                Err(e) => {
+                    AlertMessage::alert(&format!("timestamp parse error. input: {evttime} {e}"))
+                        .ok();
+                    None
+                }
+            };
+            if timestamp.is_none() {
+                return;
+            }
+            if self.start_time.is_none() || timestamp < self.start_time {
+                self.start_time = timestamp;
+            }
+            if self.end_time.is_none() || timestamp > self.end_time {
+                self.end_time = timestamp;
+            }
+        };
         // sortしなくてもイベントログのTimeframeを取得できるように修正しました。
         // sortしないことにより計算量が改善されています。
         for record in records.iter() {
@@ -134,34 +157,38 @@ impl EventMetrics {
                 &record.record,
                 eventkey_alias,
             )
-            .map(|evt_value| evt_value.to_string())
+            .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
             {
-                if self.start_time.is_empty() || evttime < self.start_time {
-                    self.start_time = evttime.to_string();
-                }
-                if self.end_time.is_empty() || evttime > self.end_time {
-                    self.end_time = evttime;
-                }
+                check_start_end_time(&evttime);
+            } else if let Some(evttime) =
+                utils::get_event_value("Event.System.@timestamp", &record.record, eventkey_alias)
+                    .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
+            {
+                check_start_end_time(&evttime);
             };
         }
         self.total += records.len();
     }
 
-    /// EventID`で集計
-    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], eventkey_alias: &EventKeyAliasConfig) {
-        //        let mut evtstat_map = HashMap::new();
+    /// EventIDで集計
+    fn stats_eventid(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
         for record in records.iter() {
             let channel = if let Some(ch) =
-                utils::get_event_value("Channel", &record.record, eventkey_alias)
+                utils::get_event_value("Channel", &record.record, &stored_static.eventkey_alias)
             {
-                ch.to_string()
+                ch.as_str().unwrap()
             } else {
-                "-".to_string()
+                "-"
             };
-            if let Some(idnum) = utils::get_event_value("EventID", &record.record, eventkey_alias) {
+            if let Some(idnum) =
+                utils::get_event_value("EventID", &record.record, &stored_static.eventkey_alias)
+            {
                 let count: &mut usize = self
                     .stats_list
-                    .entry((idnum.to_string().replace('\"', ""), channel))
+                    .entry((
+                        idnum.to_string().replace('\"', "").to_lowercase().into(),
+                        channel.to_lowercase().into(),
+                    ))
                     .or_insert(0);
                 *count += 1;
             };
@@ -195,14 +222,14 @@ impl EventMetrics {
                     evtid.as_str().unwrap().parse::<i64>().unwrap_or_default()
                 };
 
-                if !(utils::get_serde_number_to_string(
-                    utils::get_event_value("Channel", &record.record, eventkey_alias)
-                        .unwrap_or(&serde_json::Value::Null),
-                )
-                .unwrap_or_else(|| "n/a".to_string())
-                .replace(['"', '\''], "")
-                    == "Security"
-                    && (idnum == 4624 || idnum == 4625))
+                if !(idnum == 4624 || idnum == 4625)
+                    || utils::get_serde_number_to_string(
+                        utils::get_event_value("Channel", &record.record, eventkey_alias)
+                            .unwrap_or(&serde_json::Value::Null),
+                    )
+                    .unwrap_or_else(|| "n/a".into())
+                    .replace(['"', '\''], "")
+                        != "Security"
                 {
                     continue;
                 }
@@ -212,21 +239,21 @@ impl EventMetrics {
                         utils::get_event_value("TargetUserName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or_else(|| "n/a".to_string())
+                    .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
                 );
                 let logontype = utils::get_serde_number_to_string(
                     utils::get_event_value("LogonType", &record.record, eventkey_alias)
                         .unwrap_or(&serde_json::Value::Null),
                 )
-                .unwrap_or_else(|| "n/a".to_string())
+                .unwrap_or_else(|| "n/a".into())
                 .replace(['"', '\''], "");
                 let hostname = CompactString::from(
                     utils::get_serde_number_to_string(
                         utils::get_event_value("Computer", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or_else(|| "n/a".to_string())
+                    .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
                 );
 
@@ -235,7 +262,7 @@ impl EventMetrics {
                         utils::get_event_value("WorkstationName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or_else(|| "n/a".to_string())
+                    .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
                 );
 
@@ -244,7 +271,7 @@ impl EventMetrics {
                         utils::get_event_value("IpAddress", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
                     )
-                    .unwrap_or_else(|| "n/a".to_string())
+                    .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
                 );
 

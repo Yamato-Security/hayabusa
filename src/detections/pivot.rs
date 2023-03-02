@@ -46,13 +46,14 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
         }
     }
     if is_exist_event_key {
-        let hash_value = get_serde_number_to_string(tmp_event_record);
-
-        if hash_value.is_some() && hash_value.as_ref().unwrap() == "infomational"
-            || hash_value.as_ref().unwrap() == "undefined"
-            || hash_value.as_ref().unwrap() == "-"
-        {
-            return;
+        if let Some(event_record_str) = get_serde_number_to_string(tmp_event_record) {
+            let exclude_check_str = event_record_str.as_str();
+            if exclude_check_str == "infomational"
+                || exclude_check_str == "undefined"
+                || exclude_check_str == "-"
+            {
+                return;
+            }
         }
     } else {
         return;
@@ -76,7 +77,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
                         if value == "-" || value == "127.0.0.1" || value == "::1" {
                             continue;
                         }
-                        pivot.keywords.insert(value);
+                        pivot.keywords.insert(value.to_string());
                     };
                 }
             }
@@ -100,7 +101,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -138,7 +139,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -176,7 +177,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -214,7 +215,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "high"
                 },
@@ -252,7 +253,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "infomational"
                 },
@@ -290,7 +291,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "low"
                 },
@@ -328,7 +329,7 @@ mod tests {
         load_pivot_keywords("test_files/config/pivot_keywords.txt");
         let record_json_str = r#"
         {
-            "Event": { 
+            "Event": {
                 "System": {
                     "Level": "-"
                 },

@@ -53,8 +53,7 @@ impl AggegationConditionCompiler {
         let result = self.compile_body(condition_str);
         if let Result::Err(msg) = result {
             Result::Err(format!(
-                "An aggregation condition parse error has occurred. {}",
-                msg
+                "An aggregation condition parse error has occurred. {msg}"
             ))
         } else {
             result

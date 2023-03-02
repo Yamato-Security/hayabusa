@@ -281,7 +281,7 @@ impl LeafSelectionNode {
 
     /// JSON形式のEventJSONから値を取得する関数 aliasも考慮されている。
     fn get_event_value<'a>(&self, record: &'a EvtxRecordInfo) -> Option<&'a String> {
-        // keyが指定されたいない場合は
+        // keyが指定されていない場合はそのままのレコードのデータを取得する
         if self.key_list.is_empty() {
             return Option::Some(&record.data_string);
         }
@@ -377,6 +377,12 @@ impl SelectionNode for LeafSelectionNode {
         }
 
         let event_value = self.get_event_value(event_record);
+        if self.get_key() == "EventID" && !self.select_value.is_null() {
+            if let Some(event_id) = self.select_value.as_i64() {
+                // 正規表現は重いので、数値のEventIDのみ文字列完全一致で判定
+                return event_value.unwrap() == &event_id.to_string();
+            }
+        }
         return self
             .matcher
             .as_ref()
@@ -429,8 +435,8 @@ mod tests {
     use crate::detections::{
         self,
         configs::{
-            Action, Config, CsvOutputOption, InputOption, OutputOption, StoredStatic,
-            STORED_EKEY_ALIAS,
+            Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+            OutputOption, StoredStatic, STORED_EKEY_ALIAS,
         },
         rule::tests::parse_rule_from_str,
         utils,
@@ -444,17 +450,12 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -470,10 +471,22 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                    },
                 },
+                geo_ip: None,
+                output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
@@ -492,6 +505,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias
                     ),
                     expect_select
@@ -553,7 +567,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
@@ -575,7 +589,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
@@ -597,7 +611,7 @@ mod tests {
         enabled: true
         detection:
             selection:
-                Channel: 
+                Channel:
                     - PowerShell
                     - Security
         details: 'command=%CommandLine%'
@@ -610,5 +624,47 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_event_id_wildcard() {
+        // EventIDのワイルドカードマッチが正しく検知することを確認する。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 41*3
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_event_id_question() {
+        // EventIDのクエスチョン?1文字マッチが正しく検知することを確認する。
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: Security
+                EventID: 41?3
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"
+        {
+            "Event": {"System": {"EventID": 4103, "Channel": "Security"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
     }
 }

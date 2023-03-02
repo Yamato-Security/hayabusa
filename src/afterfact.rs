@@ -1,9 +1,15 @@
-use crate::detections::configs::{Action, OutputOption, StoredStatic, CURRENT_EXE_PATH};
+use crate::detections::configs::{
+    Action, OutputOption, StoredStatic, CURRENT_EXE_PATH, GEOIP_DB_PARSER,
+};
 use crate::detections::message::{self, AlertMessage, LEVEL_FULL, MESSAGEKEYS};
-use crate::detections::utils::{self, format_time, get_writable_color, write_color_buffer};
+use crate::detections::utils::{
+    self, format_time, get_writable_color, output_and_data_stack_for_html, write_color_buffer,
+};
 use crate::options::htmlreport;
 use crate::options::profile::Profile;
+use crate::timeline::timelines::Timeline;
 use crate::yaml::ParseYaml;
+use aho_corasick::{AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -14,7 +20,7 @@ use csv::{QuoteStyle, WriterBuilder};
 use itertools::Itertools;
 use krapslog::{build_sparkline, build_time_markers};
 use nested::Nested;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use yaml_rust::YamlLoader;
 
@@ -141,21 +147,17 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     } else {
         timestamps.len() - 2
     };
-    let marker_num = min(timestamp_marker_max, 10);
+    let marker_num = min(timestamp_marker_max, 18);
 
     let (header_raw, footer_raw) =
         build_time_markers(&timestamps, marker_num, length - (side_margin_size * 2));
-    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2));
+    let sparkline = build_sparkline(&timestamps, length - (side_margin_size * 2), 5_usize);
     for header_str in header_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), header_str).ok();
     }
-    writeln!(
-        wtr,
-        "{}{}",
-        " ".repeat(side_margin_size - 1),
-        sparkline.unwrap_or_default()
-    )
-    .ok();
+    for line in sparkline.lines() {
+        writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), line).ok();
+    }
     for footer_str in footer_raw.lines() {
         writeln!(wtr, "{}{}", " ".repeat(side_margin_size - 1), footer_str).ok();
     }
@@ -165,22 +167,23 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
 
 pub fn after_fact(
     all_record_cnt: usize,
-    output_option: &OutputOption,
+    output_option: &Option<PathBuf>,
     no_color_flag: bool,
     stored_static: &StoredStatic,
+    tl: Timeline,
 ) {
     let fn_emit_csv_err = |err: Box<dyn Error>| {
-        AlertMessage::alert(&format!("Failed to write CSV. {}", err)).ok();
+        AlertMessage::alert(&format!("Failed to write CSV. {err}")).ok();
         process::exit(1);
     };
 
     let mut displayflag = false;
-    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option.output {
+    let mut target: Box<dyn io::Write> = if let Some(path) = &output_option {
         // output to file
         match File::create(path) {
             Ok(file) => Box::new(BufWriter::new(file)),
             Err(err) => {
-                AlertMessage::alert(&format!("Failed to open file. {}", err)).ok();
+                AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
                 process::exit(1);
             }
         }
@@ -197,6 +200,7 @@ pub fn after_fact(
         all_record_cnt as u128,
         stored_static.profiles.as_ref().unwrap(),
         stored_static,
+        (&tl.stats.start_time, &tl.stats.end_time),
     ) {
         fn_emit_csv_err(Box::new(err));
     }
@@ -209,7 +213,19 @@ fn emit_csv<W: std::io::Write>(
     all_record_cnt: u128,
     profile: &Vec<(CompactString, Profile)>,
     stored_static: &StoredStatic,
+    tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
+    let output_replaced_maps: HashMap<&str, &str> =
+        HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
+    let removed_replaced_maps: HashMap<&str, &str> =
+        HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
+    let output_replacer = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostLongest)
+        .build(output_replaced_maps.keys());
+    let output_remover = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostLongest)
+        .build(removed_replaced_maps.keys());
+
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
     let output_option = stored_static.output_option.as_ref().unwrap();
@@ -242,7 +258,7 @@ fn emit_csv<W: std::io::Write>(
 
     disp_wtr_buf.set_color(ColorSpec::new().set_fg(None)).ok();
 
-    // level is devided by "Critical","High","Medium","Low","Informational","Undefined".
+    // level is divided by "Critical","High","Medium","Low","Informational","Undefined".
     let mut total_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut unique_detect_counts_by_level: Vec<u128> = vec![0; 6];
     let mut detected_rule_files: HashSet<CompactString> = HashSet::new();
@@ -325,7 +341,7 @@ fn emit_csv<W: std::io::Write>(
                 if plus_header {
                     write_color_buffer(
                         &disp_wtr,
-                        get_writable_color(None, &stored_static.config),
+                        get_writable_color(None, stored_static.common_options.no_color),
                         &_get_serialized_disp_output(profile, true),
                         false,
                     )
@@ -339,7 +355,7 @@ fn emit_csv<W: std::io::Write>(
                             &color_map,
                             LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
                         ),
-                        &stored_static.config,
+                        stored_static.common_options.no_color,
                     ),
                     &_get_serialized_disp_output(&detect_info.ext_field, false),
                     false,
@@ -349,25 +365,39 @@ fn emit_csv<W: std::io::Write>(
                 // JSONL output format
                 wtr.write_field(format!(
                     "{{ {} }}",
-                    &output_json_str(&detect_info.ext_field, jsonl_output_flag)
+                    &output_json_str(
+                        &detect_info.ext_field,
+                        jsonl_output_flag,
+                        GEOIP_DB_PARSER.read().unwrap().is_some()
+                    )
                 ))?;
             } else if json_output_flag {
                 // JSON output
                 wtr.write_field("{")?;
-                wtr.write_field(&output_json_str(&detect_info.ext_field, jsonl_output_flag))?;
+                wtr.write_field(&output_json_str(
+                    &detect_info.ext_field,
+                    jsonl_output_flag,
+                    GEOIP_DB_PARSER.read().unwrap().is_some(),
+                ))?;
                 wtr.write_field("}")?;
             } else {
                 // csv output format
                 if plus_header {
-                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim().to_string()))?;
+                    wtr.write_record(detect_info.ext_field.iter().map(|x| x.0.trim()))?;
                     plus_header = false;
                 }
-                wtr.write_record(
-                    detect_info
-                        .ext_field
-                        .iter()
-                        .map(|x| x.1.to_value().trim().to_string()),
-                )?;
+                wtr.write_record(detect_info.ext_field.iter().map(|x| {
+                    output_remover
+                        .replace_all(
+                            &output_replacer.replace_all(
+                                &x.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
+                            ),
+                            &removed_replaced_maps.values().collect_vec(),
+                        )
+                        .split_whitespace()
+                        .join(" ")
+                }))?;
             }
             // 各種集計作業
             if !output_option.no_summary {
@@ -441,14 +471,17 @@ fn emit_csv<W: std::io::Write>(
         if !rule_author_counter.is_empty() {
             write_color_buffer(
                 &disp_wtr,
-                get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+                get_writable_color(
+                    Some(Color::Rgb(0, 255, 0)),
+                    stored_static.common_options.no_color,
+                ),
                 "Rule Authors:",
                 false,
             )
             .ok();
             write_color_buffer(
                 &disp_wtr,
-                get_writable_color(None, &stored_static.config),
+                get_writable_color(None, stored_static.common_options.no_color),
                 " ",
                 true,
             )
@@ -461,7 +494,10 @@ fn emit_csv<W: std::io::Write>(
         disp_wtr_buf.clear();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             "Results Summary:",
             true,
         )
@@ -471,12 +507,43 @@ fn emit_csv<W: std::io::Write>(
             Some((Width(w), _)) => w as usize,
             None => 100,
         };
-        println!();
 
+        println!();
         if output_option.visualize_timeline {
             _print_timeline_hist(timestamps, terminal_width, 3);
             println!();
         }
+
+        if tl_start_end_time.0.is_some() {
+            output_and_data_stack_for_html(
+                &format!(
+                    "First Timestamp: {}",
+                    utils::format_time(
+                        &tl_start_end_time.0.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ),
+                "Results Summary {#results_summary}",
+                stored_static.html_report_flag,
+            );
+        }
+        if tl_start_end_time.1.is_some() {
+            output_and_data_stack_for_html(
+                &format!(
+                    "Last Timestamp: {}",
+                    utils::format_time(
+                        &tl_start_end_time.1.unwrap(),
+                        false,
+                        stored_static.output_option.as_ref().unwrap()
+                    )
+                ),
+                "Results Summary {#results_summary}",
+                stored_static.html_report_flag,
+            );
+            println!();
+        }
+
         let reducted_record_cnt: u128 = all_record_cnt - detected_record_idset.len() as u128;
         let reducted_percent = if all_record_cnt == 0 {
             0 as f64
@@ -485,28 +552,34 @@ fn emit_csv<W: std::io::Write>(
         };
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(255, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             "Events with hits",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 255)),
+                stored_static.common_options.no_color,
+            ),
             "Total events",
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             ": ",
             false,
         )
@@ -515,14 +588,17 @@ fn emit_csv<W: std::io::Write>(
             (all_record_cnt - reducted_record_cnt).to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(255, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(255, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             &saved_alerts_output,
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " / ",
             false,
         )
@@ -531,14 +607,17 @@ fn emit_csv<W: std::io::Write>(
         let all_record_output = all_record_cnt.to_formatted_string(&Locale::en);
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 255)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 255)),
+                stored_static.common_options.no_color,
+            ),
             &all_record_output,
             false,
         )
         .ok();
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             " (",
             false,
         )
@@ -550,7 +629,10 @@ fn emit_csv<W: std::io::Write>(
         );
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(Some(Color::Rgb(0, 255, 0)), &stored_static.config),
+            get_writable_color(
+                Some(Color::Rgb(0, 255, 0)),
+                stored_static.common_options.no_color,
+            ),
             &reduction_output,
             false,
         )
@@ -558,7 +640,7 @@ fn emit_csv<W: std::io::Write>(
 
         write_color_buffer(
             &disp_wtr,
-            get_writable_color(None, &stored_static.config),
+            get_writable_color(None, stored_static.common_options.no_color),
             ")",
             false,
         )
@@ -569,7 +651,7 @@ fn emit_csv<W: std::io::Write>(
         if html_output_flag {
             html_output_stock.push(format!("- Events with hits: {}", &saved_alerts_output));
             html_output_stock.push(format!("- Total events analyzed: {}", &all_record_output));
-            html_output_stock.push(format!("- {}", reduction_output));
+            html_output_stock.push(format!("- {reduction_output}"));
         }
 
         _print_unique_results(
@@ -672,11 +754,47 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
     } else {
         for (i, d) in data.iter().enumerate() {
             if i == 0 {
-                ret.push(_format_cellpos(&d.1.to_value(), ColPos::First).replace('|', "🦅"))
+                ret.push(
+                    _format_cellpos(
+                        &d.1.to_value()
+                            .replace("🛂r", "\r")
+                            .replace("🛂n", "\n")
+                            .replace("🛂t", "\t")
+                            .replace(['\n', '\r', '\t'], " ")
+                            .split_whitespace()
+                            .join(" "),
+                        ColPos::First,
+                    )
+                    .replace('|', "🦅"),
+                )
             } else if i == data_length - 1 {
-                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Last).replace('|', "🦅"))
+                ret.push(
+                    _format_cellpos(
+                        &d.1.to_value()
+                            .replace("🛂r", "\r")
+                            .replace("🛂n", "\n")
+                            .replace("🛂t", "\t")
+                            .replace(['\n', '\r', '\t'], " ")
+                            .split_whitespace()
+                            .join(" "),
+                        ColPos::Last,
+                    )
+                    .replace('|', "🦅"),
+                )
             } else {
-                ret.push(_format_cellpos(&d.1.to_value(), ColPos::Other).replace('|', "🦅"))
+                ret.push(
+                    _format_cellpos(
+                        &d.1.to_value()
+                            .replace("🛂r", "\r")
+                            .replace("🛂n", "\n")
+                            .replace("🛂t", "\t")
+                            .replace(['\n', '\r', '\t'], " ")
+                            .split_whitespace()
+                            .join(" "),
+                        ColPos::Other,
+                    )
+                    .replace('|', "🦅"),
+                )
             }
         }
     }
@@ -699,9 +817,9 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
 /// return str position in output file
 fn _format_cellpos(colval: &str, column: ColPos) -> String {
     match column {
-        ColPos::First => format!("{} ", colval),
-        ColPos::Last => format!(" {}", colval),
-        ColPos::Other => format!(" {} ", colval),
+        ColPos::First => format!("{colval} "),
+        ColPos::Last => format!(" {colval}"),
+        ColPos::Other => format!(" {colval} "),
     }
 }
 
@@ -806,7 +924,7 @@ fn _print_detection_summary_by_date(
     write_color_buffer(&buf_wtr, None, output_header, true).ok();
 
     if stored_static.html_report_flag {
-        html_output_stock.push(format!("- {}", output_header));
+        html_output_stock.push(format!("- {output_header}"));
     }
     for (idx, level) in level_abbr.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -834,13 +952,13 @@ fn _print_detection_summary_by_date(
             LEVEL_FULL.get(&level[1].as_str()).unwrap(),
             &max_detect_str
         );
-        write!(wtr, "{}", output_str).ok();
+        write!(wtr, "{output_str}").ok();
         if idx != level_abbr.len() - 1 {
             wtr.set_color(ColorSpec::new().set_fg(None)).ok();
             write!(wtr, ", ").ok();
         }
         if stored_static.html_report_flag {
-            html_output_stock.push(format!("    - {}", output_str));
+            html_output_stock.push(format!("    - {output_str}"));
         }
     }
     buf_wtr.print(&wtr).ok();
@@ -1052,7 +1170,7 @@ fn _get_json_vec(profile: &Profile, target_data: &String) -> Vec<String> {
         }
         Profile::Details(_) | Profile::AllFieldInfo(_) => {
             let ret: Vec<String> = target_data.split(" ¦ ").map(|x| x.to_string()).collect();
-            if target_data == &ret[0] && !target_data.contains(": ") {
+            if target_data == &ret[0] && !utils::contains_str(target_data, ": ") {
                 vec![]
             } else {
                 ret
@@ -1073,7 +1191,7 @@ fn _create_json_output_format(
     let head = if key_quote_exclude_flag {
         key.to_string()
     } else {
-        format!("\"{}\"", key)
+        format!("\"{key}\"")
     };
     // 4 space is json indent.
     if let Ok(i) = i64::from_str(value) {
@@ -1089,52 +1207,70 @@ fn _create_json_output_format(
 
 /// JSONの値に対して文字列の出力形式をJSON出力でエラーにならないようにするための変換を行う関数
 fn _convert_valid_json_str(input: &[&str], concat_flag: bool) -> String {
-    let tmp = if input.len() == 1 {
+    let con_cal = if input.len() == 1 {
         input[0].to_string()
     } else if concat_flag {
         input.join(": ")
     } else {
         input[1..].join(": ")
     };
-    let char_cnt = tmp.char_indices().count();
-    let con_val = tmp.as_str();
+    let char_cnt = con_cal.char_indices().count();
     if char_cnt == 0 {
-        tmp
-    } else if con_val.starts_with('\"') {
-        let addition_header = if !con_val.starts_with('\"') { "\"" } else { "" };
-        let addition_quote = if !con_val.ends_with('\"') && concat_flag {
+        con_cal
+    } else if con_cal.starts_with('\"') {
+        let addition_header = if !con_cal.starts_with('\"') { "\"" } else { "" };
+        let addition_quote = if !con_cal.ends_with('\"') && concat_flag {
             "\""
-        } else if !con_val.ends_with('\"') {
+        } else if !con_cal.ends_with('\"') {
             "\\\""
         } else {
             ""
         };
         [
             addition_header,
-            con_val
-                .to_string()
+            &con_cal
+                .replace('🛂', "\\")
                 .replace('\\', "\\\\")
-                .replace('\"', "\\\"")
-                .trim(),
+                .replace('\"', "\\\""),
             addition_quote,
         ]
         .join("")
     } else {
-        con_val
+        con_cal
+            .replace('🛂', "\\")
             .replace('\\', "\\\\")
             .replace('\"', "\\\"")
-            .trim()
-            .to_string()
     }
 }
 
 /// JSONに出力する1検知分のオブジェクトの文字列を出力する関数
-fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bool) -> String {
+fn output_json_str(
+    ext_field: &[(CompactString, Profile)],
+    jsonl_output_flag: bool,
+    is_included_geo_ip: bool,
+) -> String {
     let mut target: Vec<String> = vec![];
+    let ext_field_map: HashMap<CompactString, Profile> = HashMap::from_iter(ext_field.to_owned());
+    let key_add_to_details = vec![
+        "SrcASN",
+        "SrcCountry",
+        "SrcCity",
+        "TgtASN",
+        "TgtCountry",
+        "TgtCity",
+    ];
+    let valid_key_add_to_details: Vec<&str> = key_add_to_details
+        .iter()
+        .filter(|target_key| {
+            let target = ext_field_map.get(&CompactString::from(**target_key));
+            target.is_some() && target.unwrap().to_value() != "-"
+        })
+        .copied()
+        .collect();
     for (key, profile) in ext_field.iter() {
         let val = profile.to_value();
         let vec_data = _get_json_vec(profile, &val.to_string());
-        if vec_data.is_empty() {
+        if !key_add_to_details.contains(&key.as_str()) && vec_data.is_empty() {
             let tmp_val: Vec<&str> = val.split(": ").collect();
             let output_val =
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
@@ -1147,61 +1283,90 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
             ));
         } else {
             match profile {
+                // process GeoIP profile in details sections to include GeoIP data in details section.
+                Profile::SrcASN(_)
+                | Profile::SrcCountry(_)
+                | Profile::SrcCity(_)
+                | Profile::TgtASN(_)
+                | Profile::TgtCountry(_)
+                | Profile::TgtCity(_) => continue,
                 Profile::AllFieldInfo(_) | Profile::Details(_) => {
                     let mut output_stock: Vec<String> = vec![];
-                    output_stock.push(format!("    \"{}\": {{", key));
-                    let mut stocked_value = vec![];
+                    output_stock.push(format!("    \"{key}\": {{"));
+                    let mut stocked_value: Vec<Vec<String>> = vec![];
                     let mut key_index_stock = vec![];
                     for detail_contents in vec_data.iter() {
                         // 分解してキーとなりえる箇所を抽出する
                         let mut tmp_stock = vec![];
-                        for sp in detail_contents.split(' ') {
+                        let mut space_split_contents = detail_contents.split(' ');
+                        while let Some(sp) = space_split_contents.next() {
                             if sp.ends_with(':') && sp.len() > 2 {
-                                stocked_value.push(tmp_stock);
-                                tmp_stock = vec![];
                                 key_index_stock.push(sp.replace(':', ""));
+                                if sp == "Payload:" {
+                                    stocked_value.push(vec![]);
+                                    stocked_value.push(
+                                        space_split_contents.map(|s| s.to_string()).collect(),
+                                    );
+                                    break;
+                                } else {
+                                    stocked_value.push(tmp_stock);
+                                    tmp_stock = vec![];
+                                }
                             } else {
                                 tmp_stock.push(sp.to_owned());
                             }
                         }
-                        stocked_value.push(tmp_stock);
+                        if !tmp_stock.is_empty() {
+                            stocked_value.push(tmp_stock);
+                        }
+                    }
+                    if stocked_value
+                        .iter()
+                        .counts_by(|x| x.len())
+                        .get(&0)
+                        .unwrap_or(&0)
+                        != &key_index_stock.len()
+                    {
+                        if let Some((target_idx, _)) = key_index_stock
+                            .iter()
+                            .enumerate()
+                            .rfind(|(_, y)| "CmdLine" == *y)
+                        {
+                            let cmd_line_vec_idx_len =
+                                stocked_value[2 * (target_idx + 1) - 1].len();
+                            stocked_value[2 * (target_idx + 1) - 1][cmd_line_vec_idx_len - 1]
+                                .push_str(&format!(" {}:", key_index_stock[target_idx + 1]));
+                            key_index_stock.remove(target_idx + 1);
+                        }
                     }
                     let mut key_idx = 0;
                     let mut output_value_stock = String::default();
                     for (value_idx, value) in stocked_value.iter().enumerate() {
-                        let mut tmp = if key_idx >= key_index_stock.len() {
-                            String::default()
-                        } else if value_idx == 0 && !value.is_empty() {
-                            key.to_string()
+                        if key_idx >= key_index_stock.len() {
+                            break;
+                        }
+                        let mut tmp = if value_idx == 0 && !value.is_empty() {
+                            key.as_str()
                         } else {
-                            key_index_stock[key_idx].to_string()
+                            key_index_stock[key_idx].as_str()
                         };
                         if !output_value_stock.is_empty() {
                             output_value_stock.push_str(" | ");
                         }
                         output_value_stock.push_str(&value.join(" "));
                         //``1つまえのキーの段階で以降にvalueの配列で区切りとなる空の配列が存在しているかを確認する
-                        let is_remain_split_stock = if key_idx == key_index_stock.len() - 2
+                        let is_remain_split_stock = key_idx == key_index_stock.len() - 2
                             && value_idx < stocked_value.len() - 1
                             && !output_value_stock.is_empty()
-                        {
-                            let mut ret = true;
-                            for remain_value in stocked_value[value_idx + 1..].iter() {
-                                if remain_value.is_empty() {
-                                    ret = false;
-                                    break;
-                                }
-                            }
-                            ret
-                        } else {
-                            false
-                        };
+                            && !stocked_value[value_idx + 1..]
+                                .iter()
+                                .any(|remain_value| remain_value.is_empty());
                         if (value_idx < stocked_value.len() - 1
                             && stocked_value[value_idx + 1].is_empty())
                             || is_remain_split_stock
                         {
                             // 次の要素を確認して、存在しないもしくは、キーが入っているとなった場合現在ストックしている内容が出力していいことが確定するので出力処理を行う
-                            let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                            let output_tmp = format!("{tmp}: {output_value_stock}");
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
@@ -1216,22 +1381,59 @@ fn output_json_str(ext_field: &[(CompactString, Profile)], jsonl_output_flag: bo
                                 )
                             ));
                             output_value_stock.clear();
-                            tmp = String::default();
+                            tmp = "";
                             key_idx += 1;
                         }
-                        if value_idx == stocked_value.len() - 1 {
-                            let output_tmp = format!("{}: {}", tmp, output_value_stock);
+                        if value_idx == stocked_value.len() - 1
+                            && !(tmp.is_empty() && stocked_value.is_empty())
+                        {
+                            let output_tmp = format!("{tmp}: {output_value_stock}");
                             let output: Vec<&str> = output_tmp.split(": ").collect();
                             let key = _convert_valid_json_str(&[output[0]], false);
                             let fmted_val = _convert_valid_json_str(&output, false);
-                            output_stock.push(_create_json_output_format(
-                                &key,
-                                &fmted_val,
-                                key.starts_with('\"'),
-                                fmted_val.starts_with('\"'),
-                                8,
+                            let last_contents_end =
+                                if is_included_geo_ip && !valid_key_add_to_details.is_empty() {
+                                    ","
+                                } else {
+                                    ""
+                                };
+                            output_stock.push(format!(
+                                "{}{last_contents_end}",
+                                _create_json_output_format(
+                                    &key,
+                                    &fmted_val,
+                                    key.starts_with('\"'),
+                                    fmted_val.starts_with('\"'),
+                                    8,
+                                )
                             ));
                             key_idx += 1;
+                        }
+                    }
+                    if is_included_geo_ip {
+                        for (geo_ip_field_cnt, target_key) in
+                            valid_key_add_to_details.iter().enumerate()
+                        {
+                            let val = ext_field_map
+                                .get(&CompactString::from(*target_key))
+                                .unwrap()
+                                .to_value();
+                            let output_end_fmt =
+                                if geo_ip_field_cnt == valid_key_add_to_details.len() - 1 {
+                                    ""
+                                } else {
+                                    ","
+                                };
+                            output_stock.push(format!(
+                                "{}{output_end_fmt}",
+                                _create_json_output_format(
+                                    target_key,
+                                    &val,
+                                    target_key.starts_with('\"'),
+                                    val.starts_with('\"'),
+                                    8
+                                )
+                            ));
                         }
                     }
                     output_stock.push("    }".to_string());
@@ -1388,8 +1590,10 @@ mod tests {
     use crate::afterfact::format_time;
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::Action;
+    use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DetectCommonOption;
     use crate::detections::configs::InputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
@@ -1411,8 +1615,10 @@ mod tests {
 
     #[test]
     fn test_emit_csv_output() {
-        let mock_ch_filter =
-            message::create_output_filter_config("test_files/config/channel_abbreviations.txt");
+        let mock_ch_filter = message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            true,
+        );
         let test_filepath: &str = "test.evtx";
         let test_rulepath: &str = "test-rule.yml";
         let test_title = "test_title";
@@ -1428,24 +1634,19 @@ mod tests {
         let expect_time = Utc
             .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
             .unwrap();
-        let expect_tz = expect_time.with_timezone(&Local);
+        let expect_tz = expect_time.with_timezone(&Utc);
         let dummy_action = Action::CsvTimeline(CsvOutputOption {
             output_options: OutputOption {
                 input_args: InputOption {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                 },
                 profile: None,
-                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
+                exact_level: None,
                 enable_noisy_rules: false,
                 end_timeline: None,
                 start_timeline: None,
@@ -1461,12 +1662,24 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
             },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
-            no_color: false,
-            quiet: false,
             debug: false,
         });
         let stored_static = StoredStatic::create_static_data(dummy_config);
@@ -1499,17 +1712,12 @@ mod tests {
                     directory: None,
                     filepath: None,
                     live_analysis: false,
-                    evtx_file_ext: None,
-                    thread_number: None,
-                    quiet_errors: false,
-                    config: Path::new("./rules/config").to_path_buf(),
-                    verbose: false,
                 },
                 profile: None,
-                output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
                 enable_deprecated_rules: false,
                 exclude_status: None,
                 min_level: "informational".to_string(),
+                exact_level: None,
                 enable_noisy_rules: false,
                 end_timeline: None,
                 start_timeline: None,
@@ -1525,15 +1733,23 @@ mod tests {
                 rules: Path::new("./rules").to_path_buf(),
                 html_report: None,
                 no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
             };
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(CompactString::from(format_time(
-                        &expect_time,
-                        false,
-                        &output_option,
-                    ))),
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option)),
                 ),
                 (
                     "Computer",
@@ -1541,11 +1757,12 @@ mod tests {
                 ),
                 (
                     "Channel",
-                    Profile::Channel(CompactString::from(
+                    Profile::Channel(
                         mock_ch_filter
-                            .get(&"Security".to_ascii_lowercase())
-                            .unwrap_or(&String::default()),
-                    )),
+                            .get(&CompactString::from("security"))
+                            .unwrap_or(&CompactString::default())
+                            .to_owned(),
+                    ),
                 ),
                 ("Level", Profile::Level(CompactString::from(test_level))),
                 (
@@ -1630,14 +1847,12 @@ mod tests {
             let multi = message::MESSAGES.get(&expect_time).unwrap();
             let (_, detect_infos) = multi.pair();
 
-            println!("message: {:?}", detect_infos);
+            println!("message: {detect_infos:?}");
         }
         let expect =
             "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
                 .to_string()
-                + &expect_tz
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
                 + ","
                 + test_computername
                 + ","
@@ -1663,9 +1878,8 @@ mod tests {
                 + ","
                 + test_attack
                 + "\n"
-                + &expect_tz
-                    .format("%Y-%m-%d %H:%M:%S%.3f %:z")
-                    .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
                 + ","
                 + test_computername2
                 + ","
@@ -1699,7 +1913,8 @@ mod tests {
             HashMap::new(),
             1,
             &output_profile,
-            &stored_static
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
         )
         .is_ok());
         match read_to_string("./test_emit_csv.csv") {
@@ -1751,17 +1966,12 @@ mod tests {
                 directory: None,
                 filepath: None,
                 live_analysis: false,
-                evtx_file_ext: None,
-                thread_number: None,
-                quiet_errors: false,
-                config: Path::new("./rules/config").to_path_buf(),
-                verbose: false,
             },
             profile: None,
-            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
             enable_deprecated_rules: false,
             exclude_status: None,
             min_level: "informational".to_string(),
+            exact_level: None,
             enable_noisy_rules: false,
             end_timeline: None,
             start_timeline: None,
@@ -1777,6 +1987,18 @@ mod tests {
             rules: Path::new("./rules").to_path_buf(),
             html_report: None,
             no_summary: false,
+            common_options: CommonOptions {
+                no_color: false,
+                quiet: false,
+            },
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: false,
+            },
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
@@ -1831,10 +2053,7 @@ mod tests {
         assert_eq!(target.len(), expected.len());
         for (k, v) in target {
             assert!(expected.get(&k).is_some());
-            assert_eq!(
-                format!("{:?}", v),
-                format!("{:?}", expected.get(&k).unwrap())
-            );
+            assert_eq!(format!("{v:?}"), format!("{:?}", expected.get(&k).unwrap()));
         }
     }
 

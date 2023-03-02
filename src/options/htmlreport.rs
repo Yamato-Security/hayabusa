@@ -130,20 +130,40 @@ pub fn create_html_file(input_html: String, path_str: &str) {
         }
     );
 
-    writeln!(html_writer, "{}", html_data).ok();
-    println!("HTML report: {}", path_str);
+    writeln!(html_writer, "{html_data}").ok();
+    println!("HTML report: {path_str}");
 }
 
 #[cfg(test)]
 mod tests {
 
+    use std::{
+        fs::{read_to_string, remove_dir_all},
+        path::Path,
+    };
+
     use nested::Nested;
 
-    use crate::options::htmlreport::HtmlReporter;
+    use crate::{
+        detections::configs::{
+            Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
+            JSONOutputOption, OutputOption, StoredStatic,
+        },
+        options::htmlreport::{self, HtmlReporter},
+    };
+
+    use super::HTML_REPORTER;
+
+    fn create_dummy_stored_static(action: Option<Action>) -> StoredStatic {
+        StoredStatic::create_static_data(Some(Config {
+            action,
+            debug: false,
+        }))
+    }
 
     #[test]
     fn test_create_html() {
-        let mut html_reporter = HtmlReporter::new();
+        let mut html_reporter = HtmlReporter::default();
         let mut general_data = Nested::<String>::new();
         general_data.extend(vec![
             "- Analyzed event files: 581".to_string(),
@@ -159,6 +179,7 @@ mod tests {
             "- Elapsed time: 00:00:29.035".to_string(),
             "".to_string(),
         ]);
+        html_reporter.section_order.push("No Exist Section");
         html_reporter.md_datas.insert(
             "General Overview {#general_overview}".to_string(),
             general_data.to_owned(),
@@ -171,10 +192,287 @@ mod tests {
                 .replace("- ", "")
         );
         let expect_str = format!(
-            "<h2 id=\"general_overview\">General Overview</h2>\n{}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n",
-            general_overview_str
+            "<h2 id=\"general_overview\">General Overview</h2>\n{general_overview_str}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n"
         );
 
         assert_eq!(html_reporter.create_html(), expect_str);
+    }
+
+    #[test]
+    fn test_none_config_check_html_flag() {
+        let none_action = create_dummy_stored_static(None);
+        assert!(!htmlreport::check_html_flag(&none_action.config));
+    }
+
+    #[test]
+    fn test_with_config_check_html_flag_csvtimeline() {
+        let enable_csv_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: Some(Path::new("./dummy").to_path_buf()),
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+            },
+            geo_ip: None,
+            output: None,
+        });
+        let csv_html_flag_enable = create_dummy_stored_static(Some(enable_csv_action));
+        assert!(htmlreport::check_html_flag(&csv_html_flag_enable.config));
+
+        let disable_csv_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+            },
+            geo_ip: None,
+            output: None,
+        });
+        let csv_html_flag_disable = create_dummy_stored_static(Some(disable_csv_action));
+        assert!(!htmlreport::check_html_flag(&csv_html_flag_disable.config));
+    }
+
+    #[test]
+    fn test_with_config_check_html_flag_jsontimeline() {
+        let enable_json_action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: Some(Path::new("./dummy").to_path_buf()),
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+            },
+            jsonl_timeline: false,
+            geo_ip: None,
+            output: None,
+        });
+        let json_html_flag_enable = create_dummy_stored_static(Some(enable_json_action));
+        assert!(htmlreport::check_html_flag(&json_html_flag_enable.config));
+
+        let disable_json_action = Action::JsonTimeline(JSONOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+            },
+            jsonl_timeline: false,
+            geo_ip: None,
+            output: None,
+        });
+        let json_html_flag_disable = create_dummy_stored_static(Some(disable_json_action));
+        assert!(!htmlreport::check_html_flag(&json_html_flag_disable.config));
+    }
+
+    #[test]
+    fn test_create_html_file() {
+        let mut html_reporter = HtmlReporter::default();
+        let mut general_data = Nested::<String>::new();
+        general_data.extend(vec![
+            "- Analyzed event files: 581".to_string(),
+            "- Total file size: 148.5 MB".to_string(),
+            "- Excluded rules: 12".to_string(),
+            "- Noisy rules: 5 (Disabled)".to_string(),
+            "- Experimental rules: 1935 (65.97%)".to_string(),
+            "- Stable rules: 215 (7.33%)".to_string(),
+            "- Test rules: 783 (26.70%)".to_string(),
+            "- Hayabusa rules: 138".to_string(),
+            "- Sigma rules: 2795".to_string(),
+            "- Total enabled detection rules: 2933".to_string(),
+            "- Elapsed time: 00:00:29.035".to_string(),
+            "".to_string(),
+        ]);
+        html_reporter.section_order.push("No Exist Section");
+        html_reporter.md_datas.insert(
+            "General Overview {#general_overview}".to_string(),
+            general_data.to_owned(),
+        );
+        let gen_data = general_data.iter().collect::<Vec<&str>>();
+        let general_overview_str = format!(
+            "<ul>\n<li>{}</li>\n</ul>",
+            gen_data[..general_data.len() - 1]
+                .join("</li>\n<li>")
+                .replace("- ", "")
+        );
+        let expect_str = format!(
+            "<h2 id=\"general_overview\">General Overview</h2>\n{general_overview_str}\n<h2 id=\"results_summary\">Results Summary</h2>\n<p>not found data.</p>\n"
+        );
+        htmlreport::create_html_file(
+            html_reporter.create_html(),
+            "./test-html/test_create_html_file.html",
+        );
+
+        let header = r#"<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" type="text/css" href="./config/html_report/hayabusa_report.css"><link rel="icon" type="image/png" href="./config/html_report/favicon.png"></head><body><section><img id="logo" src="./config/html_report/logo.png">"#;
+        let footer = "</section></body></html>\n";
+        let expect = format!("{header}{expect_str}{footer}");
+        assert_eq!(
+            read_to_string("./test-html/test_create_html_file.html").unwrap(),
+            expect
+        );
+        assert!(remove_dir_all("./test-html").is_ok());
+    }
+
+    #[test]
+    fn test_add_md_data() {
+        let mut html_reporter = HtmlReporter::default();
+        let mut general_data = Nested::<String>::new();
+        general_data.extend(vec![
+            "- Analyzed event files: 581".to_string(),
+            "- Total file size: 148.5 MB".to_string(),
+            "- Excluded rules: 12".to_string(),
+            "- Noisy rules: 5 (Disabled)".to_string(),
+            "- Experimental rules: 1935 (65.97%)".to_string(),
+            "- Stable rules: 215 (7.33%)".to_string(),
+            "- Test rules: 783 (26.70%)".to_string(),
+            "- Hayabusa rules: 138".to_string(),
+            "- Sigma rules: 2795".to_string(),
+            "- Total enabled detection rules: 2933".to_string(),
+            "- Elapsed time: 00:00:29.035".to_string(),
+            "".to_string(),
+        ]);
+        html_reporter.section_order.push("No Exist Section");
+        let expect_key = "AddTest {#add_test}";
+        htmlreport::add_md_data(expect_key, general_data.clone());
+        let actual_html_reporter = HTML_REPORTER.read().unwrap().clone();
+        let expect_general_data: Vec<&str> = general_data.iter().collect();
+        for (k, v) in actual_html_reporter.md_datas.iter() {
+            if k == expect_key {
+                assert_eq!(v.iter().collect::<Vec<&str>>(), expect_general_data);
+            } else {
+                assert_eq!(v.len(), 0);
+            }
+        }
     }
 }

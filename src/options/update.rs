@@ -83,7 +83,7 @@ impl Update {
                     submodule.update(true, None)?;
                     let submodule_repo = submodule.open()?;
                     if let Err(e) = Update::pull_repository(&submodule_repo) {
-                        AlertMessage::alert(&format!("Failed submodule update. {}", e)).ok();
+                        AlertMessage::alert(&format!("Failed submodule update. {e}")).ok();
                         is_success_submodule_update = false;
                     }
                 }
@@ -132,7 +132,7 @@ impl Update {
             .find_remote("origin")?
             .fetch(&["main"], None, None)
             .map_err(|e| {
-                AlertMessage::alert(&format!("Failed git fetch to rules folder. {}", e)).ok();
+                AlertMessage::alert(&format!("Failed git fetch to rules folder. {e}")).ok();
             }) {
             Ok(it) => it,
             Err(_err) => return Err(git2::Error::from_str(&String::default())),
@@ -197,6 +197,7 @@ impl Update {
             .read_dir(
                 rule_folder_path,
                 "INFORMATIONAL",
+                "",
                 &filter::RuleExclude::new(),
                 stored_staic,
             )
@@ -258,7 +259,7 @@ impl Update {
         }
         println!();
         for (key, value) in &update_count_by_rule_type {
-            println!("Updated {} rules: {}", key, value);
+            println!("Updated {key} rules: {value}");
         }
         if !&update_count_by_rule_type.is_empty() {
             Ok("Rule updated".to_string())
@@ -278,7 +279,7 @@ impl Update {
 #[cfg(test)]
 mod tests {
     use crate::{
-        detections::configs::{Action, Config, StoredStatic, UpdateOption},
+        detections::configs::{Action, CommonOptions, Config, StoredStatic, UpdateOption},
         options::update::Update,
     };
     use std::{path::Path, time::SystemTime};
@@ -289,9 +290,11 @@ mod tests {
         let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
             action: Some(Action::UpdateRules(UpdateOption {
                 rules: Path::new("./rules").to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }));
         let prev_modified_rules = Update::get_updated_rules(
@@ -308,5 +311,63 @@ mod tests {
             &dummy_stored_static,
         );
         assert_eq!(prev_modified_rules2.len(), 0);
+    }
+
+    #[test]
+    fn test_no_diff_print_diff_modified_rule_dates() {
+        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
+        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+            })),
+            debug: false,
+        }));
+        let prev_modified_rules = Update::get_updated_rules(
+            "test_files/rules/level_yaml",
+            &prev_modified_time,
+            &dummy_stored_static,
+        );
+        let dummy_after_updated_rules = prev_modified_rules.clone();
+
+        let actual =
+            Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
+        assert!(actual.is_ok());
+        assert_eq!(
+            actual.unwrap(),
+            "You currently have the latest rules.".to_string()
+        );
+    }
+
+    #[test]
+    fn test_diff_print_diff_modified_rule_dates() {
+        let prev_modified_time: SystemTime = SystemTime::UNIX_EPOCH;
+        let dummy_stored_static = StoredStatic::create_static_data(Some(Config {
+            action: Some(Action::UpdateRules(UpdateOption {
+                rules: Path::new("./rules").to_path_buf(),
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+            })),
+            debug: false,
+        }));
+        let prev_modified_rules = Update::get_updated_rules(
+            "test_files/rules/level_yaml",
+            &prev_modified_time,
+            &dummy_stored_static,
+        );
+        let mut dummy_after_updated_rules = prev_modified_rules.clone();
+        dummy_after_updated_rules.insert(format!(
+            "Dummy New|-|{}|Other",
+            Path::new("test_files/rules/yaml/1.yml").to_str().unwrap()
+        ));
+        let actual =
+            Update::print_diff_modified_rule_dates(prev_modified_rules, dummy_after_updated_rules);
+        assert!(actual.is_ok());
+        assert_eq!(actual.unwrap(), "Rule updated".to_string());
     }
 }

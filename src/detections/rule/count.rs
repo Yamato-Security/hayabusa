@@ -17,7 +17,13 @@ use crate::detections::rule::aggregation_parser::AggregationConditionToken;
 use crate::detections::utils;
 
 /// 検知された際にカウント情報を投入する関数
-pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_errors_flag: bool) {
+pub fn count(
+    rule: &mut RuleNode,
+    record: &Value,
+    verbose_flag: bool,
+    quiet_errors_flag: bool,
+    json_input_flag: bool,
+) {
     let key = create_count_key(
         rule,
         record,
@@ -49,7 +55,7 @@ pub fn count(rule: &mut RuleNode, record: &Value, verbose_flag: bool, quiet_erro
         rule,
         key,
         field_value,
-        message::get_event_time(record).unwrap_or(default_time),
+        message::get_event_time(record, json_input_flag).unwrap_or(default_time),
     );
 }
 
@@ -112,7 +118,7 @@ fn get_alias_value_in_record(
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             None
         }
@@ -207,22 +213,19 @@ pub struct TimeFrameInfo {
 
 impl TimeFrameInfo {
     /// timeframeの文字列をパースし、構造体を返す関数
-    pub fn parse_tframe(mut value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
+    pub fn parse_tframe(value: String, stored_static: &StoredStatic) -> TimeFrameInfo {
         let mut ttype = "";
-        if value.contains('s') {
+        let mut target_val = value.as_str();
+        if target_val.ends_with('s') {
             ttype = "s";
-            value.retain(|c| c != 's');
-        } else if value.contains('m') {
+        } else if target_val.ends_with('m') {
             ttype = "m";
-            value.retain(|c| c != 'm')
-        } else if value.contains('h') {
+        } else if target_val.ends_with('h') {
             ttype = "h";
-            value.retain(|c| c != 'h');
-        } else if value.contains('d') {
+        } else if target_val.ends_with('d') {
             ttype = "d";
-            value.retain(|c| c != 'd');
         } else {
-            let errmsg = format!("Timeframe is invalid. Input value:{}", value);
+            let errmsg = format!("Timeframe is invalid. Input value:{value}");
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -230,12 +233,15 @@ impl TimeFrameInfo {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
+        }
+        if !ttype.is_empty() {
+            target_val = &value[..value.len() - 1];
         }
         TimeFrameInfo {
             timetype: ttype.to_string(),
-            timenum: value.parse::<i64>(),
+            timenum: target_val.parse::<i64>(),
         }
     }
 }
@@ -257,7 +263,7 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
             }
         }
         Err(err) => {
-            let errmsg = format!("Timeframe number is invalid. timeframe. {}", err);
+            let errmsg = format!("Timeframe number is invalid. timeframe. {err}");
             if stored_static.verbose_flag {
                 AlertMessage::alert(&errmsg).ok();
             }
@@ -265,7 +271,7 @@ pub fn get_sec_timeframe(rule: &RuleNode, stored_static: &StoredStatic) -> Optio
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             Option::None
         }
@@ -534,8 +540,10 @@ mod tests {
 
     use crate::detections;
     use crate::detections::configs::Action;
+    use crate::detections::configs::CommonOptions;
     use crate::detections::configs::Config;
     use crate::detections::configs::CsvOutputOption;
+    use crate::detections::configs::DetectCommonOption;
     use crate::detections::configs::InputOption;
     use crate::detections::configs::OutputOption;
     use crate::detections::configs::StoredStatic;
@@ -575,17 +583,12 @@ mod tests {
                         directory: None,
                         filepath: None,
                         live_analysis: false,
-                        evtx_file_ext: None,
-                        thread_number: None,
-                        quiet_errors: false,
-                        config: Path::new("./rules/config").to_path_buf(),
-                        verbose: false,
                     },
                     profile: None,
-                    output: None,
                     enable_deprecated_rules: false,
                     exclude_status: None,
                     min_level: "informational".to_string(),
+                    exact_level: None,
                     enable_noisy_rules: false,
                     end_timeline: None,
                     start_timeline: None,
@@ -601,10 +604,22 @@ mod tests {
                     rules: Path::new("./rules").to_path_buf(),
                     html_report: None,
                     no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: false,
+                    },
                 },
+                geo_ip: None,
+                output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
@@ -914,6 +929,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
                     );
                 }
@@ -1688,6 +1704,7 @@ mod tests {
                         &recinfo,
                         dummy_stored_static.verbose_flag,
                         dummy_stored_static.quiet_errors_flag,
+                        dummy_stored_static.json_input_flag,
                         &dummy_stored_static.eventkey_alias,
                     );
                     assert_eq!(result, &true);

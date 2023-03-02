@@ -1,6 +1,76 @@
 # Changes
 
-## 2.1.0 [2022/01/10]
+## 2.X.X [2023/XX/XX] "XXX Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Approximately 2% speed increase and memory usage reduction by improving string contains check. (#947) (@hitenkoku)
+- Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Some event titles would be displayed as `Unknown` in the `metrics` command even if they were defined. (#943) (@hitenkoku)
+
+## 2.2.2 [2023/2/22] "Ninja Day Release"
+
+**New Features:**
+
+- Added support for the `|base64offset|contains` pipe keyword. (#705) (@hitenkoku)
+
+**Enhancements:**
+
+- Reorganized the grouping of command line options. (#918) (@hitenkoku)
+- Reduced memory usage by approximately 75% when reading JSONL formatted logs. (#921) (@fukusuket)
+- Channel names are now further abbreviated in the metrics, json-timeline, csv-timeline commands according to `rules/config/generic_abbreviations.txt`. (#923) (@hitenkoku)
+- Reduced parsing errors by updating the evtx crate. (@YamatoSecurity)
+- Provider names (`%Provider%` field) are now abbreviated like channel names according to `rules/config/provider_abbreviations.txt` and `rules/config/generic_abbreviations.txt`. (#932) (@hitenkoku)
+- Print the first and last timestamps in the metrics command when the `-d` directory option is used. (#935) (@hitenkoku)
+- Added first and last timestamp to Results Summary. (#938) (@hitenkoku)
+- Added Time Format options for `logon-summary`, `metrics` commands. (#938) (@hitenkoku)
+- `\r`, `\n`, and `\t` characters are preserved (not converted to spaces) when saving results with the `json-output` command. (#940) (@hitenkoku)
+
+**Bug Fixes:**
+
+- The first and last timestamps in the `logon-summary` and `metrics` commands were blank. (#920) (@hitenkoku)
+- Event titles stopped being shown in the `metrics` command during development of 2.2.2. (#933) (@hitenkoku)
+
+## 2.2.0 [2023/2/12] "SECCON Release"
+
+**New Features:**
+
+- Added support for input of JSON-formatted event logs (`-J, --JSON-input`). (#386) (@hitenkoku)
+- Log enrichment by outputting the ASN organization, city and country of source and destination IP addresses based on MaxMind GeoIP databases (`-G, --GeoIP`). (#879) (@hitenkoku)
+- Added the `-e, --exact-level` option to scan for only specific rule levels. (#899) (@hitenkoku)
+
+**Enhancements:**
+
+- Added the executed command line to the HTML report. (#877) (@hitenkoku)
+- Approximately 3% speed increase and memory usage reduction by performing exact string matching on Event IDs. (#882) (@fukusuket)
+- Approximately 14% speed increase and memory usage reduction by filtering before regex usage. (#883) (@fukusuket)
+- Approximately 8% speed increase and memory usage reduction by case-insensitive comparisons instead of regex usage. (#884) (@fukusuket)
+- Approximately 5% speed increase and memory usage reduction by reducing regex usage in wildcard expressions. (#890) (@fukusuket)
+- Further speed increase and memory usage reduction by removing unnecessary regex usage. (#894) (@fukusuket)
+- Approximately 3% speed increase and 10% memory usage reduction by reducing regex usage. (#898) (@fukuseket)
+- Improved `-T, --visualize-timeline` by increasing the height of the markers to make it easier to read. (#902) (@hitenkoku)
+- Reduced memory usage by approximately 50% when reading JSON/L formatted logs. (#906) (@fukusuket)
+- Alphabetically sorted options based on their long names. (#904) (@hitenkoku)
+- Added JSON input support (`-J, --JSON-input` option) for `logon-summary`, `metrics` and `pivot-keywords-list` commands. (#908) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed a bug when rules with 4 consecutive backslashes in their conditions would not be detected. (#897) (@fukusuket)
+- When parsing PowerShell EID 4103, the `Payload` field would be separated into multiple fields when outputting to JSON. (#895) (@hitenkoku)
+- Fixed a crash when looking up event log file size. (#914) (@hitenkoku)
+
+**Vulnerability Fixes:**
+
+- Updated the git2 and gitlib2 crates to prevent a possible SSH MITM attack (CVE-2023-22742) when updating rules and config files. (#888) (@YamatoSecurity)
+
+## 2.1.0 [2023/01/10] "Happy Year of the Rabbit Release"
 
 **Enhancements:**
 
@@ -13,13 +83,13 @@
 - Successful login CSV results were not correctly being outputted when using the logon timeline function. (#849) (@hitenkoku)
 - Removed unnecessary line breaks that would occur when using the `-J, --jsonl` option. (#852) (@hitenkoku)
 
-## 2.0.0 [2022/12/24]
+## 2.0.0 [2022/12/24] "Merry Christmas Release"
 
 **New Features:**
 
 - Command usage and help menu are now done by subcommands. (#656) (@hitenkoku)
 
-## 1.9.0 [2022/12/24]
+## 1.9.0 [2022/12/24] "Merry Christmas Release"
 
 **New Features:**
 

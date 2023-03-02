@@ -1,10 +1,11 @@
 extern crate bytesize;
 extern crate downcast_rs;
+extern crate maxminddb;
 extern crate serde;
 extern crate serde_derive;
 
 use bytesize::ByteSize;
-use chrono::{DateTime, Datelike, Local};
+use chrono::{DateTime, Datelike, Local, NaiveDateTime, Utc};
 use clap::Command;
 use evtx::{EvtxParser, ParserSettings};
 use hashbrown::{HashMap, HashSet};
@@ -27,11 +28,12 @@ use hayabusa::{afterfact::after_fact, detections::utils};
 use hayabusa::{detections::configs, timeline::timelines::Timeline};
 use hayabusa::{detections::utils::write_color_buffer, filter};
 use hhmmss::Hhmmss;
+use itertools::Itertools;
 use libmimalloc_sys::mi_stats_print_out;
 use mimalloc::MiMalloc;
 use nested::Nested;
 use pbr::ProgressBar;
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
 use std::fmt::Display;
@@ -91,10 +93,13 @@ impl App {
         let analysis_start_time: DateTime<Local> = Local::now();
         if stored_static.html_report_flag {
             let mut output_data = Nested::<String>::new();
-            output_data.extend(vec![format!(
-                "- Start time: {}",
-                analysis_start_time.format("%Y/%m/%d %H:%M")
-            )]);
+            output_data.extend(vec![
+                format!("- Command line: {}", std::env::args().join(" ")),
+                format!(
+                    "- Start time: {}",
+                    analysis_start_time.format("%Y/%m/%d %H:%M")
+                ),
+            ]);
             htmlreport::add_md_data("General Overview {#general_overview}", output_data);
         }
 
@@ -103,7 +108,7 @@ impl App {
         if stored_static.config.action.is_some()
             && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
         {
-            if !stored_static.config.quiet {
+            if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
                 println!();
             }
@@ -118,7 +123,7 @@ impl App {
 
         // Show usage when no arguments.
         if stored_static.config.action.is_none() {
-            if !stored_static.config.quiet {
+            if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
                 println!();
             }
@@ -126,7 +131,7 @@ impl App {
             println!();
             return;
         }
-        if !stored_static.config.quiet {
+        if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
             println!();
             self.output_eggs(&format!(
@@ -216,9 +221,10 @@ impl App {
                     .output_option
                     .as_ref()
                     .unwrap()
-                    .input_args
+                    .detect_common_options
                     .evtx_file_ext
                     .as_ref(),
+                stored_static.json_input_flag,
             )
         } else {
             HashSet::default()
@@ -254,7 +260,7 @@ impl App {
                         return;
                     }
                 }
-                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_path {
                     if utils::check_file_expect_not_exist(
                         path.as_path(),
                         format!(
@@ -267,7 +273,7 @@ impl App {
                 }
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
 
-                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_path {
                     if let Ok(metadata) = fs::metadata(path) {
                         let output_saved_str = format!(
                             "Saved file: {} ({})",
@@ -297,13 +303,13 @@ impl App {
                     )
                 }
             }
-            Action::ListContributors => {
+            Action::ListContributors(_) => {
                 self.print_contributors();
                 return;
             }
             Action::LogonSummary(_) | Action::Metrics(_) | Action::Search(_) => {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
-                if let Some(path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(path) = &stored_static.output_path {
                     if let Ok(metadata) = fs::metadata(path) {
                         let output_saved_str = format!(
                             "Saved file: {} ({})",
@@ -320,7 +326,7 @@ impl App {
             }
             Action::PivotKeywordsList(_) => {
                 // pivot 機能でファイルを出力する際に同名ファイルが既に存在していた場合はエラー文を出して終了する。
-                if let Some(csv_path) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(csv_path) = &stored_static.output_path {
                     let mut error_flag = false;
                     let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                     pivot_key_unions.iter().for_each(|(key, _)| {
@@ -357,20 +363,20 @@ impl App {
                 let pivot_key_unions = PIVOT_KEYWORD.read().unwrap();
                 let create_output =
                     |mut output: String, key: &String, pivot_keyword: &PivotKeyword| {
-                        write!(output, "{}: ( ", key).ok();
+                        write!(output, "{key}: ( ").ok();
                         for i in pivot_keyword.fields.iter() {
-                            write!(output, "%{}% ", i).ok();
+                            write!(output, "%{i}% ").ok();
                         }
                         writeln!(output, "):").ok();
 
                         for i in pivot_keyword.keywords.iter() {
-                            writeln!(output, "{}", i).ok();
+                            writeln!(output, "{i}").ok();
                         }
                         writeln!(output).ok();
 
                         output
                     };
-                if let Some(pivot_file) = &stored_static.output_option.as_ref().unwrap().output {
+                if let Some(pivot_file) = &stored_static.output_path {
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         let mut f = BufWriter::new(
                             fs::File::create(
@@ -454,7 +460,7 @@ impl App {
                         if e.message().is_empty() {
                             AlertMessage::alert("Failed to update rules.").ok();
                         } else {
-                            AlertMessage::alert(&format!("Failed to update rules. {:?}  ", e)).ok();
+                            AlertMessage::alert(&format!("Failed to update rules. {e:?}  ")).ok();
                         }
                     }
                 }
@@ -582,7 +588,7 @@ impl App {
                 }
                 return;
             }
-            Action::ListProfiles => {
+            Action::ListProfiles(_) => {
                 let profile_list =
                     options::profile::get_profile_list("config/profiles.yaml", stored_static);
                 write_color_buffer(
@@ -805,7 +811,7 @@ impl App {
                 ERROR_LOG_STACK
                     .lock()
                     .unwrap()
-                    .push(format!("[ERROR] {}", errmsg));
+                    .push(format!("[ERROR] {errmsg}"));
             }
             return vec![];
         }
@@ -858,7 +864,7 @@ impl App {
                 .ok();
             }
             Err(err) => {
-                AlertMessage::alert(&format!("{}", err)).ok();
+                AlertMessage::alert(&format!("{err}")).ok();
             }
         }
     }
@@ -877,21 +883,43 @@ impl App {
             .unwrap()
             .min_level
             .to_uppercase();
+        let target_level = stored_static
+            .output_option
+            .as_ref()
+            .unwrap()
+            .exact_level
+            .as_ref()
+            .unwrap_or(&String::default())
+            .to_uppercase();
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
             None,
-            &format!("Analyzing event files: {:?}", evtx_files.len()),
+            &format!("Total event log files: {:?}", evtx_files.len()),
             true,
         )
         .ok();
 
         let mut total_file_size = ByteSize::b(0);
         for file_path in &evtx_files {
-            let meta = fs::metadata(file_path).ok();
-            total_file_size += ByteSize::b(meta.unwrap().len());
+            let file_size = match fs::metadata(file_path) {
+                Ok(res) => res.len(),
+                Err(err) => {
+                    if stored_static.verbose_flag {
+                        AlertMessage::warn(&err.to_string()).ok();
+                    }
+                    if !stored_static.quiet_errors_flag {
+                        ERROR_LOG_STACK
+                            .lock()
+                            .unwrap()
+                            .push(format!("[WARN] {err}"));
+                    }
+                    0
+                }
+            };
+            total_file_size += ByteSize::b(file_size);
         }
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
-        println!("{}", total_size_output);
+        println!("{total_size_output}");
         println!();
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
@@ -905,13 +933,14 @@ impl App {
             let mut output_data = Nested::<String>::new();
             output_data.extend(vec![
                 format!("- Analyzed event files: {}", evtx_files.len()),
-                format!("- {}", total_size_output),
+                format!("- {total_size_output}"),
             ]);
             htmlreport::add_md_data("General Overview #{general_overview}", output_data);
         }
 
         let rule_files = detection::Detection::parse_rule_files(
-            level.as_str(),
+            &level,
+            &target_level,
             &stored_static.output_option.as_ref().unwrap().rules,
             &filter::exclude_ids(stored_static),
             stored_static,
@@ -944,14 +973,25 @@ impl App {
                 println!("Checking target evtx FilePath: {:?}", &evtx_file);
             }
             let cnt_tmp: usize;
-            (detection, cnt_tmp, tl) = self.analysis_file(
-                evtx_file,
-                detection,
-                time_filter,
-                tl.to_owned(),
-                target_event_ids,
-                stored_static,
-            );
+            (detection, cnt_tmp, tl) = if evtx_file.extension().unwrap() == "json" {
+                self.analysis_json_file(
+                    evtx_file,
+                    detection,
+                    time_filter,
+                    tl.to_owned(),
+                    target_event_ids,
+                    stored_static,
+                )
+            } else {
+                self.analysis_file(
+                    evtx_file,
+                    detection,
+                    time_filter,
+                    tl.to_owned(),
+                    target_event_ids,
+                    stored_static,
+                )
+            };
             total_records += cnt_tmp;
             pb.inc();
         }
@@ -970,16 +1010,10 @@ impl App {
         if stored_static.search_flag {
             println!("TODO: CREATE HERE");
         }
-        if stored_static
-            .output_option
-            .as_ref()
-            .unwrap()
-            .output
-            .is_some()
-        {
+        if stored_static.output_path.is_some() {
             println!();
             println!();
-            println!("Analysis finished. Please wait while the results are being saved.");
+            println!("Scanning finished. Please wait while the results are being saved.");
         }
         println!();
         detection.add_aggcondition_msges(&self.rt, stored_static);
@@ -990,9 +1024,10 @@ impl App {
         {
             after_fact(
                 total_records,
-                stored_static.output_option.as_ref().unwrap(),
-                stored_static.config.no_color,
+                &stored_static.output_path,
+                stored_static.common_options.no_color,
                 stored_static,
+                tl,
             );
         }
         CHECKPOINT
@@ -1049,7 +1084,7 @@ impl App {
                         ERROR_LOG_STACK
                             .lock()
                             .unwrap()
-                            .push(format!("[ERROR] {}", errmsg));
+                            .push(format!("[ERROR] {errmsg}"));
                     }
                     continue;
                 }
@@ -1058,22 +1093,25 @@ impl App {
                 // Searchならすべてのフィルタを無視
                 if !stored_static.search_flag {
                     // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                    if !self._is_valid_channel(data, &stored_static.eventkey_alias)
-                        || (stored_static.output_option.as_ref().unwrap().eid_filter
-                            && !self._is_target_event_id(
-                                data,
-                                target_event_ids,
-                                &stored_static.eventkey_alias,
-                            ))
+                    if !self._is_valid_channel(
+                        data,
+                        &stored_static.eventkey_alias,
+                        "Event.System.Channel",
+                    ) || (stored_static.output_option.as_ref().unwrap().eid_filter
+                        && !self._is_target_event_id(
+                            data,
+                            target_event_ids,
+                            &stored_static.eventkey_alias,
+                        ))
                     {
                         continue;
                     }
-                }
 
-                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                let timestamp = record_result.as_ref().unwrap().timestamp;
-                if !time_filter.is_target(&Some(timestamp)) {
-                    continue;
+                    // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                    let timestamp = record_result.as_ref().unwrap().timestamp;
+                    if !time_filter.is_target(&Some(timestamp)) {
+                        continue;
+                    }
                 }
 
                 records_per_detect.push(data.to_owned());
@@ -1091,12 +1129,149 @@ impl App {
             // timeline機能の実行
             tl.start(
                 &records_per_detect,
-                stored_static.metrics_flag,
-                stored_static.logon_summary_flag,
-                stored_static.search_flag,
-                &stored_static.search_option,
-                &stored_static.eventkey_alias,
+                stored_static
             );
+
+            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+                // ruleファイルの検知
+                detection = detection.start(&self.rt, records_per_detect);
+            }
+        }
+
+        (detection, record_cnt, tl)
+    }
+
+    // JSON形式のイベントログファイルを1ファイル分解析する。
+    fn analysis_json_file(
+        &self,
+        filepath: PathBuf,
+        mut detection: detection::Detection,
+        time_filter: &TargetEventTime,
+        mut tl: Timeline,
+        target_event_ids: &TargetEventIds,
+        stored_static: &StoredStatic,
+    ) -> (detection::Detection, usize, Timeline) {
+        let path = filepath.display();
+        let mut record_cnt = 0;
+        let filename = filepath.to_str().unwrap_or_default();
+        let filepath = if filename.starts_with("./") {
+            check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), filename, true)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string()
+        } else {
+            filename.to_string()
+        };
+        let jsonl_value_iter = utils::read_jsonl_to_value(&filepath);
+        let mut records = match jsonl_value_iter {
+            // JSONL形式の場合
+            Ok(values) => values,
+            // JSONL形式以外(JSON(Array or jq)形式)の場合
+            Err(_) => {
+                let json_value_iter = utils::read_json_to_value(&filepath);
+                match json_value_iter {
+                    Ok(values) => values,
+                    Err(e) => {
+                        AlertMessage::alert(&e).ok();
+                        return (detection, record_cnt, tl);
+                    }
+                }
+            }
+        };
+
+        loop {
+            let mut records_per_detect = vec![];
+            while records_per_detect.len() < MAX_DETECT_RECORDS {
+                // パースに失敗している場合、エラーメッセージを出力
+                let next_rec = records.next();
+                if next_rec.is_none() {
+                    break;
+                }
+                record_cnt += 1;
+
+                let mut data = next_rec.unwrap();
+                // ChannelなどのデータはEvent -> Systemに存在する必要があるが、他処理のことも考え、Event -> EventDataのデータをそのまま投入する形にした。cloneを利用しているのはCopy trait実装がserde_json::Valueにないため
+                data["Event"]["System"] = data["Event"]["EventData"].clone();
+                data["Event"]["System"]
+                    .as_object_mut()
+                    .unwrap()
+                    .insert("EventRecordID".to_string(), Value::from(1));
+                data["Event"]["System"].as_object_mut().unwrap().insert(
+                    "Provider_attributes".to_string(),
+                    Value::Object(Map::from_iter(vec![("Name".to_string(), Value::from(1))])),
+                );
+
+                data["Event"]["System"]["EventRecordID"] =
+                    data["Event"]["EventData"]["RecordNumber"].clone();
+                data["Event"]["System"]["Provider_attributes"]["Name"] =
+                    data["Event"]["EventData"]["SourceName"].clone();
+                data["Event"]["UserData"] = data["Event"]["EventData"].clone();
+                // Computer名に対応する内容はHostnameであることがわかったためデータをクローンして投入
+                data["Event"]["System"]["Computer"] =
+                    data["Event"]["EventData"]["Hostname"].clone();
+                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                if !self._is_valid_channel(
+                    &data,
+                    &stored_static.eventkey_alias,
+                    "Event.EventData.Channel",
+                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
+                    && !self._is_target_event_id(
+                        &data,
+                        target_event_ids,
+                        &stored_static.eventkey_alias,
+                    ))
+                {
+                    continue;
+                }
+                let target_timestamp = if data["Event"]["EventData"]["@timestamp"].is_null() {
+                    &data["Event"]["EventData"]["TimeGenerated"]
+                } else {
+                    &data["Event"]["EventData"]["@timestamp"]
+                };
+                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                let timestamp = match NaiveDateTime::parse_from_str(
+                    &target_timestamp
+                        .to_string()
+                        .replace("\\\"", "")
+                        .replace('"', ""),
+                    "%Y-%m-%dT%H:%M:%S%.3fZ",
+                ) {
+                    Ok(without_timezone_datetime) => {
+                        Some(DateTime::<Utc>::from_utc(without_timezone_datetime, Utc))
+                    }
+                    Err(e) => {
+                        AlertMessage::alert(&format!(
+                            "timestamp parse error. filepath:{},{} {}",
+                            path,
+                            &data["Event"]["EventData"]["@timestamp"]
+                                .to_string()
+                                .replace("\\\"", "")
+                                .replace('"', ""),
+                            e
+                        ))
+                        .ok();
+                        None
+                    }
+                };
+                if !time_filter.is_target(&timestamp) {
+                    continue;
+                }
+
+                records_per_detect.push(data.to_owned());
+            }
+            if records_per_detect.is_empty() {
+                break;
+            }
+
+            let records_per_detect = self.rt.block_on(App::create_rec_infos(
+                records_per_detect,
+                &path,
+                self.rule_keys.to_owned(),
+            ));
+
+            // timeline機能の実行
+            tl.start(&records_per_detect, stored_static);
 
             // 以下のコマンドの際にはルールにかけない
             if !(stored_static.metrics_flag
@@ -1169,8 +1344,13 @@ impl App {
     }
 
     /// レコードのチャンネルの値が正しい(Stringの形でありnullでないもの)ことを判定する関数
-    fn _is_valid_channel(&self, data: &Value, eventkey_alias: &EventKeyAliasConfig) -> bool {
-        let channel = utils::get_event_value("Event.System.Channel", data, eventkey_alias);
+    fn _is_valid_channel(
+        &self,
+        data: &Value,
+        eventkey_alias: &EventKeyAliasConfig,
+        channel_key: &str,
+    ) -> bool {
+        let channel = utils::get_event_value(channel_key, data, eventkey_alias);
         if channel.is_none() {
             return false;
         }
@@ -1192,7 +1372,7 @@ impl App {
                 Option::Some(evtx_parser)
             }
             Err(e) => {
-                eprintln!("{}", e);
+                eprintln!("{e}");
                 Option::None
             }
         }
@@ -1203,7 +1383,7 @@ impl App {
         let fp = utils::check_setting_path(&CURRENT_EXE_PATH.to_path_buf(), "art/logo.txt", true)
             .unwrap();
         let content = fs::read_to_string(fp).unwrap_or_default();
-        let output_color = if stored_static.config.no_color {
+        let output_color = if stored_static.common_options.no_color {
             None
         } else {
             Some(Color::Green)
@@ -1282,16 +1462,70 @@ mod tests {
     use std::path::Path;
 
     use crate::App;
+    use chrono::Local;
     use hashbrown::HashSet;
-    use hayabusa::detections::configs::{Action, Config, ConfigReader, StoredStatic, UpdateOption};
+    use hayabusa::{
+        detections::{
+            configs::{
+                Action, CommonOptions, Config, ConfigReader, CsvOutputOption, DetectCommonOption,
+                InputOption, OutputOption, StoredStatic, TargetEventIds, TargetEventTime,
+                STORED_EKEY_ALIAS, STORED_STATIC,
+            },
+            detection,
+            message::MESSAGES,
+            rule::create_rule,
+        },
+        options::htmlreport::HTML_REPORTER,
+        timeline::timelines::Timeline,
+    };
+    use itertools::Itertools;
+    use yaml_rust::YamlLoader;
 
     fn create_dummy_stored_static() -> StoredStatic {
         StoredStatic::create_static_data(Some(Config {
-            action: Some(Action::UpdateRules(UpdateOption {
-                rules: Path::new("./rules").to_path_buf(),
+            action: Some(Action::CsvTimeline(CsvOutputOption {
+                output_options: OutputOption {
+                    input_args: InputOption {
+                        directory: None,
+                        filepath: None,
+                        live_analysis: false,
+                    },
+                    profile: None,
+                    enable_deprecated_rules: false,
+                    exclude_status: None,
+                    min_level: "informational".to_string(),
+                    exact_level: None,
+                    enable_noisy_rules: false,
+                    end_timeline: None,
+                    start_timeline: None,
+                    eid_filter: false,
+                    european_time: false,
+                    iso_8601: false,
+                    rfc_2822: false,
+                    rfc_3339: false,
+                    us_military_time: false,
+                    us_time: false,
+                    utc: false,
+                    visualize_timeline: false,
+                    rules: Path::new("./rules").to_path_buf(),
+                    html_report: None,
+                    no_summary: false,
+                    common_options: CommonOptions {
+                        no_color: false,
+                        quiet: false,
+                    },
+                    detect_common_options: DetectCommonOption {
+                        evtx_file_ext: None,
+                        thread_number: None,
+                        quiet_errors: false,
+                        config: Path::new("./rules/config").to_path_buf(),
+                        verbose: false,
+                        json_input: true,
+                    },
+                },
+                geo_ip: None,
+                output: None,
             })),
-            no_color: false,
-            quiet: false,
             debug: false,
         }))
     }
@@ -1323,5 +1557,67 @@ mod tests {
         config_reader.config = None;
         stored_static.profiles = None;
         app.exec(&mut config_reader.app, &mut stored_static);
+    }
+
+    #[test]
+    fn test_exec_general_html_output() {
+        let mut app = App::new(None);
+        let mut config_reader = ConfigReader::new();
+        let mut stored_static = StoredStatic::create_static_data(config_reader.config);
+        config_reader.config = None;
+        stored_static.config.action = None;
+        stored_static.html_report_flag = true;
+        app.exec(&mut config_reader.app, &mut stored_static);
+        let expect_general_contents = vec![
+            format!("- Command line: {}", std::env::args().join(" ")),
+            format!("- Start time: {}", Local::now().format("%Y/%m/%d %H:%M")),
+        ];
+
+        let actual = &HTML_REPORTER.read().unwrap().md_datas;
+        let general_contents = actual.get("General Overview {#general_overview}").unwrap();
+        assert_eq!(expect_general_contents.len(), general_contents.len());
+
+        for actual_general_contents in general_contents.iter() {
+            assert!(expect_general_contents.contains(&actual_general_contents.to_string()));
+        }
+    }
+
+    #[test]
+    fn test_analysis_json_file() {
+        let mut app = App::new(None);
+        let stored_static = create_dummy_stored_static();
+        *STORED_EKEY_ALIAS.write().unwrap() = Some(stored_static.eventkey_alias.clone());
+        *STORED_STATIC.write().unwrap() = Some(stored_static.clone());
+
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+            condition: selection1
+        details: testdata
+        "#;
+        let mut rule_yaml = YamlLoader::load_from_str(rule_str).unwrap().into_iter();
+        let test_yaml_data = rule_yaml.next().unwrap();
+        let mut rule = create_rule("testpath".to_string(), test_yaml_data);
+        let rule_init = rule.init(&stored_static);
+        assert!(rule_init.is_ok());
+        let rule_files = vec![rule];
+        app.rule_keys = app.get_all_keys(&rule_files);
+        let detection = detection::Detection::new(rule_files);
+        let target_time_filter = TargetEventTime::new(&stored_static);
+        let tl = Timeline::default();
+        let target_event_ids = TargetEventIds::default();
+
+        let actual = app.analysis_json_file(
+            Path::new("test_files/evtx/test.jsonl").to_path_buf(),
+            detection,
+            &target_time_filter,
+            tl,
+            &target_event_ids,
+            &stored_static,
+        );
+        assert_eq!(actual.1, 2);
+        assert_eq!(MESSAGES.len(), 2);
     }
 }
