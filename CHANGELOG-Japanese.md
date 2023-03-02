@@ -1,16 +1,15 @@
 # 変更点
 
-## 2.X.X [2023/XX/XX] "XXX Release"
+## 2.3.0 [2023/03/25] "TMCIT Release"
 
 **新機能:**
 
-- XXX
+- 新たなパイプキーワード(`contains|all`)`に対応した。 (#945) (@hitenkoku)
+- ステータスが`unsupported`となっているルールの件数を表示した。ステータス`unsupported`のルールも検知対象とするオプションとして`--enable-supported-rules`オプションを追加した。 (#949) (@hitenkoku)
 
 **改善:**
 
-- 文字列が含まれているかの確認処理を改善することで約2%の速度改善をした。(#947) (@hitenkoku)
-- 新たなパイプキーワード(`contains|all`)`に対応した。 (#945) (@hitenkoku)
-- ステータスが`unsupported`となっているルールの件数を表示した。ステータス`unsupported`のルールも検知対象とするオプションとして`--enable-supported-rules`オプションを追加した。 (#949) (@hitenkoku)
+- 文字列が含まれているかの確認処理を改善することで約2-3%の速度改善をした。(#947) (@hitenkoku)
 
 **バグ修正:**
 
