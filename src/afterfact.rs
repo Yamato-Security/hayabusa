@@ -1674,6 +1674,7 @@ mod tests {
                     verbose: false,
                     json_input: false,
                 },
+                enable_unsupported_rules: false,
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1745,6 +1746,7 @@ mod tests {
                     verbose: false,
                     json_input: false,
                 },
+                enable_unsupported_rules: false,
             };
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
@@ -1999,6 +2001,7 @@ mod tests {
                 verbose: false,
                 json_input: false,
             },
+            enable_unsupported_rules: false,
         };
         let data: Vec<(CompactString, Profile)> = vec![
             (
