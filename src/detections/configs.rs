@@ -707,7 +707,6 @@ pub struct SearchOption {
 
     #[clap(flatten)]
     pub detect_common_options: DetectCommonOption,
-
 }
 
 #[derive(Args, Clone, Debug)]

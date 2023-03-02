@@ -1127,10 +1127,7 @@ impl App {
             ));
 
             // timeline機能の実行
-            tl.start(
-                &records_per_detect,
-                stored_static
-            );
+            tl.start(&records_per_detect, stored_static);
 
             if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
                 // ruleファイルの検知

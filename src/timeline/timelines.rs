@@ -2,9 +2,7 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
 
-use crate::detections::configs::{
-    Action, EventInfoConfig, StoredStatic,
-};
+use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
@@ -50,19 +48,18 @@ impl Timeline {
         Timeline { stats: statistic }
     }
 
-    pub fn start(
-        &mut self,
-        records: &[EvtxRecordInfo],
-        stored_static: &StoredStatic
-    ) {
-        self.stats
-            .evt_stats_start(records, stored_static);
-        self.stats
-            .logon_stats_start(records, stored_static.logon_summary_flag, &stored_static.eventkey_alias);
+    pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
+        self.stats.evt_stats_start(records, stored_static);
+        self.stats.logon_stats_start(
+            records,
+            stored_static.logon_summary_flag,
+            &stored_static.eventkey_alias,
+        );
 
         if stored_static.search_flag {
             let keyword = &stored_static.search_option.clone().unwrap().keywords[0]; // Sample Keyword
-            self.stats.search_start(records, stored_static.search_flag, keyword);
+            self.stats
+                .search_start(records, stored_static.search_flag, keyword);
         }
     }
 
