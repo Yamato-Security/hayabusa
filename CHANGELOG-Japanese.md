@@ -10,6 +10,7 @@
 
 - 文字列が含まれているかの確認処理を改善することで約2%の速度改善をした。(#947) (@hitenkoku)
 - 新たなパイプキーワード(`contains|all`)`に対応した。 (#945) (@hitenkoku)
+- ステータスが`unsupported`となっているルールの件数を表示した。ステータス`unsupported`のルールも検知対象とするオプションとして`--enable-supported-rules`オプションを追加した。 (#949) (@hitenkoku)
 
 **バグ修正:**
 

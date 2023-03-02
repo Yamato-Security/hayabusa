@@ -10,6 +10,7 @@
 
 - Approximately 2% speed increase and memory usage reduction by improving string contains check. (#947) (@hitenkoku)
 - Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
+- Added output for rule count of status value is `unsupported` and `--enable-unsupported-rules` option. (#949) (@hitenkoku) (#949) (@hitenkoku)
 
 **Bug Fixes:**
 
