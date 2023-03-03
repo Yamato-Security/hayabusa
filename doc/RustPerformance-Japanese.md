@@ -45,17 +45,17 @@
 [メモリアロケーター](https://doc.rust-lang.org/stable/std/alloc/trait.GlobalAlloc.html)の変更手順は、以下の2ステップのみです。
 
 1. [mimallocクレート](https://crates.io/crates/mimalloc)を`Cargo.toml`の[[dependencies]セクション](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency)で指定する
-```Toml
-[dependencies]
-mimalloc = { version = "*", default-features = false }
-```
+    ```Toml
+    [dependencies]
+    mimalloc = { version = "*", default-features = false }
+    ```
 2. プログラム中のどこかで、[#[global_allocator]](https://doc.rust-lang.org/std/alloc/index.html#the-global_allocator-attribute)で[mimalloc](https://github.com/microsoft/mimalloc)利用を明示する
-```Rust
-use mimalloc::MiMalloc;
-
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
-```
+    ```Rust
+    use mimalloc::MiMalloc;
+    
+    #[global_allocator]
+    static GLOBAL: MiMalloc = MiMalloc;
+    ```
 以上で、メモリアロケーターが[mimalloc](https://github.com/microsoft/mimalloc)に変更されます。
 
 ### 効果（Pull Reuest事例）  <!-- omit in toc -->
