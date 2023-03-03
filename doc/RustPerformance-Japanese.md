@@ -35,7 +35,7 @@
 - [mimalloc](https://microsoft.github.io/mimalloc/)
 - [jemalloc](https://jemalloc.net/)
 
-既定のメモリアロケーターより、高速という結果です。[Hayabusa](https://github.com/Yamato-Security/hayabusa)でも[mimalloc](https://microsoft.github.io/mimalloc/)を採用することで、大幅な速度改善が確認されたため、バージョン1.8.0から[mimalloc](https://microsoft.github.io/mimalloc/)を利用しています。
+既定のメモリアロケーターより、高速という結果です。[Hayabusa](https://github.com/Yamato-Security/hayabusa)でも[mimalloc](https://microsoft.github.io/mimalloc/)を採用することで、大幅な速度改善を確認できたため、バージョン1.8.0から[mimalloc](https://microsoft.github.io/mimalloc/)を利用しています。
 
 ### 変更前  <!-- omit in toc -->
 ```
@@ -56,7 +56,7 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 ```
-以上で、[mimalloc](https://github.com/microsoft/mimalloc)をメモリアロケーターとして動作させることができます。
+以上で、メモリアロケーターが[mimalloc](https://github.com/microsoft/mimalloc)に変更されます。
 
 ### 効果（Pull Reuest事例）  <!-- omit in toc -->
 改善効果はプログラムの特性に依りますが、以下PRの事例では、
@@ -94,13 +94,13 @@ fn main() {
 上記の例では、変更前と比較して1000倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、検知結果を1件ずつ扱うループ中のIO処理をループ外にだすことで、
+以下の事例では、検知結果を1件ずつ扱うときのIO処理をループ外にだすことで、
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
 20%ほどの速度改善を実現しました。
 
 ## ループの中で、正規表現コンパイルを避ける
-正規表現マッチングは一定の速度がでる一方で、正規表現コンパイルは非常に低速です。そのため、とくにループ中での正規表現コンパイルは極力避けることが望ましいです。
+正規表現マッチングは一定の速度がでる一方で、正規表現コンパイルは非常に低速です。そのため、とくにループ中の正規表現コンパイルは極力避けることが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
 たとえば、ループの中で正規表現マッチを10万回試行する以下の処理は、
@@ -138,7 +138,7 @@ fn main() {
 上記の例では、変更前と比較して100倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、正規表現コンパイルをループ外で実施、キャッシュすることで
+以下の事例では、正規表現コンパイルをループ外で実施し、キャッシュすることで
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
 大幅な速度改善を実現しました。
@@ -177,7 +177,7 @@ fn main() {
 上記の例では、変更前と比較して50倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、上記手法により、
+以下の事例では、上記手法により、
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
 出力処理の大幅な速度改善を実現しました。
@@ -230,7 +230,7 @@ fn main() {
 
 ## 文字列長比較により、フィルターする
 扱う文字列の特性に依っては、簡単なフィルターを加えることで、文字列マッチング試行回数を減らし、高速化できる場合があります。
-たとえば、文字列長が非固定長かつ不一致の文字列を比較することが多い場合、文字列長を一次フィルターに使うことで処理を高速化できます。
+文字列長が非固定長かつ不一致の文字列を比較することが多い場合、文字列長を一次フィルターに使うことで処理を高速化できます。
 
 ### 変更前  <!-- omit in toc -->
 たとえば、100万回正規表現マッチを試行する以下の処理は、
@@ -271,7 +271,7 @@ fn main() {
 上記の例では、変更前と比較して20倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、上記手法により、
+以下の事例では、上記手法により、
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 15%ほどの速度改善を実現しました。
@@ -313,7 +313,7 @@ fn main() {
 上記の例では、変更前と比較して最大メモリ使用量が50%ほど削減されます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、不要な[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)、[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)を置き換えることで、
+以下の事例では、不要な[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)、[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)を置き換えることで、
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 大幅なメモリ使用量削減を実現しました。
@@ -395,7 +395,7 @@ fn main() {
 上記の例では、変更前と比較してメモリ使用量が50%ほど削減されます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、短い文字列に対して、[CompactString](https://docs.rs/compact_str/latest/compact_str/)を利用することで、
+以下の事例では、短い文字列に対して、[CompactString](https://docs.rs/compact_str/latest/compact_str/)を利用することで、
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
 20%ほどのメモリ使用量削減を実現しました。
@@ -442,7 +442,7 @@ pub struct DetectInfo {
 検知結果レコード1件あたり、数バイトのメモリ使用量削減が見込めます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では、検知結果レコード件数が150万件ほどのデータに対して、
+以下の事例では、検知結果レコード件数が150万件ほどのデータに対して、
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
 
