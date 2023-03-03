@@ -343,7 +343,7 @@ fn main() {
 }
 ```
 ### 変更後  <!-- omit in toc -->
-以下のように、[Iteratorトレイト](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を返すことで、
+以下のように、[Iteratorトレイト](https://doc.rust-lang.org/std/iter/trait.Iterator.html)を返す、
 ```Rust
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -358,6 +358,32 @@ fn return_lines() -> impl Iterator<Item=String> {
 
 fn main() {
     let lines = return_lines();
+    for line in lines {
+        println!("{}", line)
+    }
+}
+```
+また処理の分岐により、型が異なる場合は、以下のように`Box<dyn Iterator<Item = T>>`を返すことで
+```Rust
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+
+fn return_lines(need_filter:bool) -> Box<dyn Iterator<Item = String>> {
+    let f = File::open("sample.txt").unwrap();
+    let buf = BufReader::new(f);
+    if need_filter {
+        let result= buf.lines()
+            .filter_map(|l| l.ok())
+            .map(|l| l.replace("A", "B"));
+        return Box::new(result)
+    }
+    let result= buf.lines()
+        .map(|l| l.expect("Could not parse line"));
+    Box::new(result)
+}
+
+fn main() {
+    let lines = return_lines(true);
     for line in lines {
         println!("{}", line)
     }
