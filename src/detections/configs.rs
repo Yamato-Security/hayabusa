@@ -732,16 +732,16 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 60)]
+    /// Enable rules marked as deprecated (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules marked as unsupported
-    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 80)]
+    /// Enable rules marked as unsupported (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 310)]
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 110)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -752,7 +752,7 @@ pub struct PivotKeywordOption {
         default_value = "informational",
         hide_default_value = true,
         value_name = "LEVEL",
-        display_order = 120
+        display_order = 390
     )]
     pub min_level: String,
 
@@ -762,20 +762,20 @@ pub struct PivotKeywordOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
-        display_order = 100
+        display_order = 311
     )]
     pub exact_level: Option<String>,
 
     /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 70)]
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 130)]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
     pub end_timeline: Option<String>,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 140)]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
@@ -844,16 +844,16 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 60)]
+    /// Enable rules marked as deprecated (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules marked as unsupported
-    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 80)]
+    /// Enable rules marked as unsupported (no longer included by default)
+    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 310)]
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 110)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -864,7 +864,7 @@ pub struct OutputOption {
         default_value = "informational",
         hide_default_value = true,
         value_name = "LEVEL",
-        display_order = 120,
+        display_order = 390,
     )]
     pub min_level: String,
 
@@ -874,20 +874,20 @@ pub struct OutputOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
-        display_order = 100
+        display_order = 311
     )]
     pub exact_level: Option<String>,
 
     /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 70)]
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 130)]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-end", value_name = "DATE", display_order = 460)]
     pub end_timeline: Option<String>,
 
     /// Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
-    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 140)]
+    #[arg(help_heading = Some("Filtering"), long = "timeline-start", value_name = "DATE", display_order = 460)]
     pub start_timeline: Option<String>,
 
     /// Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
