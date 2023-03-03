@@ -222,7 +222,7 @@ fn main() {
 上記の例では、変更前と比較して10倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-[Hayabusa](https://github.com/Yamato-Security/hayabusa)では、大文字小文字を区別しない文字列比較をする必要があるため、[to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase)を実施したうえで、上記手法を適用しています。その場合でも以下PRの事例では、
+[Hayabusa](https://github.com/Yamato-Security/hayabusa)では、大文字小文字を区別しない文字列比較をする必要があるため、[to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase)を実施したうえで、上記手法を適用しています。その場合でも以下の事例では、
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
