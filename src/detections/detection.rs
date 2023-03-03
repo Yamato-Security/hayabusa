@@ -970,24 +970,23 @@ impl Detection {
         println!();
 
         let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
-        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| *v).sum();
+        let output_opt = stored_static.output_option.as_ref().unwrap();
+        let enable_deprecated_flag = output_opt.enable_deprecated_rules;
+        let enable_unsupported_flag = output_opt.enable_unsupported_rules;
+        let is_filtered_rule_flag = |x: &str| {
+            x == "deprecated" && !enable_deprecated_flag
+                || x == "unsupported" && !enable_unsupported_flag
+        };
+        let total_loaded_rule_cnt: u128 = sorted_st_rc
+            .iter()
+            .filter(|(k, _)| !is_filtered_rule_flag(k.as_str()))
+            .map(|(_, v)| *v)
+            .sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
                 let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
-                let disabled_flag = if (key == "deprecated"
-                    && !stored_static
-                        .output_option
-                        .as_ref()
-                        .unwrap()
-                        .enable_deprecated_rules)
-                    || (key == "unsupported"
-                        && !stored_static
-                            .output_option
-                            .as_ref()
-                            .unwrap()
-                            .enable_unsupported_rules)
-                {
+                let disabled_flag = if is_filtered_rule_flag(key) {
                     " (Disabled)"
                 } else {
                     ""
