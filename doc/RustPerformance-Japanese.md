@@ -366,7 +366,7 @@ fn main() {
 上記の例では、変更前のメモリ使用量は1GBほどでしたが、3MBほどのメモリ使用量に削減できます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
-以下PRの事例では上記手法により、
+以下の事例では上記手法により、
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 1.7GBのJSONファイルの処理時のメモリ使用量を75%削減しています。
