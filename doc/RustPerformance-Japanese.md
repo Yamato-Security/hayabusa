@@ -59,7 +59,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 以上で、メモリアロケーターが[mimalloc](https://github.com/microsoft/mimalloc)に変更されます。
 
 ### 効果（Pull Reuest事例）  <!-- omit in toc -->
-改善効果はプログラムの特性に依りますが、以下PRの事例では、
+改善効果はプログラムの特性に依りますが、以下の事例では、
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
 上記手順でメモリアロケーターを[mimalloc](https://github.com/microsoft/mimalloc)に変更することで、Intel系OSで20-30%速度を改善しました。
