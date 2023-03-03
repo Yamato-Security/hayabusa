@@ -919,22 +919,22 @@ impl Detection {
     }
 
     pub fn print_rule_load_info(
-        rc: &HashMap<String, u128>,
-        ld_rc: &HashMap<String, u128>,
-        st_rc: &HashMap<String, u128>,
+        rc: &HashMap<CompactString, u128>,
+        ld_rc: &HashMap<CompactString, u128>,
+        st_rc: &HashMap<CompactString, u128>,
         err_rc: &u128,
         stored_static: &StoredStatic,
     ) {
         if stored_static.metrics_flag {
             return;
         }
-        let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
+        let mut sorted_ld_rc: Vec<(&CompactString, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let mut html_report_stock = Nested::<String>::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
-                let disable_flag = if key == "noisy"
+                let disable_flag = if key.as_str() == "noisy"
                     && !stored_static
                         .output_option
                         .as_ref()
@@ -969,17 +969,17 @@ impl Detection {
         }
         println!();
 
-        let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
+        let mut sorted_st_rc: Vec<(&CompactString, &u128)> = st_rc.iter().collect();
         let output_opt = stored_static.output_option.as_ref().unwrap();
         let enable_deprecated_flag = output_opt.enable_deprecated_rules;
         let enable_unsupported_flag = output_opt.enable_unsupported_rules;
-        let is_filtered_rule_flag = |x: &str| {
-            x == "deprecated" && !enable_deprecated_flag
-                || x == "unsupported" && !enable_unsupported_flag
+        let is_filtered_rule_flag = |x: &CompactString| {
+            x == &"deprecated" && !enable_deprecated_flag
+                || x == &"unsupported" && !enable_unsupported_flag
         };
         let total_loaded_rule_cnt: u128 = sorted_st_rc
             .iter()
-            .filter(|(k, _)| !is_filtered_rule_flag(k.as_str()))
+            .filter(|(k, _)| !is_filtered_rule_flag(k))
             .map(|(_, v)| *v)
             .sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
@@ -1013,7 +1013,7 @@ impl Detection {
         });
         println!();
 
-        let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
+        let mut sorted_rc: Vec<(&CompactString, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
             let output_str = format!("{key} rules: {value}");

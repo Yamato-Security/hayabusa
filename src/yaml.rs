@@ -6,6 +6,7 @@ use crate::detections::message::AlertMessage;
 use crate::detections::message::ERROR_LOG_STACK;
 use crate::detections::utils;
 use crate::filter::RuleExclude;
+use compact_str::CompactString;
 use hashbrown::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;
@@ -16,9 +17,9 @@ use yaml_rust::YamlLoader;
 
 pub struct ParseYaml {
     pub files: Vec<(String, yaml_rust::Yaml)>,
-    pub rulecounter: HashMap<String, u128>,
-    pub rule_load_cnt: HashMap<String, u128>,
-    pub rule_status_cnt: HashMap<String, u128>,
+    pub rulecounter: HashMap<CompactString, u128>,
+    pub rule_load_cnt: HashMap<CompactString, u128>,
+    pub rule_status_cnt: HashMap<CompactString, u128>,
     pub errorrule_count: u128,
     pub exclude_status: HashSet<String>,
     pub level_map: HashMap<String, u128>,
@@ -34,13 +35,10 @@ impl ParseYaml {
         ParseYaml {
             files: Vec::new(),
             rulecounter: HashMap::new(),
-            rule_load_cnt: HashMap::from([
-                ("excluded".to_string(), 0_u128),
-                ("noisy".to_string(), 0_u128),
-            ]),
+            rule_load_cnt: HashMap::from([("excluded".into(), 0_u128), ("noisy".into(), 0_u128)]),
             rule_status_cnt: HashMap::from([
-                ("deprecated".to_string(), 0_u128),
-                ("unsupported".to_string(), 0_u128),
+                ("deprecated".into(), 0_u128),
+                ("unsupported".into(), 0_u128),
             ]),
             errorrule_count: 0,
             exclude_status: configs::convert_option_vecs_to_hs(exclude_status_vec.as_ref()),
@@ -258,7 +256,7 @@ impl ParseYaml {
                     };
                     // テスト用のルール(ID:000...0)の場合はexcluded ruleのカウントから除外するようにする
                     if v != "00000000-0000-0000-0000-000000000000" {
-                        let entry = self.rule_load_cnt.entry(entry_key.to_string()).or_insert(0);
+                        let entry = self.rule_load_cnt.entry(entry_key.into()).or_insert(0);
                         *entry += 1;
                     }
                     let enable_noisy_rules = if let Some(o) = stored_static.output_option.as_ref() {
@@ -274,7 +272,7 @@ impl ParseYaml {
             }
 
             let mut up_rule_status_cnt = |status: &str| {
-                let status_cnt = self.rule_status_cnt.entry(status.to_string()).or_insert(0);
+                let status_cnt = self.rule_status_cnt.entry(status.into()).or_insert(0);
                 *status_cnt += 1;
             };
 
@@ -282,10 +280,7 @@ impl ParseYaml {
             if let Some(s) = yaml_doc["status"].as_str() {
                 // excluded status optionで指定されたstatusを除外する
                 if self.exclude_status.contains(&s.to_string()) {
-                    let entry = self
-                        .rule_load_cnt
-                        .entry("excluded".to_string())
-                        .or_insert(0);
+                    let entry = self.rule_load_cnt.entry("excluded".into()).or_insert(0);
                     *entry += 1;
                     return Option::None;
                 }
@@ -309,9 +304,9 @@ impl ParseYaml {
             }
 
             self.rulecounter.insert(
-                yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string(),
+                yaml_doc["ruletype"].as_str().unwrap_or("Other").into(),
                 self.rulecounter
-                    .get(&yaml_doc["ruletype"].as_str().unwrap_or("Other").to_string())
+                    .get(yaml_doc["ruletype"].as_str().unwrap_or("Other"))
                     .unwrap_or(&0)
                     + 1,
             );
