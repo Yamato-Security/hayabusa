@@ -91,7 +91,7 @@ fn main() {
     }
 }
 ```
-上記の例では、変更前と比較して1000倍ほど速くなります。
+変更前と比較して1000倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下の事例では、検知結果を1件ずつ扱うときのIO処理をループ外にだすことで、
@@ -135,7 +135,7 @@ fn main() {
     }
 }
 ```
-上記の例では、変更前と比較して100倍ほど速くなります。
+変更前と比較して100倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下の事例では、正規表現コンパイルをループ外で実施し、キャッシュすることで
@@ -174,7 +174,7 @@ fn main() {
     writer.flush().unwrap();
 }
 ```
-上記の例では、変更前と比較して50倍ほど速くなります。
+変更前と比較して50倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下の事例では、上記手法により、
@@ -219,7 +219,7 @@ fn main() {
     }
 }
 ```
-上記の例では、変更前と比較して10倍ほど速くなります。
+変更前と比較して10倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 [Hayabusa](https://github.com/Yamato-Security/hayabusa)では、大文字小文字を区別しない文字列比較をする必要があるため、[to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase)を実施したうえで、上記手法を適用しています。その場合でも以下の事例では、
@@ -268,7 +268,7 @@ fn main() {
     }
 }
 ```
-上記の例では、変更前と比較して20倍ほど速くなります。
+変更前と比較して20倍ほど速くなります。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下の事例では、上記手法により、
@@ -280,7 +280,7 @@ fn main() {
 
 ## 不要なclone()、to_string()、to_owned()の使用を避ける
 [所有権](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html)に関連するコンパイルエラーの解消手段として、[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)や[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)を安易に使うと、保持するデータ量や頻度に依り、ボトルネックになる可能性があります。
-低コストで動作する[借用](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)で代替できるかを先に検討することが望ましいです。
+低コストで動作する[参照](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)で代替できるかを先に検討することが望ましいです。
 
 ### 変更前  <!-- omit in toc -->
 たとえば、同一の`Vec`を複数回イテレーションしたい場合、[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)でコンパイルエラーを解消することもできますが
@@ -310,7 +310,7 @@ fn main() {
     }
 }
 ```
-上記の例では、変更前と比較して最大メモリ使用量が50%ほど削減されます。
+変更前と比較して最大メモリ使用量が50%ほど削減されます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下の事例では、不要な[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)、[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)を置き換えることで、
@@ -389,7 +389,7 @@ fn main() {
     }
 }
 ```
-上記の例では、変更前のメモリ使用量は1GBほどでしたが、3MBほどのメモリ使用量に削減できます。
+変更前のメモリ使用量は1GBほどでしたが、3MBほどのメモリ使用量に削減できます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下の事例では上記手法により、
@@ -418,7 +418,7 @@ fn main() {
     // なにか処理
 }
 ```
-上記の例では、変更前と比較してメモリ使用量が50%ほど削減されます。
+変更前と比較してメモリ使用量が50%ほど削減されます。
 
 ### 効果（Pull Reuest事例）   <!-- omit in toc -->
 以下の事例では、短い文字列に対して、[CompactString](https://docs.rs/compact_str/latest/compact_str/)を利用することで、
@@ -475,7 +475,7 @@ pub struct DetectInfo {
 それぞれどちらも、300MB程度メモリ使用量を削減しています。
 
 
-# ベンチマークの取得
+# ベンチマーク情報の取得
 ## メモリアロケーターの統計機能を利用する
 メモリアロケーターの中には、自身のメモリ使用統計情報を保持するものがあります。たとえば[mimalloc](https://github.com/microsoft/mimalloc)では、[mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79)関数を呼び出すことで、メモリ使用量が取得できます。
 
@@ -505,7 +505,7 @@ pub struct DetectInfo {
     ![mimalloc_stats_print_out](01_mi_stats_print_out.png)
 
 ### 事例   <!-- omit in toc -->
-以下PRで上記実装を適用し、
+以下で上記実装を適用し、
 - [add --debug option for printing mimalloc memory stats #822](https://github.com/Yamato-Security/hayabusa/pull/822)
 
 [Hayabusa](https://github.com/Yamato-Security/hayabusa)では、`--debug`オプションつきで実行した場合、メモリ使用量を確認できるようにしています。
