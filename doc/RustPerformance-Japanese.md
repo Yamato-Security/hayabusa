@@ -328,8 +328,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 fn return_lines() -> Vec<String> {
-    let file = File::open("sample.txt").unwrap();
-    let buf = BufReader::new(file);
+    let f = File::open("sample.txt").unwrap();
+    let buf = BufReader::new(f);
     buf.lines()
         .map(|l| l.expect("Could not parse line"))
         .collect()
@@ -349,8 +349,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 fn return_lines() -> impl Iterator<Item=String> {
-    let file = File::open("sample.txt").unwrap();
-    let buf = BufReader::new(file);
+    let f = File::open("sample.txt").unwrap();
+    let buf = BufReader::new(f);
     buf.lines()
         .map(|l| l.expect("Could not parse line"))
         // ここでcollect()せずに、Iteratorを戻り値として返す
