@@ -732,11 +732,11 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated (no longer included by default)
+    /// Enable rules marked as deprecated
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules marked as unsupported (no longer included by default)
+    /// Enable rules marked as unsupported
     #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
@@ -844,11 +844,11 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated (no longer included by default)
+    /// Enable rules marked as deprecated
     #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules marked as unsupported (no longer included by default)
+    /// Enable rules marked as unsupported
     #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
