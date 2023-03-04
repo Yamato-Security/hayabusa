@@ -1,15 +1,15 @@
 # Changes
 
-## 2.X.X [2023/XX/XX] "XXX Release"
+## 2.3.0 [2023/03/25] "TMCIT Release"
 
 **New Features:**
 
-- XXX
+- Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
+- Added the `--enable-unsupported-rules` option to enable rules marked as `unsupported`. (#949) (@hitenkoku) (#949) (@hitenkoku)
 
 **Enhancements:**
 
-- Approximately 2% speed increase and memory usage reduction by improving string contains check. (#947) (@hitenkoku)
-- Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
+- Approximately 2-3% speed increase and memory usage reduction by improving string contains check. (#947) (@hitenkoku)
 
 **Bug Fixes:**
 

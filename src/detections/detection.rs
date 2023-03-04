@@ -919,22 +919,22 @@ impl Detection {
     }
 
     pub fn print_rule_load_info(
-        rc: &HashMap<String, u128>,
-        ld_rc: &HashMap<String, u128>,
-        st_rc: &HashMap<String, u128>,
+        rc: &HashMap<CompactString, u128>,
+        ld_rc: &HashMap<CompactString, u128>,
+        st_rc: &HashMap<CompactString, u128>,
         err_rc: &u128,
         stored_static: &StoredStatic,
     ) {
         if stored_static.metrics_flag {
             return;
         }
-        let mut sorted_ld_rc: Vec<(&String, &u128)> = ld_rc.iter().collect();
+        let mut sorted_ld_rc: Vec<(&CompactString, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let mut html_report_stock = Nested::<String>::new();
 
         sorted_ld_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
-                let disable_flag = if key == "noisy"
+                let disable_flag = if key.as_str() == "noisy"
                     && !stored_static
                         .output_option
                         .as_ref()
@@ -969,19 +969,24 @@ impl Detection {
         }
         println!();
 
-        let mut sorted_st_rc: Vec<(&String, &u128)> = st_rc.iter().collect();
-        let total_loaded_rule_cnt: u128 = sorted_st_rc.iter().map(|(_, v)| *v).sum();
+        let mut sorted_st_rc: Vec<(&CompactString, &u128)> = st_rc.iter().collect();
+        let output_opt = stored_static.output_option.as_ref().unwrap();
+        let enable_deprecated_flag = output_opt.enable_deprecated_rules;
+        let enable_unsupported_flag = output_opt.enable_unsupported_rules;
+        let is_filtered_rule_flag = |x: &CompactString| {
+            x == &"deprecated" && !enable_deprecated_flag
+                || x == &"unsupported" && !enable_unsupported_flag
+        };
+        let total_loaded_rule_cnt: u128 = sorted_st_rc
+            .iter()
+            .filter(|(k, _)| !is_filtered_rule_flag(k))
+            .map(|(_, v)| *v)
+            .sum();
         sorted_st_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_st_rc.into_iter().for_each(|(key, value)| {
             if value != &0_u128 {
                 let rate = (*value as f64) / (total_loaded_rule_cnt as f64) * 100.0;
-                let deprecated_flag = if key == "deprecated"
-                    && !stored_static
-                        .output_option
-                        .as_ref()
-                        .unwrap()
-                        .enable_deprecated_rules
-                {
+                let disabled_flag = if is_filtered_rule_flag(key) {
                     " (Disabled)"
                 } else {
                     ""
@@ -991,7 +996,7 @@ impl Detection {
                     make_ascii_titlecase(key),
                     value,
                     rate,
-                    deprecated_flag
+                    disabled_flag
                 );
                 //タイトルに利用するものはascii文字であることを前提として1文字目を大文字にするように変更する
                 write_color_buffer(
@@ -1008,7 +1013,7 @@ impl Detection {
         });
         println!();
 
-        let mut sorted_rc: Vec<(&String, &u128)> = rc.iter().collect();
+        let mut sorted_rc: Vec<(&CompactString, &u128)> = rc.iter().collect();
         sorted_rc.sort_by(|a, b| a.0.cmp(b.0));
         sorted_rc.into_iter().for_each(|(key, value)| {
             let output_str = format!("{key} rules: {value}");
@@ -1126,6 +1131,7 @@ mod tests {
                         verbose: false,
                         json_input: false,
                     },
+                    enable_unsupported_rules: false,
                 },
                 geo_ip: None,
                 output: None,
@@ -1369,6 +1375,7 @@ mod tests {
                     verbose: false,
                     json_input: false,
                 },
+                enable_unsupported_rules: false,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
@@ -1485,6 +1492,7 @@ mod tests {
                     verbose: false,
                     json_input: false,
                 },
+                enable_unsupported_rules: false,
             },
             geo_ip: Some(Path::new("test_files/mmdb").to_path_buf()),
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
