@@ -1377,7 +1377,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             filter: option.filter.clone(),
             output: option.output.clone(),
             common_options: option.common_options,
-            detect_common_options: option.detect_common_options,
+            detect_common_options: option.detect_common_options.clone(),
         }),
         _ => None,
     }

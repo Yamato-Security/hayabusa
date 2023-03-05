@@ -1,12 +1,12 @@
-use crate::detections::detection::EvtxRecordInfo;
+use crate::detections::{configs::EventKeyAliasConfig, detection::EvtxRecordInfo, utils};
 use compact_str::CompactString;
 use hashbrown::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct EventSearch {
     pub total: usize,
-    pub filepath: String,
-    search_result: HashSet<(
+    pub filepath: CompactString,
+    pub search_result: HashSet<(
         CompactString,
         CompactString,
         CompactString,
@@ -21,7 +21,7 @@ pub struct EventSearch {
 impl EventSearch {
     pub fn new(
         total: usize,
-        filepath: String,
+        filepath: CompactString,
         search_result: HashSet<(
             CompactString,
             CompactString,
@@ -40,33 +40,60 @@ impl EventSearch {
         }
     }
 
-    pub fn search_start(&mut self, records: &[EvtxRecordInfo], search_flag: bool, keyword: &str) {
+    pub fn search_start(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        search_flag: bool,
+        keyword: &str,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) {
         if !search_flag {
             return;
         }
         println!("Search_start");
-        self.search_keyword(records, keyword);
+        self.search_keyword(records, keyword, eventkey_alias);
     }
 
-    fn search_keyword(&mut self, records: &[EvtxRecordInfo], keyword: &str) {
+    fn search_keyword(
+        &mut self,
+        records: &[EvtxRecordInfo],
+        keyword: &str,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) {
         if records.is_empty() {
             return;
         }
 
         for record in records.iter() {
-            self.filepath = records[0].evtx_filepath.to_owned();
-            // self.start_time = null;
-            // self.end_time = null;
-            // stats_list = null;
-            // stats_login_list = null;
+            self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
             if record.data_string.contains(keyword) {
                 println!("find \"{}\"", keyword);
                 println!("{:?}", record.data_string);
 
                 let timestamp = "hoge";
-                let computer = "computer";
+
+                let hostname = CompactString::from(
+                    utils::get_serde_number_to_string(
+                        utils::get_event_value("Computer", &record.record, eventkey_alias)
+                            .unwrap_or(&serde_json::Value::Null),
+                    )
+                    .unwrap_or_else(|| "n/a".into())
+                    .replace(['"', '\''], ""),
+                );
+
                 let channel = "channel";
-                let eventid = "eventid";
+
+                let mut eventid = String::new();
+                if let Some(evtid) =
+                    utils::get_event_value("EventID", &record.record, eventkey_alias)
+                {
+                    if evtid.is_number() {
+                        eventid.push_str(evtid.as_str().unwrap_or(""));
+                    } else {
+                        eventid.push('-');
+                    };
+                }
+
                 let recordid = "recordid";
                 let eventtitle = "eventtitle";
                 let allfieldinfo = "allfieldinfo";
@@ -74,7 +101,7 @@ impl EventSearch {
 
                 self.search_result.entry((
                     timestamp.into(),
-                    computer.into(),
+                    hostname,
                     channel.into(),
                     eventid.into(),
                     recordid.into(),

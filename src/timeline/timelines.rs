@@ -41,12 +41,12 @@ impl Timeline {
         let statistic = EventMetrics::new(
             totalcnt,
             filepath.clone(),
-            starttm,
-            endtm,
+            None,
+            None,
             statslst,
             statsloginlst,
         );
-        let search = EventSearch::new(totalcnt, filepath, search_result);
+        let search = EventSearch::new(totalcnt, filepath.clone(), search_result);
         Timeline {
             stats: statistic,
             event_search: search,
@@ -63,8 +63,12 @@ impl Timeline {
 
         if stored_static.search_flag {
             let keyword = &stored_static.search_option.clone().unwrap().keywords[0]; // Sample Keyword
-            self.stats
-                .search_start(records, stored_static.search_flag, keyword);
+            self.event_search.search_start(
+                records,
+                stored_static.search_flag,
+                keyword,
+                &stored_static.eventkey_alias,
+            );
         }
     }
 
