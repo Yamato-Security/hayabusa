@@ -6,6 +6,7 @@ use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
+use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
@@ -279,6 +280,7 @@ impl Timeline {
         }
     }
 
+    //ここをSearch版でつくる！つくる！
     /// ユーザ毎のログイン統計情報出力
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
         let header = vec![
@@ -361,6 +363,10 @@ impl Timeline {
         {
             println!("This is search output phase");
             sammsges.push(format!("\n\nTotal findings: {}\n", self.event_search.total));
+            search_result_dsp_msg(
+                &self.event_search.search_result,
+                &search_summary_option.output,
+            );
 
             for msgprint in sammsges.iter() {
                 println!("{}", msgprint);
