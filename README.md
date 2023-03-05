@@ -144,6 +144,8 @@ Windows event log analysis has traditionally been a very long and tedious proces
 Hayabusa's goal is to extract out only useful data and present it in a concise as possible easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
 Hayabusa hopes to let analysts get 80% of their work done in 20% of the time when compared to traditional Windows event log analysis.
 
+![DFIR Timeline](doc/DFIR-TimelineCreation-EN.png)
+
 # Screenshots
 
 ## Startup
