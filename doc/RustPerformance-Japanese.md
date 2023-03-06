@@ -297,7 +297,7 @@ fn main() {
 }
 ```
 ### 変更後  <!-- omit in toc -->
-以下のように、[借用](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)を利用することで[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)による不要なコピーをなくすことができます。
+以下のように、[参照](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)を利用することで[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)による不要なコピーをなくすことができます。
 ```Rust
 fn main() {
     let lst = vec![1, 2, 3];
