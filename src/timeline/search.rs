@@ -77,7 +77,14 @@ impl EventSearch {
                 println!("find \"{}\"", keyword);
                 println!("{:?}", record.data_string);
 
-                let timestamp = "hoge";
+                let timestamp = utils::get_event_value(
+                    "Event.System.TimeCreated_attributes.SystemTime",
+                    &record.record,
+                    eventkey_alias,
+                )
+                .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
+                .unwrap_or_else(|| "n/a".into())
+                .replace(['"', '\''], "");
 
                 let hostname = CompactString::from(
                     utils::get_serde_number_to_string(
@@ -88,33 +95,37 @@ impl EventSearch {
                     .replace(['"', '\''], ""),
                 );
 
-                let channel = "channel";
+                let channel = CompactString::from(
+                    utils::get_serde_number_to_string(
+                        utils::get_event_value("Channel", &record.record, eventkey_alias)
+                            .unwrap_or(&serde_json::Value::Null),
+                    )
+                    .unwrap_or_else(|| "n/a".into())
+                    .replace(['"', '\''], ""),
+                );
 
                 let mut eventid = String::new();
                 if let Some(evtid) =
                     utils::get_event_value("EventID", &record.record, eventkey_alias)
                 {
-                    if evtid.is_number() {
-                        eventid.push_str(evtid.as_str().unwrap_or(""));
-                    } else {
-                        eventid.push('-');
-                    };
-                }
+                    eventid.push_str(evtid.as_str().unwrap_or("-"));
+                } else {
+                    eventid.push('-');
+                };
 
                 let recordid = "recordid";
                 let eventtitle = "eventtitle";
                 let allfieldinfo = "allfieldinfo";
-                let evtxfile = "evtxfile";
 
                 self.search_result.insert((
                     timestamp.into(),
                     hostname,
-                    channel.into(),
+                    channel,
                     eventid.into(),
                     recordid.into(),
                     eventtitle.into(),
                     allfieldinfo.into(),
-                    evtxfile.into(),
+                    self.filepath.clone(),
                 ));
                 self.total += 1;
             }
