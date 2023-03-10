@@ -105,13 +105,14 @@ impl EventSearch {
                 );
 
                 let mut eventid = String::new();
-                if let Some(evtid) =
-                    utils::get_event_value("EventID", &record.record, eventkey_alias)
-                {
-                    eventid.push_str(evtid.as_str().unwrap_or("-"));
-                } else {
-                    eventid.push('-');
-                };
+                match utils::get_event_value("EventID", &record.record, eventkey_alias) {
+                    Some(evtid) if evtid.is_u64() => {
+                        eventid.push_str(evtid.to_string().as_str());
+                    }
+                    _ => {
+                        eventid.push('-');
+                    }
+                }
 
                 let recordid = "recordid";
                 let eventtitle = "eventtitle";
