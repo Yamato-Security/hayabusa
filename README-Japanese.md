@@ -996,7 +996,7 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 8. `timesketch-verbose`
 
 このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
-`set-default-profile -P <profile>`オプションでデフォルトのプロファイルを変更することもできます。
+`set-default-profile --profile <profile>`オプションでデフォルトのプロファイルを変更することもできます。
 利用可能なプロファイルとそのフィールド情報を表示するには、`csv-timeline --list-profiles`オプションを使用してください。
 
 ### 1. `minimal`プロファイルの出力

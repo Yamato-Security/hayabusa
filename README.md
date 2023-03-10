@@ -996,7 +996,7 @@ Hayabusa has 5 pre-defined output profiles to use in `config/profiles.yaml`:
 8. `timesketch-verbose`
 
 You can easily customize or add your own profiles by editing this file.
-You can also easily change the default profile with `set-default-profile -P <profile>`.
+You can also easily change the default profile with `set-default-profile --profile <profile>`.
 Use the `list-profiles` command to show the available profiles and their field information.
 
 ### 1. `minimal` profile output
