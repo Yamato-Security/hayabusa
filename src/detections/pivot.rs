@@ -59,7 +59,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
         return;
     }
     let mut pivots = PIVOT_KEYWORD.write().unwrap();
-    pivots.iter_mut().into_iter().for_each(|(_, pivot)| {
+    pivots.iter_mut().for_each(|(_, pivot)| {
         for field in &pivot.fields {
             if let Some(array_str) = eventkey_alias.get_event_key(&String::from(field)) {
                 let mut is_exist_event_key = false;
