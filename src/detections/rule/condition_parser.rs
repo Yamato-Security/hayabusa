@@ -158,7 +158,7 @@ impl ConditionCompiler {
         match r.captures(condition_str) {
             Some(c) => {
                 let s = keys.iter().filter(|x| x.contains(&c[1])).join(sep);
-                condition_str.replace(&c[0], format!(" ({}) ", s).as_str())
+                condition_str.replace(&c[0], format!("({})", s).as_str())
             }
             None => condition_str.to_string(),
         }
@@ -1484,18 +1484,39 @@ mod tests {
     #[test]
     fn test_convert_condition_all_of_selection() {
         let condition = "all of selection*";
+
         let keys = vec!["selection1".to_string(), "selection2".to_string()];
         let result = ConditionCompiler::convert_condition(condition, &keys);
-        let expected = " (selection1 and selection2) ".to_string();
+        let expected = "(selection1 and selection2)".to_string();
+        assert_eq!(result, expected);
+
+        let keys = vec!["selection1".to_string(), "selection2".to_string(),"selection3".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 and selection2 and selection3)".to_string();
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_convert_condition_one_of_selection() {
         let condition = "1 of selection*";
+
         let keys = vec!["selection1".to_string(), "selection2".to_string()];
         let result = ConditionCompiler::convert_condition(condition, &keys);
-        let expected = " (selection1 or selection2) ".to_string();
+        let expected = "(selection1 or selection2)".to_string();
+        assert_eq!(result, expected);
+
+        let keys = vec!["selection1".to_string(), "selection2".to_string(), "selection3".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 or selection2 or selection3)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_convert_complex_condition() {
+        let condition = "all of selection* and test1 or test2 or 1 of filter*";
+        let keys = vec!["selection1".to_string(), "selection2".to_string(), "test".to_string(), "filter1".to_string(), "filter2".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 and selection2) and test1 or test2 or (filter1 or filter2)".to_string();
         assert_eq!(result, expected);
     }
 
