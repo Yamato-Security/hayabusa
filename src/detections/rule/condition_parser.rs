@@ -6,6 +6,7 @@ use self::selectionnodes::{
 };
 use super::selectionnodes;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use std::{sync::Arc, vec::IntoIter};
 
 lazy_static! {
@@ -16,6 +17,8 @@ lazy_static! {
         Regex::new(r"^\w+").unwrap(),
     ];
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
+    pub static ref ALL_OF_SELECTION: Regex = Regex::new(r"all of ([^*]+)\*").unwrap();
+    pub static ref ONE_OF_SELECTION: Regex = Regex::new(r"1 of ([^*]+)\*").unwrap();
 }
 
 #[derive(Debug, Clone)]
@@ -119,7 +122,9 @@ impl ConditionCompiler {
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
         // パイプはここでは処理しない
-        let captured = self::RE_PIPE.captures(condition_str);
+        let keys: Vec<String> = name_2_node.keys().cloned().collect();
+        let condition_str = Self::convert_condition(condition_str, &keys);
+        let captured = self::RE_PIPE.captures(condition_str.as_str());
         let replaced_condition = if let Some(cap) = captured {
             let captured = cap.get(0).unwrap().as_str();
             condition_str.replacen(captured, "", 1)
@@ -132,6 +137,30 @@ impl ConditionCompiler {
             Result::Err(format!("A condition parse error has occurred. {msg}"))
         } else {
             result
+        }
+    }
+
+    /// all of selection* と 1 of selection* を通常のand/orに変換する
+    pub fn convert_condition(condition_str: &str, keys: &[String]) -> String {
+        let converted_str =
+            Self::convert_of_condition(&ALL_OF_SELECTION, keys, condition_str, " and ");
+        let converted_str =
+            Self::convert_of_condition(&ONE_OF_SELECTION, keys, converted_str.as_str(), " or ");
+        converted_str
+    }
+
+    pub fn convert_of_condition(
+        r: &Regex,
+        keys: &[String],
+        condition_str: &str,
+        sep: &str,
+    ) -> String {
+        match r.captures(condition_str) {
+            Some(c) => {
+                let s = keys.iter().filter(|x| x.contains(&c[1])).join(sep);
+                condition_str.replace(&c[0], format!(" ({}) ", s).as_str())
+            }
+            None => condition_str.to_string(),
         }
     }
 
@@ -494,15 +523,15 @@ impl ConditionCompiler {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use crate::detections::configs::{
         Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
         OutputOption, StoredStatic, STORED_EKEY_ALIAS,
     };
+    use crate::detections::rule::condition_parser::ConditionCompiler;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
+    use std::path::Path;
     use yaml_rust::YamlLoader;
 
     const SIMPLE_RECORD_STR: &str = r#"
@@ -1450,5 +1479,31 @@ mod tests {
             rule_str,
             vec!["A condition parse error has occurred. Not is continuous.".to_string()],
         );
+    }
+
+    #[test]
+    fn test_convert_condition_all_of_selection() {
+        let condition = "all of selection*";
+        let keys = vec!["selection1".to_string(), "selection2".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = " (selection1 and selection2) ".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_one_of_selection() {
+        let condition = "1 of selection*";
+        let keys = vec!["selection1".to_string(), "selection2".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = " (selection1 or selection2) ".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_not_convert() {
+        let condition = "selection1 and selection2";
+        let keys = vec!["selection1".to_string(), "selection2".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        assert_eq!(result, condition);
     }
 }
