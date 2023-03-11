@@ -121,9 +121,9 @@ impl ConditionCompiler {
         condition_str: &str,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
+        let node_keys: Vec<String> = name_2_node.keys().cloned().collect();
+        let condition_str = Self::convert_condition(condition_str, &node_keys);
         // パイプはここでは処理しない
-        let keys: Vec<String> = name_2_node.keys().cloned().collect();
-        let condition_str = Self::convert_condition(condition_str, &keys);
         let captured = self::RE_PIPE.captures(condition_str.as_str());
         let replaced_condition = if let Some(cap) = captured {
             let captured = cap.get(0).unwrap().as_str();
@@ -150,14 +150,16 @@ impl ConditionCompiler {
     }
 
     pub fn convert_of_condition(
-        r: &Regex,
-        keys: &[String],
+        re: &Regex,
+        node_keys: &[String],
         condition_str: &str,
         sep: &str,
     ) -> String {
-        match r.captures(condition_str) {
+        match re.captures(condition_str) {
             Some(c) => {
-                let s = keys.iter().filter(|x| x.contains(&c[1])).join(sep);
+                // all of selection* -> (selection1 and selection2) に変換
+                //   1 of selection* -> (selection1 or selection2) に変換
+                let s = node_keys.iter().filter(|x| x.contains(&c[1])).join(sep);
                 condition_str.replace(&c[0], format!("({})", s).as_str())
             }
             None => condition_str.to_string(),
