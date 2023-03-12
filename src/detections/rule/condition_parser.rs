@@ -17,8 +17,8 @@ lazy_static! {
         Regex::new(r"^\w+").unwrap(),
     ];
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
-    pub static ref ALL_OF_SELECTION: Regex = Regex::new(r"all of ([^*]+)\*").unwrap();
-    pub static ref ONE_OF_SELECTION: Regex = Regex::new(r"1 of ([^*]+)\*").unwrap();
+    // all of selection* と 1 of selection* にマッチする正規表現
+    pub static ref OF_SELECTION: Regex = Regex::new(r"(all|1) of ([^*]+)\*").unwrap();
 }
 
 #[derive(Debug, Clone)]
@@ -140,30 +140,27 @@ impl ConditionCompiler {
         }
     }
 
-    /// all of selection* と 1 of selection* を通常のand/orに変換する
-    pub fn convert_condition(condition_str: &str, keys: &[String]) -> String {
-        let converted_str =
-            Self::convert_of_condition(&ALL_OF_SELECTION, keys, condition_str, " and ");
-        let converted_str =
-            Self::convert_of_condition(&ONE_OF_SELECTION, keys, converted_str.as_str(), " or ");
-        converted_str
-    }
-
-    pub fn convert_of_condition(
-        re: &Regex,
-        node_keys: &[String],
-        condition_str: &str,
-        sep: &str,
-    ) -> String {
-        match re.captures(condition_str) {
-            Some(c) => {
-                // all of selection* -> (selection1 and selection2) に変換
-                //   1 of selection* -> (selection1 or selection2) に変換
-                let s = node_keys.iter().filter(|x| x.contains(&c[1])).join(sep);
-                condition_str.replace(&c[0], format!("({})", s).as_str())
-            }
-            None => condition_str.to_string(),
+    // all of selection* と 1 of selection* を通常のand/orに変換する
+    pub fn convert_condition(condition_str: &str, node_keys: &[String]) -> String {
+        let mut converted_str = condition_str.to_string();
+        for matched in OF_SELECTION.find_iter(condition_str) {
+            let match_str: &str = matched.as_str();
+            let sep = if match_str.starts_with("all") {
+                " and "
+            } else {
+                " or "
+            };
+            let target_node_key_prefix = match_str
+                .replace('*', "")
+                .replace("all of ", "")
+                .replace("1 of ", "");
+            let replaced_condition = node_keys
+                .iter()
+                .filter(|x| x.starts_with(target_node_key_prefix.as_str()))
+                .join(sep);
+            converted_str = converted_str.replace(match_str, format!("({})", replaced_condition).as_str())
         }
+        converted_str
     }
 
     /// 与えたConditionからSelectionNodeを作る
@@ -1503,6 +1500,21 @@ mod tests {
     }
 
     #[test]
+    fn test_convert_condition_multiple_all_of_selection() {
+        let condition = "all of selection* and all of filter*";
+
+        let keys = vec![
+            "selection1".to_string(),
+            "selection2".to_string(),
+            "filter1".to_string(),
+            "filter2".to_string(),
+        ];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 and selection2) and (filter1 and filter2)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
     fn test_convert_condition_one_of_selection() {
         let condition = "1 of selection*";
 
@@ -1518,6 +1530,20 @@ mod tests {
         ];
         let result = ConditionCompiler::convert_condition(condition, &keys);
         let expected = "(selection1 or selection2 or selection3)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_multiple_one_of_selection() {
+        let condition = "1 of selection* and 1 of filter*";
+        let keys = vec![
+            "selection1".to_string(),
+            "selection2".to_string(),
+            "filter1".to_string(),
+            "filter2".to_string(),
+        ];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 or selection2) and (filter1 or filter2)".to_string();
         assert_eq!(result, expected);
     }
 
