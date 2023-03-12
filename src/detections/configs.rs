@@ -604,7 +604,7 @@ pub struct DetectCommonOption {
         short = 't',
         long = "threads",
         value_name = "NUMBER",
-        display_order = 460
+        display_order = 461
     )]
     pub thread_number: Option<usize>,
 
