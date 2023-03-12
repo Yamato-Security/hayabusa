@@ -158,7 +158,8 @@ impl ConditionCompiler {
                 .iter()
                 .filter(|x| x.starts_with(target_node_key_prefix.as_str()))
                 .join(sep);
-            converted_str = converted_str.replace(match_str, format!("({})", replaced_condition).as_str())
+            converted_str =
+                converted_str.replace(match_str, format!("({})", replaced_condition).as_str())
         }
         converted_str
     }
@@ -1569,5 +1570,81 @@ mod tests {
         let keys = vec!["selection1".to_string(), "selection2".to_string()];
         let result = ConditionCompiler::convert_condition(condition, &keys);
         assert_eq!(result, condition);
+    }
+
+    #[test]
+    fn test_condition_1_of_select_detect() {
+        // conditionにorを使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: 1 of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, true);
+    }
+
+    #[test]
+    fn test_condition_1_of_select_not_detect() {
+        // conditionにorを使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'NODETECT'
+            selection2:
+                EventID: 9999
+            selection3:
+                param1: 'NODETECT'
+            condition: 1 of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, false);
+    }
+
+    #[test]
+    fn test_condition_all_of_select_detect() {
+        // conditionにorを使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: all of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, true);
+    }
+
+    #[test]
+    fn test_condition_all_of_select_not_detect() {
+        // conditionにorを使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'NOTDETECT'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: all of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, false);
     }
 }
