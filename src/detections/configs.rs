@@ -542,9 +542,21 @@ pub enum Action {
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        disable_help_flag = true
+    )]
     /// Print the list of contributors
     ListContributors(CommonOptions),
 
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        term_width = 400,
+        disable_help_flag = true
+    )]
     /// List the output profiles
     ListProfiles(CommonOptions),
 }
