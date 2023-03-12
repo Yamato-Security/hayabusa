@@ -591,7 +591,8 @@ impl Action {
 #[derive(Args, Clone, Debug)]
 pub struct DetectCommonOption {
     /// Scan JSON formatted logs instead of .evtx (.json or .jsonl)
-    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 100)]
+    #[arg(help_heading = Some("Input"), short = 'J', long = "JSON-input", display_order = 999)]
+    // JSON-inputのみ通常の並び順とは別にInputの後ろに配置したいためdisplay_orderの値は大きい値(999)で調整した
     pub json_input: bool,
 
     /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
@@ -926,7 +927,7 @@ pub struct OutputOption {
     pub utc: bool,
 
     /// Output event frequency timeline (terminal needs to support unicode)
-    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 480)]
+    #[arg(help_heading = Some("Display Settings"), short = 'T', long = "visualize-timeline", display_order = 481)]
     pub visualize_timeline: bool,
 
     /// Specify a custom rule directory or file (default: ./rules)
