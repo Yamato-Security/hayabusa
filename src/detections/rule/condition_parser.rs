@@ -1574,7 +1574,7 @@ mod tests {
 
     #[test]
     fn test_condition_1_of_select_detect() {
-        // conditionにorを使ったパターンのテスト
+        // conditionに 1 of selection* を使ったパターンのテスト
         let rule_str = r#"
         enabled: true
         detection:
@@ -1593,7 +1593,7 @@ mod tests {
 
     #[test]
     fn test_condition_1_of_select_not_detect() {
-        // conditionにorを使ったパターンのテスト
+        // conditionに 1 of selection* を使ったパターンのテスト
         let rule_str = r#"
         enabled: true
         detection:
@@ -1612,7 +1612,7 @@ mod tests {
 
     #[test]
     fn test_condition_all_of_select_detect() {
-        // conditionにorを使ったパターンのテスト
+        // conditionに all of selection* を使ったパターンのテスト
         let rule_str = r#"
         enabled: true
         detection:
@@ -1631,7 +1631,7 @@ mod tests {
 
     #[test]
     fn test_condition_all_of_select_not_detect() {
-        // conditionにorを使ったパターンのテスト
+        // conditionに all of selection* を使ったパターンのテスト
         let rule_str = r#"
         enabled: true
         detection:
@@ -1646,5 +1646,66 @@ mod tests {
         "#;
 
         check_select(rule_str, SIMPLE_RECORD_STR, false);
+    }
+
+    #[test]
+    fn test_condition_complex_of_selection() {
+        let rule_str = |condition: &str| {
+            format!(
+                r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7045
+            suspicious1:
+                ImagePath|contains:
+                    - 'A'
+                    - 'B'
+            suspicious2a:
+                ImagePath|contains: 'C'
+            suspicious2b:
+                ImagePath|contains:
+                    - 'D'
+                    - 'E'
+            filter_thor_remote:
+                ImagePath|startswith: 'F'
+            filter_defender_def_updates:
+                ImagePath|startswith: 'G'
+            condition:
+                {condition}
+        "#
+            )
+        };
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7045,
+              "Channel": "System"
+            },
+            "EventData": {
+              "ImagePath": "A B C D E F G"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        let case0 = "selection and all of suspicious2* and not 1 of filter_*";
+        let case1 = "selection and ( suspicious1 or all of suspicious2* ) and not 1 of filter_*";
+        let case2 = "selection and ( suspicious1 or all of suspicious2* ) and 1 of filter_*";
+        let case3 =
+            "selection and not ( suspicious1 or all of suspicious2* ) and not 1 of filter_*";
+        let case4 = "selection and not ( suspicious1 or all of suspicious2* ) and 1 of filter_*";
+        let case5 = "selection and ( suspicious1 and not all of suspicious2* ) and 1 of filter_*";
+
+        check_select(rule_str(case0).as_str(), record_json_str, true);
+        check_select(rule_str(case1).as_str(), record_json_str, true);
+        check_select(rule_str(case2).as_str(), record_json_str, false);
+        check_select(rule_str(case3).as_str(), record_json_str, false);
+        check_select(rule_str(case4).as_str(), record_json_str, false);
+        check_select(rule_str(case5).as_str(), record_json_str, false);
     }
 }
