@@ -284,10 +284,9 @@ fn main() {
 
 ## コンパイル時にcodegen-units=1を使用しない
 Rustのパフォーマンス最適化に関する多くの記事では、`[profile.release]`セクションに `codegen-units = 1` を追加することが推奨されています。
-
-This will cause slower compilation times as the default is to compile in parallel but in theory should result in more optimized and faster code.
-However, in our testing, Hayabusa actually runs slower with this option turned on and compilation takes longer so we keep this off.
-The binary size of the executable is about 100kb smaller so this may be ideal for embedded systems where hard disk space is limited.
+デフォルトでは並列にコンパイルされるため、コンパイルにかかる時間は遅くなりますが、理論的にはより最適化された高速なコードが得られるはずです。
+しかし、この設定を有効にした場合、Hayabusaの動作が遅くなり、コンパイルに時間がかかるため、無効のままにしています。
+実行ファイルのバイナリサイズが100kb程度小さくなるので、ハードディスクの容量が限られている組み込みシステムには最適かもしれません。
 
 # メモリ使用量の削減
 
