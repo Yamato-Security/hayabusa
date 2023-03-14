@@ -1316,11 +1316,13 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 英語
 
+* 2023/03/14 [Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-English.md) by Fukusuke Takahashi
 * 2022/06/19 [VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Hayabusa結果をneo4jで可視化する方法](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
 
 ## 日本語
 
+* 2023/03/14 [Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-Japanese.md) by Fukusuke Takahashi
 * 2022/01/22 [Hayabusa結果をElastic Stackで可視化する方法](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749) by [@kzzzzo2](https://qiita.com/kzzzzo2)
 * 2021/12/31 [Windowsイベントログ解析ツール「Hayabusa」を使ってみる](https://itib.hatenablog.com/entry/2021/12/31/222946) by itiB ([@itiB_S144](https://twitter.com/itiB_S144))
 * 2021/12/27 [Hayabusaの中身](https://kazuminkun.hatenablog.com/entry/2021/12/27/190535) by Kazuminn ([@k47_um1n](https://twitter.com/k47_um1n))
