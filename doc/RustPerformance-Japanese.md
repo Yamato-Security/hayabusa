@@ -4,6 +4,7 @@
 
 - [Hayabusa開発者向けRustパフォーマンスガイド](#hayabusa開発者向けrustパフォーマンスガイド)
 - [目次](#目次)
+- [著者](#著者)
 - [この文書について](#この文書について)
 - [速度の改善](#速度の改善)
   - [メモリアロケーターを変更する](#メモリアロケーターを変更する)
@@ -12,17 +13,22 @@
   - [バッファーIOを使う](#バッファーioを使う)
   - [正規表現の代わりにString標準メソッドを使う](#正規表現の代わりにstring標準メソッドを使う)
   - [文字列長比較により、フィルターする](#文字列長比較によりフィルターする)
+  - [コンパイル時にcodegen-units=1を使用しない](#コンパイル時にcodegen-units1を使用しない)
 - [メモリ使用量の削減](#メモリ使用量の削減)
   - [不要なclone()、to\_string()、to\_owned()の使用を避ける](#不要なcloneto_stringto_ownedの使用を避ける)
   - [Vecの代わりにIteratorを使う](#vecの代わりにiteratorを使う)
   - [短い文字列に、compact\_strクレートを使う](#短い文字列にcompact_strクレートを使う)
   - [寿命の長い構造体の不要なフィールドを削除する](#寿命の長い構造体の不要なフィールドを削除する)
-- [ベンチマークの取得](#ベンチマークの取得)
+- [ベンチマーク情報の取得](#ベンチマーク情報の取得)
   - [メモリアロケーターの統計機能を利用する](#メモリアロケーターの統計機能を利用する)
   - [Windowsパフォーマンスカウンターを利用する](#windowsパフォーマンスカウンターを利用する)
   - [heaptrackを利用する](#heaptrackを利用する)
 - [参考リンク](#参考リンク)
 - [貢献](#貢献)
+
+# 著者
+
+Fukusuke Takahashi
 
 # この文書について
 [Hayabusa](https://github.com/Yamato-Security/hayabusa)は、日本の[Yamato Security](https://yamatosecurity.connpass.com/)グループにより開発されたファストフォレンジックツールです。[隼](https://ja.wikipedia.org/wiki/%E3%83%8F%E3%83%A4%E3%83%96%E3%82%B5)のように高速に脅威ハンティングできることを目指し、[Rust](https://www.rust-lang.org/) で開発されています。[Rust](https://www.rust-lang.org/) はそれ自体が高速な言語ですが、その特徴を十分に活かすためのポイントがあります。この文書は、[Hayabusa開発史](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md)の中の改善事例をもとに、ハイパフォーマンスな[Rust](https://www.rust-lang.org/) プログラムを開発するためのテクニックを説明し、今後の開発に役立てることを目的としています。
@@ -58,7 +64,7 @@
     ```
 以上で、メモリアロケーターが[mimalloc](https://github.com/microsoft/mimalloc)に変更されます。
 
-### 効果（Pull Reuest事例）  <!-- omit in toc -->
+### 効果（Pull Request事例）  <!-- omit in toc -->
 改善効果はプログラムの特性に依りますが、以下の事例では、
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
@@ -93,7 +99,7 @@ fn main() {
 ```
 変更前と比較して1000倍ほど速くなります。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では、検知結果を1件ずつ扱うときのIO処理をループ外にだすことで、
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
@@ -137,7 +143,7 @@ fn main() {
 ```
 変更前と比較して100倍ほど速くなります。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では、正規表現コンパイルをループ外で実施し、キャッシュすることで
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
@@ -176,7 +182,7 @@ fn main() {
 ```
 変更前と比較して50倍ほど速くなります。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では、上記手法により、
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
@@ -221,7 +227,7 @@ fn main() {
 ```
 変更前と比較して10倍ほど速くなります。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 [Hayabusa](https://github.com/Yamato-Security/hayabusa)では、大文字小文字を区別しない文字列比較をする必要があるため、[to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase)を実施したうえで、上記手法を適用しています。その場合でも以下の事例では、
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
@@ -270,11 +276,18 @@ fn main() {
 ```
 変更前と比較して20倍ほど速くなります。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では、上記手法により、
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 15%ほどの速度改善を実現しました。
+
+## コンパイル時にcodegen-units=1を使用しない
+Rustのパフォーマンス最適化に関する多くの記事では、`[profile.release]`セクションに `codegen-units = 1` を追加することが推奨されています。
+
+This will cause slower compilation times as the default is to compile in parallel but in theory should result in more optimized and faster code.
+However, in our testing, Hayabusa actually runs slower with this option turned on and compilation takes longer so we keep this off.
+The binary size of the executable is about 100kb smaller so this may be ideal for embedded systems where hard disk space is limited.
 
 # メモリ使用量の削減
 
@@ -312,7 +325,7 @@ fn main() {
 ```
 変更前と比較して最大メモリ使用量が50%ほど削減されます。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では、不要な[clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html)、[to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html)、[to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html)を置き換えることで、
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
@@ -391,7 +404,7 @@ fn main() {
 ```
 変更前のメモリ使用量は1GBほどでしたが、3MBほどのメモリ使用量になり、大幅に削減できます。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では上記手法により、
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
@@ -420,7 +433,7 @@ fn main() {
 ```
 変更前と比較してメモリ使用量が50%ほど削減されます。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では、短い文字列に対して、[CompactString](https://docs.rs/compact_str/latest/compact_str/)を利用することで、
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
@@ -467,7 +480,7 @@ pub struct DetectInfo {
 ```
 検知結果レコード1件あたり、数バイトのメモリ使用量削減が見込めます。
 
-### 効果（Pull Reuest事例）   <!-- omit in toc -->
+### 効果（Pull Request事例）   <!-- omit in toc -->
 以下の事例では、検知結果レコード件数が150万件ほどのデータに対して、
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
@@ -568,7 +581,7 @@ OS側で取得できる統計情報から各種リソース使用状況を確認
 以上で、[Hayabusa](https://github.com/Yamato-Security/hayabusa)の実行が完了すると、自動で[heaptrack](https://github.com/KDE/heaptrack)解析結果のGUIが立ち上がります。
 
 ### 事例  <!-- omit in toc -->
-[heaptrack](https://github.com/KDE/heaptrack)解析結果の例は以下です。`Flame Grapth`タブや`Top-Down`タブで視覚的にメモリ使用量の多い処理を確認することができます。
+[heaptrack](https://github.com/KDE/heaptrack)解析結果の例は以下です。`Flame Graph`タブや`Top-Down`タブで視覚的にメモリ使用量の多い処理を確認することができます。
 
 ![heaptrack01](02-heaptrack.png)
 

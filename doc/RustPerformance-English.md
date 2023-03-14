@@ -14,6 +14,7 @@
   - [Use buffer IO](#use-buffer-io)
   - [Use standard String methods instead of regular expressions](#use-standard-string-methods-instead-of-regular-expressions)
   - [Filter by string length](#filter-by-string-length)
+  - [Do not compile with codegen-units=1](#do-not-compile-with-codegen-units1)
 - [Reducing memory usage](#reducing-memory-usage)
   - [Avoid unnecessary use of clone(), to\_string(), and to\_owned()](#avoid-unnecessary-use-of-clone-to_string-and-to_owned)
   - [Use Iterator instead of Vec](#use-iterator-instead-of-vec)
@@ -22,7 +23,7 @@
 - [Benchmarking](#benchmarking)
   - [Use the memory allocator's statistics function.](#use-the-memory-allocators-statistics-function)
   - [Use Windows' performance counter](#use-windows-performance-counter)
-  - [heaptrackを利用する](#heaptrackを利用する)
+  - [Use heaptrack](#use-heaptrack)
 - [References](#references)
 - [Contributions](#contributions)
 
@@ -33,7 +34,7 @@ Fukusuke Takahashi
 Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity))
 
 # About this document
-[Hayabusa](https://github.com/Yamato-Security/hayabusa)(English: "peregrine falcon") is a fast forensics analysis tool developed by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. It is developed in [Rust](https://www.rust-lang.org/) in order to (threat) hunt as fast as a peregrine falcon. Rust is a fast language in itself, however, there are many pitfalls that can result in slow speeds and high memory usage. We created this document based on actual performance improvements in Hayabusa (see the [changelog here](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md)), but these techniques should be applicable to other Rust programs as well. We hope you can benefit from the knowledge we have gained through our trial and error.
+[Hayabusa](https://github.com/Yamato-Security/hayabusa) (English: "peregrine falcon") is a fast forensics analysis tool developed by the [Yamato Security](https://yamatosecurity.connpass.com/) group in Japan. It is developed in [Rust](https://www.rust-lang.org/) in order to (threat) hunt as fast as a peregrine falcon. Rust is a fast language in itself, however, there are many pitfalls that can result in slow speeds and high memory usage. We created this document based on actual performance improvements in Hayabusa (see the [changelog here](https://github.com/Yamato-Security/hayabusa/blob/main/CHANGELOG.md)), but these techniques should be applicable to other Rust programs as well. We hope you can benefit from the knowledge we have gained through our trial and error.
 
 # Speed improvement
 ## Change the memory allocator
@@ -66,7 +67,7 @@ You only need to perform the following 2 steps in order to change the global [me
     ```
 That is all you need to do to change the memory allocator.
 
-### Effectiveness（Example From Our Pull Request）  <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）  <!-- omit in toc -->
 How much speed improves will depend on the program, but in the following example
 - [chg: build.rs(for vc runtime) to rustflags in config.toml and replace default global memory allocator with mimalloc. #777](https://github.com/Yamato-Security/hayabusa/pull/777)
 
@@ -89,7 +90,7 @@ fn main() {
 }
 ```
 ### After  <!-- omit in toc -->
-By opening the file open the loop as follows
+By opening the file outside of the loop as follows
 ```Rust
 use std::fs;
 
@@ -102,7 +103,7 @@ fn main() {
 ```
 there will be about a 1000 times speed increase.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, the IO processing when handling one detection result at a time was able to be performed outside of the loop:
 - [Improve speed by removing IO process before insert_message() #858](https://github.com/Yamato-Security/hayabusa/pull/858)
 
@@ -144,9 +145,9 @@ fn main() {
     }
 }
 ```
-The updated code is about 100 times faster.
+the updated code is about 100 times faster.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, regular expression compilation is performed outside the loop and cached.
 - [cache regex for allowlist and regexes keyword. #174](https://github.com/Yamato-Security/hayabusa/pull/174)
 
@@ -185,11 +186,11 @@ fn main() {
 ```
 there is about a 50 times speed improvement.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 The method described above was implemented here
 - [Feature/improve output#253 #285](https://github.com/Yamato-Security/hayabusa/pull/285)
 
-has resulted in significant speed improvements in output processing.
+and has resulted in significant speed improvements in output processing.
 
 ## Use standard String methods instead of regular expressions
 While regular expressions can cover complex matching patterns, they are slower than [standard String methods](https://doc.rust-lang.org/std/string/struct.String.html). Therefore, it is faster to use standard String methods for simple string matching such as the following.
@@ -230,12 +231,12 @@ fn main() {
 ```
 processing will be 10 times faster.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
-Since Hayabusa requires case-insensitive string comparison, we use [to_lowercase()](https://doc.rust-lang.org/ std/string/struct.String.html#method.to_lowercase) and then apply the above method. Even then, in the following examples
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
+Since Hayabusa requires case-insensitive string comparison, we use [to_lowercase()](https://doc.rust-lang.org/std/string/struct.String.html#method.to_lowercase) and then apply the above method. Even then, in the following examples
 - [Imporving speed by changing wildcard search process from regular expression match to starts_with/ends_with match #890](https://github.com/Yamato-Security/hayabusa/pull/890)
 - [Improving speed by using eq_ignore_ascii_case() before regular expression match #884](https://github.com/Yamato-Security/hayabusa/pull/884)
 
-speed has improved about 15% compared to before.
+speed has improved by about 15% compared to before.
 
 ## Filter by string length
 Depending on the characteristics of the strings being handled, adding a simple filter may reduce the number of string matching attempts and speed up the process. If you often compare strings of non-fixed and unmatched string lengths, you can speed up the process by using string length as a primary filter.
@@ -276,20 +277,24 @@ fn main() {
     }
 }
 ```
-speed improves by about 20 times than before.
+speed will improve by about 20 times.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, the above method is used.
 - [Improving speed by adding string length match before regular expression match #883](https://github.com/Yamato-Security/hayabusa/pull/883)
 
 This improved speed by about 15%.
 
+## Do not compile with codegen-units=1
+Many articles on performance optimization with Rust advise to add `codegen-units = 1` under the `[profile.release]` section.
+This will cause slower compilation times as the default is to compile in parallel but in theory should result in more optimized and faster code.
+However, in our testing, Hayabusa actually runs slower with this option turned on and compilation takes longer so we keep this off.
+The binary size of the executable is about 100kb smaller so this may be ideal for embedded systems where hard disk space is limited.
+
 # Reducing memory usage
 
 ## Avoid unnecessary use of clone(), to_string(), and to_owned()
-The easy use of [clone()](https://doc.rust-lang.org/std/) or [clone/trait.Clone.html)(https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html) as a means of resolving compilation errors related to [ownership](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html) may result in a loss of data, depending on the amount and frequency of data to be retained. Clone/trait.Clone.html) or [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) may cause bottlenecks depending on the amount and frequency of data to be retained. The following is a list of the possible bottlenecks.
-
-One easy way to get rid of compile errors dealing with [ownership](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html) is to use [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) and [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html). However, these can become bottlenecks depending on the amount and frequency of data. It is always best to first see if you can replace them with low cost [references](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html).
+Using [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html) or [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html) are easy ways to resolve compilation errors related to [ownership](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html). However, they will usually result in high usage of memory and should be avoided. It is always best to first see if you can replace them with low cost [references](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html).
 
 ### Before  <!-- omit in toc -->
 For example, if you want to iterate the same `Vec` multiple times, you can use [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html) to eliminate compilation errors.
@@ -319,16 +324,16 @@ fn main() {
     }
 }
 ```
-By removing the clone() usage, you can reduce memory usage by up to 50%.
+By removing the clone() usage, memory usage is reduced by up to 50%.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
-In the following example, by replacing unnecessary [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/ ToString.html), and [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html) usage,
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
+In the following example, by replacing unnecessary [clone()](https://doc.rust-lang.org/std/clone/trait.Clone.html), [to_string()](https://doc.rust-lang.org/std/string/trait.ToString.html), and [to_owned()](https://doc.rust-lang.org/std/borrow/trait.ToOwned.html) usage,
 - [Reduce used memory and Skipped rule author, detect counts aggregation when --no-summary option is used #782](https://github.com/Yamato-Security/hayabusa/pull/782)
 
 we were able to significantly reduce memory usage.
 
 ## Use Iterator instead of Vec
-[Vec](https://doc.rust-lang.org/std/vec/) keeps all elements in memory, so it uses a lot of memory in proportion to the number of elements. If processing one element at a time is sufficient, use [Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html) instead, which uses much less memory.
+[Vec](https://doc.rust-lang.org/std/vec/) keeps all elements in memory, so it uses a lot of memory in proportion to the number of elements. If processing one element at a time is sufficient, then using an [Iterator](https://doc.rust-lang.org/std/iter/trait.Iterator.html) instead will use much less memory.
 
 ### Before  <!-- omit in toc -->
 For example, the following `return_lines()` function reads a file of about 1 GB and returns a [Vec](https://doc.rust-lang.org/std/vec/):
@@ -400,21 +405,21 @@ fn main() {
 ```
 Memory usage drops significantly from 1 GB to only 3 MB.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 The following example uses the method described above:
 - [Reduce memory usage when reading JSONL file #921](https://github.com/Yamato-Security/hayabusa/pull/921)
 
 When tested on a 1.7GB JSON file, memory decreased by 75%.
 
 ## Use the compact_str crate when handling short strings
-24byte未満の短い文字列を大量に扱う場合は、[compact_strクレート](https://docs.rs/crate/compact_str/latest)を利用することで、メモリ使用量の削減効果があります。
+When dealing with a large number of short strings of less than 24 bytes, the [compact_str crate](https://docs.rs/crate/compact_str/latest) can be used to reduce memory usage.
 
 ### Before  <!-- omit in toc -->
 In the example below, the Vec holds 10 million strings.
 ```Rust
 fn main() {
     let v: Vec<String> = vec![String::from("ABCDEFGHIJKLMNOPQRSTUV"); 10000000];
-    // なにか処理
+    // do some kind of processing
 }
 ```
 ### After  <!-- omit in toc -->
@@ -424,12 +429,12 @@ use compact_str::CompactString;
 
 fn main() {
     let v: Vec<CompactString> = vec![CompactString::from("ABCDEFGHIJKLMNOPQRSTUV"); 10000000];
-    // なにか処理
+    // do some kind of processing
 }
 ```
 By doing this, memory usage is reduced by around 50%.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, short strings are handled with [CompactString](https://docs.rs/compact_str/latest/compact_str/):
 - [To reduce ram usage and performance, Replaced String with other crate #793](https://github.com/Yamato-Security/hayabusa/pull/793)
 
@@ -474,9 +479,9 @@ pub struct DetectInfo {
     pub is_condition: bool,
 }
 ```
-A reduction in memory usage of several bytes per detection result record was achieved.
+a reduction in memory usage of several bytes per detection result record was achieved.
 
-### Effectiveness（Example From Our Pull Request）   <!-- omit in toc -->
+### Effectiveness（Real example from a Pull Request）   <!-- omit in toc -->
 In the following example, when tested against data where the number of detection result records was about 1.5 million,
 - [Reduced memory usage of DetectInfo/EvtxRecordInfo #837](https://github.com/Yamato-Security/hayabusa/pull/837)
 - [Reduce memory usage by removing unnecessary regex #894](https://github.com/Yamato-Security/hayabusa/pull/894)
@@ -489,7 +494,7 @@ we were able to achieve about a 300MB reduction in memory usage.
 Some memory allocators maintain their own memory usage statistics. For example, in [mimalloc](https://github.com/microsoft/mimalloc), the [mi_stats_print_out()](https://microsoft.github.io/mimalloc/group__extended.html#ga537f13b299ddf801e49a5a94fde02c79) function can be called to obtain memory usage.
 
 ### How to obtain statistics  <!-- omit in toc -->
-Prerequisites： You need to be using mimalloc as explained in the [Change the memory allocator](#Change the memory allocator) section.
+Prerequisites: You need to be using mimalloc as explained in the [Change the memory allocator](#change-the-memory-allocator) section.
 
 1.  In `Cargo.toml`'s [dependencies section](https://doc.rust-lang.org/cargo/guide/dependencies.html#adding-a-dependency), add the [libmimalloc-sys crate](https://crates.io/crates/libmimalloc-sys):
     ```Toml
@@ -520,12 +525,12 @@ The above implementation was applied in the following:
 In Hayabusa, if you add the `--debug` option, memory usage statistics will be outputted at the end.
 
 ## Use Windows' performance counter
-Various resource usage can be checked from the statistics that can be obtained on the OS side. In this case, the following two points should be noted.
+Various resource usage can be checked from statistics that can be obtained on the OS side. In this case, the following two points should be noted.
 
 - Influence from anti-virus software (Windows Defender)
-  - Only the first run is affected by the scan and is slower, so results from the second and subsequent runs after the build are suitable for comparison.
+  - Only the first run is affected by the scan and is slower, so results from the second and subsequent runs after the build are suitable for comparison. (Or you can disable your anti-virus for more accurate results.)
 - Influence from file caching
-  - The results from the second and subsequent times after OS startup are faster than the first time because evtx and other file IOs are read from the file cache in memory, so the results from the first time after the OS boots are suitable for comparison.
+  - The results from the second and subsequent times after OS startup are faster than the first time because evtx and other file IOs are read from the file cache in memory, so the results from the first time after the OS boots is more ideal for taking benchmarks.
 
 ### How to obtain  <!-- omit in toc -->
 Prerequisites：The following procedure is only valid for environments where `PowerShell 7` is already installed on Windows.
@@ -549,11 +554,11 @@ Prerequisites：The following procedure is only valid for environments where `Po
 The following contains an example procedure for measuring performance with Hayabusa.
 - [Example of obtaining Windows performance counters](https://github.com/Yamato-Security/hayabusa/issues/778#issuecomment-1296504766)
 
-## heaptrackを利用する
-[heaptrack](https://github.com/KDE/heaptrack) is a sophisticated memory profiler available for Linux and macOS. By using heaptrack, you can investigate bottlenecks in detail.
+## Use heaptrack
+[heaptrack](https://github.com/KDE/heaptrack) is a sophisticated memory profiler available for Linux and macOS. By using heaptrack, you can thoroughly investigate bottlenecks.
 
 ### How to obtain  <!-- omit in toc -->
-Prerequisites： Below is the procedure for Ubuntu 22.04. You cannot use heaptrack on Windows.
+Prerequisites: Below is the procedure for Ubuntu 22.04. You cannot use heaptrack on Windows.
 
 1. Install heaptrack with the following two commands.
       ```
@@ -590,4 +595,4 @@ An example of heaptrack's results are shown below. The `Flame Graph` and `Top-Do
 
 # Contributions
 
-This document is based on findings from actual improvement cases in [Hayabusa](https://github.com/Yamato-Security/hayabusa), but if you find any errors or techniques that can improve performance, please send us an issue or pull request.
+This document is based on findings from actual improvement cases in [Hayabusa](https://github.com/Yamato-Security/hayabusa). If you find any errors or techniques that can improve performance, please send us an issue or pull request.
