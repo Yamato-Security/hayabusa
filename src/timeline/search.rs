@@ -114,7 +114,13 @@ impl EventSearch {
                     }
                 }
 
-                let recordid = "recordid";
+                let recordid = match utils::get_serde_number_to_string(
+                    &record.record["Event"]["System"]["EventRecordID"],
+                ) {
+                    Some(recid) => recid,
+                    _ => CompactString::new("-"),
+                };
+
                 let eventtitle = "eventtitle";
                 let allfieldinfo = "allfieldinfo";
 
