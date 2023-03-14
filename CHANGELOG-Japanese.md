@@ -4,7 +4,8 @@
 
 **新機能:**
 
-- 新たなパイプキーワード(`contains|all`)`に対応した。 (#945) (@hitenkoku)
+- 新たなキーワードの`1 of selection*`と`all of selection*`に対応した。 (#957) (@fukusuket)
+- 新たなパイプキーワードの`|contains|all`に対応した。 (#945) (@hitenkoku)
 - ステータスが`unsupported`となっているルールの件数を表示した。ステータス`unsupported`のルールも検知対象とするオプションとして`--enable-supported-rules`オプションを追加した。 (#949) (@hitenkoku)
 
 **改善:**
