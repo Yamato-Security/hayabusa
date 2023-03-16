@@ -1247,7 +1247,6 @@ Hayabusaルールのディレクトリ構造は、2つのディレクトリに�
 ## Hayabusa v.s. 変換されたSigmaルール
 
 Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
-Hayabusaルールは`|contains|all`、`1 of selection*`、`all of selection*`、[Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルールをデフォルトで対応していないため、コンバータが必要です。
 殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
 Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 

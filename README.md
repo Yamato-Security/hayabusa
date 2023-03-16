@@ -1247,7 +1247,6 @@ Please check out the current rules to use as a template in creating new ones or 
 ## Hayabusa v.s. Converted Sigma Rules
 
 Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
-A converter is needed as hayabusa rules do not support `|contains|all`, `1 of selection*`, and `all of selection*`.
 However, almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
 Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
 
