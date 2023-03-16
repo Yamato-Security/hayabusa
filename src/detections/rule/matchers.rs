@@ -1,7 +1,10 @@
 use base64::{engine::general_purpose, Engine as _};
+use cidr_utils::cidr::{IpCidr, IpCidrError};
 use nested::Nested;
 use regex::Regex;
 use std::cmp::Ordering;
+use std::net::IpAddr;
+use std::str::FromStr;
 use yaml_rust::Yaml;
 
 use crate::detections::{detection::EvtxRecordInfo, utils};
@@ -359,9 +362,7 @@ impl LeafMatcher for DefaultMatcher {
         let n = self.pipes.len();
         if n == 0 {
             // パイプがないケース
-            if let Some(val) = select_value.as_str() {
-                self.fast_match = Self::convert_to_fast_match(val, true);
-            };
+            self.fast_match = Self::convert_to_fast_match(&pattern, true);
             if self.fast_match.is_some()
                 && matches!(
                     &self.fast_match.as_ref().unwrap()[0],
@@ -369,97 +370,89 @@ impl LeafMatcher for DefaultMatcher {
                 )
                 && !self.key_list.is_empty()
             {
-                // FastMatch::Exact検索に置き換えられたときは正規表現は不要
+                // FastMatch::Exact/Contains検索に置き換えられたときは正規表現は不要
                 return Result::Ok(());
             }
         } else if n == 1 {
             // パイプがあるケース
-            if let Some(val) = select_value.as_str() {
-                self.fast_match = match &self.pipes[0] {
-                    PipeElement::Startswith => {
-                        Self::convert_to_fast_match(format!("{val}*").as_str(), true)
-                    }
-                    PipeElement::Endswith => {
-                        Self::convert_to_fast_match(format!("*{val}").as_str(), true)
-                    }
-                    PipeElement::Contains => {
-                        Self::convert_to_fast_match(format!("*{val}*").as_str(), true)
-                    }
-                    _ => None,
-                };
-            }
+            self.fast_match = match &self.pipes[0] {
+                PipeElement::Startswith => {
+                    Self::convert_to_fast_match(format!("{pattern}*").as_str(), true)
+                }
+                PipeElement::Endswith => {
+                    Self::convert_to_fast_match(format!("*{pattern}").as_str(), true)
+                }
+                PipeElement::Contains => {
+                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true)
+                }
+                _ => None,
+            };
         } else if n == 2 {
             if self.pipes[0] == PipeElement::Base64offset && self.pipes[1] == PipeElement::Contains
             {
                 // |base64offset|containsの場合
-                if let Some(val) = select_value.as_str() {
-                    let val_byte = val.as_bytes();
-                    let mut fastmatches = vec![];
-                    for i in 0..3 {
-                        let mut b64_result = vec![];
-                        let mut target_byte = vec![];
-                        target_byte.resize_with(i, || 0b0);
-                        target_byte.extend_from_slice(val_byte);
-                        b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
-                        general_purpose::STANDARD
-                            .encode_slice(target_byte, &mut b64_result)
-                            .ok();
-                        let convstr_b64 = String::from_utf8(b64_result);
-                        if let Ok(b64_str) = convstr_b64 {
-                            // ここでContainsのfastmatch対応を行う
-                            let filtered_null_chr = b64_str.replace('\0', "");
-                            let b64_offset_contents = match b64_str.find('=').unwrap_or_default()
-                                % 4
-                            {
-                                2 => {
-                                    if i == 0 {
-                                        filtered_null_chr[..filtered_null_chr.len() - 3].to_string()
-                                    } else {
-                                        filtered_null_chr[(i + 1)..filtered_null_chr.len() - 3]
-                                            .to_string()
-                                    }
+                let val = pattern.as_str();
+                let val_byte = val.as_bytes();
+                let mut fastmatches = vec![];
+                for i in 0..3 {
+                    let mut b64_result = vec![];
+                    let mut target_byte = vec![];
+                    target_byte.resize_with(i, || 0b0);
+                    target_byte.extend_from_slice(val_byte);
+                    b64_result.resize_with(target_byte.len() * 4 / 3 + 4, || 0b0);
+                    general_purpose::STANDARD
+                        .encode_slice(target_byte, &mut b64_result)
+                        .ok();
+                    let convstr_b64 = String::from_utf8(b64_result);
+                    if let Ok(b64_str) = convstr_b64 {
+                        // ここでContainsのfastmatch対応を行う
+                        let filtered_null_chr = b64_str.replace('\0', "");
+                        let b64_offset_contents = match b64_str.find('=').unwrap_or_default() % 4 {
+                            2 => {
+                                if i == 0 {
+                                    filtered_null_chr[..filtered_null_chr.len() - 3].to_string()
+                                } else {
+                                    filtered_null_chr[(i + 1)..filtered_null_chr.len() - 3]
+                                        .to_string()
                                 }
-                                3 => {
-                                    if i == 0 {
-                                        filtered_null_chr[..filtered_null_chr.len() - 2].to_string()
-                                    } else {
-                                        filtered_null_chr.replace('\0', "")
-                                            [(i + 1)..filtered_null_chr.len() - 2]
-                                            .to_string()
-                                    }
-                                }
-                                _ => {
-                                    if i == 0 {
-                                        filtered_null_chr
-                                    } else {
-                                        filtered_null_chr[(i + 1)..].to_string()
-                                    }
-                                }
-                            };
-                            if let Some(fm) = Self::convert_to_fast_match(
-                                &format!("*{b64_offset_contents}*"),
-                                false,
-                            ) {
-                                fastmatches.extend(fm);
                             }
-                        } else {
-                            err_msges.push(format!(
-                                "Failed base64 encoding: {}",
-                                convstr_b64.unwrap_err()
-                            ));
+                            3 => {
+                                if i == 0 {
+                                    filtered_null_chr[..filtered_null_chr.len() - 2].to_string()
+                                } else {
+                                    filtered_null_chr.replace('\0', "")
+                                        [(i + 1)..filtered_null_chr.len() - 2]
+                                        .to_string()
+                                }
+                            }
+                            _ => {
+                                if i == 0 {
+                                    filtered_null_chr
+                                } else {
+                                    filtered_null_chr[(i + 1)..].to_string()
+                                }
+                            }
+                        };
+                        if let Some(fm) =
+                            Self::convert_to_fast_match(&format!("*{b64_offset_contents}*"), false)
+                        {
+                            fastmatches.extend(fm);
                         }
+                    } else {
+                        err_msges.push(format!(
+                            "Failed base64 encoding: {}",
+                            convstr_b64.unwrap_err()
+                        ));
                     }
-                    if !fastmatches.is_empty() {
-                        self.fast_match = Some(fastmatches);
-                    }
+                }
+                if !fastmatches.is_empty() {
+                    self.fast_match = Some(fastmatches);
                 }
             } else if self.pipes[0] == PipeElement::Contains && self.pipes[1] == PipeElement::All
             // |contains|allの場合、事前の分岐でAndNodeとしているのでここではcontainsのみとして取り扱う
             {
-                if let Some(val) = select_value.as_str() {
-                    self.fast_match =
-                        Self::convert_to_fast_match(format!("*{val}*").as_str(), true);
-                }
+                self.fast_match =
+                    Self::convert_to_fast_match(format!("*{pattern}*").as_str(), true);
             }
         } else {
             let errmsg = format!(
@@ -469,10 +462,12 @@ impl LeafMatcher for DefaultMatcher {
             return Result::Err(vec![errmsg]);
         }
 
-        let is_eqfield = self
-            .pipes
-            .iter()
-            .any(|pipe_element| pipe_element.get_eqfield().is_some());
+        let is_eqfield = self.pipes.iter().any(|pipe_element| {
+            matches!(
+                pipe_element,
+                PipeElement::EqualsField(_) | PipeElement::Endswithfield(_)
+            )
+        });
         if !is_eqfield {
             // 正規表現ではない場合、ワイルドカードであることを表す。
             // ワイルドカードは正規表現でマッチングするので、ワイルドカードを正規表現に変換するPipeを内部的に追加することにする。
@@ -502,10 +497,27 @@ impl LeafMatcher for DefaultMatcher {
     }
 
     fn is_match(&self, event_value: Option<&String>, recinfo: &EvtxRecordInfo) -> bool {
-        // PipeElement::EqualsFieldが設定されていた場合
-        let pipe = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
-        if pipe.get_eqfield().is_some() {
-            return pipe.is_eqfield_match(event_value, recinfo);
+        let pipe: &PipeElement = self.pipes.first().unwrap_or(&PipeElement::Wildcard);
+        let match_result = match pipe {
+            PipeElement::EqualsField(_) | PipeElement::Endswithfield(_) => {
+                Some(pipe.is_eqfield_match(event_value, recinfo))
+            }
+            PipeElement::Cidr(ip_result) => match ip_result {
+                Ok(matcher_ip) => {
+                    let val = String::default();
+                    let event_value_str = event_value.unwrap_or(&val);
+                    let event_ip = IpAddr::from_str(event_value_str);
+                    match event_ip {
+                        Ok(target_ip) => Some(matcher_ip.contains(target_ip)),
+                        Err(_) => Some(false), //IPアドレス以外の形式のとき
+                    }
+                }
+                Err(_) => Some(false), //IPアドレス以外の形式のとき
+            },
+            _ => None,
+        };
+        if let Some(result) = match_result {
+            return result;
         }
 
         // yamlにnullが設定されていた場合
@@ -570,6 +582,7 @@ enum PipeElement {
     EqualsField(String),
     Endswithfield(String),
     Base64offset,
+    Cidr(Result<IpCidr, IpCidrError>),
     All,
 }
 
@@ -583,6 +596,7 @@ impl PipeElement {
             "equalsfield" => Option::Some(PipeElement::EqualsField(pattern.to_string())),
             "endswithfield" => Option::Some(PipeElement::Endswithfield(pattern.to_string())),
             "base64offset" => Option::Some(PipeElement::Base64offset),
+            "cidr" => Option::Some(PipeElement::Cidr(IpCidr::from_str(pattern))),
             "all" => Option::Some(PipeElement::All),
             _ => Option::None,
         };
@@ -920,7 +934,7 @@ mod tests {
             let matcher = child_node.matcher.as_ref().unwrap();
             assert!(matcher.is::<DefaultMatcher>());
             let matcher = matcher.downcast_ref::<DefaultMatcher>().unwrap();
-            assert!(matcher.fast_match.is_none());
+            assert!(matcher.fast_match.is_some());
         }
 
         // ContextInfo
@@ -2390,6 +2404,101 @@ mod tests {
 
         let record_json_str = r#"{
             "Event": {"System": {"EventID": 4103, "Channel": "Security", "Computer": "Tester"}, "EventData":{"Payload": "aHR0cDovL"}},
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_cidr_ipv4_detect() {
+        // cidrにマッチするIP
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                IpAddress|cidr: 192.168.0.0/16
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4624}, "EventData": {"IpAddress": "192.168.0.1"} },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_cidr_ipv4_not_detect() {
+        // cidrにマッチしないIP
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                IpAddress|cidr: 2600:1f18:130c:d900::/56
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4624}, "EventData": {"IpAddress": "8.8.8.8"} },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_cidr_ipv6_detect() {
+        // cidrにマッチするIP
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                IpAddress|cidr: 2001:db8:1234::/48
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4624}, "EventData": {"IpAddress": "2001:db8:1234:ffff:ffff:ffff:ffff:ffff"} },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_cidr_ipv6_not_detect() {
+        // cidrにマッチしないIP
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                IpAddress|cidr: 2001:db8:1234::/48
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4624}, "EventData": {"IpAddress": "2001:db8:1111:ffff:ffff:ffff:ffff:ffff"} },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_cidr_ip_field_not_exists_not_detect() {
+        // cidrにマッチしないIP
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                IpAddress|cidr: 192.168.0.0/16
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4624} },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
