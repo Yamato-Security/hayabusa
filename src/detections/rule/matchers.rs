@@ -2412,7 +2412,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ipv4_detect() {
-        // cidrにマッチしないIP
+        // cidrにマッチするIP
         let rule_str = r#"
         enabled: true
         detection:
@@ -2450,7 +2450,7 @@ mod tests {
 
     #[test]
     fn test_cidr_ipv6_detect() {
-        // cidrにマッチしないIP
+        // cidrにマッチするIP
         let rule_str = r#"
         enabled: true
         detection:
@@ -2480,6 +2480,25 @@ mod tests {
 
         let record_json_str = r#"{
             "Event": {"System": {"EventID": 4624}, "EventData": {"IpAddress": "2001:db8:1111:ffff:ffff:ffff:ffff:ffff"} },
+            "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_cidr_ip_field_not_exists_not_detect() {
+        // cidrにマッチしないIP
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                IpAddress|cidr: 192.168.0.0/16
+        details: 'command=%CommandLine%'
+        "#;
+
+        let record_json_str = r#"{
+            "Event": {"System": {"EventID": 4624} },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
         }"#;
 
