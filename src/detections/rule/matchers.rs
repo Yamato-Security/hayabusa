@@ -504,7 +504,8 @@ impl LeafMatcher for DefaultMatcher {
             }
             PipeElement::Cidr(ip_result) => match ip_result {
                 Ok(matcher_ip) => {
-                    let event_value_str = event_value.unwrap_or_default();
+                    let val = String::default();
+                    let event_value_str = event_value.unwrap_or(&val);
                     let event_ip = IpAddr::from_str(event_value_str);
                     match event_ip {
                         Ok(target_ip) => Some(matcher_ip.contains(target_ip)),
