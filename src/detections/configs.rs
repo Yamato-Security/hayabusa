@@ -95,6 +95,7 @@ impl StoredStatic {
             Some(Action::SetDefaultProfile(opt)) => opt.common_options,
             Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
             Some(Action::UpdateRules(opt)) => opt.common_options,
+            Some(Action::AlertElastic(opt)) => opt.common_options,
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
@@ -476,6 +477,15 @@ pub enum Action {
         term_width = 400,
         disable_help_flag = true
     )]
+    /// Alert the timeline to Elastic.
+    AlertElastic(AlertElasticOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        term_width = 400,
+        disable_help_flag = true
+    )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
 
@@ -575,6 +585,7 @@ impl Action {
                 Action::SetDefaultProfile(_) => 7,
                 Action::ListContributors(_) => 8,
                 Action::ListProfiles(_) => 9,
+                Action::AlertElastic(_) => 10,
             }
         } else {
             100
@@ -593,6 +604,7 @@ impl Action {
                 Action::SetDefaultProfile(_) => "set-default-profile",
                 Action::ListContributors(_) => "list-contributors",
                 Action::ListProfiles(_) => "list-profiles",
+                Action::AlertElastic(_) => "alert-elastic",
             }
         } else {
             ""
@@ -1032,6 +1044,65 @@ pub struct JSONOutputOption {
         display_order = 70
     )]
     pub geo_ip: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct ElasticSettingOption {
+    ///strict mode: do not only warn, but abort if an error occurs
+    #[arg(help_heading = Some("Elastic Settings"),long , display_order = 450)]
+    pub strict: bool,
+
+    ///name of the elasticsearch index
+    #[arg(help_heading = Some("Elastic Settings"),short, long , value_name="INDEX_NAME", display_order = 350)]
+    pub index: String,
+
+    ///server name or IP address of elasticsearch server
+    #[arg(help_heading = Some("Elastic Settings"),short='H', long , value_name="HOST", display_order = 340)]
+    pub host: String,
+
+    /// API port number of elasticsearch server [default: 9200]
+    #[arg(help_heading = Some("Elastic Settings"),short='P', long , value_name="PORT", default_value="9200", display_order = 420)]
+    pub port: u16,
+
+    ///protocol to be used to connect to elasticsearch [default: https] [possible values: http, https]
+    #[arg(help_heading = Some("Elastic Settings"),long , value_name="PROTOCOL",default_value="https", display_order = 350)]
+    pub proto: String,
+
+    /// omit certificate validation
+    #[arg(help_heading = Some("Elastic Settings"), short='k', long, value_name="PROTOCOL", display_order = 420)]
+    pub insecure: bool,
+
+    ///username for elasticsearch server [default: elastic]
+    #[arg(help_heading = Some("Elastic Settings"),short='U', long , value_name="USERNAME", default_value="elastic", display_order = 470)]
+    pub username: String,
+
+    ///password for authenticating at elasticsearch
+    #[arg(help_heading = Some("Elastic Settings"),short='W', long , value_name="PASSWORD", display_order = 420)]
+    pub password: String,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct AlertElasticOption {
+    #[clap(flatten)]
+    pub input_args: InputOption,
+
+    /// Specify output profile
+    #[arg(help_heading = Some("Output"), short = 'p', long = "profile", display_order = 420)]
+    pub profile: Option<String>,
+
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    /// Save the timeline in JSON format (ex: results.json)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE", display_order = 410)]
+    pub output: Option<PathBuf>,
+
+    #[clap(flatten)]
+    pub detect_common_options: DetectCommonOption,
+
+    #[clap(flatten)]
+    pub elastic_options: ElasticSettingOption,
+
 }
 
 #[derive(Parser, Clone, Debug)]
