@@ -4,6 +4,7 @@
 
 **New Features:**
 
+- Added support for `|cidr`. (#961) (@fukusuket)
 - Added support for `1 of selection*` and `all of selection*`. (#957) (@fukusuket)
 - Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
 - Added the `--enable-unsupported-rules` option to enable rules marked as `unsupported`. (#949) (@hitenkoku) (#949) (@hitenkoku)
