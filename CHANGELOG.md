@@ -1,4 +1,10 @@
 # Changes
+ 
+## 2.3.1 [2023/03/xx] "TMCIT Release-2"
+
+**Enhancements:**
+
+- Updated `logon-summary` headers. (@yamatosecurity)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
