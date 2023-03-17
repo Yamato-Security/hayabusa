@@ -2,7 +2,7 @@
 
 ## 2.3.1 [2023/03/xx] "TMCIT Release-2"
 
-**Enhancements:**
+**改善:**
 
 - `logon-summary`の見出しを更新した。 (@yamatosecurity)
 
