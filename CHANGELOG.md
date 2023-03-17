@@ -1,10 +1,11 @@
 # Changes
- 
+
 ## 2.3.1 [2023/03/xx] "TMCIT Release-2"
 
 **Enhancements:**
 
 - Updated `logon-summary` headers. (@yamatosecurity)
+- Added double quote in csv field of `csv-timeline` output. (#965) (@hitenkoku)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 

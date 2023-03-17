@@ -5,6 +5,7 @@
 **改善:**
 
 - `logon-summary`の見出しを更新した。 (@yamatosecurity)
+- `csv-timeline`の出力のフィールドでダブルクォートを追加した。 (#965) (@hitenkoku)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
