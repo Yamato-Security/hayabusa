@@ -247,7 +247,12 @@ fn emit_csv<W: std::io::Write>(
                     .from_writer(writer),
             )
         }
-        Action::CsvTimeline(_) => Some(WriterBuilder::new().double_quote(true).quote_style(QuoteStyle::Always).from_writer(writer)),
+        Action::CsvTimeline(_) => Some(
+            WriterBuilder::new()
+                .double_quote(true)
+                .quote_style(QuoteStyle::Always)
+                .from_writer(writer),
+        ),
         _ => None,
     };
     //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
