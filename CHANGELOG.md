@@ -8,7 +8,7 @@
 
 **Bug Fixes:**
 
-- Fixed panics error when `update-rules` subcommand execute on version 2.3.0. (#965) (@hitenkoku)
+- Fixed a crash when the `update-rules` command was executed on version 2.3.0. (#965) (@hitenkoku)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
