@@ -5,7 +5,7 @@
 **Enhancements:**
 
 - Updated `logon-summary` headers. (@yamatosecurity)
-- Added double quote in csv field of `csv-timeline` output. (#965) (@hitenkoku)
+- Added double quotes in CSV fields of `csv-timeline` output to support multiple lines in fields. (#965) (@hitenkoku)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
