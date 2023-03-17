@@ -1431,7 +1431,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 filepath: None,
                 live_analysis: false,
             },
-            enable_deprecated_rules:true,
+            enable_deprecated_rules: true,
             enable_noisy_rules: true,
             profile: None,
             exclude_status: None,
