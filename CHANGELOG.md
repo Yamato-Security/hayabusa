@@ -4,8 +4,12 @@
 
 **Enhancements:**
 
-- Updated `logon-summary` headers. (@yamatosecurity)
 - Added double quotes in CSV fields of `csv-timeline` output to support multiple lines in fields. (#965) (@hitenkoku)
+- Updated `logon-summary` headers. (#964) (@yamatosecurity)
+
+**Bug Fixes:**
+
+- Fixed a crash when the `update-rules` command was executed on version 2.3.0. (#965) (@hitenkoku)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
@@ -14,7 +18,7 @@
 - Added support for `|cidr`. (#961) (@fukusuket)
 - Added support for `1 of selection*` and `all of selection*`. (#957) (@fukusuket)
 - Added support for the `|contains|all` pipe keyword. (#945) (@hitenkoku)
-- Added the `--enable-unsupported-rules` option to enable rules marked as `unsupported`. (#949) (@hitenkoku) (#949) (@hitenkoku)
+- Added the `--enable-unsupported-rules` option to enable rules marked as `unsupported`. (#949) (@hitenkoku)
 
 **Enhancements:**
 
