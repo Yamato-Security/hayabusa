@@ -1,10 +1,14 @@
 # Changes
- 
+
 ## 2.3.1 [2023/03/xx] "TMCIT Release-2"
 
 **Enhancements:**
 
-- Updated `logon-summary` headers. (@yamatosecurity)
+- Updated `logon-summary` headers. (#964) (@yamatosecurity)
+
+**Bug Fixes:**
+
+- Fixed panics error when `update-rules` subcommand execute on version 2.3.0. (#965) (@hitenkoku)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
