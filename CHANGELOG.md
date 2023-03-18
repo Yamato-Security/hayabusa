@@ -6,6 +6,7 @@
 
 - Added double quotes in CSV fields of `csv-timeline` output to support multiple lines in fields. (#965) (@hitenkoku)
 - Updated `logon-summary` headers. (#964) (@yamatosecurity)
+- Added short-hand option `-D` for `--enable-deprecated-rules` and `-u` for `--enable-unsupported-rules`. (@yamatosecurity)
 
 **Bug Fixes:**
 

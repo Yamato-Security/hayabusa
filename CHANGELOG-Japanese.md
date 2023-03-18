@@ -6,6 +6,7 @@
 
 - `csv-timeline`の出力のフィールドでダブルクォートを追加した。 (#965) (@hitenkoku)
 - `logon-summary`の見出しを更新した。 (#964) (@yamatosecurity)
+- `--enable-deprecated-rules`の`-D`ショートオプションと`--enable-unsupported-rules`の`-u`ショートオプションを追加した。(@yamatosecurity)
 
 **Bug Fixes:**
 
