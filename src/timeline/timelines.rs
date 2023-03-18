@@ -280,7 +280,6 @@ impl Timeline {
         }
     }
 
-    //ここをSearch版でつくる！つくる！
     /// ユーザ毎のログイン統計情報出力
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
         let header = vec![
@@ -355,7 +354,11 @@ impl Timeline {
     }
 
     /// Search結果出力
-    pub fn search_dsp_msg(&mut self, stored_static: &StoredStatic) {
+    pub fn search_dsp_msg(
+        &mut self,
+        event_timeline_config: &EventInfoConfig,
+        stored_static: &StoredStatic,
+    ) {
         println!("TODO: CREATE HERE");
         let mut sammsges: Vec<String> = Vec::new();
         if let Action::Search(search_summary_option) =
@@ -365,6 +368,7 @@ impl Timeline {
             sammsges.push(format!("\n\nTotal findings: {}\n", self.event_search.total));
             search_result_dsp_msg(
                 &self.event_search.search_result,
+                event_timeline_config,
                 &search_summary_option.output,
             );
 

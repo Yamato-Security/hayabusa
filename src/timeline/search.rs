@@ -1,5 +1,8 @@
 use crate::detections::{
-    configs::EventKeyAliasConfig, detection::EvtxRecordInfo, message::AlertMessage, utils,
+    configs::{EventInfoConfig, EventKeyAliasConfig},
+    detection::EvtxRecordInfo,
+    message::AlertMessage,
+    utils,
 };
 use compact_str::CompactString;
 use csv::WriterBuilder;
@@ -21,7 +24,6 @@ pub struct EventSearch {
         CompactString,
         CompactString,
         CompactString,
-        CompactString,
     )>,
 }
 
@@ -30,7 +32,6 @@ impl EventSearch {
         total: usize,
         filepath: CompactString,
         search_result: HashSet<(
-            CompactString,
             CompactString,
             CompactString,
             CompactString,
@@ -101,7 +102,8 @@ impl EventSearch {
                             .unwrap_or(&serde_json::Value::Null),
                     )
                     .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], ""),
+                    .replace(['"', '\''], "")
+                    .to_lowercase(),
                 );
 
                 let mut eventid = String::new();
@@ -121,7 +123,6 @@ impl EventSearch {
                     _ => CompactString::new("-"),
                 };
 
-                let eventtitle = "eventtitle";
                 let allfieldinfo = "allfieldinfo";
 
                 self.search_result.insert((
@@ -130,7 +131,6 @@ impl EventSearch {
                     channel,
                     eventid.into(),
                     recordid.into(),
-                    eventtitle.into(),
                     allfieldinfo.into(),
                     self.filepath.clone(),
                 ));
@@ -149,8 +149,8 @@ pub fn search_result_dsp_msg(
         CompactString,
         CompactString,
         CompactString,
-        CompactString,
     )>,
+    event_timeline_config: &EventInfoConfig,
     output: &Option<PathBuf>,
 ) {
     let header = vec![
@@ -182,24 +182,28 @@ pub fn search_result_dsp_msg(
     wtr.write_record(&header).ok();
 
     // Write contents
-    for (
-        timestamp,
-        hostname,
-        channel,
-        event_id,
-        record_id,
-        event_title,
-        all_field_info,
-        evtx_file,
-    ) in result_list
+    for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
+        result_list
     {
+        let event_title = if event_timeline_config
+            .get_event_id(channel, event_id)
+            .is_some()
+        {
+            event_timeline_config
+                .get_event_id(channel, event_id)
+                .unwrap()
+                .evttitle
+                .as_str()
+        } else {
+            "-"
+        };
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
             channel.as_str(),
             event_id.as_str(),
             record_id.as_str(),
-            event_title.as_str(),
+            event_title,
             all_field_info.as_str(),
             evtx_file.as_str(),
         ];
