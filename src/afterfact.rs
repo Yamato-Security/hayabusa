@@ -247,7 +247,11 @@ fn emit_csv<W: std::io::Write>(
                     .from_writer(writer),
             )
         }
-        Action::CsvTimeline(_) => Some(WriterBuilder::new().from_writer(writer)),
+        Action::CsvTimeline(_) => Some(
+            WriterBuilder::new()
+                .quote_style(QuoteStyle::NonNumeric)
+                .from_writer(writer),
+        ),
         _ => None,
     };
     //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
@@ -1852,61 +1856,61 @@ mod tests {
             println!("message: {detect_infos:?}");
         }
         let expect =
-            "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
+            "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
                 .to_string()
                 + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
-                + ","
+                + "\",\""
                 + test_computername
-                + ","
+                + "\",\""
                 + test_channel
-                + ","
+                + "\",\""
                 + test_level
-                + ","
+                + "\","
                 + test_eventid
-                + ","
+                + ",\""
                 + test_attack
-                + ","
+                + "\","
                 + test_record_id
-                + ","
+                + ",\""
                 + test_title
-                + ","
+                + "\",\""
                 + output
-                + ","
+                + "\",\""
                 + test_recinfo
-                + ","
+                + "\",\""
                 + test_rulepath
-                + ","
+                + "\",\""
                 + test_filepath
-                + ","
+                + "\",\""
                 + test_attack
-                + "\n"
+                + "\"\n\""
                 + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z")
                 .to_string()
-                + ","
+                + "\",\""
                 + test_computername2
-                + ","
+                + "\",\""
                 + test_channel
-                + ","
+                + "\",\""
                 + test_level
-                + ","
+                + "\","
                 + test_eventid
-                + ","
+                + ",\""
                 + test_attack
-                + ","
+                + "\","
                 + test_record_id
-                + ","
+                + ",\""
                 + test_title
-                + ","
+                + "\",\""
                 + output
-                + ","
+                + "\",\""
                 + test_recinfo
-                + ","
+                + "\",\""
                 + test_rulepath
-                + ","
+                + "\",\""
                 + test_filepath
-                + ","
+                + "\",\""
                 + test_attack
-                + "\n";
+                + "\"\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
 
         assert!(emit_csv(
