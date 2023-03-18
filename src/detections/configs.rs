@@ -1281,7 +1281,7 @@ pub fn load_pivot_keywords(path: &str) {
         PIVOT_KEYWORD
             .write()
             .unwrap()
-            .get_mut(&key.to_string())
+            .get_mut(key)
             .unwrap()
             .fields
             .insert(value.to_string());
