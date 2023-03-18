@@ -190,7 +190,7 @@ pub fn parse_message(
     eventkey_alias: &EventKeyAliasConfig,
 ) -> CompactString {
     let mut return_message = output;
-    let mut hash_map: HashMap<String, String> = HashMap::new();
+    let mut hash_map: HashMap<CompactString, CompactString> = HashMap::new();
     for caps in ALIASREGEX.captures_iter(&return_message) {
         let full_target_str = &caps[0];
         let target_length = full_target_str.chars().count() - 2; // The meaning of 2 is two percent
@@ -227,15 +227,15 @@ pub fn parse_message(
         let hash_value = get_serde_number_to_string(tmp_event_record);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
-                hash_map.insert(full_target_str.to_string(), hash_value.to_string());
+                hash_map.insert(CompactString::from(full_target_str), hash_value);
             }
         } else {
-            hash_map.insert(full_target_str.to_string(), "n/a".to_string());
+            hash_map.insert(CompactString::from(full_target_str), "n/a".into());
         }
     }
 
-    for (k, v) in &hash_map {
-        return_message = CompactString::new(return_message.replace(k, v));
+    for (k, v) in hash_map {
+        return_message = CompactString::new(return_message.replace(k.as_str(), v.as_str()));
     }
     return_message
 }
