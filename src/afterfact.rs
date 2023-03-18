@@ -249,8 +249,7 @@ fn emit_csv<W: std::io::Write>(
         }
         Action::CsvTimeline(_) => Some(
             WriterBuilder::new()
-                .double_quote(true)
-                .quote_style(QuoteStyle::Never)
+                .quote_style(QuoteStyle::NonNumeric)
                 .from_writer(writer),
         ),
         _ => None,
@@ -392,19 +391,16 @@ fn emit_csv<W: std::io::Write>(
                     plus_header = false;
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    format!(
-                        "\"{}\"",
-                        output_remover
-                            .replace_all(
-                                &output_replacer.replace_all(
-                                    &x.1.to_value(),
-                                    &output_replaced_maps.values().collect_vec(),
-                                ),
-                                &removed_replaced_maps.values().collect_vec(),
-                            )
-                            .split_whitespace()
-                            .join(" ")
-                    )
+                    output_remover
+                        .replace_all(
+                            &output_replacer.replace_all(
+                                &x.1.to_value(),
+                                &output_replaced_maps.values().collect_vec(),
+                            ),
+                            &removed_replaced_maps.values().collect_vec(),
+                        )
+                        .split_whitespace()
+                        .join(" ")
                 }))?;
             }
             // 各種集計作業
