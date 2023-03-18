@@ -101,7 +101,7 @@ pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
 fn _get_output_color(color_map: &HashMap<CompactString, Colors>, level: &str) -> Option<Color> {
     let mut color = None;
     if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
-        color = Some(c.output_color.to_owned());
+        color = Some(c.output_color);
     }
     color
 }
