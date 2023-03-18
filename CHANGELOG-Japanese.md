@@ -10,6 +10,7 @@
 **Bug Fixes:**
 
 - v2.3.0にて`update-rules`コマンド実行時にクラッシュする問題を修正した。 (#965) (@hitenkoku)
+- コマンドプロンプトとPowerShellプロンプトではヘルプメニューのタイトルに長いアンダーバーが表示されていた問題が修正された。 (#911) (@yamatosecurity)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 

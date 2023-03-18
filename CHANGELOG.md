@@ -10,6 +10,7 @@
 **Bug Fixes:**
 
 - Fixed a crash when the `update-rules` command was executed on version 2.3.0. (#965) (@hitenkoku)
+- Fixed long underlines displayed in the help menu in Command Prompt and PowerShell prompt. (#911) (@yamatosecurity)
 
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
