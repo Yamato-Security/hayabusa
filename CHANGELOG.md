@@ -1,13 +1,13 @@
 # Changes
 
-## 2.3.1 [2023/03/xx] "TMCIT Release-2"
+## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
 **Enhancements:**
 
 - Added double quotes in CSV fields of `csv-timeline` output to support multiple lines in fields. (#965) (@hitenkoku)
 - Updated `logon-summary` headers. (#964) (@yamatosecurity)
 - Added short-hand option `-D` for `--enable-deprecated-rules` and `-u` for `--enable-unsupported-rules`. (@yamatosecurity)
-- Reordered option in Filtering and Changed option help contents. (#969) (@hitenkoku)
+- Reordered option in Filtering and changed option help contents. (#969) (@hitenkoku)
 
 **Bug Fixes:**
 
