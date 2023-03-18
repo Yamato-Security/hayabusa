@@ -732,16 +732,16 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated
+    /// Enable rules with status of deprecated
     #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules marked as unsupported
+    /// Enable rules with status of unsupported
     #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 313)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -766,7 +766,7 @@ pub struct PivotKeywordOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
+    /// Enable rules set to noisy (./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 311)]
     pub enable_noisy_rules: bool,
 
@@ -844,16 +844,16 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated
+    /// Enable rules with status of deprecated
     #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
-    /// Enable rules marked as unsupported
+    /// Enable rules with status of unsupported
     #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 312)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -878,7 +878,7 @@ pub struct OutputOption {
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
+    /// Enable rules set to noisy (./rules/config/noisy_rules.txt)
     #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 311)]
     pub enable_noisy_rules: bool,
 
