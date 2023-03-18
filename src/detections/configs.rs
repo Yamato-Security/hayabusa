@@ -733,11 +733,11 @@ pub struct PivotKeywordOption {
     pub common_options: CommonOptions,
 
     /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
+    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Enable rules marked as unsupported
-    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 312)]
+    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
@@ -845,11 +845,11 @@ pub struct OutputOption {
     pub common_options: CommonOptions,
 
     /// Enable rules marked as deprecated
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
+    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
     /// Enable rules marked as unsupported
-    #[arg(help_heading = Some("Filtering"), long = "enable-unsupported-rules", display_order = 312)]
+    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
     pub enable_unsupported_rules: bool,
 
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
