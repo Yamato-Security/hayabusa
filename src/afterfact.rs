@@ -1856,7 +1856,7 @@ mod tests {
             println!("message: {detect_infos:?}");
         }
         let expect =
-            "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n\""
+            "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
                 .to_string()
                 + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
                 + "\",\""
@@ -1864,17 +1864,14 @@ mod tests {
                 + "\",\""
                 + test_channel
                 + "\",\""
-
                 + test_level
-                + "\",\""
-
+                + "\","
                 + test_eventid
-                + "\",\""
-
+                + ",\""
                 + test_attack
-                + "\",\""
+                + "\","
                 + test_record_id
-                + "\",\""
+                + ",\""
                 + test_title
                 + "\",\""
                 + output
@@ -1895,13 +1892,13 @@ mod tests {
                 + test_channel
                 + "\",\""
                 + test_level
-                + "\",\""
+                + "\","
                 + test_eventid
-                + "\",\""
+                + ",\""
                 + test_attack
-                + "\",\""
+                + "\","
                 + test_record_id
-                + "\",\""
+                + ",\""
                 + test_title
                 + "\",\""
                 + output
