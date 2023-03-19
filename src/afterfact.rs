@@ -761,12 +761,12 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                 ret.push(
                     _format_cellpos(
                         &d.1.to_value()
-                            .replace("🛂r", "\r")
-                            .replace("🛂n", "\n")
-                            .replace("🛂t", "\t")
-                            .replace(['\n', '\r', '\t'], " ")
-                            .split_whitespace()
-                            .join(" "),
+                            .replace("🛂r", "")
+                            .replace("🛂n", "")
+                            .replace("🛂t", ""),
+                        // .replace(['\n', '\r', '\t'], " ")
+                        // .split_whitespace()
+                        // .join(" "),
                         ColPos::First,
                     )
                     .replace('|', "🦅"),
@@ -775,12 +775,12 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                 ret.push(
                     _format_cellpos(
                         &d.1.to_value()
-                            .replace("🛂r", "\r")
-                            .replace("🛂n", "\n")
-                            .replace("🛂t", "\t")
-                            .replace(['\n', '\r', '\t'], " ")
-                            .split_whitespace()
-                            .join(" "),
+                            .replace("🛂r", "")
+                            .replace("🛂n", "")
+                            .replace("🛂t", ""),
+                        // .replace(['\n', '\r', '\t'], " ")
+                        // .split_whitespace()
+                        // .join(" "),
                         ColPos::Last,
                     )
                     .replace('|', "🦅"),
@@ -789,12 +789,12 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                 ret.push(
                     _format_cellpos(
                         &d.1.to_value()
-                            .replace("🛂r", "\r")
-                            .replace("🛂n", "\n")
-                            .replace("🛂t", "\t")
-                            .replace(['\n', '\r', '\t'], " ")
-                            .split_whitespace()
-                            .join(" "),
+                            .replace("🛂r", "")
+                            .replace("🛂n", "")
+                            .replace("🛂t", ""),
+                        // .replace(['\n', '\r', '\t'], " ")
+                        // .split_whitespace()
+                        // .join(" "),
                         ColPos::Other,
                     )
                     .replace('|', "🦅"),
