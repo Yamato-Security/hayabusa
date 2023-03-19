@@ -933,27 +933,28 @@ fn _print_detection_summary_by_date(
     for (idx, level) in level_abbr.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(&level[1]).unwrap();
-        let mut max_detect_str = String::default();
+        let mut max_detect_str = CompactString::default();
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
                 exist_max_data = true;
-                max_detect_str = format!("{} ({})", date, cnt.to_formatted_string(&Locale::en));
+                max_detect_str =
+                    format!("{} ({})", date, cnt.to_formatted_string(&Locale::en)).into();
                 tmp_cnt = *cnt;
             }
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
         )))
         .ok();
         if !exist_max_data {
-            max_detect_str = "n/a".to_string();
+            max_detect_str = "n/a".into();
         }
         let output_str = format!(
             "{}: {}",
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
             &max_detect_str
         );
         write!(wtr, "{output_str}").ok();
@@ -997,8 +998,8 @@ fn _print_detection_summary_by_computer(
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
-                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
-                LEVEL_FULL.get(&level[1].as_str()).unwrap()
+                LEVEL_FULL.get(level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -1024,13 +1025,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
         )))
         .ok();
         writeln!(
             wtr,
             "{}: {}",
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
             &result_str
         )
         .ok();
@@ -1056,12 +1057,12 @@ fn _print_detection_summary_tables(
         let mut col_output: Vec<String> = vec![];
         col_output.push(format!(
             "Top {} alerts:",
-            LEVEL_FULL.get(&level[1].as_str()).unwrap()
+            LEVEL_FULL.get(level[1].as_str()).unwrap()
         ));
 
         col_color.push(_get_table_color(
             color_map,
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
         ));
 
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -1075,8 +1076,8 @@ fn _print_detection_summary_tables(
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
-                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
-                LEVEL_FULL.get(&level[1].as_str()).unwrap()
+                LEVEL_FULL.get(level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -1092,7 +1093,7 @@ fn _print_detection_summary_tables(
             html_output_stock.push("");
         }
 
-        let take_cnt = if "informational" == *LEVEL_FULL.get(&level[1].as_str()).unwrap_or(&"-") {
+        let take_cnt = if "informational" == *LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"-") {
             10
         } else {
             5
