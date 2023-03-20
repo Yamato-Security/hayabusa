@@ -278,7 +278,7 @@ fn emit_csv<W: std::io::Write>(
     let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
     let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
 
-    let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
+    let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
@@ -288,7 +288,7 @@ fn emit_csv<W: std::io::Write>(
     if displayflag {
         println!();
     }
-    let mut timestamps: Vec<i64> = Vec::new();
+    let mut timestamps: Vec<i64> = vec![0; MESSAGEKEYS.lock().unwrap().len()];
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
