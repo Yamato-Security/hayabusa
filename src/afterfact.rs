@@ -112,7 +112,7 @@ fn _get_table_color(
 ) -> Option<comfy_table::Color> {
     let mut color = None;
     if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
-        color = Some(c.table_color.to_owned());
+        color = Some(c.table_color);
     }
     color
 }
