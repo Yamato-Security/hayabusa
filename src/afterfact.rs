@@ -357,7 +357,7 @@ fn emit_csv<W: std::io::Write>(
                     get_writable_color(
                         _get_output_color(
                             &color_map,
-                            LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
+                            LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
                         ),
                         stored_static.common_options.no_color,
                     ),
@@ -1054,7 +1054,7 @@ fn _print_detection_summary_tables(
     let mut output = vec![];
     let mut col_color = vec![];
     for level in level_abbr.iter() {
-        let mut col_output: Vec<String> = vec![];
+        let mut col_output: Nested<String> = Nested::<String>::new();
         col_output.push(format!(
             "Top {} alerts:",
             LEVEL_FULL.get(level[1].as_str()).unwrap()
@@ -1111,7 +1111,7 @@ fn _print_detection_summary_tables(
             take_cnt - sorted_detections.len()
         };
         for _x in 0..na_cnt {
-            col_output.push("n/a".to_string());
+            col_output.push("n/a");
         }
         output.push(col_output);
     }
@@ -1133,15 +1133,15 @@ fn _print_detection_summary_tables(
         .set_style(TableComponent::BottomBorderIntersections, hlch);
 
         tb.add_row(vec![
-            Cell::new(output[2 * x][1..].join("\n"))
+            Cell::new(output[2 * x].iter().skip(1).join("\n"))
                 .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
-            Cell::new(output[2 * x + 1][1..].join("\n"))
+            Cell::new(output[2 * x + 1].iter().skip(1).join("\n"))
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
         ]);
     }
 
-    let odd_row = &output[4][1..6];
-    let even_row = &output[4][6..11];
+    let odd_row = &mut output[4].iter().skip(1).take(5);
+    let even_row = &mut output[4].iter().skip(1).take(5);
     tb.add_row(vec![
         Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
         Cell::new(""),
