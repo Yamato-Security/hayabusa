@@ -215,13 +215,13 @@ fn emit_csv<W: std::io::Write>(
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
-    let mut output_replaced_maps: HashMap<&str, &str> =
+    let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
-    if stored_static.multiline_flag {
-        output_replaced_maps.insert(" ¦ ", "\r\n");
-    }
-    let removed_replaced_maps: HashMap<&str, &str> =
+    let mut removed_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
+    if stored_static.multiline_flag {
+        removed_replaced_maps.insert(" ¦ ", "\r\n");
+    }
     let output_replacer = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
         .build(output_replaced_maps.keys());
@@ -402,8 +402,6 @@ fn emit_csv<W: std::io::Write>(
                             ),
                             &removed_replaced_maps.values().collect_vec(),
                         )
-                        .split_whitespace()
-                        .join(" ")
                 }))?;
             }
             // 各種集計作業
