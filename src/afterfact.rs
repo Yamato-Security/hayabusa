@@ -1685,6 +1685,7 @@ mod tests {
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            multiline: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
