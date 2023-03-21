@@ -123,15 +123,19 @@ impl EventSearch {
                     _ => CompactString::new("-"),
                 };
 
-                let allfieldinfo = "allfieldinfo";
+                let allfieldinfo =
+                    match utils::get_serde_number_to_string(&record.record["Event"]["EventData"]) {
+                        Some(eventdata) => eventdata,
+                        _ => CompactString::new("-"),
+                    };
 
                 self.search_result.insert((
                     timestamp.into(),
                     hostname,
                     channel,
                     eventid.into(),
-                    recordid.into(),
-                    allfieldinfo.into(),
+                    recordid,
+                    allfieldinfo,
                     self.filepath.clone(),
                 ));
                 self.total += 1;

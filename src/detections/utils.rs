@@ -18,7 +18,7 @@ use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
-use serde_json::{json, Error, Value};
+use serde_json::{json, Error, Map, Value};
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::prelude::*;
@@ -218,7 +218,17 @@ pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<CompactSt
         } else {
             Option::Some(CompactString::from(val_str))
         }
-    } else if value.is_object() || value.is_null() {
+    } else if value.is_object() {
+        let map: Map<String, Value> = Map::new();
+        let val_obj = value.as_object().unwrap_or(&map);
+        let val = val_obj
+            .iter()
+            .map(|(k, v)| format!("{}:{}", k, v))
+            .collect::<Vec<String>>()
+            .join(" | ")
+            .replace('\"', "");
+        Some(CompactString::from(val))
+    } else if value.is_null() {
         // Object type is not specified record value.
         Option::None
     } else {
