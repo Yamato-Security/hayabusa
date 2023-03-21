@@ -988,7 +988,7 @@ pub struct CsvOutputOption {
     pub output_options: OutputOption,
 
     /// Output event field information in multiple rows
-    #[arg(help_heading = Some("Output"), long="multiline", display_order = 390)]
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
     pub multiline: bool,
 
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
