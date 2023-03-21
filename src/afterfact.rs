@@ -215,8 +215,11 @@ fn emit_csv<W: std::io::Write>(
     stored_static: &StoredStatic,
     tl_start_end_time: (&Option<DateTime<Utc>>, &Option<DateTime<Utc>>),
 ) -> io::Result<()> {
-    let output_replaced_maps: HashMap<&str, &str> =
+    let mut output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
+    if stored_static.multiline_flag {
+        output_replaced_maps.insert(" ¦ ", "\r\n");
+    }
     let removed_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
     let output_replacer = AhoCorasickBuilder::new()
