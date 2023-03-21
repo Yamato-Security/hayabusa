@@ -4,7 +4,7 @@
 
 **改善:**
 
-- `csv-timeline`コマンドに`--multiline`オプションを追加した。 (#965) (@hitenkoku)
+- `csv-timeline`コマンドに`--multiline`オプションを追加した。 (#972) (@hitenkoku)
 
 ## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
