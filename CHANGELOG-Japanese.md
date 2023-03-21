@@ -1,5 +1,11 @@
 # 変更点
 
+## 2.3.2 [202X/XX/XX] "XXX"
+
+**改善:**
+
+- `csv-timeline`コマンドに`--multiline`オプションを追加した。 (#965) (@hitenkoku)
+
 ## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
 **改善:**
