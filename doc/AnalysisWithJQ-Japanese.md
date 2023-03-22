@@ -25,7 +25,7 @@
 
 # 著者
 
-田中ザック ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2023/01/15
+田中ザック ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2023/03/22
 
 # 翻訳者
 
