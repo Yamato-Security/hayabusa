@@ -21,6 +21,7 @@
   - [6. PowerShellログの再構築](#6-powershellログの再構築)
   - [7. 疑わしいネットワーク接続の検出](#7-疑わしいネットワーク接続の検出)
   - [8. 実行可能なバイナリのハッシュ値の抽出](#8-実行可能なバイナリのハッシュ値の抽出)
+  - [9. PowerShellログの抽出](#9-powershellログの抽出)
 
 # 著者
 
@@ -575,3 +576,24 @@ Sysmonは通常、`MD5`、`SHA1`、`IMPHASH`など複数のハッシュを計算
 たとえば、次のようにMD5ハッシュを抽出して重複を削除できます:
 
 `cat results.json | jq 'select ( .Details.Hashes? ) | .Details.Hashes | .[4:36] ' -r | sort | uniq`
+
+## 9. PowerShellログの抽出
+
+PowerShellのScriptblockログ（EID: 4104）は、通常多くのログに分割されており、CSV形式で出力する際、Hayabusaはタブやリターン文字を削除して簡潔に出力します。
+しかし、PowerShellログは、本来のタブとリターン文字の書式で、ログを組み合わせて解析するのが最も簡単です。
+ここでは、VSCode等で開いて分析するために、`COMPUTER-A`からPowerShell EID 4104のログを抽出して、`.txt`ファイルに保存する例を紹介します。
+ScriptBlockフィールドを抽出した後、`awk`を使って`\r\n`と`\n`をリターン文字に、`\t`をタブに置き換えています。
+
+```
+cat results.json | jq 'select ( .EventID == 4104 and .Details.ScriptBlock? != "n/a" ) | .Details.ScriptBlock , "\r\n"' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/, "\t"); print; }' | awk '{ gsub(/\\n/, "\r\n"); print; }' > 4104-PowerShell-Logs.txt
+```
+
+アナリストは、PowerShellログを分析して悪意のあるコマンドが無いかを確認した後、通常、これらのコマンドがいつ実行されたかを調べる必要があります。
+以下は、コマンドの実行時間を調べるために、TimestampとPowerShellのコマンド履歴をCSVファイルに出力する例です:
+
+```
+cat results.json | jq ' select (.EventID == 4104 and .Details.ScriptBlock? != "n/a" and .Computer == "COMPUTER-A.hinokabe.local") | .Timestamp, ",¦", .Details.ScriptBlock?, "¦\r\n" ' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/,"\t"); print; }' | awk '{ gsub(/\\n/,"\r\n"); print; }' > 4104-PowerShell-Logs.csv
+```
+
+注：PowerShellのログにはシングルクォートやダブルクォートが多く、CSVの出力を壊してしまうため、文字列の区切りを`¦`にしています。
+CSVファイルをインポートする際に、`¦`の文字列の区切りをアプリケーションに指定する必要があります。

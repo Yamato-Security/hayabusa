@@ -20,10 +20,11 @@
   - [6. Reconstructing PowerShell Logs](#6-reconstructing-powershell-logs)
   - [7. Finding Suspicious Network Connections](#7-finding-suspicious-network-connections)
   - [8. Extracting Executable Binary Hashes](#8-extracting-executable-binary-hashes)
+  - [9. Extract PowerShell Logs](#9-extract-powershell-logs)
 
 # Author
 
-Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2023/01/15
+Zach Mathis ([@yamatosecurity](https://twitter.com/yamatosecurity)) - 2023/03/22
 
 # About
 
@@ -571,3 +572,24 @@ You can extract out these hashes with regular expressions in `jq` or just use st
 For example, you can extract out the MD5 hashes and remove duplicates with the following:
 
 `cat results.json | jq 'select ( .Details.Hashes? ) | .Details.Hashes | .[4:36] ' -r | sort | uniq`
+
+## 9. Extract PowerShell Logs
+
+PowerShell Scriptblock logs (EID: 4104) are usually broken into many logs and when outputting to CSV format, Hayabusa will delete tabs and return characters to make output more concise.
+However, it is easiest to analyze powershell logs with the original tab and return character formatting and combining the logs together.
+Here is an example of extracting out the PowerShell EID 4104 logs from `COMPUTER-A` and saving them to a `.ps1` file in order to open and analyze VSCode, etc...
+After extracting the ScriptBlock field, we use `awk` to replace `\r\n` and `\n` with return characters and `\t` with tabs.
+
+```
+cat results.json | jq 'select ( .EventID == 4104 and .Details.ScriptBlock? != "n/a" ) | .Details.ScriptBlock , "\r\n"' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/, "\t"); print; }' | awk '{ gsub(/\\n/, "\r\n"); print; }' > 4104-PowerShell-Logs.ps1
+```
+
+After the analyst analyzes the logs for malicious PowerShell commands, they then will usually need to look up when those commands were run.
+Here is an example of outputting the Timestamp and PowerShell logs into a CSV file in order to look up the time a command was run:
+
+```
+cat results.json | jq ' select (.EventID == 4104 and .Details.ScriptBlock? != "n/a" and .Computer == "COMPUTER-A.hinokabe.local") | .Timestamp, ",¦", .Details.ScriptBlock?, "¦\r\n" ' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/,"\t"); print; }' | awk '{ gsub(/\\n/,"\r\n"); print; }' > 4104-PowerShell-Logs.csv
+```
+
+Note: The string delimeter used is `¦` because single and double quotes are often found in PowerShell logs and will corrupt the CSV output.
+When you import the CSV file, you need to specify to the application the string delimeter of `¦`.
