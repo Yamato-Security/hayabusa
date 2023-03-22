@@ -70,6 +70,7 @@ pub struct StoredStatic {
     pub json_input_flag: bool,
     pub output_path: Option<PathBuf>,
     pub common_options: CommonOptions,
+    pub multiline_flag: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -277,6 +278,10 @@ impl StoredStatic {
                 .unwrap(),
             false,
         );
+        let multiline_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.multiline,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -376,6 +381,7 @@ impl StoredStatic {
             json_input_flag,
             output_path: output_path.cloned(),
             common_options,
+            multiline_flag,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -980,6 +986,10 @@ pub struct InputOption {
 pub struct CsvOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
+
+    /// Output event field information in multiple rows
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
+    pub multiline: bool,
 
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses

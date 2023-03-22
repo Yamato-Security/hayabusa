@@ -1,5 +1,11 @@
 # 変更点
 
+## 2.3.2 [202X/XX/XX] "XXX"
+
+**改善:**
+
+- `csv-timeline`コマンドに`-M, --multiline`オプションを追加した。 (#972) (@hitenkoku)
+
 ## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
 **改善:**
@@ -9,7 +15,7 @@
 - `--enable-deprecated-rules`の`-D`ショートオプションと`--enable-unsupported-rules`の`-u`ショートオプションを追加した。(@yamatosecurity)
 - Filteringセクションのオプションの表示順とヘルプの表示内容を修正した。 (#969) (@hitenkoku)
 
-**Bug Fixes:**
+**バグ修正:**
 
 - v2.3.0にて`update-rules`コマンド実行時にクラッシュする問題を修正した。 (#965) (@hitenkoku)
 - コマンドプロンプトとPowerShellプロンプトではヘルプメニューのタイトルに長いアンダーバーが表示されていた問題が修正された。 (#911) (@yamatosecurity)

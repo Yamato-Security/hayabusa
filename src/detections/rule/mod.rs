@@ -428,6 +428,7 @@ mod tests {
                 },
                 geo_ip: None,
                 output: None,
+                multiline: false,
             })),
             debug: false,
         }))
