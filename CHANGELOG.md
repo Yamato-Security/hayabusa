@@ -1,6 +1,6 @@
 # Changes
 
-## 2.3.2 [202X/XX/XX] "XXX"
+## 2.3.2 [2023/03/22] "TMCIT Release-3"
 
 **Enhancements:**
 
