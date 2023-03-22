@@ -585,14 +585,14 @@ PowerShellのScriptblockログ（EID: 4104）は、通常多くのログに分�
 ScriptBlockフィールドを抽出した後、`awk`を使って`\r\n`と`\n`をリターン文字に、`\t`をタブに置き換えています。
 
 ```
-cat results.json | jq 'select ( .EventID == 4104 and .Details.ScriptBlock? != "n/a" ) | .Details.ScriptBlock , "\r\n"' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/, "\t"); print; }' | awk '{ gsub(/\\n/, "\r\n"); print; }' > 4104-PowerShell-Logs.txt
+cat results.json | jq 'select ( .EventID == 4104 and .Details.ScriptBlock? != "n/a"  and .Computer == "COMPUTER-A.domain.local" ) | .Details.ScriptBlock , "\r\n"' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/, "\t"); print; }' | awk '{ gsub(/\\n/, "\r\n"); print; }' > 4104-PowerShell-Logs.txt
 ```
 
 アナリストは、PowerShellログを分析して悪意のあるコマンドが無いかを確認した後、通常、これらのコマンドがいつ実行されたかを調べる必要があります。
 以下は、コマンドの実行時間を調べるために、TimestampとPowerShellのコマンド履歴をCSVファイルに出力する例です:
 
 ```
-cat results.json | jq ' select (.EventID == 4104 and .Details.ScriptBlock? != "n/a" and .Computer == "COMPUTER-A.hinokabe.local") | .Timestamp, ",¦", .Details.ScriptBlock?, "¦\r\n" ' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/,"\t"); print; }' | awk '{ gsub(/\\n/,"\r\n"); print; }' > 4104-PowerShell-Logs.csv
+cat results.json | jq ' select (.EventID == 4104 and .Details.ScriptBlock? != "n/a" and .Computer == "COMPUTER-A.domain.local") | .Timestamp, ",¦", .Details.ScriptBlock?, "¦\r\n" ' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/,"\t"); print; }' | awk '{ gsub(/\\n/,"\r\n"); print; }' > 4104-PowerShell-Logs.csv
 ```
 
 注：PowerShellのログにはシングルクォートやダブルクォートが多く、CSVの出力を壊してしまうため、文字列の区切りを`¦`にしています。

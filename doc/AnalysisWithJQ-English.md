@@ -581,14 +581,14 @@ Here is an example of extracting out the PowerShell EID 4104 logs from `COMPUTER
 After extracting the ScriptBlock field, we use `awk` to replace `\r\n` and `\n` with return characters and `\t` with tabs.
 
 ```
-cat results.json | jq 'select ( .EventID == 4104 and .Details.ScriptBlock? != "n/a" ) | .Details.ScriptBlock , "\r\n"' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/, "\t"); print; }' | awk '{ gsub(/\\n/, "\r\n"); print; }' > 4104-PowerShell-Logs.ps1
+cat results.json | jq 'select ( .EventID == 4104 and .Details.ScriptBlock? != "n/a"  and .Computer == "COMPUTER-A.domain.local" ) | .Details.ScriptBlock , "\r\n"' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/, "\t"); print; }' | awk '{ gsub(/\\n/, "\r\n"); print; }' > 4104-PowerShell-Logs.ps1
 ```
 
 After the analyst analyzes the logs for malicious PowerShell commands, they then will usually need to look up when those commands were run.
 Here is an example of outputting the Timestamp and PowerShell logs into a CSV file in order to look up the time a command was run:
 
 ```
-cat results.json | jq ' select (.EventID == 4104 and .Details.ScriptBlock? != "n/a" and .Computer == "COMPUTER-A.hinokabe.local") | .Timestamp, ",¦", .Details.ScriptBlock?, "¦\r\n" ' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/,"\t"); print; }' | awk '{ gsub(/\\n/,"\r\n"); print; }' > 4104-PowerShell-Logs.csv
+cat results.json | jq ' select (.EventID == 4104 and .Details.ScriptBlock? != "n/a" and .Computer == "COMPUTER-A.domain.local") | .Timestamp, ",¦", .Details.ScriptBlock?, "¦\r\n" ' -j | awk '{ gsub(/\\r\\n/,"\r\n"); print; }' | awk '{ gsub(/\\t/,"\t"); print; }' | awk '{ gsub(/\\n/,"\r\n"); print; }' > 4104-PowerShell-Logs.csv
 ```
 
 Note: The string delimeter used is `¦` because single and double quotes are often found in PowerShell logs and will corrupt the CSV output.
