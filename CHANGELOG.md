@@ -1,5 +1,11 @@
 # Changes
 
+## 2.3.3 [2023/03/XX] "XXX"
+
+**Bug Fixes:**
+
+- Fixed a crash when the `level-tuning` command was executed on version 2.3.0. (#977) (@hitenkoku)
+
 ## 2.3.2 [2023/03/22] "TMCIT Release-3"
 
 **Enhancements:**
