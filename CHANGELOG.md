@@ -4,7 +4,7 @@
 
 **Enhancements:**
 
-- Removed extra space when outputting to files(CSV, JSON, JSONL). (#979) (@hitenkoku)
+- Removed an extra space when outputting `Level` to files(CSV, JSON, JSONL). (#979) (@hitenkoku)
 
 **Bug Fixes:**
 

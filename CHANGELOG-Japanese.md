@@ -4,7 +4,7 @@
 
 **改善:**
 
-- ファイル(CSV, JSON, JSONL)出力の際に余分なスペースを削除したRemoved extra space when outputting to files. (#979) (@hitenkoku)
+- ファイル(CSV, JSON, JSONL)出力の際に`Level`の余分なスペースを削除した。 (#979) (@hitenkoku)
 
 **バグ修正:**
 
