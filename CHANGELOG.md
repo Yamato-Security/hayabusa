@@ -2,6 +2,10 @@
 
 ## 2.3.3 [2023/03/XX] "XXX"
 
+**Enhancements:**
+
+- Made rule authors multiple lines with `-M, --multiline` option. (#980) (@hitenkoku)
+
 **Bug Fixes:**
 
 - Fixed a crash when the `level-tuning` command was executed on version 2.3.0. (#977) (@hitenkoku)
