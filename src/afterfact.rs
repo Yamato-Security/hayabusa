@@ -396,7 +396,7 @@ fn emit_csv<W: std::io::Write>(
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
                     output_remover.replace_all(
                         &output_replacer.replace_all(
-                            &x.1.to_value(),
+                            x.1.to_value().trim(),
                             &output_replaced_maps.values().collect_vec(),
                         ),
                         &removed_replaced_maps.values().collect_vec(),
