@@ -1280,7 +1280,7 @@ fn output_json_str(
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
             target.push(_create_json_output_format(
                 key,
-                &output_val,
+                output_val.trim(),
                 key.starts_with('\"'),
                 output_val.starts_with('\"'),
                 4,
@@ -1474,7 +1474,7 @@ fn output_json_str(
                     };
                     target.push(_create_json_output_format(
                         &key,
-                        &fmted_val,
+                        fmted_val.trim(),
                         key.starts_with('\"'),
                         true,
                         4,
