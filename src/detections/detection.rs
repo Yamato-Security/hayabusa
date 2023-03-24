@@ -384,12 +384,18 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags));
                 }
                 RuleAuthor(_) => {
-                    profile_converter.insert(
-                        key.as_str(),
-                        RuleAuthor(CompactString::from(
-                            rule.yaml["author"].as_str().unwrap_or("-"),
-                        )),
-                    );
+                    let author = if stored_static.multiline_flag {
+                        CompactString::from(
+                            rule.yaml["author"]
+                                .as_str()
+                                .unwrap_or("-")
+                                .replace([',', '/'], "\r\n")
+                                .replace(' ', ""),
+                        )
+                    } else {
+                        CompactString::from(rule.yaml["author"].as_str().unwrap_or("-"))
+                    };
+                    profile_converter.insert(key.as_str(), RuleAuthor(author));
                 }
                 RuleCreationDate(_) => {
                     profile_converter.insert(
@@ -746,12 +752,18 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags));
                 }
                 RuleAuthor(_) => {
-                    profile_converter.insert(
-                        key.as_str(),
-                        RuleAuthor(CompactString::from(
-                            rule.yaml["author"].as_str().unwrap_or("-"),
-                        )),
-                    );
+                    let author = if stored_static.multiline_flag {
+                        CompactString::from(
+                            rule.yaml["author"]
+                                .as_str()
+                                .unwrap_or("-")
+                                .replace([',', '/'], "\r\n")
+                                .replace(' ', ""),
+                        )
+                    } else {
+                        CompactString::from(rule.yaml["author"].as_str().unwrap_or("-"))
+                    };
+                    profile_converter.insert(key.as_str(), RuleAuthor(author));
                 }
                 RuleCreationDate(_) => {
                     profile_converter.insert(
