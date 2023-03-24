@@ -396,7 +396,7 @@ fn emit_csv<W: std::io::Write>(
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
                     output_remover.replace_all(
                         &output_replacer.replace_all(
-                            &x.1.to_value(),
+                            x.1.to_value().trim(),
                             &output_replaced_maps.values().collect_vec(),
                         ),
                         &removed_replaced_maps.values().collect_vec(),
@@ -1280,7 +1280,7 @@ fn output_json_str(
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
             target.push(_create_json_output_format(
                 key,
-                &output_val,
+                output_val.trim(),
                 key.starts_with('\"'),
                 output_val.starts_with('\"'),
                 4,
@@ -1474,7 +1474,7 @@ fn output_json_str(
                     };
                     target.push(_create_json_output_format(
                         &key,
-                        &fmted_val,
+                        fmted_val.trim(),
                         key.starts_with('\"'),
                         true,
                         4,
