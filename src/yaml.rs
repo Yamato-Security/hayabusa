@@ -284,18 +284,19 @@ impl ParseYaml {
                     *entry += 1;
                     return Option::None;
                 }
-                if (s == "deprecated"
-                    && !stored_static
-                        .output_option
-                        .as_ref()
-                        .unwrap()
-                        .enable_deprecated_rules)
-                    || (s == "unsupported"
+                if stored_static.output_option.is_some()
+                    && ((s == "deprecated"
                         && !stored_static
                             .output_option
                             .as_ref()
                             .unwrap()
-                            .enable_unsupported_rules)
+                            .enable_deprecated_rules)
+                        || (s == "unsupported"
+                            && !stored_static
+                                .output_option
+                                .as_ref()
+                                .unwrap()
+                                .enable_unsupported_rules))
                 {
                     // deprecated or unsupported statusで対応するenable-xxx-rules optionが指定されていない場合はステータスのカウントのみ行ったうえで除外する
                     up_rule_status_cnt(s);
@@ -401,6 +402,7 @@ mod tests {
                 },
                 geo_ip: None,
                 output: None,
+                multiline: false,
             })),
             debug: false,
         }))

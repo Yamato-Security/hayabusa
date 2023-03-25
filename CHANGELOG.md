@@ -1,5 +1,21 @@
 # Changes
 
+## 2.3.3 [2023/03/XX] "XXX"
+
+**Enhancements:**
+
+- Removed an extra space when outputting `Level` to files(CSV, JSON, JSONL). (#979) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed a crash when the `level-tuning` command was executed on version 2.3.0. (#977) (@hitenkoku)
+
+## 2.3.2 [2023/03/22] "TMCIT Release-3"
+
+**Enhancements:**
+
+- Added `-M, --multiline` option in the `csv-timeline` command. (#972) (@hitenkoku)
+
 ## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
 **Enhancements:**

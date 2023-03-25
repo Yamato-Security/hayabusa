@@ -464,6 +464,7 @@ Input:
 Output:
   -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
+  -M, --multiline                 イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
 

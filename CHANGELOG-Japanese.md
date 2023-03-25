@@ -1,5 +1,21 @@
 # 変更点
 
+## 2.3.3 [2023/03/XX] "XXX"
+
+**改善:**
+
+- ファイル(CSV, JSON, JSONL)出力の際に`Level`の余分なスペースを削除した。 (#979) (@hitenkoku)
+
+**バグ修正:**
+
+- v2.3.0にて`level-tuning`コマンド実行時にクラッシュする問題を修正した。 (#977) (@hitenkoku)
+
+## 2.3.2 [2023/03/22] "TMCIT Release-3"
+
+**改善:**
+
+- `csv-timeline`コマンドに`-M, --multiline`オプションを追加した。 (#972) (@hitenkoku)
+
 ## 2.3.1 [2023/03/18] "TMCIT Release-2"
 
 **改善:**
@@ -9,7 +25,7 @@
 - `--enable-deprecated-rules`の`-D`ショートオプションと`--enable-unsupported-rules`の`-u`ショートオプションを追加した。(@yamatosecurity)
 - Filteringセクションのオプションの表示順とヘルプの表示内容を修正した。 (#969) (@hitenkoku)
 
-**Bug Fixes:**
+**バグ修正:**
 
 - v2.3.0にて`update-rules`コマンド実行時にクラッシュする問題を修正した。 (#965) (@hitenkoku)
 - コマンドプロンプトとPowerShellプロンプトではヘルプメニューのタイトルに長いアンダーバーが表示されていた問題が修正された。 (#911) (@yamatosecurity)

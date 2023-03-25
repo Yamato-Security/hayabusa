@@ -464,6 +464,7 @@ Input:
 Output:
   -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
   -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
+  -M, --multiline               Output event field information in multiple rows
   -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
   -p, --profile <PROFILE>       Specify output profile
 
