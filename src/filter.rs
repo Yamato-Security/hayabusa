@@ -1,9 +1,7 @@
 use crate::detections::configs::{self, StoredStatic};
 use crate::detections::message::{AlertMessage, ERROR_LOG_STACK};
-use compact_str::CompactString;
 use hashbrown::HashMap;
 use regex::Regex;
-use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -15,7 +13,7 @@ pub struct DataFilterRule {
 
 #[derive(Clone, Debug)]
 pub struct RuleExclude {
-    pub no_use_rule: HashMap<CompactString, CompactString>,
+    pub no_use_rule: HashMap<String, String>,
 }
 
 impl RuleExclude {
@@ -69,13 +67,15 @@ impl RuleExclude {
             return;
         }
         let reader = BufReader::new(f.unwrap());
-        reader.lines().for_each(|line| {
-            let line_contents = line.unwrap();
-            let v = line_contents.split('#').collect::<Vec<&str>>()[0].trim();
-            if !v.borrow().is_empty() && configs::IDS_REGEX.is_match(v) {
-                // IDのフォーマットにあっているもののみ追加する
-                self.no_use_rule.insert(v.into(), filename.into());
+        for v in reader.lines() {
+            let v = v.unwrap().split('#').collect::<Vec<&str>>()[0]
+                .trim()
+                .to_string();
+            if v.is_empty() || !configs::IDS_REGEX.is_match(&v) {
+                // 空行は無視する。IDの検証
+                continue;
             }
-        });
+            self.no_use_rule.insert(v, filename.to_owned());
+        }
     }
 }
