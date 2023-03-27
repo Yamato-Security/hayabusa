@@ -58,7 +58,6 @@ impl EventSearch {
         if !search_flag {
             return;
         }
-        println!("Search_start");
         self.search_keyword(records, keyword, eventkey_alias);
     }
 
@@ -75,9 +74,6 @@ impl EventSearch {
         for record in records.iter() {
             self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
             if record.data_string.contains(keyword) {
-                println!("find \"{}\"", keyword);
-                println!("{:?}", record.data_string);
-
                 let timestamp = utils::get_event_value(
                     "Event.System.TimeCreated_attributes.SystemTime",
                     &record.record,
@@ -169,7 +165,7 @@ pub fn search_result_dsp_msg(
     ];
     let target: Box<dyn io::Write> = match output {
         Some(path) => {
-            let file_name = path.display().to_string() + ".csv";
+            let file_name = path.display().to_string();
             match File::create(file_name) {
                 Ok(file) => Box::new(BufWriter::new(file)),
                 Err(err) => {
@@ -181,7 +177,6 @@ pub fn search_result_dsp_msg(
         None => Box::new(BufWriter::new(io::stdout())),
     };
     let mut wtr = WriterBuilder::new().from_writer(target);
-
     // Write header
     wtr.write_record(&header).ok();
 

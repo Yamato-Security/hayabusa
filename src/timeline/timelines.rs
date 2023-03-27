@@ -359,12 +359,10 @@ impl Timeline {
         event_timeline_config: &EventInfoConfig,
         stored_static: &StoredStatic,
     ) {
-        println!("TODO: CREATE HERE");
         let mut sammsges: Vec<String> = Vec::new();
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            println!("This is search output phase");
             sammsges.push(format!("\n\nTotal findings: {}\n", self.event_search.total));
             search_result_dsp_msg(
                 &self.event_search.search_result,
