@@ -1611,7 +1611,6 @@ mod tests {
     use compact_str::CompactString;
     use hashbrown::HashMap;
     use serde_json::Value;
-    use std::borrow::Cow;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;
