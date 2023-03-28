@@ -243,12 +243,12 @@ impl ParseYaml {
 
         let files = yaml_docs.into_iter().filter_map(|(filepath, yaml_doc)| {
             //除外されたルールは無視する
-            let rule_id = yaml_doc["id"].as_str();
+            let rule_id = &yaml_doc["id"].as_str();
             if rule_id.is_some() {
-                if let Some(matched_rule_id) =
-                    exclude_ids.no_use_rule.get(rule_id.unwrap_or_default())
+                if let Some(v) = exclude_ids
+                    .no_use_rule
+                    .get(&rule_id.unwrap_or(&String::default()).to_string())
                 {
-                    let v = matched_rule_id.as_str();
                     let entry_key = if utils::contains_str(v, "exclude_rule") {
                         "excluded"
                     } else {
