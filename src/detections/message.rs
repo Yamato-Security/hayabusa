@@ -143,19 +143,17 @@ pub fn insert(
                 if detect_info.detail.is_empty() {
                     replaced_profiles.push((key.to_owned(), profile.to_owned()));
                 } else {
-                    replaced_profiles.push((key.to_owned(), Details(detect_info.detail)));
+                    replaced_profiles.push((key.to_owned(), Details(detect_info.detail.into())));
                     detect_info.detail = CompactString::default();
                 }
             }
             AllFieldInfo(_) => {
                 if is_agg {
-                    replaced_profiles
-                        .push((key.to_owned(), AllFieldInfo(CompactString::from("-"))));
+                    replaced_profiles.push((key.to_owned(), AllFieldInfo("-".into())));
                 } else {
                     let rec = utils::create_recordinfos(event_record);
                     let rec = if rec.is_empty() { "-".to_string() } else { rec };
-                    replaced_profiles
-                        .push((key.to_owned(), AllFieldInfo(CompactString::from(rec))));
+                    replaced_profiles.push((key.to_owned(), AllFieldInfo(rec.into())));
                 }
             }
             Literal(_) => replaced_profiles.push((key.to_owned(), profile.to_owned())),

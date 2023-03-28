@@ -11,6 +11,7 @@ use crate::yaml;
 use compact_str::CompactString;
 use itertools::Itertools;
 use nested::Nested;
+use std::borrow::Cow;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
@@ -18,34 +19,34 @@ use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Profile {
-    Timestamp(CompactString),
-    Computer(CompactString),
-    Channel(CompactString),
-    Level(CompactString),
-    EventID(CompactString),
-    RecordID(CompactString),
-    RuleTitle(CompactString),
-    AllFieldInfo(CompactString),
-    RuleFile(CompactString),
-    EvtxFile(CompactString),
-    MitreTactics(CompactString),
-    MitreTags(CompactString),
-    OtherTags(CompactString),
-    RuleAuthor(CompactString),
-    RuleCreationDate(CompactString),
-    RuleModifiedDate(CompactString),
-    Status(CompactString),
-    RuleID(CompactString),
-    Provider(CompactString),
-    Details(CompactString),
-    RenderedMessage(CompactString),
-    SrcASN(CompactString),
-    SrcCountry(CompactString),
-    SrcCity(CompactString),
-    TgtASN(CompactString),
-    TgtCountry(CompactString),
-    TgtCity(CompactString),
-    Literal(CompactString), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
+    Timestamp(Cow<'static, str>),
+    Computer(Cow<'static, str>),
+    Channel(Cow<'static, str>),
+    Level(Cow<'static, str>),
+    EventID(Cow<'static, str>),
+    RecordID(Cow<'static, str>),
+    RuleTitle(Cow<'static, str>),
+    AllFieldInfo(Cow<'static, str>),
+    RuleFile(Cow<'static, str>),
+    EvtxFile(Cow<'static, str>),
+    MitreTactics(Cow<'static, str>),
+    MitreTags(Cow<'static, str>),
+    OtherTags(Cow<'static, str>),
+    RuleAuthor(Cow<'static, str>),
+    RuleCreationDate(Cow<'static, str>),
+    RuleModifiedDate(Cow<'static, str>),
+    Status(Cow<'static, str>),
+    RuleID(Cow<'static, str>),
+    Provider(Cow<'static, str>),
+    Details(Cow<'static, str>),
+    RenderedMessage(Cow<'static, str>),
+    SrcASN(Cow<'static, str>),
+    SrcCountry(Cow<'static, str>),
+    SrcCity(Cow<'static, str>),
+    TgtASN(Cow<'static, str>),
+    TgtCountry(Cow<'static, str>),
+    TgtCity(Cow<'static, str>),
+    Literal(Cow<'static, str>), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
 impl Profile {
@@ -62,31 +63,31 @@ impl Profile {
 
     pub fn convert(&self, converted_string: &CompactString) -> Self {
         match self {
-            Timestamp(_) => Timestamp(converted_string.to_owned()),
-            Computer(_) => Computer(converted_string.to_owned()),
-            Channel(_) => Channel(converted_string.to_owned()),
-            Level(_) => Level(converted_string.to_owned()),
-            EventID(_) => EventID(converted_string.to_owned()),
-            RecordID(_) => RecordID(converted_string.to_owned()),
-            RuleTitle(_) => RuleTitle(converted_string.to_owned()),
-            RuleFile(_) => RuleFile(converted_string.to_owned()),
-            EvtxFile(_) => EvtxFile(converted_string.to_owned()),
-            MitreTactics(_) => MitreTactics(converted_string.to_owned()),
-            MitreTags(_) => MitreTags(converted_string.to_owned()),
-            OtherTags(_) => OtherTags(converted_string.to_owned()),
-            RuleAuthor(_) => RuleAuthor(converted_string.to_owned()),
-            RuleCreationDate(_) => RuleCreationDate(converted_string.to_owned()),
-            RuleModifiedDate(_) => RuleModifiedDate(converted_string.to_owned()),
-            Status(_) => Status(converted_string.to_owned()),
-            RuleID(_) => RuleID(converted_string.to_owned()),
-            Provider(_) => Provider(converted_string.to_owned()),
-            RenderedMessage(_) => RenderedMessage(converted_string.to_owned()),
-            SrcASN(_) => SrcASN(converted_string.to_owned()),
-            SrcCountry(_) => SrcCountry(converted_string.to_owned()),
-            SrcCity(_) => SrcCity(converted_string.to_owned()),
-            TgtASN(_) => TgtASN(converted_string.to_owned()),
-            TgtCountry(_) => TgtCountry(converted_string.to_owned()),
-            TgtCity(_) => TgtCity(converted_string.to_owned()),
+            Timestamp(_) => Timestamp(converted_string.to_owned().into()),
+            Computer(_) => Computer(converted_string.to_owned().into()),
+            Channel(_) => Channel(converted_string.to_owned().into()),
+            Level(_) => Level(converted_string.to_owned().into()),
+            EventID(_) => EventID(converted_string.to_owned().into()),
+            RecordID(_) => RecordID(converted_string.to_owned().into()),
+            RuleTitle(_) => RuleTitle(converted_string.to_owned().into()),
+            RuleFile(_) => RuleFile(converted_string.to_owned().into()),
+            EvtxFile(_) => EvtxFile(converted_string.to_owned().into()),
+            MitreTactics(_) => MitreTactics(converted_string.to_owned().into()),
+            MitreTags(_) => MitreTags(converted_string.to_owned().into()),
+            OtherTags(_) => OtherTags(converted_string.to_owned().into()),
+            RuleAuthor(_) => RuleAuthor(converted_string.to_owned().into()),
+            RuleCreationDate(_) => RuleCreationDate(converted_string.to_owned().into()),
+            RuleModifiedDate(_) => RuleModifiedDate(converted_string.to_owned().into()),
+            Status(_) => Status(converted_string.to_owned().into()),
+            RuleID(_) => RuleID(converted_string.to_owned().into()),
+            Provider(_) => Provider(converted_string.to_owned().into()),
+            RenderedMessage(_) => RenderedMessage(converted_string.to_owned().into()),
+            SrcASN(_) => SrcASN(converted_string.to_owned().into()),
+            SrcCountry(_) => SrcCountry(converted_string.to_owned().into()),
+            SrcCity(_) => SrcCity(converted_string.to_owned().into()),
+            TgtASN(_) => TgtASN(converted_string.to_owned().into()),
+            TgtCountry(_) => TgtCountry(converted_string.to_owned().into()),
+            TgtCity(_) => TgtCity(converted_string.to_owned().into()),
             p => p.to_owned(),
         }
     }
@@ -116,7 +117,7 @@ impl From<&str> for Profile {
             "%Provider%" => Provider(Default::default()),
             "%Details%" => Details(Default::default()),
             "%RenderedMessage%" => RenderedMessage(Default::default()),
-            s => Literal(CompactString::from(s)), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
+            s => Literal(s.to_string().into()), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
         }
     }
 }
@@ -229,30 +230,18 @@ pub fn load_profile(
     }
     // insert preserved keyword when get-ip option specified.
     if GEOIP_DB_PARSER.read().unwrap().is_some() {
-        ret.push((
-            CompactString::from("SrcASN"),
-            SrcASN(CompactString::default()),
-        ));
+        ret.push((CompactString::from("SrcASN"), SrcASN(Cow::default())));
         ret.push((
             CompactString::from("SrcCountry"),
-            SrcCountry(CompactString::default()),
+            SrcCountry(Cow::default()),
         ));
-        ret.push((
-            CompactString::from("SrcCity"),
-            SrcCity(CompactString::default()),
-        ));
-        ret.push((
-            CompactString::from("TgtASN"),
-            TgtASN(CompactString::default()),
-        ));
+        ret.push((CompactString::from("SrcCity"), SrcCity(Cow::default())));
+        ret.push((CompactString::from("TgtASN"), TgtASN(Cow::default())));
         ret.push((
             CompactString::from("TgtCountry"),
-            TgtCountry(CompactString::default()),
+            TgtCountry(Cow::default()),
         ));
-        ret.push((
-            CompactString::from("TgtCity"),
-            TgtCity(CompactString::default()),
-        ));
+        ret.push((CompactString::from("TgtCity"), TgtCity(Cow::default())));
     }
     Some(ret)
 }

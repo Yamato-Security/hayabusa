@@ -1611,6 +1611,7 @@ mod tests {
     use compact_str::CompactString;
     use hashbrown::HashMap;
     use serde_json::Value;
+    use std::borrow::Cow;
     use std::fs::File;
     use std::fs::{read_to_string, remove_file};
     use std::io;
@@ -1754,54 +1755,29 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
             };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option)),
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
                 ),
-                (
-                    "Computer",
-                    Profile::Computer(CompactString::from(test_computername2)),
-                ),
-                (
-                    "Channel",
-                    Profile::Channel(
-                        mock_ch_filter
-                            .get(&CompactString::from("security"))
-                            .unwrap_or(&CompactString::default())
-                            .to_owned(),
-                    ),
-                ),
-                ("Level", Profile::Level(CompactString::from(test_level))),
-                (
-                    "EventID",
-                    Profile::EventID(CompactString::from(test_eventid)),
-                ),
-                (
-                    "MitreAttack",
-                    Profile::MitreTactics(CompactString::from(test_attack)),
-                ),
-                (
-                    "RecordID",
-                    Profile::RecordID(CompactString::from(test_record_id)),
-                ),
-                (
-                    "RuleTitle",
-                    Profile::RuleTitle(CompactString::from(test_title)),
-                ),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
                 (
                     "RecordInformation",
-                    Profile::AllFieldInfo(CompactString::from(test_recinfo)),
+                    Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                (
-                    "RuleFile",
-                    Profile::RuleFile(CompactString::from(test_rulepath)),
-                ),
-                (
-                    "EvtxFile",
-                    Profile::EvtxFile(CompactString::from(test_filepath)),
-                ),
-                ("Tags", Profile::MitreTags(CompactString::from(test_attack))),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
             let eventkey_alias = load_eventkey_alias(
                 utils::check_setting_path(
@@ -1832,7 +1808,7 @@ mod tests {
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
-                Profile::Computer(CompactString::from(test_computername));
+                Profile::Computer(test_computername.into());
 
             message::insert(
                 &event,
@@ -2072,54 +2048,26 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
             };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option)),
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
                 ),
-                (
-                    "Computer",
-                    Profile::Computer(CompactString::from(test_computername2)),
-                ),
-                (
-                    "Channel",
-                    Profile::Channel(
-                        mock_ch_filter
-                            .get(&CompactString::from("security"))
-                            .unwrap_or(&CompactString::default())
-                            .to_owned(),
-                    ),
-                ),
-                ("Level", Profile::Level(CompactString::from(test_level))),
-                (
-                    "EventID",
-                    Profile::EventID(CompactString::from(test_eventid)),
-                ),
-                (
-                    "MitreAttack",
-                    Profile::MitreTactics(CompactString::from(test_attack)),
-                ),
-                (
-                    "RecordID",
-                    Profile::RecordID(CompactString::from(test_record_id)),
-                ),
-                (
-                    "RuleTitle",
-                    Profile::RuleTitle(CompactString::from(test_title)),
-                ),
-                (
-                    "AllFieldInfo",
-                    Profile::AllFieldInfo(CompactString::from(test_recinfo)),
-                ),
-                (
-                    "RuleFile",
-                    Profile::RuleFile(CompactString::from(test_rulepath)),
-                ),
-                (
-                    "EvtxFile",
-                    Profile::EvtxFile(CompactString::from(test_filepath)),
-                ),
-                ("Tags", Profile::MitreTags(CompactString::from(test_attack))),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
+                ("AllFieldInfo", Profile::AllFieldInfo(test_recinfo.into())),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
             let eventkey_alias = load_eventkey_alias(
                 utils::check_setting_path(
@@ -2150,7 +2098,7 @@ mod tests {
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
-                Profile::Computer(CompactString::from(test_computername));
+                Profile::Computer(test_computername.into());
 
             message::insert(
                 &event,
@@ -2319,43 +2267,39 @@ mod tests {
         let data: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
-                Profile::Timestamp(CompactString::new(format_time(
-                    &test_timestamp,
-                    false,
-                    &output_option,
-                ))),
+                Profile::Timestamp(format_time(&test_timestamp, false, &output_option).into()),
             ),
             (
                 CompactString::new("Computer"),
-                Profile::Computer(CompactString::new(test_computername)),
+                Profile::Computer(test_computername.into()),
             ),
             (
                 CompactString::new("Channel"),
-                Profile::Channel(CompactString::new(test_channel)),
+                Profile::Channel(test_channel.into()),
             ),
             (
                 CompactString::new("EventID"),
-                Profile::EventID(CompactString::new(test_eventid)),
+                Profile::EventID(test_eventid.into()),
             ),
             (
                 CompactString::new("Level"),
-                Profile::Level(CompactString::new(test_level)),
+                Profile::Level(test_level.into()),
             ),
             (
                 CompactString::new("RecordID"),
-                Profile::RecordID(CompactString::new(test_recid)),
+                Profile::RecordID(test_recid.into()),
             ),
             (
                 CompactString::new("RuleTitle"),
-                Profile::RuleTitle(CompactString::new(test_title)),
+                Profile::RuleTitle(test_title.into()),
             ),
             (
                 CompactString::new("Details"),
-                Profile::Details(CompactString::new(output)),
+                Profile::Details(output.into()),
             ),
             (
                 CompactString::new("RecordInformation"),
-                Profile::AllFieldInfo(CompactString::new(test_recinfo)),
+                Profile::AllFieldInfo(test_recinfo.into()),
             ),
         ];
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);
