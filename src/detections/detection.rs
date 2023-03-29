@@ -1698,7 +1698,7 @@ mod tests {
             assert!(detect_infos[0].ext_field.iter().any(|x| x
                 == &(
                     CompactString::from("RuleAuthor"),
-                    Profile::RuleAuthor("Test\r\nTest2\r\nTest3".into())
+                    Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3".into())
                 )));
         }
     }
