@@ -389,8 +389,9 @@ impl Detection {
                             rule.yaml["author"]
                                 .as_str()
                                 .unwrap_or("-")
-                                .replace([',', '/'], "\r\n")
-                                .replace(' ', ""),
+                                .split([',', '/'])
+                                .map(|x| x.trim())
+                                .join("🛂🛂"),
                         )
                     } else {
                         CompactString::from(rule.yaml["author"].as_str().unwrap_or("-"))
@@ -757,8 +758,9 @@ impl Detection {
                             rule.yaml["author"]
                                 .as_str()
                                 .unwrap_or("-")
-                                .replace([',', '/'], "\r\n")
-                                .replace(' ', ""),
+                                .split([',', '/'])
+                                .map(|x| x.trim())
+                                .join("🛂🛂"),
                         )
                     } else {
                         CompactString::from(rule.yaml["author"].as_str().unwrap_or("-"))
