@@ -389,7 +389,7 @@ impl Detection {
                             rule.yaml["author"]
                                 .as_str()
                                 .unwrap_or("-")
-                                .split([',', '/'])
+                                .split([',', '/', ';'])
                                 .map(|x| x.trim())
                                 .join("🛂🛂"),
                         )
@@ -758,7 +758,7 @@ impl Detection {
                             rule.yaml["author"]
                                 .as_str()
                                 .unwrap_or("-")
-                                .split([',', '/'])
+                                .split([',', '/', ';'])
                                 .map(|x| x.trim())
                                 .join("🛂🛂"),
                         )
@@ -1674,7 +1674,7 @@ mod tests {
         "##;
             let rule_str = r#"
         enabled: true
-        author: "Test, Test2/Test3 "
+        author: "Test, Test2/Test3; Test4 "
         detection:
             selection:
                 Channel: 'Dummy'
@@ -1698,7 +1698,7 @@ mod tests {
             assert!(detect_infos[0].ext_field.iter().any(|x| x
                 == &(
                     CompactString::from("RuleAuthor"),
-                    Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3".into())
+                    Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3🛂🛂Test4".into())
                 )));
         }
     }
