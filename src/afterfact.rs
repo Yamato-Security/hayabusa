@@ -220,6 +220,7 @@ fn emit_csv<W: std::io::Write>(
     let mut removed_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
     if stored_static.multiline_flag {
+        removed_replaced_maps.insert("🛂🛂", "\r\n");
         removed_replaced_maps.insert(" ¦ ", "\r\n");
     }
     let output_replacer = AhoCorasickBuilder::new()

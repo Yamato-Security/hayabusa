@@ -5,6 +5,7 @@
 **Enhancements:**
 
 - Removed an extra space when outputting `Level` to files(CSV, JSON, JSONL). (#979) (@hitenkoku)
+- Made rule authors multiple lines with `-M, --multiline` option. (#980) (@hitenkoku)
 
 **Bug Fixes:**
 
