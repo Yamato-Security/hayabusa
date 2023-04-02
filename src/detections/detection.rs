@@ -387,16 +387,17 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    profile_converter.insert(
-                        key.as_str(),
-                        RuleAuthor(
+                    let author = if stored_static.multiline_flag {
                             rule.yaml["author"]
                                 .as_str()
                                 .unwrap_or("-")
-                                .to_string()
-                                .into(),
-                        ),
-                    );
+                                .split([',', '/', ';'])
+                                .map(|x| x.trim())
+                                .join("🛂🛂")
+                    } else {
+                        rule.yaml["author"].as_str().unwrap_or("-").to_string()
+                    };
+                    profile_converter.insert(key.as_str(), RuleAuthor(author.into()));
                 }
                 RuleCreationDate(_) => {
                     profile_converter.insert(
@@ -768,16 +769,17 @@ impl Detection {
                     profile_converter.insert(key.as_str(), OtherTags(tags.into()));
                 }
                 RuleAuthor(_) => {
-                    profile_converter.insert(
-                        key.as_str(),
-                        RuleAuthor(
+                    let author = if stored_static.multiline_flag {
                             rule.yaml["author"]
                                 .as_str()
                                 .unwrap_or("-")
-                                .to_owned()
-                                .into(),
-                        ),
-                    );
+                                .split([',', '/', ';'])
+                                .map(|x| x.trim())
+                                .join("🛂🛂")
+                    } else {
+                        rule.yaml["author"].as_str().unwrap_or("-").to_string()
+                    };
+                    profile_converter.insert(key.as_str(), RuleAuthor(author.into()));
                 }
                 RuleCreationDate(_) => {
                     profile_converter.insert(
@@ -1598,6 +1600,132 @@ mod tests {
             for expect in expect_geo_ip_data.iter() {
                 assert!(ext_field.contains(expect));
             }
+        }
+    }
+
+    #[test]
+    fn test_insert_message_multiline_ruleauthor() {
+        let test_filepath: &str = "test.evtx";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: None,
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+                enable_unsupported_rules: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            multiline: true,
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            debug: false,
+        });
+        let mut stored_static = StoredStatic::create_static_data(dummy_config);
+        stored_static
+            .profiles
+            .as_mut()
+            .unwrap()
+            .push(("RuleAuthor".into(), Profile::RuleAuthor(Default::default())));
+        {
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            *STORED_EKEY_ALIAS.write().unwrap() = Some(eventkey_alias);
+
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+            {
+                "Event": {
+                    "EventData": {
+                        "CommandRLine": "hoge",
+                        "IpAddress": "89.160.20.128",
+                        "DestAddress": "2.125.160.216"
+                    },
+                    "System": {
+                        "TimeCreated_attributes": {
+                            "SystemTime": "1996-02-27T01:05:01Z"
+                        },
+                        "EventRecordID": "11111",
+                        "Channel": "Dummy",
+                        "EventID": "4624"
+                    }
+                }
+            }
+        "##;
+            let rule_str = r#"
+        enabled: true
+        author: "Test, Test2/Test3; Test4 "
+        detection:
+            selection:
+                Channel: 'Dummy'
+        details: 'Test'
+        "#;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let rule_yaml = YamlLoader::load_from_str(rule_str);
+            assert!(rule_yaml.is_ok());
+            let rule_yamls = rule_yaml.unwrap();
+            let mut rule_yaml = rule_yamls.into_iter();
+            let mut rule_node = create_rule(test_filepath.to_string(), rule_yaml.next().unwrap());
+            assert!(rule_node.init(&create_dummy_stored_static()).is_ok());
+
+            let keys = detections::rule::get_detection_keys(&rule_node);
+            let input_evtxrecord = utils::create_rec_info(event, test_filepath.to_owned(), &keys);
+            Detection::insert_message(&rule_node, &input_evtxrecord, &stored_static.clone());
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+            assert!(detect_infos.len() == 1);
+            println!("{:?}", detect_infos[0].ext_field);
+            assert!(detect_infos[0].ext_field.iter().any(|x| x
+                == &(
+                    CompactString::from("RuleAuthor"),
+                    Profile::RuleAuthor("Test🛂🛂Test2🛂🛂Test3🛂🛂Test4".into())
+                )));
         }
     }
 }
