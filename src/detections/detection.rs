@@ -388,12 +388,12 @@ impl Detection {
                 }
                 RuleAuthor(_) => {
                     let author = if stored_static.multiline_flag {
-                            rule.yaml["author"]
-                                .as_str()
-                                .unwrap_or("-")
-                                .split([',', '/', ';'])
-                                .map(|x| x.trim())
-                                .join("🛂🛂")
+                        rule.yaml["author"]
+                            .as_str()
+                            .unwrap_or("-")
+                            .split([',', '/', ';'])
+                            .map(|x| x.trim())
+                            .join("🛂🛂")
                     } else {
                         rule.yaml["author"].as_str().unwrap_or("-").to_string()
                     };
@@ -770,12 +770,12 @@ impl Detection {
                 }
                 RuleAuthor(_) => {
                     let author = if stored_static.multiline_flag {
-                            rule.yaml["author"]
-                                .as_str()
-                                .unwrap_or("-")
-                                .split([',', '/', ';'])
-                                .map(|x| x.trim())
-                                .join("🛂🛂")
+                        rule.yaml["author"]
+                            .as_str()
+                            .unwrap_or("-")
+                            .split([',', '/', ';'])
+                            .map(|x| x.trim())
+                            .join("🛂🛂")
                     } else {
                         rule.yaml["author"].as_str().unwrap_or("-").to_string()
                     };
