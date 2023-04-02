@@ -6,6 +6,7 @@
 
 - Removed an extra space when outputting `Level` to files(CSV, JSON, JSONL). (#979) (@hitenkoku)
 - Made rule authors multiple lines with `-M, --multiline` option. (#980) (@hitenkoku)
+- Approximately 3-5% speed increase by replaced String with CoW. (#984) (@hitenkoku)
 
 **Bug Fixes:**
 
