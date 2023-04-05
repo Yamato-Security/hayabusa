@@ -52,19 +52,22 @@ impl EventSearch {
         &mut self,
         records: &[EvtxRecordInfo],
         search_flag: bool,
-        keyword: &str,
+        keywords: &Vec<String>,
         eventkey_alias: &EventKeyAliasConfig,
     ) {
         if !search_flag {
             return;
         }
-        self.search_keyword(records, keyword, eventkey_alias);
+
+        if !keywords.is_empty() {
+            self.search_keyword(records, keywords, eventkey_alias);
+        }
     }
 
     fn search_keyword(
         &mut self,
         records: &[EvtxRecordInfo],
-        keyword: &str,
+        keywords: &[String],
         eventkey_alias: &EventKeyAliasConfig,
     ) {
         if records.is_empty() {
@@ -73,7 +76,11 @@ impl EventSearch {
 
         for record in records.iter() {
             self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
-            if record.data_string.contains(keyword) {
+            if record
+                .data_string
+                .contains(keywords.get(0).unwrap_or(&String::from("SampleMessage")))
+            // TODO: fix to search all keywords.
+            {
                 let timestamp = utils::get_event_value(
                     "Event.System.TimeCreated_attributes.SystemTime",
                     &record.record,

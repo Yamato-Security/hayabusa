@@ -63,11 +63,11 @@ impl Timeline {
         );
 
         if stored_static.search_flag {
-            let keyword = &stored_static.search_option.clone().unwrap().keywords[0]; // Sample Keyword
+            let keywords = &stored_static.search_option.clone().unwrap().keywords; // Sample Keyword
             self.event_search.search_start(
                 records,
                 stored_static.search_flag,
-                keyword,
+                keywords,
                 &stored_static.eventkey_alias,
             );
         }
