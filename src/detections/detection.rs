@@ -277,7 +277,8 @@ impl Detection {
                         key.as_str(),
                         Computer(
                             record_info.record["Event"]["System"]["Computer"]
-                                .to_string()
+                                .as_str()
+                                .unwrap_or_default()
                                 .replace('\"', "")
                                 .into(),
                         ),
@@ -303,11 +304,13 @@ impl Detection {
                 }
                 Level(_) => {
                     let str_level = level.as_str();
-                    let prof_level = LEVEL_ABBR_MAP
-                        .get(str_level)
-                        .unwrap_or(&str_level)
-                        .to_string();
-                    profile_converter.insert(key.as_str(), Level(prof_level.into()));
+                    let abbr_level = LEVEL_ABBR_MAP.get(str_level).unwrap_or(&str_level);
+                    let prof_level = if stored_static.output_path.is_none() {
+                        abbr_level
+                    } else {
+                        abbr_level.trim()
+                    };
+                    profile_converter.insert(key.as_str(), Level(prof_level.to_string().into()));
                 }
                 EventID(_) => {
                     profile_converter.insert(key.as_str(), EventID(eid.to_string().into()));
@@ -350,7 +353,7 @@ impl Detection {
                 }
                 MitreTactics(_) => {
                     let tactics = CompactString::from(
-                        &tag_info
+                        tag_info
                             .iter()
                             .filter(|x| tags_config_values.contains(&&CompactString::from(*x)))
                             .join(" ¦ "),
@@ -695,12 +698,13 @@ impl Detection {
                 }
                 Level(_) => {
                     let str_level = level.as_str();
-                    let prof_level = LEVEL_ABBR_MAP
-                        .get(str_level)
-                        .unwrap_or(&str_level)
-                        .to_string();
-
-                    profile_converter.insert(key.as_str(), Level(prof_level.into()));
+                    let abbr_level = LEVEL_ABBR_MAP.get(str_level).unwrap_or(&str_level);
+                    let prof_level = if stored_static.output_path.is_none() {
+                        abbr_level
+                    } else {
+                        abbr_level.trim()
+                    };
+                    profile_converter.insert(key.as_str(), Level(prof_level.to_string().into()));
                 }
                 EventID(_) => {
                     profile_converter.insert(key.as_str(), EventID("-".into()));
