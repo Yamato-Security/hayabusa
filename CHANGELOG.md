@@ -7,6 +7,7 @@
 - Removed an extra space when outputting the rule `level` to files (CSV, JSON, JSONL). (#979) (@hitenkoku)
 - Rule authors are now outputted in multiple lines with the `-M, --multiline` option. (#980) (@hitenkoku)
 - Approximately 3-5% speed increase by replacing String with CoW. (#984) (@hitenkoku)
+- Replaced message and usage color green with white. (#989) (@hitenkoku)
 
 **Bug Fixes:**
 
