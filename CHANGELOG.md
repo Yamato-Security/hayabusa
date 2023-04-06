@@ -1,12 +1,13 @@
 # Changes
 
-## 2.3.3 [2023/04/05] "Sakura Release"
+## 2.3.3 [2023/04/07] "Sakura Release"
 
 **Enhancements:**
 
 - Removed an extra space when outputting the rule `level` to files (CSV, JSON, JSONL). (#979) (@hitenkoku)
 - Rule authors are now outputted in multiple lines with the `-M, --multiline` option. (#980) (@hitenkoku)
 - Approximately 3-5% speed increase by replacing String with CoW. (#984) (@hitenkoku)
+- Made sure text after the logo does not turn green with recent clap versions. (#989) (@hitenkoku)
 
 **Bug Fixes:**
 
