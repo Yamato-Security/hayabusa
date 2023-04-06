@@ -125,7 +125,7 @@ impl App {
         if stored_static.config.action.is_none() {
             if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
-                println!();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             }
             app.print_help().ok();
             println!();
