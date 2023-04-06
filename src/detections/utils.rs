@@ -437,7 +437,7 @@ fn _collect_recordinfo<'a>(
  * 最初の文字を大文字にする関数
  */
 pub fn make_ascii_titlecase(s: &str) -> CompactString {
-    let mut c = s.chars();
+    let mut c = s.trim().chars();
     match c.next() {
         None => CompactString::default(),
         Some(f) => {

@@ -164,7 +164,7 @@ pub fn insert(
                 ))
             }
             _ => {
-                if let Some(p) = profile_converter.get(key.to_string().as_str()) {
+                if let Some(p) = profile_converter.get(key.as_str()) {
                     replaced_profiles.push((
                         key.to_owned(),
                         profile.convert(&parse_message(
