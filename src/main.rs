@@ -110,7 +110,7 @@ impl App {
         {
             if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
-                println!();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             }
             app.find_subcommand(subcommand_name)
                 .unwrap()
@@ -133,7 +133,7 @@ impl App {
         }
         if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
-            println!();
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
                 &analysis_start_time.month(),
