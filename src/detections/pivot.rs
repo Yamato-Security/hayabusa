@@ -46,7 +46,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
         }
     }
     if is_exist_event_key {
-        if let Some(event_record_str) = get_serde_number_to_string(tmp_event_record) {
+        if let Some(event_record_str) = get_serde_number_to_string(tmp_event_record, false) {
             let exclude_check_str = event_record_str.as_str();
             if exclude_check_str == "infomational"
                 || exclude_check_str == "undefined"
@@ -71,7 +71,7 @@ pub fn insert_pivot_keyword(event_record: &Value, eventkey_alias: &EventKeyAlias
                     }
                 }
                 if is_exist_event_key {
-                    let hash_value = get_serde_number_to_string(tmp_event_record);
+                    let hash_value = get_serde_number_to_string(tmp_event_record, false);
 
                     if let Some(value) = hash_value {
                         if value == "-" || value == "127.0.0.1" || value == "::1" {

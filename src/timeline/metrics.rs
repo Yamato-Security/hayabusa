@@ -190,6 +190,7 @@ impl EventMetrics {
                     || utils::get_serde_number_to_string(
                         utils::get_event_value("Channel", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
+                            false
                     )
                     .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], "")
@@ -202,6 +203,7 @@ impl EventMetrics {
                     utils::get_serde_number_to_string(
                         utils::get_event_value("TargetUserName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
+                            false
                     )
                     .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
@@ -209,6 +211,7 @@ impl EventMetrics {
                 let logontype = utils::get_serde_number_to_string(
                     utils::get_event_value("LogonType", &record.record, eventkey_alias)
                         .unwrap_or(&serde_json::Value::Null),
+                        false
                 )
                 .unwrap_or_else(|| "n/a".into())
                 .replace(['"', '\''], "");
@@ -216,6 +219,7 @@ impl EventMetrics {
                     utils::get_serde_number_to_string(
                         utils::get_event_value("Computer", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
+                            false
                     )
                     .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
@@ -225,6 +229,7 @@ impl EventMetrics {
                     utils::get_serde_number_to_string(
                         utils::get_event_value("WorkstationName", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
+                            false
                     )
                     .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
@@ -234,6 +239,7 @@ impl EventMetrics {
                     utils::get_serde_number_to_string(
                         utils::get_event_value("IpAddress", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
+                            false
                     )
                     .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),

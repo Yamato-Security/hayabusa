@@ -94,6 +94,7 @@ impl EventSearch {
                     utils::get_serde_number_to_string(
                         utils::get_event_value("Computer", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
+                            true
                     )
                     .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], ""),
@@ -103,6 +104,7 @@ impl EventSearch {
                     utils::get_serde_number_to_string(
                         utils::get_event_value("Channel", &record.record, eventkey_alias)
                             .unwrap_or(&serde_json::Value::Null),
+                            true
                     )
                     .unwrap_or_else(|| "n/a".into())
                     .replace(['"', '\''], "")
@@ -121,13 +123,14 @@ impl EventSearch {
 
                 let recordid = match utils::get_serde_number_to_string(
                     &record.record["Event"]["System"]["EventRecordID"],
+                    true
                 ) {
                     Some(recid) => recid,
                     _ => CompactString::new("-"),
                 };
 
                 let allfieldinfo =
-                    match utils::get_serde_number_to_string(&record.record["Event"]["EventData"]) {
+                    match utils::get_serde_number_to_string(&record.record["Event"]["EventData"], true) {
                         Some(eventdata) => eventdata,
                         _ => CompactString::new("-"),
                     };

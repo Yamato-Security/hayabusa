@@ -222,7 +222,7 @@ pub fn parse_message(
                 .get((suffix - 1) as usize)
                 .unwrap_or(tmp_event_record);
         }
-        let hash_value = get_serde_number_to_string(tmp_event_record);
+        let hash_value = get_serde_number_to_string(tmp_event_record, false);
         if hash_value.is_some() {
             if let Some(hash_value) = hash_value {
                 hash_map.insert(CompactString::from(full_target_str), hash_value);
@@ -373,7 +373,7 @@ mod tests {
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                )
+                ),
             ),
             expected,
         );
@@ -445,7 +445,7 @@ mod tests {
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                )
+                ),
             ),
             expected,
         );
@@ -483,7 +483,7 @@ mod tests {
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                )
+                ),
             ),
             expected,
         );
@@ -526,7 +526,7 @@ mod tests {
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                )
+                ),
             ),
             expected,
         );
@@ -569,7 +569,7 @@ mod tests {
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                )
+                ),
             ),
             expected,
         );
@@ -612,7 +612,7 @@ mod tests {
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                )
+                ),
             ),
             expected,
         );
