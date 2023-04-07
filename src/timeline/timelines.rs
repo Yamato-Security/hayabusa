@@ -47,7 +47,7 @@ impl Timeline {
             statslst,
             statsloginlst,
         );
-        let search = EventSearch::new(totalcnt, filepath.clone(), search_result);
+        let search = EventSearch::new(totalcnt, filepath, search_result);
         Timeline {
             stats: statistic,
             event_search: search,
