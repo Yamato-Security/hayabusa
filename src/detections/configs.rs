@@ -1508,6 +1508,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
             exact_level: None,
+            enable_unsupported_rules: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {
             input_args: InputOption {
