@@ -88,7 +88,13 @@ impl EventSearch {
                     &record.record,
                     eventkey_alias,
                 )
-                .map(|evt_value| evt_value.to_string().replace("\\\"", "").replace('"', ""))
+                .map(|evt_value| {
+                    evt_value
+                        .as_str()
+                        .unwrap_or_default()
+                        .replace("\\\"", "")
+                        .replace('"', "")
+                })
                 .unwrap_or_else(|| "n/a".into())
                 .replace(['"', '\''], "");
 
