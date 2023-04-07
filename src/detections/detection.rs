@@ -233,19 +233,25 @@ impl Detection {
             .iter()
             .any(|(_s, p)| *p == RecordID(Default::default()))
         {
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"], false)
-                .unwrap_or_default()
+            get_serde_number_to_string(
+                &record_info.record["Event"]["System"]["EventRecordID"],
+                false,
+            )
+            .unwrap_or_default()
         } else {
             CompactString::from("")
         };
-        let ch_str = &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"], false)
-            .unwrap_or_default();
+        let ch_str =
+            &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"], false)
+                .unwrap_or_default();
         let provider = &get_serde_number_to_string(
-            &record_info.record["Event"]["System"]["Provider_attributes"]["Name"], false
+            &record_info.record["Event"]["System"]["Provider_attributes"]["Name"],
+            false,
         )
         .unwrap_or_default();
-        let eid = get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
-            .unwrap_or_else(|| "-".into());
+        let eid =
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
+                .unwrap_or_else(|| "-".into());
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
@@ -595,7 +601,7 @@ impl Detection {
                             .map(|x| x.as_str().unwrap())
                             .collect(),
                         &record_info.record,
-                        eventkey_alias
+                        eventkey_alias,
                     );
 
                     let geo_data = GEOIP_DB_PARSER

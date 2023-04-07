@@ -209,7 +209,10 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
-pub fn get_serde_number_to_string(value: &serde_json::Value, search_flag:bool) -> Option<CompactString> {
+pub fn get_serde_number_to_string(
+    value: &serde_json::Value,
+    search_flag: bool,
+) -> Option<CompactString> {
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
         if val_str.ends_with(',') {
@@ -741,8 +744,11 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
-            utils::get_serde_number_to_string(&event_record["Event"]["EventData"]["ComputerName"], false)
-                .unwrap(),
+            utils::get_serde_number_to_string(
+                &event_record["Event"]["EventData"]["ComputerName"],
+                false
+            )
+            .unwrap(),
             "HayabusaComputer1".to_owned()
         );
     }
@@ -761,7 +767,9 @@ mod tests {
         "##;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
-        assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"], false).is_none());
+        assert!(
+            utils::get_serde_number_to_string(&event_record["Event"]["EventData"], false).is_none()
+        );
     }
 
     #[test]
