@@ -77,7 +77,7 @@ impl EventSearch {
         }
 
         for record in records.iter() {
-            self.filepath = CompactString::from(records[0].evtx_filepath.as_str());
+            self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if utils::contains_str(&record
                 .data_string, keywords.get(0).unwrap_or(&String::from("SampleMessage")))
             // TODO: fix to search all keywords.
