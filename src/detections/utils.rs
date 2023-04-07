@@ -113,7 +113,6 @@ pub fn read_jsonl_to_value(path: &str) -> Result<Box<dyn Iterator<Item = Value>>
     };
     if is_jsonl {
         let ret = peekable_lines
-            .into_iter()
             .filter_map(|s| s.ok())
             .filter(|s| !s.trim().is_empty())
             .map(|line| {
@@ -448,7 +447,7 @@ fn _collect_recordinfo<'a>(
  * 最初の文字を大文字にする関数
  */
 pub fn make_ascii_titlecase(s: &str) -> CompactString {
-    let mut c = s.chars();
+    let mut c = s.trim().chars();
     match c.next() {
         None => CompactString::default(),
         Some(f) => {

@@ -284,11 +284,11 @@ impl Timeline {
     fn tm_loginstats_tb_dsp_msg(&self, logon_res: &str, output: &Option<PathBuf>) {
         let header = vec![
             logon_res,
-            "User",
-            "Hostname",
+            "Target Account",
+            "Target Computer",
             "Logon Type",
             "Source Computer",
-            "Source Ip",
+            "Source IP Address",
         ];
         let target;
         let mut wtr = if let Some(csv_path) = output {

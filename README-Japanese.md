@@ -144,6 +144,8 @@ Windowsのイベントログは、1）解析が困難なデータ形式である
 Hayabusaは、有用なデータのみを抽出し、専門的なトレーニングを受けた分析者だけでなく、Windowsのシステム管理者であれば誰でも利用できる読みやすい形式で提示することを主な目的としています。
 Hayabusaは従来のWindowsイベントログ分析解析と比較して、分析者が20%の時間で80%の作業を行えるようにすることを目指しています。
 
+![DFIR Timeline](doc/DFIR-TimelineCreation-JP.png)
+
 # スクリーンショット
 
 ## 起動画面
@@ -462,6 +464,7 @@ Input:
 Output:
   -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
+  -M, --multiline                 イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
 
@@ -473,14 +476,15 @@ Display Settings:
   -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Deprecatedルールを有効にする
-  -n, --enable-noisy-rules       Noisyルールを有効にする
-  -e, --exact-level <LEVEL>      特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules        Noisyルールを有効にする
+  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
@@ -666,14 +670,15 @@ Display Settings:
   -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Deprecatedルールを有効にする
-  -n, --enable-noisy-rules       Noisyルールを有効にする
-  -e, --exact-level <LEVEL>      特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules        Noisyルールを有効にする
+  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
@@ -805,14 +810,15 @@ Display Settings:
   -v, --verbose        詳細な情報を出力する
 
 Filtering:
-  -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Deprecatedルールを有効にする
-  -n, --enable-noisy-rules       Noisyルールを有効にする
-  -e, --exact-level <LEVEL>      特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules        Noisyルールを有効にする
+  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
@@ -994,8 +1000,8 @@ Hayabusaの`config/profiles.yaml`設定ファイルでは、５つのプロフ�
 8. `timesketch-verbose`
 
 このファイルを編集することで、簡単に独自のプロファイルをカスタマイズしたり、追加したりすることができます。
-`set-default-profile -P <profile>`オプションでデフォルトのプロファイルを変更することもできます。
-利用可能なプロファイルとそのフィールド情報を表示するには、`csv-timeline --list-profiles`オプションを使用してください。
+`set-default-profile --profile <profile>`コマンドでデフォルトのプロファイルを変更することもできます。
+利用可能なプロファイルとそのフィールド情報を表示するには、`csv-timeline --list-profiles`コマンドを使用してください。
 
 ### 1. `minimal`プロファイルの出力
 
@@ -1245,7 +1251,6 @@ Hayabusaルールのディレクトリ構造は、2つのディレクトリに�
 ## Hayabusa v.s. 変換されたSigmaルール
 
 Sigmaルールは、最初にHayabusaルール形式に変換する必要があります。変換のやり方は[ここ](https://github.com/Yamato-Security/hayabusa-rules/tree/main/tools/sigmac/README-Japanese.md)で説明されています。
-Hayabusaルールは`|contains|all`、`1 of selection*`、`all of selection*`、[Rust正規表現クレート](https://docs.rs/regex/1.5.4/regex/)では機能しない正規表現を使用するルールをデフォルトで対応していないため、コンバータが必要です。
 殆どのルールはSigmaルールと互換性があるので、Sigmaルールのようにその他のSIEM形式に変換できます。
 Hayabusaルールは、Windowsのイベントログ解析専用に設計されており、以下のような利点があります:
 
@@ -1314,11 +1319,13 @@ Windows機での悪性な活動を検知する為には、デフォルトのロ�
 
 ## 英語
 
+* 2023/03/14 [Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-English.md) by Fukusuke Takahashi
 * 2022/06/19 [VelociraptorチュートリアルとHayabusaの統合方法](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Hayabusa結果をneo4jで可視化する方法](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
 
 ## 日本語
 
+* 2023/03/14 [Hayabusa開発者向けRustパフォーマンスガイド](doc/RustPerformance-Japanese.md) by Fukusuke Takahashi
 * 2022/01/22 [Hayabusa結果をElastic Stackで可視化する方法](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749) by [@kzzzzo2](https://qiita.com/kzzzzo2)
 * 2021/12/31 [Windowsイベントログ解析ツール「Hayabusa」を使ってみる](https://itib.hatenablog.com/entry/2021/12/31/222946) by itiB ([@itiB_S144](https://twitter.com/itiB_S144))
 * 2021/12/27 [Hayabusaの中身](https://kazuminkun.hatenablog.com/entry/2021/12/27/190535) by Kazuminn ([@k47_um1n](https://twitter.com/k47_um1n))

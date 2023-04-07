@@ -1,22 +1,22 @@
 [package]
 name = "hayabusa"
-version = "2.3.0-dev"
+version = "2.3.3"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.66.0"
+rust-version = "1.68.2"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]
 itertools = "*"
 dashmap = "*"
 clap = { version = "4.*", features = ["derive", "cargo", "color"]}
-evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "2cf05bc" } # 0.8.3 2023/02/18 update
-quick-xml = {version = "0.27.*", features = ["serialize"] }
+evtx = { git = "https://github.com/Yamato-Security/hayabusa-evtx.git" , features = ["fast-alloc"] , rev = "1377055" } # 0.8.5 2023/03/15 update
+quick-xml = {version = "0.28.*", features = ["serialize"] }
 serde = { version = "1.*", features = ["derive"] }
 serde_json = { version = "1.0"}
 serde_derive = "1.*"
 regex = "1"
-csv = "1.1.*"
+csv = "1.2.*"
 base64 = "*"
 flate2 = "1.*"
 lazy_static = "1.4.*"
@@ -66,4 +66,3 @@ openssl = { version = "*", features = ["vendored"] }  #vendored is needed to com
 [profile.release]
 lto = true
 strip = "symbols"
-codegen-units = 1

@@ -144,6 +144,8 @@ Windows event log analysis has traditionally been a very long and tedious proces
 Hayabusa's goal is to extract out only useful data and present it in a concise as possible easy-to-read format that is usable not only by professionally trained analysts but any Windows system administrator.
 Hayabusa hopes to let analysts get 80% of their work done in 20% of the time when compared to traditional Windows event log analysis.
 
+![DFIR Timeline](doc/DFIR-TimelineCreation-EN.png)
+
 # Screenshots
 
 ## Startup
@@ -462,6 +464,7 @@ Input:
 Output:
   -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
   -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
+  -M, --multiline               Output event field information in multiple rows
   -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
   -p, --profile <PROFILE>       Specify output profile
 
@@ -473,14 +476,15 @@ Display Settings:
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
-  -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Enable rules marked as deprecated (no longer included by default)
-  -n, --enable-noisy-rules       Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-  -e, --exact-level <LEVEL>      Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   Enable rules with status of deprecated
+  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules  Enable rules with status of unsupported
+  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
@@ -666,14 +670,15 @@ Display Settings:
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
-  -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Enable rules marked as deprecated (no longer included by default)
-  -n, --enable-noisy-rules       Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-  -e, --exact-level <LEVEL>      Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   Enable rules with status of deprecated
+  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules  Enable rules with status of unsupported
+  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
@@ -805,14 +810,15 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 Filtering:
-  -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Enable rules marked as deprecated (no longer included by default)
-  -n, --enable-noisy-rules       Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-  -e, --exact-level <LEVEL>      Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   Enable rules with status of deprecated
+  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules  Enable rules with status of unsupported
+  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
@@ -994,7 +1000,7 @@ Hayabusa has 5 pre-defined output profiles to use in `config/profiles.yaml`:
 8. `timesketch-verbose`
 
 You can easily customize or add your own profiles by editing this file.
-You can also easily change the default profile with `set-default-profile -P <profile>`.
+You can also easily change the default profile with `set-default-profile --profile <profile>`.
 Use the `list-profiles` command to show the available profiles and their field information.
 
 ### 1. `minimal` profile output
@@ -1245,7 +1251,6 @@ Please check out the current rules to use as a template in creating new ones or 
 ## Hayabusa v.s. Converted Sigma Rules
 
 Sigma rules need to first be converted to hayabusa rule format explained [here](https://github.com/Yamato-Security/hayabusa-rules/blob/main/tools/sigmac/README.md).
-A converter is needed as hayabusa rules do not support `|contains|all`, `1 of selection*`, and `all of selection*`.
 However, almost all hayabusa rules are compatible with the sigma format so you can use them just like sigma rules to convert to other SIEM formats.
 Hayabusa rules are designed solely for Windows event log analysis and have the following benefits:
 
@@ -1314,11 +1319,13 @@ To create the most forensic evidence and detect with the highest accuracy, you n
 
 ## English
 
+* 2023/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-English.md) by Fukusuke Takahashi
 * 2022/06/19 [Velociraptor Walkthrough and Hayabusa Integration](https://www.youtube.com/watch?v=Q1IoGX--814) by [Eric Capuano](https://twitter.com/eric_capuano)
 * 2022/01/24 [Graphing Hayabusa results in neo4j](https://www.youtube.com/watch?v=7sQqz2ek-ko) by Matthew Seyer ([@forensic_matt](https://twitter.com/forensic_matt))
 
 ## Japanese
 
+* 2022/03/14 [Rust Performance Guide for Hayabusa Developers](doc/RustPerformance-Japanese.md) by Fukusuke Takahashi
 * 2022/01/22 [Visualizing Hayabusa results in Elastic Stack](https://qiita.com/kzzzzo2/items/ead8ccc77b7609143749) by [@kzzzzo2](https://qiita.com/kzzzzo2)
 * 2021/12/31 [Intro to Hayabusa](https://itib.hatenablog.com/entry/2021/12/31/222946) by itiB ([@itiB_S144](https://twitter.com/itiB_S144))
 * 2021/12/27 [Hayabusa internals](https://kazuminkun.hatenablog.com/entry/2021/12/27/190535) by Kazuminn ([@k47_um1n](https://twitter.com/k47_um1n))

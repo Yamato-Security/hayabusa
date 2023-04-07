@@ -424,9 +424,11 @@ mod tests {
                         verbose: false,
                         json_input: false,
                     },
+                    enable_unsupported_rules: false,
                 },
                 geo_ip: None,
                 output: None,
+                multiline: false,
             })),
             debug: false,
         }))

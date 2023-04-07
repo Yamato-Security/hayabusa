@@ -6,6 +6,7 @@ use self::selectionnodes::{
 };
 use super::selectionnodes;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use std::{sync::Arc, vec::IntoIter};
 
 lazy_static! {
@@ -16,6 +17,8 @@ lazy_static! {
         Regex::new(r"^\w+").unwrap(),
     ];
     pub static ref RE_PIPE: Regex = Regex::new(r"\|.*").unwrap();
+    // all of selection* と 1 of selection* にマッチする正規表現
+    pub static ref OF_SELECTION: Regex = Regex::new(r"(all|1) of ([^*]+)\*").unwrap();
 }
 
 #[derive(Debug, Clone)]
@@ -118,8 +121,10 @@ impl ConditionCompiler {
         condition_str: &str,
         name_2_node: &HashMap<String, Arc<Box<dyn SelectionNode>>>,
     ) -> Result<Box<dyn SelectionNode>, String> {
+        let node_keys: Vec<String> = name_2_node.keys().cloned().collect();
+        let condition_str = Self::convert_condition(condition_str, &node_keys);
         // パイプはここでは処理しない
-        let captured = self::RE_PIPE.captures(condition_str);
+        let captured = self::RE_PIPE.captures(condition_str.as_str());
         let replaced_condition = if let Some(cap) = captured {
             let captured = cap.get(0).unwrap().as_str();
             condition_str.replacen(captured, "", 1)
@@ -133,6 +138,30 @@ impl ConditionCompiler {
         } else {
             result
         }
+    }
+
+    // all of selection* と 1 of selection* を通常のand/orに変換する
+    pub fn convert_condition(condition_str: &str, node_keys: &[String]) -> String {
+        let mut converted_str = condition_str.to_string();
+        for matched in OF_SELECTION.find_iter(condition_str) {
+            let match_str: &str = matched.as_str();
+            let sep = if match_str.starts_with("all") {
+                " and "
+            } else {
+                " or "
+            };
+            let target_node_key_prefix = match_str
+                .replace('*', "")
+                .replace("all of ", "")
+                .replace("1 of ", "");
+            let replaced_condition = node_keys
+                .iter()
+                .filter(|x| x.starts_with(target_node_key_prefix.as_str()))
+                .join(sep);
+            converted_str =
+                converted_str.replace(match_str, format!("({})", replaced_condition).as_str())
+        }
+        converted_str
     }
 
     /// 与えたConditionからSelectionNodeを作る
@@ -494,15 +523,15 @@ impl ConditionCompiler {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use crate::detections::configs::{
         Action, CommonOptions, Config, CsvOutputOption, DetectCommonOption, InputOption,
         OutputOption, StoredStatic, STORED_EKEY_ALIAS,
     };
+    use crate::detections::rule::condition_parser::ConditionCompiler;
     use crate::detections::rule::create_rule;
     use crate::detections::rule::tests::parse_rule_from_str;
     use crate::detections::{self, utils};
+    use std::path::Path;
     use yaml_rust::YamlLoader;
 
     const SIMPLE_RECORD_STR: &str = r#"
@@ -563,9 +592,11 @@ mod tests {
                         verbose: false,
                         json_input: false,
                     },
+                    enable_unsupported_rules: false,
                 },
                 geo_ip: None,
                 output: None,
+                multiline: false,
             })),
             debug: false,
         }))
@@ -1449,5 +1480,233 @@ mod tests {
             rule_str,
             vec!["A condition parse error has occurred. Not is continuous.".to_string()],
         );
+    }
+
+    #[test]
+    fn test_convert_condition_all_of_selection() {
+        let condition = "all of selection*";
+
+        let keys = vec!["selection1".to_string(), "selection2".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 and selection2)".to_string();
+        assert_eq!(result, expected);
+
+        let keys = vec![
+            "selection1".to_string(),
+            "selection2".to_string(),
+            "selection3".to_string(),
+        ];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 and selection2 and selection3)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_multiple_all_of_selection() {
+        let condition = "all of selection* and all of filter*";
+
+        let keys = vec![
+            "selection1".to_string(),
+            "selection2".to_string(),
+            "filter1".to_string(),
+            "filter2".to_string(),
+        ];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 and selection2) and (filter1 and filter2)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_one_of_selection() {
+        let condition = "1 of selection*";
+
+        let keys = vec!["selection1".to_string(), "selection2".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 or selection2)".to_string();
+        assert_eq!(result, expected);
+
+        let keys = vec![
+            "selection1".to_string(),
+            "selection2".to_string(),
+            "selection3".to_string(),
+        ];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 or selection2 or selection3)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_multiple_one_of_selection() {
+        let condition = "1 of selection* and 1 of filter*";
+        let keys = vec![
+            "selection1".to_string(),
+            "selection2".to_string(),
+            "filter1".to_string(),
+            "filter2".to_string(),
+        ];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected = "(selection1 or selection2) and (filter1 or filter2)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_convert_complex_condition() {
+        let condition = "all of selection* and test1 or test2 or 1 of filter*";
+        let keys = vec![
+            "selection1".to_string(),
+            "selection2".to_string(),
+            "test".to_string(),
+            "filter1".to_string(),
+            "filter2".to_string(),
+        ];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        let expected =
+            "(selection1 and selection2) and test1 or test2 or (filter1 or filter2)".to_string();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_convert_condition_not_convert() {
+        let condition = "selection1 and selection2";
+        let keys = vec!["selection1".to_string(), "selection2".to_string()];
+        let result = ConditionCompiler::convert_condition(condition, &keys);
+        assert_eq!(result, condition);
+    }
+
+    #[test]
+    fn test_condition_1_of_select_detect() {
+        // conditionに 1 of selection* を使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: 1 of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, true);
+    }
+
+    #[test]
+    fn test_condition_1_of_select_not_detect() {
+        // conditionに 1 of selection* を使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'NODETECT'
+            selection2:
+                EventID: 9999
+            selection3:
+                param1: 'NODETECT'
+            condition: 1 of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, false);
+    }
+
+    #[test]
+    fn test_condition_all_of_select_detect() {
+        // conditionに all of selection* を使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'System'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: all of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, true);
+    }
+
+    #[test]
+    fn test_condition_all_of_select_not_detect() {
+        // conditionに all of selection* を使ったパターンのテスト
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection1:
+                Channel: 'NOTDETECT'
+            selection2:
+                EventID: 7040
+            selection3:
+                param1: 'Windows Event Log'
+            condition: all of selection*
+        details: 'Service name : %param1%¥nMessage : Event Log Service Stopped¥nResults: Selective event log manipulation may follow this event.'
+        "#;
+
+        check_select(rule_str, SIMPLE_RECORD_STR, false);
+    }
+
+    #[test]
+    fn test_condition_complex_of_selection() {
+        let rule_str = |condition: &str| {
+            format!(
+                r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'System'
+                EventID: 7045
+            suspicious1:
+                ImagePath|contains:
+                    - 'A'
+                    - 'B'
+            suspicious2a:
+                ImagePath|contains: 'C'
+            suspicious2b:
+                ImagePath|contains:
+                    - 'D'
+                    - 'E'
+            filter_thor_remote:
+                ImagePath|startswith: 'F'
+            filter_defender_def_updates:
+                ImagePath|startswith: 'G'
+            condition:
+                {condition}
+        "#
+            )
+        };
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 7045,
+              "Channel": "System"
+            },
+            "EventData": {
+              "ImagePath": "A B C D E F G"
+            }
+          },
+          "Event_attributes": {
+            "xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"
+          }
+        }"#;
+        let case0 = "selection and all of suspicious2* and not 1 of filter_*";
+        let case1 = "selection and ( suspicious1 or all of suspicious2* ) and not 1 of filter_*";
+        let case2 = "selection and ( suspicious1 or all of suspicious2* ) and 1 of filter_*";
+        let case3 =
+            "selection and not ( suspicious1 or all of suspicious2* ) and not 1 of filter_*";
+        let case4 = "selection and not ( suspicious1 or all of suspicious2* ) and 1 of filter_*";
+        let case5 = "selection and ( suspicious1 and not all of suspicious2* ) and 1 of filter_*";
+
+        check_select(rule_str(case0).as_str(), record_json_str, true);
+        check_select(rule_str(case1).as_str(), record_json_str, true);
+        check_select(rule_str(case2).as_str(), record_json_str, false);
+        check_select(rule_str(case3).as_str(), record_json_str, false);
+        check_select(rule_str(case4).as_str(), record_json_str, false);
+        check_select(rule_str(case5).as_str(), record_json_str, false);
     }
 }

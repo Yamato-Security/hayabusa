@@ -110,7 +110,7 @@ impl App {
         {
             if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
-                println!();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             }
             app.find_subcommand(subcommand_name)
                 .unwrap()
@@ -125,7 +125,7 @@ impl App {
         if stored_static.config.action.is_none() {
             if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
-                println!();
+                write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             }
             app.print_help().ok();
             println!();
@@ -133,7 +133,7 @@ impl App {
         }
         if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
-            println!();
+            write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
             self.output_eggs(&format!(
                 "{:02}/{:02}",
                 &analysis_start_time.month(),
@@ -953,7 +953,7 @@ impl App {
 
         if rule_files.is_empty() {
             AlertMessage::alert(
-                "No rules were loaded. Please download the latest rules with the --update-rules option.\r\n",
+                "No rules were loaded. Please download the latest rules with the update-rules command.\r\n",
             )
             .ok();
             return;
@@ -1518,9 +1518,11 @@ mod tests {
                         verbose: false,
                         json_input: true,
                     },
+                    enable_unsupported_rules: false,
                 },
                 geo_ip: None,
                 output: None,
+                multiline: false,
             })),
             debug: false,
         }))

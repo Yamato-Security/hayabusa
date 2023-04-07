@@ -72,6 +72,7 @@ pub struct StoredStatic {
     pub json_input_flag: bool,
     pub output_path: Option<PathBuf>,
     pub common_options: CommonOptions,
+    pub multiline_flag: bool,
 }
 impl StoredStatic {
     /// main.rsでパースした情報からデータを格納する関数
@@ -283,6 +284,10 @@ impl StoredStatic {
                 .unwrap(),
             false,
         );
+        let multiline_flag = match &input_config.as_ref().unwrap().action {
+            Some(Action::CsvTimeline(opt)) => opt.multiline,
+            _ => false,
+        };
         let mut ret = StoredStatic {
             config: input_config.as_ref().unwrap().to_owned(),
             config_path: config_path.to_path_buf(),
@@ -384,6 +389,7 @@ impl StoredStatic {
             json_input_flag,
             output_path: output_path.cloned(),
             common_options,
+            multiline_flag,
         };
         ret.profiles = load_profile(
             check_setting_path(
@@ -480,7 +486,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -489,7 +495,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -498,7 +504,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -507,7 +513,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -516,7 +522,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -525,7 +531,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -543,7 +549,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -552,7 +558,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -802,12 +808,16 @@ pub struct PivotKeywordOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated (no longer included by default)
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
+    /// Enable rules with status of deprecated
+    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
+    /// Enable rules with status of unsupported
+    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
+    pub enable_unsupported_rules: bool,
+
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -828,12 +838,12 @@ pub struct PivotKeywordOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
-        display_order = 311
+        display_order = 313
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
+    /// Enable rules set to noisy (./rules/config/noisy_rules.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 311)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
@@ -910,12 +920,16 @@ pub struct OutputOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
 
-    /// Enable rules marked as deprecated (no longer included by default)
-    #[arg(help_heading = Some("Filtering"), long = "enable-deprecated-rules", display_order = 310)]
+    /// Enable rules with status of deprecated
+    #[arg(help_heading = Some("Filtering"), short = 'D', long = "enable-deprecated-rules", display_order = 310)]
     pub enable_deprecated_rules: bool,
 
+    /// Enable rules with status of unsupported
+    #[arg(help_heading = Some("Filtering"), short = 'u', long = "enable-unsupported-rules", display_order = 312)]
+    pub enable_unsupported_rules: bool,
+
     /// Ignore rules according to status (ex: experimental) (ex: stable,test)
-    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 311)]
+    #[arg(help_heading = Some("Filtering"), long = "exclude-status", value_name = "STATUS", use_value_delimiter = true, value_delimiter = ',', display_order = 314)]
     pub exclude_status: Option<Vec<String>>,
 
     /// Minimum level for rules (default: informational)
@@ -936,12 +950,12 @@ pub struct OutputOption {
         short = 'e',
         long = "exact-level",
         value_name = "LEVEL",
-        display_order = 311
+        display_order = 313
     )]
     pub exact_level: Option<String>,
 
-    /// Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 310)]
+    /// Enable rules set to noisy (./rules/config/noisy_rules.txt)
+    #[arg(help_heading = Some("Filtering"), short = 'n', long = "enable-noisy-rules", display_order = 311)]
     pub enable_noisy_rules: bool,
 
     /// End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
@@ -1043,6 +1057,10 @@ pub struct CsvOutputOption {
     #[clap(flatten)]
     pub output_options: OutputOption,
 
+    /// Output event field information in multiple rows
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
+    pub multiline: bool,
+
     // display_order value is defined acronym of long option (A=10,B=20,...,Z=260,a=270, b=280...,z=520)
     /// Add GeoIP (ASN, city, country) info to IP addresses
     #[arg(
@@ -1086,7 +1104,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa 2.3.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa 2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1343,7 +1361,7 @@ pub fn load_pivot_keywords(path: &str) {
         PIVOT_KEYWORD
             .write()
             .unwrap()
-            .get_mut(&key.to_string())
+            .get_mut(key)
             .unwrap()
             .fields
             .insert(value.to_string());
@@ -1412,6 +1430,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: option.enable_unsupported_rules,
         }),
         Action::Metrics(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1437,6 +1456,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: false,
         }),
         Action::LogonSummary(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1462,6 +1482,7 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: false,
         }),
         Action::Search(option) => Some(OutputOption {
             input_args: option.input_args.clone(),
@@ -1523,6 +1544,44 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
                 verbose: false,
                 json_input: false,
             },
+            enable_unsupported_rules: false,
+        }),
+        Action::UpdateRules(option) => Some(OutputOption {
+            input_args: InputOption {
+                directory: None,
+                filepath: None,
+                live_analysis: false,
+            },
+            enable_deprecated_rules: true,
+            enable_noisy_rules: true,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            exact_level: None,
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: DetectCommonOption {
+                evtx_file_ext: None,
+                thread_number: None,
+                quiet_errors: false,
+                config: Path::new("./rules/config").to_path_buf(),
+                verbose: false,
+                json_input: false,
+            },
+            enable_unsupported_rules: true,
         }),
         _ => None,
     }
