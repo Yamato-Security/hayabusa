@@ -1391,7 +1391,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             input_args: option.input_args.clone(),
             keywords: option.keywords.clone(),
             regex: option.regex.clone(),
-            ignore_case: option.ignore_case.clone(),
+            ignore_case: option.ignore_case,
             filter: option.filter.clone(),
             output: option.output.clone(),
             common_options: option.common_options,
