@@ -189,38 +189,38 @@ pub fn search_result_dsp_msg(
         "EvtxFile",
     ];
     let target: Box<dyn io::Write> = match output {
-        Some(path) => {
-            let file_name = path.display().to_string();
-            match File::create(file_name) {
-                Ok(file) => Box::new(BufWriter::new(file)),
-                Err(err) => {
-                    AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
-                    process::exit(1)
-                }
+        Some(path) => match File::create(path) {
+            Ok(file) => Box::new(BufWriter::new(file)),
+            Err(err) => {
+                AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
+                process::exit(1)
             }
-        }
+        },
         None => Box::new(BufWriter::new(io::stdout())),
     };
-    let mut wtr = WriterBuilder::new().from_writer(target);
+    let mut wtr = if output.is_none() {
+        Some(WriterBuilder::new().from_writer(target))
+    } else {
+        Some(WriterBuilder::new().delimiter(b',').from_writer(target))
+    };
+
     // Write header
-    wtr.write_record(&header).ok();
+    if output.is_some() {
+        wtr.as_mut().unwrap().write_record(&header).ok();
+    } else {
+        wtr.as_mut().unwrap().write_field(header.join(" ‖ ")).ok();
+    }
 
     // Write contents
     for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
         result_list
     {
-        let event_title = if event_timeline_config
-            .get_event_id(channel, event_id)
-            .is_some()
-        {
-            event_timeline_config
-                .get_event_id(channel, event_id)
-                .unwrap()
-                .evttitle
-                .as_str()
-        } else {
-            "-"
-        };
+        let event_title =
+            if let Some(event_info) = event_timeline_config.get_event_id(channel, event_id) {
+                event_info.evttitle.as_str()
+            } else {
+                "-"
+            };
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
@@ -231,6 +231,13 @@ pub fn search_result_dsp_msg(
             all_field_info.as_str(),
             evtx_file.as_str(),
         ];
-        wtr.write_record(&record_data).ok();
+        if wtr.as_ref().is_some() {
+            wtr.as_mut().unwrap().write_record(&record_data).ok();
+        } else {
+            wtr.as_mut()
+                .unwrap()
+                .write_field(record_data.join(" ‖ "))
+                .ok();
+        }
     }
 }
