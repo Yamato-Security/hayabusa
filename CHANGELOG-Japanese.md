@@ -7,7 +7,7 @@
 - ファイル(CSV, JSON, JSONL)出力の際にルールの`level`の余分なスペースを削除した。 (#979) (@hitenkoku)
 - `-M, --multiline`オプション利用時にルール作者名の出力を複数行出力対応をした。 (#980) (@hitenkoku)
 - Stringの代わりにCoWを利用することで、約5%の速度向上を実現した。 (#984) (@hitenkoku)
-- Clapの新バージョンでロゴ後のメッセージとUsageテキストの出力色が緑にならないように修正した。 (#989) (@hitenkoku)
+- Clapの新バージョンでロゴ後のメッセージとUsageテキストの出力色が緑にならないように修正した。 (#989) (@hitenkoku, @yamatosecurity)
 
 **バグ修正:**
 
