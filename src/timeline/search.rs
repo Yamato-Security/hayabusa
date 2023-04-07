@@ -1,5 +1,5 @@
 use crate::detections::{
-    configs::{EventInfoConfig, EventKeyAliasConfig},
+    configs::{EventInfoConfig, EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
     message::AlertMessage,
     utils,
@@ -54,13 +54,14 @@ impl EventSearch {
         search_flag: bool,
         keywords: &Vec<String>,
         eventkey_alias: &EventKeyAliasConfig,
+        stored_static: &StoredStatic,
     ) {
         if !search_flag {
             return;
         }
 
         if !keywords.is_empty() {
-            self.search_keyword(records, keywords, eventkey_alias);
+            self.search_keyword(records, keywords, eventkey_alias, stored_static);
         }
     }
 
@@ -69,6 +70,7 @@ impl EventSearch {
         records: &[EvtxRecordInfo],
         keywords: &[String],
         eventkey_alias: &EventKeyAliasConfig,
+        stored_static: &StoredStatic,
     ) {
         if records.is_empty() {
             return;
@@ -100,17 +102,22 @@ impl EventSearch {
                     .replace(['"', '\''], ""),
                 );
 
-                let channel = CompactString::from(
-                    utils::get_serde_number_to_string(
-                        utils::get_event_value("Channel", &record.record, eventkey_alias)
-                            .unwrap_or(&serde_json::Value::Null),
-                        true,
+                let ch_str = &utils::get_serde_number_to_string(
+                    &record.record["Event"]["System"]["Channel"],
+                    false,
+                )
+                .unwrap_or_default();
+                let channel = stored_static
+                    .disp_abbr_generic
+                    .replace_all(
+                        stored_static
+                            .ch_config
+                            .get(&CompactString::from(ch_str.to_ascii_lowercase()))
+                            .unwrap_or(ch_str)
+                            .as_str(),
+                        &stored_static.disp_abbr_general_values,
                     )
-                    .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], "")
-                    .to_lowercase(),
-                );
-
+                    .into();
                 let mut eventid = String::new();
                 match utils::get_event_value("EventID", &record.record, eventkey_alias) {
                     Some(evtid) if evtid.is_u64() => {

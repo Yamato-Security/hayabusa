@@ -69,6 +69,7 @@ impl Timeline {
                 stored_static.search_flag,
                 keywords,
                 &stored_static.eventkey_alias,
+                stored_static,
             );
         }
     }
