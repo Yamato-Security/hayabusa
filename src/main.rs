@@ -1128,7 +1128,10 @@ impl App {
             // timeline機能の実行
             tl.start(&records_per_detect, stored_static);
 
-            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+            if !(stored_static.metrics_flag
+                || stored_static.logon_summary_flag
+                || stored_static.search_flag)
+            {
                 // ruleファイルの検知
                 detection = detection.start(&self.rt, records_per_detect);
             }

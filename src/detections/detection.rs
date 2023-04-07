@@ -136,7 +136,10 @@ impl Detection {
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
-        if !stored_static.logon_summary_flag {
+        if !(stored_static.logon_summary_flag
+            || stored_static.search_flag
+            || stored_static.metrics_flag)
+        {
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
                 &rulefile_loader.rule_load_cnt,
@@ -975,9 +978,6 @@ impl Detection {
         err_rc: &u128,
         stored_static: &StoredStatic,
     ) {
-        if stored_static.metrics_flag {
-            return;
-        }
         let mut sorted_ld_rc: Vec<(&CompactString, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let mut html_report_stock = Nested::<String>::new();
