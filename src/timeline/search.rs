@@ -78,9 +78,9 @@ impl EventSearch {
 
         for record in records.iter() {
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
-            if utils::contains_str(&record
-                .data_string, keywords.get(0).unwrap_or(&String::from("SampleMessage")))
-            // TODO: fix to search all keywords.
+            if keywords
+                .iter()
+                .any(|key| utils::contains_str(&record.data_string, key))
             {
                 let timestamp = utils::get_event_value(
                     "Event.System.TimeCreated_attributes.SystemTime",
