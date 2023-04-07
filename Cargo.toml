@@ -1,9 +1,9 @@
 [package]
 name = "hayabusa"
-version = "2.3.0"
+version = "2.3.3"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
-rust-version = "1.66.0"
+rust-version = "1.68.2"
 include = ["src/**/*", "LICENSE.txt", "README.md", "CHANGELOG.md"]
 
 [dependencies]

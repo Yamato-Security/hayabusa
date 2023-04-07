@@ -464,6 +464,7 @@ Input:
 Output:
   -G, --GeoIP <MAXMIND-DB-DIR>    IPアドレスのGeoIP(ASN、都市、国)情報を追加する
   -H, --HTML-report <FILE>        HTML形式で詳細な結果を出力する (例: results.html)
+  -M, --multiline                 イベントフィールド情報を複数の行に出力する
   -o, --output <FILE>             タイムラインを保存する (例: results.csv)
   -p, --profile <PROFILE>         利用する出力プロファイル名を指定する
 
@@ -475,14 +476,15 @@ Display Settings:
   -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Deprecatedルールを有効にする
-  -n, --enable-noisy-rules       Noisyルールを有効にする
-  -e, --exact-level <LEVEL>      特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules        Noisyルールを有効にする
+  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
@@ -668,14 +670,15 @@ Display Settings:
   -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
-  -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Deprecatedルールを有効にする
-  -n, --enable-noisy-rules       Noisyルールを有効にする
-  -e, --exact-level <LEVEL>      特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules        Noisyルールを有効にする
+  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
@@ -807,14 +810,15 @@ Display Settings:
   -v, --verbose        詳細な情報を出力する
 
 Filtering:
-  -E, --EID-filter               速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Deprecatedルールを有効にする
-  -n, --enable-noisy-rules       Noisyルールを有効にする
-  -e, --exact-level <LEVEL>      特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>      解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules        Noisyルールを有効にする
+  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない

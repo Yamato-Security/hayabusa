@@ -101,7 +101,7 @@ pub fn set_output_color(no_color_flag: bool) -> HashMap<CompactString, Colors> {
 fn _get_output_color(color_map: &HashMap<CompactString, Colors>, level: &str) -> Option<Color> {
     let mut color = None;
     if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
-        color = Some(c.output_color.to_owned());
+        color = Some(c.output_color);
     }
     color
 }
@@ -112,7 +112,7 @@ fn _get_table_color(
 ) -> Option<comfy_table::Color> {
     let mut color = None;
     if let Some(c) = color_map.get(&CompactString::from(level.to_lowercase())) {
-        color = Some(c.table_color.to_owned());
+        color = Some(c.table_color);
     }
     color
 }
@@ -217,8 +217,12 @@ fn emit_csv<W: std::io::Write>(
 ) -> io::Result<()> {
     let output_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("🛂r", "\r"), ("🛂n", "\n"), ("🛂t", "\t")]);
-    let removed_replaced_maps: HashMap<&str, &str> =
+    let mut removed_replaced_maps: HashMap<&str, &str> =
         HashMap::from_iter(vec![("\n", " "), ("\r", " "), ("\t", " ")]);
+    if stored_static.multiline_flag {
+        removed_replaced_maps.insert("🛂🛂", "\r\n");
+        removed_replaced_maps.insert(" ¦ ", "\r\n");
+    }
     let output_replacer = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
         .build(output_replaced_maps.keys());
@@ -247,7 +251,11 @@ fn emit_csv<W: std::io::Write>(
                     .from_writer(writer),
             )
         }
-        Action::CsvTimeline(_) => Some(WriterBuilder::new().from_writer(writer)),
+        Action::CsvTimeline(_) => Some(
+            WriterBuilder::new()
+                .quote_style(QuoteStyle::NonNumeric)
+                .from_writer(writer),
+        ),
         _ => None,
     };
     //CsvTimeLineとJsonTimeLine以外はこの関数は呼ばれないが、matchをつかうためにこの処理を追加した。
@@ -274,7 +282,7 @@ fn emit_csv<W: std::io::Write>(
     let mut rule_title_path_map: HashMap<CompactString, CompactString> = HashMap::new();
     let mut rule_author_counter: HashMap<CompactString, i128> = HashMap::new();
 
-    let levels = Vec::from(["crit", "high", "med ", "low ", "info", "undefined"]);
+    let levels = ["crit", "high", "med ", "low ", "info", "undefined"];
     // レベル別、日ごとの集計用変数の初期化
     for level_init in levels {
         detect_counts_by_date_and_level.insert(CompactString::from(level_init), HashMap::new());
@@ -284,7 +292,7 @@ fn emit_csv<W: std::io::Write>(
     if displayflag {
         println!();
     }
-    let mut timestamps: Vec<i64> = Vec::new();
+    let mut timestamps: Vec<i64> = vec![0; MESSAGEKEYS.lock().unwrap().len()];
     let mut plus_header = true;
     let mut detected_record_idset: HashSet<CompactString> = HashSet::new();
 
@@ -353,7 +361,7 @@ fn emit_csv<W: std::io::Write>(
                     get_writable_color(
                         _get_output_color(
                             &color_map,
-                            LEVEL_FULL.get(&detect_info.level.as_str()).unwrap_or(&""),
+                            LEVEL_FULL.get(detect_info.level.as_str()).unwrap_or(&""),
                         ),
                         stored_static.common_options.no_color,
                     ),
@@ -387,16 +395,13 @@ fn emit_csv<W: std::io::Write>(
                     plus_header = false;
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    output_remover
-                        .replace_all(
-                            &output_replacer.replace_all(
-                                &x.1.to_value(),
-                                &output_replaced_maps.values().collect_vec(),
-                            ),
-                            &removed_replaced_maps.values().collect_vec(),
-                        )
-                        .split_whitespace()
-                        .join(" ")
+                    output_remover.replace_all(
+                        &output_replacer.replace_all(
+                            &x.1.to_value(),
+                            &output_replaced_maps.values().collect_vec(),
+                        ),
+                        &removed_replaced_maps.values().collect_vec(),
+                    )
                 }))?;
             }
             // 各種集計作業
@@ -757,12 +762,12 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                 ret.push(
                     _format_cellpos(
                         &d.1.to_value()
-                            .replace("🛂r", "\r")
-                            .replace("🛂n", "\n")
-                            .replace("🛂t", "\t")
-                            .replace(['\n', '\r', '\t'], " ")
-                            .split_whitespace()
-                            .join(" "),
+                            .replace("🛂r", "")
+                            .replace("🛂n", "")
+                            .replace("🛂t", ""),
+                        // .replace(['\n', '\r', '\t'], " ")
+                        // .split_whitespace()
+                        // .join(" "),
                         ColPos::First,
                     )
                     .replace('|', "🦅"),
@@ -771,12 +776,12 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                 ret.push(
                     _format_cellpos(
                         &d.1.to_value()
-                            .replace("🛂r", "\r")
-                            .replace("🛂n", "\n")
-                            .replace("🛂t", "\t")
-                            .replace(['\n', '\r', '\t'], " ")
-                            .split_whitespace()
-                            .join(" "),
+                            .replace("🛂r", "")
+                            .replace("🛂n", "")
+                            .replace("🛂t", ""),
+                        // .replace(['\n', '\r', '\t'], " ")
+                        // .split_whitespace()
+                        // .join(" "),
                         ColPos::Last,
                     )
                     .replace('|', "🦅"),
@@ -785,12 +790,12 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                 ret.push(
                     _format_cellpos(
                         &d.1.to_value()
-                            .replace("🛂r", "\r")
-                            .replace("🛂n", "\n")
-                            .replace("🛂t", "\t")
-                            .replace(['\n', '\r', '\t'], " ")
-                            .split_whitespace()
-                            .join(" "),
+                            .replace("🛂r", "")
+                            .replace("🛂n", "")
+                            .replace("🛂t", ""),
+                        // .replace(['\n', '\r', '\t'], " ")
+                        // .split_whitespace()
+                        // .join(" "),
                         ColPos::Other,
                     )
                     .replace('|', "🦅"),
@@ -929,27 +934,28 @@ fn _print_detection_summary_by_date(
     for (idx, level) in level_abbr.iter().enumerate() {
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
         let detections_by_day = detect_counts_by_date.get(&level[1]).unwrap();
-        let mut max_detect_str = String::default();
+        let mut max_detect_str = CompactString::default();
         let mut tmp_cnt: i128 = 0;
         let mut exist_max_data = false;
         for (date, cnt) in detections_by_day {
             if cnt > &tmp_cnt {
                 exist_max_data = true;
-                max_detect_str = format!("{} ({})", date, cnt.to_formatted_string(&Locale::en));
+                max_detect_str =
+                    format!("{} ({})", date, cnt.to_formatted_string(&Locale::en)).into();
                 tmp_cnt = *cnt;
             }
         }
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
         )))
         .ok();
         if !exist_max_data {
-            max_detect_str = "n/a".to_string();
+            max_detect_str = "n/a".into();
         }
         let output_str = format!(
             "{}: {}",
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
             &max_detect_str
         );
         write!(wtr, "{output_str}").ok();
@@ -993,8 +999,8 @@ fn _print_detection_summary_by_computer(
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Computers with most unique {} detections: {{#computers_with_most_unique_{}_detections}}",
-                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
-                LEVEL_FULL.get(&level[1].as_str()).unwrap()
+                LEVEL_FULL.get(level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -1020,13 +1026,13 @@ fn _print_detection_summary_by_computer(
 
         wtr.set_color(ColorSpec::new().set_fg(_get_output_color(
             color_map,
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
         )))
         .ok();
         writeln!(
             wtr,
             "{}: {}",
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
             &result_str
         )
         .ok();
@@ -1049,15 +1055,15 @@ fn _print_detection_summary_tables(
     let mut output = vec![];
     let mut col_color = vec![];
     for level in level_abbr.iter() {
-        let mut col_output: Vec<String> = vec![];
+        let mut col_output: Nested<String> = Nested::<String>::new();
         col_output.push(format!(
             "Top {} alerts:",
-            LEVEL_FULL.get(&level[1].as_str()).unwrap()
+            LEVEL_FULL.get(level[1].as_str()).unwrap()
         ));
 
         col_color.push(_get_table_color(
             color_map,
-            LEVEL_FULL.get(&level[1].as_str()).unwrap(),
+            LEVEL_FULL.get(level[1].as_str()).unwrap(),
         ));
 
         // output_levelsはlevelsからundefinedを除外した配列であり、各要素は必ず初期化されているのでSomeであることが保証されているのでunwrapをそのまま実施
@@ -1071,8 +1077,8 @@ fn _print_detection_summary_tables(
         if stored_static.html_report_flag {
             html_output_stock.push(format!(
                 "### Top {} alerts: {{#top_{}_alerts}}",
-                LEVEL_FULL.get(&level[1].as_str()).unwrap(),
-                LEVEL_FULL.get(&level[1].as_str()).unwrap()
+                LEVEL_FULL.get(level[1].as_str()).unwrap(),
+                LEVEL_FULL.get(level[1].as_str()).unwrap()
             ));
             for x in sorted_detections.iter() {
                 html_output_stock.push(format!(
@@ -1088,7 +1094,7 @@ fn _print_detection_summary_tables(
             html_output_stock.push("");
         }
 
-        let take_cnt = if "informational" == *LEVEL_FULL.get(&level[1].as_str()).unwrap_or(&"-") {
+        let take_cnt = if "informational" == *LEVEL_FULL.get(level[1].as_str()).unwrap_or(&"-") {
             10
         } else {
             5
@@ -1106,7 +1112,7 @@ fn _print_detection_summary_tables(
             take_cnt - sorted_detections.len()
         };
         for _x in 0..na_cnt {
-            col_output.push("n/a".to_string());
+            col_output.push("n/a");
         }
         output.push(col_output);
     }
@@ -1128,15 +1134,15 @@ fn _print_detection_summary_tables(
         .set_style(TableComponent::BottomBorderIntersections, hlch);
 
         tb.add_row(vec![
-            Cell::new(output[2 * x][1..].join("\n"))
+            Cell::new(output[2 * x].iter().skip(1).join("\n"))
                 .fg(col_color[2 * x].unwrap_or(comfy_table::Color::Reset)),
-            Cell::new(output[2 * x + 1][1..].join("\n"))
+            Cell::new(output[2 * x + 1].iter().skip(1).join("\n"))
                 .fg(col_color[2 * x + 1].unwrap_or(comfy_table::Color::Reset)),
         ]);
     }
 
-    let odd_row = &output[4][1..6];
-    let even_row = &output[4][6..11];
+    let odd_row = &mut output[4].iter().skip(1).take(5);
+    let even_row = &mut output[4].iter().skip(1).take(5);
     tb.add_row(vec![
         Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
         Cell::new(""),
@@ -1276,7 +1282,7 @@ fn output_json_str(
                 _convert_valid_json_str(&tmp_val, matches!(profile, Profile::AllFieldInfo(_)));
             target.push(_create_json_output_format(
                 key,
-                &output_val,
+                output_val.trim(),
                 key.starts_with('\"'),
                 output_val.starts_with('\"'),
                 4,
@@ -1470,7 +1476,7 @@ fn output_json_str(
                     };
                     target.push(_create_json_output_format(
                         &key,
-                        &fmted_val,
+                        fmted_val.trim(),
                         key.starts_with('\"'),
                         true,
                         4,
@@ -1572,7 +1578,7 @@ fn extract_author_name(yaml_path: &str, stored_static: &StoredStatic) -> Nested<
                 .iter()
                 .map(|r| {
                     r.split('/')
-                        .map(|p| p.to_string().replace(['"', '\''], "").trim().to_string())
+                        .map(|p| p.trim().replace(['"', '\''], ""))
                         .collect::<String>()
                 })
                 .collect();
@@ -1678,6 +1684,7 @@ mod tests {
             },
             geo_ip: None,
             output: Some(Path::new("./test_emit_csv.csv").to_path_buf()),
+            multiline: false,
         });
         let dummy_config = Some(Config {
             action: Some(dummy_action),
@@ -1748,54 +1755,29 @@ mod tests {
                 },
                 enable_unsupported_rules: false,
             };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
             let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
                 (
                     "Timestamp",
-                    Profile::Timestamp(format_time(&expect_time, false, &output_option)),
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
                 ),
-                (
-                    "Computer",
-                    Profile::Computer(CompactString::from(test_computername2)),
-                ),
-                (
-                    "Channel",
-                    Profile::Channel(
-                        mock_ch_filter
-                            .get(&CompactString::from("security"))
-                            .unwrap_or(&CompactString::default())
-                            .to_owned(),
-                    ),
-                ),
-                ("Level", Profile::Level(CompactString::from(test_level))),
-                (
-                    "EventID",
-                    Profile::EventID(CompactString::from(test_eventid)),
-                ),
-                (
-                    "MitreAttack",
-                    Profile::MitreTactics(CompactString::from(test_attack)),
-                ),
-                (
-                    "RecordID",
-                    Profile::RecordID(CompactString::from(test_record_id)),
-                ),
-                (
-                    "RuleTitle",
-                    Profile::RuleTitle(CompactString::from(test_title)),
-                ),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
                 (
                     "RecordInformation",
-                    Profile::AllFieldInfo(CompactString::from(test_recinfo)),
+                    Profile::AllFieldInfo(test_recinfo.into()),
                 ),
-                (
-                    "RuleFile",
-                    Profile::RuleFile(CompactString::from(test_rulepath)),
-                ),
-                (
-                    "EvtxFile",
-                    Profile::EvtxFile(CompactString::from(test_filepath)),
-                ),
-                ("Tags", Profile::MitreTags(CompactString::from(test_attack))),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
             ]);
             let eventkey_alias = load_eventkey_alias(
                 utils::check_setting_path(
@@ -1826,7 +1808,7 @@ mod tests {
                 &eventkey_alias,
             );
             *profile_converter.get_mut("Computer").unwrap() =
-                Profile::Computer(CompactString::from(test_computername));
+                Profile::Computer(test_computername.into());
 
             message::insert(
                 &event,
@@ -1852,61 +1834,61 @@ mod tests {
             println!("message: {detect_infos:?}");
         }
         let expect =
-            "Timestamp,Computer,Channel,Level,EventID,MitreAttack,RecordID,RuleTitle,Details,RecordInformation,RuleFile,EvtxFile,Tags\n"
+            "\"Timestamp\",\"Computer\",\"Channel\",\"Level\",\"EventID\",\"MitreAttack\",\"RecordID\",\"RuleTitle\",\"Details\",\"RecordInformation\",\"RuleFile\",\"EvtxFile\",\"Tags\"\n\""
                 .to_string()
                 + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
-                + ","
+                + "\",\""
                 + test_computername
-                + ","
+                + "\",\""
                 + test_channel
-                + ","
+                + "\",\""
                 + test_level
-                + ","
+                + "\","
                 + test_eventid
-                + ","
+                + ",\""
                 + test_attack
-                + ","
+                + "\","
                 + test_record_id
-                + ","
+                + ",\""
                 + test_title
-                + ","
+                + "\",\""
                 + output
-                + ","
+                + "\",\""
                 + test_recinfo
-                + ","
+                + "\",\""
                 + test_rulepath
-                + ","
+                + "\",\""
                 + test_filepath
-                + ","
+                + "\",\""
                 + test_attack
-                + "\n"
+                + "\"\n\""
                 + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z")
                 .to_string()
-                + ","
+                + "\",\""
                 + test_computername2
-                + ","
+                + "\",\""
                 + test_channel
-                + ","
+                + "\",\""
                 + test_level
-                + ","
+                + "\","
                 + test_eventid
-                + ","
+                + ",\""
                 + test_attack
-                + ","
+                + "\","
                 + test_record_id
-                + ","
+                + ",\""
                 + test_title
-                + ","
+                + "\",\""
                 + output
-                + ","
+                + "\",\""
                 + test_recinfo
-                + ","
+                + "\",\""
                 + test_rulepath
-                + ","
+                + "\",\""
                 + test_filepath
-                + ","
+                + "\",\""
                 + test_attack
-                + "\n";
+                + "\"\n";
         let mut file: Box<dyn io::Write> = Box::new(File::create("./test_emit_csv.csv").unwrap());
 
         assert!(emit_csv(
@@ -1926,6 +1908,285 @@ mod tests {
             }
         };
         assert!(remove_file("./test_emit_csv.csv").is_ok());
+    }
+
+    #[test]
+    fn test_emit_csv_output_with_multiline_opt() {
+        let mock_ch_filter = message::create_output_filter_config(
+            "test_files/config/channel_abbreviations.txt",
+            true,
+        );
+        let test_filepath: &str = "test.evtx";
+        let test_rulepath: &str = "test-rule.yml";
+        let test_title = "test_title";
+        let test_level = "high";
+        let test_computername = "testcomputer";
+        let test_computername2 = "testcomputer2";
+        let test_eventid = "1111";
+        let test_channel = "Sec";
+        let output = "pokepoke";
+        let test_attack = "execution/txxxx.yyy";
+        let test_recinfo = "CommandRLine: hoge ¦ Test1: hogetest1 ¦ Test2: hogetest2";
+        let test_record_id = "11111";
+        let expect_time = Utc
+            .datetime_from_str("1996-02-27T01:05:01Z", "%Y-%m-%dT%H:%M:%SZ")
+            .unwrap();
+        let expect_tz = expect_time.with_timezone(&Utc);
+        let dummy_action = Action::CsvTimeline(CsvOutputOption {
+            output_options: OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: Some("verbose-2".to_string()),
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: true,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+                enable_unsupported_rules: false,
+            },
+            geo_ip: None,
+            output: Some(Path::new("./test_emit_csv_multiline.csv").to_path_buf()),
+            multiline: true,
+        });
+        let dummy_config = Some(Config {
+            action: Some(dummy_action),
+            debug: false,
+        });
+        let stored_static = StoredStatic::create_static_data(dummy_config);
+        let output_profile: Vec<(CompactString, Profile)> = load_profile(
+            "test_files/config/default_profile.yaml",
+            "test_files/config/profiles.yaml",
+            Some(&stored_static),
+        )
+        .unwrap_or_default();
+        {
+            let messages = &message::MESSAGES;
+            messages.clear();
+            let val = r##"
+                {
+                    "Event": {
+                        "EventData": {
+                            "CommandRLine": "hoge",
+                            "Test1": "hogetest1",
+                            "Test2": "hogetest2"
+                        },
+                        "System": {
+                            "TimeCreated_attributes": {
+                                "SystemTime": "1996-02-27T01:05:01Z"
+                            }
+                        }
+                    }
+                }
+            "##;
+            let event: Value = serde_json::from_str(val).unwrap();
+            let output_option = OutputOption {
+                input_args: InputOption {
+                    directory: None,
+                    filepath: None,
+                    live_analysis: false,
+                },
+                profile: Some("verbose-2".to_string()),
+                enable_deprecated_rules: false,
+                exclude_status: None,
+                min_level: "informational".to_string(),
+                exact_level: None,
+                enable_noisy_rules: false,
+                end_timeline: None,
+                start_timeline: None,
+                eid_filter: false,
+                european_time: false,
+                iso_8601: false,
+                rfc_2822: false,
+                rfc_3339: false,
+                us_military_time: false,
+                us_time: false,
+                utc: false,
+                visualize_timeline: false,
+                rules: Path::new("./rules").to_path_buf(),
+                html_report: None,
+                no_summary: false,
+                common_options: CommonOptions {
+                    no_color: false,
+                    quiet: false,
+                },
+                detect_common_options: DetectCommonOption {
+                    evtx_file_ext: None,
+                    thread_number: None,
+                    quiet_errors: false,
+                    config: Path::new("./rules/config").to_path_buf(),
+                    verbose: false,
+                    json_input: false,
+                },
+                enable_unsupported_rules: false,
+            };
+            let ch = mock_ch_filter
+                .get(&CompactString::from("security"))
+                .unwrap_or(&CompactString::default())
+                .clone();
+            let mut profile_converter: HashMap<&str, Profile> = HashMap::from([
+                (
+                    "Timestamp",
+                    Profile::Timestamp(format_time(&expect_time, false, &output_option).into()),
+                ),
+                ("Computer", Profile::Computer(test_computername2.into())),
+                ("Channel", Profile::Channel(ch.into())),
+                ("Level", Profile::Level(test_level.into())),
+                ("EventID", Profile::EventID(test_eventid.into())),
+                ("MitreAttack", Profile::MitreTactics(test_attack.into())),
+                ("RecordID", Profile::RecordID(test_record_id.into())),
+                ("RuleTitle", Profile::RuleTitle(test_title.into())),
+                ("AllFieldInfo", Profile::AllFieldInfo(test_recinfo.into())),
+                ("RuleFile", Profile::RuleFile(test_rulepath.into())),
+                ("EvtxFile", Profile::EvtxFile(test_filepath.into())),
+                ("Tags", Profile::MitreTags(test_attack.into())),
+            ]);
+            let eventkey_alias = load_eventkey_alias(
+                utils::check_setting_path(
+                    &CURRENT_EXE_PATH.to_path_buf(),
+                    "rules/config/eventkey_alias.txt",
+                    true,
+                )
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            );
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername2),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                false,
+                &eventkey_alias,
+            );
+            *profile_converter.get_mut("Computer").unwrap() =
+                Profile::Computer(test_computername.into());
+
+            message::insert(
+                &event,
+                CompactString::new(output),
+                DetectInfo {
+                    rulepath: CompactString::from(test_rulepath),
+                    ruletitle: CompactString::from(test_title),
+                    level: CompactString::from(test_level),
+                    computername: CompactString::from(test_computername),
+                    eventid: CompactString::from(test_eventid),
+                    detail: CompactString::default(),
+                    ext_field: output_profile.to_owned(),
+                    is_condition: false,
+                },
+                expect_time,
+                &mut profile_converter,
+                false,
+                &eventkey_alias,
+            );
+            let multi = message::MESSAGES.get(&expect_time).unwrap();
+            let (_, detect_infos) = multi.pair();
+
+            println!("message: {detect_infos:?}");
+        }
+        let expect =
+            "\"Timestamp\",\"Computer\",\"Channel\",\"EventID\",\"Level\",\"Tags\",\"RecordID\",\"RuleTitle\",\"Details\",\"AllFieldInfo\"\n\""
+                .to_string()
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z").to_string()
+                + "\",\""
+                + test_computername
+                + "\",\""
+                + test_channel
+                + "\","
+                + test_eventid
+                + ",\""
+                + test_level
+                + "\",\""
+                + test_attack
+                + "\","
+                + test_record_id
+                + ",\""
+                + test_title
+                + "\",\""
+                + output
+                + "\",\""
+                + &test_recinfo.replace(" ¦ ", "\r\n")
+                + "\"\n\""
+                + &expect_tz.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S%.3f %:z")
+                .to_string()
+                + "\",\""
+                + test_computername2
+                + "\",\""
+                + test_channel
+                + "\","
+                + test_eventid
+                + ",\""
+                + test_level
+                + "\",\""
+                + test_attack
+                + "\","
+                + test_record_id
+                + ",\""
+                + test_title
+                + "\",\""
+                + output
+                + "\",\""
+                + &test_recinfo.replace(" ¦ ", "\r\n")
+                + "\"\n";
+        let mut file: Box<dyn io::Write> =
+            Box::new(File::create("./test_emit_csv_multiline.csv").unwrap());
+
+        assert!(emit_csv(
+            &mut file,
+            false,
+            HashMap::new(),
+            1,
+            &output_profile,
+            &stored_static,
+            (&Some(expect_tz), &Some(expect_tz))
+        )
+        .is_ok());
+        match read_to_string("./test_emit_csv_multiline.csv") {
+            Err(_) => panic!("Failed to open file."),
+            Ok(s) => {
+                assert_eq!(s, expect);
+            }
+        };
+        assert!(remove_file("./test_emit_csv_multiline.csv").is_ok());
     }
 
     #[test]
@@ -2006,43 +2267,39 @@ mod tests {
         let data: Vec<(CompactString, Profile)> = vec![
             (
                 CompactString::new("Timestamp"),
-                Profile::Timestamp(CompactString::new(format_time(
-                    &test_timestamp,
-                    false,
-                    &output_option,
-                ))),
+                Profile::Timestamp(format_time(&test_timestamp, false, &output_option).into()),
             ),
             (
                 CompactString::new("Computer"),
-                Profile::Computer(CompactString::new(test_computername)),
+                Profile::Computer(test_computername.into()),
             ),
             (
                 CompactString::new("Channel"),
-                Profile::Channel(CompactString::new(test_channel)),
+                Profile::Channel(test_channel.into()),
             ),
             (
                 CompactString::new("EventID"),
-                Profile::EventID(CompactString::new(test_eventid)),
+                Profile::EventID(test_eventid.into()),
             ),
             (
                 CompactString::new("Level"),
-                Profile::Level(CompactString::new(test_level)),
+                Profile::Level(test_level.into()),
             ),
             (
                 CompactString::new("RecordID"),
-                Profile::RecordID(CompactString::new(test_recid)),
+                Profile::RecordID(test_recid.into()),
             ),
             (
                 CompactString::new("RuleTitle"),
-                Profile::RuleTitle(CompactString::new(test_title)),
+                Profile::RuleTitle(test_title.into()),
             ),
             (
                 CompactString::new("Details"),
-                Profile::Details(CompactString::new(output)),
+                Profile::Details(output.into()),
             ),
             (
                 CompactString::new("RecordInformation"),
-                Profile::AllFieldInfo(CompactString::new(test_recinfo)),
+                Profile::AllFieldInfo(test_recinfo.into()),
             ),
         ];
         assert_eq!(_get_serialized_disp_output(&data, true), expect_header);

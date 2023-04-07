@@ -464,6 +464,7 @@ Input:
 Output:
   -G, --GeoIP <MAXMIND-DB-DIR>  Add GeoIP (ASN, city, country) info to IP addresses
   -H, --HTML-report <FILE>      Save Results Summary details to an HTML report (ex: results.html)
+  -M, --multiline               Output event field information in multiple rows
   -o, --output <FILE>           Save the timeline in CSV format (ex: results.csv)
   -p, --profile <PROFILE>       Specify output profile
 
@@ -475,14 +476,15 @@ Display Settings:
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
-  -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Enable rules marked as deprecated (no longer included by default)
-  -n, --enable-noisy-rules       Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-  -e, --exact-level <LEVEL>      Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   Enable rules with status of deprecated
+  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules  Enable rules with status of unsupported
+  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
@@ -668,14 +670,15 @@ Display Settings:
   -T, --visualize-timeline  Output event frequency timeline (terminal needs to support unicode)
 
 Filtering:
-  -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Enable rules marked as deprecated (no longer included by default)
-  -n, --enable-noisy-rules       Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-  -e, --exact-level <LEVEL>      Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   Enable rules with status of deprecated
+  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules  Enable rules with status of unsupported
+  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs
@@ -807,14 +810,15 @@ Display Settings:
   -v, --verbose   Output verbose information
 
 Filtering:
-  -E, --EID-filter               Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
-      --enable-deprecated-rules  Enable rules marked as deprecated (no longer included by default)
-  -n, --enable-noisy-rules       Enable rules marked as noisy (./rules/config/noisy_rules.txt)
-  -e, --exact-level <LEVEL>      Scan for only specific levels (informational, low, medium, high, critical)
-      --exclude-status <STATUS>  Ignore rules according to status (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>        Minimum level for rules (default: informational)
-      --timeline-end <DATE>      End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>    Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
+  -E, --EID-filter                Scan only common EIDs for faster speed (./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   Enable rules with status of deprecated
+  -n, --enable-noisy-rules        Enable rules set to noisy (./rules/config/noisy_rules.txt)
+  -u, --enable-unsupported-rules  Enable rules with status of unsupported
+  -e, --exact-level <LEVEL>       Scan for only specific levels (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   Ignore rules according to status (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         Minimum level for rules (default: informational)
+      --timeline-end <DATE>       End time of the event logs to load (ex: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     Start time of the event logs to load (ex: "2020-02-22 00:00:00 +09:00")
 
 General Options:
   -Q, --quiet-errors                     Quiet errors mode: do not save error logs

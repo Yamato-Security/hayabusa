@@ -1,5 +1,38 @@
 # 変更点
 
+## 2.3.3 [2023/04/07] "Sakura Release"
+
+**改善:**
+
+- ファイル(CSV, JSON, JSONL)出力の際にルールの`level`の余分なスペースを削除した。 (#979) (@hitenkoku)
+- `-M, --multiline`オプション利用時にルール作者名の出力を複数行出力対応をした。 (#980) (@hitenkoku)
+- Stringの代わりにCoWを利用することで、約5%の速度向上を実現した。 (#984) (@hitenkoku)
+- Clapの新バージョンでロゴ後のメッセージとUsageテキストの出力色が緑にならないように修正した。 (#989) (@hitenkoku)
+
+**バグ修正:**
+
+- v2.3.0にて`level-tuning`コマンド実行時にクラッシュする問題を修正した。 (#977) (@hitenkoku)
+
+## 2.3.2 [2023/03/22] "TMCIT Release-3"
+
+**改善:**
+
+- `csv-timeline`コマンドに`-M, --multiline`オプションを追加した。 (#972) (@hitenkoku)
+
+## 2.3.1 [2023/03/18] "TMCIT Release-2"
+
+**改善:**
+
+- `csv-timeline`の出力のフィールドでダブルクォートを追加した。 (#965) (@hitenkoku)
+- `logon-summary`の見出しを更新した。 (#964) (@yamatosecurity)
+- `--enable-deprecated-rules`の`-D`ショートオプションと`--enable-unsupported-rules`の`-u`ショートオプションを追加した。(@yamatosecurity)
+- Filteringセクションのオプションの表示順とヘルプの表示内容を修正した。 (#969) (@hitenkoku)
+
+**バグ修正:**
+
+- v2.3.0にて`update-rules`コマンド実行時にクラッシュする問題を修正した。 (#965) (@hitenkoku)
+- コマンドプロンプトとPowerShellプロンプトではヘルプメニューのタイトルに長いアンダーバーが表示されていた問題が修正された。 (#911) (@yamatosecurity)
+
 ## 2.3.0 [2023/03/16] "TMCIT Release"
 
 **新機能:**
