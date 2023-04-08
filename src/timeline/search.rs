@@ -45,6 +45,7 @@ impl EventSearch {
         }
     }
 
+    /// 検索処理を呼び出す関数。keywordsが空の場合は検索処理を行わない
     pub fn search_start(
         &mut self,
         records: &[EvtxRecordInfo],
@@ -62,6 +63,7 @@ impl EventSearch {
         }
     }
 
+    /// イベントレコード内の情報からkeywordに設定した文字列を検索して、構造体に結果を保持する関数
     fn search_keyword(
         &mut self,
         records: &[EvtxRecordInfo],
@@ -160,6 +162,7 @@ impl EventSearch {
     }
 }
 
+/// 検索結果を標準出力もしくはcsvファイルに出力する関数
 pub fn search_result_dsp_msg(
     result_list: &HashSet<(
         CompactString,
