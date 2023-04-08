@@ -1,5 +1,5 @@
 use crate::detections::{
-    configs::{EventInfoConfig, EventKeyAliasConfig, StoredStatic},
+    configs::{Action, EventInfoConfig, EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
     message::AlertMessage,
     utils::{self, write_color_buffer},
@@ -134,17 +134,30 @@ impl EventSearch {
                 }
                 acc
             });
+        let ignore_flag = match &stored_static.config.action {
+            Some(Action::Search(opt)) => opt.ignore_case,
+            _ => false,
+        };
 
         for record in records.iter() {
             // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
             if !self.filter_record(record, &filter_rule, eventkey_alias) {
                 continue;
             }
+            let search_target = if ignore_flag {
+                record.data_string.to_lowercase()
+            } else {
+                record.data_string.clone()
+            };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
-            if keywords
-                .iter()
-                .any(|key| utils::contains_str(&record.data_string, key))
-            {
+            if keywords.iter().any(|key| {
+                let converted_key = if ignore_flag {
+                    key.to_lowercase()
+                } else {
+                    key.clone()
+                };
+                utils::contains_str(&search_target, &converted_key)
+            }) {
                 let timestamp = utils::get_event_value(
                     "Event.System.TimeCreated_attributes.SystemTime",
                     &record.record,
