@@ -665,7 +665,7 @@ pub struct DefaultProfileOption {
 }
 
 #[derive(Args, Clone, Debug)]
-#[clap(group(ArgGroup::new("search_input").args(["keywords"]).required(true).multiple(false)))]
+#[clap(group(ArgGroup::new("search_input").args(["keywords", "regex"]).required(true).multiple(false)))]
 pub struct SearchOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -682,14 +682,15 @@ pub struct SearchOption {
     )]
     pub keywords: Vec<String>,
 
-    // /// Search condition by Regex
-    // #[arg(
-    //     help_heading = Some("Filtering"),
-    //     short = 'R',
-    //     long,
-    //     value_name = "REGEX"
-    // )]
-    // pub regex: Option<String>,
+    /// Search condition by Regex
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'R',
+        long,
+        value_name = "REGEX"
+    )]
+    pub regex: Option<String>,
+
     /// Ignore case
     #[arg(
         help_heading = Some("Filtering"),
@@ -1420,7 +1421,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
         Action::Search(option) => Some(SearchOption {
             input_args: option.input_args.clone(),
             keywords: option.keywords.clone(),
-            // regex: option.regex.clone(),
+            regex: option.regex.clone(),
             ignore_case: option.ignore_case,
             filter: option.filter.clone(),
             output: option.output.clone(),
