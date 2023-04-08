@@ -364,16 +364,19 @@ impl Timeline {
         if let Action::Search(search_summary_option) =
             &stored_static.config.action.as_ref().unwrap()
         {
-            if self.event_search.total == 0 {
+            if self.event_search.search_result.is_empty() {
                 sammsges.push("\n\nNot found matched record to keywords.".into());
             } else {
-                sammsges.push(format!("\n\nTotal findings: {}\n", self.event_search.total));
-                search_result_dsp_msg(
-                    &self.event_search.search_result,
-                    event_timeline_config,
-                    &search_summary_option.output,
-                );
+                sammsges.push(format!(
+                    "\n\nTotal findings: {}\n",
+                    self.event_search.search_result.len()
+                ));
             }
+            search_result_dsp_msg(
+                &self.event_search.search_result,
+                event_timeline_config,
+                &search_summary_option.output,
+            );
             for msgprint in sammsges.iter() {
                 println!("{}", msgprint);
             }
