@@ -86,7 +86,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
-            Some(Action::Search(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::Search(opt)) => opt.quiet_errors,
             _ => false,
         };
         let common_options = match &input_config.as_ref().unwrap().action {
@@ -112,7 +112,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
             Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
-            Some(Action::Search(opt)) => &opt.detect_common_options.config,
+            Some(Action::Search(opt)) => &opt.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
@@ -121,7 +121,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
             Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
-            Some(Action::Search(opt)) => opt.detect_common_options.verbose,
+            Some(Action::Search(opt)) => opt.verbose,
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
@@ -710,8 +710,39 @@ pub struct SearchOption {
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
-    #[clap(flatten)]
-    pub detect_common_options: DetectCommonOption,
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Number of threads (default: optimal number for performance)
+    #[arg(
+            help_heading = Some("General Options"),
+            short = 't',
+            long = "threads",
+            value_name = "NUMBER",
+            display_order = 460
+        )]
+    pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
+    pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+            help_heading = Some("General Options"),
+            short = 'c',
+            long = "rules-config",
+            default_value = "./rules/config",
+            hide_default_value = true,
+            value_name = "DIR",
+            display_order = 441
+        )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
+    pub verbose: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1394,7 +1425,11 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             filter: option.filter.clone(),
             output: option.output.clone(),
             common_options: option.common_options,
-            detect_common_options: option.detect_common_options.clone(),
+            evtx_file_ext: option.evtx_file_ext.clone(),
+            thread_number: option.thread_number,
+            quiet_errors: option.quiet_errors,
+            config: option.config.clone(),
+            verbose: option.verbose,
         }),
         _ => None,
     }
@@ -1505,7 +1540,14 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             html_report: None,
             no_summary: false,
             common_options: option.common_options,
-            detect_common_options: option.detect_common_options.clone(),
+            detect_common_options: DetectCommonOption {
+                json_input: false,
+                evtx_file_ext: option.evtx_file_ext.clone(),
+                thread_number: option.thread_number,
+                quiet_errors: option.quiet_errors,
+                config: option.config.clone(),
+                verbose: option.verbose,
+            },
             exact_level: None,
             enable_unsupported_rules: false,
         }),
