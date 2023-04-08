@@ -13,7 +13,7 @@ use nested::Nested;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
-use termcolor::{BufferWriter, ColorChoice};
+use termcolor::{BufferWriter, Color, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct EventSearch {
@@ -292,8 +292,8 @@ pub fn search_result_dsp_msg(
     }
 
     // Write contents
-    for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
-        result_list
+    for (idx, (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file)) in
+        result_list.iter().enumerate()
     {
         let event_title =
             if let Some(event_info) = event_timeline_config.get_event_id(channel, event_id) {
@@ -314,13 +314,56 @@ pub fn search_result_dsp_msg(
         if output.is_some() {
             file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else {
-            write_color_buffer(
-                disp_wtr.as_mut().unwrap(),
-                None,
-                &record_data.join(" ‖ "),
-                true,
-            )
-            .ok();
+            let color = if idx % 2 == 0 {
+                Some(Color::Rgb(180, 211, 169))
+            } else {
+                Some(Color::Rgb(144, 215, 236))
+            };
+            for (record_field_idx, record_field_data) in record_data.iter().enumerate() {
+                let newline_flag = record_field_idx == record_data.len() - 1;
+                if record_field_idx == 6 {
+                    let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
+                    for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
+                        let mut separated_fields_data = fields.split(':');
+                        write_color_buffer(
+                            disp_wtr.as_mut().unwrap(),
+                            Some(Color::Rgb(255, 158, 61)),
+                            &format!("{}: ", separated_fields_data.next().unwrap()),
+                            newline_flag,
+                        )
+                        .ok();
+                        write_color_buffer(
+                            disp_wtr.as_mut().unwrap(),
+                            color,
+                            separated_fields_data.join(":").trim(),
+                            newline_flag,
+                        )
+                        .ok();
+                        if field_idx != all_field_sep_info.len() - 1 {
+                            write_color_buffer(
+                                disp_wtr.as_mut().unwrap(),
+                                Some(Color::Yellow),
+                                " ¦ ",
+                                newline_flag,
+                            )
+                            .ok();
+                        }
+                    }
+                } else {
+                    write_color_buffer(
+                        disp_wtr.as_mut().unwrap(),
+                        color,
+                        record_field_data,
+                        newline_flag,
+                    )
+                    .ok();
+                }
+
+                if !newline_flag {
+                    write_color_buffer(disp_wtr.as_mut().unwrap(), Some(Color::Red), " ‖ ", false)
+                        .ok();
+                }
+            }
         }
     }
 }
