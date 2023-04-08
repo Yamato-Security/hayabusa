@@ -2,7 +2,7 @@ use crate::detections::{
     configs::{EventInfoConfig, EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
     message::AlertMessage,
-    utils,
+    utils::{self, write_color_buffer},
 };
 use compact_str::CompactString;
 use csv::WriterBuilder;
@@ -11,8 +11,9 @@ use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use nested::Nested;
 use std::fs::File;
-use std::io::{self, BufWriter};
+use std::io::BufWriter;
 use std::path::PathBuf;
+use termcolor::{BufferWriter, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct EventSearch {
@@ -249,27 +250,32 @@ pub fn search_result_dsp_msg(
         "AllFieldInfo",
         "EvtxFile",
     ];
-    let target: Box<dyn io::Write> = match output {
-        Some(path) => match File::create(path) {
-            Ok(file) => Box::new(BufWriter::new(file)),
+    let mut disp_wtr = None;
+    let mut file_wtr = None;
+    if let Some(path) = output {
+        match File::create(path) {
+            Ok(file) => {
+                file_wtr = Some(
+                    WriterBuilder::new()
+                        .delimiter(b',')
+                        .from_writer(BufWriter::new(file)),
+                )
+            }
             Err(err) => {
                 AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
                 process::exit(1)
             }
-        },
-        None => Box::new(BufWriter::new(io::stdout())),
+        }
     };
-    let mut wtr = if output.is_none() {
-        Some(WriterBuilder::new().from_writer(target))
-    } else {
-        Some(WriterBuilder::new().delimiter(b',').from_writer(target))
-    };
+    if file_wtr.is_none() {
+        disp_wtr = Some(BufferWriter::stdout(ColorChoice::Always));
+    }
 
     // Write header
     if output.is_some() {
-        wtr.as_mut().unwrap().write_record(&header).ok();
+        file_wtr.as_mut().unwrap().write_record(&header).ok();
     } else if output.is_none() && !result_list.is_empty() {
-        wtr.as_mut().unwrap().write_field(header.join(" ‖ ")).ok();
+        write_color_buffer(disp_wtr.as_mut().unwrap(), None, &header.join(" ‖ "), true).ok();
     }
 
     // Write contents
@@ -292,13 +298,16 @@ pub fn search_result_dsp_msg(
             all_field_info.as_str(),
             evtx_file.as_str(),
         ];
-        if wtr.as_ref().is_some() {
-            wtr.as_mut().unwrap().write_record(&record_data).ok();
+        if output.is_some() {
+            file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else {
-            wtr.as_mut()
-                .unwrap()
-                .write_field(record_data.join(" ‖ "))
-                .ok();
+            write_color_buffer(
+                disp_wtr.as_mut().unwrap(),
+                None,
+                &record_data.join(" ‖ "),
+                true,
+            )
+            .ok();
         }
     }
 }
