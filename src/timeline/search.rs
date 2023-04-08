@@ -14,7 +14,6 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct EventSearch {
-    pub total: usize,
     pub filepath: CompactString,
     pub search_result: HashSet<(
         CompactString,
@@ -29,7 +28,6 @@ pub struct EventSearch {
 
 impl EventSearch {
     pub fn new(
-        total: usize,
         filepath: CompactString,
         search_result: HashSet<(
             CompactString,
@@ -42,7 +40,6 @@ impl EventSearch {
         )>,
     ) -> EventSearch {
         EventSearch {
-            total,
             filepath,
             search_result,
         }
@@ -158,7 +155,6 @@ impl EventSearch {
                     allfieldinfo,
                     self.filepath.clone(),
                 ));
-                self.total += 1;
             }
         }
     }
