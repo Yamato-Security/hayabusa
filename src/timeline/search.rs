@@ -206,7 +206,7 @@ pub fn search_result_dsp_msg(
     // Write header
     if output.is_some() {
         wtr.as_mut().unwrap().write_record(&header).ok();
-    } else {
+    } else if output.is_none() && !result_list.is_empty() {
         wtr.as_mut().unwrap().write_field(header.join(" ‖ ")).ok();
     }
 
