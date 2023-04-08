@@ -51,6 +51,7 @@ impl EventSearch {
         records: &[EvtxRecordInfo],
         search_flag: bool,
         keywords: &Vec<String>,
+        filters: &Vec<String>,
         eventkey_alias: &EventKeyAliasConfig,
         stored_static: &StoredStatic,
     ) {

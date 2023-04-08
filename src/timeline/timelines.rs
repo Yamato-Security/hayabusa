@@ -67,6 +67,7 @@ impl Timeline {
                 records,
                 stored_static.search_flag,
                 &stored_static.search_option.as_ref().unwrap().keywords,
+                &stored_static.search_option.as_ref().unwrap().filter,
                 &stored_static.eventkey_alias,
                 stored_static,
             );
