@@ -673,7 +673,7 @@ pub struct SearchOption {
     #[clap(flatten)]
     pub input_args: InputOption,
 
-    /// Search condition by keyword
+    /// Search by keyword(s)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'k',
@@ -698,7 +698,7 @@ pub struct SearchOption {
     )]
     pub ignore_case: bool,
 
-    /// Search by specify field
+    /// Search a specific field
     #[arg(
         help_heading = Some("Filtering"),
         short = 'F',
@@ -706,7 +706,7 @@ pub struct SearchOption {
     )]
     pub filter: Vec<String>,
 
-    /// Save the Search result in CSV format (ex: search.csv)
+    /// Save the search results in CSV format (ex: search.csv)
     #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
     pub output: Option<PathBuf>,
 
