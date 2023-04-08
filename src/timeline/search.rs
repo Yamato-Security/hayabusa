@@ -7,7 +7,9 @@ use crate::detections::{
 use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
-use hashbrown::HashSet;
+use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
+use nested::Nested;
 use std::fs::File;
 use std::io::{self, BufWriter};
 use std::path::PathBuf;
@@ -50,8 +52,8 @@ impl EventSearch {
         &mut self,
         records: &[EvtxRecordInfo],
         search_flag: bool,
-        keywords: &Vec<String>,
-        filters: &Vec<String>,
+        keywords: &[String],
+        filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
         stored_static: &StoredStatic,
     ) {
@@ -60,8 +62,44 @@ impl EventSearch {
         }
 
         if !keywords.is_empty() {
-            self.search_keyword(records, keywords, eventkey_alias, stored_static);
+            self.search_keyword(records, keywords, filters, eventkey_alias, stored_static);
         }
+    }
+
+    /// イベントレコード内の情報からfilterに設定した情報が存在するかを返す関数
+    fn filter_record(
+        &mut self,
+        record: &EvtxRecordInfo,
+        filter_rule: &HashMap<String, Nested<String>>,
+        eventkey_alias: &EventKeyAliasConfig,
+    ) -> bool {
+        filter_rule.iter().all(|(k, v)| {
+            let alias_target_val = utils::get_serde_number_to_string(
+                utils::get_event_value(k, &record.record, eventkey_alias)
+                    .unwrap_or(&serde_json::Value::Null),
+                true,
+            )
+            .unwrap_or_else(|| "n/a".into())
+            .replace(['"', '\''], "");
+
+            // aliasでマッチした場合はaliasに登録されていないフィールドを検索する必要がないためtrueを返す
+            if v.iter()
+                .all(|search_target| utils::contains_str(&alias_target_val, search_target))
+            {
+                return true;
+            }
+
+            // aliasに登録されていないフィールドも検索対象とするため
+            let allfieldinfo = match utils::get_serde_number_to_string(
+                &record.record["Event"]["EventData"][k],
+                true,
+            ) {
+                Some(eventdata) => eventdata,
+                _ => CompactString::new("-"),
+            };
+            v.iter()
+                .all(|search_target| utils::contains_str(&allfieldinfo, search_target))
+        })
     }
 
     /// イベントレコード内の情報からkeywordに設定した文字列を検索して、構造体に結果を保持する関数
@@ -69,6 +107,7 @@ impl EventSearch {
         &mut self,
         records: &[EvtxRecordInfo],
         keywords: &[String],
+        filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
         stored_static: &StoredStatic,
     ) {
@@ -76,7 +115,30 @@ impl EventSearch {
             return;
         }
 
+        let filter_rule = filters
+            .iter()
+            .fold(HashMap::new(), |mut acc, filter_condition| {
+                let prefix_trim_condition = filter_condition
+                    .strip_prefix('"')
+                    .unwrap_or(filter_condition);
+                let trimed_condition = prefix_trim_condition
+                    .strip_suffix('"')
+                    .unwrap_or(prefix_trim_condition);
+                let condition = trimed_condition.split(':').map(|x| x.trim()).collect_vec();
+                if condition.len() != 1 {
+                    let acc_val = acc
+                        .entry(condition[0].to_string())
+                        .or_insert(Nested::<String>::new());
+                    acc_val.push(condition[1..].join(":"));
+                }
+                acc
+            });
+
         for record in records.iter() {
+            // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
+            if !self.filter_record(record, &filter_rule, eventkey_alias) {
+                continue;
+            }
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if keywords
                 .iter()
