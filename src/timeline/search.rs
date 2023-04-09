@@ -1,8 +1,8 @@
 use crate::detections::{
-    configs::{EventInfoConfig, EventKeyAliasConfig, StoredStatic},
+    configs::{Action, EventInfoConfig, EventKeyAliasConfig, StoredStatic},
     detection::EvtxRecordInfo,
     message::AlertMessage,
-    utils,
+    utils::{self, write_color_buffer},
 };
 use compact_str::CompactString;
 use csv::WriterBuilder;
@@ -12,8 +12,9 @@ use itertools::Itertools;
 use nested::Nested;
 use regex::Regex;
 use std::fs::File;
-use std::io::{self, BufWriter};
+use std::io::BufWriter;
 use std::path::PathBuf;
+use termcolor::{BufferWriter, Color, ColorChoice};
 
 #[derive(Debug, Clone)]
 pub struct EventSearch {
@@ -138,17 +139,30 @@ impl EventSearch {
                 }
                 acc
             });
+        let ignore_flag = match &stored_static.config.action {
+            Some(Action::Search(opt)) => opt.ignore_case,
+            _ => false,
+        };
 
         for record in records.iter() {
             // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
             if !self.filter_record(record, &filter_rule, eventkey_alias) {
                 continue;
             }
+            let search_target = if ignore_flag {
+                record.data_string.to_lowercase()
+            } else {
+                record.data_string.clone()
+            };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
-            if keywords
-                .iter()
-                .any(|key| utils::contains_str(&record.data_string, key))
-            {
+            if keywords.iter().any(|key| {
+                let converted_key = if ignore_flag {
+                    key.to_lowercase()
+                } else {
+                    key.clone()
+                };
+                utils::contains_str(&search_target, &converted_key)
+            }) {
                 let timestamp = utils::get_event_value(
                     "Event.System.TimeCreated_attributes.SystemTime",
                     &record.record,
@@ -174,22 +188,11 @@ impl EventSearch {
                     .replace(['"', '\''], ""),
                 );
 
-                let ch_str = &utils::get_serde_number_to_string(
+                let channel = utils::get_serde_number_to_string(
                     &record.record["Event"]["System"]["Channel"],
                     false,
                 )
                 .unwrap_or_default();
-                let channel = stored_static
-                    .disp_abbr_generic
-                    .replace_all(
-                        stored_static
-                            .ch_config
-                            .get(&CompactString::from(ch_str.to_ascii_lowercase()))
-                            .unwrap_or(ch_str)
-                            .as_str(),
-                        &stored_static.disp_abbr_general_values,
-                    )
-                    .into();
                 let mut eventid = String::new();
                 match utils::get_event_value("EventID", &record.record, eventkey_alias) {
                     Some(evtid) if evtid.is_u64() => {
@@ -392,6 +395,7 @@ pub fn search_result_dsp_msg(
     )>,
     event_timeline_config: &EventInfoConfig,
     output: &Option<PathBuf>,
+    stored_static: &StoredStatic,
 ) {
     let header = vec![
         "Timestamp",
@@ -403,56 +407,124 @@ pub fn search_result_dsp_msg(
         "AllFieldInfo",
         "EvtxFile",
     ];
-    let target: Box<dyn io::Write> = match output {
-        Some(path) => match File::create(path) {
-            Ok(file) => Box::new(BufWriter::new(file)),
+    let mut disp_wtr = None;
+    let mut file_wtr = None;
+    if let Some(path) = output {
+        match File::create(path) {
+            Ok(file) => {
+                file_wtr = Some(
+                    WriterBuilder::new()
+                        .delimiter(b',')
+                        .from_writer(BufWriter::new(file)),
+                )
+            }
             Err(err) => {
                 AlertMessage::alert(&format!("Failed to open file. {err}")).ok();
                 process::exit(1)
             }
-        },
-        None => Box::new(BufWriter::new(io::stdout())),
+        }
     };
-    let mut wtr = if output.is_none() {
-        Some(WriterBuilder::new().from_writer(target))
-    } else {
-        Some(WriterBuilder::new().delimiter(b',').from_writer(target))
-    };
+    if file_wtr.is_none() {
+        disp_wtr = Some(BufferWriter::stdout(ColorChoice::Always));
+    }
 
     // Write header
     if output.is_some() {
-        wtr.as_mut().unwrap().write_record(&header).ok();
+        file_wtr.as_mut().unwrap().write_record(&header).ok();
     } else if output.is_none() && !result_list.is_empty() {
-        wtr.as_mut().unwrap().write_field(header.join(" ‖ ")).ok();
+        write_color_buffer(disp_wtr.as_mut().unwrap(), None, &header.join(" ‖ "), true).ok();
     }
 
     // Write contents
     for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
-        result_list
+        result_list.iter()
     {
-        let event_title =
-            if let Some(event_info) = event_timeline_config.get_event_id(channel, event_id) {
-                event_info.evttitle.as_str()
-            } else {
-                "-"
-            };
+        let event_title = if let Some(event_info) =
+            event_timeline_config.get_event_id(&channel.to_ascii_lowercase(), event_id)
+        {
+            event_info.evttitle.as_str()
+        } else {
+            "-"
+        };
+        let abbr_channel = stored_static.disp_abbr_generic.replace_all(
+            stored_static
+                .ch_config
+                .get(&CompactString::from(channel.to_ascii_lowercase()))
+                .unwrap_or(channel)
+                .as_str(),
+            &stored_static.disp_abbr_general_values,
+        );
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
-            channel.as_str(),
+            abbr_channel.as_str(),
             event_id.as_str(),
             record_id.as_str(),
             event_title,
             all_field_info.as_str(),
             evtx_file.as_str(),
         ];
-        if wtr.as_ref().is_some() {
-            wtr.as_mut().unwrap().write_record(&record_data).ok();
+        if output.is_some() {
+            file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else {
-            wtr.as_mut()
-                .unwrap()
-                .write_field(record_data.join(" ‖ "))
-                .ok();
+            for (record_field_idx, record_field_data) in record_data.iter().enumerate() {
+                let newline_flag = record_field_idx == record_data.len() - 1;
+                if record_field_idx == 6 {
+                    let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
+                    for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
+                        let mut separated_fields_data = fields.split(':');
+                        write_color_buffer(
+                            disp_wtr.as_mut().unwrap(),
+                            Some(Color::Rgb(255, 158, 61)),
+                            &format!("{}: ", separated_fields_data.next().unwrap()),
+                            newline_flag,
+                        )
+                        .ok();
+                        write_color_buffer(
+                            disp_wtr.as_mut().unwrap(),
+                            Some(Color::Rgb(0, 255, 255)),
+                            separated_fields_data.join(":").trim(),
+                            newline_flag,
+                        )
+                        .ok();
+                        if field_idx != all_field_sep_info.len() - 1 {
+                            write_color_buffer(
+                                disp_wtr.as_mut().unwrap(),
+                                None,
+                                " ¦ ",
+                                newline_flag,
+                            )
+                            .ok();
+                        }
+                    }
+                } else if record_field_idx == 0 {
+                    write_color_buffer(
+                        disp_wtr.as_mut().unwrap(),
+                        Some(Color::Rgb(0, 255, 0)),
+                        record_field_data,
+                        newline_flag,
+                    )
+                    .ok();
+                } else {
+                    write_color_buffer(
+                        disp_wtr.as_mut().unwrap(),
+                        None,
+                        record_field_data,
+                        newline_flag,
+                    )
+                    .ok();
+                }
+
+                if !newline_flag {
+                    write_color_buffer(
+                        disp_wtr.as_mut().unwrap(),
+                        Some(Color::Rgb(255, 0, 0)),
+                        " ‖ ",
+                        false,
+                    )
+                    .ok();
+                }
+            }
         }
     }
 }

@@ -531,7 +531,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords <KEYWORDS>> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -665,7 +665,6 @@ pub struct DefaultProfileOption {
 }
 
 #[derive(Args, Clone, Debug)]
-#[clap(group(ArgGroup::new("search_input").args(["keywords", "regex"]).required(true).multiple(false)))]
 pub struct SearchOption {
     #[clap(flatten)]
     pub common_options: CommonOptions,
@@ -699,7 +698,7 @@ pub struct SearchOption {
     )]
     pub ignore_case: bool,
 
-    /// Search a specific field
+    /// Filter by specific field(s)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'F',
