@@ -376,6 +376,7 @@ impl Timeline {
                 &self.event_search.search_result,
                 event_timeline_config,
                 &search_summary_option.output,
+                stored_static,
             );
             for msgprint in sammsges.iter() {
                 println!("{}", msgprint);

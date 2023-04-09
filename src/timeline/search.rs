@@ -183,22 +183,11 @@ impl EventSearch {
                     .replace(['"', '\''], ""),
                 );
 
-                let ch_str = &utils::get_serde_number_to_string(
+                let channel = utils::get_serde_number_to_string(
                     &record.record["Event"]["System"]["Channel"],
                     false,
                 )
                 .unwrap_or_default();
-                let channel = stored_static
-                    .disp_abbr_generic
-                    .replace_all(
-                        stored_static
-                            .ch_config
-                            .get(&CompactString::from(ch_str.to_ascii_lowercase()))
-                            .unwrap_or(ch_str)
-                            .as_str(),
-                        &stored_static.disp_abbr_general_values,
-                    )
-                    .into();
                 let mut eventid = String::new();
                 match utils::get_event_value("EventID", &record.record, eventkey_alias) {
                     Some(evtid) if evtid.is_u64() => {
@@ -252,6 +241,7 @@ pub fn search_result_dsp_msg(
     )>,
     event_timeline_config: &EventInfoConfig,
     output: &Option<PathBuf>,
+    stored_static: &StoredStatic,
 ) {
     let header = vec![
         "Timestamp",
@@ -292,19 +282,28 @@ pub fn search_result_dsp_msg(
     }
 
     // Write contents
-    for (idx, (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file)) in
-        result_list.iter().enumerate()
+    for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
+        result_list.iter()
     {
-        let event_title =
-            if let Some(event_info) = event_timeline_config.get_event_id(channel, event_id) {
-                event_info.evttitle.as_str()
-            } else {
-                "-"
-            };
+        let event_title = if let Some(event_info) =
+            event_timeline_config.get_event_id(&channel.to_ascii_lowercase(), event_id)
+        {
+            event_info.evttitle.as_str()
+        } else {
+            "-"
+        };
+        let abbr_channel = stored_static.disp_abbr_generic.replace_all(
+            stored_static
+                .ch_config
+                .get(&CompactString::from(channel.to_ascii_lowercase()))
+                .unwrap_or(channel)
+                .as_str(),
+            &stored_static.disp_abbr_general_values,
+        );
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
-            channel.as_str(),
+            abbr_channel.as_str(),
             event_id.as_str(),
             record_id.as_str(),
             event_title,
