@@ -365,7 +365,7 @@ impl Timeline {
             &stored_static.config.action.as_ref().unwrap()
         {
             if self.event_search.search_result.is_empty() {
-                sammsges.push("\n\nNot found matched record to keywords.".into());
+                sammsges.push("\n\nNo matches found.".into());
             } else {
                 sammsges.push(format!(
                     "\n\nTotal findings: {}\n",

@@ -697,7 +697,7 @@ pub struct SearchOption {
     )]
     pub ignore_case: bool,
 
-    /// Search a specific field
+    /// Filter by specific field(s)
     #[arg(
         help_heading = Some("Filtering"),
         short = 'F',
