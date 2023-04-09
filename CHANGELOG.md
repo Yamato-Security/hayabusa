@@ -1,5 +1,15 @@
 # Changes
 
+## 2.4.x [2023/04/xx] "xxx"
+
+**New Features:**
+
+- Added `search` command to search for specified keywords in records. (#617) (@itiB, @hitenkoku)
+
+**Enhancements:**
+
+- XXX
+
 ## 2.3.3 [2023/04/07] "Sakura Release"
 
 **Enhancements:**
