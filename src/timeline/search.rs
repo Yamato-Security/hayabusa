@@ -313,11 +313,6 @@ pub fn search_result_dsp_msg(
         if output.is_some() {
             file_wtr.as_mut().unwrap().write_record(&record_data).ok();
         } else {
-            let color = if idx % 2 == 0 {
-                Some(Color::Rgb(180, 211, 169))
-            } else {
-                Some(Color::Rgb(144, 215, 236))
-            };
             for (record_field_idx, record_field_data) in record_data.iter().enumerate() {
                 let newline_flag = record_field_idx == record_data.len() - 1;
                 if record_field_idx == 6 {
@@ -333,7 +328,7 @@ pub fn search_result_dsp_msg(
                         .ok();
                         write_color_buffer(
                             disp_wtr.as_mut().unwrap(),
-                            color,
+                            Some(Color::Rgb(0, 255, 255)),
                             separated_fields_data.join(":").trim(),
                             newline_flag,
                         )
@@ -341,17 +336,25 @@ pub fn search_result_dsp_msg(
                         if field_idx != all_field_sep_info.len() - 1 {
                             write_color_buffer(
                                 disp_wtr.as_mut().unwrap(),
-                                Some(Color::Yellow),
+                                None,
                                 " ¦ ",
                                 newline_flag,
                             )
                             .ok();
                         }
                     }
+                } else if record_field_idx == 0 {
+                    write_color_buffer(
+                        disp_wtr.as_mut().unwrap(),
+                        Some(Color::Rgb(0, 255, 0)),
+                        record_field_data,
+                        newline_flag,
+                    )
+                    .ok();
                 } else {
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
-                        color,
+                        None,
                         record_field_data,
                         newline_flag,
                     )
@@ -359,8 +362,13 @@ pub fn search_result_dsp_msg(
                 }
 
                 if !newline_flag {
-                    write_color_buffer(disp_wtr.as_mut().unwrap(), Some(Color::Red), " ‖ ", false)
-                        .ok();
+                    write_color_buffer(
+                        disp_wtr.as_mut().unwrap(),
+                        Some(Color::Rgb(255, 0, 0)),
+                        " ‖ ",
+                        false,
+                    )
+                    .ok();
                 }
             }
         }
