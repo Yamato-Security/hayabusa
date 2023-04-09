@@ -18,7 +18,7 @@ use tokio::runtime::{Builder, Runtime};
 
 use chrono::{DateTime, TimeZone, Utc};
 use regex::Regex;
-use serde_json::{json, Error, Value};
+use serde_json::{json, Error, Map, Value};
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::prelude::*;
@@ -209,7 +209,10 @@ pub fn str_time_to_datetime(system_time_str: &str) -> Option<DateTime<Utc>> {
 }
 
 /// serde:Valueの型を確認し、文字列を返します。
-pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<CompactString> {
+pub fn get_serde_number_to_string(
+    value: &serde_json::Value,
+    search_flag: bool,
+) -> Option<CompactString> {
     if value.is_string() {
         let val_str = value.as_str().unwrap_or("");
         if val_str.ends_with(',') {
@@ -217,7 +220,17 @@ pub fn get_serde_number_to_string(value: &serde_json::Value) -> Option<CompactSt
         } else {
             Option::Some(CompactString::from(val_str))
         }
-    } else if value.is_object() || value.is_null() {
+    } else if value.is_object() && search_flag {
+        let map: Map<String, Value> = Map::new();
+        let val_obj = value.as_object().unwrap_or(&map);
+        let val = val_obj
+            .iter()
+            .map(|(k, v)| format!("{k}:{v}").replace('\"', ""))
+            .collect::<Nested<String>>()
+            .iter()
+            .join(" ¦ ");
+        Some(CompactString::from(val))
+    } else if value.is_null() || (value.is_object() && !search_flag) {
         // Object type is not specified record value.
         Option::None
     } else {
@@ -711,7 +724,7 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
-            utils::get_serde_number_to_string(&event_record["Event"]["System"]["EventID"]),
+            utils::get_serde_number_to_string(&event_record["Event"]["System"]["EventID"], false),
             Some(CompactString::from("11111"))
         );
     }
@@ -731,8 +744,11 @@ mod tests {
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
         assert_eq!(
-            utils::get_serde_number_to_string(&event_record["Event"]["EventData"]["ComputerName"])
-                .unwrap(),
+            utils::get_serde_number_to_string(
+                &event_record["Event"]["EventData"]["ComputerName"],
+                false
+            )
+            .unwrap(),
             "HayabusaComputer1".to_owned()
         );
     }
@@ -751,7 +767,9 @@ mod tests {
         "##;
         let event_record: Value = serde_json::from_str(json_str).unwrap();
 
-        assert!(utils::get_serde_number_to_string(&event_record["Event"]["EventData"]).is_none());
+        assert!(
+            utils::get_serde_number_to_string(&event_record["Event"]["EventData"], false).is_none()
+        );
     }
 
     #[test]

@@ -59,6 +59,8 @@ pub struct StoredStatic {
     pub verbose_flag: bool,
     pub metrics_flag: bool,
     pub logon_summary_flag: bool,
+    pub search_flag: bool,
+    pub search_option: Option<SearchOption>,
     pub output_option: Option<OutputOption>,
     pub pivot_keyword_list_flag: bool,
     pub default_details: HashMap<CompactString, CompactString>,
@@ -84,6 +86,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::Metrics(opt)) => opt.detect_common_options.quiet_errors,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.quiet_errors,
+            Some(Action::Search(opt)) => opt.quiet_errors,
             _ => false,
         };
         let common_options = match &input_config.as_ref().unwrap().action {
@@ -96,6 +99,7 @@ impl StoredStatic {
             Some(Action::SetDefaultProfile(opt)) => opt.common_options,
             Some(Action::ListContributors(opt)) | Some(Action::ListProfiles(opt)) => *opt,
             Some(Action::UpdateRules(opt)) => opt.common_options,
+            Some(Action::Search(opt)) => opt.common_options,
             None => CommonOptions {
                 no_color: false,
                 quiet: false,
@@ -108,6 +112,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => &opt.detect_common_options.config,
             Some(Action::Metrics(opt)) => &opt.detect_common_options.config,
             Some(Action::PivotKeywordsList(opt)) => &opt.detect_common_options.config,
+            Some(Action::Search(opt)) => &opt.config,
             _ => &binding,
         };
         let verbose_flag = match &input_config.as_ref().unwrap().action {
@@ -116,6 +121,7 @@ impl StoredStatic {
             Some(Action::LogonSummary(opt)) => opt.detect_common_options.verbose,
             Some(Action::Metrics(opt)) => opt.detect_common_options.verbose,
             Some(Action::PivotKeywordsList(opt)) => opt.detect_common_options.verbose,
+            Some(Action::Search(opt)) => opt.verbose,
             _ => false,
         };
         let json_input_flag = match &input_config.as_ref().unwrap().action {
@@ -345,6 +351,8 @@ impl StoredStatic {
             ),
             logon_summary_flag: action_id == 2,
             metrics_flag: action_id == 3,
+            search_flag: action_id == 10,
+            search_option: extract_search_options(input_config.as_ref().unwrap()),
             output_option: extract_output_options(input_config.as_ref().unwrap()),
             pivot_keyword_list_flag: action_id == 4,
             quiet_errors_flag,
@@ -478,7 +486,7 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -487,7 +495,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -496,7 +504,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -505,7 +513,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -514,7 +522,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -523,7 +531,16 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords <KEYWORDS>> [OPTIONS]\n\n{all-args}",
+        term_width = 400,
+        disable_help_flag = true
+    )]
+    /// Search by keyword
+    Search(SearchOption),
+
+    #[clap(
+        author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -532,7 +549,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -541,7 +558,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.3.3\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -569,6 +586,7 @@ impl Action {
                 Action::SetDefaultProfile(_) => 7,
                 Action::ListContributors(_) => 8,
                 Action::ListProfiles(_) => 9,
+                Action::Search(_) => 10,
             }
         } else {
             100
@@ -587,6 +605,7 @@ impl Action {
                 Action::SetDefaultProfile(_) => "set-default-profile",
                 Action::ListContributors(_) => "list-contributors",
                 Action::ListProfiles(_) => "list-profiles",
+                Action::Search(_) => "search",
             }
         } else {
             ""
@@ -643,6 +662,86 @@ pub struct DefaultProfileOption {
 
     #[arg(help_heading = Some("General Options"), short = 'p', long = "profile", display_order = 420)]
     pub profile: Option<String>,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct SearchOption {
+    #[clap(flatten)]
+    pub common_options: CommonOptions,
+
+    #[clap(flatten)]
+    pub input_args: InputOption,
+
+    /// Search by keyword(s)
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'k',
+        long,
+        value_name = "KEYWORDS"
+    )]
+    pub keywords: Vec<String>,
+
+    // /// Search condition by Regex
+    // #[arg(
+    //     help_heading = Some("Filtering"),
+    //     short = 'R',
+    //     long,
+    //     value_name = "REGEX"
+    // )]
+    // pub regex: Option<String>,
+    /// Ignore case
+    #[arg(
+        help_heading = Some("Filtering"),
+        short,
+        long = "ignore-case",
+    )]
+    pub ignore_case: bool,
+
+    /// Filter by specific field(s)
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'F',
+        long,
+    )]
+    pub filter: Vec<String>,
+
+    /// Save the search results in CSV format (ex: search.csv)
+    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    pub output: Option<PathBuf>,
+
+    /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+    #[arg(help_heading = Some("General Options"), long = "target-file-ext", use_value_delimiter = true, value_delimiter = ',', display_order = 450)]
+    pub evtx_file_ext: Option<Vec<String>>,
+
+    /// Number of threads (default: optimal number for performance)
+    #[arg(
+            help_heading = Some("General Options"),
+            short = 't',
+            long = "threads",
+            value_name = "NUMBER",
+            display_order = 460
+        )]
+    pub thread_number: Option<usize>,
+
+    /// Quiet errors mode: do not save error logs
+    #[arg(help_heading = Some("General Options"), short = 'Q', long = "quiet-errors", display_order = 430)]
+    pub quiet_errors: bool,
+
+    /// Specify custom rule config directory (default: ./rules/config)
+    #[arg(
+            help_heading = Some("General Options"),
+            short = 'c',
+            long = "rules-config",
+            default_value = "./rules/config",
+            hide_default_value = true,
+            value_name = "DIR",
+            display_order = 441
+        )]
+    pub config: PathBuf,
+
+    /// Output verbose information
+    #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
+    pub verbose: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1034,7 +1133,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa 2.3.3\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1315,6 +1414,26 @@ pub fn convert_option_vecs_to_hs(arg: Option<&Vec<String>>) -> HashSet<String> {
     ret
 }
 
+fn extract_search_options(config: &Config) -> Option<SearchOption> {
+    match &config.action.as_ref()? {
+        Action::Search(option) => Some(SearchOption {
+            input_args: option.input_args.clone(),
+            keywords: option.keywords.clone(),
+            // regex: option.regex.clone(),
+            ignore_case: option.ignore_case,
+            filter: option.filter.clone(),
+            output: option.output.clone(),
+            common_options: option.common_options,
+            evtx_file_ext: option.evtx_file_ext.clone(),
+            thread_number: option.thread_number,
+            quiet_errors: option.quiet_errors,
+            config: option.config.clone(),
+            verbose: option.verbose,
+        }),
+        _ => None,
+    }
+}
+
 /// configから出力に関連したオプションの値を格納した構造体を抽出する関数
 fn extract_output_options(config: &Config) -> Option<OutputOption> {
     match &config.action.as_ref()? {
@@ -1396,6 +1515,39 @@ fn extract_output_options(config: &Config) -> Option<OutputOption> {
             no_summary: false,
             common_options: option.common_options,
             detect_common_options: option.detect_common_options.clone(),
+            enable_unsupported_rules: false,
+        }),
+        Action::Search(option) => Some(OutputOption {
+            input_args: option.input_args.clone(),
+            enable_deprecated_rules: false,
+            enable_noisy_rules: false,
+            profile: None,
+            exclude_status: None,
+            min_level: String::default(),
+            end_timeline: None,
+            start_timeline: None,
+            eid_filter: false,
+            european_time: false,
+            iso_8601: false,
+            rfc_2822: false,
+            rfc_3339: false,
+            us_military_time: false,
+            us_time: false,
+            utc: false,
+            visualize_timeline: false,
+            rules: Path::new("./rules").to_path_buf(),
+            html_report: None,
+            no_summary: false,
+            common_options: option.common_options,
+            detect_common_options: DetectCommonOption {
+                json_input: false,
+                evtx_file_ext: option.evtx_file_ext.clone(),
+                thread_number: option.thread_number,
+                quiet_errors: option.quiet_errors,
+                config: option.config.clone(),
+                verbose: option.verbose,
+            },
+            exact_level: None,
             enable_unsupported_rules: false,
         }),
         Action::SetDefaultProfile(option) => Some(OutputOption {

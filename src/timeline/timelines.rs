@@ -6,6 +6,7 @@ use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
+use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
@@ -15,11 +16,13 @@ use downcast_rs::__std::process;
 use nested::Nested;
 
 use super::metrics::EventMetrics;
-use hashbrown::HashMap;
+use super::search::EventSearch;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct Timeline {
     pub stats: EventMetrics,
+    pub event_search: EventSearch,
 }
 
 impl Default for Timeline {
@@ -34,9 +37,21 @@ impl Timeline {
         let filepath = CompactString::default();
         let statslst = HashMap::new();
         let statsloginlst = HashMap::new();
+        let search_result = HashSet::new();
 
-        let statistic = EventMetrics::new(totalcnt, filepath, None, None, statslst, statsloginlst);
-        Timeline { stats: statistic }
+        let statistic = EventMetrics::new(
+            totalcnt,
+            filepath.clone(),
+            None,
+            None,
+            statslst,
+            statsloginlst,
+        );
+        let search = EventSearch::new(filepath, search_result);
+        Timeline {
+            stats: statistic,
+            event_search: search,
+        }
     }
 
     pub fn start(&mut self, records: &[EvtxRecordInfo], stored_static: &StoredStatic) {
@@ -46,6 +61,17 @@ impl Timeline {
             stored_static.logon_summary_flag,
             &stored_static.eventkey_alias,
         );
+
+        if stored_static.search_flag {
+            self.event_search.search_start(
+                records,
+                stored_static.search_flag,
+                &stored_static.search_option.as_ref().unwrap().keywords,
+                &stored_static.search_option.as_ref().unwrap().filter,
+                &stored_static.eventkey_alias,
+                stored_static,
+            );
+        }
     }
 
     pub fn tm_stats_dsp_msg(
@@ -325,6 +351,36 @@ impl Timeline {
             println!(" No logon {logon_res} events were detected.");
         } else {
             println!("{logins_stats_tb}");
+        }
+    }
+
+    /// Search結果出力
+    pub fn search_dsp_msg(
+        &mut self,
+        event_timeline_config: &EventInfoConfig,
+        stored_static: &StoredStatic,
+    ) {
+        let mut sammsges: Vec<String> = Vec::new();
+        if let Action::Search(search_summary_option) =
+            &stored_static.config.action.as_ref().unwrap()
+        {
+            if self.event_search.search_result.is_empty() {
+                sammsges.push("\n\nNo matches found.".into());
+            } else {
+                sammsges.push(format!(
+                    "\n\nTotal findings: {}\n",
+                    self.event_search.search_result.len()
+                ));
+            }
+            search_result_dsp_msg(
+                &self.event_search.search_result,
+                event_timeline_config,
+                &search_summary_option.output,
+                stored_static,
+            );
+            for msgprint in sammsges.iter() {
+                println!("{}", msgprint);
+            }
         }
     }
 }
