@@ -65,8 +65,13 @@ impl Timeline {
         if stored_static.search_flag {
             self.event_search.search_start(
                 records,
-                stored_static.search_flag,
-                &stored_static.search_option.as_ref().unwrap().keywords,
+                stored_static
+                    .search_option
+                    .as_ref()
+                    .unwrap()
+                    .keywords
+                    .as_ref()
+                    .unwrap_or(&vec![]),
                 &stored_static.search_option.as_ref().unwrap().regex,
                 &stored_static.search_option.as_ref().unwrap().filter,
                 &stored_static.eventkey_alias,

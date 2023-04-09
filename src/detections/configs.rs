@@ -531,7 +531,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords <KEYWORDS>> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords <KEYWORDS> | --regex <REGEX>> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true
     )]
@@ -679,7 +679,7 @@ pub struct SearchOption {
         long,
         value_name = "KEYWORDS"
     )]
-    pub keywords: Vec<String>,
+    pub keywords: Option<Vec<String>>,
 
     /// Search condition by Regex
     #[arg(

@@ -53,17 +53,12 @@ impl EventSearch {
     pub fn search_start(
         &mut self,
         records: &[EvtxRecordInfo],
-        search_flag: bool,
         keywords: &[String],
         regex: &Option<String>,
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
         stored_static: &StoredStatic,
     ) {
-        if !search_flag {
-            return;
-        }
-
         if !keywords.is_empty() {
             self.search_keyword(records, keywords, filters, eventkey_alias, stored_static);
         }
