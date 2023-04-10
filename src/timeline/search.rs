@@ -237,7 +237,7 @@ impl EventSearch {
         stored_static: &StoredStatic,
     ) {
         let re = Regex::new(regex).unwrap_or_else(|err| {
-            AlertMessage::alert(&format!("Failed to create Reagex pattern. \n{err}")).ok();
+            AlertMessage::alert(&format!("Failed to create regex pattern. \n{err}")).ok();
             process::exit(1);
         });
         if records.is_empty() {

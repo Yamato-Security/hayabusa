@@ -681,7 +681,7 @@ pub struct SearchOption {
     )]
     pub keywords: Option<Vec<String>>,
 
-    /// Search condition by Regex
+    /// Search by regular expression
     #[arg(
         help_heading = Some("Filtering"),
         short = 'R',
