@@ -131,6 +131,21 @@ impl App {
             println!();
             return;
         }
+
+        // searchサブコマンドでregexを指定した際にダブルクォーテーションで囲まれていない場合はエラーを表示して終了する
+        if let Some(search_opt) = &stored_static.search_option {
+            if let Some(search_regex) = &search_opt.regex {
+                if !(search_regex.starts_with('"') && search_regex.ends_with('"')) {
+                    AlertMessage::alert(
+                        "You must enclose your regular expression in double quotes.",
+                    )
+                    .ok();
+                    println!();
+                    return;
+                }
+            }
+        }
+
         if !stored_static.common_options.quiet {
             self.output_logo(stored_static);
             write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
