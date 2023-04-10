@@ -1445,7 +1445,7 @@ impl App {
             | Action::PivotKeywordsList(_)
             | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
             Action::Search(opt) => {
-                std::env::args().len() != 2 && (opt.keywords.is_some() || opt.regex.is_some())
+                std::env::args().len() != 2 && (opt.keywords.is_some() ^ opt.regex.is_some())
             }
             _ => true,
         }
