@@ -3,7 +3,7 @@ name: Rust
 on:
   pull_request:
     branches:
-        - '*'
+      - "*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -38,16 +38,16 @@ jobs:
             }
     runs-on: ${{ matrix.info.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Set up Rust toolchain
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
-        uses: dtolnay/rust-toolchain@88e7c2e1da2693cf72d58fce9416206818e61dea # https://github.com/dtolnay/rust-toolchain/commit/88e7c2e1da2693cf72d58fce9416206818e61dea
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: rustfmt, clippy
-          target: ${{ matrix.info.target }}
+          targets: ${{ matrix.info.target }}
       - name: Enable Rust cache
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
         uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # 1.4.0
@@ -56,10 +56,7 @@ jobs:
       - name: Prepare Clippy
         run: rustup component add clippy
       - name: Run clippy action to produce annotations
-        uses: actions-rs/clippy-check@v1
-        with:
-          args: --all-targets -- -D warnings
-          token: ${{ secrets.GITHUB_TOKEN }}
+        run: cargo clippy --all-targets -- -D warnings
       - name: Build tests
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
         uses: ClementTsang/cargo-action@v0.0.2
