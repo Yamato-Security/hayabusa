@@ -253,9 +253,13 @@ impl EventSearch {
             }
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if re.is_match(&record.data_string) {
-                let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
+                let (timestamp, hostname, _, eventid, recordid, allfieldinfo) =
                     extract_search_event_info(record, eventkey_alias, stored_static);
-
+                let channel = utils::get_serde_number_to_string(
+                    &record.record["Event"]["System"]["Channel"],
+                    false,
+                )
+                .unwrap_or_default();
                 self.search_result.insert((
                     timestamp,
                     hostname,
