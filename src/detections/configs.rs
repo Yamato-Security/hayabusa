@@ -677,16 +677,18 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'k',
         long,
-        value_name = "KEYWORDS"
+        value_name = "KEYWORDS",
+        display_order = 370
     )]
     pub keywords: Option<Vec<String>>,
 
     /// Search by regular expression
     #[arg(
         help_heading = Some("Filtering"),
-        short = 'R',
+        short = 'r',
         long,
-        value_name = "REGEX"
+        value_name = "REGEX",
+        display_order = 440
     )]
     pub regex: Option<String>,
 
@@ -695,6 +697,7 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short,
         long = "ignore-case",
+        display_order = 350
     )]
     pub ignore_case: bool,
 
@@ -703,6 +706,7 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'F',
         long,
+        display_order = 320
     )]
     pub filter: Vec<String>,
 
