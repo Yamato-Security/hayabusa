@@ -469,6 +469,7 @@ pub fn search_result_dsp_msg(
             for (record_field_idx, record_field_data) in record_data.iter().enumerate() {
                 let newline_flag = record_field_idx == record_data.len() - 1;
                 if record_field_idx == 6 {
+                    //AllFieldInfoの列の出力
                     let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
                     for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
                         let mut separated_fields_data = fields.split(':');
@@ -496,7 +497,8 @@ pub fn search_result_dsp_msg(
                             .ok();
                         }
                     }
-                } else if record_field_idx == 0 {
+                } else if record_field_idx == 0 || record_field_idx == 5 {
+                    //タイムスタンプとイベントタイトルは同じ色で表示
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
                         Some(Color::Rgb(0, 255, 0)),
