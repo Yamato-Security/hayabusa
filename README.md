@@ -68,7 +68,10 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
-- [Main Commands](#main-commands)
+- [Commands](#commands)
+  - [Analysis Commands:](#analysis-commands)
+  - [DFIR Timeline Commands:](#dfir-timeline-commands)
+  - [General Commands:](#general-commands)
 - [Usage](#usage)
   - [Main Help Menu](#main-help-menu)
   - [`csv-timeline` command](#csv-timeline-command)
@@ -91,6 +94,9 @@ Hayabusa is a **Windows event log fast forensics timeline generator** and **thre
     - [`level-tuning` config file](#level-tuning-config-file)
   - [`set-default-profile` command](#set-default-profile-command)
   - [`list-profiles` command](#list-profiles-command)
+  - [`search` command](#search-command)
+    - [`search` command examples](#search-command-examples)
+    - [`search` command config files](#search-command-config-files)
   - [Advanced](#advanced)
     - [GeoIP Log Enrichment](#geoip-log-enrichment)
       - [GeoIP config file](#geoip-config-file)
@@ -409,17 +415,25 @@ The following warning will pop up, so please click "Open".
 
 You should now be able to run hayabusa.
 
-# Main Commands
+# Commands
 
-* `csv-timeline`: Save the timeline in CSV format.
-* `json-timeline`: Save the timeline in JSON/JSONL format.
+## Analysis Commands:
 * `logon-summary`: Print a summary of logon events.
 * `metrics`: Print metrics of the number and percentage of events based on Event ID.
 * `pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
-* `update-rules`: Sync the rules to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) GitHub repository.
+* `search`: Search by keyword
+
+## DFIR Timeline Commands:
+* `csv-timeline`: Save the timeline in CSV format.
+* `json-timeline`: Save the timeline in JSON/JSONL format.
 * `level-tuning`: Custom tune the alerts' `level`.
 * `list-profiles`: List the available output profiles.
 * `set-default-profile`: Change the default profile.
+* `update-rules`: Sync the rules to the latest rules in the [hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules) GitHub repository.
+
+## General Commands:
+* `help`: Print this message or the help of the given subcommand(s)
+* `list-contributors`: Print the list of contributors
 
 # Usage
 
@@ -934,6 +948,52 @@ Display Settings:
       --no-color  Disable color output
   -q, --quiet     Quiet mode: do not display the launch banner
 ```
+
+## `search` command
+
+The `search` command will let you keyword search on all events. 
+(Not just Hayabusa results.)
+This is useful to determine if there is any evidence in events that are not detected by Hayabusa.
+
+```
+Usage: hayabusa search [OPTIONS] <--keywords <KEYWORDS>>
+
+Display Settings:
+      --no-color  Disable color output
+  -q, --quiet     Quiet mode: do not display the launch banner
+  -v, --verbose   Output verbose information
+
+Input:
+  -d, --directory <DIR>  Directory of multiple .evtx files
+  -f, --file <FILE>      File path to one .evtx file
+  -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
+
+Filtering:
+  -k, --keywords <KEYWORDS>  Search by keyword(s)
+  -i, --ignore-case          Ignore case
+  -F, --filter <FILTER>      Search a specific field
+
+Output:
+  -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
+
+General Options:
+  -Q, --quiet-errors                     Quiet errors mode: do not save error logs
+  -c, --rules-config <DIR>               Specify custom rule config directory (default: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
+  -t, --threads <NUMBER>                 Number of threads (default: optimal number for performance)
+```
+
+### `search` command examples
+
+* Run hayabusa against one Windows event log file with default `standard` profile:
+
+```
+hayabusa.exe csv-timeline -f eventlog.evtx
+```
+
+### `search` command config files
+
+`./rules/config/channel_abbreviations.txt`: Mappings of channel names and their abbreviations.
 
 ## Advanced
 

@@ -68,7 +68,10 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
-- [主なコマンド](#主なコマンド)
+- [コマンド](#コマンド)
+  - [分析コマンド:](#分析コマンド)
+  - [汎用コマンド:](#汎用コマンド)
+  - [DFIRタイムライン作成のコマンド:](#dfirタイムライン作成のコマンド)
 - [使用方法](#使用方法)
   - [デフォルトのヘルプメニュー](#デフォルトのヘルプメニュー)
   - [`csv-timeline`コマンド](#csv-timelineコマンド)
@@ -409,17 +412,25 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 これで実行できるようになります。
 
-# 主なコマンド
+# コマンド
 
-* `csv-timeline`: CSV形式のタイムラインを出力する。
-* `json-timeline`: JSON/JSONL形式のタイムラインを出力する。
+## 分析コマンド:
 * `logon-summary`: ログオンイベントのサマリを出力する。
 * `metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `pivot-keywords-list`: ピボットする不審なキーワードのリストを作成する。
-* `update-rules`: GitHubの[hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)リポジトリにある最新のルールに同期させる。
+* `search`: キーワード検索
+
+## 汎用コマンド:
+* `help`: このメッセージまたは指定されたコマンドのヘルプを表示する。
+* `list-contributors`: コントリビュータ一覧の表示
+
+## DFIRタイムライン作成のコマンド:
+* `csv-timeline`: CSV形式のタイムラインを出力する。
+* `json-timeline`: JSON/JSONL形式のタイムラインを出力する。
 * `level-tuning`: アラート`level`のカスタムチューニング。
-* `list-profiles` : 出力プロファイルの一覧表示。
+* `list-profiles`: 出力プロファイルの一覧表示。
 * `set-default-profile`: デフォルトプロファイルを変更する。
+* `update-rules`: ピボットする不審なキーワードのリストを作成する。
 
 # 使用方法
 
