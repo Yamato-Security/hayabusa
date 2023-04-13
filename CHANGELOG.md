@@ -1,14 +1,19 @@
 # Changes
 
-## 2.4.x [2023/04/xx] "xxx"
+## 2.4.x [2023/04/19] "SANS Secure Korea Release"
 
 **New Features:**
 
 - Added `search` command to search for specified keywords in records. (#617) (@itiB, @hitenkoku)
+- Added `-r, --regex` option in the `search` command to search for regular expressions. (#992) (@itiB)
 
 **Enhancements:**
 
-- XXX
+- Alphabetically sorted commands. (#991) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed timestamps that did not exist from being displayed in the event frequency timeline (`-T, --visualize-timeline`) in version 2.3.3. (#977) (@hitenkoku)
 
 ## 2.3.3 [2023/04/07] "Sakura Release"
 
