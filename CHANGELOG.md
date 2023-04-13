@@ -5,7 +5,7 @@
 **New Features:**
 
 - Added `search` command to search for specified keywords in records. (#617) (@itiB, @hitenkoku)
-- Added `-R, --regex` option in `search` command to search for specified regex in records. (#992) (@itiB)
+- Added `-r, --regex` option in the `search` command to search for regular expressions. (#992) (@itiB)
 
 **Enhancements:**
 
