@@ -536,7 +536,7 @@ pub enum Action {
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords <KEYWORDS>> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
         disable_help_flag = true,
         display_order = 450
@@ -688,23 +688,27 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'k',
         long,
-        value_name = "KEYWORDS"
+        value_name = "KEYWORDS",
+        display_order = 370
     )]
-    pub keywords: Vec<String>,
+    pub keywords: Option<Vec<String>>,
 
-    // /// Search condition by Regex
-    // #[arg(
-    //     help_heading = Some("Filtering"),
-    //     short = 'R',
-    //     long,
-    //     value_name = "REGEX"
-    // )]
-    // pub regex: Option<String>,
+    /// Search by regular expression
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'r',
+        long,
+        value_name = "REGEX",
+        display_order = 440
+    )]
+    pub regex: Option<String>,
+
     /// Ignore case
     #[arg(
         help_heading = Some("Filtering"),
         short,
         long = "ignore-case",
+        display_order = 350
     )]
     pub ignore_case: bool,
 
@@ -713,6 +717,7 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'F',
         long,
+        display_order = 320
     )]
     pub filter: Vec<String>,
 
@@ -1430,7 +1435,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
         Action::Search(option) => Some(SearchOption {
             input_args: option.input_args.clone(),
             keywords: option.keywords.clone(),
-            // regex: option.regex.clone(),
+            regex: option.regex.clone(),
             ignore_case: option.ignore_case,
             filter: option.filter.clone(),
             output: option.output.clone(),
