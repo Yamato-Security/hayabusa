@@ -488,7 +488,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 290
     )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
@@ -497,7 +498,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 360
     )]
     /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
@@ -506,7 +508,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 383
     )]
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
@@ -515,7 +518,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 390
     )]
     /// Print event ID metrics
     Metrics(MetricsOption),
@@ -524,7 +528,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 420
     )]
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
@@ -533,7 +538,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords <KEYWORDS>> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 450
     )]
     /// Search by keyword
     Search(SearchOption),
@@ -542,7 +548,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 470
     )]
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
@@ -551,7 +558,8 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 380
     )]
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
@@ -560,14 +568,17 @@ pub enum Action {
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
         help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 451
     )]
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
 
+    #[clap(display_order = 381)]
     /// Print the list of contributors
     ListContributors(CommonOptions),
 
+    #[clap(display_order = 382)]
     /// List the output profiles
     ListProfiles(CommonOptions),
 }

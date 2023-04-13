@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- XXX
+- Alphabetically sorted commands. (#991) (@hitenkoku)
 
 ## 2.3.3 [2023/04/07] "Sakura Release"
 
