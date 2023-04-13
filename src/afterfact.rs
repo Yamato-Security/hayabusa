@@ -130,14 +130,14 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     if timestamps.len() < 5 {
         writeln!(
             wtr,
-            "Event Frequency Timeline could not be displayed as there needs to be more than 5 events.",
+            "Detection Frequency Timeline could not be displayed as there needs to be more than 5 events.",
         )
         .ok();
         buf_wtr.print(&wtr).ok();
         return;
     }
 
-    let title = "Event Frequency Timeline";
+    let title = "Detection Frequency Timeline";
     let header_row_space = (length - title.len()) / 2;
     writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
     println!();
