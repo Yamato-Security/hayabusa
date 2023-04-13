@@ -11,6 +11,10 @@
 
 - Alphabetically sorted commands. (#991) (@hitenkoku)
 
+**Bug Fixes:**
+
+- Fixed timestamps that did not exist from being displayed in the event frequency timeline (`-T, --visualize-timeline`) in version 2.3.3. (#977) (@hitenkoku)
+
 ## 2.3.3 [2023/04/07] "Sakura Release"
 
 **Enhancements:**
