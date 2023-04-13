@@ -13,7 +13,7 @@
 
 **Bug Fixes:**
 
-- Fixed timestamps that did not exist in `-T, --visualize-timeline` data to be output to the event frequency timeline on version 2.3.3. (#977) (@hitenkoku)
+- Fixed timestamps that did not exist from being displayed in the event frequency timeline (`-T, --visualize-timeline`) in version 2.3.3. (#977) (@hitenkoku)
 
 ## 2.3.3 [2023/04/07] "Sakura Release"
 
