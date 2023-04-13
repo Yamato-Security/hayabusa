@@ -316,10 +316,16 @@ fn emit_csv<W: std::io::Write>(
             .unwrap_or(&0) as usize
     };
 
-    for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
+    for (message_idx, time) in MESSAGEKEYS
+        .lock()
+        .unwrap()
+        .iter()
+        .sorted_unstable()
+        .enumerate()
+    {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
-        timestamps.push(_get_timestamp(output_option, time));
+        timestamps[message_idx] = _get_timestamp(output_option, time);
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
                 &format!(
