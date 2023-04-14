@@ -703,12 +703,13 @@ pub struct SearchOption {
     )]
     pub regex: Option<String>,
 
-    /// Ignore case
+    /// case-insensitive Search(require kewords option)
     #[arg(
         help_heading = Some("Filtering"),
         short,
         long = "ignore-case",
-        display_order = 350
+        display_order = 350,
+        requires = "keywords"
     )]
     pub ignore_case: bool,
 

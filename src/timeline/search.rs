@@ -60,10 +60,21 @@ impl EventSearch {
         stored_static: &StoredStatic,
     ) {
         if !keywords.is_empty() {
-            self.search_keyword(records, keywords, filters, eventkey_alias, stored_static);
+            // 大文字小文字を区別しないかどうかのフラグを設定
+            let case_insensitive_flag = match &stored_static.config.action {
+                Some(Action::Search(opt)) => opt.ignore_case,
+                _ => false,
+            };
+            self.search_keyword(
+                records,
+                keywords,
+                filters,
+                eventkey_alias,
+                case_insensitive_flag,
+            );
         }
         if let Some(re) = regex {
-            self.search_regex(records, re, filters, eventkey_alias, stored_static);
+            self.search_regex(records, re, filters, eventkey_alias);
         }
     }
 
@@ -110,31 +121,27 @@ impl EventSearch {
         keywords: &[String],
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
-        stored_static: &StoredStatic,
+        case_insensitive_flag: bool, // 検索時に大文字小文字を区別するかどうか
     ) {
         if records.is_empty() {
             return;
         }
 
         let filter_rule = create_filter_rule(filters);
-        let ignore_flag = match &stored_static.config.action {
-            Some(Action::Search(opt)) => opt.ignore_case,
-            _ => false,
-        };
 
         for record in records.iter() {
             // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
             if !self.filter_record(record, &filter_rule, eventkey_alias) {
                 continue;
             }
-            let search_target = if ignore_flag {
+            let search_target = if case_insensitive_flag {
                 record.data_string.to_lowercase()
             } else {
                 record.data_string.clone()
             };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if keywords.iter().any(|key| {
-                let converted_key = if ignore_flag {
+                let converted_key = if case_insensitive_flag {
                     key.to_lowercase()
                 } else {
                     key.clone()
@@ -164,7 +171,6 @@ impl EventSearch {
         regex: &str,
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
-        stored_static: &StoredStatic,
     ) {
         let re = Regex::new(regex).unwrap_or_else(|err| {
             AlertMessage::alert(&format!("Failed to create regex pattern. \n{err}")).ok();
