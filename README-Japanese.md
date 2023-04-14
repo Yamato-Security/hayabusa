@@ -44,7 +44,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
 - [スクリーンショット](#スクリーンショット)
   - [起動画面](#起動画面)
   - [ターミナル出力画面](#ターミナル出力画面)
-  - [イベント頻度タイムライン出力画面 (`-T`オプション)](#イベント頻度タイムライン出力画面--tオプション)
+  - [検知頻度タイムライン出力画面 (`-T`オプション)](#検知頻度タイムライン出力画面--tオプション)
   - [結果サマリ画面 (Results Summary)](#結果サマリ画面-results-summary)
   - [HTMLの結果サマリ (`-H`オプション)](#htmlの結果サマリ--hオプション)
   - [Excelでの解析](#excelでの解析)
@@ -68,12 +68,12 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [Windows](#windows)
   - [Linux](#linux)
   - [macOS](#macos)
-- [コマンド](#コマンド)
+- [コマンド一覧](#コマンド一覧)
   - [分析コマンド:](#分析コマンド)
   - [汎用コマンド:](#汎用コマンド)
   - [DFIRタイムライン作成のコマンド:](#dfirタイムライン作成のコマンド)
-- [使用方法](#使用方法)
-  - [デフォルトのヘルプメニュー](#デフォルトのヘルプメニュー)
+- [コマンド使用方法](#コマンド使用方法)
+  - [分析コマンド](#分析コマンド-1)
   - [`csv-timeline`コマンド](#csv-timelineコマンド)
     - [`csv-timeline`コマンドの使用例](#csv-timelineコマンドの使用例)
     - [`csv-timeline`コマンドの設定ファイル](#csv-timelineコマンドの設定ファイル)
@@ -118,7 +118,7 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [プログレスバー](#プログレスバー)
   - [カラー出力](#カラー出力)
   - [結果のサマリ (Results Summary)](#結果のサマリ-results-summary)
-    - [イベント頻度タイムライン](#イベント頻度タイムライン)
+    - [検知頻度タイムライン](#検知頻度タイムライン)
 - [Hayabusaルール](#hayabusaルール)
   - [Hayabusa v.s. 変換されたSigmaルール](#hayabusa-vs-変換されたsigmaルール)
 - [その他のWindowsイベントログ解析ツールおよび関連リソース](#その他のwindowsイベントログ解析ツールおよび関連リソース)
@@ -159,9 +159,9 @@ Hayabusaは従来のWindowsイベントログ分析解析と比較して、分�
 
 ![Hayabusa ターミナル出力画面](screenshots/Hayabusa-Results.png)
 
-## イベント頻度タイムライン出力画面 (`-T`オプション)
+## 検知頻度タイムライン出力画面 (`-T`オプション)
 
-![Hayabusa イベント頻度タイムライン出力画面](screenshots/HayabusaEventFrequencyTimeline.png)
+![Hayabusa 検知頻度タイムライン出力画面](screenshots/HayabusaEventFrequencyTimeline.png)
 
 ## 結果サマリ画面 (Results Summary)
 
@@ -231,6 +231,7 @@ JSON形式の結果を`jq`で解析する方法については、[こちら](/do
 * JSON形式のログ入力にも対応。
 * ログフィールドの正規化
 * IPアドレスにGeoIP（ASN、都市、国）情報を付加することによるログエンリッチメント。
+* キーワードや正規表現で全イベントの検索。
 
 # ダウンロード
 
@@ -412,7 +413,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 
 これで実行できるようになります。
 
-# コマンド
+# コマンド一覧
 
 ## 分析コマンド:
 * `logon-summary`: ログオンイベントのサマリを出力する。
@@ -432,32 +433,11 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * `set-default-profile`: デフォルトプロファイルを変更する。
 * `update-rules`: ピボットする不審なキーワードのリストを作成する。
 
-# 使用方法
+# コマンド使用方法
 
-## デフォルトのヘルプメニュー
+## 分析コマンド
 
-```
-Usage:
-  hayabusa.exe help <COMMAND>
-  hayabusa.exe <COMMAND> [OPTIONS]
 
-Commands:
-  csv-timeline         CSV形式のタイムラインを出力
-  json-timeline        JSON/JSONL形式のタイムラインを出力
-  logon-summary        ログオンイベントのサマリを出力
-  metrics              イベントIDに基づくイベントの合計と割合の集計を出力
-  pivot-keywords-list  ピボットキーワードの一覧作成
-  update-rules         rulesフォルダをhayabusa-rulesのgithubリポジトリの最新版に更新する
-  level-tuning         ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-  set-default-profile  デフォルトの出力コンフィグを設定する
-  list-contributors    コントリビュータの一覧表示
-  list-profiles        出力プロファイルの一覧表示
-  help                 コマンドに付随するオプションのヘルプを表示する
-
-Options:
-      --no-color  カラーで出力しない
-  -q, --quiet     Quietモード: 起動バナーを表示しない
-```
 
 ## `csv-timeline`コマンド
 
@@ -484,7 +464,7 @@ Display Settings:
       --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
-  -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
+  -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
   -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -678,7 +658,7 @@ Display Settings:
       --no-summary          結果概要を出力しない (多少速くなる)
   -q, --quiet               Quietモード: 起動バナーを表示しない
   -v, --verbose             詳細な情報を出力する
-  -T, --visualize-timeline  イベント頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
+  -T, --visualize-timeline  検知頻度タイムラインを出力する（ターミナルはUnicodeに対応する必要がある）
 
 Filtering:
   -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
@@ -1235,7 +1215,7 @@ Hayabusaの結果は`level`毎に文字色が変わります。
 
 元々のイベント数、検知したイベント数、データ削減の統計、検知数情報、最多検知日、最多検知端末名、最多アラート等の情報がスキャン後に出力されます。
 
-### イベント頻度タイムライン
+### 検知頻度タイムライン
 
 `-T, --visualize-timeline`オプションを使うことで、検知したイベントの数が5以上の時、頻度のタイムライン(スパークライン)を画面に出力します。
 マーカーの数は最大10個です。デフォルトのCommand PromptとPowerShell Promptでは文字化けがでるので、Windows TerminalやiTerm2等のターミナルをご利用ください。
