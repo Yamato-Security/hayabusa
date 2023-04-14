@@ -421,7 +421,7 @@ You should now be able to run hayabusa.
 * `logon-summary`: Print a summary of logon events.
 * `metrics`: Print metrics of the number and percentage of events based on Event ID.
 * `pivot-keywords-list`: Print a list of suspicious keywords to pivot on.
-* `search`: Search by keyword
+* `search`: Search all events by keyword(s) or regular expressions
 
 ## DFIR Timeline Commands:
 * `csv-timeline`: Save the timeline in CSV format.
@@ -598,7 +598,7 @@ The `search` command will let you keyword search on all events.
 This is useful to determine if there is any evidence in events that are not detected by Hayabusa.
 
 ```
-Usage: hayabusa search [OPTIONS] <--keywords <KEYWORDS>>
+Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
 
 Display Settings:
       --no-color  Disable color output
@@ -611,9 +611,10 @@ Input:
   -l, --live-analysis    Analyze the local C:\Windows\System32\winevt\Logs folder
 
 Filtering:
-  -k, --keywords <KEYWORDS>  Search by keyword(s)
+  -F, --filter <FILTER>      Filter by specific field(s)
   -i, --ignore-case          Ignore case
-  -F, --filter <FILTER>      Search a specific field
+  -k, --keywords <KEYWORDS>  Search by keyword(s)
+  -r, --regex <REGEX>        Search by regular expression
 
 Output:
   -o, --output <FILE>  Save the search results in CSV format (ex: search.csv)
@@ -627,11 +628,39 @@ General Options:
 
 #### `search` command examples
 
-* Run hayabusa against one Windows event log file with default `standard` profile:
+* Search the `../hayabusa-sample-evtx` directory for the keyword `mimikatz`:
 
 ```
-hayabusa.exe csv-timeline -f eventlog.evtx
+hayabusa.exe search -d ../hayabusa-sample-evtx -k "mimikatz"
 ```
+
+> Note: The keyword will match if `mimikatz` is found anywhere in the data. It is not an exact match.
+
+* Search the `../hayabusa-sample-evtx` directory for the keywords `mimikatz` or `kali`:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -k "mimikatz" -k "kali"
+```
+
+* Search the `../hayabusa-sample-evtx` directory for the keyword `mimikatz` and ignore case:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -k "mimikatz" -i
+```
+
+* Search the `../hayabusa-sample-evtx` directory for IP addresses using regular expressions:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -r "(?:[0-9]{1,3}\.){3}[0-9]{1,3}"
+```
+
+* Search the `../hayabusa-sample-evtx` directory and show all events where the `WorkstationName` field is `kali`:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
+```
+
+> Note: `.*` is the regular expression to match on every event.
 
 #### `search` command config files
 

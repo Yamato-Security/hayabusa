@@ -70,36 +70,38 @@ Hayabusaは、日本の[Yamato Security](https://yamatosecurity.connpass.com/)�
   - [macOS](#macos)
 - [コマンド一覧](#コマンド一覧)
   - [分析コマンド:](#分析コマンド)
-  - [汎用コマンド:](#汎用コマンド)
   - [DFIRタイムライン作成のコマンド:](#dfirタイムライン作成のコマンド)
+  - [汎用コマンド:](#汎用コマンド)
 - [コマンド使用方法](#コマンド使用方法)
   - [分析コマンド](#分析コマンド-1)
-  - [`csv-timeline`コマンド](#csv-timelineコマンド)
-    - [`csv-timeline`コマンドの使用例](#csv-timelineコマンドの使用例)
-    - [`csv-timeline`コマンドの設定ファイル](#csv-timelineコマンドの設定ファイル)
-  - [`json-timeline`コマンド](#json-timelineコマンド)
-    - [`json-timeline`コマンドの使用例と設定ファイル](#json-timelineコマンドの使用例と設定ファイル)
-  - [`logon-summary`コマンド](#logon-summaryコマンド)
-    - [`logon-summary`コマンドの使用例](#logon-summaryコマンドの使用例)
-  - [`metrics`コマンド](#metricsコマンド)
-    - [`metrics`コマンドの使用例](#metricsコマンドの使用例)
-    - [`metrics`コマンドの設定ファイル](#metricsコマンドの設定ファイル)
-  - [`pivot-keywords-list`コマンド](#pivot-keywords-listコマンド)
-    - [`pivot-keywords-list`コマンドの使用例](#pivot-keywords-listコマンドの使用例)
-    - [`pivot-keywords-list`の設定ファイル](#pivot-keywords-listの設定ファイル)
+    - [`logon-summary`コマンド](#logon-summaryコマンド)
+      - [`logon-summary`コマンドの使用例](#logon-summaryコマンドの使用例)
+    - [`metrics`コマンド](#metricsコマンド)
+      - [`metrics`コマンドの使用例](#metricsコマンドの使用例)
+      - [`metrics`コマンドの設定ファイル](#metricsコマンドの設定ファイル)
+    - [`pivot-keywords-list`コマンド](#pivot-keywords-listコマンド)
+      - [`pivot-keywords-list`コマンドの使用例](#pivot-keywords-listコマンドの使用例)
+      - [`pivot-keywords-list`の設定ファイル](#pivot-keywords-listの設定ファイル)
+    - [`search`コマンド](#searchコマンド)
+      - [`search`コマンドの使用例](#searchコマンドの使用例)
+      - [`search`の設定ファイル](#searchの設定ファイル)
+  - [DFIRタイムラインコマンド](#dfirタイムラインコマンド)
+    - [`csv-timeline`コマンド](#csv-timelineコマンド)
+      - [`csv-timeline`コマンドの使用例](#csv-timelineコマンドの使用例)
+      - [アドバンス - GeoIPのログエンリッチメント](#アドバンス---geoipのログエンリッチメント)
+        - [GeoIPの設定ファイル](#geoipの設定ファイル)
+        - [GeoIPデータベースの自動アップデート](#geoipデータベースの自動アップデート)
+      - [`csv-timeline`コマンドの設定ファイル](#csv-timelineコマンドの設定ファイル)
+    - [`json-timeline`コマンド](#json-timelineコマンド)
+      - [`json-timeline`コマンドの使用例と設定ファイル](#json-timelineコマンドの使用例と設定ファイル)
+    - [`level-tuning`コマンド](#level-tuningコマンド)
+      - [`level-tuning`コマンドの使用例](#level-tuningコマンドの使用例)
+      - [`level-tuning`の設定ファイル](#level-tuningの設定ファイル)
+    - [`list-profiles`コマンド](#list-profilesコマンド)
+    - [`set-default-profile`コマンド](#set-default-profileコマンド)
   - [`update-rules`コマンド](#update-rulesコマンド)
     - [`update-rules`コマンドの使用例](#update-rulesコマンドの使用例)
-  - [`level-tuning`コマンド](#level-tuningコマンド)
-    - [`level-tuning`コマンドの使用例](#level-tuningコマンドの使用例)
-    - [`level-tuning`の設定ファイル](#level-tuningの設定ファイル)
-  - [`set-default-profile`コマンド](#set-default-profileコマンド)
-  - [`list-profiles`コマンド](#list-profilesコマンド)
-  - [アドバンス](#アドバンス)
-    - [GeoIPのログエンリッチメント](#geoipのログエンリッチメント)
-      - [GeoIPの設定ファイル](#geoipの設定ファイル)
-      - [GeoIPデータベースの自動アップデート](#geoipデータベースの自動アップデート)
-- [サンプルevtxファイルでHayabusaをテストする](#サンプルevtxファイルでhayabusaをテストする)
-- [HayabusaのCSVとJSON/L出力](#hayabusaのcsvとjsonl出力)
+- [タイムライン出力](#タイムライン出力)
   - [出力プロファイル](#出力プロファイル)
     - [1. `minimal`プロファイルの出力](#1-minimalプロファイルの出力)
     - [2. `standard`プロファイルの出力](#2-standardプロファイルの出力)
@@ -419,11 +421,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * `logon-summary`: ログオンイベントのサマリを出力する。
 * `metrics`: イベントIDに基づくイベントの合計と割合の集計を出力する。
 * `pivot-keywords-list`: ピボットする不審なキーワードのリストを作成する。
-* `search`: キーワード検索
-
-## 汎用コマンド:
-* `help`: このメッセージまたは指定されたコマンドのヘルプを表示する。
-* `list-contributors`: コントリビュータ一覧の表示
+* `search`: キーワードや正規表現で全イベントの検索。
 
 ## DFIRタイムライン作成のコマンド:
 * `csv-timeline`: CSV形式のタイムラインを出力する。
@@ -433,13 +431,245 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * `set-default-profile`: デフォルトプロファイルを変更する。
 * `update-rules`: ピボットする不審なキーワードのリストを作成する。
 
+## 汎用コマンド:
+* `help`: このメッセージまたは指定されたコマンドのヘルプを表示する。
+* `list-contributors`: コントリビュータ一覧の表示
+
+
 # コマンド使用方法
 
 ## 分析コマンド
 
+### `logon-summary`コマンド
 
+`logon-summary`コマンドを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。
+単体のevtxファイルを解析したい場合は`-f`オプションを利用してください。複数のevtxファイルを対象としたい場合は`-d`オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。
 
-## `csv-timeline`コマンド
+```
+Usage: logon-summary <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+
+Output:
+  -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: logon-summary.csv)
+
+Display Settings:
+      --no-color            カラーで出力しない
+  -q, --quiet               Quietモード: 起動バナーを表示しない
+  -v, --verbose             詳細な情報を出力する
+
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+```
+
+#### `logon-summary`コマンドの使用例
+
+* ログオンサマリの出力: `hayabusa.exe logon-summary -f Security.evtx`
+* ログオンサマリ結果を保存する: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
+
+### `metrics`コマンド
+
+`metrics`コマンドを使用すると、イベントIDの総数や割合をチャンネルごとに分けて表示することができます。
+
+```
+Usage: metrics <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+
+Output:
+  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: metrics.csv)
+
+Display Settings:
+      --no-color       カラーで出力しない
+  -q, --quiet          Quietモード: 起動バナーを表示しない
+  -v, --verbose        詳細な情報を出力する
+
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+```
+
+#### `metrics`コマンドの使用例
+
+* 一つのファイルに対してイベントIDの統計情報を出力する: `hayabusa.exe metrics -f Security.evtx`
+
+* ディレクトリに対してイベントIDの統計情報を出力する: `hayabusa.exe metrics -d ../logs`
+
+* 結果をCSVファイルに保存する: `hayabusa.exe metrics -f metrics.csv`
+
+#### `metrics`コマンドの設定ファイル
+
+チャンネル名、イベントID、イベントのタイトルは、`rules/config/channel_eid_info.txt`で定義されています。
+
+例:
+```
+Channel,EventID,EventTitle
+Microsoft-Windows-Sysmon/Operational,1,Process Creation.
+Microsoft-Windows-Sysmon/Operational,2,File Creation Timestamp Changed. (Possible Timestomping)
+Microsoft-Windows-Sysmon/Operational,3,Network Connection.
+Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
+```
+
+### `pivot-keywords-list`コマンド
+
+`pivot-keywords-list`コマンドを使用すると、異常なユーザ、ホスト名、プロセスなどを迅速に特定し、イベントを関連付けるための固有のピボットキーワードのリストを作成することができます。
+
+重要：デフォルトでは、Hayabusaはすべてのイベント（informationalおよびそれ以上）から結果を返すので、`pivot-keywords-list`コマンドと`-m, --min-level`オプションを組み合わせることを強くお勧めします。
+例えば、まず`-m critical`で`critical`アラートのみのキーワードを作成し、次に`-m high`、`-m medium`等々と続けていきます。
+検索結果には、多くの通常のイベントと一致する共通のキーワードが含まれている可能性が高いので、検索結果を手動でチェックし、固有のキーワードのリストを1つのファイルに作成した後、`grep -f keywords.txt timeline.csv`といったコマンドで疑わしい活動のタイムラインを絞り込み作成することが可能です。
+
+```
+Usage: pivot-keywords-list <INPUT> [OPTIONS]
+
+Input:
+  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
+
+Output:
+  -o, --output <FILE>       ピボットキーワードの一覧を複数ファイルに出力する (例: pivot-keywords.txt)
+
+Display Settings:
+      --no-color       カラーで出力しない
+  -q, --quiet          Quietモード: 起動バナーを表示しない
+  -v, --verbose        詳細な情報を出力する
+
+Filtering:
+  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
+  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
+  -n, --enable-noisy-rules        Noisyルールを有効にする
+  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
+  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
+      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
+  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
+      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
+      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+```
+
+#### `pivot-keywords-list`コマンドの使用例
+
+* 重要なアラートからピボットキーワードのリストを作成し、その結果を保存します。(結果は、`keywords-Ip Addresses.txt`、`keywords-Users.txt`等に保存されます):
+
+```
+hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
+```
+
+#### `pivot-keywords-list`の設定ファイル
+
+検索キーワードは、`./config/pivot_keywords.txt`を編集することでカスタマイズすることができます。
+デフォルト設定は以下の通りです:
+
+```txt
+Users.SubjectUserName
+Users.TargetUserName
+Users.User
+Logon IDs.SubjectLogonId
+Logon IDs.TargetLogonId
+Workstation Names.WorkstationName
+Ip Addresses.IpAddress
+Processes.Image
+```
+
+フォーマットは、`キーワード名.フィールド名`です。例えば、`Users`のリストを作成する場合、Hayabusaは、`SubjectUserName`、`TargetUserName`、`User`フィールドにあるすべての値をリストアップします。
+
+### `search`コマンド
+
+`search`コマンドは、すべてのイベントのキーワード検索が可能です。
+(※Hayabusaの検知結果だけではありません。）
+Hayabusaの検知ルールでなにかの痕跡を検知できなくても、検索機能で検知できる可能性があるので、便利です。
+
+```
+Usage: hayabusa.exe search <INPUT> <--keywords "<KEYWORDS>" OR --regex "<REGEX>"> [OPTIONS]
+
+Display Settings:
+      --no-color  カラーで出力しない
+  -q, --quiet     Quietモード: 起動バナーを表示しない
+  -v, --verbose   詳細な情報を出力する
+
+Input:
+  -d, --directory <DIR>  .evtxファイルを持つディレクトリのパス
+  -f, --file <FILE>      1つの.evtxファイルに対して解析を行う
+  -l, --live-analysis    ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
+
+Filtering:
+  -F, --filter <FILTER>       特定のフィールドでフィルタする
+  -i, --ignore-case           大文字と小文字を区別しない
+  -k, --keywords <KEYWORDS>   キーワードでの検索
+  -r, --regex <REG EX>        正規表現での検索
+
+Output:
+  -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: search.csv)
+
+General Options:
+  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
+  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
+      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
+  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+```
+
+#### `search`コマンドの使用例
+
+* `../hayabusa-sample-evtx`ディレクトリで`mimikatz`のキーワードを検索する:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -k "mimikatz"
+```
+
+> 注意: `mimikatz`のキーワードがデータ内のどこかに存在する場合にマッチする。完全一致しなくても良い。
+
+* `../hayabusa-sample-evtx`ディレクトリで`mimikatz`または`kali`のキーワードを検索する:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -k "mimikatz" -k "kali"
+```
+
+* `../hayabusa-sample-evtx`ディレクトリで大文字小文字を区別せずに`mimikatz`のキーワードを検索する:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -k "mimikatz" -i
+```
+
+* `../hayabusa-sample-evtx`ディレクトリで正規表現を使用し、IPアドレスを検索する:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -r "(?:[0-9]{1,3}\.){3}[0-9]{1,3}"
+```
+
+* `../hayabusa-sample-evtx`ディレクトリで`WorkstationName`フィールドが`kali`の条件で、全イベントを表示する:
+
+```
+hayabusa.exe search -d ../hayabusa-sample-evtx -r ".*" -F WorkstationName:"kali"
+```
+
+> ※ `.*`の正規表現を使用すると、すべてのイベントが表示される。
+
+#### `search`の設定ファイル
+
+`./rules/config/channel_abbreviations.txt`: チャンネル名とその略称のマッピング。
+
+## DFIRタイムラインコマンド
+
+### `csv-timeline`コマンド
 
 `csv-timeline`コマンドはイベントのフォレンジックタイムラインをCSV形式で作成します。
 
@@ -494,7 +724,7 @@ Time Format:
   -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
 ```
 
-### `csv-timeline`コマンドの使用例
+#### `csv-timeline`コマンドの使用例
 
 * デフォルトの`standard`プロファイルで１つのWindowsイベントログファイルに対してHayabusaを実行する:
 
@@ -598,7 +828,44 @@ hayabusa.exe csv-timeline -d ../hayabusa-sample-evtx --RFC-3339 -o timesketch-im
 デフォルトでは、Hayabusaはエラーメッセージをエラーログに保存します。
 エラーメッセージを保存したくない場合は、`-Q`を追加してください。
 
-### `csv-timeline`コマンドの設定ファイル
+#### アドバンス - GeoIPのログエンリッチメント
+
+無償のGeoLite2のジオロケーションデータで、SrcIP（ソースIPアドレス）フィールドとTgtIP（ターゲットIPアドレス）フィールドにGeoIP（ASN組織、都市、国）情報を追加することができます。
+
+手順:
+1. まずMaxMindのアカウントを[こちら](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)で登録してください。
+2. [ダウンロードページ](https://www.maxmind.com/en/accounts/current/geoip/downloads)から3つの`.mmdb`ファイルをダウンロードし、ディレクトリに保存してください。ファイル名は、`GeoLite2-ASN.mmdb`、`GeoLite2-City.mmdb`、`GeoLite2-Country.mmdb`であることをご確認ください。
+3. `csv-timeline`または`json-timeline`コマンドを実行する際には、`-G`オプションの後にMaxMindデータベースのあるディレクトリを追加してください。
+
+* `csv-timeline`を使用すると、次の6つのカラムが追加で出力されます: `SrcASN`、`SrcCity`、`SrcCountry`、`TgtASN`、`TgtCity`、`TgtCountry`
+* `json-timeline`を使用すると、同じ`SrcASN`、`SrcCity`、`SrcCountry`、`TgtASN`、`TgtCity`、`TgtCountry`フィールドが`Details`オブジェクトに追加されますが、情報を含む場合のみとなります。
+
+* `SrcIP`または`TgtIP`がlocalhost (`127.0.0.1`、`::1`等々)の場合、`SrcASN`または`TgtASN`は、`Local`として出力されます。
+* `SrcIP`または`TgtIP`がプライベートIPアドレス (`10.0.0.0/8`、`fe80::/10`等々)の場合、`SrcASN`または`TgtASN`は、`Private`として出力されます。
+
+##### GeoIPの設定ファイル
+
+GeoIPデータベースで検索される送信元と送信先のIPアドレスを含むフィールド名は、`rules/config/geoip_field_mapping.yaml`で定義されています。
+必要であれば、このリストに追加することができます。
+また、このファイルには、どのイベントからIPアドレス情報を抽出するかを決定するフィルタセクションもあります。
+
+##### GeoIPデータベースの自動アップデート
+
+MaxMind GeoIP データベースは、2 週間ごとに更新されます。
+これらのデータベースを自動的に更新するために、[こちら](https://github.com/maxmind/geoipupdate)からMaxMindの`geoipupdate`のツールをインストールすることができます。
+
+macOSでの手順:
+1. `brew install geoipupdate`
+2. `/usr/local/etc/GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
+3. `geoipupdate`を実行する。
+4. GeoIP情報を追加する場合は、`-G /usr/local/var/GeoIP`を追加する。
+
+Windowsでの手順:
+1. [Releases](https://github.com/maxmind/geoipupdate/releases)ページからWindowsバイナリの最新版(例: `geoipupdate_4.10.0_windows_amd64.zip`)をダウンロードする。
+2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
+3. `geoipupdate`を実行する。
+
+#### `csv-timeline`コマンドの設定ファイル
 
 `./rules/config/channel_abbreviations.txt`: チャンネル名とその略称のマッピング。
 
@@ -628,7 +895,7 @@ IpAddress,Event.EventData.IpAddress
 デフォルトでは、Hayabusaはすべてのイベントをスキャンしますが、パフォーマンスを向上させたい場合は、`-E, --EID-filter`オプションを使用してください。
 これにより、通常10〜25％の速度向上があります。
 
-## `json-timeline`コマンド
+### `json-timeline`コマンド
 
 `json-timeline`コマンドは、JSONまたはJSONL形式でイベントのフォレンジックタイムラインを作成します。
 JSONLへの出力は、JSONよりも高速でファイルサイズも小さいので、結果をElastic Stack等の他のツールにインポートするだけなら、JSONLが理想です。
@@ -688,161 +955,72 @@ Time Format:
   -U, --UTC               UTC形式で日付と時刻を出力する (デフォルト: 現地時間)
 ```
 
-### `json-timeline`コマンドの使用例と設定ファイル
+#### `json-timeline`コマンドの使用例と設定ファイル
 
 `json-timeline`のオプションと設定ファイルは、`csv-timeline`と同じですが、JSONL形式で出力するための`-L, --JSONL-output`オプションが1つ追加されています。
 
-## `logon-summary`コマンド
+### `level-tuning`コマンド
 
-`logon-summary`コマンドを使うことでログオン情報の要約(ユーザ名、ログイン成功数、ログイン失敗数)の画面出力ができます。
-単体のevtxファイルを解析したい場合は`-f`オプションを利用してください。複数のevtxファイルを対象としたい場合は`-d`オプションを合わせて使うことでevtxファイルごとのログイン情報の要約を出力できます。
+`level-tuning`コマンドを使用すると、環境に応じてリスクレベルを上げたり下げたりして、ルールのアラートレベルを調整できます。
 
 ```
-Usage: logon-summary <INPUT> [OPTIONS]
-
-Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input                .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-
-Output:
-  -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: logon-summary.csv)
+Usage: level-tuning [OPTIONS]
 
 Display Settings:
-      --no-color            カラーで出力しない
-  -q, --quiet               Quietモード: 起動バナーを表示しない
-  -v, --verbose             詳細な情報を出力する
+      --no-color      カラーで出力しない
+  -q, --quiet         Quietモード: 起動バナーを表示しない
 
 General Options:
-  -Q, --quiet-errors              Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>        ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する (例１: evtx_data 例２:evtx1,evtx2)
-  -t, --threads <NUMBER>          スレッド数 (デフォルト: パフォーマンスに最適な数値)
+  -f, --file <FILE>   ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
 ```
 
-### `logon-summary`コマンドの使用例
+#### `level-tuning`コマンドの使用例
 
-* ログオンサマリの出力: `hayabusa.exe logon-summary -f Security.evtx`
-* ログオンサマリ結果を保存する: `hayabusa.exe logon-summary -d ../logs -o logon-summary.csv`
+* 通常使用: `hayabusa.exe level-tuning`
 
-## `metrics`コマンド
+* カスタム設定ファイルに基づくルールのアラートレベルの調整: `hayabusa.exe level-tuning -f my_level_tuning.txt`
 
-`metrics`コマンドを使用すると、イベントIDの総数や割合をチャンネルごとに分けて表示することができます。
+#### `level-tuning`の設定ファイル
+
+HayabubsaとSigmaのルール作成者は、アラートのリスクレベルを判定してルールを作成します。
+しかし、実際のリスクレベルは環境に応じて異なる場合があります。
+`./rules/config/level_tuning.txt`にルールを追加して `hayabusa.exe level-tuning`を実行すると、ルールファイル内の`level`行が更新され、リスクレベルを調整することができます。
+ルールファイルが直接更新されますので、ご注意ください。
+
+> 注意: `update-rules`を実行するたびに、アラートレベルが元の設定に上書きされるので、レベルを変更したい場合は、`update-rules`を実行した後に、`level-tuning`コマンドも実行する必要があります。
+
+`./rules/config/level_tuning.txt`の一例:
+
+```csv
+id,new_level
+00000000-0000-0000-0000-000000000000,informational # レベルチューニングのサンプル
+```
+
+この場合、ルールディレクトリ内の`id`が`00000000-0000-0000000000`のルールのアラート`level`が、`informational`に書き換えられます。
+設定可能なレベルは、`critical`、`high`、`medium`、`low`、`informational`です。
+
+### `list-profiles`コマンド
 
 ```
-Usage: metrics <INPUT> [OPTIONS]
-
-Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-
-Output:
-  -o, --output <FILE>       イベントIDに基づくイベントの合計と割合の集計を出力する (例: metrics.csv)
+Usage: list-profiles [OPTIONS]
 
 Display Settings:
-      --no-color       カラーで出力しない
-  -q, --quiet          Quietモード: 起動バナーを表示しない
-  -v, --verbose        詳細な情報を出力する
-
-General Options:
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
+      --no-color   カラーで出力しない
+  -q, --quiet      Quietモード: 起動バナーを表示しない
 ```
 
-### `metrics`コマンドの使用例
-
-* 一つのファイルに対してイベントIDの統計情報を出力する: `hayabusa.exe metrics -f Security.evtx`
-
-* ディレクトリに対してイベントIDの統計情報を出力する: `hayabusa.exe metrics -d ../logs`
-
-* 結果をCSVファイルに保存する: `hayabusa.exe metrics -f metrics.csv`
-
-### `metrics`コマンドの設定ファイル
-
-チャンネル名、イベントID、イベントのタイトルは、`rules/config/channel_eid_info.txt`で定義されています。
-
-例:
-```
-Channel,EventID,EventTitle
-Microsoft-Windows-Sysmon/Operational,1,Process Creation.
-Microsoft-Windows-Sysmon/Operational,2,File Creation Timestamp Changed. (Possible Timestomping)
-Microsoft-Windows-Sysmon/Operational,3,Network Connection.
-Microsoft-Windows-Sysmon/Operational,4,Sysmon Service State Changed.
-```
-
-## `pivot-keywords-list`コマンド
-
-`pivot-keywords-list`コマンドを使用すると、異常なユーザ、ホスト名、プロセスなどを迅速に特定し、イベントを関連付けるための固有のピボットキーワードのリストを作成することができます。
-
-重要：デフォルトでは、Hayabusaはすべてのイベント（informationalおよびそれ以上）から結果を返すので、`pivot-keywords-list`コマンドと`-m, --min-level`オプションを組み合わせることを強くお勧めします。
-例えば、まず`-m critical`で`critical`アラートのみのキーワードを作成し、次に`-m high`、`-m medium`等々と続けていきます。
-検索結果には、多くの通常のイベントと一致する共通のキーワードが含まれている可能性が高いので、検索結果を手動でチェックし、固有のキーワードのリストを1つのファイルに作成した後、`grep -f keywords.txt timeline.csv`といったコマンドで疑わしい活動のタイムラインを絞り込み作成することが可能です。
+### `set-default-profile`コマンド
 
 ```
-Usage: pivot-keywords-list <INPUT> [OPTIONS]
-
-Input:
-  -d, --directory <DIR>        .evtxファイルを持つディレクトリのパス
-  -f, --file <FILE>            1つの.evtxファイルに対して解析を行う
-  -l, --live-analysis          ローカル端末のC:\Windows\System32\winevt\Logsフォルダを解析する
-  -J, --JSON-input             .evtxファイルの代わりにJSON形式のログファイル(.jsonまたは.jsonl)をスキャンする
-
-Output:
-  -o, --output <FILE>       ピボットキーワードの一覧を複数ファイルに出力する (例: pivot-keywords.txt)
+Usage: set-default-profile [OPTIONS]
 
 Display Settings:
-      --no-color       カラーで出力しない
-  -q, --quiet          Quietモード: 起動バナーを表示しない
-  -v, --verbose        詳細な情報を出力する
-
-Filtering:
-  -E, --EID-filter                速度を上げるため主なEIDだけスキャンする (コンフィグファイル: ./rules/config/target_event_IDs.txt)
-  -D, --enable-deprecated-rules   ステータスがdeprecatedのルールを有効にする
-  -n, --enable-noisy-rules        Noisyルールを有効にする
-  -u, --enable-unsupported-rules  ステータスがunsupportedのルールを有効にする
-  -e, --exact-level <LEVEL>       特定のレベルだけスキャンする (informational, low, medium, high, critical)
-      --exclude-status <STATUS>   読み込み対象外とするルール内でのステータス (ex: experimental) (ex: stable,test)
-  -m, --min-level <LEVEL>         結果出力をするルールの最低レベル (デフォルト: informational)
-      --timeline-end <DATE>       解析対象とするイベントログの終了時刻 (例: "2022-02-22 23:59:59 +09:00")
-      --timeline-start <DATE>     解析対象とするイベントログの開始時刻 (例: "2020-02-22 00:00:00 +09:00")
+      --no-color           カラーで出力しない
+  -q, --quiet              Quietモード: 起動バナーを表示しない
 
 General Options:
-  -Q, --quiet-errors                     Quiet errorsモード: エラーログを保存しない
-  -c, --rules-config <DIR>               ルールフォルダのコンフィグディレクトリ (デフォルト: ./rules/config)
-  -t, --threads <NUMBER>                 スレッド数 (デフォルト: パフォーマンスに最適な数値)
-      --target-file-ext <EVTX_FILE_EXT>  evtx以外の拡張子を解析対象に追加する。 (例１: evtx_data 例２: evtx1,evtx2)
+  -p, --profile <PROFILE>  利用する出力プロファイル名を指定する
 ```
-
-### `pivot-keywords-list`コマンドの使用例
-
-* 重要なアラートからピボットキーワードのリストを作成し、その結果を保存します。(結果は、`keywords-Ip Addresses.txt`、`keywords-Users.txt`等に保存されます):
-
-```
-hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
-```
-
-### `pivot-keywords-list`の設定ファイル
-
-検索キーワードは、`./config/pivot_keywords.txt`を編集することでカスタマイズすることができます。
-デフォルト設定は以下の通りです:
-
-```txt
-Users.SubjectUserName
-Users.TargetUserName
-Users.User
-Logon IDs.SubjectLogonId
-Logon IDs.TargetLogonId
-Workstation Names.WorkstationName
-Ip Addresses.IpAddress
-Processes.Image
-```
-
-フォーマットは、`キーワード名.フィールド名`です。例えば、`Users`のリストを作成する場合、Hayabusaは、`SubjectUserName`、`TargetUserName`、`User`フィールドにあるすべての値をリストアップします。
 
 ## `update-rules`コマンド
 
@@ -863,119 +1041,7 @@ General Options:
 
 普段は次のように実行します: `hayabusa.exe update-rules`
 
-## `level-tuning`コマンド
-
-`level-tuning`コマンドを使用すると、環境に応じてリスクレベルを上げたり下げたりして、ルールのアラートレベルを調整できます。
-
-```
-Usage: level-tuning [OPTIONS]
-
-Display Settings:
-      --no-color      カラーで出力しない
-  -q, --quiet         Quietモード: 起動バナーを表示しない
-
-General Options:
-  -f, --file <FILE>   ルールlevelのチューニング (デフォルト: ./rules/config/level_tuning.txt)
-```
-
-### `level-tuning`コマンドの使用例
-
-* 通常使用: `hayabusa.exe level-tuning`
-
-* カスタム設定ファイルに基づくルールのアラートレベルの調整: `hayabusa.exe level-tuning -f my_level_tuning.txt`
-
-### `level-tuning`の設定ファイル
-
-HayabubsaとSigmaのルール作成者は、アラートのリスクレベルを判定してルールを作成します。
-しかし、実際のリスクレベルは環境に応じて異なる場合があります。
-`./rules/config/level_tuning.txt`にルールを追加して `hayabusa.exe level-tuning`を実行すると、ルールファイル内の`level`行が更新され、リスクレベルを調整することができます。
-ルールファイルが直接更新されますので、ご注意ください。
-
-> 注意: `update-rules`を実行するたびに、アラートレベルが元の設定に上書きされるので、レベルを変更したい場合は、`update-rules`を実行した後に、`level-tuning`コマンドも実行する必要があります。
-
-`./rules/config/level_tuning.txt`の一例:
-
-```csv
-id,new_level
-00000000-0000-0000-0000-000000000000,informational # レベルチューニングのサンプル
-```
-
-この場合、ルールディレクトリ内の`id`が`00000000-0000-0000000000`のルールのアラート`level`が、`informational`に書き換えられます。
-設定可能なレベルは、`critical`、`high`、`medium`、`low`、`informational`です。
-
-## `set-default-profile`コマンド
-
-```
-Usage: set-default-profile [OPTIONS]
-
-Display Settings:
-      --no-color           カラーで出力しない
-  -q, --quiet              Quietモード: 起動バナーを表示しない
-
-General Options:
-  -p, --profile <PROFILE>  利用する出力プロファイル名を指定する
-```
-
-## `list-profiles`コマンド
-
-```
-Usage: list-profiles [OPTIONS]
-
-Display Settings:
-      --no-color   カラーで出力しない
-  -q, --quiet      Quietモード: 起動バナーを表示しない
-```
-
-## アドバンス
-
-### GeoIPのログエンリッチメント
-
-無償のGeoLite2のジオロケーションデータで、SrcIP（ソースIPアドレス）フィールドとTgtIP（ターゲットIPアドレス）フィールドにGeoIP（ASN組織、都市、国）情報を追加することができます。
-
-手順:
-1. まずMaxMindのアカウントを[こちら](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)で登録してください。
-2. [ダウンロードページ](https://www.maxmind.com/en/accounts/current/geoip/downloads)から3つの`.mmdb`ファイルをダウンロードし、ディレクトリに保存してください。ファイル名は、`GeoLite2-ASN.mmdb`、`GeoLite2-City.mmdb`、`GeoLite2-Country.mmdb`であることをご確認ください。
-3. `csv-timeline`または`json-timeline`コマンドを実行する際には、`-G`オプションの後にMaxMindデータベースのあるディレクトリを追加してください。
-
-* `csv-timeline`を使用すると、次の6つのカラムが追加で出力されます: `SrcASN`、`SrcCity`、`SrcCountry`、`TgtASN`、`TgtCity`、`TgtCountry`
-* `json-timeline`を使用すると、同じ`SrcASN`、`SrcCity`、`SrcCountry`、`TgtASN`、`TgtCity`、`TgtCountry`フィールドが`Details`オブジェクトに追加されますが、情報を含む場合のみとなります。
-
-* `SrcIP`または`TgtIP`がlocalhost (`127.0.0.1`、`::1`等々)の場合、`SrcASN`または`TgtASN`は、`Local`として出力されます。
-* `SrcIP`または`TgtIP`がプライベートIPアドレス (`10.0.0.0/8`、`fe80::/10`等々)の場合、`SrcASN`または`TgtASN`は、`Private`として出力されます。
-
-#### GeoIPの設定ファイル
-
-GeoIPデータベースで検索される送信元と送信先のIPアドレスを含むフィールド名は、`rules/config/geoip_field_mapping.yaml`で定義されています。
-必要であれば、このリストに追加することができます。
-また、このファイルには、どのイベントからIPアドレス情報を抽出するかを決定するフィルタセクションもあります。
-
-#### GeoIPデータベースの自動アップデート
-
-MaxMind GeoIP データベースは、2 週間ごとに更新されます。
-これらのデータベースを自動的に更新するために、[こちら](https://github.com/maxmind/geoipupdate)からMaxMindの`geoipupdate`のツールをインストールすることができます。
-
-macOSでの手順:
-1. `brew install geoipupdate`
-2. `/usr/local/etc/GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
-3. `geoipupdate`を実行する。
-4. GeoIP情報を追加する場合は、`-G /usr/local/var/GeoIP`を追加する。
-
-Windowsでの手順:
-1. [Releases](https://github.com/maxmind/geoipupdate/releases)ページからWindowsバイナリの最新版(例: `geoipupdate_4.10.0_windows_amd64.zip`)をダウンロードする。
-2. `\ProgramData\MaxMind/GeoIPUpdate\GeoIP.conf`を編集する: MaxMindのウェブサイトにログインした後に作成した`AccountID`と`LicenseKey`を入れる。`EditionIDs`の行に、`EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country`とあることを確認する。
-3. `geoipupdate`を実行する。
-
-# サンプルevtxファイルでHayabusaをテストする
-
-Hayabusaをテストしたり、新しいルールを作成したりするためのサンプルevtxファイルをいくつか提供しています: [https://github.com/Yamato-Security/Hayabusa-sample-evtx](https://github.com/Yamato-Security/Hayabusa-sample-evtx)
-
-以下のコマンドで、サンプルのevtxファイルを新しいサブディレクトリ `hayabusa-sample-evtx` にダウンロードすることができます:
-
-```bash
-git clone https://github.com/Yamato-Security/hayabusa-sample-evtx.git
-```
-
-# HayabusaのCSVとJSON/L出力
+# タイムライン出力
 
 ## 出力プロファイル
 
