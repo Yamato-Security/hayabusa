@@ -142,7 +142,7 @@ impl EventSearch {
                 utils::contains_str(&search_target, &converted_key)
             }) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                    extract_search_event_info(record, eventkey_alias, stored_static);
+                    extract_search_event_info(record, eventkey_alias);
 
                 self.search_result.insert((
                     timestamp,
@@ -184,7 +184,7 @@ impl EventSearch {
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if re.is_match(&record.data_string) {
                 let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
-                    extract_search_event_info(record, eventkey_alias, stored_static);
+                    extract_search_event_info(record, eventkey_alias);
                 self.search_result.insert((
                     timestamp,
                     hostname,
@@ -225,7 +225,6 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Nested<String>> {
 fn extract_search_event_info(
     record: &EvtxRecordInfo,
     eventkey_alias: &EventKeyAliasConfig,
-    stored_static: &StoredStatic,
 ) -> (
     CompactString,
     CompactString,
