@@ -688,8 +688,9 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'k',
         long,
-        value_name = "KEYWORDS",
-        display_order = 370
+        value_name = "keywords",
+        display_order = 370,
+        conflicts_with = "regex"
     )]
     pub keywords: Option<Vec<String>>,
 
@@ -698,18 +699,19 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'r',
         long,
-        value_name = "REGEX",
-        display_order = 440
+        value_name = "regex",
+        display_order = 440,
+        conflicts_with = "keywords"
     )]
     pub regex: Option<String>,
 
-    /// case-insensitive Search(require kewords option)
+    /// Case-insensitive keyword search
     #[arg(
         help_heading = Some("Filtering"),
         short,
         long = "ignore-case",
         display_order = 350,
-        requires = "keywords"
+        conflicts_with = "regex"
     )]
     pub ignore_case: bool,
 
@@ -717,7 +719,7 @@ pub struct SearchOption {
     #[arg(
         help_heading = Some("Filtering"),
         short = 'F',
-        long,
+        long = "filter",
         display_order = 320
     )]
     pub filter: Vec<String>,
