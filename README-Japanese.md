@@ -429,7 +429,7 @@ macOSの環境設定から「セキュリティとプライバシー」を開き
 * `level-tuning`: アラート`level`のカスタムチューニング。
 * `list-profiles`: 出力プロファイルの一覧表示。
 * `set-default-profile`: デフォルトプロファイルを変更する。
-* `update-rules`: ピボットする不審なキーワードのリストを作成する。
+* `update-rules`: GitHubの[hayabusa-rules](https://github.com/Yamato-Security/hayabusa-rules)リポジトリにある最新のルールに同期させる。
 
 ## 汎用コマンド:
 * `help`: このメッセージまたは指定されたコマンドのヘルプを表示する。
