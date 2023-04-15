@@ -10,6 +10,7 @@
 **改善:**
 
 - コマンドの表示順を辞書順に並べ替えた。 (#991) (@hitenkoku)
+- `csv-timeline`, `json-timeline`, `search`コマンドの `AllFieldInfo`の出力に`Event.UserData`の属性情報を追加した。 (#1006) (@hitenkoku)
 
 **バグ修正:**
 
