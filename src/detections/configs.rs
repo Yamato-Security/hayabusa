@@ -689,7 +689,7 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'k',
         long,
-        value_name = "keywords",
+        value_name = "KEYWORDS",
         display_order = 370,
         conflicts_with = "regex"
     )]
@@ -700,7 +700,7 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'r',
         long,
-        value_name = "regex",
+        value_name = "REGEX",
         display_order = 440,
         conflicts_with = "keywords"
     )]
