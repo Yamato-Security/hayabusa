@@ -541,7 +541,7 @@ pub enum Action {
         disable_help_flag = true,
         display_order = 450
     )]
-    /// Search all events by keyword(s) or regular expressions
+    /// Search all events by keyword(s) or regular expression
     Search(SearchOption),
 
     #[clap(
