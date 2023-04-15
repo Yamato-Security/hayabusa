@@ -749,7 +749,7 @@ hayabusa.exe csv-timeline -d .\hayabusa-sample-evtx -o results.csv -p super-verb
 > 注意: EIDフィルタを有効にすると、私達のテストでは処理時間が約10〜15%速くなりますが、アラートを見逃す可能性があります。
 
 ```
-hayabusa.exe json-timeline -E -d .\hayabusa-sample-evtx -o results.json
+hayabusa.exe csv-timeline -E -d .\hayabusa-sample-evtx -o results.csv
 ```
 
 * Hayabusaルールのみを実行する（デフォルトでは`-r .\rules`にあるすべてのルールが利用される）:
