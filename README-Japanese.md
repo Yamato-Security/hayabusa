@@ -615,7 +615,7 @@ Filtering:
   -F, --filter <FILTER>       特定のフィールドでフィルタする
   -i, --ignore-case           大文字と小文字を区別しない
   -k, --keywords <KEYWORDS>   キーワードでの検索
-  -r, --regex <REG EX>        正規表現での検索
+  -r, --regex <REGEX>        正規表現での検索
 
 Output:
   -o, --output <FILE>  ログオンサマリをCSV形式で保存する (例: search.csv)
