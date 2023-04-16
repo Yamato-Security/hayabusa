@@ -1497,11 +1497,11 @@ impl App {
                     return Err("");
                 } else if !(opt.keywords.is_some() ^ opt.regex.is_some()) {
                     // key word and regex are conflict
-                    return Err("the argument '--regex <REGEX>' cannot be used with '--keywords <KEYWORDS>'");
+                    return Err("the arguments '--regex <REGEX>' and '--keywords <KEYWORDS>' cannot be used together.");
                 } else if opt.regex.is_some() && opt.ignore_case {
                     // ignore case is not supported for regex
                     return Err(
-                        "the argument '--regex <REGEX>' cannot be used with '--ignore-case'",
+                        "the arguments '--regex <REGEX>' and '--ignore-case' cannot be used together.",
                     );
                 }
                 Ok(())
