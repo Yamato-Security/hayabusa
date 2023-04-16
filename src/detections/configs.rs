@@ -690,6 +690,7 @@ pub struct SearchOption {
         long,
         value_name = "KEYWORDS",
         display_order = 370,
+        conflicts_with = "regex",
     )]
     pub keywords: Option<Vec<String>>,
 
@@ -700,6 +701,7 @@ pub struct SearchOption {
         long,
         value_name = "REGEX",
         display_order = 440,
+        conflicts_with = "keywords",
     )]
     pub regex: Option<String>,
 
@@ -709,6 +711,7 @@ pub struct SearchOption {
         short,
         long = "ignore-case",
         display_order = 350,
+        conflicts_with = "regex",
     )]
     pub ignore_case: bool,
 
