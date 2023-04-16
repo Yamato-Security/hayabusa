@@ -130,7 +130,7 @@ impl App {
             let variable_split_error = error_str.split('\'');
             write_color_buffer(
                 &BufferWriter::stdout(ColorChoice::Always),
-                Some(Color::Red),
+                Some(Color::Rgb(238, 102, 97)),
                 "error: ",
                 false,
             )
