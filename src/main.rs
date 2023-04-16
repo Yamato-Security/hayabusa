@@ -1443,8 +1443,12 @@ impl App {
             | Action::LogonSummary(_)
             | Action::Metrics(_)
             | Action::PivotKeywordsList(_)
-            | Action::SetDefaultProfile(_)
-            | Action::Search(_) => std::env::args().len() != 2,
+            | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
+            Action::Search(opt) => {
+                std::env::args().len() != 2
+                    && (opt.keywords.is_some() ^ opt.regex.is_some()) // key word and regex are conflict
+                    && !(opt.regex.is_some() && opt.ignore_case) // ignore case is not supported for regex
+            }
             _ => true,
         }
     }
