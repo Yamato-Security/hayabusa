@@ -142,10 +142,15 @@ impl App {
                 } else {
                     None
                 };
+                let output = if variable_color_flag {
+                    format!("'{}'", output_err_str)
+                } else {
+                    output_err_str.to_string()
+                };
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
                     output_color,
-                    output_err_str,
+                    &output,
                     false,
                 )
                 .ok();
