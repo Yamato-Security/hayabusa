@@ -1477,6 +1477,9 @@ impl App {
     }
 
     fn check_is_valid_args_num(&self, action: Option<&Action>) -> Result<(), &str> {
+        if action.is_none() {
+            return Ok(());
+        }
         match action.as_ref().unwrap() {
             Action::CsvTimeline(_)
             | Action::JsonTimeline(_)
