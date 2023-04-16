@@ -105,9 +105,9 @@ impl App {
 
         // 引数がなかった時にhelpを出力するためのサブコマンド出力。引数がなくても動作するサブコマンドはhelpを出力しない
         let subcommand_name = Action::get_action_name(stored_static.config.action.as_ref());
-        if stored_static.config.action.is_some()
-            && !self.check_is_valid_args_num(stored_static.config.action.as_ref())
-        {
+        let check_result_valid_arg_num =
+            self.check_is_valid_args_num(stored_static.config.action.as_ref());
+        if stored_static.config.action.is_some() && check_result_valid_arg_num.is_err() {
             if !stored_static.common_options.quiet {
                 self.output_logo(stored_static);
                 write_color_buffer(&BufferWriter::stdout(ColorChoice::Always), None, "", true).ok();
@@ -117,6 +117,41 @@ impl App {
                 .clone()
                 .print_help()
                 .ok();
+            println!();
+
+            let error_str = if let Err(tmp) = check_result_valid_arg_num {
+                tmp
+            } else {
+                ""
+            };
+            if error_str.is_empty() {
+                return;
+            }
+            let variable_split_error = error_str.split('\'');
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                Some(Color::Red),
+                "error: ",
+                false,
+            )
+            .ok();
+            let mut variable_color_flag = false;
+            for output_err_str in variable_split_error {
+                let output_color = if variable_color_flag {
+                    Some(Color::Yellow)
+                } else {
+                    None
+                };
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    output_color,
+                    output_err_str,
+                    false,
+                )
+                .ok();
+                variable_color_flag = !variable_color_flag;
+            }
+
             println!();
             return;
         }
@@ -1436,20 +1471,34 @@ impl App {
         true
     }
 
-    fn check_is_valid_args_num(&self, action: Option<&Action>) -> bool {
+    fn check_is_valid_args_num(&self, action: Option<&Action>) -> Result<(), &str> {
         match action.as_ref().unwrap() {
             Action::CsvTimeline(_)
             | Action::JsonTimeline(_)
             | Action::LogonSummary(_)
             | Action::Metrics(_)
             | Action::PivotKeywordsList(_)
-            | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
-            Action::Search(opt) => {
-                std::env::args().len() != 2
-                    && (opt.keywords.is_some() ^ opt.regex.is_some()) // key word and regex are conflict
-                    && !(opt.regex.is_some() && opt.ignore_case) // ignore case is not supported for regex
+            | Action::SetDefaultProfile(_) => {
+                if std::env::args().len() != 2 {
+                    return Ok(());
+                }
+                Err("")
             }
-            _ => true,
+            Action::Search(opt) => {
+                if std::env::args().len() == 2 || (opt.keywords.is_none() && opt.regex.is_none()) {
+                    return Err("");
+                } else if !(opt.keywords.is_some() ^ opt.regex.is_some()) {
+                    // key word and regex are conflict
+                    return Err("the argument '--regex <REGEX>' cannot be used with '--keywords <KEYWORDS>'");
+                } else if opt.regex.is_some() && opt.ignore_case {
+                    // ignore case is not supported for regex
+                    return Err(
+                        "the argument '--regex <REGEX>' cannot be used with '--ignore-case'",
+                    );
+                }
+                Ok(())
+            }
+            _ => Ok(()),
         }
     }
 }
