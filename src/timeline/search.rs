@@ -206,12 +206,11 @@ impl EventSearch {
                     _ => CompactString::new("-"),
                 };
 
-                let allfieldinfo = match utils::get_serde_number_to_string(
-                    &record.record["Event"]["EventData"],
-                    true,
-                ) {
-                    Some(eventdata) => eventdata,
-                    _ => CompactString::new("-"),
+                let datainfo = utils::create_recordinfos(&record.record);
+                let allfieldinfo = if !datainfo.is_empty() {
+                    datainfo.into()
+                } else {
+                    CompactString::new("-")
                 };
 
                 self.search_result.insert((
@@ -366,11 +365,13 @@ fn extract_search_event_info(
         _ => CompactString::new("-"),
     };
 
-    let allfieldinfo =
-        match utils::get_serde_number_to_string(&record.record["Event"]["EventData"], true) {
-            Some(eventdata) => eventdata,
-            _ => CompactString::new("-"),
-        };
+    let datainfo = utils::create_recordinfos(&record.record);
+    let allfieldinfo = if !datainfo.is_empty() {
+        datainfo.into()
+    } else {
+        CompactString::new("-")
+    };
+
     (
         timestamp.into(),
         hostname,

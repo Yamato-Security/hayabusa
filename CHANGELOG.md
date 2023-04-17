@@ -10,6 +10,7 @@
 **Enhancements:**
 
 - Alphabetically sorted commands. (#991) (@hitenkoku)
+- Added attribute information of `Event.UserData` to the output of `AllFieldInfo` in `csv-timeline`, `json-timeline` and `search` commands. (#1006) (@hitenkoku)
 
 **Bug Fixes:**
 
