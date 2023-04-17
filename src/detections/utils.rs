@@ -412,8 +412,7 @@ fn _collect_recordinfo<'a>(
                 keys.push(parent_key);
             }
             for (key, value) in obj {
-                // 属性は出力しない
-                if key.ends_with("_attributes") {
+                if key.eq("xmlns") {
                     continue;
                 }
                 // Event.Systemは出力しない
