@@ -438,7 +438,7 @@ pub fn search_result_dsp_msg(
                 if !newline_flag {
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
-                        Some(Color::Rgb(255, 0, 0)),
+                        Some(Color::Rgb(238, 102, 97)),
                         " ‖ ",
                         false,
                     )
