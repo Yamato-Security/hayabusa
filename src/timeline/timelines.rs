@@ -374,7 +374,7 @@ impl Timeline {
             if self.event_search.search_result.is_empty() {
                 write_color_buffer(
                     &BufferWriter::stdout(ColorChoice::Always),
-                    Some(Color::Rgb(255, 0, 0)),
+                    Some(Color::Rgb(238, 102, 97)),
                     "\n\nNo matches found.",
                     true,
                 )
