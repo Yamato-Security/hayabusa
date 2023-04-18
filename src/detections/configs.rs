@@ -307,7 +307,8 @@ impl StoredStatic {
             ),
             disp_abbr_generic: AhoCorasickBuilder::new()
                 .match_kind(MatchKind::LeftmostLongest)
-                .build(general_ch_abbr.keys().map(|x| x.as_str())),
+                .build(general_ch_abbr.keys().map(|x| x.as_str()))
+                .unwrap(),
             disp_abbr_general_values: general_ch_abbr.values().map(|x| x.to_owned()).collect_vec(),
             provider_abbr_config: create_output_filter_config(
                 utils::check_setting_path(config_path, "provider_abbreviations.txt", false)

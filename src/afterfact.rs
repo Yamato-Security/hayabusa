@@ -225,10 +225,12 @@ fn emit_csv<W: std::io::Write>(
     }
     let output_replacer = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
-        .build(output_replaced_maps.keys());
+        .build(output_replaced_maps.keys())
+        .unwrap();
     let output_remover = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
-        .build(removed_replaced_maps.keys());
+        .build(removed_replaced_maps.keys())
+        .unwrap();
 
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
