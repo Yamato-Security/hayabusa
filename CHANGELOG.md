@@ -1,6 +1,6 @@
 # Changes
 
-## 2.4.x [2023/04/19] "SANS Secure Korea Release"
+## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
 **New Features:**
 
