@@ -1,6 +1,7 @@
 [package]
 name = "hayabusa"
-version = "2.4.0-dev"
+version = "2.4.0"
+repository = "https://github.com/Yamato-Security/hayabusa"
 authors = ["Yamato Security @SecurityYamato"]
 edition = "2021"
 rust-version = "1.68.2"

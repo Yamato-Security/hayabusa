@@ -1444,7 +1444,10 @@ impl App {
             | Action::Metrics(_)
             | Action::PivotKeywordsList(_)
             | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
-            Action::Search(opt) => std::env::args().len() != 2 && !opt.keywords.is_empty(),
+            Action::Search(opt) => {
+                std::env::args().len() != 2 && (opt.keywords.is_some() ^ opt.regex.is_some())
+                // key word and regex are conflict
+            }
             _ => true,
         }
     }

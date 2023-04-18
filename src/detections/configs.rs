@@ -307,7 +307,8 @@ impl StoredStatic {
             ),
             disp_abbr_generic: AhoCorasickBuilder::new()
                 .match_kind(MatchKind::LeftmostLongest)
-                .build(general_ch_abbr.keys().map(|x| x.as_str())),
+                .build(general_ch_abbr.keys().map(|x| x.as_str()))
+                .unwrap(),
             disp_abbr_general_values: general_ch_abbr.values().map(|x| x.to_owned()).collect_vec(),
             provider_abbr_config: create_output_filter_config(
                 utils::check_setting_path(config_path, "provider_abbreviations.txt", false)
@@ -486,88 +487,99 @@ fn check_thread_number(config: &Config) -> Option<usize> {
 pub enum Action {
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe csv-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 290
     )]
     /// Save the timeline in CSV format.
     CsvTimeline(CsvOutputOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe json-timeline <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 360
     )]
     /// Save the timeline in JSON/JSONL format.
     JsonTimeline(JSONOutputOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe logon-summary <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 383
     )]
     /// Print a summary of successful and failed logons
     LogonSummary(LogonSummaryOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe metrics <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 390
     )]
     /// Print event ID metrics
     Metrics(MetricsOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe pivot-keywords-list <INPUT> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 420
     )]
     /// Create a list of pivot keywords
     PivotKeywordsList(PivotKeywordOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords <KEYWORDS>> [OPTIONS]\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe search <INPUT> <--keywords \"<KEYWORDS>\" OR --regex \"<REGEX>\"> [OPTIONS]\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 450
     )]
-    /// Search by keyword
+    /// Search all events by keyword(s) or regular expression
     Search(SearchOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 470
     )]
     /// Update to the latest rules in the hayabusa-rules github repository
     UpdateRules(UpdateOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 380
     )]
     /// Tune alert levels (default: ./rules/config/level_tuning.txt)
     LevelTuning(LevelTuningOption),
 
     #[clap(
         author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-        help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
+        help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  {usage}\n\n{all-args}",
         term_width = 400,
-        disable_help_flag = true
+        disable_help_flag = true,
+        display_order = 451
     )]
     /// Set default output profile
     SetDefaultProfile(DefaultProfileOption),
 
+    #[clap(display_order = 381)]
     /// Print the list of contributors
     ListContributors(CommonOptions),
 
+    #[clap(display_order = 382)]
     /// List the output profiles
     ListProfiles(CommonOptions),
 }
@@ -677,23 +689,30 @@ pub struct SearchOption {
         help_heading = Some("Filtering"),
         short = 'k',
         long,
-        value_name = "KEYWORDS"
+        value_name = "KEYWORDS",
+        display_order = 370,
+        conflicts_with = "regex",
     )]
-    pub keywords: Vec<String>,
+    pub keywords: Option<Vec<String>>,
 
-    // /// Search condition by Regex
-    // #[arg(
-    //     help_heading = Some("Filtering"),
-    //     short = 'R',
-    //     long,
-    //     value_name = "REGEX"
-    // )]
-    // pub regex: Option<String>,
-    /// Ignore case
+    /// Search by regular expression
+    #[arg(
+        help_heading = Some("Filtering"),
+        short = 'r',
+        long,
+        value_name = "REGEX",
+        display_order = 440,
+        conflicts_with = "keywords",
+    )]
+    pub regex: Option<String>,
+
+    /// Case-insensitive keyword search
     #[arg(
         help_heading = Some("Filtering"),
         short,
         long = "ignore-case",
+        display_order = 350,
+        conflicts_with = "regex",
     )]
     pub ignore_case: bool,
 
@@ -701,7 +720,8 @@ pub struct SearchOption {
     #[arg(
         help_heading = Some("Filtering"),
         short = 'F',
-        long,
+        long = "filter",
+        display_order = 320
     )]
     pub filter: Vec<String>,
 
@@ -1133,7 +1153,7 @@ pub struct JSONOutputOption {
 #[derive(Parser, Clone, Debug)]
 #[clap(
     author = "Yamato Security (https://github.com/Yamato-Security/hayabusa) @SecurityYamato)",
-    help_template = "\nHayabusa v2.4.0-dev\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
+    help_template = "\nHayabusa v2.4.0\n{author-with-newline}\n{usage-heading}\n  hayabusa.exe <COMMAND> [OPTIONS]\n  hayabusa.exe help <COMMAND>\n\n{all-args}{options}",
     term_width = 400,
     disable_help_flag = true
 )]
@@ -1419,7 +1439,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
         Action::Search(option) => Some(SearchOption {
             input_args: option.input_args.clone(),
             keywords: option.keywords.clone(),
-            // regex: option.regex.clone(),
+            regex: option.regex.clone(),
             ignore_case: option.ignore_case,
             filter: option.filter.clone(),
             output: option.output.clone(),

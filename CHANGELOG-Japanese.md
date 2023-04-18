@@ -6,10 +6,12 @@
 
 - 指定されたキーワードに合致したレコードを検索する`search`コマンドを追加した。 (#617) (@itiB, @hitenkoku)
 - 指定された正規表現に合致したレコードを検索する`-r, --regex`オプションを`search`コマンドに追加した。 (#992) (@itiB)
+- Aho-Corasickクレートをversino1.0に更新した。 (#1013) (@hitenkoku)
 
 **改善:**
 
 - コマンドの表示順を辞書順に並べ替えた。 (#991) (@hitenkoku)
+- `csv-timeline`, `json-timeline`, `search`コマンドの `AllFieldInfo`の出力に`Event.UserData`の属性情報を追加した。 (#1006) (@hitenkoku)
 
 **バグ修正:**
 

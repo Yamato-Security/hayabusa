@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::detections::configs::{Action, EventInfoConfig, StoredStatic};
 use crate::detections::detection::EvtxRecordInfo;
 use crate::detections::message::AlertMessage;
-use crate::detections::utils;
+use crate::detections::utils::{self, write_color_buffer};
 use crate::timeline::search::search_result_dsp_msg;
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -14,6 +14,7 @@ use compact_str::CompactString;
 use csv::WriterBuilder;
 use downcast_rs::__std::process;
 use nested::Nested;
+use termcolor::{BufferWriter, Color, ColorChoice};
 
 use super::metrics::EventMetrics;
 use super::search::EventSearch;
@@ -65,8 +66,14 @@ impl Timeline {
         if stored_static.search_flag {
             self.event_search.search_start(
                 records,
-                stored_static.search_flag,
-                &stored_static.search_option.as_ref().unwrap().keywords,
+                stored_static
+                    .search_option
+                    .as_ref()
+                    .unwrap()
+                    .keywords
+                    .as_ref()
+                    .unwrap_or(&vec![]),
+                &stored_static.search_option.as_ref().unwrap().regex,
                 &stored_static.search_option.as_ref().unwrap().filter,
                 &stored_static.eventkey_alias,
                 stored_static,
@@ -365,7 +372,13 @@ impl Timeline {
             &stored_static.config.action.as_ref().unwrap()
         {
             if self.event_search.search_result.is_empty() {
-                sammsges.push("\n\nNo matches found.".into());
+                write_color_buffer(
+                    &BufferWriter::stdout(ColorChoice::Always),
+                    Some(Color::Rgb(238, 102, 97)),
+                    "\n\nNo matches found.",
+                    true,
+                )
+                .ok();
             } else {
                 sammsges.push(format!(
                     "\n\nTotal findings: {}\n",
