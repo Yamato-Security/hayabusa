@@ -60,10 +60,21 @@ impl EventSearch {
         stored_static: &StoredStatic,
     ) {
         if !keywords.is_empty() {
-            self.search_keyword(records, keywords, filters, eventkey_alias, stored_static);
+            // 大文字小文字を区別しないかどうかのフラグを設定
+            let case_insensitive_flag = match &stored_static.config.action {
+                Some(Action::Search(opt)) => opt.ignore_case,
+                _ => false,
+            };
+            self.search_keyword(
+                records,
+                keywords,
+                filters,
+                eventkey_alias,
+                case_insensitive_flag,
+            );
         }
         if let Some(re) = regex {
-            self.search_regex(records, re, filters, eventkey_alias, stored_static);
+            self.search_regex(records, re, filters, eventkey_alias);
         }
     }
 
@@ -110,114 +121,41 @@ impl EventSearch {
         keywords: &[String],
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
-        stored_static: &StoredStatic,
+        case_insensitive_flag: bool, // 検索時に大文字小文字を区別するかどうか
     ) {
         if records.is_empty() {
             return;
         }
 
-        let filter_rule = filters
-            .iter()
-            .fold(HashMap::new(), |mut acc, filter_condition| {
-                let prefix_trim_condition = filter_condition
-                    .strip_prefix('"')
-                    .unwrap_or(filter_condition);
-                let trimed_condition = prefix_trim_condition
-                    .strip_suffix('"')
-                    .unwrap_or(prefix_trim_condition);
-                let condition = trimed_condition.split(':').map(|x| x.trim()).collect_vec();
-                if condition.len() != 1 {
-                    let acc_val = acc
-                        .entry(condition[0].to_string())
-                        .or_insert(Nested::<String>::new());
-                    acc_val.push(condition[1..].join(":"));
-                }
-                acc
-            });
-        let ignore_flag = match &stored_static.config.action {
-            Some(Action::Search(opt)) => opt.ignore_case,
-            _ => false,
-        };
+        let filter_rule = create_filter_rule(filters);
 
         for record in records.iter() {
             // フィルタリングを通過しなければ検索は行わず次のレコードを読み込む
             if !self.filter_record(record, &filter_rule, eventkey_alias) {
                 continue;
             }
-            let search_target = if ignore_flag {
+            let search_target = if case_insensitive_flag {
                 record.data_string.to_lowercase()
             } else {
                 record.data_string.clone()
             };
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if keywords.iter().any(|key| {
-                let converted_key = if ignore_flag {
+                let converted_key = if case_insensitive_flag {
                     key.to_lowercase()
                 } else {
                     key.clone()
                 };
                 utils::contains_str(&search_target, &converted_key)
             }) {
-                let timestamp = utils::get_event_value(
-                    "Event.System.TimeCreated_attributes.SystemTime",
-                    &record.record,
-                    eventkey_alias,
-                )
-                .map(|evt_value| {
-                    evt_value
-                        .as_str()
-                        .unwrap_or_default()
-                        .replace("\\\"", "")
-                        .replace('"', "")
-                })
-                .unwrap_or_else(|| "n/a".into())
-                .replace(['"', '\''], "");
-
-                let hostname = CompactString::from(
-                    utils::get_serde_number_to_string(
-                        utils::get_event_value("Computer", &record.record, eventkey_alias)
-                            .unwrap_or(&serde_json::Value::Null),
-                        true,
-                    )
-                    .unwrap_or_else(|| "n/a".into())
-                    .replace(['"', '\''], ""),
-                );
-
-                let channel = utils::get_serde_number_to_string(
-                    &record.record["Event"]["System"]["Channel"],
-                    false,
-                )
-                .unwrap_or_default();
-                let mut eventid = String::new();
-                match utils::get_event_value("EventID", &record.record, eventkey_alias) {
-                    Some(evtid) if evtid.is_u64() => {
-                        eventid.push_str(evtid.to_string().as_str());
-                    }
-                    _ => {
-                        eventid.push('-');
-                    }
-                }
-
-                let recordid = match utils::get_serde_number_to_string(
-                    &record.record["Event"]["System"]["EventRecordID"],
-                    true,
-                ) {
-                    Some(recid) => recid,
-                    _ => CompactString::new("-"),
-                };
-
-                let datainfo = utils::create_recordinfos(&record.record);
-                let allfieldinfo = if !datainfo.is_empty() {
-                    datainfo.into()
-                } else {
-                    CompactString::new("-")
-                };
+                let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
+                    extract_search_event_info(record, eventkey_alias);
 
                 self.search_result.insert((
-                    timestamp.into(),
+                    timestamp,
                     hostname,
                     channel,
-                    eventid.into(),
+                    eventid,
                     recordid,
                     allfieldinfo,
                     self.filepath.clone(),
@@ -233,7 +171,6 @@ impl EventSearch {
         regex: &str,
         filters: &[String],
         eventkey_alias: &EventKeyAliasConfig,
-        stored_static: &StoredStatic,
     ) {
         let re = Regex::new(regex).unwrap_or_else(|err| {
             AlertMessage::alert(&format!("Failed to create regex pattern. \n{err}")).ok();
@@ -252,13 +189,8 @@ impl EventSearch {
             }
             self.filepath = CompactString::from(record.evtx_filepath.as_str());
             if re.is_match(&record.data_string) {
-                let (timestamp, hostname, _, eventid, recordid, allfieldinfo) =
-                    extract_search_event_info(record, eventkey_alias, stored_static);
-                let channel = utils::get_serde_number_to_string(
-                    &record.record["Event"]["System"]["Channel"],
-                    false,
-                )
-                .unwrap_or_default();
+                let (timestamp, hostname, channel, eventid, recordid, allfieldinfo) =
+                    extract_search_event_info(record, eventkey_alias);
                 self.search_result.insert((
                     timestamp,
                     hostname,
@@ -299,7 +231,6 @@ fn create_filter_rule(filters: &[String]) -> HashMap<String, Nested<String>> {
 fn extract_search_event_info(
     record: &EvtxRecordInfo,
     eventkey_alias: &EventKeyAliasConfig,
-    stored_static: &StoredStatic,
 ) -> (
     CompactString,
     CompactString,
@@ -333,20 +264,9 @@ fn extract_search_event_info(
         .replace(['"', '\''], ""),
     );
 
-    let ch_str =
-        &utils::get_serde_number_to_string(&record.record["Event"]["System"]["Channel"], false)
+    let channel =
+        utils::get_serde_number_to_string(&record.record["Event"]["System"]["Channel"], false)
             .unwrap_or_default();
-    let channel = stored_static
-        .disp_abbr_generic
-        .replace_all(
-            stored_static
-                .ch_config
-                .get(&CompactString::from(ch_str.to_ascii_lowercase()))
-                .unwrap_or(ch_str)
-                .as_str(),
-            &stored_static.disp_abbr_general_values,
-        )
-        .into();
     let mut eventid = String::new();
     match utils::get_event_value("EventID", &record.record, eventkey_alias) {
         Some(evtid) if evtid.is_u64() => {
@@ -520,7 +440,7 @@ pub fn search_result_dsp_msg(
                 if !newline_flag {
                     write_color_buffer(
                         disp_wtr.as_mut().unwrap(),
-                        Some(Color::Rgb(255, 0, 0)),
+                        Some(Color::Rgb(238, 102, 97)),
                         " ‖ ",
                         false,
                     )

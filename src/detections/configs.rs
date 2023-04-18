@@ -541,7 +541,7 @@ pub enum Action {
         disable_help_flag = true,
         display_order = 450
     )]
-    /// Search all events by keyword(s) or regular expressions
+    /// Search all events by keyword(s) or regular expression
     Search(SearchOption),
 
     #[clap(
@@ -689,7 +689,8 @@ pub struct SearchOption {
         short = 'k',
         long,
         value_name = "KEYWORDS",
-        display_order = 370
+        display_order = 370,
+        conflicts_with = "regex",
     )]
     pub keywords: Option<Vec<String>>,
 
@@ -699,16 +700,18 @@ pub struct SearchOption {
         short = 'r',
         long,
         value_name = "REGEX",
-        display_order = 440
+        display_order = 440,
+        conflicts_with = "keywords",
     )]
     pub regex: Option<String>,
 
-    /// Ignore case
+    /// Case-insensitive keyword search
     #[arg(
         help_heading = Some("Filtering"),
         short,
         long = "ignore-case",
-        display_order = 350
+        display_order = 350,
+        conflicts_with = "regex",
     )]
     pub ignore_case: bool,
 
@@ -716,7 +719,7 @@ pub struct SearchOption {
     #[arg(
         help_heading = Some("Filtering"),
         short = 'F',
-        long,
+        long = "filter",
         display_order = 320
     )]
     pub filter: Vec<String>,
