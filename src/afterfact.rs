@@ -773,9 +773,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::First,
                     )
                     .replace('|', "🦅"),
@@ -787,9 +784,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::Last,
                     )
                     .replace('|', "🦅"),
@@ -801,9 +795,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::Other,
                     )
                     .replace('|', "🦅"),
