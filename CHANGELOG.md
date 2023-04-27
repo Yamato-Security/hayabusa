@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
+- Deleted return characters in output of `search` command.(#1003) (@hitenkoku)
 
 **Bug Fixes:**
 
