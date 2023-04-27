@@ -374,6 +374,12 @@ pub fn search_result_dsp_msg(
                 .as_str(),
             &stored_static.disp_abbr_general_values,
         );
+
+        let all_field_info = if output.is_some() && stored_static.multiline_flag {
+            all_field_info.replace(" ¦ ", "\r\n")
+        } else {
+            all_field_info.to_string()
+        };
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
