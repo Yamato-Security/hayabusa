@@ -286,6 +286,7 @@ impl StoredStatic {
         );
         let multiline_flag = match &input_config.as_ref().unwrap().action {
             Some(Action::CsvTimeline(opt)) => opt.multiline,
+            Some(Action::Search(opt)) => opt.multiline,
             _ => false,
         };
         let mut ret = StoredStatic {
@@ -762,6 +763,10 @@ pub struct SearchOption {
     /// Output verbose information
     #[arg(help_heading = Some("Display Settings"), short = 'v', long, display_order = 480)]
     pub verbose: bool,
+
+    /// Output event field information in multiple rows
+    #[arg(help_heading = Some("Output"), short = 'M', long="multiline", display_order = 390)]
+    pub multiline: bool,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -1449,6 +1454,7 @@ fn extract_search_options(config: &Config) -> Option<SearchOption> {
             quiet_errors: option.quiet_errors,
             config: option.config.clone(),
             verbose: option.verbose,
+            multiline: option.multiline,
         }),
         _ => None,
     }
