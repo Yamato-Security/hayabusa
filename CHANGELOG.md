@@ -1,5 +1,19 @@
 # Changes
 
+## 2.4.X [2023/XX/XX] "XXX"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added Multiline output optin to search command. (#1017) (@hitenkoku)
+
+**Bug Fixes:**
+
+- XXX
+
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
 **New Features:**

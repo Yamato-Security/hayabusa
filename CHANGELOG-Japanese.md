@@ -1,5 +1,19 @@
 # 変更点
 
+## 2.X.X [2023/XX/XX] "XXX"
+
+**新機能:**
+
+- XXX
+
+**改善:**
+
+- `search`コマンドに`-M, --multiline`オプションを追加した。 (#1017) (@hitenkoku)
+
+**バグ修正:**
+
+- XXX
+
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
 **新機能:**
