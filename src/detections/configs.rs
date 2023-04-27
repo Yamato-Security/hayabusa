@@ -1,8 +1,8 @@
 use crate::detections::message::AlertMessage;
 use crate::detections::utils;
-use crate::options::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::options::geoip_search::GeoIPSearch;
 use crate::options::htmlreport;
+use crate::options::pivot::{PivotKeyword, PIVOT_KEYWORD};
 use crate::options::profile::{load_profile, Profile};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use chrono::{DateTime, Utc};

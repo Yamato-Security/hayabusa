@@ -19,8 +19,8 @@ use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
-use crate::options::pivot::insert_pivot_keyword;
 use crate::options::htmlreport;
+use crate::options::pivot::insert_pivot_keyword;
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
