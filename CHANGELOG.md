@@ -1,6 +1,6 @@
 # Changes
 
-## 2.4.X [2023/XX/XX] "XXX"
+## 2.X.X [2023/XX/XX] "XXX"
 
 **New Features:**
 
@@ -8,7 +8,7 @@
 
 **Enhancements:**
 
-- Added Multiline output optin to search command. (#1017) (@hitenkoku)
+- Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
 
 **Bug Fixes:**
 
