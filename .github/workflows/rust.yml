@@ -50,7 +50,7 @@ jobs:
           targets: ${{ matrix.info.target }}
       - name: Enable Rust cache
         if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
-        uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c # 1.4.0
+        uses: Swatinem/rust-cache
       - name: Fmt Check
         run: cargo fmt -- --check
       - name: Prepare Clippy
