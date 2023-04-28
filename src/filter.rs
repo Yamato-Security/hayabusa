@@ -5,6 +5,7 @@ use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
+
 #[derive(Debug)]
 pub struct DataFilterRule {
     pub regex_rule: Regex,
