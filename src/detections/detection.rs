@@ -2,8 +2,8 @@ extern crate csv;
 
 use crate::detections::utils::{create_recordinfos, format_time, write_color_buffer};
 use crate::options::profile::Profile::{
-    self, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags, OtherTags,
-    Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
+    self, AllFieldInfo, Channel, Computer, EventID, EvtxFile, Level, MitreTactics, MitreTags,
+    OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate, RuleFile, RuleID,
     RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN, TgtCity, TgtCountry,
     Timestamp,
 };
@@ -265,6 +265,7 @@ impl Detection {
         let tags_config_values: Vec<&CompactString> = TAGS_CONFIG.values().collect();
         let binding = STORED_EKEY_ALIAS.read().unwrap();
         let eventkey_alias = binding.as_ref().unwrap();
+        let mut included_all_field_info_flag = false;
 
         for (key, profile) in stored_static.profiles.as_ref().unwrap().iter() {
             match profile {
@@ -630,6 +631,9 @@ impl Detection {
                         .entry("SrcCity")
                         .and_modify(|p| *p = SrcCity(src_data.next().unwrap().to_owned().into()));
                 }
+                AllFieldInfo(_) => {
+                    included_all_field_info_flag = true;
+                }
                 _ => {}
             }
         }
@@ -670,7 +674,7 @@ impl Detection {
             detect_info,
             time,
             &mut profile_converter,
-            false,
+            (false, included_all_field_info_flag),
             eventkey_alias,
         );
     }
@@ -881,7 +885,7 @@ impl Detection {
             detect_info,
             agg_result.start_timedate,
             &mut profile_converter,
-            true,
+            (true, false),
             eventkey_alias,
         )
     }

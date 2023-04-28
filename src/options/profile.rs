@@ -2,10 +2,10 @@ use crate::detections::configs::{Action, StoredStatic, CURRENT_EXE_PATH, GEOIP_D
 use crate::detections::message::AlertMessage;
 use crate::detections::utils::check_setting_path;
 use crate::options::profile::Profile::{
-    AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, Level, Literal, MitreTactics,
-    MitreTags, OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor, RuleCreationDate,
-    RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry, Status, TgtASN,
-    TgtCity, TgtCountry, Timestamp,
+    AllFieldInfo, Channel, Computer, Details, EventID, EvtxFile, ExtraFieldInfo, Level, Literal,
+    MitreTactics, MitreTags, OtherTags, Provider, RecordID, RenderedMessage, RuleAuthor,
+    RuleCreationDate, RuleFile, RuleID, RuleModifiedDate, RuleTitle, SrcASN, SrcCity, SrcCountry,
+    Status, TgtASN, TgtCity, TgtCountry, Timestamp,
 };
 use crate::yaml;
 use compact_str::CompactString;
@@ -46,6 +46,7 @@ pub enum Profile {
     TgtASN(Cow<'static, str>),
     TgtCountry(Cow<'static, str>),
     TgtCity(Cow<'static, str>),
+    ExtraFieldInfo(Cow<'static, str>),
     Literal(Cow<'static, str>), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
 }
 
@@ -57,7 +58,7 @@ impl Profile {
             | MitreTags(v) | OtherTags(v) | RuleAuthor(v) | RuleCreationDate(v)
             | RuleModifiedDate(v) | Status(v) | RuleID(v) | Provider(v) | Details(v)
             | RenderedMessage(v) | SrcASN(v) | SrcCountry(v) | SrcCity(v) | TgtASN(v)
-            | TgtCountry(v) | TgtCity(v) | Literal(v) => v.to_string(),
+            | TgtCountry(v) | TgtCity(v) | ExtraFieldInfo(v) | Literal(v) => v.to_string(),
         }
     }
 
@@ -88,6 +89,7 @@ impl Profile {
             TgtASN(_) => TgtASN(converted_string.to_owned().into()),
             TgtCountry(_) => TgtCountry(converted_string.to_owned().into()),
             TgtCity(_) => TgtCity(converted_string.to_owned().into()),
+            ExtraFieldInfo(_) => ExtraFieldInfo(converted_string.to_owned().into()),
             p => p.to_owned(),
         }
     }
@@ -117,6 +119,7 @@ impl From<&str> for Profile {
             "%Provider%" => Provider(Default::default()),
             "%Details%" => Details(Default::default()),
             "%RenderedMessage%" => RenderedMessage(Default::default()),
+            "%ExtraFieldInfo%" => ExtraFieldInfo(Default::default()),
             s => Literal(s.to_string().into()), // profiles.yamlの固定文字列を変換なしでそのまま出力する場合
         }
     }
