@@ -374,6 +374,7 @@ pub fn search_result_dsp_msg(
                 .as_str(),
             &stored_static.disp_abbr_general_values,
         );
+        let fmt_all_field_info = all_field_info.split_whitespace().join(" ");
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
@@ -381,7 +382,7 @@ pub fn search_result_dsp_msg(
             event_id.as_str(),
             record_id.as_str(),
             event_title,
-            all_field_info.as_str(),
+            fmt_all_field_info.as_str(),
             evtx_file.as_str(),
         ];
         if output.is_some() {
@@ -393,7 +394,8 @@ pub fn search_result_dsp_msg(
                     //AllFieldInfoの列の出力
                     let all_field_sep_info = all_field_info.split('¦').collect::<Vec<&str>>();
                     for (field_idx, fields) in all_field_sep_info.iter().enumerate() {
-                        let mut separated_fields_data = fields.split(':');
+                        let mut separated_fields_data =
+                            fields.split(':').map(|x| x.split_whitespace().join(" "));
                         write_color_buffer(
                             disp_wtr.as_mut().unwrap(),
                             Some(Color::Rgb(255, 158, 61)),
