@@ -1,6 +1,6 @@
 # 変更点
 
-## 2.X.X [2023/XX/XX] "XXX"
+## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
 
 **新機能:**
 
@@ -9,6 +9,8 @@
 **改善:**
 
 - `search`コマンドに`-M, --multiline`オプションを追加した。 (#1017) (@hitenkoku)
+- `search`コマンドの出力での不要な改行やタブを削除した。 (#1003) (@hitenkoku)
+- 正規表現の不要なエスケープを許容し、パースエラーを減らす`regex`クレートを1.8に更新した。(#1018) (@YamatoSecurity)
 
 **バグ修正:**
 

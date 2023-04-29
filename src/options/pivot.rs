@@ -5,7 +5,7 @@ use std::sync::RwLock;
 
 use crate::detections::utils::get_serde_number_to_string;
 
-use super::configs::EventKeyAliasConfig;
+use crate::detections::configs::EventKeyAliasConfig;
 
 #[derive(Debug)]
 pub struct PivotKeyword {
@@ -90,9 +90,9 @@ mod tests {
     use crate::detections::configs::load_eventkey_alias;
     use crate::detections::configs::load_pivot_keywords;
     use crate::detections::configs::CURRENT_EXE_PATH;
-    use crate::detections::pivot::insert_pivot_keyword;
-    use crate::detections::pivot::PIVOT_KEYWORD;
     use crate::detections::utils;
+    use crate::options::pivot::insert_pivot_keyword;
+    use crate::options::pivot::PIVOT_KEYWORD;
     use serde_json;
 
     #[test]

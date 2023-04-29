@@ -1,6 +1,6 @@
 # Changes
 
-## 2.X.X [2023/XX/XX] "XXX"
+## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
 
 **New Features:**
 
@@ -9,6 +9,8 @@
 **Enhancements:**
 
 - Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
+- Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
+- `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
 
 **Bug Fixes:**
 
