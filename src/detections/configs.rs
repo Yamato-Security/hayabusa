@@ -727,7 +727,12 @@ pub struct SearchOption {
     pub filter: Vec<String>,
 
     /// Save the search results in CSV format (ex: search.csv)
-    #[arg(help_heading = Some("Output"), short = 'o', long, value_name = "FILE")]
+    #[arg(
+        help_heading = Some("Output"),
+        short = 'o',
+        long, value_name = "FILE",
+        display_order = 410
+    )]
     pub output: Option<PathBuf>,
 
     /// Specify additional file extensions (ex: evtx_data) (ex: evtx1,evtx2)
