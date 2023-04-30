@@ -8,8 +8,9 @@
 
 **Enhancements:**
 
+- Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
 - Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
-- `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors.
+- `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
 
 **Bug Fixes:**
 
