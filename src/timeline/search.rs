@@ -375,12 +375,12 @@ pub fn search_result_dsp_msg(
             &stored_static.disp_abbr_general_values,
         );
 
+        let fmted_all_field_info = all_field_info.split_whitespace().join(" ");
         let all_field_info = if output.is_some() && stored_static.multiline_flag {
-            all_field_info.replace(" ¦ ", "\r\n")
+            fmted_all_field_info.replace(" ¦ ", "\r\n")
         } else {
-            all_field_info.to_string()
+            fmted_all_field_info
         };
-        let fmt_all_field_info = all_field_info.split_whitespace().join(" ");
         let record_data = vec![
             timestamp.as_str(),
             hostname.as_str(),
@@ -388,7 +388,7 @@ pub fn search_result_dsp_msg(
             event_id.as_str(),
             record_id.as_str(),
             event_title,
-            fmt_all_field_info.as_str(),
+            all_field_info.as_str(),
             evtx_file.as_str(),
         ];
         if output.is_some() {
