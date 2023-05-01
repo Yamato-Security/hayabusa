@@ -373,8 +373,10 @@ fn emit_csv<W: std::io::Write>(
                         ),
                         stored_static.common_options.no_color,
                     ),
-                    &_get_serialized_disp_output(&detect_info.ext_field, false),
-                    false,
+                    &_get_serialized_disp_output(&detect_info.ext_field, false)
+                        .split_whitespace()
+                        .join(" "),
+                    true,
                 )
                 .ok();
             } else if jsonl_output_flag {
