@@ -655,6 +655,10 @@ impl PipeElement {
                 patt + "*"
             } else if patt.ends_with('*') {
                 patt
+            } else if patt.ends_with('\\') {
+                // 末尾が\(バックスラッシュ1つ)の場合は、末尾を\\* (バックスラッシュ2つとアスタリスク)に変換する
+                // 末尾が\\*は、バックスラッシュ1文字とそれに続けてワイルドカードパターンであることを表す
+                patt + "\\*"
             } else {
                 patt + "*"
             }
@@ -2501,6 +2505,110 @@ mod tests {
         let record_json_str = r#"{
             "Event": {"System": {"EventID": 4624} },
             "Event_attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"}
+        }"#;
+
+        check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_startswith_backslash1() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|startswith: C:\Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_startswith_backslash2() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|startswith: C:\Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows_\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, false); //★ expect false
+    }
+
+    #[test]
+    fn test_detect_contains_backslash1() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|contains: \Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows\\hoge.exe"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_contains_backslash2() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                EventID: 1040
+                Data|contains: \Windows\
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1040,
+              "Channel": "Application"
+            },
+            "EventData": {
+              "Data": "C:\\Windows_\\hoge.exe"
+            }
+          }
         }"#;
 
         check_select(rule_str, record_json_str, false);
