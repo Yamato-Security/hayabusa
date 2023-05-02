@@ -617,6 +617,7 @@ impl App {
                 println!();
                 return;
             }
+            Action::AlertElastic(_) => todo!(),
         }
 
         // 処理時間の出力
