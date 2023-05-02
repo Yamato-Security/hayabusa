@@ -339,7 +339,10 @@ impl LeafMatcher for DefaultMatcher {
             );
             return Result::Err(vec![errmsg]);
         }
-        let pattern = yaml_value.unwrap();
+        let mut pattern = yaml_value.unwrap();
+        if pattern.ends_with('\\') {
+            pattern.pop();
+        }
         // Pipeが指定されていればパースする
         let emp = String::default();
         // 一つ目はただのキーで、2つめ以降がpipe
