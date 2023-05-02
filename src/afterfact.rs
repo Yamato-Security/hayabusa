@@ -405,16 +405,16 @@ fn emit_csv<W: std::io::Write>(
                     plus_header = false;
                 }
                 wtr.write_record(detect_info.ext_field.iter().map(|x| {
-                    output_remover
-                        .replace_all(
-                            &output_replacer.replace_all(
+                    output_remover.replace_all(
+                        &output_replacer
+                            .replace_all(
                                 &x.1.to_value(),
                                 &output_replaced_maps.values().collect_vec(),
-                            ),
-                            &removed_replaced_maps.values().collect_vec(),
-                        )
-                        .split_whitespace()
-                        .join(" ")
+                            )
+                            .split_whitespace()
+                            .join(" "),
+                        &removed_replaced_maps.values().collect_vec(),
+                    )
                 }))?;
             }
             // 各種集計作業
