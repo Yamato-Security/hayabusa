@@ -1,5 +1,38 @@
 # Changes
 
+## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
+
+**New Features:**
+
+- XXX
+
+**Enhancements:**
+
+- Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
+- Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
+- `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
+
+**Bug Fixes:**
+
+- XXX
+
+## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
+
+**New Features:**
+
+- Added `search` command to search for specified keywords in records. (#617) (@itiB, @hitenkoku)
+- Added `-r, --regex` option in the `search` command to search for regular expressions. (#992) (@itiB)
+
+**Enhancements:**
+
+- Alphabetically sorted commands. (#991) (@hitenkoku)
+- Added attribute information of `Event.UserData` to the output of `AllFieldInfo` in `csv-timeline`, `json-timeline` and `search` commands. (#1006) (@hitenkoku)
+- Updated Aho-Corasick crate to 1.0. (#1013) (@hitenkoku)
+
+**Bug Fixes:**
+
+- Fixed timestamps that did not exist from being displayed in the event frequency timeline (`-T, --visualize-timeline`) in version 2.3.3. (#977) (@hitenkoku)
+
 ## 2.3.3 [2023/04/07] "Sakura Release"
 
 **Enhancements:**

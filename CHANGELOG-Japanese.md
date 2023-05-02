@@ -1,5 +1,38 @@
 # 変更点
 
+## 2.5.0 [2023/05/12] "Security Mini Camp in Tokyo Release"
+
+**新機能:**
+
+- XXX
+
+**改善:**
+
+- `search`コマンドに`-M, --multiline`オプションを追加した。 (#1017) (@hitenkoku)
+- `search`コマンドの出力での不要な改行やタブを削除した。 (#1003) (@hitenkoku)
+- 正規表現の不要なエスケープを許容し、パースエラーを減らす`regex`クレートを1.8に更新した。(#1018) (@YamatoSecurity)
+
+**バグ修正:**
+
+- XXX
+
+## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
+
+**新機能:**
+
+- 指定されたキーワードに合致したレコードを検索する`search`コマンドを追加した。 (#617) (@itiB, @hitenkoku)
+- 指定された正規表現に合致したレコードを検索する`-r, --regex`オプションを`search`コマンドに追加した。 (#992) (@itiB)
+- Aho-Corasickクレートをversino1.0に更新した。 (#1013) (@hitenkoku)
+
+**改善:**
+
+- コマンドの表示順を辞書順に並べ替えた。 (#991) (@hitenkoku)
+- `csv-timeline`, `json-timeline`, `search`コマンドの `AllFieldInfo`の出力に`Event.UserData`の属性情報を追加した。 (#1006) (@hitenkoku)
+
+**バグ修正:**
+
+- v2.3.3にて`-T, --visualize-timeline`データの中に存在していないタイムスタンプがイベント頻度のタイムラインに出力するバグを修正した。 (#977) (@hitenkoku)
+
 ## 2.3.3 [2023/04/07] "Sakura Release"
 
 **改善:**

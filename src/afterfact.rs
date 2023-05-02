@@ -130,14 +130,14 @@ fn _print_timeline_hist(timestamps: Vec<i64>, length: usize, side_margin_size: u
     if timestamps.len() < 5 {
         writeln!(
             wtr,
-            "Event Frequency Timeline could not be displayed as there needs to be more than 5 events.",
+            "Detection Frequency Timeline could not be displayed as there needs to be more than 5 events.",
         )
         .ok();
         buf_wtr.print(&wtr).ok();
         return;
     }
 
-    let title = "Event Frequency Timeline";
+    let title = "Detection Frequency Timeline";
     let header_row_space = (length - title.len()) / 2;
     writeln!(wtr, "{}{}", " ".repeat(header_row_space), title).ok();
     println!();
@@ -225,10 +225,12 @@ fn emit_csv<W: std::io::Write>(
     }
     let output_replacer = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
-        .build(output_replaced_maps.keys());
+        .build(output_replaced_maps.keys())
+        .unwrap();
     let output_remover = AhoCorasickBuilder::new()
         .match_kind(MatchKind::LeftmostLongest)
-        .build(removed_replaced_maps.keys());
+        .build(removed_replaced_maps.keys())
+        .unwrap();
 
     let mut html_output_stock = Nested::<String>::new();
     let html_output_flag = stored_static.html_report_flag;
@@ -316,10 +318,16 @@ fn emit_csv<W: std::io::Write>(
             .unwrap_or(&0) as usize
     };
 
-    for time in MESSAGEKEYS.lock().unwrap().iter().sorted_unstable() {
+    for (message_idx, time) in MESSAGEKEYS
+        .lock()
+        .unwrap()
+        .iter()
+        .sorted_unstable()
+        .enumerate()
+    {
         let multi = message::MESSAGES.get(time).unwrap();
         let (_, detect_infos) = multi.pair();
-        timestamps.push(_get_timestamp(output_option, time));
+        timestamps[message_idx] = _get_timestamp(output_option, time);
         for detect_info in detect_infos.iter().sorted_by(|a, b| {
             Ord::cmp(
                 &format!(
@@ -765,9 +773,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::First,
                     )
                     .replace('|', "🦅"),
@@ -779,9 +784,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::Last,
                     )
                     .replace('|', "🦅"),
@@ -793,9 +795,6 @@ fn _get_serialized_disp_output(data: &Vec<(CompactString, Profile)>, header: boo
                             .replace("🛂r", "")
                             .replace("🛂n", "")
                             .replace("🛂t", ""),
-                        // .replace(['\n', '\r', '\t'], " ")
-                        // .split_whitespace()
-                        // .join(" "),
                         ColPos::Other,
                     )
                     .replace('|', "🦅"),

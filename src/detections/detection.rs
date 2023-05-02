@@ -16,11 +16,11 @@ use termcolor::{BufferWriter, Color, ColorChoice};
 use yaml_rust::Yaml;
 
 use crate::detections::message::{AlertMessage, DetectInfo, ERROR_LOG_STACK, TAGS_CONFIG};
-use crate::detections::pivot::insert_pivot_keyword;
 use crate::detections::rule::{self, AggResult, RuleNode};
 use crate::detections::utils::{get_serde_number_to_string, make_ascii_titlecase};
 use crate::filter;
 use crate::options::htmlreport;
+use crate::options::pivot::insert_pivot_keyword;
 use crate::yaml::ParseYaml;
 use hashbrown::HashMap;
 use serde_json::Value;
@@ -136,7 +136,10 @@ impl Detection {
             .map(|rule_file_tuple| rule::create_rule(rule_file_tuple.0, rule_file_tuple.1))
             .filter_map(return_if_success)
             .collect();
-        if !stored_static.logon_summary_flag {
+        if !(stored_static.logon_summary_flag
+            || stored_static.search_flag
+            || stored_static.metrics_flag)
+        {
             Detection::print_rule_load_info(
                 &rulefile_loader.rulecounter,
                 &rulefile_loader.rule_load_cnt,
@@ -233,19 +236,25 @@ impl Detection {
             .iter()
             .any(|(_s, p)| *p == RecordID(Default::default()))
         {
-            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventRecordID"])
-                .unwrap_or_default()
+            get_serde_number_to_string(
+                &record_info.record["Event"]["System"]["EventRecordID"],
+                false,
+            )
+            .unwrap_or_default()
         } else {
             CompactString::from("")
         };
-        let ch_str = &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"])
-            .unwrap_or_default();
+        let ch_str =
+            &get_serde_number_to_string(&record_info.record["Event"]["System"]["Channel"], false)
+                .unwrap_or_default();
         let provider = &get_serde_number_to_string(
             &record_info.record["Event"]["System"]["Provider_attributes"]["Name"],
+            false,
         )
         .unwrap_or_default();
-        let eid = get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"])
-            .unwrap_or_else(|| "-".into());
+        let eid =
+            get_serde_number_to_string(&record_info.record["Event"]["System"]["EventID"], false)
+                .unwrap_or_else(|| "-".into());
 
         let default_time = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
         let time = message::get_event_time(&record_info.record, stored_static.json_input_flag)
@@ -969,9 +978,6 @@ impl Detection {
         err_rc: &u128,
         stored_static: &StoredStatic,
     ) {
-        if stored_static.metrics_flag {
-            return;
-        }
         let mut sorted_ld_rc: Vec<(&CompactString, &u128)> = ld_rc.iter().collect();
         sorted_ld_rc.sort_by(|a, b| a.0.cmp(b.0));
         let mut html_report_stock = Nested::<String>::new();

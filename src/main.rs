@@ -16,12 +16,12 @@ use hayabusa::detections::configs::{
 };
 use hayabusa::detections::detection::{self, EvtxRecordInfo};
 use hayabusa::detections::message::{AlertMessage, ERROR_LOG_STACK};
-use hayabusa::detections::pivot::PivotKeyword;
-use hayabusa::detections::pivot::PIVOT_KEYWORD;
 use hayabusa::detections::rule::{get_detection_keys, RuleNode};
 use hayabusa::detections::utils::{check_setting_path, output_and_data_stack_for_html};
 use hayabusa::options;
 use hayabusa::options::htmlreport::{self, HTML_REPORTER};
+use hayabusa::options::pivot::PivotKeyword;
+use hayabusa::options::pivot::PIVOT_KEYWORD;
 use hayabusa::options::profile::set_default_profile;
 use hayabusa::options::{level_tuning::LevelTuning, update::Update};
 use hayabusa::{afterfact::after_fact, detections::utils};
@@ -189,6 +189,16 @@ impl App {
             .ok();
             println!();
         }
+        if stored_static.search_flag {
+            write_color_buffer(
+                &BufferWriter::stdout(ColorChoice::Always),
+                None,
+                "Searching...",
+                true,
+            )
+            .ok();
+            println!();
+        }
 
         write_color_buffer(
             &BufferWriter::stdout(ColorChoice::Always),
@@ -297,7 +307,7 @@ impl App {
                 self.print_contributors();
                 return;
             }
-            Action::LogonSummary(_) | Action::Metrics(_) => {
+            Action::LogonSummary(_) | Action::Metrics(_) | Action::Search(_) => {
                 self.analysis_start(&target_extensions, &time_filter, stored_static);
                 if let Some(path) = &stored_static.output_path {
                     if let Ok(metadata) = fs::metadata(path) {
@@ -911,7 +921,10 @@ impl App {
         let total_size_output = format!("Total file size: {}", total_file_size.to_string_as(false));
         println!("{total_size_output}");
         println!();
-        if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+        if !(stored_static.metrics_flag
+            || stored_static.logon_summary_flag
+            || stored_static.search_flag)
+        {
             println!("Loading detections rules. Please wait.");
             println!();
         }
@@ -989,9 +1002,10 @@ impl App {
             .rap_check_point("Analysis Processing Time");
         if stored_static.metrics_flag {
             tl.tm_stats_dsp_msg(event_timeline_config, stored_static);
-        }
-        if stored_static.logon_summary_flag {
+        } else if stored_static.logon_summary_flag {
             tl.tm_logon_stats_dsp_msg(stored_static);
+        } else if stored_static.search_flag {
+            tl.search_dsp_msg(event_timeline_config, stored_static);
         }
         if stored_static.output_path.is_some() {
             println!();
@@ -1002,6 +1016,7 @@ impl App {
         detection.add_aggcondition_msges(&self.rt, stored_static);
         if !(stored_static.metrics_flag
             || stored_static.logon_summary_flag
+            || stored_static.search_flag
             || stored_static.pivot_keyword_list_flag)
         {
             after_fact(
@@ -1072,25 +1087,28 @@ impl App {
                 }
 
                 let data = record_result.as_ref().unwrap().data.borrow();
-                // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
-                if !self._is_valid_channel(
-                    data,
-                    &stored_static.eventkey_alias,
-                    "Event.System.Channel",
-                ) || (stored_static.output_option.as_ref().unwrap().eid_filter
-                    && !self._is_target_event_id(
+                // Searchならすべてのフィルタを無視
+                if !stored_static.search_flag {
+                    // channelがnullである場合とEventID Filter optionが指定されていない場合は、target_eventids.txtでイベントIDベースでフィルタする。
+                    if !self._is_valid_channel(
                         data,
-                        target_event_ids,
                         &stored_static.eventkey_alias,
-                    ))
-                {
-                    continue;
-                }
+                        "Event.System.Channel",
+                    ) || (stored_static.output_option.as_ref().unwrap().eid_filter
+                        && !self._is_target_event_id(
+                            data,
+                            target_event_ids,
+                            &stored_static.eventkey_alias,
+                        ))
+                    {
+                        continue;
+                    }
 
-                // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
-                let timestamp = record_result.as_ref().unwrap().timestamp;
-                if !time_filter.is_target(&Some(timestamp)) {
-                    continue;
+                    // EventID側の条件との条件の混同を防ぐため時間でのフィルタリングの条件分岐を分離した
+                    let timestamp = record_result.as_ref().unwrap().timestamp;
+                    if !time_filter.is_target(&Some(timestamp)) {
+                        continue;
+                    }
                 }
 
                 records_per_detect.push(data.to_owned());
@@ -1108,7 +1126,10 @@ impl App {
             // timeline機能の実行
             tl.start(&records_per_detect, stored_static);
 
-            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+            if !(stored_static.metrics_flag
+                || stored_static.logon_summary_flag
+                || stored_static.search_flag)
+            {
                 // ruleファイルの検知
                 detection = detection.start(&self.rt, records_per_detect);
             }
@@ -1249,7 +1270,11 @@ impl App {
             // timeline機能の実行
             tl.start(&records_per_detect, stored_static);
 
-            if !(stored_static.metrics_flag || stored_static.logon_summary_flag) {
+            // 以下のコマンドの際にはルールにかけない
+            if !(stored_static.metrics_flag
+                || stored_static.logon_summary_flag
+                || stored_static.search_flag)
+            {
                 // ruleファイルの検知
                 detection = detection.start(&self.rt, records_per_detect);
             }
@@ -1418,11 +1443,10 @@ impl App {
             | Action::LogonSummary(_)
             | Action::Metrics(_)
             | Action::PivotKeywordsList(_)
-            | Action::SetDefaultProfile(_) => {
-                if std::env::args().len() == 2 {
-                    return false;
-                }
-                true
+            | Action::SetDefaultProfile(_) => std::env::args().len() != 2,
+            Action::Search(opt) => {
+                std::env::args().len() != 2 && (opt.keywords.is_some() ^ opt.regex.is_some())
+                // key word and regex are conflict
             }
             _ => true,
         }
