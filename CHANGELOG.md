@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Unconverted sigma rules that search for a string that end in a backslash would not be detected. Also `|contains` conditions would not match if the string was located in the beginning. (#1025) (@fukusuket)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
