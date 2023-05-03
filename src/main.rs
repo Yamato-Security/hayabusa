@@ -367,12 +367,10 @@ impl App {
                         for i in pivot_keyword.fields.iter() {
                             write!(output, "%{i}% ").ok();
                         }
-                        writeln!(output, "):").ok();
 
                         for i in pivot_keyword.keywords.iter() {
                             writeln!(output, "{i}").ok();
                         }
-                        writeln!(output).ok();
 
                         output
                     };
@@ -422,11 +420,21 @@ impl App {
                     pivot_key_unions.iter().for_each(|(key, pivot_keyword)| {
                         write_color_buffer(
                             &BufferWriter::stdout(ColorChoice::Always),
-                            None,
+                            Some(Color::Green),
                             &create_output(String::default(), key, pivot_keyword),
                             true,
                         )
                         .ok();
+
+                        if pivot_keyword.keywords.len() == 0 {
+                            write_color_buffer(
+                                &BufferWriter::stdout(ColorChoice::Always),
+                                Some(Color::Red),
+                                "No keywords found\n\n",
+                                true,
+                            )
+                            .ok();
+                        }
                     });
                 }
             }
