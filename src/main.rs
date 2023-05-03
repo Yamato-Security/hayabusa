@@ -410,7 +410,7 @@ impl App {
                     .ok();
                 } else {
                     //標準出力の場合
-                    let output = "The following pivot keywords were found:";
+                    let output = "\nThe following pivot keywords were found:\n";
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
                         None,
