@@ -16,3 +16,4 @@ hayabusa*
 *.txt
 !contributors.txt
 !LICENSE.txt
+.~*
