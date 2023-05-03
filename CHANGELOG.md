@@ -11,6 +11,7 @@
 - Added `-M, --multiline` option to search command. (#1017) (@hitenkoku)
 - Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
 - `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
+- Changed check details of hayabusa version number when `update-rules` command is used (#1028) (@hitenkoku)
 
 **Bug Fixes:**
 
