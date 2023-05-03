@@ -14,7 +14,7 @@
 
 **Bug Fixes:**
 
-- XXX
+- Fixed rule of last character is a backslash is not detected. (#1025) (@fukusuket)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
