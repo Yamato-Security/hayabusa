@@ -349,7 +349,7 @@ impl App {
                 load_pivot_keywords(
                     utils::check_setting_path(
                         &CURRENT_EXE_PATH.to_path_buf(),
-                        "config/pivot_keywords.txt",
+                        "rules/config/pivot_keywords.txt",
                         true,
                     )
                     .unwrap()
