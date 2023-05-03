@@ -2511,6 +2511,33 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_backslash_exact_match() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory: 'C:\Windows\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
     fn test_detect_startswith_backslash1() {
         let rule_str = r#"
         enabled: true
@@ -2612,5 +2639,59 @@ mod tests {
         }"#;
 
         check_select(rule_str, record_json_str, false);
+    }
+
+    #[test]
+    fn test_detect_backslash_endswith() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory|endswith: 'C:\Windows\system32\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
+    }
+
+    #[test]
+    fn test_detect_backslash_regex() {
+        let rule_str = r#"
+        enabled: true
+        detection:
+            selection:
+                Channel: 'Microsoft-Windows-Sysmon/Operational'
+                EventID: 1
+                CurrentDirectory|re: '.*system32\\'
+        "#;
+
+        let record_json_str = r#"
+        {
+          "Event": {
+            "System": {
+              "EventID": 1,
+              "Channel": "Microsoft-Windows-Sysmon/Operational"
+            },
+            "EventData": {
+              "CurrentDirectory": "C:\\Windows\\system32\\"
+            }
+          }
+        }"#;
+
+        check_select(rule_str, record_json_str, true);
     }
 }
