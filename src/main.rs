@@ -468,9 +468,15 @@ impl App {
                 let split_now_version = &now_version
                     .replace("-dev", "")
                     .split('.')
-                    .filter_map(|x| x.parse().ok()).collect::<Vec<i8>>();
-                let split_latest_version = &latest_version_data.as_ref().unwrap_or(now_version).replace('"', "").split('.').
-                filter_map(|x| x.parse().ok()).collect::<Vec<i8>>();
+                    .filter_map(|x| x.parse().ok())
+                    .collect::<Vec<i8>>();
+                let split_latest_version = &latest_version_data
+                    .as_ref()
+                    .unwrap_or(now_version)
+                    .replace('"', "")
+                    .split('.')
+                    .filter_map(|x| x.parse().ok())
+                    .collect::<Vec<i8>>();
                 if split_latest_version > split_now_version {
                     write_color_buffer(
                         &BufferWriter::stdout(ColorChoice::Always),
