@@ -12,10 +12,11 @@
 - Deleted return characters in the output of the `search` command. (#1003) (@hitenkoku)
 - `regex` crate updated to 1.8 which allows unnecessary escapes in regular expressions reducing parsing errors. (#1018) (@YamatoSecurity)
 - Deleted return characters in output of `csv-timeline` command. (#1019) (@hitenkoku)
+- Don't show new version information with the `update-rules` command when building a newer dev build. (#1028) (@hitenkoku)
 
 **Bug Fixes:**
 
-- XXX
+- Unconverted sigma rules that search for a string that end in a backslash would not be detected. Also `|contains` conditions would not match if the string was located in the beginning. (#1025) (@fukusuket)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
