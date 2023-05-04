@@ -1,4 +1,4 @@
-use hashbrown::{HashMap, HashSet};
+use indexmap::{IndexMap, IndexSet};
 use lazy_static::lazy_static;
 use serde_json::Value;
 use std::sync::RwLock;
@@ -9,13 +9,13 @@ use crate::detections::configs::EventKeyAliasConfig;
 
 #[derive(Debug)]
 pub struct PivotKeyword {
-    pub keywords: HashSet<String>,
-    pub fields: HashSet<String>,
+    pub keywords: IndexSet<String>,
+    pub fields: IndexSet<String>,
 }
 
 lazy_static! {
-    pub static ref PIVOT_KEYWORD: RwLock<HashMap<String, PivotKeyword>> =
-        RwLock::new(HashMap::new());
+    pub static ref PIVOT_KEYWORD: RwLock<IndexMap<String, PivotKeyword>> =
+        RwLock::new(IndexMap::new());
 }
 
 impl Default for PivotKeyword {
@@ -27,8 +27,8 @@ impl Default for PivotKeyword {
 impl PivotKeyword {
     pub fn new() -> PivotKeyword {
         PivotKeyword {
-            keywords: HashSet::new(),
-            fields: HashSet::new(),
+            keywords: IndexSet::new(),
+            fields: IndexSet::new(),
         }
     }
 }
