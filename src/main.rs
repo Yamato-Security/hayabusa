@@ -426,7 +426,7 @@ impl App {
                         )
                         .ok();
 
-                        if pivot_keyword.keywords.len() == 0 {
+                        if pivot_keyword.keywords.is_empty() {
                             write_color_buffer(
                                 &BufferWriter::stdout(ColorChoice::Always),
                                 Some(Color::Red),
