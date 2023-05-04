@@ -368,6 +368,12 @@ impl App {
                             write!(output, "%{i}% ").ok();
                         }
 
+                        if pivot_keyword.keywords.is_empty() {
+                            write!(output, "):").ok();
+                        } else {
+                            writeln!(output, "):").ok();
+                        }
+
                         for i in pivot_keyword.keywords.iter() {
                             writeln!(output, "{i}").ok();
                         }
