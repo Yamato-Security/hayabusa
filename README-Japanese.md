@@ -577,29 +577,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
 #### `pivot-keywords-list`の設定ファイル
 
 検索キーワードは、`./rules/config/pivot_keywords.txt`を編集することでカスタマイズすることができます。
-デフォルト設定は以下の通りです:
+デフォルト設定は[こちらのページ](https://github.com/Yamato-Security/hayabusa-rules/blob/main/config/pivot_keywords.txt)です。
 
-```txt
-Source Computers.WorkstationName
-Subject Users.SubjectUserName
-Target Users.TargetUserName
-Users.User
-Subject Logon IDs.SubjectLogonId
-Target Logon IDs.TargetLogonId
-Logon IDs.LogonId
-IP Addresses.IpAddress
-Source IP Addresses.SourceIp
-Source IP Addresses.ClientAddress
-Source IP Addresses.SourceAddress
-Target IP Addresses.DestinationIp
-Target IP Addresses.DestAddress
-Processes.Image
-Processes.NewProcessName
-Process IDs.ProcessId
-Process IDs.NewProcessId
-Process GUIDs.ProcessGuid
-Command Lines.CommandLine
-```
 
 フォーマットは、`キーワード名.フィールド名`です。例えば、`Users`のリストを作成する場合、Hayabusaは、`SubjectUserName`、`TargetUserName`、`User`フィールドにあるすべての値をリストアップします。
 

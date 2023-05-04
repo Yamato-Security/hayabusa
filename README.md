@@ -576,29 +576,8 @@ hayabusa.exe pivot-keywords-list -d ../logs -m critical -o keywords
 #### `pivot-keywords-list` config file
 
 You can customize what keywords you want to search for by editing `./rules/config/pivot_keywords.txt`.
-This is the default setting:
+[This page](https://github.com/Yamato-Security/hayabusa-rules/blob/main/config/pivot_keywords.txt) is the default setting.
 
-```txt
-Source Computers.WorkstationName
-Subject Users.SubjectUserName
-Target Users.TargetUserName
-Users.User
-Subject Logon IDs.SubjectLogonId
-Target Logon IDs.TargetLogonId
-Logon IDs.LogonId
-IP Addresses.IpAddress
-Source IP Addresses.SourceIp
-Source IP Addresses.ClientAddress
-Source IP Addresses.SourceAddress
-Target IP Addresses.DestinationIp
-Target IP Addresses.DestAddress
-Processes.Image
-Processes.NewProcessName
-Process IDs.ProcessId
-Process IDs.NewProcessId
-Process GUIDs.ProcessGuid
-Command Lines.CommandLine
-```
 
 The format is `KeywordName.FieldName`. For example, when creating the list of `Users`, hayabusa will list up all the values in the `SubjectUserName`, `TargetUserName` and `User` fields.
 
