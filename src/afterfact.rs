@@ -1140,8 +1140,8 @@ fn _print_detection_summary_tables(
         ]);
     }
 
-    let odd_row = &mut output[4].iter().skip(1).take(5);
-    let even_row = &mut output[4].iter().skip(1).take(5);
+    let odd_row = &mut output[4].iter().skip(1).step_by(2);
+    let even_row = &mut output[4].iter().skip(2).step_by(2);
     tb.add_row(vec![
         Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
         Cell::new(""),
