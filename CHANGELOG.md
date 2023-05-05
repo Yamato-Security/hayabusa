@@ -16,7 +16,7 @@
 **Bug Fixes:**
 
 - Unconverted sigma rules that search for a string that end in a backslash would not be detected. Also `|contains` conditions would not match if the string was located in the beginning. (#1025) (@fukusuket)
-- Fixed Informatonal level alert show up twice in results summary (#1031) (@hitenkoku)
+- In versions 2.3.3-2.4.0, informational level alerts in the Result Summary would show the top 5 twice instead of the top 10 events. (#1031) (@hitenkoku)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
