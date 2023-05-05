@@ -1140,15 +1140,15 @@ fn _print_detection_summary_tables(
         ]);
     }
 
-    let odd_row = &mut output[4].iter().skip(1).take(5);
-    let even_row = &mut output[4].iter().skip(1).take(5);
+    let odd_col = &mut output[4].iter().skip(1).take(5);
+    let even_col = &mut output[4].iter().skip(6).take(5);
     tb.add_row(vec![
         Cell::new(&output[4][0]).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
         Cell::new(""),
     ]);
     tb.add_row(vec![
-        Cell::new(odd_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
-        Cell::new(even_row.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(odd_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
+        Cell::new(even_col.join("\n")).fg(col_color[4].unwrap_or(comfy_table::Color::Reset)),
     ]);
     println!("{tb}");
 }

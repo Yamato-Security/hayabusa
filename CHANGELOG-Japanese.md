@@ -16,6 +16,7 @@
 **バグ修正:**
 
 - ruleで指定された値で`\`が最後の文字のときに、検知ができない問題を修正した。 (#1025) (@fukusuket)
+- results summary内のInformationalレベルアラートの結果が同じ内容が2つ表示されている状態を修正した。 (#1031) (@hitenkoku)
 
 ## 2.4.0 [2023/04/19] "SANS Secure Korea Release"
 
