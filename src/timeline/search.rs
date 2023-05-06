@@ -304,7 +304,7 @@ fn extract_search_event_info(
 
 /// 検索結果を標準出力もしくはcsvファイルに出力する関数
 pub fn search_result_dsp_msg(
-    result_list: &HashSet<(
+    result_list: &mut HashSet<(
         CompactString,
         CompactString,
         CompactString,
@@ -357,7 +357,9 @@ pub fn search_result_dsp_msg(
 
     // Write contents
     for (timestamp, hostname, channel, event_id, record_id, all_field_info, evtx_file) in
-        result_list.iter()
+        result_list
+            .iter()
+            .sorted_unstable_by(|a, b| Ord::cmp(&a.0, &b.0))
     {
         let event_title = if let Some(event_info) =
             event_timeline_config.get_event_id(&channel.to_ascii_lowercase(), event_id)

@@ -386,7 +386,7 @@ impl Timeline {
                 ));
             }
             search_result_dsp_msg(
-                &self.event_search.search_result,
+                &mut self.event_search.search_result,
                 event_timeline_config,
                 &search_summary_option.output,
                 stored_static,
